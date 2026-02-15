@@ -4,11 +4,11 @@ const { Task, TaskUpdate, User, Department, Branch } = require('../models');
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
 
-/** ساخت شرط دسترسی بر اساس نقش: ادمین اصلی، مالک و ادمین همه؛ مدیر دپارتمان فقط دپارتمان خود؛ کارمند فقط تسک‌های اختصاص‌یافته به خود */
+/** ساخت شرط دسترسی: ادمین/مالک همه؛ مدیر دپارتمان خودش؛ کارمند/ناظر تسک‌های اختصاص‌یافته به خود + تسک‌های دپارتمان خود */
 async function taskAccessWhere(req) {
     const u = req.user;
     if (isMainAdmin(u) || u.role === 'owner' || u.role === 'admin') return {};
-    if (u.role === 'manager' && u.departmentId) {
+    if ((u.role === 'manager' || u.role === 'supervisor') && u.departmentId) {
         const deptUserIds = await User.findAll({
             where: { departmentId: u.departmentId, isActive: true },
             attributes: ['id']
@@ -17,11 +17,17 @@ async function taskAccessWhere(req) {
             [Op.or]: [
                 { assignedToDepartmentId: u.departmentId },
                 { assignedTo: { [Op.in]: deptUserIds } },
+                { assignedTo: u.id },
                 { createdBy: u.id }
             ]
         };
     }
-    return { assignedTo: u.id };
+    return {
+        [Op.or]: [
+            { assignedTo: u.id },
+            ...(u.departmentId ? [{ assignedToDepartmentId: u.departmentId }] : [])
+        ]
+    };
 }
 
 /** بررسی دسترسی به یک تسک (خواندن/ویرایش) */
@@ -30,7 +36,7 @@ async function canAccessTask(req, taskId) {
     if (!task) return { ok: false, status: 404 };
     const u = req.user;
     if (isMainAdmin(u) || u.role === 'owner' || u.role === 'admin') return { ok: true, task };
-    if (u.role === 'manager' && u.departmentId) {
+    if ((u.role === 'manager' || u.role === 'supervisor') && u.departmentId) {
         const deptUserIds = await User.findAll({
             where: { departmentId: u.departmentId },
             attributes: ['id']
@@ -38,10 +44,12 @@ async function canAccessTask(req, taskId) {
         const ok =
             task.assignedToDepartmentId === u.departmentId ||
             (task.assignedTo && deptUserIds.includes(task.assignedTo)) ||
+            task.assignedTo === u.id ||
             task.createdBy === u.id;
         return ok ? { ok: true, task } : { ok: false, status: 403 };
     }
     if (task.assignedTo === u.id || task.createdBy === u.id) return { ok: true, task };
+    if (u.departmentId && task.assignedToDepartmentId === u.departmentId) return { ok: true, task };
     return { ok: false, status: 403 };
 }
 

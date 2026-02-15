@@ -27,6 +27,52 @@ function canManageConversation(req) {
     return isMainAdmin(req.user) || req.user.role === 'owner' || req.user.role === 'admin' || req.user.role === 'manager';
 }
 
+// ——— ایجاد مکالمه جدید (با مشتری)
+router.post('/', async (req, res) => {
+    try {
+        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        const { customerId } = req.body;
+        if (!customerId) return res.status(400).json({ error: 'شناسه مشتری الزامی است' });
+        const accessibleCustomerIds = await getAccessibleCustomerIds(req);
+        const { canAccessCustomer } = require('../lib/customerAccess');
+        if (!(await canAccessCustomer(req, customerId))) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+        const customer = await Customer.findByPk(customerId);
+        if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
+        let conversation = await Conversation.findOne({
+            where: { customerId, status: { [Op.ne]: 'closed' } },
+            include: [
+                { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'] },
+                { model: User, as: 'assignee', attributes: ['id', 'name'] },
+                { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
+                { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
+            ]
+        });
+        if (!conversation) {
+            conversation = await Conversation.create({
+                customerId,
+                status: 'open',
+                priority: 'normal',
+                source: 'whatsapp',
+                branchId: req.user.branchId || null,
+                departmentId: req.user.departmentId || null,
+                assignedTo: req.userId,
+                assignedAt: new Date()
+            });
+            conversation = await Conversation.findByPk(conversation.id, {
+                include: [
+                    { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'] },
+                    { model: User, as: 'assignee', attributes: ['id', 'name'] },
+                    { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
+                    { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
+                ]
+            });
+        }
+        res.status(201).json(conversation);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ——— لیست مکالمات (با فیلتر و سیاست دسترسی)
 router.get('/', async (req, res) => {
     try {
@@ -130,24 +176,32 @@ router.patch('/:id', async (req, res) => {
             return res.json(conversation);
         }
 
-        if (!canManageConversation(req)) return res.status(403).json({ error: 'فقط مدیر یا ادمین می‌تواند تخصیص و وضعیت مکالمه را تغییر دهد' });
-
         const updateData = {};
+        const canManage = canManageConversation(req);
+        const canAssignSelf = !canManage && assignedTo === req.userId;
         if (assignedTo !== undefined) {
-            updateData.assignedTo = assignedTo || null;
-            updateData.assignedAt = assignedTo ? new Date() : null;
+            if (canManage || canAssignSelf) {
+                updateData.assignedTo = canAssignSelf ? req.userId : (assignedTo || null);
+                updateData.assignedAt = updateData.assignedTo ? new Date() : null;
+            }
         }
-        if (departmentId !== undefined) updateData.departmentId = departmentId || null;
-        if (branchId !== undefined && (isMainAdmin(req.user) || req.user.role === 'owner' || req.user.role === 'admin' || req.user.role === 'manager')) updateData.branchId = branchId || null;
-        if (status !== undefined) {
+        if (!canManage && Object.keys(updateData).length === 0 && (departmentId !== undefined || branchId !== undefined || status !== undefined || priority !== undefined || subject !== undefined)) {
+            return res.status(403).json({ error: 'فقط مدیر یا ادمین می‌تواند تخصیص و وضعیت مکالمه را تغییر دهد' });
+        }
+        if (!canManage && (departmentId !== undefined || branchId !== undefined || status !== undefined || priority !== undefined || subject !== undefined)) {
+            return res.status(403).json({ error: 'فقط مدیر یا ادمین می‌تواند وضعیت و اولویت را تغییر دهد' });
+        }
+        if (canManage && departmentId !== undefined) updateData.departmentId = departmentId || null;
+        if (canManage && branchId !== undefined && (isMainAdmin(req.user) || req.user.role === 'owner' || req.user.role === 'admin' || req.user.role === 'manager')) updateData.branchId = branchId || null;
+        if (canManage && status !== undefined) {
             updateData.status = status;
             if (status === 'closed' || status === 'resolved') {
                 updateData.closedAt = new Date();
                 updateData.closedBy = req.userId;
             }
         }
-        if (priority !== undefined) updateData.priority = priority;
-        if (subject !== undefined) updateData.subject = subject;
+        if (canManage && priority !== undefined) updateData.priority = priority;
+        if (canManage && subject !== undefined) updateData.subject = subject;
 
         await conversation.update(updateData);
 
@@ -211,7 +265,9 @@ router.post('/:id/send', async (req, res) => {
             type: req.body.type || 'text',
             timestamp: new Date()
         });
-        const updateData = { lastMessageAt: new Date(), unreadCount: 0 };
+        var preview = (content || '').slice(0, 120);
+        if ((content || '').length > 120) preview += '…';
+        const updateData = { lastMessageAt: new Date(), lastMessagePreview: preview, unreadCount: 0 };
         if (!conversation.branchId && req.user.branchId) updateData.branchId = req.user.branchId;
         await conversation.update(updateData);
         const gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3001';

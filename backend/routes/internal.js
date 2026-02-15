@@ -1,7 +1,9 @@
 const express = require('express');
-const router = express.Router();
 const { InternalThread, InternalMessage, InternalThreadParticipant, User } = require('../models');
 const { Op } = require('sequelize');
+
+function createInternalRouter(io) {
+const router = express.Router();
 
 // لیست تردهای چت داخلی من
 router.get('/threads', async (req, res) => {
@@ -92,10 +94,19 @@ router.post('/threads/:id/messages', async (req, res) => {
             threadId: req.params.id,
             fromUserId: req.userId,
             content: content || '(پیوست)',
-            attachments: attachments.map(a => typeof a === 'object' && a.url ? { name: a.name || a.url, url: a.url, size: a.size } : null).filter(Boolean)
+            attachments: attachments.map(a => typeof a === 'object' && a.url ? { name: a.name || a.url, url: a.url, size: a.size, allowDownload: a.allowDownload !== false } : null).filter(Boolean)
         });
         await InternalThread.update({ lastMessageAt: new Date() }, { where: { id: req.params.id } });
         const withUser = await InternalMessage.findByPk(msg.id, { include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'email'] }] });
+        if (io) {
+            const participants = await InternalThreadParticipant.findAll({ where: { threadId: req.params.id }, attributes: ['userId'] });
+            const recipientIds = participants.map(p => p.userId).filter(id => String(id) !== String(req.userId));
+            recipientIds.forEach(uid => io.to(`user_${uid}`).emit('internal_message', {
+                threadId: req.params.id,
+                message: withUser,
+                fromUser: withUser.fromUser
+            }));
+        }
         res.status(201).json(withUser);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -118,4 +129,7 @@ router.get('/users', async (req, res) => {
     }
 });
 
-module.exports = router;
+return router;
+}
+
+module.exports = createInternalRouter;

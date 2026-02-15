@@ -1,13 +1,25 @@
 const express = require('express');
-const router = express.Router();
 const { Ticket, User, Department, TicketReply } = require('../models');
 const { Op } = require('sequelize');
 
+function createTicketsRouter(io) {
+const router = express.Router();
+
 router.get('/', async (req, res) => {
     try {
-        const { status, page = 1, limit = 20 } = req.query;
+        const { status, priority, assignedTo, createdBy, departmentId, search, page = 1, limit = 50 } = req.query;
         const where = {};
         if (status) where.status = status;
+        if (priority) where.priority = priority;
+        if (assignedTo) where.assignedTo = assignedTo;
+        if (createdBy) where.createdBy = createdBy;
+        if (departmentId) where.departmentId = departmentId;
+        if (search && String(search).trim()) {
+            where[Op.or] = [
+                { title: { [Op.like]: '%' + String(search).trim() + '%' } },
+                { description: { [Op.like]: '%' + String(search).trim() + '%' } }
+            ];
+        }
         const { rows, count } = await Ticket.findAndCountAll({
             where,
             include: [
@@ -16,8 +28,8 @@ router.get('/', async (req, res) => {
                 { model: Department, as: 'department', attributes: ['id', 'name'] }
             ],
             order: [['createdAt', 'DESC']],
-            limit: Math.min(parseInt(limit) || 20, 100),
-            offset: (parseInt(page) - 1) * (parseInt(limit) || 20)
+            limit: Math.min(parseInt(limit) || 50, 100),
+            offset: (Math.max(1, parseInt(page)) - 1) * (parseInt(limit) || 50)
         });
         res.json({ data: rows, total: count, page: parseInt(page) });
     } catch (err) {
@@ -56,6 +68,15 @@ router.post('/:id/replies', async (req, res) => {
             attachments: attachments.map(a => typeof a === 'object' && a.url ? { name: a.name || a.url, url: a.url, size: a.size } : null).filter(Boolean)
         });
         const withUser = await TicketReply.findByPk(reply.id, { include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }] });
+        if (io) {
+            const recipientIds = [ticket.createdBy, ticket.assignedTo].filter(Boolean).filter(id => String(id) !== String(req.userId));
+            [...new Set(recipientIds)].forEach(uid => io.to(`user_${uid}`).emit('ticket_reply', {
+                ticketId: ticket.id,
+                ticketTitle: ticket.title,
+                reply: withUser,
+                fromUser: withUser.user
+            }));
+        }
         res.status(201).json(withUser);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -75,7 +96,14 @@ router.post('/', async (req, res) => {
             priority: priority || 'normal',
             status: 'open'
         });
-        res.status(201).json(ticket);
+        const withIncludes = await Ticket.findByPk(ticket.id, {
+            include: [
+                { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
+                { model: User, as: 'assignee', attributes: ['id', 'name', 'email'] },
+                { model: Department, as: 'department', attributes: ['id', 'name'] }
+            ]
+        });
+        res.status(201).json(withIncludes);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -99,4 +127,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+return router;
+}
+
+module.exports = createTicketsRouter;

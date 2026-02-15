@@ -20,7 +20,6 @@ const departmentRoutes = require('./routes/departments');
 const analyticsRoutes = require('./routes/analytics');
 const bulkRoutes = require('./routes/bulk');
 const customerRoutes = require('./routes/customers');
-const ticketRoutes = require('./routes/tickets');
 const branchRoutes = require('./routes/branches');
 const supervisionRoutes = require('./routes/supervision');
 const taskRoutes = require('./routes/tasks');
@@ -253,8 +252,11 @@ async function processIncomingMessage(messageData) {
         
         // بروزرسانی آخرین پیام
         const ts = timestamp ? new Date((timestamp < 1e12 ? timestamp * 1000 : timestamp)) : new Date();
+        var preview = (body || '').slice(0, 120);
+        if ((body || '').length > 120) preview += '…';
         await conversation.update({
             lastMessageAt: ts,
+            lastMessagePreview: preview,
             unreadCount: (conversation.unreadCount || 0) + 1
         });
         
@@ -362,7 +364,9 @@ async function sendAutoReply(conversation, responseText) {
             isAutoReply: true,
             timestamp: new Date()
         });
-        
+        var preview = (responseText || '').slice(0, 120);
+        if ((responseText || '').length > 120) preview += '…';
+        await conversation.update({ lastMessageAt: new Date(), lastMessagePreview: preview });
         logger.info(`🤖 Auto-reply sent to ${customer.phone}`);
     } catch (error) {
         logger.error('Send auto-reply error:', error);
@@ -584,7 +588,7 @@ apiRouter.use('/departments', authMiddleware, departmentRoutes);
 apiRouter.use('/analytics', authMiddleware, analyticsRoutes);
 apiRouter.use('/bulk', authMiddleware, bulkRoutes);
 apiRouter.use('/customers', authMiddleware, customerRoutes);
-apiRouter.use('/tickets', authMiddleware, ticketRoutes);
+apiRouter.use('/tickets', authMiddleware, require('./routes/tickets')(io));
 apiRouter.use('/branches', authMiddleware, branchRoutes);
 apiRouter.use('/supervision', authMiddleware, supervisionRoutes);
 apiRouter.use('/tasks', authMiddleware, taskRoutes);
@@ -595,7 +599,7 @@ apiRouter.use('/services', authMiddleware, require('./routes/services'));
 const announcementRoutes = require('./routes/announcements');
 const internalRoutes = require('./routes/internal');
 apiRouter.use('/announcements', authMiddleware, announcementRoutes);
-apiRouter.use('/internal', authMiddleware, internalRoutes);
+apiRouter.use('/internal', authMiddleware, internalRoutes(io));
 
 apiRouter.post('/webhook/incoming-message', (req, res) => {
     processIncomingMessage(req.body).then(() => res.json({ ok: true })).catch(err => {

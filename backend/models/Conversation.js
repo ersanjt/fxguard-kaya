@@ -45,6 +45,10 @@ const ConversationModel = (sequelize) => {
         lastMessageAt: {
             type: DataTypes.DATE
         },
+        lastMessagePreview: {
+            type: DataTypes.STRING(500),
+            comment: 'پیش‌نمایش آخرین پیام برای لیست'
+        },
         assignedAt: {
             type: DataTypes.DATE
         },
@@ -75,7 +79,9 @@ const ConversationModel = (sequelize) => {
             { fields: ['assignedTo'] },
             { fields: ['status'] },
             { fields: ['departmentId'] },
-            { fields: ['branchId'] }
+            { fields: ['branchId'] },
+            { fields: ['status', 'lastMessageAt'] },
+            { fields: ['lastMessageAt'] }
         ]
     });
 

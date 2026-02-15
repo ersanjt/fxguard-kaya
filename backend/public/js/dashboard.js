@@ -415,6 +415,7 @@
                     ann_select: 'Select', ann_title: 'Title', ann_body: 'Message', ann_ph_title: 'Announcement title', ann_ph_body: 'Message text...',
                     ann_important: 'Important (popup and sound for recipient)', send_ann: 'Send announcement',
                     new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file',
+                    file_allow_download: 'Allow download and save', file_view_only: 'View only in chat',
                     start_chat_with: 'Start conversation with', start_chat: 'Start chat', cancel: 'Cancel',
                     branch_name: 'Branch name', branch_city: 'City', branch_country: 'Country', branch_ph_name: 'e.g. Tehran office', branch_ph_city: 'e.g. Tehran', branch_ph_country: 'e.g. Iran', add_branch: 'Add branch', edit: 'Edit',
                     staff_online: 'Staff online', staff_intro: 'Recent logins and online staff � for managers and above', last_logins: 'Recent logins',
@@ -430,6 +431,7 @@
                     rates_none: 'No change', rates_fixed: 'Fixed', rates_delta: '± Amount', rates_percent: '± Percent', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value',
                     no_data: 'No data.', loading_err: 'Error loading.', select_user: 'Select user',
                     empty_conv_list: 'No conversations. Click "New conversation".', chat: 'Chat', empty_internal_msgs: 'No messages yet.', file: 'File',
+                    conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me',
                     empty_no_logins: 'No logins recorded yet.', no_staff_online: 'No staff online.', login_err_load: 'Error loading logins.',
                     required_name_email_pass: 'Name, email and password are required', select_user_first: 'Please select a user', select_conversation_first: 'Please select a conversation',
                     enter_text_or_file: 'Enter text or attach a file', manage_users_required: 'User management access required',
@@ -539,17 +541,42 @@
         }
         function formatTickerDateTime(updatedAtStr) {
             var d;
-            try { d = updatedAtStr ? new Date(updatedAtStr) : new Date(); } catch (e) { d = new Date(); }
+            try {
+                if (updatedAtStr) {
+                    var s = String(updatedAtStr).trim();
+                    if (s.indexOf(' ') >= 0 && s.indexOf('T') < 0) s = s.replace(' ', 'T');
+                    if (/^\d{4}-\d{2}-\d{2}/.test(s)) d = new Date(s);
+                    else if (/^\d{10,13}$/.test(s)) d = new Date(parseInt(s, 10));
+                    else d = new Date(s);
+                } else d = new Date();
+            } catch (e) { d = new Date(); }
             if (isNaN(d.getTime())) d = new Date();
             var opts = { hour: '2-digit', minute: '2-digit', hour12: false };
-            var iran = new Intl.DateTimeFormat('fa-IR', { ...opts, timeZone: 'Asia/Tehran' }).format(d);
-            var turkey = new Intl.DateTimeFormat('fa-IR', { ...opts, timeZone: 'Europe/Istanbul' }).format(d);
-            var uae = new Intl.DateTimeFormat('fa-IR', { ...opts, timeZone: 'Asia/Dubai' }).format(d);
-            var shamsi = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            var iran = new Intl.DateTimeFormat('fa-IR', Object.assign({}, opts, { timeZone: 'Asia/Tehran' })).format(d);
+            var turkey = new Intl.DateTimeFormat('fa-IR', Object.assign({}, opts, { timeZone: 'Europe/Istanbul' })).format(d);
+            var uae = new Intl.DateTimeFormat('fa-IR', Object.assign({}, opts, { timeZone: 'Asia/Dubai' })).format(d);
+            var shamsi = '';
+            try {
+                var pf = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' });
+                var parts = pf.formatToParts(d);
+                var y = (parts.find(function(p){ return p.type === 'year'; }) || {}).value || '';
+                var m = (parts.find(function(p){ return p.type === 'month'; }) || {}).value || '';
+                var day = (parts.find(function(p){ return p.type === 'day'; }) || {}).value || '';
+                shamsi = y + '/' + m + '/' + day;
+            } catch (e) {
+                shamsi = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            }
             var miladi = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             return {
-                times: (t('ticker_last') || 'آخرین بروزرسانی') + ': ' + (t('ticker_iran') || 'ایران') + ' ' + iran + ' · ' + (t('ticker_turkey') || 'ترکیه') + ' ' + turkey + ' · ' + (t('ticker_uae') || 'امارات') + ' ' + uae,
-                dates: shamsi + ' · ' + miladi
+                iran: iran,
+                turkey: turkey,
+                uae: uae,
+                shamsi: shamsi,
+                miladi: miladi,
+                label: t('ticker_last') || 'آخرین بروزرسانی',
+                iranLabel: t('ticker_iran') || 'ایران',
+                turkeyLabel: t('ticker_turkey') || 'ترکیه',
+                uaeLabel: t('ticker_uae') || 'امارات'
             };
         }
         async function fetchRates() {
@@ -564,8 +591,19 @@
             var items = (data && data.items) || [];
             var fmt = formatTickerDateTime(data.updatedAt);
             if (loadingEl) loadingEl.style.display = 'none';
-            if (timesEl) { timesEl.textContent = fmt.times; timesEl.style.display = ''; }
-            if (datesEl) { datesEl.textContent = fmt.dates; datesEl.style.display = ''; }
+            if (timesEl) {
+                timesEl.innerHTML = '<span class="ticker-dt-label">' + escapeHtml(fmt.label) + '</span>' +
+                    '<span class="ticker-time-block"><span class="ticker-tz">' + escapeHtml(fmt.iranLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.iran) + '</span></span>' +
+                    '<span class="ticker-sep">·</span>' +
+                    '<span class="ticker-time-block"><span class="ticker-tz">' + escapeHtml(fmt.turkeyLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.turkey) + '</span></span>' +
+                    '<span class="ticker-sep">·</span>' +
+                    '<span class="ticker-time-block"><span class="ticker-tz">' + escapeHtml(fmt.uaeLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.uae) + '</span></span>';
+                timesEl.style.display = '';
+            }
+            if (datesEl) {
+                datesEl.innerHTML = '<span class="ticker-date-shamsi">' + escapeHtml(fmt.shamsi) + '</span><span class="ticker-date-sep">·</span><span class="ticker-date-miladi">' + escapeHtml(fmt.miladi) + '</span>';
+                datesEl.style.display = '';
+            }
             if (itemsEl) {
                 itemsEl.innerHTML = items.map(function(it) {
                     var ch = it.change;
@@ -759,12 +797,90 @@
                         var active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
                     });
+                    socket.on('internal_message', function(data) {
+                        playInternalChatSound();
+                        var fromName = (data.fromUser && data.fromUser.name) || (LANG === 'fa' ? 'کاربر' : 'User');
+                        var preview = (data.message && data.message.content) ? String(data.message.content).slice(0, 50) : '';
+                        if (preview.length > 50) preview += '…';
+                        var active = document.querySelector('.nav-link.active');
+                        var onInternalPage = active && active.getAttribute('data-page') === 'internal-chat';
+                        var viewingThread = currentInternalThreadId === data.threadId;
+                        if (onInternalPage && viewingThread) {
+                            appendInternalMessage(data.message);
+                            loadInternalThreads();
+                        } else {
+                            loadInternalThreads();
+                            toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + fromName + (preview ? ': ' + preview : ''), false);
+                            if (!onInternalPage) { showPage('internal-chat'); setTimeout(function(){ openInternalThread(data.threadId); }, 100); }
+                            else if (!viewingThread) openInternalThread(data.threadId);
+                        }
+                    });
+                    socket.on('ticket_reply', function(data) {
+                        playInternalChatSound();
+                        var fromName = (data.fromUser && data.fromUser.name) || (LANG === 'fa' ? 'کاربر' : 'User');
+                        var preview = (data.reply && data.reply.content) ? String(data.reply.content).slice(0, 40) : '';
+                        if (preview.length > 40) preview += '…';
+                        var active = document.querySelector('.nav-link.active');
+                        var onTicketsPage = active && active.getAttribute('data-page') === 'tickets';
+                        var viewingTicket = currentTicketId === data.ticketId;
+                        if (onTicketsPage && viewingTicket) {
+                            appendTicketReply(data.reply);
+                        } else {
+                            loadTickets();
+                            toast((LANG === 'fa' ? 'پاسخ جدید به تیکت «' : 'New reply to ticket "') + (data.ticketTitle || '') + (LANG === 'fa' ? '» از ' : '" from ') + fromName + (preview ? ': ' + preview : ''), false);
+                            if (!onTicketsPage) { showPage('tickets'); setTimeout(function(){ loadTicketDetail(data.ticketId); }, 150); }
+                            else if (!viewingTicket) loadTicketDetail(data.ticketId);
+                        }
+                    });
                     socket.on('connect_error', function() { socket = null; });
                 }
             } catch (e) { socket = null; }
         }
         function disconnectSocket() {
             if (socket) { socket.disconnect(); socket = null; }
+        }
+        function playInternalChatSound() {
+            try {
+                var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                var osc = ctx.createOscillator();
+                var gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.15);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.15);
+            } catch (e) {}
+        }
+        function isImageExt(name) { return /\.(png|jpg|jpeg|gif|webp)$/i.test(name || ''); }
+        function isPdfExt(name) { return /\.pdf$/i.test(name || ''); }
+        function renderInternalAttachment(a) {
+            var allowDl = a.allowDownload !== false;
+            var name = a.name || t('file');
+            var fullUrl = (a.url && a.url.startsWith('/')) ? (window.API || '') + a.url : a.url;
+            if (allowDl) return '<a href="' + escapeHtml(fullUrl) + '" target="_blank" rel="noopener" style="color:var(--accent); display:block; margin-top:4px;">📎 ' + escapeHtml(name) + '</a>';
+            if (isImageExt(name)) return '<div class="internal-att-viewonly" style="margin-top:6px;"><img src="' + escapeHtml(fullUrl) + '" alt="" style="max-width:100%; max-height:200px; border-radius:6px; pointer-events:none; user-select:none;" oncontextmenu="return false;"><span class="badge" style="font-size:0.7rem; margin-top:4px; display:inline-block;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
+            if (isPdfExt(name)) return '<div class="internal-att-viewonly" style="margin-top:6px;"><iframe src="' + escapeHtml(fullUrl) + '#toolbar=0" style="width:100%; height:200px; border:1px solid var(--border); border-radius:6px;" oncontextmenu="return false;"></iframe><span class="badge" style="font-size:0.7rem; margin-top:4px; display:inline-block;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
+            return '<div style="margin-top:4px;"><span style="color:var(--text-secondary);">📎 ' + escapeHtml(name) + '</span> <span class="badge" style="font-size:0.7rem;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
+        }
+        function toggleInternalFileOption() {
+            var fi = document.getElementById('internalChatFile');
+            var opt = document.getElementById('internalChatFileOption');
+            if (opt) opt.style.display = (fi && fi.files && fi.files[0]) ? 'inline' : 'none';
+        }
+        function appendInternalMessage(m) {
+            var list = document.getElementById('internalChatMessages');
+            if (!list || !currentInternalThreadId) return;
+            var emptyEl = list.querySelector('.empty');
+            if (emptyEl) emptyEl.remove();
+            var me = (currentUser && currentUser.id) || '';
+            var isOut = m.fromUserId === me;
+            var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
+            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? new Date(m.createdAt).toLocaleTimeString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
+            list.insertAdjacentHTML('beforeend', html);
+            list.scrollTop = list.scrollHeight;
         }
         function startStaffActivityLive() {
             if (staffActivityInterval) clearInterval(staffActivityInterval);
@@ -1137,26 +1253,49 @@
             container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : 'No sections available.') + '</div>');
         }
 
+        async function loadConvFiltersInit() {
+            await loadConvAssignees();
+            loadBranchesForSelect(['convFilterBranch']);
+            var res = await apiFetch('/api/departments');
+            if (res.ok && res.data && res.data.data) {
+                var sel = document.getElementById('convFilterDept');
+                if (sel) {
+                    var opt = '<option value="">' + (LANG === 'fa' ? 'همه دپارتمان‌ها' : 'All departments') + '</option>' + res.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+                    sel.innerHTML = opt;
+                }
+            }
+        }
         async function loadConversations() {
             var list = document.getElementById('convList');
+            var statsEl = document.getElementById('convStats');
             setLoading('convList', 4);
             var q = '?limit=50';
             var statusEl = document.getElementById('convFilterStatus');
             var priorityEl = document.getElementById('convFilterPriority');
+            var branchEl = document.getElementById('convFilterBranch');
+            var deptEl = document.getElementById('convFilterDept');
             var assigneeEl = document.getElementById('convFilterAssignee');
             var unreadEl = document.getElementById('convFilterUnread');
             var searchEl = document.getElementById('convSearch');
             if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value);
             if (priorityEl && priorityEl.value) q += '&priority=' + encodeURIComponent(priorityEl.value);
+            if (branchEl && branchEl.value) q += '&branchId=' + encodeURIComponent(branchEl.value);
+            if (deptEl && deptEl.value) q += '&departmentId=' + encodeURIComponent(deptEl.value);
             if (assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
             if (unreadEl && unreadEl.checked) q += '&unread=true';
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
             var res = await apiFetch('/api/conversations' + q);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty"><span class="empty-icon">�a�️</span><br>' + t('loading_err') + ' ' + (res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + (res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
             var data = res.data;
+            if (statsEl && data.total != null) {
+                var open = (data.data || []).filter(function(c){ return c.status === 'open'; }).length;
+                var unread = (data.data || []).reduce(function(s,c){ return s + (c.unreadCount || 0); }, 0);
+                statsEl.innerHTML = '<span class="conv-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</span><span class="conv-stat"><strong>' + open + '</strong> ' + (LANG === 'fa' ? 'باز' : 'open') + '</span><span class="conv-stat"><strong>' + unread + '</strong> ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread') + '</span>';
+                statsEl.style.display = 'flex';
+            }
             if (!data.data || data.data.length === 0) {
-                list.innerHTML = '<div class="empty"><span class="empty-icon">�x�</span><br>' + t('empty_conv') + '</div>';
+                list.innerHTML = '<div class="empty conv-empty"><span class="empty-icon">💬</span><p>' + t('empty_conv') + '</p><button type="button" class="btn-primary" onclick="openNewConvModal()">' + (t('conv_new') || (LANG === 'fa' ? 'مکالمه جدید' : 'New conversation')) + '</button></div>';
                 return;
             }
             list.innerHTML = data.data.map(function(c) {
@@ -1165,12 +1304,15 @@
                 var phone = cust.phone || '';
                 var safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 var safePhone = (phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                var initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
                 var assigneeName = userDisplay(c.assignee);
                 var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved' };
                 var statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
                 var priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
                 var unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
-                return '<div class="list-item" data-id="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\')"><div><span class="name">' + unreadBadge + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(phone) + (assigneeName ? ' \u25E2 ' + escapeHtml(assigneeName) : '') + '</div></div><div>' + priorityBadge + statusBadge + '</div></div>';
+                var preview = (c.lastMessagePreview || '').trim();
+                var timeStr = c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleTimeString(LANG === 'en' ? 'en-US' : 'fa-IR', { hour: '2-digit', minute: '2-digit' }) : '';
+                return '<div class="conv-list-item" data-id="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\')"><div class="conv-item-avatar">' + initial + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(phone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + priorityBadge + statusBadge + '</div></div>';
             }).join('');
         }
 
@@ -1214,7 +1356,15 @@
                 metaEl.textContent = (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + (statusT[d.status] || d.status) + ' | ' + (LANG === 'fa' ? 'اولویت: ' : 'Priority: ') + (prioT[d.priority] || d.priority) + ' | ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + assigneeName + (deptName ? ' | ' + deptName : '');
                 barEl.style.display = 'block';
                 var canManage = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager'));
-                if (actionsEl) actionsEl.style.display = canManage ? 'flex' : 'none';
+                var isAssignedToMe = d.assignedTo === (currentUser && currentUser.id);
+                if (actionsEl) {
+                    actionsEl.style.display = 'flex';
+                    var assignBtn = document.getElementById('btnAssignToMe');
+                    if (assignBtn) assignBtn.style.display = (canManage || !isAssignedToMe) ? '' : 'none';
+                    actionsEl.querySelectorAll('select').forEach(function(el){ el.style.display = canManage ? '' : 'none'; });
+                    var applyBtn = actionsEl.querySelector('[onclick="updateConvFromDetail()"]');
+                    if (applyBtn) applyBtn.style.display = canManage ? '' : 'none';
+                }
                 if (canManage) {
                     var statusSel = document.getElementById('convDetailStatus');
                     var prioritySel = document.getElementById('convDetailPriority');
@@ -1238,6 +1388,44 @@
             if (selDetail) selDetail.innerHTML = optDetail;
         }
         function applyConvFilters() { loadConversations(); }
+        function openNewConvModal() {
+            document.getElementById('newConvModal').style.display = 'flex';
+            document.getElementById('newConvCustomerSearch').value = '';
+            loadNewConvCustomers();
+        }
+        function closeNewConvModal() { document.getElementById('newConvModal').style.display = 'none'; }
+        async function loadNewConvCustomers(search) {
+            var list = document.getElementById('newConvCustomerList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var q = '?limit=30';
+            if (search && String(search).trim()) q += '&search=' + encodeURIComponent(String(search).trim());
+            var res = await apiFetch('/api/customers' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data;
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
+            list.innerHTML = data.data.map(function(c) {
+                var name = c.name || c.phone || t('customer');
+                return '<div class="new-conv-customer-item" onclick="startNewConversation(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + ((name && name[0]) ? name[0].toUpperCase() : '?') + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
+            }).join('');
+        }
+        async function startNewConversation(customerId, name) {
+            closeNewConvModal();
+            var res = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customerId }) });
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            var conv = res.data;
+            var phone = (conv.customer && conv.customer.phone) || '';
+            openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone);
+            loadConversations();
+        }
+        async function assignConvToMe() {
+            if (!currentConvId || !currentUser) return;
+            var assigneeSel = document.getElementById('convDetailAssignee');
+            if (assigneeSel) assigneeSel.value = currentUser.id;
+            await updateConvFromDetail();
+        }
         async function updateConvFromDetail() {
             if (!currentConvId) return;
             var statusSel = document.getElementById('convDetailStatus');
@@ -1459,11 +1647,11 @@
             var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices' };
             if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = 'block'; el.classList.add('show'); } }
             if (page === 'dashboard') loadDashboard();
-            if (page === 'conversations') loadConversations();
+            if (page === 'conversations') { loadConvFiltersInit(); loadConversations(); }
             if (page === 'customers') loadCustomers();
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
             if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }
-            if (page === 'tickets') loadTickets();
+            if (page === 'tickets') { loadTicketFiltersInit(); loadTickets(); }
             if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
             if (page === 'whatsapp') loadWhatsappStatus();
@@ -1477,17 +1665,63 @@
             if (page === 'supervision') { loadBranchesForSelect(['supBranch', 'supActBranch']); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
         }
 
+        function toggleTicketForm() {
+            var box = document.getElementById('ticketFormBox');
+            if (box.style.display === 'none') { box.style.display = 'block'; loadTicketFormSelects(); } else { box.style.display = 'none'; }
+        }
+        async function loadTicketFiltersInit() {
+            await loadTicketFormSelects();
+            var res = await apiFetch('/api/departments');
+            if (res.ok && res.data && res.data.data) {
+                var sel = document.getElementById('ticketFilterDept');
+                if (sel) sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه دپارتمان‌ها' : 'All depts') + '</option>' + res.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+            }
+        }
+        async function loadTicketFormSelects() {
+            var res = await apiFetch('/api/users');
+            if (!res.ok || !res.data || !res.data.data) return;
+            var users = res.data.data;
+            var unassOpt = '<option value="">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            var anyOpt = '<option value="">' + (LANG === 'fa' ? 'هر مسئول' : 'Any') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            var a1 = document.getElementById('ticketAssignee'); if (a1) a1.innerHTML = unassOpt;
+            var a2 = document.getElementById('ticketFilterAssignee'); if (a2) a2.innerHTML = anyOpt;
+            var a3 = document.getElementById('ticketDetailAssignee'); if (a3) a3.innerHTML = unassOpt;
+            var deptRes = await apiFetch('/api/departments');
+            if (deptRes.ok && deptRes.data && deptRes.data.data) {
+                var deptOpt = '<option value="">' + (LANG === 'fa' ? 'بدون دپارتمان' : 'No dept') + '</option>' + deptRes.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+                var td = document.getElementById('ticketDept'); if (td) td.innerHTML = deptOpt;
+            }
+        }
+        function applyTicketFilters() { loadTickets(); }
         async function loadTickets() {
             var list = document.getElementById('ticketList');
+            var statsEl = document.getElementById('ticketStats');
             setLoading('ticketList', 4);
-            var res = await apiFetch('/api/tickets?limit=50');
+            var q = '?limit=50';
+            var s = document.getElementById('ticketFilterStatus'); if (s && s.value) q += '&status=' + encodeURIComponent(s.value);
+            var p = document.getElementById('ticketFilterPriority'); if (p && p.value) q += '&priority=' + encodeURIComponent(p.value);
+            var a = document.getElementById('ticketFilterAssignee'); if (a && a.value) q += '&assignedTo=' + encodeURIComponent(a.value);
+            var d = document.getElementById('ticketFilterDept'); if (d && d.value) q += '&departmentId=' + encodeURIComponent(d.value);
+            var search = document.getElementById('ticketSearch'); if (search && search.value.trim()) q += '&search=' + encodeURIComponent(search.value.trim());
+            var res = await apiFetch('/api/tickets' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x}�</span><br>' + t('empty_tickets') + '</div>'; return; }
+            if (statsEl && data.data) {
+                var open = (data.data || []).filter(function(x){ return x.status === 'open'; }).length;
+                var inProg = (data.data || []).filter(function(x){ return x.status === 'in_progress'; }).length;
+                var closed = (data.data || []).filter(function(x){ return x.status === 'closed'; }).length;
+                statsEl.innerHTML = '<span class="ticket-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'کل' : 'total') + '</span><span class="ticket-stat"><strong>' + open + '</strong> ' + (LANG === 'fa' ? 'باز' : 'open') + '</span><span class="ticket-stat"><strong>' + inProg + '</strong> ' + (LANG === 'fa' ? 'در حال انجام' : 'in progress') + '</span><span class="ticket-stat"><strong>' + closed + '</strong> ' + (LANG === 'fa' ? 'بسته' : 'closed') + '</span>';
+                statsEl.style.display = 'flex';
+            }
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🎫</span><br>' + t('empty_tickets') + '</div>'; return; }
             list.innerHTML = data.data.map(function(t) {
                 var statusLabel = t.status === 'open' ? t('status_open') : t.status === 'in_progress' ? t('status_in_progress') : t.status === 'closed' ? t('status_closed') : t.status || '';
-                return '<div class="list-item" onclick="loadTicketDetail(\'' + t.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + userDisplay(t.creator) + ' ⬢ ' + statusLabel + '</div></div><span class="badge ' + (t.status || '') + '">' + statusLabel + '</span></div>';
+                var prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[t.priority] || t.priority || '';
+                var assign = userDisplay(t.assignee);
+                var dept = (t.department && t.department.name) ? t.department.name : '';
+                var meta = [userDisplay(t.creator), assign, dept].filter(Boolean).join(' · ');
+                return '<div class="ticket-list-item" onclick="loadTicketDetail(\'' + t.id + '\')"><div class="ticket-item-body"><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + escapeHtml(meta) + '</div></div><div class="ticket-item-badges"><span class="badge ' + (t.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="badge ' + (t.status || '') + '">' + escapeHtml(statusLabel) + '</span></div></div>';
             }).join('');
         }
         var currentTicketId = null;
@@ -1500,6 +1734,19 @@
             document.getElementById('ticketReplyAttachments').textContent = '';
             loadTickets();
         }
+        async function updateTicketFromDetail() {
+            if (!currentTicketId) return;
+            var statusSel = document.getElementById('ticketDetailStatus');
+            var assigneeSel = document.getElementById('ticketDetailAssignee');
+            var prioritySel = document.getElementById('ticketDetailPriority');
+            var body = {};
+            if (statusSel) body.status = statusSel.value;
+            if (assigneeSel) body.assignedTo = assigneeSel.value || null;
+            if (prioritySel) body.priority = prioritySel.value;
+            var res = await apiFetch('/api/tickets/' + currentTicketId, { method: 'PUT', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('btn_save')); loadTicketDetail(currentTicketId); loadTickets(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
         async function loadTicketDetail(id) {
             currentTicketId = id;
             document.getElementById('ticketList').style.display = 'none';
@@ -1509,7 +1756,13 @@
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showTicketList(); return; }
             var t = res.data;
             document.getElementById('ticketDetailTitle').textContent = t.title || '';
-            document.getElementById('ticketDetailMeta').textContent = t('creator_label') + ' ' + userDisplay(t.creator) + ' | ' + t('th_status') + ': ' + (t.status || '') + ' | ' + t('ticket_priority') + ': ' + (t.priority || '');
+            document.getElementById('ticketDetailMeta').textContent = t('creator_label') + ' ' + userDisplay(t.creator) + ' | ' + t('assignee_label') + ' ' + userDisplay(t.assignee) + ' | ' + t('th_status') + ': ' + (t.status || '') + ' | ' + t('ticket_priority') + ': ' + (t.priority || '');
+            var statusSel = document.getElementById('ticketDetailStatus');
+            var assigneeSel = document.getElementById('ticketDetailAssignee');
+            var prioritySel = document.getElementById('ticketDetailPriority');
+            if (statusSel) statusSel.value = t.status || 'open';
+            if (assigneeSel) { await loadTicketFormSelects(); assigneeSel.value = t.assignedTo || ''; }
+            if (prioritySel) prioritySel.value = t.priority || 'normal';
             var repliesHtml = (t.replies || []).map(function(r) {
                 var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">�x} ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
                 return '<div class="msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + escapeHtml(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' � ' + (r.createdAt ? new Date(r.createdAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
@@ -1549,15 +1802,18 @@
             if (deptSel) deptSel.style.display = isUser ? 'none' : '';
         }
         function loadTasksFilters() {
+            var userSel = document.getElementById('taskAssignUser');
+            var deptSel = document.getElementById('taskAssignDept');
             Promise.all([apiFetch('/api/users'), apiFetch('/api/departments')]).then(function(ress) {
                 var users = (ress[0].data && ress[0].data.data) || [];
                 var depts = (ress[1].data && ress[1].data.data) || [];
-                if (userSel) userSel.innerHTML = '<option value="">' + t('no_user') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>'; }).join('');
+                if (userSel) userSel.innerHTML = '<option value="">' + t('no_user') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
                 if (deptSel) deptSel.innerHTML = '<option value="">' + t('select_dept') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
                 var filterDept = document.getElementById('taskFilterDept');
                 var filterUser = document.getElementById('taskFilterUser');
-                if (filterDept) filterDept.innerHTML = '<option value="">' + t('all_depts') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
-                if (filterUser) filterUser.innerHTML = '<option value="">' + t('no_user_filter') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>'; }).join('');
+                var myDeptOpt = (currentUser && currentUser.departmentId) ? '<option value="__my_dept__">' + (LANG === 'fa' ? 'دپارتمان من' : 'My department') + '</option>' : '';
+                if (filterDept) filterDept.innerHTML = '<option value="">' + t('all_depts') + '</option>' + myDeptOpt + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
+                if (filterUser) filterUser.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه کارمندان' : 'All') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
             });
         }
         async function loadTasks() {
@@ -1565,11 +1821,13 @@
             if (!list) return;
             setLoading('taskList', 4);
             var status = (document.getElementById('taskFilterStatus') && document.getElementById('taskFilterStatus').value) || '';
-            var dept = (document.getElementById('taskFilterDept') && document.getElementById('taskFilterDept').value) || '';
+            var deptEl = document.getElementById('taskFilterDept');
+            var dept = deptEl ? deptEl.value : '';
+            if (dept === '__my_dept__' && currentUser && currentUser.departmentId) dept = currentUser.departmentId;
             var user = (document.getElementById('taskFilterUser') && document.getElementById('taskFilterUser').value) || '';
             var q = '?limit=50';
             if (status) q += '&status=' + encodeURIComponent(status);
-            if (dept) q += '&assignedToDepartmentId=' + encodeURIComponent(dept);
+            if (dept && dept !== '__my_dept__') q += '&assignedToDepartmentId=' + encodeURIComponent(dept);
             if (user) q += '&assignedTo=' + encodeURIComponent(user);
             var res = await apiFetch('/api/tasks' + q);
             if (res.needLogin) return;
@@ -1577,16 +1835,17 @@
             var data = res.data;
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x9</span><br>' + t('empty_tasks') + '</div>'; return; }
             list.innerHTML = data.data.map(function(t) {
-                var assign = userDisplay(t.assignee) || (t.department && t.department.name ? 'دپارت�&ا�  ' + t.department.name : '�');
-                var due = t.dueDate ? new Date(t.dueDate).toLocaleDateString('fa-IR') : '';
-                return '<div class="list-item" onclick="loadTaskDetail(\'' + t.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + assign + ' ⬢ ' + taskStatusLabel(t.status) + (due ? ' ⬢ ' + t('due_label') + ' ' + due : '') + '</div></div><span class="badge ' + (t.status || '') + '">' + taskStatusLabel(t.status) + '</span></div>';
+                var assign = t.assignedToDepartmentId && t.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(t.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(t.assignee) || '—';
+                var due = t.dueDate ? new Date(t.dueDate).toLocaleDateString(LANG === 'en' ? 'en-US' : 'fa-IR') : '';
+                var prioBadge = t.priority && t.priority !== 'normal' ? '<span class="badge ' + t.priority + '">' + escapeHtml(taskPriorityLabel(t.priority)) + '</span>' : '';
+                return '<div class="task-list-item" onclick="loadTaskDetail(\'' + t.id + '\')"><div class="task-item-body"><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + assign + ' · ' + taskStatusLabel(t.status) + (due ? ' · ' + t('due_label') + ' ' + due : '') + '</div></div><div class="task-item-badges">' + prioBadge + '<span class="badge ' + (t.status || '') + '">' + taskStatusLabel(t.status) + '</span></div></div>';
             }).join('');
         }
         async function loadTasksSummary() {
             var box = document.getElementById('tasksSummaryBox');
             if (!box) return;
             var role = (currentUser && currentUser.role) || '';
-            if (role !== 'owner' && role !== 'admin' && role !== 'manager') { box.style.display = 'none'; return; }
+            if (role !== 'owner' && role !== 'admin' && role !== 'manager' && role !== 'supervisor') { box.style.display = 'none'; return; }
             var res = await apiFetch('/api/tasks/summary');
             if (res.needLogin || !res.ok) { box.style.display = 'none'; return; }
             var d = res.data;
@@ -1642,7 +1901,7 @@
             if (res.needLogin) return;
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showTaskList(); return; }
             var t = res.data;
-            var assign = userDisplay(t.assignee) || (t.department && t.department.name ? 'دپارت�&ا�  ' + t.department.name : '�');
+            var assign = t.assignedToDepartmentId && t.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(t.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(t.assignee) || '—';
             var creator = userDisplay(t.creator) || '�';
             var due = t.dueDate ? new Date(t.dueDate).toLocaleString('fa-IR') : '�';
             var statusOpts = ['pending','in_progress','done','cancelled'].map(function(s){ return '<option value="' + s + '"' + (t.status === s ? ' selected' : '') + '>' + taskStatusLabel(s) + '</option>'; }).join('');
@@ -1878,9 +2137,14 @@
         async function addTicket() {
             var title = document.getElementById('ticketTitle').value.trim();
             if (!title) { toast(t('ticket_title_required'), true); return; }
-            var res = await apiFetch('/api/tickets', { method: 'POST', body: JSON.stringify({ title: title, description: document.getElementById('ticketDesc').value, priority: document.getElementById('ticketPriority').value }) });
+            var assigneeEl = document.getElementById('ticketAssignee');
+            var deptEl = document.getElementById('ticketDept');
+            var body = { title: title, description: (document.getElementById('ticketDesc').value || '').trim(), priority: (document.getElementById('ticketPriority').value || 'normal') };
+            if (assigneeEl && assigneeEl.value) body.assignedTo = assigneeEl.value;
+            if (deptEl && deptEl.value) body.departmentId = deptEl.value;
+            var res = await apiFetch('/api/tickets', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { document.getElementById('ticketTitle').value = ''; document.getElementById('ticketDesc').value = ''; toast(t('toast_ticket_created')); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { document.getElementById('ticketTitle').value = ''; document.getElementById('ticketDesc').value = ''; document.getElementById('ticketFormBox').style.display = 'none'; toast(t('toast_ticket_created')); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         async function addDepartment() {
@@ -2122,29 +2386,41 @@
             var me = (currentUser && currentUser.id) || '';
             list.innerHTML = data.length === 0 ? '<div class="empty">' + t('empty_internal_msgs') + '</div>' : data.map(function(m) {
                 var isOut = m.fromUserId === me;
-                var att = (m.attachments && m.attachments.length) ? m.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); display:block; margin-top:4px;">�x} ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
+                var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' � ' + (m.createdAt ? new Date(m.createdAt).toLocaleTimeString('fa-IR') : '') + '</div></div>';
             }).join('');
+            list.scrollTop = list.scrollHeight;
+        }
+        function appendTicketReply(r) {
+            var list = document.getElementById('ticketReplies');
+            if (!list || !currentTicketId) return;
+            var noReply = list.querySelector('.text-muted');
+            if (noReply) noReply.remove();
+            var isOut = String(r.userId) === String(currentUser && currentUser.id);
+            var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
+            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + escapeHtml(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' · ' + (r.createdAt ? new Date(r.createdAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
+            list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
         async function sendInternalMessage() {
             if (!currentInternalThreadId) { toast(t('select_conversation_first'), true); return; }
             var content = (document.getElementById('internalChatInput') && document.getElementById('internalChatInput').value) || '';
             var fileInput = document.getElementById('internalChatFile');
+            var allowDownload = !(document.getElementById('internalChatAllowDownload') && !document.getElementById('internalChatAllowDownload').checked);
             var attachments = [];
             if (fileInput && fileInput.files && fileInput.files[0]) {
                 var formData = new FormData();
                 formData.append('file', fileInput.files[0]);
                 var up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
                 var upData = await up.json();
-                if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size });
+                if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size, allowDownload: allowDownload });
             }
             if (!content.trim() && attachments.length === 0) { toast(t('enter_text_or_file'), true); return; }
-            var res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content.trim() || '(پ�R��ست)', attachments: attachments }) });
+            var res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content.trim() || '(پیوست)', attachments: attachments }) });
             if (res.needLogin) return;
             if (res.ok) {
                 document.getElementById('internalChatInput').value = '';
-                if (fileInput) fileInput.value = '';
+                if (fileInput) { fileInput.value = ''; toggleInternalFileOption(); }
                 loadInternalMessages(currentInternalThreadId);
                 loadInternalThreads();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
@@ -2213,9 +2489,10 @@
             if (res.needLogin || !res.ok) return;
             var arr = (res.data && res.data.data) || [];
             var opt = '<option value="">' + t('no_branch') + '</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '') + (b.country ? ' (' + b.country + ')' : '')) + '</option>'; }).join('');
+            var allBranchOpt = '<option value="">' + t('all_branches') + '</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '')) + '</option>'; }).join('');
             (selectIds || ['userBranch', 'deptBranch', 'supBranch', 'supActBranch']).forEach(function(id) {
                 var el = document.getElementById(id);
-                if (el) { el.innerHTML = (id === 'supBranch' || id === 'supActBranch') ? '<option value="">' + t('all_branches') + '</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '')) + '</option>'; }).join('') : opt; }
+                if (el) { el.innerHTML = (id === 'supBranch' || id === 'supActBranch' || id === 'convFilterBranch') ? allBranchOpt : opt; }
             });
         }
 
