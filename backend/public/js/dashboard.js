@@ -1070,6 +1070,19 @@
         }
 
         var currentConvDetail = null;
+        function closeChatMobile() {
+            document.getElementById('chatArea').classList.remove('show');
+            var btn = document.querySelector('.chat-back-btn');
+            if (btn) btn.style.display = 'none';
+        }
+        function updateChatBackBtn() {
+            var btn = document.querySelector('.chat-back-btn');
+            var chatArea = document.getElementById('chatArea');
+            if (btn && chatArea && chatArea.classList.contains('show')) {
+                btn.style.display = window.matchMedia('(max-width: 768px)').matches ? 'flex' : 'none';
+            }
+        }
+        if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
         function openChat(id, name, phone) {
             currentConvId = id;
             currentConvDetail = null;
@@ -1079,6 +1092,8 @@
             var actionsEl = document.getElementById('convDetailActions');
             if (headerEl) headerEl.textContent = name || phone || t('customer');
             document.getElementById('chatArea').classList.add('show');
+            var backBtn = document.querySelector('.chat-back-btn');
+            if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 768px)').matches ? 'flex' : 'none';
             if (barEl) barEl.style.display = 'none';
             apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); });
             loadMessages(id);

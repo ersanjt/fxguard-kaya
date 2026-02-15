@@ -30,7 +30,7 @@ const processRoutes = require('./routes/processes');
 const models = require('./models');
 const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse } = models;
 const { MAIN_ADMIN_EMAIL } = require('./lib/permissions');
-const { MAIN_ADMIN_EMAIL } = require('./lib/permissions');
+
 const mongoose = require('mongoose');
 
 // ==================== Express Setup ====================

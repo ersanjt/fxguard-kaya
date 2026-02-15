@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="description" content="پورتال کارکنان صرافی کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
     <title>پورتال کارکنان کایا | صرافی کایا</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23059669'/><path fill='%23fff' d='M10 8h4l2 4 2-4h4v12h-3v-6l-1.5 3L16 11v9h-3V8zm8 6h2v4h-2v-4z'/></svg>">
@@ -137,9 +137,11 @@
                         <label class="conv-filter-check"><input type="checkbox" id="convFilterUnread"> <span data-i18n="filter_unread">فقط خوانده‌نشده</span></label>
                         <button type="button" class="btn-secondary" onclick="applyConvFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
                     </div>
-                    <div id="convList"></div>
-                    <div id="chatArea" class="chat-area">
+                    <div class="conv-layout">
+                        <div id="convList" class="conv-list-pane"></div>
+                        <div id="chatArea" class="chat-area">
                         <div class="chat-header-wrap">
+                            <button type="button" class="chat-back-btn" onclick="closeChatMobile()" aria-label="بازگشت به لیست" data-i18n-title="back_to_list" title="بازگشت به لیست" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
                             <div class="chat-header" id="chatHeader"></div>
                             <div id="convDetailBar" class="conv-detail-bar" style="display:none;">
                                 <span id="convDetailMeta" class="conv-detail-meta"></span>
@@ -156,6 +158,7 @@
                             <input type="text" id="msgInput" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." onkeypress="if(event.key==='Enter')sendMsg()">
                             <button type="button" onclick="sendMsg()" data-i18n="btn_send">ارسال</button>
                         </div>
+                    </div>
                     </div>
                 </div>
                 <div id="pageCustomers" class="page">
