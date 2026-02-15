@@ -21,4 +21,4 @@ jobs:
             git pull origin master
             cd backend
             npm install
-            pm2 restart kayaCRM
+            pm2 reload kayaCRM
