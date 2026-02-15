@@ -116,11 +116,18 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر جدید بسازد' });
-        const { name, email, password, role, departmentId, branchId, permissions } = req.body;
+        const { name, username, email, password, role, departmentId, branchId, permissions } = req.body;
         if (!name || !email || !password) return res.status(400).json({ error: 'نام، ایمیل و رمز الزامی است' });
+        if (username !== undefined && username) {
+            const trimmed = String(username).trim();
+            if (!/^[a-zA-Z0-9_\u0600-\u06FF.-]+$/.test(trimmed)) return res.status(400).json({ error: 'نام کاربری فقط حروف، عدد، خط تیره و نقطه مجاز است' });
+            const existing = await User.findOne({ where: { username: trimmed } });
+            if (existing) return res.status(400).json({ error: 'این نام کاربری قبلاً استفاده شده است' });
+        }
         const finalBranchId = req.canManageUsers() ? (branchId || null) : (req.user.branchId || null);
         const user = await User.create({
             name,
+            username: (username && String(username).trim()) || null,
             email,
             password,
             role: role || 'agent',
@@ -144,14 +151,26 @@ router.put('/:id', async (req, res) => {
         const user = await User.findByPk(req.params.id);
         if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
         if (isMainAdmin(user) && !isMainAdmin(req.user)) return res.status(403).json({ error: 'امکان ویرایش یا محدود کردن ادمین اصلی پنل وجود ندارد' });
-        const { name, email, role, departmentId, branchId, isActive, permissions } = req.body;
+        const { name, username, email, role, departmentId, branchId, isActive, permissions } = req.body;
         if (name !== undefined) user.name = name;
+        if (username !== undefined && !isMainAdmin(user)) {
+            const trimmed = String(username || '').trim();
+            if (trimmed) {
+                if (!/^[a-zA-Z0-9_\u0600-\u06FF.-]+$/.test(trimmed)) return res.status(400).json({ error: 'نام کاربری فقط حروف، عدد، خط تیره و نقطه مجاز است' });
+                const existing = await User.findOne({ where: { username: trimmed } });
+                if (existing && existing.id !== user.id) return res.status(400).json({ error: 'این نام کاربری قبلاً استفاده شده است' });
+                user.username = trimmed;
+            } else user.username = null;
+        }
         if (email !== undefined && !isMainAdmin(user)) user.email = email;
         if (role !== undefined && !isMainAdmin(user)) user.role = role;
         if (departmentId !== undefined) user.departmentId = departmentId;
         if (branchId !== undefined && req.canManageUsers()) user.branchId = branchId || null;
         if (isActive !== undefined) { if (isMainAdmin(user)) user.isActive = true; else user.isActive = !!isActive; }
-        if (req.body.password) user.password = req.body.password;
+        if (req.body.password) {
+            if (String(req.body.password).length < 6) return res.status(400).json({ error: 'رمز عبور حداقل ۶ کاراکتر باشد' });
+            user.password = req.body.password;
+        }
         if (permissions !== undefined && typeof permissions === 'object' && !isMainAdmin(user)) {
             const merged = { ...(user.permissions || {}) };
             Object.keys(permissions).forEach(k => { merged[k] = !!permissions[k]; });

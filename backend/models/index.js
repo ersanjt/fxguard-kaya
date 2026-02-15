@@ -43,6 +43,7 @@ const models = {
     Task: require('./Task')(sequelize),
     TaskUpdate: require('./TaskUpdate')(sequelize),
     RateAdjustment: require('./RateAdjustment')(sequelize),
+    TickerConfig: require('./TickerConfig')(sequelize),
     ProcessTemplate: require('./ProcessTemplate')(sequelize),
     ProcessInstance: require('./ProcessInstance')(sequelize),
     ProcessInstanceStep: require('./ProcessInstanceStep')(sequelize),

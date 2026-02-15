@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { RateAdjustment } = require('../models');
+const { RateAdjustment, TickerConfig } = require('../models');
 
 const NAVASAN_API_KEY = process.env.NAVASAN_API_KEY || 'premVIlUQHLNK4IGQzHnZNZyHCbJrknc';
 const NAVASAN_LATEST = `https://api.navasan.tech/latest/?api_key=${NAVASAN_API_KEY}`;
@@ -64,7 +64,15 @@ router.get('/', async (req, res) => {
             console.warn('RateAdjustment error:', dbErr.message);
         }
 
-        const items = RATES_KEYS.map(({ key, label, apiKeys }) => {
+        let visibleKeys = null;
+        try {
+            const cfg = await TickerConfig.findByPk('default');
+            if (cfg && cfg.visibleKeys && Array.isArray(cfg.visibleKeys) && cfg.visibleKeys.length > 0) {
+                visibleKeys = cfg.visibleKeys;
+            }
+        } catch (e) { /* ignore */ }
+
+        const allItems = RATES_KEYS.map(({ key, label, apiKeys }) => {
             const rawVal = pickValue(raw, apiKeys);
             const change = pickChange(raw, apiKeys);
             const adj = adjustments[key];
@@ -78,8 +86,12 @@ router.get('/', async (req, res) => {
             };
         });
 
+        const items = visibleKeys
+            ? visibleKeys.map(k => allItems.find(i => i.key === k)).filter(Boolean)
+            : allItems;
+
         const updatedAt = raw.usd_sell && raw.usd_sell.date ? raw.usd_sell.date : new Date().toISOString();
-        res.json({ items, updatedAt });
+        res.json({ items, allItems, visibleKeys: visibleKeys || RATES_KEYS.map(r => r.key), updatedAt });
     } catch (err) {
         res.status(502).json({
             error: 'دریافت قیمت‌ها ناموفق بود',
@@ -132,6 +144,33 @@ router.put('/adjustments', async (req, res) => {
         rows.forEach(r => { map[r.currencyKey] = { currencyKey: r.currencyKey, adjustmentType: r.adjustmentType || 'none', value: r.value != null ? Number(r.value) : null }; });
         RATES_KEYS.forEach(({ key }) => { if (!map[key]) map[key] = { currencyKey: key, adjustmentType: 'none', value: null }; });
         res.json({ data: Object.values(map) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET /api/rates/ticker-config — ارزهای قابل نمایش در نوار قیمت
+router.get('/ticker-config', async (req, res) => {
+    try {
+        const cfg = await TickerConfig.findByPk('default');
+        const visibleKeys = (cfg && cfg.visibleKeys && Array.isArray(cfg.visibleKeys)) ? cfg.visibleKeys : RATES_KEYS.map(r => r.key);
+        res.json({ visibleKeys, availableKeys: RATES_KEYS.map(r => ({ key: r.key, label: r.label })) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT /api/rates/ticker-config — ذخیره ارزهای قابل نمایش (فقط با دسترسی rates)
+router.put('/ticker-config', async (req, res) => {
+    try {
+        if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
+        const visibleKeys = req.body.visibleKeys;
+        if (!Array.isArray(visibleKeys)) return res.status(400).json({ error: 'visibleKeys باید آرایه باشد' });
+        const allowed = RATES_KEYS.map(r => r.key);
+        const valid = visibleKeys.filter(k => allowed.includes(String(k).toLowerCase()));
+        const [cfg] = await TickerConfig.findOrCreate({ where: { id: 'default' }, defaults: { visibleKeys: null } });
+        await cfg.update({ visibleKeys: valid.length > 0 ? valid : null });
+        res.json({ visibleKeys: valid.length > 0 ? valid : RATES_KEYS.map(r => r.key) });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

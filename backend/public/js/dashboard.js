@@ -526,24 +526,32 @@
             var h = getTehranHour();
             return h >= 6 && h < 20;
         }
+        function formatChange(ch) {
+            if (ch == null || ch === '') return '';
+            var num = typeof ch === 'number' ? ch : parseFloat(String(ch));
+            if (isNaN(num) || num === 0) return '';
+            var s = Math.abs(num) >= 1000 ? Math.abs(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : String(Math.abs(num));
+            var fa = '۰۱۲۳۴۵۶۷۸۹';
+            var out = s.replace(/\d/g, function(d) { return fa[d]; });
+            return (num > 0 ? '+' : '−') + out;
+        }
         async function fetchRates() {
             if (!token) return;
             var upEl = document.getElementById('tickerUpdated');
+            var itemsEl = document.getElementById('tickerItems');
             var res = await apiFetch('/api/rates');
             if (res.needLogin || !res.ok) return;
             var data = res.data;
             var items = (data && data.items) || [];
-            items.forEach(function(it) {
-                var valEl = document.querySelector('.ticker-value[data-key="' + it.key + '"]');
-                var chEl = document.querySelector('.ticker-change[data-key="' + it.key + '"]');
-                if (valEl) valEl.textContent = formatPrice(it.value);
-                if (chEl) {
-                    var ch = it.change;
-                    chEl.textContent = ch != null && ch !== '' ? (ch > 0 ? '+' + ch : ch) : '';
-                    chEl.className = 'ticker-change' + (ch > 0 ? ' up' : ch < 0 ? ' down' : '');
-                }
-            });
             if (upEl) upEl.textContent = t('ticker_last') + ' ' + (data.updatedAt || '');
+            if (itemsEl) {
+                itemsEl.innerHTML = items.map(function(it) {
+                    var ch = it.change;
+                    var chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
+                    var chText = formatChange(ch);
+                    return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(formatPrice(it.value)) + '</span>' + (chText ? '<span class="ticker-change' + chClass + '">' + escapeHtml(chText) + '</span>' : '') + '</span>';
+                }).join('');
+            }
         }
 
         function startRatesInterval() {
@@ -562,7 +570,7 @@
             var adjRes = await apiFetch('/api/rates/adjustments');
             if (ratesRes.needLogin || adjRes.needLogin) return;
             if (!adjRes.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (adjRes.data && adjRes.data.error ? adjRes.data.error : '') + '</div>'; return; }
-            var items = (ratesRes.ok && ratesRes.data && ratesRes.data.items) ? ratesRes.data.items : [];
+            var items = (ratesRes.ok && ratesRes.data && (ratesRes.data.allItems || ratesRes.data.items)) ? (ratesRes.data.allItems || ratesRes.data.items) : [];
             var adjList = (adjRes.data && adjRes.data.data) || [];
             var adjMap = {};
             adjList.forEach(function(a) { adjMap[a.currencyKey] = a; });
@@ -603,6 +611,47 @@
             var res = await apiFetch('/api/rates/adjustments', { method: 'PUT', body: JSON.stringify({ adjustments: adjustments }) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_rates_saved')); fetchRates(); loadRatesAdjustments(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        var tickerConfigVisibleKeys = [];
+        async function loadTickerConfig() {
+            var box = document.getElementById('ratesTickerConfigBox');
+            var listEl = document.getElementById('ratesTickerConfigList');
+            var availEl = document.getElementById('ratesTickerConfigAvailable');
+            if (!box || !listEl || !availEl) return;
+            var canAccess = (currentUser && currentUser.permissions && currentUser.permissions.rates);
+            if (!canAccess) { box.style.display = 'none'; return; }
+            box.style.display = 'block';
+            var res = await apiFetch('/api/rates/ticker-config');
+            if (res.needLogin || !res.ok) return;
+            var visibleKeys = (res.data && res.data.visibleKeys) || [];
+            var available = (res.data && res.data.availableKeys) || [];
+            tickerConfigVisibleKeys = visibleKeys.slice();
+            listEl.innerHTML = tickerConfigVisibleKeys.map(function(k) {
+                var lab = (available.find(function(a) { return a.key === k; }) || {}).label || rateLabel(k);
+                return '<span class="ticker-config-chip" data-key="' + escapeHtml(k) + '">' + escapeHtml(lab) + ' <span class="chip-remove" data-remove-key="' + escapeHtml(k) + '">×</span></span>';
+            }).join('');
+            listEl.querySelectorAll('.chip-remove').forEach(function(btn) {
+                btn.onclick = function() { removeTickerCurrency(this.getAttribute('data-remove-key')); };
+            });
+            var remaining = available.filter(function(a) { return tickerConfigVisibleKeys.indexOf(a.key) === -1; });
+            availEl.innerHTML = remaining.length ? remaining.map(function(a) {
+                return '<span class="ticker-config-add" data-add-key="' + escapeHtml(a.key) + '">+ ' + escapeHtml(a.label) + '</span>';
+            }).join('') : '';
+            availEl.querySelectorAll('.ticker-config-add').forEach(function(btn) {
+                btn.onclick = function() { addTickerCurrency(this.getAttribute('data-add-key')); };
+            });
+        }
+        function addTickerCurrency(key) {
+            if (tickerConfigVisibleKeys.indexOf(key) === -1) { tickerConfigVisibleKeys.push(key); loadTickerConfig(); }
+        }
+        function removeTickerCurrency(key) {
+            tickerConfigVisibleKeys = tickerConfigVisibleKeys.filter(function(k) { return k !== key; });
+            loadTickerConfig();
+        }
+        async function saveTickerConfig() {
+            var res = await apiFetch('/api/rates/ticker-config', { method: 'PUT', body: JSON.stringify({ visibleKeys: tickerConfigVisibleKeys }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('toast_rates_saved')); fetchRates(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         async function loadServices() {
@@ -793,6 +842,7 @@
                 document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('app').classList.add('show');
                 applyNavByRole();
+                applyHashRoute();
                 loadDashboard();
                 startRatesInterval();
                 startPresenceInterval();
@@ -824,6 +874,7 @@
                 document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('app').classList.add('show');
                 applyNavByRole();
+                applyHashRoute();
                 loadDashboard();
                 startRatesInterval();
                 startPresenceInterval();
@@ -843,8 +894,11 @@
         function updateProfileAvatarPreview(urlOrName) {
             var el = document.getElementById('profileAvatarPreview');
             if (!el) return;
-            var url = (typeof urlOrName === 'string' && urlOrName.trim().indexOf('http') === 0) ? urlOrName.trim() : null;
-            var name = (typeof urlOrName === 'string' && !url) ? urlOrName : (currentUser && currentUser.name) ? currentUser.name : '';
+            var raw = (typeof urlOrName === 'string' && urlOrName.trim()) ? urlOrName.trim() : '';
+            var url = null;
+            if (raw.indexOf('http') === 0) url = raw;
+            else if (raw.indexOf('/') === 0) url = (window.location.origin || '') + raw;
+            var name = !url ? raw : (currentUser && (currentUser.firstName || currentUser.lastName || currentUser.name)) ? [currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ').trim() || currentUser.name : '';
             var initial = (name && name[0]) ? name[0].toUpperCase() : '?';
             if (url) {
                 var img = new Image();
@@ -911,13 +965,15 @@
         async function uploadProfileAvatar(file) {
             var formData = new FormData();
             formData.append('file', file);
-            var r = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+            var r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
             var data = await r.json().catch(function() { return {}; });
             if (data.url) {
                 var avatarInput = document.getElementById('profileAvatar');
-                var fullUrl = (API && data.url.indexOf('http') !== 0) ? (API.replace(/\/$/, '') + data.url) : data.url;
-                if (avatarInput) { avatarInput.value = fullUrl; updateProfileAvatarPreview(fullUrl); }
-                toast(t('saved') || (LANG === 'fa' ? 'تصویر بارگذاری شد' : 'Image uploaded'));
+                var avatarValue = (data.url.indexOf('http') === 0) ? data.url : data.url;
+                if (avatarInput) { avatarInput.value = avatarValue; updateProfileAvatarPreview(avatarValue); }
+                var patchRes = await apiFetch('/api/users/me', { method: 'PATCH', body: JSON.stringify({ avatar: avatarValue }) });
+                if (patchRes.ok) { if (patchRes.data) currentUser = patchRes.data; setUserDisplay(currentUser); toast(t('saved') || (LANG === 'fa' ? 'تصویر بارگذاری و ذخیره شد' : 'Image uploaded and saved')); }
+                else { toast(t('saved') || (LANG === 'fa' ? 'تصویر بارگذاری شد — ذخیره تغییرات را بزنید' : 'Image uploaded — click Save to persist')); }
             } else { toast((data.error) || t('err_generic'), true); }
         }
         async function saveProfile() {
@@ -1023,7 +1079,7 @@
             cards.forEach(function(c) {
                 if (!can(c.section)) return;
                 var badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
-                html += '<a href="#" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
+                html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
             });
             container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : 'No sections available.') + '</div>');
         }
@@ -1312,7 +1368,22 @@
             var emailEl = document.getElementById('userEmail');
             var avatarEl = document.getElementById('userAvatar');
             if (emailEl) emailEl.textContent = u.username || u.email || u.name || '';
-            if (avatarEl) avatarEl.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?');
+            if (avatarEl) {
+                var avatarUrl = (u.avatar || '').trim();
+                if (avatarUrl.indexOf('/') === 0) avatarUrl = (window.location.origin || '') + avatarUrl;
+                if (avatarUrl && avatarUrl.indexOf('http') === 0) {
+                    var img = document.createElement('img');
+                    img.src = avatarUrl;
+                    img.alt = '';
+                    img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.borderRadius = 'inherit';
+                    img.onerror = function() { avatarEl.innerHTML = ''; avatarEl.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?'); };
+                    avatarEl.innerHTML = '';
+                    avatarEl.appendChild(img);
+                } else {
+                    avatarEl.innerHTML = '';
+                    avatarEl.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?');
+                }
+            }
         }
         function applyNavByRole() {
             var perms = (currentUser && currentUser.permissions) || {};
@@ -1321,8 +1392,15 @@
                 link.style.display = perms[section] !== false ? '' : 'none';
             });
         }
+        var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','services'];
+        function applyHashRoute() {
+            var hash = (location.hash || '').replace(/^#/, '');
+            var page = VALID_PAGES.indexOf(hash) >= 0 ? hash : 'dashboard';
+            showPage(page);
+        }
         function showPage(page) {
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
+            if (page && window.location.hash !== '#' + page) { try { window.history.replaceState(null, '', (window.location.pathname || '/dashboard.html') + '#' + page); } catch (e) {} }
             document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
             var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices' };
@@ -1331,12 +1409,12 @@
             if (page === 'conversations') loadConversations();
             if (page === 'customers') loadCustomers();
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
-            if (page === 'users') { document.getElementById('userFormBox').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? 'block' : 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch']); }
+            if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }
             if (page === 'tickets') loadTickets();
             if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
             if (page === 'whatsapp') loadWhatsappStatus();
-            if (page === 'rates') loadRatesAdjustments();
+            if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); }
             if (page === 'services') loadServices();
             if (page === 'branches') { loadBranches(); }
             if (page === 'staff-activity') loadStaffActivity();
@@ -1761,6 +1839,86 @@
             if (res.ok) { document.getElementById('deptName').value = ''; document.getElementById('deptDesc').value = ''; document.getElementById('deptKeywords').value = ''; toast(t('toast_dept_added')); loadDepartments(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
+        var userListData = [];
+        function initUserFilters() {
+            var searchEl = document.getElementById('userSearchInput');
+            var roleEl = document.getElementById('userFilterRole');
+            if (searchEl) searchEl.oninput = searchEl.onkeyup = function() { filterAndRenderUsers(); };
+            if (roleEl) roleEl.onchange = function() { filterAndRenderUsers(); };
+        }
+        function initUserEditTabs() {
+            document.querySelectorAll('.user-edit-tab').forEach(function(btn) {
+                btn.onclick = function() {
+                    var tab = this.getAttribute('data-tab');
+                    document.querySelectorAll('.user-edit-tab').forEach(function(b) { b.classList.remove('active'); });
+                    document.querySelectorAll('.user-edit-tab-panel').forEach(function(p) { p.classList.remove('active'); p.style.display = 'none'; });
+                    this.classList.add('active');
+                    var panel = document.getElementById('userEditTab' + (tab === 'info' ? 'Info' : 'Perms'));
+                    if (panel) { panel.classList.add('active'); panel.style.display = 'block'; }
+                };
+            });
+        }
+        function userInitial(u) {
+            if (u.avatar && String(u.avatar).trim()) return null;
+            return (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?');
+        }
+        function filterAndRenderUsers() {
+            var search = (document.getElementById('userSearchInput') && document.getElementById('userSearchInput').value) || '';
+            var roleFilter = (document.getElementById('userFilterRole') && document.getElementById('userFilterRole').value) || '';
+            var q = search.trim().toLowerCase();
+            var filtered = userListData.filter(function(u) {
+                if (roleFilter && u.role !== roleFilter) return false;
+                if (!q) return true;
+                var name = (u.name || '').toLowerCase();
+                var email = (u.email || '').toLowerCase();
+                var username = (u.username || '').toLowerCase();
+                return name.indexOf(q) >= 0 || email.indexOf(q) >= 0 || username.indexOf(q) >= 0;
+            });
+            renderUserList(filtered);
+        }
+        function renderUserList(users) {
+            var list = document.getElementById('userList');
+            if (!list) return;
+            var canManage = (currentUser && currentUser.permissions && currentUser.permissions.manage_users);
+            var roleLabels = { owner: t('role_owner'), admin: t('role_admin'), manager: t('role_manager'), supervisor: t('role_supervisor'), agent: t('role_agent') };
+            if (!users || users.length === 0) { list.innerHTML = '<div class="empty" style="grid-column:1/-1;"><span class="empty-icon">👤</span><br>' + t('empty_users') + '</div>'; return; }
+            list.innerHTML = users.map(function(u) {
+                var initial = userInitial(u) || '?';
+                var avatarUrl = (u.avatar && String(u.avatar).trim()) ? ((u.avatar.indexOf('/') === 0 ? (window.location.origin || '') : '') + u.avatar) : '';
+                var avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : initial;
+                var metaParts = [];
+                if (u.email) metaParts.push(escapeHtml(u.email));
+                metaParts.push(roleLabels[u.role] || u.role);
+                if (u.department && u.department.name) metaParts.push(escapeHtml(u.department.name));
+                if (u.branch && u.branch.name) metaParts.push(escapeHtml(u.branch.name));
+                var inactiveClass = u.isActive === false ? ' inactive' : '';
+                var blockedBadge = u.isActive === false ? '<span class="badge cancelled">' + t('blocked') + '</span>' : '';
+                var roleBadge = '<span class="badge" style="background:var(--accent-soft);color:var(--accent);">' + escapeHtml(roleLabels[u.role] || u.role) + '</span>';
+                var btn = canManage ? '<button type="button" class="btn-secondary btn-sm" onclick="openUserEdit(\'' + u.id + '\')" style="margin:0;padding:6px 12px;font-size:0.8rem;">' + t('edit_access') + '</button>' : '';
+                return '<div class="user-card' + inactiveClass + '"><div class="user-card-avatar">' + avatarHtml + '</div><div class="user-card-body"><div class="user-card-name">' + escapeHtml(u.name) + ' ' + blockedBadge + '</div><div class="user-card-meta">' + metaParts.join(' · ') + '</div><div class="user-card-badges">' + roleBadge + '</div></div><div class="user-card-actions">' + btn + '</div></div>';
+            }).join('');
+        }
+        function toggleUserForm() {
+            var box = document.getElementById('userFormBox');
+            var btnAdd = document.getElementById('btnAddUser');
+            var btnCancel = document.getElementById('btnCancelUserForm');
+            var visible = box.style.display === 'block';
+            box.style.display = visible ? 'none' : 'block';
+            btnAdd.style.display = visible ? '' : 'none';
+            if (btnCancel) btnCancel.style.display = visible ? 'none' : '';
+        }
+        function initUserAddPerms() {
+            var box = document.getElementById('userAddPermsBox');
+            var cont = document.getElementById('userAddPerms');
+            if (!box || !cont || !(currentUser && currentUser.permissions && currentUser.permissions.manage_users)) return;
+            var canGrantManageUsers = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
+            var html = Object.keys(sectionLabels).map(function(k) {
+                if (k === 'manage_users' && !canGrantManageUsers) return '';
+                return '<label style="display:block; margin:6px 0;"><input type="checkbox" data-perm="' + k + '"> ' + sectionLabel(k) + '</label>';
+            }).join('');
+            cont.innerHTML = html;
+            box.style.display = 'block';
+        }
         async function loadUsers() {
             var list = document.getElementById('userList');
             setLoading('userList', 4);
@@ -1768,16 +1926,12 @@
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x�</span><br>' + t('empty_users') + '</div>'; return; }
-            var canManage = (currentUser && currentUser.permissions && currentUser.permissions.manage_users);
-            list.innerHTML = data.data.map(function(u) {
-                var activeLabel = u.isActive === false ? ' <span class="badge cancelled">' + t('blocked') + '</span>' : '';
-                var btn = canManage ? ' <button type="button" class="btn-secondary" style="margin:0; padding:6px 12px; font-size:0.8rem;" onclick="openUserEdit(\'' + u.id + '\')">' + t('edit_access') + '</button>' : '';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(u.name) + activeLabel + '</span><div class="meta">' + escapeHtml(u.email) + ' ⬢ ' + (u.role || '') + '</div></div>' + btn + '</div>';
-            }).join('');
+            userListData = data.data || [];
+            if (userListData.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">👤</span><br>' + t('empty_users') + '</div>'; return; }
+            filterAndRenderUsers();
         }
         var currentEditUserId = null;
-        var sectionLabels = { conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', manage_users: 'section_manage_users' };
+        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', manage_users: 'section_manage_users' };
         function sectionLabel(k) { return t(sectionLabels[k] || k); }
         function closeUserEditModal() { document.getElementById('userEditModal').style.display = 'none'; currentEditUserId = null; }
         async function openUserEdit(userId) {
@@ -1785,8 +1939,18 @@
             if (res.needLogin || !res.ok) return;
             var u = res.data;
             currentEditUserId = userId;
-            document.getElementById('userEditName').textContent = u.name + ' (' + (u.email || '') + ')';
+            document.querySelectorAll('.user-edit-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-tab') === 'info') b.classList.add('active'); });
+            document.getElementById('userEditTabInfo').classList.add('active'); document.getElementById('userEditTabInfo').style.display = 'block';
+            document.getElementById('userEditTabPerms').classList.remove('active'); document.getElementById('userEditTabPerms').style.display = 'none';
+            document.getElementById('userEditId').value = u.id;
+            document.getElementById('userEditName').value = u.name || '';
+            document.getElementById('userEditUsername').value = u.username || '';
+            document.getElementById('userEditEmail').value = u.email || '';
+            document.getElementById('userEditRole').value = u.role || 'agent';
+            document.getElementById('userEditDept').value = u.departmentId || '';
+            document.getElementById('userEditBranch').value = u.branchId || '';
             document.getElementById('userEditActive').checked = u.isActive !== false;
+            document.getElementById('userEditPassword').value = '';
             var perms = u.permissions || {};
             var canGrantManageUsers = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
             var html = Object.keys(sectionLabels).map(function(k) {
@@ -1803,7 +1967,19 @@
             document.querySelectorAll('#userEditPerms input[data-perm]').forEach(function(cb) {
                 perms[cb.getAttribute('data-perm')] = cb.checked;
             });
-            var res = await apiFetch('/api/users/' + currentEditUserId, { method: 'PUT', body: JSON.stringify({ isActive: document.getElementById('userEditActive').checked, permissions: perms }) });
+            var payload = {
+                name: document.getElementById('userEditName').value.trim(),
+                username: document.getElementById('userEditUsername').value.trim() || null,
+                email: document.getElementById('userEditEmail').value.trim(),
+                role: document.getElementById('userEditRole').value,
+                departmentId: document.getElementById('userEditDept').value || null,
+                branchId: document.getElementById('userEditBranch').value || null,
+                isActive: document.getElementById('userEditActive').checked,
+                permissions: perms
+            };
+            var pw = document.getElementById('userEditPassword').value;
+            if (pw) payload.password = pw;
+            var res = await apiFetch('/api/users/' + currentEditUserId, { method: 'PUT', body: JSON.stringify(payload) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('saved')); closeUserEditModal(); loadUsers(); if (currentEditUserId === (currentUser && currentUser.id)) { apiFetch('/api/users/me').then(function(r) { if (r.ok && r.data) { currentUser = r.data; applyNavByRole(); } }); } } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
@@ -1811,9 +1987,9 @@
         async function loadDeptsForUser() {
             var res = await apiFetch('/api/departments');
             if (res.needLogin) return;
-            var sel = document.getElementById('userDept');
             var arr = (res.data && res.data.data) || [];
-            sel.innerHTML = '<option value="">' + t('no_dept') + '</option>' + arr.map(function(d) { return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
+            var opt = '<option value="">' + t('no_dept') + '</option>' + arr.map(function(d) { return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
+            ['userDept','userEditDept'].forEach(function(id) { var el = document.getElementById(id); if (el) el.innerHTML = opt; });
         }
 
         async function addUser() {
@@ -1822,10 +1998,21 @@
             var email = document.getElementById('userEmailAdd').value.trim();
             var password = document.getElementById('userPass').value;
             if (!name || !email || !password) { toast(t('required_name_email_pass'), true); return; }
+            var username = (document.getElementById('userUsernameAdd') && document.getElementById('userUsernameAdd').value) ? document.getElementById('userUsernameAdd').value.trim() : null;
             var branchId = document.getElementById('userBranch').value || null;
-            var res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, email: email, password: password, role: document.getElementById('userRole').value, departmentId: document.getElementById('userDept').value || null, branchId: branchId }) });
+            var deptId = document.getElementById('userDept').value || null;
+            var perms = {};
+            var permsEl = document.getElementById('userAddPerms');
+            if (permsEl) permsEl.querySelectorAll('input[data-perm]').forEach(function(cb) { perms[cb.getAttribute('data-perm')] = cb.checked; });
+            var res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms }) });
             if (res.needLogin) return;
-            if (res.ok) { document.getElementById('userName').value = ''; document.getElementById('userEmailAdd').value = ''; document.getElementById('userPass').value = ''; toast(t('toast_user_added')); loadUsers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) {
+                document.getElementById('userName').value = '';
+                if (document.getElementById('userUsernameAdd')) document.getElementById('userUsernameAdd').value = '';
+                document.getElementById('userEmailAdd').value = '';
+                document.getElementById('userPass').value = '';
+                toast(t('toast_user_added')); loadUsers(); toggleUserForm();
+            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         var currentInternalThreadId = null;
@@ -2149,6 +2336,7 @@
                 showPage(this.getAttribute('data-page'));
             });
         });
+        window.addEventListener('hashchange', function() { if (document.getElementById('app').classList.contains('show')) applyHashRoute(); });
         var fy = document.getElementById('footerYear');
         if (fy) fy.textContent = '\u00A9 ' + new Date().getFullYear();
 
@@ -2167,6 +2355,7 @@
                     document.getElementById('loginBox').style.display = 'none';
                     document.getElementById('app').classList.add('show');
                     applyNavByRole();
+                    applyHashRoute();
                     loadDashboard();
                     startRatesInterval();
                     startPresenceInterval();
