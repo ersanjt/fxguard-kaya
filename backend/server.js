@@ -438,6 +438,7 @@ async function autoAssignment(conversation, messageContent) {
 // ==================== Socket.IO ====================
 const socketAuth = require('./middleware/socketAuth');
 
+app.set('io', io);
 io.use(socketAuth);
 
 io.on('connection', (socket) => {
@@ -517,8 +518,14 @@ io.on('connection', (socket) => {
         });
     });
     
-    socket.on('disconnect', () => {
+    socket.on('disconnect', async () => {
         logger.info(`🔌 User disconnected: ${socket.userId}`);
+        if (socket.userId) {
+            try {
+                await User.update({ status: 'offline' }, { where: { id: socket.userId } });
+                io.emit('user_status', { userId: socket.userId, status: 'offline' });
+            } catch (e) { logger.warn('Disconnect status update:', e.message); }
+        }
     });
 });
 
@@ -609,10 +616,13 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date(), uptime: process.uptime() });
 });
 
-// فایل استاتیک و داشبورد فقط برای مسیرهای غیر از /api
+// ساختار استاندارد لینک‌ها: / و /dashboard → پنل، /dashboard#صفحه → صفحات
+app.get('/', (req, res) => res.redirect('/dashboard'));
+app.get('/dashboard.html', (req, res) => res.redirect('/dashboard'));
+app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+app.get('/dashboard/', (req, res) => res.redirect('/dashboard'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.get('/', (req, res) => res.redirect('/dashboard.html'));
 
 // Error handling
 app.use((err, req, res, next) => {

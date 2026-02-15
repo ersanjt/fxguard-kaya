@@ -502,6 +502,8 @@
         let currentUser = null;
         let ratesInterval = null;
         let presenceInterval = null;
+        let staffActivityInterval = null;
+        let socket = null;
 
         function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
 
@@ -535,15 +537,35 @@
             var out = s.replace(/\d/g, function(d) { return fa[d]; });
             return (num > 0 ? '+' : '−') + out;
         }
+        function formatTickerDateTime(updatedAtStr) {
+            var d;
+            try { d = updatedAtStr ? new Date(updatedAtStr) : new Date(); } catch (e) { d = new Date(); }
+            if (isNaN(d.getTime())) d = new Date();
+            var opts = { hour: '2-digit', minute: '2-digit', hour12: false };
+            var iran = new Intl.DateTimeFormat('fa-IR', { ...opts, timeZone: 'Asia/Tehran' }).format(d);
+            var turkey = new Intl.DateTimeFormat('fa-IR', { ...opts, timeZone: 'Europe/Istanbul' }).format(d);
+            var uae = new Intl.DateTimeFormat('fa-IR', { ...opts, timeZone: 'Asia/Dubai' }).format(d);
+            var shamsi = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            var miladi = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            return {
+                times: (t('ticker_last') || 'آخرین بروزرسانی') + ': ' + (t('ticker_iran') || 'ایران') + ' ' + iran + ' · ' + (t('ticker_turkey') || 'ترکیه') + ' ' + turkey + ' · ' + (t('ticker_uae') || 'امارات') + ' ' + uae,
+                dates: shamsi + ' · ' + miladi
+            };
+        }
         async function fetchRates() {
             if (!token) return;
-            var upEl = document.getElementById('tickerUpdated');
+            var loadingEl = document.querySelector('.ticker-loading');
+            var timesEl = document.getElementById('tickerTimes');
+            var datesEl = document.getElementById('tickerDates');
             var itemsEl = document.getElementById('tickerItems');
             var res = await apiFetch('/api/rates');
             if (res.needLogin || !res.ok) return;
             var data = res.data;
             var items = (data && data.items) || [];
-            if (upEl) upEl.textContent = t('ticker_last') + ' ' + (data.updatedAt || '');
+            var fmt = formatTickerDateTime(data.updatedAt);
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (timesEl) { timesEl.textContent = fmt.times; timesEl.style.display = ''; }
+            if (datesEl) { datesEl.textContent = fmt.dates; datesEl.style.display = ''; }
             if (itemsEl) {
                 itemsEl.innerHTML = items.map(function(it) {
                     var ch = it.change;
@@ -724,6 +746,33 @@
                 apiFetch('/api/auth/me/presence', { method: 'PATCH', body: JSON.stringify({ status: 'online' }) }).catch(function(){});
             }, 30000);
         }
+        function connectSocket() {
+            if (!token || socket) return;
+            try {
+                if (typeof io !== 'undefined') {
+                    socket = io({ auth: { token: token } });
+                    socket.on('user_status', function() {
+                        var active = document.querySelector('.nav-link.active');
+                        if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
+                    });
+                    socket.on('user_login', function() {
+                        var active = document.querySelector('.nav-link.active');
+                        if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
+                    });
+                    socket.on('connect_error', function() { socket = null; });
+                }
+            } catch (e) { socket = null; }
+        }
+        function disconnectSocket() {
+            if (socket) { socket.disconnect(); socket = null; }
+        }
+        function startStaffActivityLive() {
+            if (staffActivityInterval) clearInterval(staffActivityInterval);
+            staffActivityInterval = setInterval(loadStaffActivity, 15000);
+        }
+        function stopStaffActivityLive() {
+            if (staffActivityInterval) { clearInterval(staffActivityInterval); staffActivityInterval = null; }
+        }
 
         function doHeaderSearch() {
             var q = (document.getElementById('headerSearch') && document.getElementById('headerSearch').value) || '';
@@ -846,6 +895,7 @@
                 loadDashboard();
                 startRatesInterval();
                 startPresenceInterval();
+                connectSocket();
                 showTotpPromptIfNeeded();
             } else {
                 document.getElementById('loginErr').textContent = data.error || t('login_err_fail');
@@ -878,6 +928,7 @@
                 loadDashboard();
                 startRatesInterval();
                 startPresenceInterval();
+                connectSocket();
                 showTotpPromptIfNeeded();
             } else {
                 document.getElementById('totpErr').textContent = data.error || t('login_totp_bad');
@@ -1037,6 +1088,8 @@
             }
             if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
             if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
+            stopStaffActivityLive();
+            disconnectSocket();
             token = null;
             currentUser = null;
             localStorage.removeItem('crm_token');
@@ -1400,7 +1453,7 @@
         }
         function showPage(page) {
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
-            if (page && window.location.hash !== '#' + page) { try { window.history.replaceState(null, '', (window.location.pathname || '/dashboard.html') + '#' + page); } catch (e) {} }
+            if (page && window.location.hash !== '#' + page) { var base = (window.location.pathname === '/dashboard.html') ? '/dashboard' : (window.location.pathname || '/dashboard'); try { window.history.replaceState(null, '', base + '#' + page); } catch (e) {} }
             document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
             var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices' };
@@ -1417,7 +1470,7 @@
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); }
             if (page === 'services') loadServices();
             if (page === 'branches') { loadBranches(); }
-            if (page === 'staff-activity') loadStaffActivity();
+            if (page === 'staff-activity') { loadStaffActivity(); startStaffActivityLive(); } else { stopStaffActivityLive(); }
             if (page === 'profile') loadProfile();
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
             if (page === 'internal-chat') { loadInternalThreads(); loadInternalUsers(); }
@@ -2359,6 +2412,7 @@
                     loadDashboard();
                     startRatesInterval();
                     startPresenceInterval();
+                    connectSocket();
                     showTotpPromptIfNeeded();
                 } else { logout(); }
             }).catch(function() { logout(); });

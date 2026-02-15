@@ -91,6 +91,7 @@ router.post('/login', async (req, res) => {
         });
         const token = issueToken(user);
         const permissions = getPermissions(user);
+        try { (req.app && req.app.get('io'))?.emit('user_login', { userId: user.id }); } catch (_) {}
         sendJson(200, {
             token,
             user: {
@@ -144,6 +145,7 @@ router.post('/totp/verify-login', async (req, res) => {
         });
         const token = issueToken(user);
         const permissions = getPermissions(user);
+        try { (req.app && req.app.get('io'))?.emit('user_login', { userId: user.id }); } catch (_) {}
         res.json({
             token,
             user: {

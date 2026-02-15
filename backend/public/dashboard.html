@@ -603,13 +603,17 @@
             </div>
         </div>
         <footer class="footer">
-            <span data-i18n="footer_text">صرافی کایا — پورتال کارکنان</span> | <a href="/" data-i18n="logo_kaya">صرافی کایا</a>
+            <span data-i18n="footer_text">صرافی کایا — پورتال کارکنان</span> | <a href="/dashboard" data-i18n="logo_kaya">صرافی کایا</a>
             <span id="footerYear"></span>
         </footer>
         </div>
         <div class="price-ticker" id="priceTicker">
             <div class="ticker-header">
-                <span class="ticker-updated" id="tickerUpdated" data-i18n="ticker_loading">در حال بارگذاری قیمت‌ها...</span>
+                <div class="ticker-datetime" id="tickerUpdated">
+                    <span class="ticker-loading" data-i18n="ticker_loading">در حال بارگذاری قیمت‌ها...</span>
+                    <span class="ticker-times" id="tickerTimes" style="display:none;"></span>
+                    <span class="ticker-dates" id="tickerDates" style="display:none;"></span>
+                </div>
             </div>
             <div class="ticker-items" id="tickerItems"></div>
         </div>
@@ -712,6 +716,7 @@
             <button type="button" class="btn-primary" onclick="startProcessInstance()" data-i18n="process_start_instance">شروع نمونه</button>
         </div>
     </div>
+    <script src="/socket.io/socket.io.js"></script>
     <script src="js/i18n-fa.js" charset="utf-8"></script>
     <script src="js/dashboard.js"></script>
 
