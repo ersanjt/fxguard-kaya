@@ -529,10 +529,6 @@
         async function fetchRates() {
             if (!token) return;
             var upEl = document.getElementById('tickerUpdated');
-            if (!isTehranRatesWindow()) {
-                if (upEl) upEl.textContent = t('ticker_outside_hours');
-                return;
-            }
             var res = await apiFetch('/api/rates');
             if (res.needLogin || !res.ok) return;
             var data = res.data;
