@@ -15,9 +15,11 @@ router.get('/', async (req, res) => {
         if (createdBy) where.createdBy = createdBy;
         if (departmentId) where.departmentId = departmentId;
         if (search && String(search).trim()) {
+            const term = '%' + String(search).trim() + '%';
             where[Op.or] = [
-                { title: { [Op.like]: '%' + String(search).trim() + '%' } },
-                { description: { [Op.like]: '%' + String(search).trim() + '%' } }
+                { title: { [Op.like]: term } },
+                { description: { [Op.like]: term } },
+                { ticketNumber: { [Op.like]: term } }
             ];
         }
         const { rows, count } = await Ticket.findAndCountAll({
@@ -85,7 +87,7 @@ router.post('/:id/replies', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
-        const { title, description, assignedTo, departmentId, priority } = req.body;
+        const { title, description, assignedTo, departmentId, priority, dueDate } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'عنوان الزامی است' });
         const ticket = await Ticket.create({
             title: title.trim(),
@@ -94,7 +96,8 @@ router.post('/', async (req, res) => {
             assignedTo: assignedTo || null,
             departmentId: departmentId || null,
             priority: priority || 'normal',
-            status: 'open'
+            status: 'open',
+            dueDate: dueDate ? new Date(dueDate) : null
         });
         const withIncludes = await Ticket.findByPk(ticket.id, {
             include: [
@@ -113,13 +116,14 @@ router.put('/:id', async (req, res) => {
     try {
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
-        const { title, description, assignedTo, departmentId, status, priority } = req.body;
+        const { title, description, assignedTo, departmentId, status, priority, dueDate } = req.body;
         if (title !== undefined) ticket.title = title.trim();
         if (description !== undefined) ticket.description = description;
         if (assignedTo !== undefined) ticket.assignedTo = assignedTo;
         if (departmentId !== undefined) ticket.departmentId = departmentId;
         if (status !== undefined) ticket.status = status;
         if (priority !== undefined) ticket.priority = priority;
+        if (dueDate !== undefined) ticket.dueDate = dueDate ? new Date(dueDate) : null;
         await ticket.save();
         res.json(ticket);
     } catch (err) {

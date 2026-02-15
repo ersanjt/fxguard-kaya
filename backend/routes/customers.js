@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Customer, Conversation, Message, CustomerNote, User } = require('../models');
+const { Customer, Conversation, Message, CustomerNote, User, ActivityLog } = require('../models');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
 
@@ -53,16 +53,66 @@ router.get('/:id/conversations', async (req, res) => {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         const allowed = await canAccessCustomer(req, req.params.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
-        // پس از تأیید دسترسی، کل تاریخچه مکالمات این مشتری را برگردان (برای دیدن همه‌چیز)
         const conversations = await Conversation.findAll({
             where: { customerId: req.params.id },
+            include: [{ model: User, as: 'assignee', attributes: ['id', 'name', 'email'] }],
             order: [['lastMessageAt', 'DESC']]
         });
         const withCount = await Promise.all(conversations.map(async (c) => {
             const count = await Message.count({ where: { conversationId: c.id } });
-            return { id: c.id, status: c.status, priority: c.priority, lastMessageAt: c.lastMessageAt, messageCount: count, createdAt: c.createdAt, assignedTo: c.assignedTo };
+            const lastOutgoing = await Message.findOne({ where: { conversationId: c.id, direction: 'outgoing' }, order: [['timestamp', 'DESC']], include: [{ model: User, as: 'user', attributes: ['id', 'name'] }] });
+            return {
+                id: c.id, status: c.status, priority: c.priority, lastMessageAt: c.lastMessageAt, messageCount: count, createdAt: c.createdAt,
+                assignedTo: c.assignedTo, assignee: c.assignee, lastOutgoingBy: lastOutgoing && lastOutgoing.user ? lastOutgoing.user.name : null
+            };
         }));
         res.json({ data: withCount });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.get('/:id/timeline', async (req, res) => {
+    try {
+        if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        const allowed = await canAccessCustomer(req, req.params.id);
+        if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+        const customerId = req.params.id;
+        const [conversationsRaw, notes, activities] = await Promise.all([
+            Conversation.findAll({
+                where: { customerId },
+                include: [{ model: User, as: 'assignee', attributes: ['id', 'name'] }],
+                order: [['lastMessageAt', 'DESC']]
+            }),
+            CustomerNote.findAll({
+                where: { customerId },
+                include: [{ model: User, as: 'user', attributes: ['id', 'name'] }],
+                order: [['createdAt', 'DESC']]
+            }),
+            ActivityLog.findAll({
+                where: { customerId },
+                include: [{ model: User, as: 'user', attributes: ['id', 'name'] }],
+                order: [['createdAt', 'DESC']],
+                limit: 100
+            })
+        ]);
+        const convWithCount = await Promise.all(conversationsRaw.map(async (c) => {
+            const count = await Message.count({ where: { conversationId: c.id } });
+            const plain = c.get ? c.get({ plain: true }) : c;
+            return { ...plain, messageCount: count };
+        }));
+        const items = [];
+        convWithCount.forEach(c => {
+            items.push({ type: 'conversation', date: c.lastMessageAt || c.createdAt, data: c, assignee: c.assignee });
+        });
+        notes.forEach(n => {
+            items.push({ type: 'note', date: n.createdAt, data: n, user: n.user });
+        });
+        activities.forEach(a => {
+            items.push({ type: 'activity', date: a.createdAt, data: a, user: a.user });
+        });
+        items.sort((a, b) => new Date(b.date) - new Date(a.date));
+        res.json({ data: items });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -135,6 +185,16 @@ router.post('/:id/notes', async (req, res) => {
         });
         const withUser = await CustomerNote.findByPk(note.id, {
             include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }]
+        });
+        const { logActivity } = require('../services/activityLog');
+        await logActivity({
+            userId: req.userId,
+            action: 'customer_note_added',
+            entityType: 'customer_note',
+            entityId: note.id,
+            customerId: req.params.id,
+            summary: 'گزارش/یادداشت ثبت شد',
+            metadata: { contentLength: content.length }
         });
         res.status(201).json(withUser);
     } catch (err) {

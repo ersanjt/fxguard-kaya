@@ -34,6 +34,11 @@ module.exports = (sequelize) => {
             type: DataTypes.UUID,
             allowNull: true
         },
+        customerId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            comment: 'مشتری مرتبط — برای نمایش تاریخچه مشتری'
+        },
         summary: {
             type: DataTypes.STRING,
             comment: 'خلاصه قابل نمایش برای مالک'
@@ -50,7 +55,8 @@ module.exports = (sequelize) => {
             { fields: ['userId'] },
             { fields: ['branchId'] },
             { fields: ['action'] },
-            { fields: ['createdAt'] }
+            { fields: ['createdAt'] },
+            { fields: ['customerId'] }
         ]
     });
 
@@ -58,6 +64,7 @@ module.exports = (sequelize) => {
         ActivityLog.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
         ActivityLog.belongsTo(models.Branch, { foreignKey: 'branchId', as: 'branch' });
         ActivityLog.belongsTo(models.Department, { foreignKey: 'departmentId', as: 'department' });
+        ActivityLog.belongsTo(models.Customer, { foreignKey: 'customerId', as: 'customer' });
     };
 
     return ActivityLog;

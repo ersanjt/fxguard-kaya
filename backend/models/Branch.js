@@ -22,7 +22,7 @@ module.exports = (sequelize) => {
         },
         timezone: {
             type: DataTypes.STRING,
-            defaultValue: 'Asia/Tehran'
+            defaultValue: 'Europe/Istanbul'
         },
         isActive: {
             type: DataTypes.BOOLEAN,

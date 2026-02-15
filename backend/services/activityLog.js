@@ -3,7 +3,7 @@ const { ActivityLog } = require('../models');
 /**
  * ثبت فعالیت برای نظارت مالک — چه کسی، در کدام شعبه/دپارتمان، چه عملی انجام داده
  */
-async function logActivity({ userId, branchId, departmentId, action, entityType, entityId, summary, metadata = {} }) {
+async function logActivity({ userId, branchId, departmentId, action, entityType, entityId, customerId, summary, metadata = {} }) {
     try {
         await ActivityLog.create({
             userId: userId || null,
@@ -12,6 +12,7 @@ async function logActivity({ userId, branchId, departmentId, action, entityType,
             action,
             entityType: entityType || null,
             entityId: entityId || null,
+            customerId: customerId || null,
             summary: summary || null,
             metadata
         });

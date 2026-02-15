@@ -7,6 +7,12 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        ticketNumber: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            unique: true,
+            comment: 'شماره رسمی تیکت مثلاً TKT-20250216-1234'
+        },
         title: {
             type: DataTypes.STRING,
             allowNull: false
@@ -25,7 +31,7 @@ module.exports = (sequelize) => {
             type: DataTypes.UUID
         },
         status: {
-            type: DataTypes.ENUM('open', 'in_progress', 'closed'),
+            type: DataTypes.ENUM('open', 'in_progress', 'resolved', 'closed'),
             defaultValue: 'open'
         },
         priority: {
@@ -39,7 +45,15 @@ module.exports = (sequelize) => {
             type: DataTypes.JSON,
             defaultValue: {}
         }
-    }, { timestamps: true });
+    }, { timestamps: true, indexes: [{ fields: ['ticketNumber'] }, { fields: ['status'] }, { fields: ['dueDate'] }] });
+
+    Ticket.beforeCreate(async (ticket) => {
+        if (!ticket.ticketNumber) {
+            const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+            const rnd = Math.floor(1000 + Math.random() * 9000);
+            ticket.ticketNumber = 'TKT-' + date + '-' + rnd;
+        }
+    });
 
     Ticket.associate = (models) => {
         Ticket.belongsTo(models.User, { foreignKey: 'createdBy', as: 'creator' });

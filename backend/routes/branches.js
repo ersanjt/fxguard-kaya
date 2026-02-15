@@ -55,7 +55,7 @@ router.post('/', ownerOrAdmin, async (req, res) => {
             name: name.trim(),
             city: (city || '').trim() || null,
             country: (country || '').trim() || null,
-            timezone: timezone || 'Asia/Tehran',
+            timezone: timezone || 'Europe/Istanbul',
             isActive: true
         });
         res.status(201).json(branch);

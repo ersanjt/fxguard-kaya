@@ -550,6 +550,11 @@ apiRouter.get('/ping', (req, res) => {
     res.json({ ok: true, message: 'API در دسترس است' });
 });
 
+// تنظیمات عمومی (timezone و غیره) — بدون احراز هویت
+apiRouter.get('/config', (req, res) => {
+    res.json({ timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul' });
+});
+
 const gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3001';
 let gatewayProcess = null;
 

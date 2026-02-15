@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Conversation, Message, Customer, Ticket, Task, Announcement } = require('../models');
+const { Conversation, Message, Customer, Ticket, Task, Announcement, AnnouncementRead } = require('../models');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
@@ -33,7 +33,8 @@ router.get('/dashboard', async (req, res) => {
             customerCount,
             ticketsOpen,
             tasksPending,
-            announcementsCount
+            announcementsCount,
+            unreadAnnouncements
         ] = await Promise.all([
             Conversation.count({ where: convWhere }),
             Conversation.count({ where: { ...convWhere, status: 'open' } }),
@@ -45,9 +46,14 @@ router.get('/dashboard', async (req, res) => {
                 if (ids.length === 0) return 0;
                 return Customer.count({ where: { id: { [Op.in]: ids } } });
             })(),
-            Ticket.count({ where: { status: { [Op.in]: ['open', 'in_progress'] } } }),
+            Ticket.count({ where: { status: { [Op.in]: ['open', 'in_progress', 'resolved'] } } }),
             Task.count({ where: { status: { [Op.in]: ['pending', 'in_progress'] } } }),
-            Announcement.count()
+            Announcement.count(),
+            (async () => {
+                const readIds = await AnnouncementRead.findAll({ where: { userId: req.userId }, attributes: ['announcementId'], raw: true }).then(r => r.map(x => x.announcementId));
+                if (readIds.length === 0) return Announcement.count();
+                return Announcement.count({ where: { id: { [Op.notIn]: readIds } } });
+            })()
         ]);
 
         res.json({
@@ -58,7 +64,8 @@ router.get('/dashboard', async (req, res) => {
             totalCustomers: customerCount,
             ticketsOpen,
             tasksPending,
-            announcementsCount
+            announcementsCount,
+            unreadAnnouncements: unreadAnnouncements || 0
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

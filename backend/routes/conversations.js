@@ -213,6 +213,7 @@ router.patch('/:id', async (req, res) => {
                 action: 'conversation_assigned',
                 entityType: 'conversation',
                 entityId: conversation.id,
+                customerId: conversation.customerId,
                 summary: `مکالمه به کاربر تخصیص داده شد`,
                 metadata: { conversationId: conversation.id, assignedTo, customerPhone: conversation.customer && conversation.customer.phone }
             });
@@ -283,6 +284,7 @@ router.post('/:id/send', async (req, res) => {
             action: 'message_sent',
             entityType: 'message',
             entityId: msg.id,
+            customerId: conversation.customerId,
             summary: `پیام به مشتری ${conversation.customer.phone || conversation.customerId}`,
             metadata: { conversationId: conversation.id, contentLength: content.length }
         });

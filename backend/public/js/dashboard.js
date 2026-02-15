@@ -171,7 +171,7 @@
                     ann_select: 'ا� تخاب ک� �Rد', ann_title: 'ع� ��ا� ', ann_body: '�&ت� ', ann_ph_title: 'ع� ��ا�  اع�ا� ', ann_ph_body: '�&ت�  پ�Rا�&...',
                     ann_important: 'پ�Rا�& �&�!�& (پاپ�Rآپ �� صدا برا�R گ�Rر� د�!)', send_ann: 'ارسا� اع�ا� ',
                     new_chat: 'گفتگ���R جد�Rد', select_conversation: 'ا� تخاب گفتگ��', msg_ph_short: 'پ�Rا�&...', attach_file: 'پ�R��ست فا�R�',
-                    start_chat_with: 'شر��ع گفتگ�� با', start_chat: 'شر��ع � ت', cancel: 'ا� صراف',
+                    start_chat_with: 'شر��ع گفتگ�� با', start_chat: 'شر��ع � ت', internal_chat_open_full: 'باز کردن چت کامل', cancel: 'ا� صراف',
                     branch_name: '� ا�& شعب�!', branch_city: 'ش�!ر', branch_country: 'کش��ر', branch_ph_name: '�&ثا�: دفتر ت�!را� ', branch_ph_city: '�&ثا�: ت�!را� ', branch_ph_country: '�&ثا�: ا�Rرا� ', add_branch: 'افز��د�  شعب�!', edit: '���Rرا�Rش',
                     staff_online: 'کارک� ا�  آ� �ا�R� ', staff_intro: 'آخر�R�  ��ر��د�!ا �� ��Rست کارک� ا�  آ� �ا�R�  � برا�R �&د�Rر �� با�اتر', last_logins: 'آخر�R�  ��ر��د�!ا',
                     sup_performance: 'خ�اص�! ع�&�کرد', sup_conversations: '�&کا��&ات', sup_activity: '�اگ فعا��Rت', sup_branch_status: 'شعب�! / دپارت�&ا�  / ��ضع�Rت', apply_filter: 'اع�&ا� ف�R�تر',
@@ -402,7 +402,7 @@
                     users_intro: 'Only the owner or users with "User management" access can create users and edit permissions.',
                     label_name: 'Name', label_email: 'Email', label_password: 'Password', label_role: 'Role', label_dept: 'Department', label_branch: 'Branch',
                     user_ph_name: 'Full name', user_ph_pass: 'At least 6 characters', add_user: 'Add user', role_agent: 'Agent', role_manager: 'Manager', role_admin: 'Admin',
-                    ticket_title: 'Ticket title', ticket_desc: 'Description', ticket_priority: 'Priority', create_ticket: 'Create ticket', ticket_ph_subject: 'Subject',
+                    ticket_title: 'Ticket title', ticket_desc: 'Description', ticket_priority: 'Priority', create_ticket: 'Create ticket', ticket_ph_subject: 'Subject', ticket_ph_search: 'Search number or title...', tickets_intro: 'Official section for submitting and tracking requests. Each ticket has a unique number.', overdue: 'Overdue',
                     reply_to_ticket: 'Reply to ticket', reply_ph: 'Reply text...', file_attach: 'Attach file (optional)', send_reply: 'Send reply',
                     priority_normal: 'Normal', priority_high: 'High', priority_low: 'Low', priority_urgent: 'Urgent',
                     tasks_intro: 'Track tasks assigned to staff or departments.',
@@ -416,7 +416,7 @@
                     ann_important: 'Important (popup and sound for recipient)', send_ann: 'Send announcement',
                     new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file',
                     file_allow_download: 'Allow download and save', file_view_only: 'View only in chat',
-                    start_chat_with: 'Start conversation with', start_chat: 'Start chat', cancel: 'Cancel',
+                    start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', cancel: 'Cancel',
                     branch_name: 'Branch name', branch_city: 'City', branch_country: 'Country', branch_ph_name: 'e.g. Tehran office', branch_ph_city: 'e.g. Tehran', branch_ph_country: 'e.g. Iran', add_branch: 'Add branch', edit: 'Edit',
                     staff_online: 'Staff online', staff_intro: 'Recent logins and online staff � for managers and above', last_logins: 'Recent logins',
                     sup_performance: 'Performance summary', sup_conversations: 'Conversations', sup_activity: 'Activity log', sup_branch_status: 'Branch / status', apply_filter: 'Apply filter',
@@ -506,8 +506,46 @@
         let presenceInterval = null;
         let staffActivityInterval = null;
         let socket = null;
+        window.APP_TIMEZONE = 'Europe/Istanbul';
+        window.navBadgeCounts = {};
+        window.hasNewInternalChat = false;
+        fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){ if (c && c.timezone) window.APP_TIMEZONE = c.timezone; }).catch(function(){});
+        function updateNavBadges(stats) {
+            if (stats) {
+                window.navBadgeCounts.conversations = (stats.unreadConversations || 0);
+                window.navBadgeCounts.tickets = (stats.ticketsOpen || 0);
+                window.navBadgeCounts.tasks = (stats.tasksPending || 0);
+                window.navBadgeCounts.announcements = (stats.unreadAnnouncements || 0);
+            }
+            if (window.hasNewInternalChat) window.navBadgeCounts['internal-chat'] = 1;
+            document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
+                var page = link.getAttribute('data-page');
+                var oldBadge = link.querySelector('.nav-badge, .nav-badge-dot');
+                if (oldBadge) oldBadge.remove();
+                var n = window.navBadgeCounts[page] || 0;
+                if (n > 0) {
+                    var badge = document.createElement('span');
+                    badge.className = n > 99 ? 'nav-badge-dot' : 'nav-badge';
+                    badge.textContent = n > 99 ? '' : n;
+                    link.appendChild(badge);
+                }
+            });
+        }
 
         function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
+        function fmtTZ(d, opts) {
+            if (!d) return '';
+            var date = d instanceof Date ? d : new Date(d);
+            if (isNaN(date.getTime())) return '';
+            var tz = window.APP_TIMEZONE || 'Europe/Istanbul';
+            var base = { timeZone: tz };
+            if (typeof opts === 'string') {
+                if (opts === 'time') return new Intl.DateTimeFormat(LANG === 'en' ? 'en-US' : 'fa-IR', Object.assign({}, base, { hour: '2-digit', minute: '2-digit' })).format(date);
+                if (opts === 'date') return new Intl.DateTimeFormat(LANG === 'en' ? 'en-US' : 'fa-IR', Object.assign({}, base, { dateStyle: 'short' })).format(date);
+                if (opts === 'datetime') return new Intl.DateTimeFormat(LANG === 'en' ? 'en-US' : 'fa-IR', Object.assign({}, base, { dateStyle: 'short', timeStyle: 'short' })).format(date);
+            }
+            return new Intl.DateTimeFormat(LANG === 'en' ? 'en-US' : 'fa-IR', Object.assign({}, base, opts || {})).format(date);
+        }
 
         function formatPrice(val) {
             if (val == null || val === '' || val === '�') return '�';
@@ -520,14 +558,15 @@
             return s;
         }
 
-        function getTehranHour() {
+        function getLocalHour() {
             try {
-                var h = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Tehran', hour: 'numeric', hour12: false }).format(new Date());
+                var tz = window.APP_TIMEZONE || 'Europe/Istanbul';
+                var h = new Intl.DateTimeFormat('en', { timeZone: tz, hour: 'numeric', hour12: false }).format(new Date());
                 return parseInt(h, 10);
             } catch (e) { return 12; }
         }
-        function isTehranRatesWindow() {
-            var h = getTehranHour();
+        function isRatesWindow() {
+            var h = getLocalHour();
             return h >= 6 && h < 20;
         }
         function formatChange(ch) {
@@ -566,7 +605,8 @@
             } catch (e) {
                 shamsi = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             }
-            var miladi = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Tehran', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            var tz = window.APP_TIMEZONE || 'Europe/Istanbul';
+            var miladi = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             return {
                 iran: iran,
                 turkey: turkey,
@@ -805,14 +845,24 @@
                         var active = document.querySelector('.nav-link.active');
                         var onInternalPage = active && active.getAttribute('data-page') === 'internal-chat';
                         var viewingThread = currentInternalThreadId === data.threadId;
+                        var popup = document.getElementById('internalChatPopup');
+                        var popupOpen = popup && popup.style.display !== 'none';
+                        var popupViewingThread = popupOpen && currentInternalThreadId === data.threadId;
                         if (onInternalPage && viewingThread) {
                             appendInternalMessage(data.message);
                             loadInternalThreads();
-                        } else {
+                        } else if (popupViewingThread) {
+                            appendInternalMessageToPopup(data.message);
+                            loadInternalThreads();
+                        } else if (!onInternalPage) {
+                            window.hasNewInternalChat = true; updateNavBadges();
                             loadInternalThreads();
                             toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + fromName + (preview ? ': ' + preview : ''), false);
-                            if (!onInternalPage) { showPage('internal-chat'); setTimeout(function(){ openInternalThread(data.threadId); }, 100); }
-                            else if (!viewingThread) openInternalThread(data.threadId);
+                            showInternalChatPopup(data.threadId, fromName);
+                        } else if (!viewingThread) {
+                            openInternalThread(data.threadId);
+                        } else {
+                            loadInternalThreads();
                         }
                     });
                     socket.on('ticket_reply', function(data) {
@@ -826,6 +876,7 @@
                         if (onTicketsPage && viewingTicket) {
                             appendTicketReply(data.reply);
                         } else {
+                            if (!onTicketsPage) { window.navBadgeCounts.tickets = (window.navBadgeCounts.tickets || 0) + 1; updateNavBadges(); }
                             loadTickets();
                             toast((LANG === 'fa' ? 'پاسخ جدید به تیکت «' : 'New reply to ticket "') + (data.ticketTitle || '') + (LANG === 'fa' ? '» از ' : '" from ') + fromName + (preview ? ': ' + preview : ''), false);
                             if (!onTicketsPage) { showPage('tickets'); setTimeout(function(){ loadTicketDetail(data.ticketId); }, 150); }
@@ -839,6 +890,17 @@
         function disconnectSocket() {
             if (socket) { socket.disconnect(); socket = null; }
         }
+        var navBadgeRefreshInterval = null;
+        function startNavBadgeRefresh() {
+            if (navBadgeRefreshInterval) return;
+            navBadgeRefreshInterval = setInterval(function() {
+                if (!token) return;
+                apiFetch('/api/analytics/dashboard').then(function(res) {
+                    if (res.ok && res.data) updateNavBadges(res.data);
+                }).catch(function(){});
+            }, 120000);
+        }
+        function stopNavBadgeRefresh() { if (navBadgeRefreshInterval) { clearInterval(navBadgeRefreshInterval); navBadgeRefreshInterval = null; } }
         function playInternalChatSound() {
             try {
                 var ctx = new (window.AudioContext || window.webkitAudioContext)();
@@ -878,7 +940,7 @@
             var me = (currentUser && currentUser.id) || '';
             var isOut = m.fromUserId === me;
             var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? new Date(m.createdAt).toLocaleTimeString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
+            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '') + '</div></div>';
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
@@ -1012,6 +1074,7 @@
                 startRatesInterval();
                 startPresenceInterval();
                 connectSocket();
+                startNavBadgeRefresh();
                 showTotpPromptIfNeeded();
             } else {
                 document.getElementById('loginErr').textContent = data.error || t('login_err_fail');
@@ -1045,6 +1108,7 @@
                 startRatesInterval();
                 startPresenceInterval();
                 connectSocket();
+                startNavBadgeRefresh();
                 showTotpPromptIfNeeded();
             } else {
                 document.getElementById('totpErr').textContent = data.error || t('login_totp_bad');
@@ -1089,7 +1153,7 @@
                 var roleLabel = (LANG === 'fa' ? { owner: 'مالک', admin: 'ادمین', manager: 'مدیر', supervisor: 'ناظر', agent: 'کارمند' } : { owner: 'Owner', admin: 'Admin', manager: 'Manager', supervisor: 'Supervisor', agent: 'Agent' })[u.role] || u.role;
                 var branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
                 var deptName = (u.department && u.department.name) ? u.department.name : '\u2014';
-                var lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString(LANG === 'fa' ? 'fa-IR' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }) : '\u2014';
+                var lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '\u2014';
                 var displayName = [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.name || '\u2014';
                 setElText('profileDisplayUsername', u.username ? '@' + u.username : '\u2014');
                 setElText('profileDisplayName', displayName);
@@ -1205,6 +1269,7 @@
             if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
             if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
             stopStaffActivityLive();
+            stopNavBadgeRefresh();
             disconnectSocket();
             token = null;
             currentUser = null;
@@ -1251,6 +1316,7 @@
                 html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
             });
             container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : 'No sections available.') + '</div>');
+            updateNavBadges(stats);
         }
 
         async function loadConvFiltersInit() {
@@ -1311,7 +1377,7 @@
                 var priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
                 var unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
                 var preview = (c.lastMessagePreview || '').trim();
-                var timeStr = c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleTimeString(LANG === 'en' ? 'en-US' : 'fa-IR', { hour: '2-digit', minute: '2-digit' }) : '';
+                var timeStr = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'time') : '';
                 return '<div class="conv-list-item" data-id="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\')"><div class="conv-item-avatar">' + initial + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(phone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + priorityBadge + statusBadge + '</div></div>';
             }).join('');
         }
@@ -1456,7 +1522,7 @@
             if (!data.data || data.data.length === 0) { el.innerHTML = '<div class="empty"><span class="empty-icon">�x�</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
             el.innerHTML = data.data.map(function(m) {
                 var isOut = m.direction === 'outgoing';
-                var time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : '';
+                var time = m.timestamp ? fmtTZ(m.timestamp, 'time') : '';
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div><div class="time">' + time + '</div></div>';
             }).join('');
             el.scrollTop = el.scrollHeight;
@@ -1490,7 +1556,7 @@
                 var initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
                 var statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
                 var statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
-                var lastContact = c.lastContactAt ? new Date(c.lastContactAt).toLocaleDateString(LANG === 'en' ? 'en-US' : 'fa-IR') : '—';
+                var lastContact = c.lastContactAt ? fmtTZ(c.lastContactAt, 'date') : '—';
                 return '<div class="list-item" onclick="showCustomerHistory(\'' + c.id + '\', \'' + (c.name || c.phone || '').replace(/'/g, "\\'") + '\')"><div class="list-item-avatar">' + initial + '</div><div><span class="name">' + escapeHtml(c.name || c.phone) + '</span><div class="meta">' + escapeHtml(c.phone || '') + (c.email ? ' ⬢ ' + escapeHtml(c.email) : '') + '</div><div class="meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div>';
             }).join('');
         }
@@ -1507,8 +1573,16 @@
             document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); });
             var cardEl = document.getElementById('customerDetailCard');
             var list = document.getElementById('customerHistoryList');
+            var timelineEl = document.getElementById('customerTimelineList');
             if (cardEl) cardEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            if (list) list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            if (timelineEl) timelineEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            document.querySelectorAll('.customer-detail-panel').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+            var tlPanel = document.getElementById('customerTimelinePanel');
+            if (tlPanel) { tlPanel.style.display = 'block'; tlPanel.classList.add('show'); }
+            document.querySelectorAll('.customer-detail-tab').forEach(function(b) { b.classList.remove('active'); });
+            var tlTab = document.querySelector('.customer-detail-tab[data-tab="timeline"]');
+            if (tlTab) tlTab.classList.add('active');
             var resDetail = await apiFetch('/api/customers/' + custId);
             if (resDetail.needLogin) return;
             if (!resDetail.ok) { if (cardEl) cardEl.innerHTML = '<div class="empty">' + (resDetail.data && resDetail.data.error ? resDetail.data.error : '') + '</div>'; list.innerHTML = ''; return; }
@@ -1516,8 +1590,8 @@
             var c = currentCustomerData;
             var initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
             var statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
-            var firstContact = c.firstContactAt ? new Date(c.firstContactAt).toLocaleDateString(LANG === 'en' ? 'en-US' : 'fa-IR') : '—';
-            var lastContact = c.lastContactAt ? new Date(c.lastContactAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '—';
+            var firstContact = c.firstContactAt ? fmtTZ(c.firstContactAt, 'date') : '—';
+            var lastContact = c.lastContactAt ? fmtTZ(c.lastContactAt, 'datetime') : '—';
             if (cardEl) cardEl.innerHTML = '<div class="customer-avatar">' + initial + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div><button type="button" class="btn-secondary" onclick="openCustomerModal(\'' + c.id + '\')" style="align-self:flex-start;">' + (LANG === 'fa' ? 'ویرایش مشتری' : 'Edit') + '</button>';
             var res = await apiFetch('/api/customers/' + custId + '/conversations');
             if (res.needLogin) return;
@@ -1526,15 +1600,65 @@
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x9</span><br>' + t('no_conv_history') + '</div>'; } else {
             var safeName = (name || '').replace(/'/g, '&#39;');
             list.innerHTML = data.data.map(function(conv) {
-                var date = conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '';
-                return '<div class="list-item" data-convid="' + conv.id + '" data-customername="' + safeName + '" onclick="openChatFromHistory(this)"><div><span class="name">' + t('conversation') + ' ' + (conv.status || '') + '</span><div class="meta">' + (conv.messageCount || 0) + ' · ' + date + '</div></div></div>';
+                var date = conv.lastMessageAt ? fmtTZ(conv.lastMessageAt, 'datetime') : '';
+                var who = [conv.assignee && conv.assignee.name, conv.lastOutgoingBy].filter(Boolean);
+                var whoStr = who.length ? ' · ' + (LANG === 'fa' ? 'مسئول/چت: ' : 'by ') + who.join(', ') : '';
+                return '<div class="list-item" data-convid="' + conv.id + '" data-customername="' + safeName + '" onclick="openChatFromHistory(this)"><div><span class="name">' + t('conversation') + ' ' + (conv.status || '') + '</span><div class="meta">' + (conv.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + whoStr + ' · ' + date + '</div></div></div>';
                 }).join('');
             }
+            loadCustomerTimeline(custId);
+            initCustomerDetailTabs();
             var noteContentEl = document.getElementById('customerNoteContent');
             var noteAddBtn = document.getElementById('customerNoteAddBtn');
             if (noteContentEl) noteContentEl.placeholder = t('customer_note_ph') || (LANG === 'fa' ? 'متن گزارش یا یادداشت...' : 'Note or report text...');
             if (noteAddBtn && !noteAddBtn._bound) { noteAddBtn._bound = true; noteAddBtn.addEventListener('click', function() { addCustomerNote(custId); }); }
             loadCustomerNotes(custId);
+        }
+        function initCustomerDetailTabs() {
+            document.querySelectorAll('.customer-detail-tab').forEach(function(btn) {
+                btn.onclick = function() {
+                    var tab = this.getAttribute('data-tab');
+                    document.querySelectorAll('.customer-detail-tab').forEach(function(b) { b.classList.remove('active'); });
+                    document.querySelectorAll('.customer-detail-panel').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+                    this.classList.add('active');
+                    var pid = tab === 'timeline' ? 'customerTimelinePanel' : tab === 'conversations' ? 'customerConversationsPanel' : 'customerNotesPanel';
+                    var panel = document.getElementById(pid);
+                    if (panel) { panel.style.display = 'block'; panel.classList.add('show'); }
+                    if (tab === 'notes' && currentCustomerId) loadCustomerNotes(currentCustomerId);
+                };
+            });
+        }
+        var activityLabels = { message_sent: 'ارسال پیام', conversation_assigned: 'تخصیص مکالمه', customer_note_added: 'ثبت گزارش/یادداشت' };
+        async function loadCustomerTimeline(custId) {
+            var list = document.getElementById('customerTimelineList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var res = await apiFetch('/api/customers/' + custId + '/timeline');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            var items = (res.data && res.data.data) || [];
+            if (items.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📋</span><br>' + (LANG === 'fa' ? 'هنوز فعالیتی ثبت نشده.' : 'No activity yet.') + '</div>'; return; }
+            var safeName = (currentCustomerData && currentCustomerData.name) ? (currentCustomerData.name || '').replace(/'/g, '&#39;') : '';
+            list.innerHTML = items.map(function(item) {
+                var date = item.date ? fmtTZ(item.date, 'datetime') : '';
+                if (item.type === 'conversation') {
+                    var d = item.data;
+                    var who = [d.assignee && d.assignee.name].filter(Boolean).join(', ');
+                    return '<div class="customer-timeline-item customer-timeline-conv" data-convid="' + d.id + '" data-customername="' + safeName + '" onclick="openChatFromHistory(this)"><div class="customer-timeline-icon">💬</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (LANG === 'fa' ? 'مکالمه' : 'Conversation') + ' ' + (d.status || '') + '</div><div class="customer-timeline-meta">' + (d.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + (who ? ' · ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + escapeHtml(who) : '') + ' · ' + date + '</div></div></div>';
+                }
+                if (item.type === 'note') {
+                    var n = item.data;
+                    var un = userDisplay(n.user);
+                    return '<div class="customer-timeline-item customer-timeline-note"><div class="customer-timeline-icon">📝</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (LANG === 'fa' ? 'گزارش/یادداشت' : 'Note') + ' · ' + escapeHtml(un) + '</div><div class="customer-timeline-content">' + escapeHtml((n.content || '').slice(0, 300)) + (n.content && n.content.length > 300 ? '…' : '') + '</div><div class="customer-timeline-meta">' + date + '</div></div></div>';
+                }
+                if (item.type === 'activity') {
+                    var a = item.data;
+                    var un = userDisplay(a.user);
+                    var label = (LANG === 'fa' ? activityLabels[a.action] : null) || a.action || '';
+                    return '<div class="customer-timeline-item customer-timeline-activity"><div class="customer-timeline-icon">⚡</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + escapeHtml(label) + ' · ' + escapeHtml(un) + '</div><div class="customer-timeline-meta">' + escapeHtml(a.summary || '') + ' · ' + date + '</div></div></div>';
+                }
+                return '';
+            }).join('');
         }
         async function loadCustomerNotes(custId) {
             var list = document.getElementById('customerNotesList');
@@ -1548,7 +1672,7 @@
             if (notes.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هنوز یادداشتی ثبت نشده.' : 'No notes yet.') + '</div>'; return; }
             list.innerHTML = notes.map(function(n) {
                 var userName = userDisplay(n.user);
-                var date = n.createdAt ? new Date(n.createdAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '';
+                var date = n.createdAt ? fmtTZ(n.createdAt, 'datetime') : '';
                 return '<div class="customer-note-item"><div class="customer-note-meta">' + escapeHtml(userName) + ' \u00B7 ' + date + '</div><div class="customer-note-content">' + escapeHtml((n.content || '').slice(0, 500)) + (n.content && n.content.length > 500 ? '\u2026' : '') + '</div></div>';
             }).join('');
         }
@@ -1561,7 +1685,7 @@
             var res = await apiFetch('/api/customers/' + custId + '/notes', { method: 'POST', body: JSON.stringify({ content: content }) });
             if (btn) btn.disabled = false;
             if (res.needLogin) return;
-            if (res.ok) { if (textarea) textarea.value = ''; toast(t('saved') || (LANG === 'fa' ? 'ذخیره شد' : 'Saved')); loadCustomerNotes(custId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { if (textarea) textarea.value = ''; toast(t('saved') || (LANG === 'fa' ? 'ذخیره شد' : 'Saved')); loadCustomerNotes(custId); loadCustomerTimeline(custId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         function openCustomerModal(customerId) {
@@ -1661,7 +1785,7 @@
             if (page === 'staff-activity') { loadStaffActivity(); startStaffActivityLive(); } else { stopStaffActivityLive(); }
             if (page === 'profile') loadProfile();
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
-            if (page === 'internal-chat') { loadInternalThreads(); loadInternalUsers(); }
+            if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); var popupTid = currentInternalThreadId; closeInternalChatPopup(); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
             if (page === 'supervision') { loadBranchesForSelect(['supBranch', 'supActBranch']); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
         }
 
@@ -1710,18 +1834,21 @@
             if (statsEl && data.data) {
                 var open = (data.data || []).filter(function(x){ return x.status === 'open'; }).length;
                 var inProg = (data.data || []).filter(function(x){ return x.status === 'in_progress'; }).length;
+                var resolved = (data.data || []).filter(function(x){ return x.status === 'resolved'; }).length;
                 var closed = (data.data || []).filter(function(x){ return x.status === 'closed'; }).length;
-                statsEl.innerHTML = '<span class="ticket-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'کل' : 'total') + '</span><span class="ticket-stat"><strong>' + open + '</strong> ' + (LANG === 'fa' ? 'باز' : 'open') + '</span><span class="ticket-stat"><strong>' + inProg + '</strong> ' + (LANG === 'fa' ? 'در حال انجام' : 'in progress') + '</span><span class="ticket-stat"><strong>' + closed + '</strong> ' + (LANG === 'fa' ? 'بسته' : 'closed') + '</span>';
+                statsEl.innerHTML = '<span class="ticket-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'کل' : 'total') + '</span><span class="ticket-stat"><strong>' + open + '</strong> ' + t('status_open') + '</span><span class="ticket-stat"><strong>' + inProg + '</strong> ' + t('status_in_progress') + '</span><span class="ticket-stat"><strong>' + resolved + '</strong> ' + t('status_resolved') + '</span><span class="ticket-stat"><strong>' + closed + '</strong> ' + t('status_closed') + '</span>';
                 statsEl.style.display = 'flex';
             }
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🎫</span><br>' + t('empty_tickets') + '</div>'; return; }
             list.innerHTML = data.data.map(function(t) {
-                var statusLabel = t.status === 'open' ? t('status_open') : t.status === 'in_progress' ? t('status_in_progress') : t.status === 'closed' ? t('status_closed') : t.status || '';
+                var statusLabel = t.status === 'open' ? t('status_open') : t.status === 'in_progress' ? t('status_in_progress') : t.status === 'resolved' ? t('status_resolved') : t.status === 'closed' ? t('status_closed') : t.status || '';
                 var prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[t.priority] || t.priority || '';
                 var assign = userDisplay(t.assignee);
                 var dept = (t.department && t.department.name) ? t.department.name : '';
                 var meta = [userDisplay(t.creator), assign, dept].filter(Boolean).join(' · ');
-                return '<div class="ticket-list-item" onclick="loadTicketDetail(\'' + t.id + '\')"><div class="ticket-item-body"><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + escapeHtml(meta) + '</div></div><div class="ticket-item-badges"><span class="badge ' + (t.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="badge ' + (t.status || '') + '">' + escapeHtml(statusLabel) + '</span></div></div>';
+                var num = (t.ticketNumber || '').trim();
+                var numHtml = num ? '<span class="ticket-number">' + escapeHtml(num) + '</span> ' : '';
+                return '<div class="ticket-list-item" onclick="loadTicketDetail(\'' + t.id + '\')"><div class="ticket-item-body">' + numHtml + '<span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + escapeHtml(meta) + '</div></div><div class="ticket-item-badges"><span class="badge ' + (t.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="badge ' + (t.status || '') + '">' + escapeHtml(statusLabel) + '</span></div></div>';
             }).join('');
         }
         var currentTicketId = null;
@@ -1755,8 +1882,20 @@
             if (res.needLogin) return;
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showTicketList(); return; }
             var t = res.data;
+            var numEl = document.getElementById('ticketDetailNumber');
+            if (numEl) numEl.textContent = (t.ticketNumber || '').trim() || '';
             document.getElementById('ticketDetailTitle').textContent = t.title || '';
-            document.getElementById('ticketDetailMeta').textContent = t('creator_label') + ' ' + userDisplay(t.creator) + ' | ' + t('assignee_label') + ' ' + userDisplay(t.assignee) + ' | ' + t('th_status') + ': ' + (t.status || '') + ' | ' + t('ticket_priority') + ': ' + (t.priority || '');
+            var metaParts = [t('creator_label') + ' ' + userDisplay(t.creator), t('assignee_label') + ' ' + userDisplay(t.assignee), t('th_status') + ': ' + (t.status || ''), t('ticket_priority') + ': ' + (t.priority || '')];
+            if (t.dueDate) metaParts.push(t('due_label') + ' ' + (fmtTZ ? fmtTZ(t.dueDate, 'date') : t.dueDate));
+            document.getElementById('ticketDetailMeta').textContent = metaParts.join(' | ');
+            var descEl = document.getElementById('ticketDetailDesc');
+            if (descEl) { descEl.textContent = (t.description || '').trim(); descEl.style.display = (t.description || '').trim() ? '' : 'none'; }
+            var overdueEl = document.getElementById('ticketDetailOverdue');
+            if (overdueEl) {
+                var due = t.dueDate;
+                var isOverdue = due && ['open','in_progress'].indexOf(t.status) >= 0 && new Date(due) < new Date();
+                overdueEl.style.display = isOverdue ? '' : 'none';
+            }
             var statusSel = document.getElementById('ticketDetailStatus');
             var assigneeSel = document.getElementById('ticketDetailAssignee');
             var prioritySel = document.getElementById('ticketDetailPriority');
@@ -1765,7 +1904,7 @@
             if (prioritySel) prioritySel.value = t.priority || 'normal';
             var repliesHtml = (t.replies || []).map(function(r) {
                 var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">�x} ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
-                return '<div class="msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + escapeHtml(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' � ' + (r.createdAt ? new Date(r.createdAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
+                return '<div class="msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + escapeHtml(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' � ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('ticketReplies').innerHTML = repliesHtml || '<p class="text-muted" style="color:var(--text-muted);">' + t('no_reply') + '</p>';
             document.getElementById('ticketReplyContent').value = '';
@@ -1836,7 +1975,7 @@
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x9</span><br>' + t('empty_tasks') + '</div>'; return; }
             list.innerHTML = data.data.map(function(t) {
                 var assign = t.assignedToDepartmentId && t.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(t.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(t.assignee) || '—';
-                var due = t.dueDate ? new Date(t.dueDate).toLocaleDateString(LANG === 'en' ? 'en-US' : 'fa-IR') : '';
+                var due = t.dueDate ? fmtTZ(t.dueDate, 'date') : '';
                 var prioBadge = t.priority && t.priority !== 'normal' ? '<span class="badge ' + t.priority + '">' + escapeHtml(taskPriorityLabel(t.priority)) + '</span>' : '';
                 return '<div class="task-list-item" onclick="loadTaskDetail(\'' + t.id + '\')"><div class="task-item-body"><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + assign + ' · ' + taskStatusLabel(t.status) + (due ? ' · ' + t('due_label') + ' ' + due : '') + '</div></div><div class="task-item-badges">' + prioBadge + '<span class="badge ' + (t.status || '') + '">' + taskStatusLabel(t.status) + '</span></div></div>';
             }).join('');
@@ -1903,7 +2042,7 @@
             var t = res.data;
             var assign = t.assignedToDepartmentId && t.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(t.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(t.assignee) || '—';
             var creator = userDisplay(t.creator) || '�';
-            var due = t.dueDate ? new Date(t.dueDate).toLocaleString('fa-IR') : '�';
+            var due = t.dueDate ? fmtTZ(t.dueDate, 'datetime') : '�';
             var statusOpts = ['pending','in_progress','done','cancelled'].map(function(s){ return '<option value="' + s + '"' + (t.status === s ? ' selected' : '') + '>' + taskStatusLabel(s) + '</option>'; }).join('');
             document.getElementById('taskDetailContent').innerHTML =
                 '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(t.title) + '</h3>' +
@@ -1911,7 +2050,7 @@
                 '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + escapeHtml(assign) + ' | ' + t('due_label') + ' ' + due + ' | ' + t('ticket_priority') + ': ' + taskPriorityLabel(t.priority) + '</p>' +
                 '<label>' + t('change_status') + '</label><select id="taskDetailStatus">' + statusOpts + '</select> <button type="button" class="btn-primary" onclick="updateTaskStatus()">' + t('btn_apply') + '</button></div>';
             var updates = (t.updates || []).map(function(u) {
-                return '<div class="msg in" style="margin:8px 0;"><div>' + escapeHtml(u.content) + '</div><div class="time">' + userDisplay(u.user) + ' � ' + (u.createdAt ? new Date(u.createdAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
+                return '<div class="msg in" style="margin:8px 0;"><div>' + escapeHtml(u.content) + '</div><div class="time">' + userDisplay(u.user) + ' � ' + (u.createdAt ? fmtTZ(u.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('taskUpdatesList').innerHTML = updates ? '<h4 style="font-size:1rem; margin:12px 0;">' + t('updates') + '</h4>' + updates : '<p class="text-muted" style="color:var(--text-muted);">' + t('no_updates') + '</p>';
             document.getElementById('taskUpdateContent').value = '';
@@ -2020,7 +2159,7 @@
             var creator = userDisplay(i.creator) || '�';
             var stepsHtml = (i.steps || []).map(function(s) {
                 var done = s.completedAt ? '�S ' : '';
-                return '<div class="msg in" style="margin:6px 0;"><div>' + done + escapeHtml(s.stageName) + (s.notes ? ' � ' + escapeHtml(s.notes) : '') + '</div><div class="time">' + userDisplay(s.assignee) + ' ⬢ ' + (s.startedAt ? new Date(s.startedAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + (s.completedAt ? ' �  ' + new Date(s.completedAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
+                return '<div class="msg in" style="margin:6px 0;"><div>' + done + escapeHtml(s.stageName) + (s.notes ? ' � ' + escapeHtml(s.notes) : '') + '</div><div class="time">' + userDisplay(s.assignee) + ' ⬢ ' + (s.startedAt ? fmtTZ(s.startedAt, 'datetime') : '') + (s.completedAt ? ' �  ' + fmtTZ(s.completedAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('processInstanceDetailContent').innerHTML =
                 '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(i.title) + '</h3>' +
@@ -2139,12 +2278,14 @@
             if (!title) { toast(t('ticket_title_required'), true); return; }
             var assigneeEl = document.getElementById('ticketAssignee');
             var deptEl = document.getElementById('ticketDept');
+            var dueEl = document.getElementById('ticketDueDate');
             var body = { title: title, description: (document.getElementById('ticketDesc').value || '').trim(), priority: (document.getElementById('ticketPriority').value || 'normal') };
             if (assigneeEl && assigneeEl.value) body.assignedTo = assigneeEl.value;
             if (deptEl && deptEl.value) body.departmentId = deptEl.value;
+            if (dueEl && dueEl.value) body.dueDate = dueEl.value;
             var res = await apiFetch('/api/tickets', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { document.getElementById('ticketTitle').value = ''; document.getElementById('ticketDesc').value = ''; document.getElementById('ticketFormBox').style.display = 'none'; toast(t('toast_ticket_created')); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { document.getElementById('ticketTitle').value = ''; document.getElementById('ticketDesc').value = ''; var dueInp = document.getElementById('ticketDueDate'); if (dueInp) dueInp.value = ''; document.getElementById('ticketFormBox').style.display = 'none'; toast(t('toast_ticket_created')); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         async function addDepartment() {
@@ -2387,7 +2528,7 @@
             list.innerHTML = data.length === 0 ? '<div class="empty">' + t('empty_internal_msgs') + '</div>' : data.map(function(m) {
                 var isOut = m.fromUserId === me;
                 var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' � ' + (m.createdAt ? new Date(m.createdAt).toLocaleTimeString('fa-IR') : '') + '</div></div>';
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' � ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '') + '</div></div>';
             }).join('');
             list.scrollTop = list.scrollHeight;
         }
@@ -2398,7 +2539,7 @@
             if (noReply) noReply.remove();
             var isOut = String(r.userId) === String(currentUser && currentUser.id);
             var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
-            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + escapeHtml(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' · ' + (r.createdAt ? new Date(r.createdAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
+            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + escapeHtml(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
@@ -2422,6 +2563,66 @@
                 document.getElementById('internalChatInput').value = '';
                 if (fileInput) { fileInput.value = ''; toggleInternalFileOption(); }
                 loadInternalMessages(currentInternalThreadId);
+                loadInternalThreads();
+            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        function showInternalChatPopup(threadId, fromName) {
+            currentInternalThreadId = threadId;
+            var popup = document.getElementById('internalChatPopup');
+            var titleEl = document.getElementById('internalChatPopupTitle');
+            if (titleEl) titleEl.textContent = (LANG === 'fa' ? 'پیام از ' : 'Message from ') + (fromName || '');
+            if (popup) popup.style.display = 'flex';
+            loadInternalMessagesForPopup(threadId);
+        }
+        function closeInternalChatPopup() {
+            var popup = document.getElementById('internalChatPopup');
+            if (popup) popup.style.display = 'none';
+            currentInternalThreadId = null;
+        }
+        function openInternalChatFromPopup() {
+            var tid = currentInternalThreadId;
+            closeInternalChatPopup();
+            showPage('internal-chat');
+            setTimeout(function() { openInternalThread(tid); loadInternalThreads(); loadInternalUsers(); }, 100);
+        }
+        function appendInternalMessageToPopup(m) {
+            var list = document.getElementById('internalChatPopupMessages');
+            if (!list || !currentInternalThreadId) return;
+            var emptyEl = list.querySelector('.empty');
+            if (emptyEl) emptyEl.remove();
+            var me = (currentUser && currentUser.id) || '';
+            var isOut = m.fromUserId === me;
+            var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
+            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '') + '</div></div>';
+            list.insertAdjacentHTML('beforeend', html);
+            list.scrollTop = list.scrollHeight;
+        }
+        async function loadInternalMessagesForPopup(threadId) {
+            var list = document.getElementById('internalChatPopupMessages');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var res = await apiFetch('/api/internal/threads/' + threadId + '/messages');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; return; }
+            var data = (res.data && res.data.data) || [];
+            var me = (currentUser && currentUser.id) || '';
+            list.innerHTML = data.length === 0 ? '<div class="empty">' + t('empty_internal_msgs') + '</div>' : data.map(function(m) {
+                var isOut = m.fromUserId === me;
+                var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '') + '</div></div>';
+            }).join('');
+            list.scrollTop = list.scrollHeight;
+        }
+        async function sendInternalMessageFromPopup() {
+            if (!currentInternalThreadId) return;
+            var inp = document.getElementById('internalChatPopupInput');
+            var content = (inp && inp.value) ? inp.value.trim() : '';
+            if (!content) { toast(t('enter_text_or_file'), true); return; }
+            var res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content, attachments: [] }) });
+            if (res.needLogin) return;
+            if (res.ok) {
+                if (inp) inp.value = '';
+                loadInternalMessagesForPopup(currentInternalThreadId);
                 loadInternalThreads();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
@@ -2605,7 +2806,7 @@
                     else onlineList.innerHTML = '<table class="sup-table"><thead><tr><th>' + t('label_name') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_status') + '</th><th>' + t('th_last_login') + '</th></tr></thead><tbody>' + users.map(function(u) {
                         var statusClass = (u.status || 'offline').toLowerCase();
                         var statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
-                        var lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString('fa-IR') : '�';
+                        var lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '�';
                         var branchName = (u.branch && u.branch.name) ? u.branch.name : '�';
                         return '<tr><td>' + escapeHtml(userDisplay(u)) + '</td><td>' + escapeHtml(u.email || '\u2014') + '</td><td>' + escapeHtml(branchName) + '</td><td><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td>' + lastLogin + '</td></tr>';
                     }).join('') + '</tbody></table>';
@@ -2620,7 +2821,7 @@
                     else loginsList.innerHTML = '<table class="sup-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
                         var user = r.user || {};
                         var branch = r.branch ? r.branch.name : '�';
-                        var time = r.createdAt ? new Date(r.createdAt).toLocaleString('fa-IR') : '';
+                        var time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
                         return '<tr><td>' + escapeHtml(userDisplay(user)) + '</td><td>' + escapeHtml(user.email || '\u2014') + '</td><td>' + escapeHtml(branch) + '</td><td>' + time + '</td><td>' + escapeHtml(r.summary || '') + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
@@ -2642,7 +2843,7 @@
             var data = res.data.data || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('no_data') + '</div>'; return; }
             list.innerHTML = '<table class="sup-table"><thead><tr><th>' + t('th_time') + '</th><th>' + t('th_user') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_action') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + data.map(function(a) {
-                var time = a.createdAt ? new Date(a.createdAt).toLocaleString('fa-IR') : '';
+                var time = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
                 var user = userDisplay(a.user) || '�';
                 var branch = a.branch ? a.branch.name : '�';
                 return '<tr><td>' + time + '</td><td>' + escapeHtml(user) + '</td><td>' + escapeHtml(branch) + '</td><td>' + escapeHtml(a.action || '') + '</td><td>' + escapeHtml(a.summary || '') + '</td></tr>';
@@ -2690,6 +2891,7 @@
                     startRatesInterval();
                     startPresenceInterval();
                     connectSocket();
+                    startNavBadgeRefresh();
                     showTotpPromptIfNeeded();
                 } else { logout(); }
             }).catch(function() { logout(); });

@@ -169,7 +169,12 @@
                     </div>
                 </div>
                 <div id="pageCustomers" class="page">
-                    <h2 data-i18n="page_customers">مشتریان</h2>
+                    <div class="customer-page-header">
+                        <div>
+                            <h2 data-i18n="page_customers_club">باشگاه مشتریان</h2>
+                            <p class="customer-page-desc" data-i18n="customers_club_intro">مدیریت مشتریان، تاریخچه مکالمات، گزارش‌ها و فعالیت‌های انجام‌شده برای هر مشتری.</p>
+                        </div>
+                    </div>
                     <div class="customer-toolbar">
                         <input type="text" id="customerSearch" class="customer-search" data-i18n-ph="customer_search_ph" placeholder="جستجو نام، تلفن یا ایمیل..." onkeypress="if(event.key==='Enter')applyCustomerFilters()">
                         <select id="customerFilterStatus">
@@ -234,13 +239,16 @@
                 </div>
                 <div id="pageTickets" class="page">
                     <div class="ticket-page-header">
-                        <h2 data-i18n="page_tickets">تیکت‌های داخلی</h2>
+                        <div>
+                            <h2 data-i18n="page_tickets">تیکت‌های داخلی</h2>
+                            <p class="ticket-page-desc" data-i18n="tickets_intro">بخش رسمی ثبت و پیگیری درخواست‌ها و مشکلات. هر تیکت دارای شماره رسمی است.</p>
+                        </div>
                         <button type="button" class="btn-primary" onclick="toggleTicketForm()" id="btnTicketCreate" data-i18n="create_ticket">ثبت تیکت</button>
                     </div>
                     <div id="ticketStats" class="ticket-stats" style="display:none;"></div>
                     <div class="ticket-filters">
-                        <input type="text" id="ticketSearch" class="conv-filter-input" data-i18n-ph="ticket_ph_subject" placeholder="جستجو عنوان..." onkeypress="if(event.key==='Enter')applyTicketFilters()">
-                        <select id="ticketFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="in_progress">در حال انجام</option><option value="closed">بسته</option></select>
+                        <input type="text" id="ticketSearch" class="conv-filter-input" data-i18n-ph="ticket_ph_search" placeholder="جستجو شماره یا عنوان..." onkeypress="if(event.key==='Enter')applyTicketFilters()">
+                        <select id="ticketFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="in_progress">در حال انجام</option><option value="resolved">حل‌شده</option><option value="closed">بسته</option></select>
                         <select id="ticketFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
                         <select id="ticketFilterAssignee"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
                         <select id="ticketFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
@@ -251,9 +259,13 @@
                         <label data-i18n="ticket_title">عنوان تیکت</label>
                         <input id="ticketTitle" data-i18n-ph="ticket_ph_subject" placeholder="موضوع">
                         <label data-i18n="ticket_desc">توضیحات</label>
-                        <textarea id="ticketDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری" rows="2"></textarea>
-                        <label data-i18n="ticket_priority">اولویت</label>
-                        <select id="ticketPriority"><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option><option value="low" data-i18n="priority_low">کم</option></select>
+                        <textarea id="ticketDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری" rows="3"></textarea>
+                        <div class="ticket-form-row">
+                            <div><label data-i18n="ticket_priority">اولویت</label>
+                            <select id="ticketPriority"><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option><option value="low" data-i18n="priority_low">کم</option></select></div>
+                            <div><label data-i18n="due_date">مهلت (اختیاری)</label>
+                            <input type="date" id="ticketDueDate" style="padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-primary);"></div>
+                        </div>
                         <label data-i18n="assignee_label">مسئول</label>
                         <select id="ticketAssignee"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
                         <label data-i18n="label_dept">دپارتمان</label>
@@ -266,13 +278,18 @@
                         <button type="button" class="btn-secondary" onclick="showTicketList()" data-i18n="back_to_list">← بازگشت به لیست</button>
                         <div class="ticket-detail-actions" style="margin:12px 0; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
                             <button type="button" class="btn-secondary" onclick="startProcessFromTicket()" data-i18n="process_start_from_ticket">شروع فرایند برای این تیکت</button>
-                            <select id="ticketDetailStatus"><option value="open">باز</option><option value="in_progress">در حال انجام</option><option value="closed">بسته</option></select>
+                            <select id="ticketDetailStatus"><option value="open">باز</option><option value="in_progress">در حال انجام</option><option value="resolved">حل‌شده</option><option value="closed">بسته</option></select>
                             <select id="ticketDetailAssignee"><option value="">بدون تخصیص</option></select>
                             <select id="ticketDetailPriority"><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
                             <button type="button" class="btn-secondary btn-sm" onclick="updateTicketFromDetail()" data-i18n="btn_apply">اعمال</button>
                         </div>
-                        <h3 id="ticketDetailTitle" style="margin:12px 0;"></h3>
+                        <div class="ticket-detail-header">
+                            <span id="ticketDetailNumber" class="ticket-detail-number"></span>
+                            <h3 id="ticketDetailTitle" style="margin:12px 0;"></h3>
+                            <p id="ticketDetailOverdue" class="ticket-overdue-badge" style="display:none;" data-i18n="overdue">مهلت گذشته</p>
+                        </div>
                         <p id="ticketDetailMeta" class="text-muted" style="color:var(--text-secondary); font-size:0.9rem;"></p>
+                        <div id="ticketDetailDesc" class="ticket-detail-desc" style="display:none; margin:12px 0; padding:12px; background:var(--bg-secondary); border-radius:var(--radius-sm); border:1px solid var(--border); white-space:pre-wrap; font-size:0.9rem;"></div>
                         <div id="ticketReplies" style="margin:16px 0;"></div>
                         <div class="form-box" style="max-width:100%;">
                             <label data-i18n="reply_to_ticket">پاسخ به تیکت</label>
@@ -598,15 +615,25 @@
                 <div id="pageCustomerDetail" class="page">
                     <button type="button" class="btn-secondary" onclick="showPage('customers')" data-i18n="back_to_customers">← بازگشت به مشتریان</button>
                     <div id="customerDetailCard" class="customer-detail-card"></div>
-                    <h3 class="customer-detail-section-title" data-i18n="customer_history">تاریخچه مکالمات</h3>
-                    <div id="customerHistoryList"></div>
-                    <h3 class="customer-detail-section-title" data-i18n="customer_notes">گزارش‌ها و یادداشت‌ها</h3>
-                    <p class="customer-detail-meta" data-i18n="customer_notes_intro">یادداشت یا گزارش مربوط به این مشتری را ذخیره کنید تا بعداً مراجعه کنید.</p>
-                    <div class="customer-notes-add">
-                        <textarea id="customerNoteContent" rows="3" placeholder="" style="width:100%; max-width:600px; margin-bottom:8px;"></textarea>
-                        <button type="button" class="btn-primary" id="customerNoteAddBtn" data-i18n="customer_note_add">افزودن گزارش / یادداشت</button>
+                    <div class="customer-detail-tabs">
+                        <button type="button" class="customer-detail-tab active" data-tab="timeline" data-i18n="customer_timeline">تاریخچه کامل</button>
+                        <button type="button" class="customer-detail-tab" data-tab="conversations" data-i18n="customer_history">مکالمات</button>
+                        <button type="button" class="customer-detail-tab" data-tab="notes" data-i18n="customer_notes">گزارش‌ها و یادداشت‌ها</button>
                     </div>
-                    <div id="customerNotesList"></div>
+                    <div id="customerTimelinePanel" class="customer-detail-panel show">
+                        <div id="customerTimelineList" class="customer-timeline-list"></div>
+                    </div>
+                    <div id="customerConversationsPanel" class="customer-detail-panel">
+                        <div id="customerHistoryList"></div>
+                    </div>
+                    <div id="customerNotesPanel" class="customer-detail-panel">
+                        <p class="customer-detail-meta" data-i18n="customer_notes_intro">یادداشت یا گزارش مربوط به این مشتری را ذخیره کنید تا بعداً مراجعه کنید.</p>
+                        <div class="customer-notes-add">
+                            <textarea id="customerNoteContent" rows="3" placeholder="" style="width:100%; max-width:600px; margin-bottom:8px;"></textarea>
+                            <button type="button" class="btn-primary" id="customerNoteAddBtn" data-i18n="customer_note_add">افزودن گزارش / یادداشت</button>
+                        </div>
+                        <div id="customerNotesList"></div>
+                    </div>
                 </div>
                 <div id="customerModal" class="modal-overlay" style="display:none;">
                     <div class="modal-box">
@@ -650,6 +677,20 @@
                 </div>
             </div>
             <div class="ticker-items" id="tickerItems"></div>
+        </div>
+        <div id="internalChatPopup" class="internal-chat-popup" style="display:none;">
+            <div class="internal-chat-popup-header">
+                <span id="internalChatPopupTitle" class="internal-chat-popup-title"></span>
+                <div class="internal-chat-popup-actions">
+                    <button type="button" class="internal-chat-popup-btn" onclick="openInternalChatFromPopup()" data-i18n="internal_chat_open_full" title="باز کردن چت کامل">↗</button>
+                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-close" onclick="closeInternalChatPopup()" title="بستن">&times;</button>
+                </div>
+            </div>
+            <div id="internalChatPopupMessages" class="internal-chat-popup-messages"></div>
+            <div class="internal-chat-popup-send">
+                <input type="text" id="internalChatPopupInput" data-i18n-ph="msg_ph_short" placeholder="پیام..." onkeypress="if(event.key==='Enter')sendInternalMessageFromPopup()">
+                <button type="button" onclick="sendInternalMessageFromPopup()" data-i18n="btn_send">ارسال</button>
+            </div>
         </div>
     </div>
     <div id="newConvModal" class="modal-overlay" style="display:none;">
