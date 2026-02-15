@@ -22,4 +22,3 @@ jobs:
             cd backend
             npm install
             pm2 reload kayaCRM
-

@@ -117,7 +117,7 @@ async function connectRabbitMQ() {
 async function connectDatabases() {
     try {
         await sequelize.authenticate();
-        await sequelize.sync({ alter: true });
+        await sequelize.sync();
         logger.info(process.env.USE_SQLITE ? '✅ SQLite Connected' : '✅ PostgreSQL Connected');
         
         if (!process.env.USE_SQLITE) {
