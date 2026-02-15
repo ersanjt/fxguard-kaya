@@ -1384,7 +1384,10 @@
 
         var currentConvDetail = null;
         function closeChatMobile() {
-            document.getElementById('chatArea').classList.remove('show');
+            var chatArea = document.getElementById('chatArea');
+            var layout = chatArea && chatArea.closest('.conv-layout');
+            if (chatArea) chatArea.classList.remove('show');
+            if (layout) layout.classList.remove('chat-open');
             var btn = document.querySelector('.chat-back-btn');
             if (btn) btn.style.display = 'none';
         }
@@ -1404,7 +1407,10 @@
             var metaEl = document.getElementById('convDetailMeta');
             var actionsEl = document.getElementById('convDetailActions');
             if (headerEl) headerEl.textContent = name || phone || t('customer');
-            document.getElementById('chatArea').classList.add('show');
+            var chatArea = document.getElementById('chatArea');
+            var layout = chatArea && chatArea.closest('.conv-layout');
+            if (chatArea) chatArea.classList.add('show');
+            if (layout) layout.classList.add('chat-open');
             var backBtn = document.querySelector('.chat-back-btn');
             if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 768px)').matches ? 'flex' : 'none';
             if (barEl) barEl.style.display = 'none';
@@ -1763,7 +1769,10 @@
             var page = VALID_PAGES.indexOf(hash) >= 0 ? hash : 'dashboard';
             showPage(page);
         }
+        function toggleSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); if (s && s.classList.contains('sidebar-open')) { closeSidebarMobile(); } else { if (s) s.classList.add('sidebar-open'); if (o) { o.classList.add('show'); o.style.display = 'block'; document.body.style.overflow = 'hidden'; } } }
+        function closeSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } }
         function showPage(page) {
+            closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             if (page && window.location.hash !== '#' + page) { var base = (window.location.pathname === '/dashboard.html') ? '/dashboard' : (window.location.pathname || '/dashboard'); try { window.history.replaceState(null, '', base + '#' + page); } catch (e) {} }
             document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); if (l.getAttribute('data-page') === page) l.classList.add('active'); });

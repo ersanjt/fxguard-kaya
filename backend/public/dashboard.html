@@ -2,7 +2,10 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0c1222">
     <meta name="description" content="پورتال کارکنان صرافی کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
     <title>پورتال کارکنان کایا | صرافی کایا</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23059669'/><path fill='%23fff' d='M10 8h4l2 4 2-4h4v12h-3v-6l-1.5 3L16 11v9h-3V8zm8 6h2v4h-2v-4z'/></svg>">
@@ -64,8 +67,9 @@
     </div>
     <div id="app" class="app">
         <header class="header">
+            <button type="button" class="header-menu-btn" id="headerMenuBtn" onclick="toggleSidebarMobile()" aria-label="منو" title="منو"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
             <div class="header-left">
-                <a href="#dashboard" class="logo" onclick="showPage('dashboard'); return false;">
+                <a href="#dashboard" class="logo" onclick="showPage('dashboard'); closeSidebarMobile(); return false;">
                     <span class="logo-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
                     <span class="logo-text"><span class="logo-dot"></span> <span data-i18n="logo_kaya">صرافی کایا</span></span>
                 </a>
@@ -89,8 +93,9 @@
             <button type="button" class="btn-primary" onclick="showPage('profile'); document.getElementById('totpPromptBanner').style.display='none'; localStorage.setItem('totp_prompt_dismissed', '1');" style="margin-right:12px; padding:6px 14px;" data-i18n="totp_enable">فعال‌سازی</button>
             <button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="document.getElementById('totpPromptBanner').style.display='none'; localStorage.setItem('totp_prompt_dismissed', '1');" data-i18n="totp_later">بعداً</button>
         </div>
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebarMobile()" aria-hidden="true"></div>
         <div class="main">
-            <nav class="sidebar">
+            <nav class="sidebar" id="sidebar">
                 <div class="nav-section">
                     <div class="nav-section-title" data-i18n="nav_dashboard">داشبورد</div>
                     <a href="#dashboard" class="nav-link active" data-page="dashboard" data-section="dashboard"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span data-i18n="nav_dashboard">داشبورد</span></a>
