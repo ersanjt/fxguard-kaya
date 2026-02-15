@@ -8,9 +8,32 @@ module.exports = (sequelize) => {
             defaultValue: DataTypes.UUIDV4,
             primaryKey: true
         },
+        username: {
+            type: DataTypes.STRING,
+            unique: true,
+            allowNull: true,
+            comment: 'نام کاربری برای ورود (غیر از ایمیل) — یکتا'
+        },
         name: {
             type: DataTypes.STRING,
-            allowNull: false
+            allowNull: false,
+            defaultValue: '',
+            comment: 'نام نمایشی (نام + نام خانوادگی)'
+        },
+        firstName: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment: 'نام'
+        },
+        lastName: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment: 'نام خانوادگی'
+        },
+        dateOfBirth: {
+            type: DataTypes.DATEONLY,
+            allowNull: true,
+            comment: 'تاریخ تولد'
         },
         email: {
             type: DataTypes.STRING,
@@ -57,6 +80,16 @@ module.exports = (sequelize) => {
         },
         lastLoginAt: {
             type: DataTypes.DATE
+        },
+        totpSecret: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment: 'کلید مخفی Google Authenticator (TOTP)'
+        },
+        totpEnabled: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+            comment: 'احراز هویت دو مرحله‌ای فعال است'
         },
         settings: {
             type: DataTypes.JSON,

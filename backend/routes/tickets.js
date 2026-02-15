@@ -47,8 +47,14 @@ router.post('/:id/replies', async (req, res) => {
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
         const content = (req.body.content || '').trim();
-        if (!content) return res.status(400).json({ error: 'متن پاسخ الزامی است' });
-        const reply = await TicketReply.create({ ticketId: ticket.id, userId: req.userId, content });
+        const attachments = Array.isArray(req.body.attachments) ? req.body.attachments : (req.body.attachments ? [req.body.attachments] : []);
+        if (!content && attachments.length === 0) return res.status(400).json({ error: 'متن پاسخ یا حداقل یک پیوست الزامی است' });
+        const reply = await TicketReply.create({
+            ticketId: ticket.id,
+            userId: req.userId,
+            content: content || '(پیوست)',
+            attachments: attachments.map(a => typeof a === 'object' && a.url ? { name: a.name || a.url, url: a.url, size: a.size } : null).filter(Boolean)
+        });
         const withUser = await TicketReply.findByPk(reply.id, { include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }] });
         res.status(201).json(withUser);
     } catch (err) {

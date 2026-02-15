@@ -1,12 +1,15 @@
 require('dotenv').config();
+const path = require('path');
 
 const useSqlite = process.env.USE_SQLITE === 'true' || process.env.USE_SQLITE === '1';
 // DATABASE_URL برای Railway, Render, Neon و غیره — در models/index.js استفاده می‌شود
 const databaseUrl = process.env.DATABASE_URL;
+// مسیر ثابت نسبت به پوشه backend تا seed و سرور هر دو همان فایل را استفاده کنند
+const sqliteStorage = path.join(__dirname, '..', 'database.sqlite');
 
 module.exports = {
   development: useSqlite
-    ? { storage: './database.sqlite', dialect: 'sqlite', logging: false }
+    ? { storage: sqliteStorage, dialect: 'sqlite', logging: false }
     : {
         database: process.env.DB_NAME || 'whatsapp_crm',
         username: process.env.DB_USER || 'crm_user',

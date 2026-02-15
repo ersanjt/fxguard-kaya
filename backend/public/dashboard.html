@@ -9,173 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --bg-primary: #0c1222;
-            --bg-secondary: #131d33;
-            --bg-card: #1a2744;
-            --bg-hover: #243352;
-            --border: #2d3f5f;
-            --text-primary: #f0f4fc;
-            --text-secondary: #8b9dc3;
-            --text-muted: #5c6f94;
-            --accent: #10b981;
-            --accent-hover: #059669;
-            --accent-soft: rgba(16, 185, 129, 0.15);
-            --danger: #ef4444;
-            --danger-soft: rgba(239, 68, 68, 0.15);
-            --warning: #f59e0b;
-            --radius: 12px;
-            --radius-sm: 8px;
-            --shadow: 0 4px 24px rgba(0,0,0,0.25);
-            --font: 'Vazirmatn', 'Segoe UI', sans-serif;
-        }
-        * { box-sizing: border-box; }
-        body { font-family: var(--font); margin: 0; background: var(--bg-primary); color: var(--text-primary); line-height: 1.6; min-height: 100vh; }
-        .login-wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; background: linear-gradient(160deg, var(--bg-primary) 0%, #0f1729 100%); }
-        .login-box { width: 100%; max-width: 400px; padding: 40px; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); box-shadow: var(--shadow); }
-        .login-box h1 { font-size: 1.5rem; font-weight: 700; margin: 0 0 8px; color: var(--text-primary); }
-        .login-box .sub { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 28px; }
-        .login-box input { display: block; width: 100%; padding: 14px 16px; margin: 10px 0; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 1rem; transition: border-color 0.2s; }
-        .login-box input:focus { outline: none; border-color: var(--accent); }
-        .login-box input::placeholder { color: var(--text-muted); }
-        .login-box button { width: 100%; padding: 14px; margin-top: 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
-        .login-box button:hover { background: var(--accent-hover); }
-        .login-box button:disabled { opacity: 0.6; cursor: not-allowed; }
-        .login-err { color: var(--danger); font-size: 0.9rem; margin-top: 12px; min-height: 20px; }
-        .app { display: none; height: 100vh; flex-direction: column; }
-        .app.show { display: flex; }
-        /* نوار قیمت ارز و طلا — همیشه در پایین برای همه کارکنان */
-        .price-ticker { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; background: linear-gradient(180deg, #0d1525 0%, #0f1929 100%); border-top: 1px solid var(--border); padding: 8px 16px; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 20px 28px; font-size: 0.85rem; box-shadow: 0 -4px 20px rgba(0,0,0,0.3); }
-        .price-ticker .ticker-item { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
-        .price-ticker .ticker-item .ticker-label { font-weight: 500; color: var(--text-muted); }
-        .price-ticker .ticker-item .ticker-value { font-weight: 700; color: var(--accent); font-family: inherit; }
-        .price-ticker .ticker-item .ticker-change { font-size: 0.75rem; margin-right: 2px; }
-        .price-ticker .ticker-item .ticker-change.up { color: #22c55e; }
-        .price-ticker .ticker-item .ticker-change.down { color: #ef4444; }
-        .price-ticker .ticker-updated { font-size: 0.7rem; color: var(--text-muted); margin-right: auto; }
-        .main-wrap { display: flex; flex: 1; overflow: hidden; flex-direction: column; padding-bottom: 48px; }
-        .header { background: linear-gradient(135deg, var(--bg-card) 0%, #151f38 100%); padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
-        .header-left { display: flex; align-items: center; gap: 24px; flex: 1; max-width: 520px; }
-        .header .logo { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text-primary); }
-        .header .logo-icon { width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(145deg, var(--accent), #059669); display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(16,185,129,0.35); color: #fff; }
-        .header .logo-icon svg { width: 24px; height: 24px; stroke: currentColor; fill: none; }
-        .header .logo-text { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.02em; }
-        .header .logo-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 10px var(--accent); margin-right: 4px; }
-        .header .search-wrap { flex: 1; max-width: 280px; position: relative; }
-        .header .search-wrap input { width: 100%; padding: 10px 14px 10px 36px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; transition: border-color 0.2s; }
-        .header .search-wrap input:focus { outline: none; border-color: var(--accent); }
-        .header .search-wrap input::placeholder { color: var(--text-muted); }
-        .header .search-wrap .search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; opacity: 0.7; pointer-events: none; }
-        .header .search-wrap .search-icon svg { width: 100%; height: 100%; stroke: currentColor; fill: none; }
-        .nav-icon svg { width: 20px; height: 20px; flex-shrink: 0; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-        .status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-left: 6px; }
-        .status-dot.online { background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.3); }
-        .status-dot.away { background: #f59e0b; }
-        .status-dot.busy { background: #ef4444; }
-        .status-dot.offline { background: var(--text-muted); }
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 24px; }
-        .modal-box { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); max-width: 440px; width: 100%; padding: 24px; box-shadow: var(--shadow); }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .modal-header h3 { margin: 0; font-size: 1.1rem; color: var(--accent); }
-        .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0 8px; line-height: 1; }
-        .modal-body { margin-bottom: 20px; color: var(--text-primary); white-space: pre-wrap; }
-        .header-right { display: flex; align-items: center; gap: 12px; }
-        .header .user-badge { display: flex; align-items: center; gap: 10px; padding: 6px 12px; background: var(--bg-hover); border-radius: var(--radius-sm); border: 1px solid var(--border); font-size: 0.9rem; color: var(--text-secondary); }
-        .header .user-badge .user-avatar { width: 32px; height: 32px; border-radius: 8px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 600; font-size: 0.85rem; }
-        .header button.logout-btn { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border); padding: 8px 16px; border-radius: var(--radius-sm); font-family: var(--font); cursor: pointer; font-size: 0.85rem; transition: background 0.2s, border-color 0.2s; }
-        .header button.logout-btn:hover { background: var(--border); border-color: var(--text-muted); }
-        .main { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 272px; min-width: 272px; background: linear-gradient(180deg, var(--bg-card) 0%, #141d35 100%); padding: 20px 0; border-left: 1px solid var(--border); display: flex; flex-direction: column; box-shadow: 4px 0 24px rgba(0,0,0,0.12); }
-        .sidebar .nav-section { padding: 0 16px 8px; margin-bottom: 8px; }
-        .sidebar .nav-section-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 0 14px 6px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
-        .sidebar a { display: flex; align-items: center; gap: 14px; padding: 12px 16px; color: var(--text-secondary); text-decoration: none; border-radius: var(--radius-sm); transition: background 0.2s, color 0.2s; font-size: 0.95rem; margin: 0 12px 2px; }
-        .sidebar a:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .sidebar a.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; border-right: 3px solid var(--accent); margin-right: 9px; padding-right: 13px; }
-        .sidebar .nav-icon { width: 24px; height: 24px; border-radius: 6px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
-        .sidebar a.active .nav-icon { background: var(--accent-soft); }
-        .footer { padding: 12px 24px; background: var(--bg-card); border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .footer a { color: var(--accent); text-decoration: none; }
-        .footer a:hover { text-decoration: underline; }
-        .content { flex: 1; overflow: auto; padding: 24px; }
-        .content h2 { color: var(--text-primary); font-size: 1.2rem; font-weight: 600; margin: 0 0 20px; }
-        .page { display: none; }
-        .page.show { display: block; }
-        .list-item { background: var(--bg-card); padding: 14px 18px; margin-bottom: 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: background 0.2s, border-color 0.2s; }
-        .list-item:hover { background: var(--bg-hover); border-color: var(--accent); }
-        .list-item .name { font-weight: 600; color: var(--text-primary); }
-        .list-item .meta { font-size: 0.85rem; color: var(--text-secondary); margin-top: 2px; }
-        .chat-area { display: none; flex-direction: column; height: 100%; background: var(--bg-secondary); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
-        .chat-area.show { display: flex; }
-        .chat-header { background: var(--bg-card); padding: 14px 18px; border-bottom: 1px solid var(--border); font-weight: 600; }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 20px; }
-        .msg { max-width: 78%; padding: 12px 16px; margin: 8px 0; border-radius: 14px; }
-        .msg.in { background: var(--bg-card); border: 1px solid var(--border); margin-right: auto; border-bottom-right-radius: 4px; }
-        .msg.out { background: var(--accent-soft); border: 1px solid var(--accent); margin-left: auto; border-bottom-left-radius: 4px; }
-        .msg .time { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
-        .chat-send { display: flex; gap: 10px; padding: 14px; background: var(--bg-card); border-top: 1px solid var(--border); }
-        .chat-send input { flex: 1; padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 1rem; }
-        .chat-send input:focus { outline: none; border-color: var(--accent); }
-        .chat-send button { padding: 12px 24px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-weight: 600; cursor: pointer; }
-        .chat-send button:hover { background: var(--accent-hover); }
-        .empty { text-align: center; color: var(--text-muted); padding: 48px 24px; font-size: 0.95rem; }
-        .empty .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
-        .form-box { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; max-width: 520px; }
-        .form-box label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; margin-top: 12px; }
-        .form-box label:first-of-type { margin-top: 0; }
-        .form-box input, .form-box select, .form-box textarea { width: 100%; padding: 10px 14px; margin: 0 0 4px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); }
-        .form-box button { margin-top: 16px; padding: 10px 20px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-weight: 500; cursor: pointer; }
-        .form-box button:hover { background: var(--accent-hover); }
-        .qr-box { text-align: center; padding: 32px; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); margin: 20px 0; }
-        .qr-box p { color: var(--text-secondary); margin-bottom: 16px; }
-        .qr-box img { max-width: 280px; border-radius: var(--radius-sm); border: 2px solid var(--border); }
-        .btn-primary { padding: 12px 24px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-weight: 600; cursor: pointer; }
-        .btn-primary:hover { background: var(--accent-hover); }
-        .btn-secondary { padding: 10px 20px; background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font); cursor: pointer; margin-bottom: 16px; }
-        .btn-secondary:hover { background: var(--border); }
-        .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 500; }
-        .badge.open { background: var(--accent-soft); color: var(--accent); }
-        .badge.closed { background: var(--text-muted); color: var(--text-secondary); }
-        .badge.in_progress { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-        .loading-skeleton { background: linear-gradient(90deg, var(--bg-hover) 25%, var(--bg-card) 50%, var(--bg-hover) 75%); background-size: 200% 100%; animation: skeleton 1.2s ease-in-out infinite; border-radius: var(--radius-sm); }
-        @keyframes skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-        .loading-row { height: 56px; margin-bottom: 10px; }
-        .toast { position: fixed; bottom: 24px; right: 24px; left: 24px; max-width: 400px; margin: 0 auto; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); z-index: 9999; font-size: 0.9rem; animation: toastIn 0.3s ease; }
-        .toast.err { border-color: var(--danger); background: var(--danger-soft); }
-        @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .supervision-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-        .sup-tab { padding: 10px 18px; background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font); cursor: pointer; font-size: 0.9rem; }
-        .sup-tab:hover { background: var(--border); color: var(--text-primary); }
-        .sup-tab.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
-        .sup-panel { display: none; }
-        .sup-panel.show { display: block; }
-        .sup-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
-        .sup-table th, .sup-table td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border); }
-        .sup-table th { background: var(--bg-hover); color: var(--text-secondary); font-weight: 500; }
-        .sup-table tr:hover { background: var(--bg-hover); }
-        .stat-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
-        .stat-card { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); min-width: 160px; }
-        .stat-card .val { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
-        .stat-card .label { font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
-        @media (max-width: 768px) {
-            .main { flex-direction: column; }
-            .sidebar { width: 100%; min-width: 100%; flex-direction: row; flex-wrap: wrap; justify-content: center; gap: 6px; padding: 10px; border-left: none; border-bottom: 1px solid var(--border); }
-            .sidebar .nav-section { padding: 0; margin: 0; }
-            .sidebar .nav-section-title { display: none; }
-            .sidebar a { padding: 8px 12px; font-size: 0.85rem; margin: 2px; }
-            .sidebar .nav-icon { display: none; }
-            .content { padding: 16px; }
-            .header { padding: 10px 16px; flex-wrap: wrap; gap: 8px; }
-            .header-left { max-width: 100%; }
-            .header .search-wrap { max-width: 100%; }
-            .header .logo-text { font-size: 1rem; }
-            .login-box { padding: 24px; }
-            .msg { max-width: 90%; }
-            .price-ticker { gap: 10px 14px; font-size: 0.75rem; padding: 6px 12px; }
-            .price-ticker .ticker-updated { display: none; }
-            .footer { flex-direction: column; gap: 4px; text-align: center; }
-        }
-    </style>
+    <link rel="stylesheet" href="css/dashboard.css">
 </head>
 <body>
     <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -192,905 +26,653 @@
             <symbol id="icon-login" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></symbol>
             <symbol id="icon-user-online" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></symbol>
             <symbol id="icon-logo" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2L2 7l10 5 10-5-10-5z"/><path fill="currentColor" d="M2 17l10 5 10-5"/></symbol>
+            <symbol id="icon-task" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+            <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+            <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
         </defs>
     </svg>
     <div id="loginBox" class="login-wrap">
-        <div class="login-box">
-            <h1>پورتال کارکنان کایا</h1>
-            <p class="sub">ورود به پورتال از سراسر دنیا</p>
-            <input type="text" id="email" placeholder="ایمیل" value="admin@company.com">
-            <input type="password" id="pass" placeholder="رمز عبور" value="Admin@123">
-            <button type="button" id="btnLogin" onclick="login()">ورود</button>
+        <div class="login-box" id="loginStep1">
+            <div class="lang-switch login-lang">
+                <button type="button" id="langFa" onclick="setLang('fa')" class="active">فارسی</button>
+                <button type="button" id="langEn" onclick="setLang('en')">English</button>
+            </div>
+            <h1 data-i18n="login_title">پورتال کارکنان کایا</h1>
+            <p class="sub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
+            <input type="text" id="email" data-i18n-ph="login_email_or_username" placeholder="ایمیل یا نام کاربری" value="admin@company.com" autocomplete="username">
+            <div class="password-wrap">
+                <input type="password" id="pass" data-i18n-ph="login_password" placeholder="رمز عبور" value="Admin@123" autocomplete="current-password">
+                <button type="button" id="loginTogglePass" class="toggle-password" title="نمایش رمز" aria-label="نمایش رمز عبور">
+                    <svg class="icon-eye" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-eye"/></svg>
+                </button>
+            </div>
+            <button type="button" id="btnLogin" onclick="login()" data-i18n="login_btn">ورود</button>
             <div id="loginErr" class="login-err"></div>
+        </div>
+        <div class="login-box" id="loginStepTotp" style="display:none;">
+            <div class="lang-switch login-lang">
+                <button type="button" onclick="setLang('fa')" data-i18n="lang_fa">فارسی</button>
+                <button type="button" onclick="setLang('en')" data-i18n="lang_en">English</button>
+            </div>
+            <h1 data-i18n="login_totp_title">احراز هویت دو مرحله‌ای</h1>
+            <p class="sub" id="totpStepEmail">کد شش‌رقمی اپلیکیشن Google Authenticator را وارد کنید.</p>
+            <input type="text" id="totpCode" data-i18n-ph="login_totp_code_ph" placeholder="کد ۶ رقمی" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code">
+            <button type="button" id="btnTotpVerify" onclick="verifyTotpLogin()" data-i18n="login_totp_verify">تأیید و ورود</button>
+            <button type="button" class="btn-secondary" onclick="backToLoginStep1()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
+            <div id="totpErr" class="login-err"></div>
         </div>
     </div>
     <div id="app" class="app">
         <header class="header">
             <div class="header-left">
-                <a href="#" class="logo" onclick="showPage('conversations'); return false;">
+                <a href="#" class="logo" onclick="showPage('dashboard'); return false;">
                     <span class="logo-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
-                    <span class="logo-text"><span class="logo-dot"></span> صرافی کایا</span>
+                    <span class="logo-text"><span class="logo-dot"></span> <span data-i18n="logo_kaya">صرافی کایا</span></span>
                 </a>
                 <div class="search-wrap">
                     <span class="search-icon"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
-                    <input type="text" id="headerSearch" placeholder="جستجو در مکالمات، مشتریان..." onkeyup="if(event.key==='Enter') doHeaderSearch();">
+                    <input type="text" id="headerSearch" data-i18n-ph="header_search" placeholder="جستجو در مکالمات، مشتریان..." onkeyup="if(event.key==='Enter') doHeaderSearch();">
                 </div>
             </div>
             <div class="header-right">
-                <span class="user-badge"><span class="user-avatar" id="userAvatar">?</span><span id="userEmail"></span></span>
-                <button type="button" class="logout-btn" onclick="logout()">خروج</button>
+                <div class="lang-switch">
+                    <button type="button" id="headerLangFa" onclick="setLang('fa')">فارسی</button>
+                    <button type="button" id="headerLangEn" onclick="setLang('en')">English</button>
+                </div>
+                <a href="#" class="user-badge" onclick="showPage('profile'); return false;" title="پروفایل من"><span class="user-avatar" id="userAvatar">?</span><span id="userEmail"></span></a>
+                <button type="button" class="logout-btn" onclick="logout()" data-i18n="header_logout">خروج</button>
             </div>
         </header>
         <div class="main-wrap">
+        <div id="totpPromptBanner" style="display:none; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 12px 20px; margin: 12px 24px 0; color: var(--text-primary); font-size: 0.9rem;">
+            <span data-i18n="totp_banner">برای امنیت بیشتر احراز هویت دو مرحله‌ای (Google Authenticator) را فعال کنید.</span>
+            <button type="button" class="btn-primary" onclick="showPage('profile'); document.getElementById('totpPromptBanner').style.display='none'; localStorage.setItem('totp_prompt_dismissed', '1');" style="margin-right:12px; padding:6px 14px;" data-i18n="totp_enable">فعال‌سازی</button>
+            <button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="document.getElementById('totpPromptBanner').style.display='none'; localStorage.setItem('totp_prompt_dismissed', '1');" data-i18n="totp_later">بعداً</button>
+        </div>
         <div class="main">
             <nav class="sidebar">
                 <div class="nav-section">
-                    <div class="nav-section-title">ارتباطات</div>
-                    <a href="#" class="nav-link active" data-page="conversations"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg></span> مکالمات</a>
-                    <a href="#" class="nav-link" data-page="customers"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-users"/></svg></span> مشتریان</a>
-                    <a href="#" class="nav-link" data-page="tickets"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-ticket"/></svg></span> تیکت‌های داخلی</a>
+                    <div class="nav-section-title" data-i18n="nav_dashboard">داشبورد</div>
+                    <a href="#" class="nav-link active" data-page="dashboard" data-section="dashboard"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span data-i18n="nav_dashboard">داشبورد</span></a>
                 </div>
                 <div class="nav-section">
-                    <div class="nav-section-title">سازمان</div>
-                    <a href="#" class="nav-link" data-page="departments"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building"/></svg></span> دپارتمان‌ها</a>
-                    <a href="#" class="nav-link" data-page="users"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></span> کاربران</a>
-                    <a href="#" class="nav-link nav-branches" data-page="branches"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building-2"/></svg></span> شعب</a>
-                    <a href="#" class="nav-link nav-supervision" data-page="supervision" style="display:none;"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> نظارت (مالک)</a>
-                    <a href="#" class="nav-link nav-staff-activity" data-page="staff-activity" style="display:none;"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user-online"/></svg></span> ورودها و وضعیت آنلاین</a>
+                    <div class="nav-section-title" data-i18n="nav_communications">ارتباطات</div>
+                    <a href="#" class="nav-link" data-page="conversations" data-section="conversations"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg></span> <span data-i18n="nav_conversations">مکالمات</span></a>
+                    <a href="#" class="nav-link" data-page="customers" data-section="customers"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-users"/></svg></span> <span data-i18n="nav_customers">مشتریان</span></a>
+                    <a href="#" class="nav-link" data-page="tickets" data-section="tickets"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-ticket"/></svg></span> <span data-i18n="nav_tickets">تیکت‌های داخلی</span></a>
                 </div>
                 <div class="nav-section">
-                    <div class="nav-section-title">تنظیمات</div>
-                    <a href="#" class="nav-link" data-page="profile"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></span> پروفایل من</a>
-                    <a href="#" class="nav-link" data-page="internal-chat"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg></span> چت داخلی</a>
-                    <a href="#" class="nav-link" data-page="announcements"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user-online"/></svg></span> اعلان‌ها</a>
-                    <a href="#" class="nav-link" data-page="whatsapp"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-phone"/></svg></span> اتصال واتساپ</a>
+                    <div class="nav-section-title" data-i18n="nav_organization">سازمان</div>
+                    <a href="#" class="nav-link" data-page="tasks" data-section="tasks"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-task"/></svg></span> <span data-i18n="nav_tasks">وظایف و تسک‌ها</span></a>
+                    <a href="#" class="nav-link" data-page="processes" data-section="processes"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-task"/></svg></span> <span data-i18n="nav_processes">فرایندهای کسب‌وکار</span></a>
+                    <a href="#" class="nav-link" data-page="departments" data-section="departments"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building"/></svg></span> <span data-i18n="nav_departments">دپارتمان‌ها</span></a>
+                    <a href="#" class="nav-link" data-page="users" data-section="users"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></span> <span data-i18n="nav_users">کاربران</span></a>
+                    <a href="#" class="nav-link nav-branches" data-page="branches" data-section="branches"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building-2"/></svg></span> <span data-i18n="nav_branches">شعب</span></a>
+                    <a href="#" class="nav-link nav-supervision" data-page="supervision" data-section="supervision" style="display:none;"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span data-i18n="nav_supervision">نظارت (مالک)</span></a>
+                    <a href="#" class="nav-link nav-staff-activity" data-page="staff-activity" data-section="staff_activity" style="display:none;"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user-online"/></svg></span> <span data-i18n="nav_staff_activity">ورودها و وضعیت آنلاین</span></a>
+                </div>
+                <div class="nav-section">
+                    <div class="nav-section-title" data-i18n="nav_settings">تنظیمات</div>
+                    <a href="#" class="nav-link" data-page="profile" data-section="profile"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></span> <span data-i18n="nav_profile">پروفایل من</span></a>
+                    <a href="#" class="nav-link" data-page="internal-chat" data-section="internal_chat"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg></span> <span data-i18n="nav_internal_chat">چت داخلی</span></a>
+                    <a href="#" class="nav-link" data-page="announcements" data-section="announcements"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user-online"/></svg></span> <span data-i18n="nav_announcements">اعلان‌ها</span></a>
+                    <a href="#" class="nav-link" data-page="whatsapp" data-section="whatsapp"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-phone"/></svg></span> <span data-i18n="nav_whatsapp">اتصال واتساپ</span></a>
+                    <a href="#" class="nav-link" data-page="rates" data-section="rates"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span data-i18n="nav_rates">نرخ ارزها</span></a>
+                    <a href="#" class="nav-link" data-page="services" data-section="services"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building"/></svg></span> <span data-i18n="nav_services">خدمات صرافی</span></a>
                 </div>
             </nav>
             <div class="content">
-                <div id="pageConversations" class="page show">
-                    <h2>مکالمات</h2>
+                <div id="pageDashboard" class="page show">
+                    <h2 data-i18n="page_dashboard">داشبورد</h2>
+                    <p class="dashboard-sub" data-i18n="dashboard_welcome">خلاصه مهم‌ترین اطلاعات و دسترسی سریع به بخش‌های پنل</p>
+                    <div id="dashboardCards" class="dashboard-cards"></div>
+                </div>
+                <div id="pageConversations" class="page">
+                    <h2 data-i18n="page_conversations">مکالمات</h2>
+                    <div class="conv-filters">
+                        <input type="text" id="convSearch" data-i18n-ph="header_search" placeholder="جستجو نام یا شماره مشتری..." class="conv-filter-input">
+                        <select id="convFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
+                        <select id="convFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                        <select id="convFilterAssignee"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
+                        <label class="conv-filter-check"><input type="checkbox" id="convFilterUnread"> <span data-i18n="filter_unread">فقط خوانده‌نشده</span></label>
+                        <button type="button" class="btn-secondary" onclick="applyConvFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
+                    </div>
                     <div id="convList"></div>
                     <div id="chatArea" class="chat-area">
-                        <div class="chat-header" id="chatHeader"></div>
+                        <div class="chat-header-wrap">
+                            <div class="chat-header" id="chatHeader"></div>
+                            <div id="convDetailBar" class="conv-detail-bar" style="display:none;">
+                                <span id="convDetailMeta" class="conv-detail-meta"></span>
+                                <div id="convDetailActions" class="conv-detail-actions" style="display:none;">
+                                    <select id="convDetailStatus"><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
+                                    <select id="convDetailPriority"><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                                    <select id="convDetailAssignee"><option value="">بدون تخصیص</option></select>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="updateConvFromDetail()" data-i18n="btn_apply">اعمال</button>
+                                </div>
+                            </div>
+                        </div>
                         <div class="chat-messages" id="chatMessages"></div>
                         <div class="chat-send">
-                            <input type="text" id="msgInput" placeholder="پیام خود را بنویسید..." onkeypress="if(event.key==='Enter')sendMsg()">
-                            <button type="button" onclick="sendMsg()">ارسال</button>
+                            <input type="text" id="msgInput" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." onkeypress="if(event.key==='Enter')sendMsg()">
+                            <button type="button" onclick="sendMsg()" data-i18n="btn_send">ارسال</button>
                         </div>
                     </div>
                 </div>
                 <div id="pageCustomers" class="page">
-                    <h2>مشتریان</h2>
+                    <h2 data-i18n="page_customers">مشتریان</h2>
+                    <div class="customer-toolbar">
+                        <input type="text" id="customerSearch" class="customer-search" data-i18n-ph="customer_search_ph" placeholder="جستجو نام، تلفن یا ایمیل..." onkeypress="if(event.key==='Enter')applyCustomerFilters()">
+                        <select id="customerFilterStatus">
+                            <option value="" data-i18n="filter_all">همه</option>
+                            <option value="active" data-i18n="status_active">فعال</option>
+                            <option value="inactive" data-i18n="status_inactive">غیرفعال</option>
+                            <option value="blocked" data-i18n="status_blocked">مسدود</option>
+                        </select>
+                        <button type="button" class="btn-secondary" onclick="applyCustomerFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
+                        <button type="button" class="btn-primary" onclick="openCustomerModal()" data-i18n="customer_add">افزودن مشتری</button>
+                    </div>
                     <div id="customerList"></div>
                 </div>
                 <div id="pageDepartments" class="page">
-                    <h2>دپارتمان‌ها</h2>
+                    <h2 data-i18n="page_departments">دپارتمان‌ها</h2>
                     <div class="form-box">
-                        <label>شعبه</label>
-                        <select id="deptBranch"><option value="">بدون شعبه</option></select>
-                        <label>نام دپارتمان</label>
-                        <input id="deptName" placeholder="مثال: پشتیبانی فنی">
-                        <label>توضیحات</label>
-                        <input id="deptDesc" placeholder="اختیاری">
-                        <label>کلمات کلیدی (با کاما)</label>
-                        <input id="deptKeywords" placeholder="مثال: مشکل، خرابی، پشتیبانی">
-                        <button type="button" onclick="addDepartment()">افزودن دپارتمان</button>
+                        <label data-i18n="dept_branch">شعبه</label>
+                        <select id="deptBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
+                        <label data-i18n="dept_name">نام دپارتمان</label>
+                        <input id="deptName" data-i18n-ph="dept_ph_name" placeholder="مثال: پشتیبانی فنی">
+                        <label data-i18n="dept_desc">توضیحات</label>
+                        <input id="deptDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری">
+                        <label data-i18n="dept_keywords">کلمات کلیدی (با کاما)</label>
+                        <input id="deptKeywords" data-i18n-ph="dept_ph_keywords" placeholder="مثال: مشکل، خرابی، پشتیبانی">
+                        <button type="button" onclick="addDepartment()" data-i18n="add_dept">افزودن دپارتمان</button>
                     </div>
                     <div id="deptList"></div>
                 </div>
                 <div id="pageUsers" class="page">
-                    <h2>کاربران</h2>
-                    <div class="form-box">
-                        <label>نام</label>
-                        <input id="userName" placeholder="نام کامل">
-                        <label>ایمیل</label>
+                    <h2 data-i18n="page_users">کاربران</h2>
+                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 12px;" data-i18n="users_intro">فقط مدیر مجموعه یا کسی که دسترسی «مدیریت کاربران» دارد می‌تواند کاربر جدید بسازد.</p>
+                    <div id="userFormBox" class="form-box" style="display:none;">
+                        <label data-i18n="label_name">نام</label>
+                        <input id="userName" data-i18n-ph="user_ph_name" placeholder="نام کامل">
+                        <label data-i18n="label_email">ایمیل</label>
                         <input id="userEmailAdd" type="email" placeholder="email@company.com">
-                        <label>رمز عبور</label>
-                        <input id="userPass" type="password" placeholder="حداقل ۶ کاراکتر">
-                        <label>نقش</label>
-                        <select id="userRole"><option value="agent">کارمند</option><option value="manager">مدیر</option><option value="admin">ادمین</option></select>
-                        <label>دپارتمان</label>
-                        <select id="userDept"><option value="">بدون دپارتمان</option></select>
-                        <label>شعبه</label>
-                        <select id="userBranch"><option value="">بدون شعبه</option></select>
-                        <button type="button" onclick="addUser()">افزودن کاربر</button>
+                        <label data-i18n="label_password">رمز عبور</label>
+                        <input id="userPass" type="password" data-i18n-ph="user_ph_pass" placeholder="حداقل ۶ کاراکتر">
+                        <label data-i18n="label_role">نقش</label>
+                        <select id="userRole"><option value="agent" data-i18n="role_agent">کارمند</option><option value="manager" data-i18n="role_manager">مدیر</option><option value="admin" data-i18n="role_admin">ادمین</option></select>
+                        <label data-i18n="label_dept">دپارتمان</label>
+                        <select id="userDept"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
+                        <label data-i18n="label_branch">شعبه</label>
+                        <select id="userBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
+                        <button type="button" onclick="addUser()" data-i18n="add_user">افزودن کاربر</button>
                     </div>
                     <div id="userList"></div>
                 </div>
                 <div id="pageTickets" class="page">
-                    <h2>تیکت‌های داخلی</h2>
+                    <h2 data-i18n="page_tickets">تیکت‌های داخلی</h2>
                     <div class="form-box">
-                        <label>عنوان تیکت</label>
-                        <input id="ticketTitle" placeholder="موضوع">
-                        <label>توضیحات</label>
-                        <textarea id="ticketDesc" placeholder="اختیاری" rows="2"></textarea>
-                        <label>اولویت</label>
-                        <select id="ticketPriority"><option value="normal">عادی</option><option value="high">مهم</option><option value="low">کم</option></select>
-                        <button type="button" onclick="addTicket()">ثبت تیکت</button>
+                        <label data-i18n="ticket_title">عنوان تیکت</label>
+                        <input id="ticketTitle" data-i18n-ph="ticket_ph_subject" placeholder="موضوع">
+                        <label data-i18n="ticket_desc">توضیحات</label>
+                        <textarea id="ticketDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری" rows="2"></textarea>
+                        <label data-i18n="ticket_priority">اولویت</label>
+                        <select id="ticketPriority"><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="low" data-i18n="priority_low">کم</option></select>
+                        <button type="button" onclick="addTicket()" data-i18n="create_ticket">ثبت تیکت</button>
                     </div>
                     <div id="ticketList"></div>
                     <div id="ticketDetail" style="display:none; margin-top:20px;">
-                        <button type="button" class="btn-secondary" onclick="showTicketList()">← بازگشت به لیست</button>
+                        <button type="button" class="btn-secondary" onclick="showTicketList()" data-i18n="back_to_list">← بازگشت به لیست</button>
+                        <div style="margin-bottom:12px;"><button type="button" class="btn-secondary" onclick="startProcessFromTicket()" data-i18n="process_start_from_ticket">شروع فرایند برای این تیکت</button></div>
                         <h3 id="ticketDetailTitle" style="margin:12px 0;"></h3>
                         <p id="ticketDetailMeta" class="text-muted" style="color:var(--text-secondary); font-size:0.9rem;"></p>
                         <div id="ticketReplies" style="margin:16px 0;"></div>
                         <div class="form-box" style="max-width:100%;">
-                            <label>پاسخ به تیکت</label>
-                            <textarea id="ticketReplyContent" rows="2" placeholder="متن پاسخ..."></textarea>
-                            <button type="button" onclick="submitTicketReply()">ارسال پاسخ</button>
+                            <label data-i18n="reply_to_ticket">پاسخ به تیکت</label>
+                            <textarea id="ticketReplyContent" rows="2" data-i18n-ph="reply_ph" placeholder="متن پاسخ..."></textarea>
+                            <label data-i18n="file_attach">پیوست فایل (اختیاری)</label>
+                            <input type="file" id="ticketReplyFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" style="margin-bottom:8px;">
+                            <div id="ticketReplyAttachments" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;"></div>
+                            <button type="button" onclick="submitTicketReply()" data-i18n="send_reply">ارسال پاسخ</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="pageTasks" class="page">
+                    <h2 data-i18n="page_tasks">وظایف و تسک‌ها</h2>
+                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="tasks_intro">پیگیری کارهای اختصاص‌یافته به کارمند یا دپارتمان.</p>
+                    <div id="tasksSummaryBox" class="stat-cards" style="display:none; margin-bottom:20px;"></div>
+                    <div class="form-box" style="max-width:560px; margin-bottom:20px;">
+                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="new_task">تسک جدید</h3>
+                        <label data-i18n="label_title">عنوان</label>
+                        <input id="taskTitle" data-i18n-ph="task_ph_title" placeholder="عنوان وظیفه">
+                        <label data-i18n="dept_desc">توضیحات (اختیاری)</label>
+                        <textarea id="taskDesc" rows="2" data-i18n-ph="task_ph_desc" placeholder="شرح کار"></textarea>
+                        <label data-i18n="assign_to">اختصاص به</label>
+                        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+                            <select id="taskAssignType" onchange="toggleTaskAssignTarget()"><option value="user" data-i18n="assign_user">کارمند</option><option value="department" data-i18n="assign_dept">دپارتمان</option></select>
+                            <select id="taskAssignUser" style="min-width:180px;"><option value="" data-i18n="no_user">انتخاب کارمند</option></select>
+                            <select id="taskAssignDept" style="min-width:180px; display:none;"><option value="" data-i18n="select_dept">انتخاب دپارتمان</option></select>
+                        </div>
+                        <label data-i18n="due_date">مهلت (اختیاری)</label>
+                        <input id="taskDueDate" type="datetime-local">
+                        <label data-i18n="ticket_priority">اولویت</label>
+                        <select id="taskPriority"><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option><option value="low" data-i18n="priority_low">کم</option></select>
+                        <button type="button" onclick="addTask()" data-i18n="add_task">ثبت تسک</button>
+                    </div>
+                    <div class="form-box" style="max-width:100%; margin-bottom:16px;">
+                        <label data-i18n="filter">فیلتر</label>
+                        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                            <select id="taskFilterStatus"><option value="" data-i18n="all_statuses">همه وضعیت‌ها</option><option value="pending" data-i18n="status_pending">در انتظار</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="done" data-i18n="status_done">انجام شده</option><option value="cancelled" data-i18n="status_cancelled">لغو</option></select>
+                            <select id="taskFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
+                            <select id="taskFilterUser"><option value="" data-i18n="no_user_filter">همه کارمندان</option></select>
+                            <button type="button" onclick="loadTasks()" data-i18n="btn_apply">اعمال</button>
+                        </div>
+                    </div>
+                    <div id="taskList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    <div id="taskDetailBox" style="display:none; margin-top:20px;">
+                        <button type="button" class="btn-secondary" onclick="showTaskList()" data-i18n="back_to_list">← بازگشت به لیست</button>
+                        <div id="taskDetailContent" style="margin:12px 0;"></div>
+                        <div id="taskUpdatesList" style="margin:16px 0;"></div>
+                        <div class="form-box" style="max-width:100%;">
+                            <label data-i18n="add_update">افزودن پیگیری / گزارش</label>
+                            <textarea id="taskUpdateContent" rows="2" data-i18n-ph="update_ph" placeholder="وضعیت یا گزارش خود را بنویسید..."></textarea>
+                            <button type="button" onclick="addTaskUpdate()" data-i18n="save_update">ثبت پیگیری</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="pageProcesses" class="page">
+                    <h2 data-i18n="page_processes">مدیر فرایندهای کسب‌وکار</h2>
+                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="processes_intro">قالب‌های فرایند را تعریف کنید و نمونه‌های در حال اجرا را پیگیری کنید.</p>
+                    <div class="process-tabs" style="display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--border);">
+                        <button type="button" class="process-tab active" data-tab="templates" data-i18n="process_templates">قالب‌های فرایند</button>
+                        <button type="button" class="process-tab" data-tab="instances" data-i18n="process_instances">نمونه‌های در حال اجرا</button>
+                    </div>
+                    <div id="processTemplatesPanel" class="process-panel show">
+                        <div class="form-box" style="max-width:100%; margin-bottom:16px;">
+                            <button type="button" class="btn-primary" onclick="openProcessTemplateModal()" data-i18n="process_add_template">افزودن قالب فرایند</button>
+                        </div>
+                        <div id="processTemplatesList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    </div>
+                    <div id="processInstancesPanel" class="process-panel" style="display:none;">
+                        <div class="form-box" style="max-width:100%; margin-bottom:16px;">
+                            <label data-i18n="filter">فیلتر</label>
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                                <select id="processInstanceStatus"><option value="" data-i18n="all_statuses">همه وضعیت‌ها</option><option value="active" data-i18n="status_active">فعال</option><option value="completed" data-i18n="status_done">انجام شده</option><option value="cancelled" data-i18n="status_cancelled">لغو</option></select>
+                                <select id="processInstanceTemplate"><option value="" data-i18n="all_templates">همه قالب‌ها</option></select>
+                                <button type="button" onclick="loadProcessInstances()" data-i18n="btn_apply">اعمال</button>
+                            </div>
+                        </div>
+                        <div id="processInstancesList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                        <div id="processInstanceDetailBox" style="display:none; margin-top:20px;">
+                            <button type="button" class="btn-secondary" onclick="showProcessInstancesList()" data-i18n="back_to_list">← بازگشت به لیست</button>
+                            <div id="processInstanceDetailContent" style="margin:12px 0;"></div>
+                            <div id="processInstanceAdvanceBox" class="form-box" style="max-width:560px; margin-top:16px;"></div>
                         </div>
                     </div>
                 </div>
                 <div id="pageProfile" class="page">
-                    <h2>پروفایل من</h2>
-                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem;">نام، تلفن و رمز عبور قابل ویرایش است. ایمیل و دپارتمان توسط مدیر تنظیم می‌شود.</p>
-                    <div class="form-box" style="max-width:480px;">
-                        <label>عکس پروفایل (آدرس URL)</label>
-                        <input id="profileAvatar" type="text" placeholder="https://... یا خالی">
-                        <div id="profileAvatarPreview" style="margin:8px 0; min-height:60px;"></div>
-                        <label>نام</label>
-                        <input id="profileName" placeholder="نام کامل">
-                        <label>ایمیل (غیرقابل تغییر)</label>
-                        <input id="profileEmail" readonly style="opacity:0.8;">
-                        <label>دپارتمان (غیرقابل تغییر)</label>
-                        <input id="profileDepartment" readonly style="opacity:0.8;">
-                        <label>تلفن</label>
-                        <input id="profilePhone" placeholder="شماره تماس">
-                        <label>رمز عبور جدید (در صورت تمایل به تغییر)</label>
-                        <input id="profilePassword" type="password" placeholder="خالی بگذارید اگر نمی‌خواهید تغییر کند">
-                        <button type="button" onclick="saveProfile()">ذخیره تغییرات</button>
+                    <h2 data-i18n="page_profile">پروفایل من</h2>
+                    <p class="profile-intro text-muted" data-i18n="profile_intro">نام کاربری، نام، نام خانوادگی، تاریخ تولد، تلفن و تصویر پروفایل را می‌توانید ویرایش کنید. ورود با ایمیل یا نام کاربری امکان‌پذیر است. ایمیل و دپارتمان توسط مدیر تنظیم می‌شود.</p>
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar-wrap">
+                                <div id="profileAvatarPreview" class="profile-avatar-preview"></div>
+                            </div>
+                            <div class="profile-meta">
+                                <div id="profileDisplayUsername" class="profile-display-username">—</div>
+                                <div id="profileDisplayName" class="profile-display-name">—</div>
+                                <div id="profileDisplayEmail" class="profile-display-email">—</div>
+                                <div class="profile-badges">
+                                    <span id="profileRoleBadge" class="profile-badge profile-badge-role">—</span>
+                                    <span id="profileBranchBadge" class="profile-badge profile-badge-branch">—</span>
+                                </div>
+                                <div id="profileDepartmentText" class="profile-meta-text">—</div>
+                                <div id="profileLastLogin" class="profile-meta-text profile-last-login">—</div>
+                            </div>
+                        </div>
+                        <div class="profile-form-section">
+                            <h3 class="profile-section-title" data-i18n="profile_editable_section">اطلاعات قابل ویرایش</h3>
+                            <div class="profile-form-grid">
+                                <div class="profile-form-group">
+                                    <label data-i18n="profile_username">نام کاربری</label>
+                                    <input id="profileUsername" type="text" placeholder="" autocomplete="username">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label data-i18n="profile_first_name">نام</label>
+                                    <input id="profileFirstName" type="text" placeholder="" autocomplete="given-name">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label data-i18n="profile_last_name">نام خانوادگی</label>
+                                    <input id="profileLastName" type="text" placeholder="" autocomplete="family-name">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label data-i18n="profile_date_of_birth">تاریخ تولد</label>
+                                    <input id="profileDateOfBirth" type="date" placeholder="">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label data-i18n="profile_phone">تلفن ثابت یا همراه</label>
+                                    <input id="profilePhone" type="tel" placeholder="" autocomplete="tel">
+                                </div>
+                                <div class="profile-form-group profile-form-group-full">
+                                    <label data-i18n="profile_avatar">تصویر پروفایل (بارگذاری یا آدرس URL)</label>
+                                    <div class="profile-avatar-edit">
+                                        <input type="file" id="profileAvatarFile" accept="image/*" style="max-width:240px;">
+                                        <input id="profileAvatar" type="url" placeholder="https://..." autocomplete="off" class="profile-avatar-url">
+                                    </div>
+                                </div>
+                                <div class="profile-form-group profile-form-group-full">
+                                    <label data-i18n="profile_password_new">رمز عبور جدید (در صورت تمایل به تغییر)</label>
+                                    <input id="profilePassword" type="password" data-i18n-ph="profile_password_ph" placeholder="" autocomplete="new-password">
+                                </div>
+                            </div>
+                            <div class="profile-form-actions">
+                                <button type="button" id="profileSaveBtn" class="btn-primary" onclick="saveProfile()" data-i18n="profile_save">ذخیره تغییرات</button>
+                            </div>
+                        </div>
+                        <div class="profile-readonly-section">
+                            <h3 class="profile-section-title" data-i18n="profile_readonly_section">اطلاعات فقط‌خواندنی</h3>
+                            <div class="profile-readonly-grid">
+                                <div class="profile-readonly-item">
+                                    <span class="profile-readonly-label" data-i18n="profile_email_readonly">ایمیل</span>
+                                    <span id="profileEmail" class="profile-readonly-value">—</span>
+                                </div>
+                                <div class="profile-readonly-item">
+                                    <span class="profile-readonly-label" data-i18n="profile_dept_readonly">دپارتمان</span>
+                                    <span id="profileDepartment" class="profile-readonly-value">—</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="profile-card profile-totp-card">
+                        <h3 class="profile-section-title" data-i18n="profile_totp_title">احراز هویت دو مرحله‌ای (Google Authenticator)</h3>
+                        <p class="profile-totp-desc text-muted" data-i18n="profile_totp_desc">ورود امن‌تر با اپلیکیشن Google Authenticator. می‌توانید از داخل پنل آن را فعال یا غیرفعال کنید.</p>
+                        <div id="profileTotpStatus" class="profile-totp-status"></div>
+                        <div id="profileTotpActions" class="profile-totp-actions"></div>
                     </div>
                 </div>
                 <div id="pageAnnouncements" class="page">
-                    <h2>اعلان‌ها</h2>
+                    <h2 data-i18n="page_announcements">اعلان‌ها</h2>
                     <div id="announcementSendBox" class="form-box" style="display:none; max-width:560px;">
-                        <h3 style="font-size:1rem; margin:0 0 12px;">ارسال اعلان به کارکنان</h3>
-                        <label>گیرنده</label>
-                        <select id="annTargetType"><option value="all">همه کارکنان</option><option value="department">یک دپارتمان</option><option value="user">یک نفر</option></select>
-                        <select id="annTargetId" style="display:none;"><option value="">انتخاب کنید</option></select>
-                        <label>عنوان</label>
-                        <input id="annTitle" placeholder="عنوان اعلان">
-                        <label>متن</label>
-                        <textarea id="annBody" rows="3" placeholder="متن پیام..."></textarea>
-                        <label><input type="checkbox" id="annImportant"> پیام مهم (پاپ‌آپ و صدا برای گیرنده)</label>
-                        <button type="button" onclick="sendAnnouncement()">ارسال اعلان</button>
+                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="ann_send_title">ارسال اعلان به کارکنان</h3>
+                        <label data-i18n="ann_recipient">گیرنده</label>
+                        <select id="annTargetType"><option value="all" data-i18n="ann_all">همه کارکنان</option><option value="department" data-i18n="ann_one_dept">یک دپارتمان</option><option value="user" data-i18n="ann_one_user">یک نفر</option></select>
+                        <select id="annTargetId" style="display:none;"><option value="" data-i18n="ann_select">انتخاب کنید</option></select>
+                        <label data-i18n="ann_title">عنوان</label>
+                        <input id="annTitle" data-i18n-ph="ann_ph_title" placeholder="عنوان اعلان">
+                        <label data-i18n="ann_body">متن</label>
+                        <textarea id="annBody" rows="3" data-i18n-ph="ann_ph_body" placeholder="متن پیام..."></textarea>
+                        <label><input type="checkbox" id="annImportant"> <span data-i18n="ann_important">پیام مهم (پاپ‌آپ و صدا برای گیرنده)</span></label>
+                        <button type="button" onclick="sendAnnouncement()" data-i18n="send_ann">ارسال اعلان</button>
                     </div>
-                    <div id="announcementList" class="empty">در حال بارگذاری...</div>
+                    <div id="announcementList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
                 </div>
                 <div id="pageInternalChat" class="page">
-                    <h2>چت داخلی</h2>
+                    <h2 data-i18n="page_internal_chat">چت داخلی</h2>
                     <div style="display:flex; gap:16px; flex-wrap:wrap;">
                         <div style="flex:1; min-width:260px;">
-                            <button type="button" class="btn-secondary" onclick="showNewChatForm()">گفتگوی جدید</button>
-                            <div id="internalThreadList" class="empty" style="margin-top:12px;">در حال بارگذاری...</div>
+                            <button type="button" class="btn-secondary" onclick="showNewChatForm()" data-i18n="new_chat">گفتگوی جدید</button>
+                            <div id="internalThreadList" class="empty" style="margin-top:12px;" data-i18n="loading">در حال بارگذاری...</div>
                         </div>
                         <div id="internalChatPane" style="flex:2; min-width:300px; display:none;">
-                            <div class="chat-header" id="internalChatHeader">انتخاب گفتگو</div>
+                            <div class="chat-header" id="internalChatHeader" data-i18n="select_conversation">انتخاب گفتگو</div>
                             <div class="chat-messages" id="internalChatMessages" style="min-height:200px;"></div>
                             <div class="chat-send">
-                                <input type="text" id="internalChatInput" placeholder="پیام..." onkeypress="if(event.key==='Enter')sendInternalMessage()">
-                                <button type="button" onclick="sendInternalMessage()">ارسال</button>
+                                <input type="text" id="internalChatInput" data-i18n-ph="msg_ph_short" placeholder="پیام..." onkeypress="if(event.key==='Enter')sendInternalMessage()">
+                                <input type="file" id="internalChatFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" style="max-width:120px;" data-i18n-title="attach_file" title="پیوست فایل">
+                                <button type="button" onclick="sendInternalMessage()" data-i18n="btn_send">ارسال</button>
                             </div>
                         </div>
                     </div>
                     <div id="internalNewChatForm" style="display:none; margin-top:12px;" class="form-box">
-                        <label>شروع گفتگو با</label>
-                        <select id="internalNewChatUser"><option value="">انتخاب کاربر</option></select>
-                        <button type="button" onclick="startInternalChat()">شروع چت</button>
-                        <button type="button" class="btn-secondary" onclick="hideNewChatForm()">انصراف</button>
+                        <label data-i18n="start_chat_with">شروع گفتگو با</label>
+                        <select id="internalNewChatUser"><option value="" data-i18n="select_user">انتخاب کاربر</option></select>
+                        <button type="button" onclick="startInternalChat()" data-i18n="start_chat">شروع چت</button>
+                        <button type="button" class="btn-secondary" onclick="hideNewChatForm()" data-i18n="cancel">انصراف</button>
                     </div>
                 </div>
                 <div id="pageBranches" class="page">
-                    <h2>شعب</h2>
+                    <h2 data-i18n="page_branches">شعب</h2>
                     <div class="form-box">
-                        <label>نام شعبه</label>
-                        <input id="branchName" placeholder="مثال: دفتر تهران">
-                        <label>شهر</label>
-                        <input id="branchCity" placeholder="مثال: تهران">
-                        <label>کشور</label>
-                        <input id="branchCountry" placeholder="مثال: ایران">
-                        <button type="button" onclick="addBranch()">افزودن شعبه</button>
+                        <label data-i18n="branch_name">نام شعبه</label>
+                        <input id="branchName" data-i18n-ph="branch_ph_name" placeholder="مثال: دفتر تهران">
+                        <label data-i18n="branch_city">شهر</label>
+                        <input id="branchCity" data-i18n-ph="branch_ph_city" placeholder="مثال: تهران">
+                        <label data-i18n="branch_country">کشور</label>
+                        <input id="branchCountry" data-i18n-ph="branch_ph_country" placeholder="مثال: ایران">
+                        <button type="button" onclick="addBranch()" data-i18n="add_branch">افزودن شعبه</button>
                     </div>
                     <div id="branchList"></div>
                 </div>
                 <div id="pageStaffActivity" class="page">
-                    <h2>ورودها و وضعیت آنلاین کارکنان</h2>
-                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 20px;">آخرین ورودها و لیست کارکنان آنلاین — برای مدیر و بالاتر</p>
+                    <h2 data-i18n="page_staff_activity">ورودها و وضعیت آنلاین کارکنان</h2>
+                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 20px;" data-i18n="staff_intro">آخرین ورودها و لیست کارکنان آنلاین — برای مدیر و بالاتر</p>
                     <div class="stat-cards" style="margin-bottom:20px;">
-                        <div class="stat-card"><div class="val" id="onlineCount">0</div><div class="label">کارکنان آنلاین</div></div>
+                        <div class="stat-card"><div class="val" id="onlineCount">0</div><div class="label" data-i18n="staff_online">کارکنان آنلاین</div></div>
                     </div>
-                    <h3 style="font-size:1rem; margin:16px 0 8px;">کارکنان آنلاین</h3>
-                    <div id="onlineStaffList" class="empty">در حال بارگذاری...</div>
-                    <h3 style="font-size:1rem; margin:24px 0 8px;">آخرین ورودها</h3>
-                    <div id="loginsList" class="empty">در حال بارگذاری...</div>
+                    <h3 style="font-size:1rem; margin:16px 0 8px;" data-i18n="staff_online">کارکنان آنلاین</h3>
+                    <div id="onlineStaffList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    <h3 style="font-size:1rem; margin:24px 0 8px;" data-i18n="last_logins">آخرین ورودها</h3>
+                    <div id="loginsList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
                 </div>
                 <div id="pageSupervision" class="page">
-                    <h2>نظارت و مونیتورینگ (مالک)</h2>
+                    <h2 data-i18n="page_supervision">نظارت و مونیتورینگ (مالک)</h2>
                     <div class="supervision-tabs">
-                        <button type="button" class="sup-tab active" data-tab="performance">خلاصه عملکرد</button>
-                        <button type="button" class="sup-tab" data-tab="conversations">مکالمات</button>
-                        <button type="button" class="sup-tab" data-tab="activity">لاگ فعالیت</button>
+                        <button type="button" class="sup-tab active" data-tab="performance" data-i18n="sup_performance">خلاصه عملکرد</button>
+                        <button type="button" class="sup-tab" data-tab="conversations" data-i18n="sup_conversations">مکالمات</button>
+                        <button type="button" class="sup-tab" data-tab="activity" data-i18n="sup_activity">لاگ فعالیت</button>
                     </div>
                     <div id="supPerformance" class="sup-panel show">
-                        <div id="supPerformanceContent" class="empty">در حال بارگذاری...</div>
+                        <div id="supPerformanceContent" class="empty" data-i18n="loading">در حال بارگذاری...</div>
                     </div>
                     <div id="supConversations" class="sup-panel">
                         <div class="form-box" style="max-width:100%;">
-                            <label>شعبه / دپارتمان / وضعیت</label>
+                            <label data-i18n="sup_branch_status">شعبه / دپارتمان / وضعیت</label>
                             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <select id="supBranch"><option value="">همه شعب</option></select>
-                                <select id="supStatus"><option value="">همه وضعیت‌ها</option><option value="open">باز</option><option value="closed">بسته</option><option value="pending">در انتظار</option><option value="resolved">حل شده</option></select>
-                                <button type="button" onclick="loadSupervisionConversations()">اعمال فیلتر</button>
+                                <select id="supBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                                <select id="supStatus"><option value="" data-i18n="all_statuses">همه وضعیت‌ها</option><option value="open" data-i18n="status_open">باز</option><option value="closed" data-i18n="status_closed">بسته</option><option value="pending" data-i18n="status_pending">در انتظار</option><option value="resolved" data-i18n="status_resolved">حل شده</option></select>
+                                <button type="button" onclick="loadSupervisionConversations()" data-i18n="apply_filter">اعمال فیلتر</button>
                             </div>
                         </div>
                         <div id="supConvList"></div>
                     </div>
                     <div id="supActivity" class="sup-panel">
                         <div class="form-box" style="max-width:100%;">
-                            <label>فیلتر</label>
+                            <label data-i18n="filter">فیلتر</label>
                             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                                <select id="supActBranch"><option value="">همه شعب</option></select>
-                                <select id="supActAction"><option value="">همه عملیات</option><option value="message_sent">ارسال پیام</option><option value="conversation_assigned">تخصیص مکالمه</option></select>
-                                <button type="button" onclick="loadSupervisionActivity()">اعمال</button>
+                                <select id="supActBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                                <select id="supActAction"><option value="" data-i18n="all_actions">همه عملیات</option><option value="message_sent" data-i18n="action_message_sent">ارسال پیام</option><option value="conversation_assigned" data-i18n="action_conv_assigned">تخصیص مکالمه</option></select>
+                                <button type="button" onclick="loadSupervisionActivity()" data-i18n="btn_apply">اعمال</button>
                             </div>
                         </div>
                         <div id="supActList"></div>
                     </div>
                 </div>
                 <div id="pageWhatsapp" class="page">
-                    <h2>اتصال واتساپ</h2>
-                    <div id="gatewayStatus" class="empty">در حال بررسی...</div>
+                    <h2 data-i18n="page_whatsapp">اتصال واتساپ</h2>
+                    <div id="gatewayStatus" class="empty" data-i18n="whatsapp_checking">در حال بررسی...</div>
                     <div class="qr-box" id="qrBox" style="display:none;">
-                        <p>QR را با اپلیکیشن واتساپ موبایل اسکن کنید</p>
+                        <p data-i18n="whatsapp_scan_qr">QR را با اپلیکیشن واتساپ موبایل اسکن کنید</p>
                         <img id="qrImg" alt="QR Code">
                     </div>
-                    <button type="button" id="btnStartGateway" class="btn-primary" onclick="startGateway()" style="display:none; margin-top:12px;">شروع Gateway واتساپ</button>
+                    <button type="button" id="btnStartGateway" class="btn-primary" onclick="startGateway()" style="display:none; margin-top:12px;" data-i18n="whatsapp_start_btn">شروع Gateway واتساپ</button>
+                </div>
+                <div id="pageRates" class="page">
+                    <h2 data-i18n="page_rates">تنظیم نرخ ارزها</h2>
+                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="rates_intro">قیمت‌ها از API دریافت می‌شوند و در نوار زیر پنل برای همه نمایش داده می‌شوند.</p>
+                    <div class="form-box" style="max-width:100%; margin-bottom:16px;">
+                        <label data-i18n="rates_adjust_type">نوع تعدیل</label>
+                        <ul style="font-size:0.85rem; color:var(--text-secondary); margin:4px 0 12px; padding-right:20px;">
+                            <li><strong data-i18n="rates_none">بدون تغییر</strong>: —</li>
+                            <li><strong data-i18n="rates_fixed">ثابت</strong>: —</li>
+                            <li><strong data-i18n="rates_delta">± تومان</strong>: —</li>
+                            <li><strong data-i18n="rates_percent">± درصد</strong>: —</li>
+                        </ul>
+                    </div>
+                    <div id="ratesAdjustmentsTable" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    <button type="button" class="btn-primary" onclick="saveRatesAdjustments()" style="margin-top:16px;" data-i18n="btn_save">ذخیره تعدیلات</button>
+                </div>
+                <div id="pageServices" class="page">
+                    <h2 data-i18n="page_services">خدمات صرافی</h2>
+                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="services_intro">سرویس‌هایی که صرافی ارائه می‌دهد (خرید/فروش ارز، حواله و غیره) را تعریف کنید.</p>
+                    <button type="button" class="btn-primary" onclick="openServiceModal()" style="margin-bottom:16px;" data-i18n="service_add">افزودن سرویس</button>
+                    <div id="serviceList"></div>
+                </div>
+                <div id="serviceModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box">
+                        <div class="modal-header"><h3 id="serviceModalTitle" data-i18n="service_add">افزودن سرویس</h3><button type="button" class="modal-close" onclick="closeServiceModal()">&times;</button></div>
+                        <div class="modal-body">
+                            <input type="hidden" id="serviceModalId" value="">
+                            <label data-i18n="service_name">نام سرویس</label>
+                            <input type="text" id="serviceModalName" placeholder="مثال: خرید دلار نقد" required>
+                            <label data-i18n="service_code">کد (اختیاری)</label>
+                            <input type="text" id="serviceModalCode" placeholder="مثال: buy-usd">
+                            <label data-i18n="service_category">دسته‌بندی (اختیاری)</label>
+                            <input type="text" id="serviceModalCategory" placeholder="مثال: نقد، حواله">
+                            <label data-i18n="service_description">توضیح (اختیاری)</label>
+                            <textarea id="serviceModalDescription" rows="2" placeholder="توضیح کوتاه..."></textarea>
+                            <label><input type="checkbox" id="serviceModalActive" checked> <span data-i18n="service_active">فعال</span></label>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeServiceModal()" data-i18n="btn_cancel">انصراف</button>
+                            <button type="button" class="btn-primary" onclick="saveServiceFromModal()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </div>
                 </div>
                 <div id="pageCustomerDetail" class="page">
-                    <button type="button" class="btn-secondary" onclick="showPage('customers')">← بازگشت به مشتریان</button>
-                    <h2 id="customerDetailTitle">تاریخچه مشتری</h2>
+                    <button type="button" class="btn-secondary" onclick="showPage('customers')" data-i18n="back_to_customers">← بازگشت به مشتریان</button>
+                    <div id="customerDetailCard" class="customer-detail-card"></div>
+                    <h3 class="customer-detail-section-title" data-i18n="customer_history">تاریخچه مکالمات</h3>
                     <div id="customerHistoryList"></div>
+                    <h3 class="customer-detail-section-title" data-i18n="customer_notes">گزارش‌ها و یادداشت‌ها</h3>
+                    <p class="customer-detail-meta" data-i18n="customer_notes_intro">یادداشت یا گزارش مربوط به این مشتری را ذخیره کنید تا بعداً مراجعه کنید.</p>
+                    <div class="customer-notes-add">
+                        <textarea id="customerNoteContent" rows="3" placeholder="" style="width:100%; max-width:600px; margin-bottom:8px;"></textarea>
+                        <button type="button" class="btn-primary" id="customerNoteAddBtn" data-i18n="customer_note_add">افزودن گزارش / یادداشت</button>
+                    </div>
+                    <div id="customerNotesList"></div>
+                </div>
+                <div id="customerModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box">
+                        <div class="modal-header"><h3 id="customerModalTitle" data-i18n="customer_add">افزودن مشتری</h3><button type="button" class="modal-close" onclick="closeCustomerModal()">&times;</button></div>
+                        <div class="modal-body">
+                            <input type="hidden" id="customerModalId" value="">
+                            <label data-i18n="customer_name">نام</label>
+                            <input type="text" id="customerModalName" data-i18n-ph="customer_name_ph" placeholder="نام مشتری" required>
+                            <label data-i18n="customer_phone">تلفن</label>
+                            <input type="text" id="customerModalPhone" data-i18n-ph="customer_phone_ph" placeholder="مثال: 09121234567">
+                            <label data-i18n="customer_email">ایمیل</label>
+                            <input type="email" id="customerModalEmail" data-i18n-ph="customer_email_ph" placeholder="email@example.com">
+                            <label data-i18n="customer_status">وضعیت</label>
+                            <select id="customerModalStatus">
+                                <option value="active" data-i18n="status_active">فعال</option>
+                                <option value="inactive" data-i18n="status_inactive">غیرفعال</option>
+                                <option value="blocked" data-i18n="status_blocked">مسدود</option>
+                            </select>
+                            <label data-i18n="customer_notes">یادداشت</label>
+                            <textarea id="customerModalNotes" rows="3" data-i18n-ph="customer_notes_ph" placeholder="یادداشت درباره مشتری..."></textarea>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeCustomerModal()" data-i18n="btn_cancel">انصراف</button>
+                            <button type="button" class="btn-primary" onclick="saveCustomerFromModal()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <footer class="footer">
-            <span>صرافی کایا — پورتال کارکنان | قیمت‌ها از <a href="https://www.navasan.net" target="_blank" rel="noopener">نوسان</a></span>
+            <span data-i18n="footer_text">صرافی کایا — پورتال کارکنان</span> | <a href="https://www.navasan.net" target="_blank" rel="noopener" data-i18n="logo_kaya">صرافی کایا</a>
             <span id="footerYear"></span>
         </footer>
         </div>
         <div class="price-ticker" id="priceTicker">
-            <span class="ticker-updated" id="tickerUpdated">در حال بارگذاری قیمت‌ها...</span>
-            <span class="ticker-item"><span class="ticker-label">دلار</span><span class="ticker-value" data-key="usd">—</span><span class="ticker-change" data-key="usd"></span></span>
-            <span class="ticker-item"><span class="ticker-label">یورو</span><span class="ticker-value" data-key="eur">—</span><span class="ticker-change" data-key="eur"></span></span>
-            <span class="ticker-item"><span class="ticker-label">پوند</span><span class="ticker-value" data-key="gbp">—</span><span class="ticker-change" data-key="gbp"></span></span>
-            <span class="ticker-item"><span class="ticker-label">لیر</span><span class="ticker-value" data-key="try">—</span><span class="ticker-change" data-key="try"></span></span>
-            <span class="ticker-item"><span class="ticker-label">درهم</span><span class="ticker-value" data-key="aed">—</span><span class="ticker-change" data-key="aed"></span></span>
-            <span class="ticker-item"><span class="ticker-label">روبل</span><span class="ticker-value" data-key="rub">—</span><span class="ticker-change" data-key="rub"></span></span>
-            <span class="ticker-item"><span class="ticker-label">منات</span><span class="ticker-value" data-key="azn">—</span><span class="ticker-change" data-key="azn"></span></span>
-            <span class="ticker-item"><span class="ticker-label">یوان</span><span class="ticker-value" data-key="cny">—</span><span class="ticker-change" data-key="cny"></span></span>
-            <span class="ticker-item"><span class="ticker-label">طلا (گرم)</span><span class="ticker-value" data-key="gold">—</span><span class="ticker-change" data-key="gold"></span></span>
+            <span class="ticker-updated" id="tickerUpdated" data-i18n="ticker_loading">در حال بارگذاری قیمت‌ها...</span>
+            <span class="ticker-item"><span class="ticker-label" data-i18n="usd">دلار</span><span class="ticker-value" data-key="usd">—</span><span class="ticker-change" data-key="usd"></span></span>
+            <span class="ticker-item"><span class="ticker-label" data-i18n="eur">یورو</span><span class="ticker-value" data-key="eur">—</span><span class="ticker-change" data-key="eur"></span></span>
+            <span class="ticker-item"><span class="ticker-label" data-i18n="gbp">پوند</span><span class="ticker-value" data-key="gbp">—</span><span class="ticker-change" data-key="gbp"></span></span>
+            <span class="ticker-item"><span class="ticker-label" data-i18n="try">لیر</span><span class="ticker-value" data-key="try">—</span><span class="ticker-change" data-key="try"></span></span>
+            <span class="ticker-item"><span class="ticker-label" data-i18n="aed">درهم</span><span class="ticker-value" data-key="aed">—</span><span class="ticker-change" data-key="aed"></span></span>
+            <span class="ticker-item"><span class="ticker-label" data-i18n="rub">روبل</span><span class="ticker-value" data-key="rub">—</span><span class="ticker-change" data-key="rub"></span></span>
+            <span class="ticker-item"><span class="ticker-label" data-i18n="azn">منات</span><span class="ticker-value" data-key="azn">—</span><span class="ticker-change" data-key="azn"></span></span>
+            <span class="ticker-item"><span class="ticker-label" data-i18n="cny">یوان</span><span class="ticker-value" data-key="cny">—</span><span class="ticker-change" data-key="cny"></span></span>
+            <span class="ticker-item"><span class="ticker-label" data-i18n="gold">طلا (گرم)</span><span class="ticker-value" data-key="gold">—</span><span class="ticker-change" data-key="gold"></span></span>
         </div>
     </div>
     <div id="announcementModal" class="modal-overlay" style="display:none;">
         <div class="modal-box">
-            <div class="modal-header"><h3 id="annModalTitle">اعلان مهم</h3><button type="button" class="modal-close" onclick="closeAnnouncementModal()">&times;</button></div>
+            <div class="modal-header"><h3 id="annModalTitle" data-i18n="modal_ann_title">اعلان مهم</h3><button type="button" class="modal-close" onclick="closeAnnouncementModal()">&times;</button></div>
             <div class="modal-body" id="annModalBody"></div>
-            <button type="button" class="btn-primary" onclick="closeAnnouncementModal()">متوجه شدم</button>
+            <button type="button" class="btn-primary" onclick="closeAnnouncementModal()" data-i18n="modal_ann_gotit">متوجه شدم</button>
         </div>
     </div>
     <div id="toast" class="toast" style="display:none;"></div>
-    <script>
-        const API = '';
-        let token = localStorage.getItem('crm_token');
-        let currentConvId = null;
-        let currentUser = null;
-        let ratesInterval = null;
-        let presenceInterval = null;
+    <div id="userEditModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:480px;">
+            <div class="modal-header"><h3 data-i18n="modal_user_edit">ویرایش دسترسی و وضعیت کاربر</h3><button type="button" class="modal-close" onclick="closeUserEditModal()">&times;</button></div>
+            <div class="modal-body">
+                <p id="userEditName" style="font-weight:600; margin-bottom:12px;"></p>
+                <label><input type="checkbox" id="userEditActive" checked> <span data-i18n="modal_user_active">حساب فعال (غیرفعال = مسدود)</span></label>
+                <div style="margin-top:16px;"><strong data-i18n="modal_user_perms">دسترسی به بخش‌ها:</strong></div>
+                <div id="userEditPerms" style="margin-top:8px; max-height:200px; overflow-y:auto;"></div>
+            </div>
+            <button type="button" class="btn-primary" onclick="saveUserEdit()" data-i18n="btn_save">ذخیره</button>
+        </div>
+    </div>
+    <div id="totpSetupModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:420px;">
+            <div class="modal-header"><h3 data-i18n="modal_totp_setup">فعال‌سازی Google Authenticator</h3><button type="button" class="modal-close" onclick="closeTotpSetupModal()">&times;</button></div>
+            <div class="modal-body">
+                <p style="margin:0 0 12px; font-size:0.9rem;" data-i18n="modal_totp_scan">با اپلیکیشن Google Authenticator QR زیر را اسکن کنید (یا کلید را دستی وارد کنید):</p>
+                <div id="totpSetupQr" style="text-align:center; margin:12px 0;"></div>
+                <p id="totpSetupSecret" style="font-size:0.8rem; word-break:break-all; color:var(--text-muted); margin:8px 0;"></p>
+                <label>کد شش‌رقمی فعلی را وارد کنید</label>
+                <input type="text" id="totpSetupCode" placeholder="۱۲۳۴۵۶" maxlength="6" pattern="[0-9]*" inputmode="numeric" style="margin-top:4px;">
+            </div>
+            <button type="button" class="btn-primary" onclick="confirmTotpSetup()" data-i18n="modal_totp_confirm">تأیید و فعال‌سازی</button>
+        </div>
+    </div>
+    <div id="totpDisableModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:400px;">
+            <div class="modal-header"><h3 data-i18n="modal_totp_disable">غیرفعال کردن احراز دو مرحله‌ای</h3><button type="button" class="modal-close" onclick="closeTotpDisableModal()">&times;</button></div>
+            <div class="modal-body">
+                <p style="margin:0 0 12px;" data-i18n="modal_totp_enter_pw">رمز عبور خود را وارد کنید:</p>
+                <input type="password" id="totpDisablePassword" data-i18n-ph="modal_totp_password_ph" placeholder="رمز عبور">
+            </div>
+            <button type="button" class="btn-primary" onclick="disableTotpSubmit()" data-i18n="totp_disable_btn">غیرفعال کردن</button>
+        </div>
+    </div>
+    <div id="modalProcessTemplate" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:520px;">
+            <div class="modal-header"><h3 id="processTemplateModalTitle" data-i18n="process_add_template">افزودن قالب فرایند</h3><button type="button" class="modal-close" onclick="closeProcessTemplateModal()">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="processTemplateId">
+                <label data-i18n="process_template_name">نام قالب</label>
+                <input type="text" id="processTemplateName" data-i18n-ph="dept_ph_name" placeholder="مثال: پشتیبانی تیکت">
+                <label data-i18n="process_template_desc">توضیحات</label>
+                <input type="text" id="processTemplateDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری">
+                <label data-i18n="process_stages">مراحل (به ترتیب)</label>
+                <div id="processTemplateStagesContainer"></div>
+                <button type="button" class="btn-secondary" onclick="addProcessTemplateStageRow()" data-i18n="process_add_stage">افزودن مرحله</button>
+            </div>
+            <button type="button" class="btn-primary" onclick="saveProcessTemplate()" data-i18n="btn_save">ذخیره</button>
+        </div>
+    </div>
+    <div id="modalProcessStartInstance" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:420px;">
+            <div class="modal-header"><h3 data-i18n="process_start_instance">شروع نمونه</h3><button type="button" class="modal-close" onclick="closeProcessStartInstanceModal()">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="processStartRefType">
+                <input type="hidden" id="processStartRefId">
+                <label data-i18n="process_templates">قالب فرایند</label>
+                <select id="processStartTemplateSel"><option value="" data-i18n="all_templates">انتخاب قالب</option></select>
+                <label data-i18n="process_instance_title">عنوان نمونه</label>
+                <input type="text" id="processStartTitle" data-i18n-ph="ticket_ph_subject" placeholder="عنوان">
+                <label data-i18n="assign_to">اختصاص به</label>
+                <select id="processStartAssignedTo"><option value="" data-i18n="no_user">انتخاب کارمند</option></select>
+            </div>
+            <button type="button" class="btn-primary" onclick="startProcessInstance()" data-i18n="process_start_instance">شروع نمونه</button>
+        </div>
+    </div>
+    <script src="js/i18n-fa.js" charset="utf-8"></script>
+    <script src="js/dashboard.js"></script>
 
-        function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
-
-        function formatPrice(val) {
-            if (val == null || val === '' || val === '—') return '—';
-            var s = String(val).replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
-            var n = String(val).replace(/[^\d]/g, '');
-            if (n.length > 3) {
-                var out = ''; for (var i = n.length - 1, c = 0; i >= 0; i--, c++) { if (c && c % 3 === 0) out = ',' + out; out = n[i] + out; }
-                return out.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
-            }
-            return s;
-        }
-
-        function getTehranHour() {
-            try {
-                var h = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Tehran', hour: 'numeric', hour12: false }).format(new Date());
-                return parseInt(h, 10);
-            } catch (e) { return 12; }
-        }
-        function isTehranRatesWindow() {
-            var h = getTehranHour();
-            return h >= 6 && h < 20;
-        }
-        async function fetchRates() {
-            if (!token) return;
-            var upEl = document.getElementById('tickerUpdated');
-            if (!isTehranRatesWindow()) {
-                if (upEl) upEl.textContent = 'بروزرسانی نرخ فقط ۶ تا ۲۰ به وقت تهران — بروزرسانی هر ۱۰ دقیقه';
-                return;
-            }
-            var res = await apiFetch('/api/rates');
-            if (res.needLogin || !res.ok) return;
-            var data = res.data;
-            var items = (data && data.items) || [];
-            items.forEach(function(it) {
-                var valEl = document.querySelector('.ticker-value[data-key="' + it.key + '"]');
-                var chEl = document.querySelector('.ticker-change[data-key="' + it.key + '"]');
-                if (valEl) valEl.textContent = formatPrice(it.value);
-                if (chEl) {
-                    var ch = it.change;
-                    chEl.textContent = ch != null && ch !== '' ? (ch > 0 ? '+' + ch : ch) : '';
-                    chEl.className = 'ticker-change' + (ch > 0 ? ' up' : ch < 0 ? ' down' : '');
-                }
-            });
-            if (upEl) upEl.textContent = 'آخرین بروزرسانی: ' + (data.updatedAt || '') + ' — هر ۱۰ دقیقه (۶–۲۰ تهران)';
-        }
-
-        function startRatesInterval() {
-            if (ratesInterval) clearInterval(ratesInterval);
-            fetchRates();
-            ratesInterval = setInterval(fetchRates, 10 * 60 * 1000);
-        }
-        function startPresenceInterval() {
-            if (presenceInterval) clearInterval(presenceInterval);
-            apiFetch('/api/auth/me/presence', { method: 'PATCH', body: JSON.stringify({ status: 'online' }) }).catch(function(){});
-            presenceInterval = setInterval(function() {
-                apiFetch('/api/auth/me/presence', { method: 'PATCH', body: JSON.stringify({ status: 'online' }) }).catch(function(){});
-            }, 30000);
-        }
-
-        function doHeaderSearch() {
-            var q = (document.getElementById('headerSearch') && document.getElementById('headerSearch').value) || '';
-            if (!q.trim()) return;
-            var active = document.querySelector('.nav-link.active');
-            var page = active ? active.getAttribute('data-page') : '';
-            if (page === 'conversations') { showPage('conversations'); toast('جستجو در لیست مکالمات از فیلتر API پشتیبانی می‌شود.'); }
-            else if (page === 'customers') { showPage('customers'); toast('جستجو در مشتریان از فیلتر API پشتیبانی می‌شود.'); }
-            else toast('جستجو در این بخش به زودی.'); 
-        }
-
-        function toast(msg, isErr) {
-            var el = document.getElementById('toast');
-            el.textContent = msg;
-            el.className = 'toast' + (isErr ? ' err' : '');
-            el.style.display = 'block';
-            setTimeout(function() { el.style.display = 'none'; }, 3500);
-        }
-
-        function setLoading(listId, count) {
-            var list = document.getElementById(listId);
-            if (!list) return;
-            var html = '';
-            for (var i = 0; i < (count || 5); i++) html += '<div class="loading-skeleton loading-row"></div>';
-            list.innerHTML = html;
-        }
-
-        async function apiFetch(url, opts) {
-            var opt = opts || {};
-            var h = opt.auth === false ? { 'Content-Type': 'application/json' } : headers();
-            var r = await fetch(API + url, { ...opt, headers: { ...h, ...opt.headers }, body: opt.body });
-            var text = await r.text();
-            if ((text || '').trim().startsWith('<')) {
-                if (token) { token = null; localStorage.removeItem('crm_token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show'); }
-                return { ok: false, needLogin: true, error: 'سرور به جای JSON پاسخ داد. از پوشه backend دستور node server.js را اجرا کنید.' };
-            }
-            var data;
-            try { data = JSON.parse(text); } catch (_) {
-                if (token) { token = null; localStorage.removeItem('crm_token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show'); }
-                return { ok: false, needLogin: true, error: 'پاسخ سرور نامعتبر است' };
-            }
-            if (r.status === 401) {
-                token = null; localStorage.removeItem('crm_token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
-                return { ok: false, needLogin: true, error: data.error || 'لطفاً دوباره وارد شوید' };
-            }
-            return { ok: r.ok, status: r.status, data: data };
-        }
-
-        async function login() {
-            var email = document.getElementById('email').value.trim();
-            var pass = document.getElementById('pass').value;
-            document.getElementById('loginErr').textContent = '';
-            var btn = document.getElementById('btnLogin');
-            btn.disabled = true;
-            btn.textContent = 'در حال ورود...';
-            var r = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: pass }) });
-            var text = await r.text();
-            btn.disabled = false;
-            btn.textContent = 'ورود';
-            if ((text || '').trim().startsWith('<')) {
-                document.getElementById('loginErr').textContent = 'سرور به جای JSON پاسخ داد. از پوشه backend دستور node server.js را اجرا کنید.';
-                return;
-            }
-            try { var data = JSON.parse(text); } catch (_) { document.getElementById('loginErr').textContent = 'پاسخ سرور نامعتبر است'; return; }
-            if (data.token) {
-                token = data.token;
-                localStorage.setItem('crm_token', token);
-                currentUser = data.user || {};
-                setUserDisplay(currentUser);
-                document.getElementById('loginBox').style.display = 'none';
-                document.getElementById('app').classList.add('show');
-                applyNavByRole();
-                loadConversations();
-                startRatesInterval();
-                startPresenceInterval();
-            } else {
-                document.getElementById('loginErr').textContent = data.error || 'ورود ناموفق';
-            }
-        }
-
-        async function logout() {
-            if (token) {
-                try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
-            }
-            if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
-            if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
-            token = null;
-            currentUser = null;
-            localStorage.removeItem('crm_token');
-            document.getElementById('loginBox').style.display = 'flex';
-            document.getElementById('app').classList.remove('show');
-        }
-
-        function escapeHtml(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-        async function loadConversations() {
-            var list = document.getElementById('convList');
-            setLoading('convList', 4);
-            var res = await apiFetch('/api/conversations?limit=50');
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty"><span class="empty-icon">⚠️</span><br>خطا در بارگذاری. ' + (res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
-            var data = res.data;
-            if (!data.data || data.data.length === 0) {
-                list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>هنوز مکالمه‌ای نیست.<br>بعد از اتصال واتساپ و دریافت پیام، اینجا نمایش داده می‌شود.</div>';
-                return;
-            }
-            list.innerHTML = data.data.map(function(c) {
-                var cust = c.customer || {};
-                var name = cust.name || cust.phone || 'مشتری';
-                var phone = cust.phone || '';
-                return '<div class="list-item" data-id="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + escapeHtml(name) + '\', \'' + escapeHtml(phone) + '\')"><div><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(phone) + ' • ' + (c.status || '') + '</div></div></div>';
-            }).join('');
-        }
-
-        function openChat(id, name, phone) {
-            currentConvId = id;
-            document.getElementById('chatHeader').textContent = name || phone || 'مکالمه';
-            document.getElementById('chatArea').classList.add('show');
-            loadMessages(id);
-        }
-
-        function openChatFromHistory(el) {
-            var convId = el.getAttribute('data-convid');
-            var name = el.getAttribute('data-customername') || '';
-            if (convId) { openChat(convId, name, ''); showPage('conversations'); }
-        }
-
-        async function loadMessages(id) {
-            var el = document.getElementById('chatMessages');
-            el.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
-            var res = await apiFetch('/api/conversations/' + id + '/messages');
-            if (res.needLogin) return;
-            if (!res.ok) { el.innerHTML = '<div class="empty">خطا: ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
-            if (!data.data || data.data.length === 0) { el.innerHTML = '<div class="empty"><span class="empty-icon">📭</span><br>هنوز پیامی نیست.</div>'; return; }
-            el.innerHTML = data.data.map(function(m) {
-                var isOut = m.direction === 'outgoing';
-                var time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : '';
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div><div class="time">' + time + '</div></div>';
-            }).join('');
-            el.scrollTop = el.scrollHeight;
-        }
-
-        async function sendMsg() {
-            var input = document.getElementById('msgInput');
-            var content = (input.value || '').trim();
-            if (!content || !currentConvId) return;
-            input.value = '';
-            var res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: content }) });
-            if (res.needLogin) return;
-            if (res.ok) loadMessages(currentConvId);
-            else toast((res.data && res.data.error) || 'خطا در ارسال', true);
-        }
-
-        async function loadCustomers() {
-            var list = document.getElementById('customerList');
-            setLoading('customerList', 5);
-            var res = await apiFetch('/api/customers?limit=100');
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty"><span class="empty-icon">⚠️</span><br>' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">👥</span><br>مشتریی یافت نشد.</div>'; return; }
-            list.innerHTML = data.data.map(function(c) {
-                return '<div class="list-item" onclick="showCustomerHistory(\'' + c.id + '\', \'' + escapeHtml(c.name || c.phone || '') + '\')"><div><span class="name">' + escapeHtml(c.name || c.phone) + '</span><div class="meta">' + escapeHtml(c.phone || '') + ' • ' + escapeHtml(c.email || '') + '</div></div></div>';
-            }).join('');
-        }
-
-        var currentCustomerId = null;
-        async function showCustomerHistory(custId, name) {
-            currentCustomerId = custId;
-            document.getElementById('customerDetailTitle').textContent = 'تاریخچه: ' + name;
-            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
-            document.getElementById('pageCustomerDetail').style.display = 'block';
-            document.getElementById('pageCustomerDetail').classList.add('show');
-            document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); });
-            var list = document.getElementById('customerHistoryList');
-            list.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
-            var res = await apiFetch('/api/customers/' + custId + '/conversations');
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">خطا: ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📋</span><br>هنوز مکالمه‌ای ثبت نشده.</div>'; return; }
-            list.innerHTML = data.data.map(function(c) {
-                var date = c.lastMessageAt ? new Date(c.lastMessageAt).toLocaleString('fa-IR') : '';
-                var safeName = (name || '').replace(/'/g, '&#39;');
-                return '<div class="list-item" data-convid="' + c.id + '" data-customername="' + safeName + '" onclick="openChatFromHistory(this)"><div><span class="name">مکالمه ' + (c.status || '') + '</span><div class="meta">' + (c.messageCount || 0) + ' پیام • ' + date + '</div></div></div>';
-            }).join('');
-        }
-
-        function setUserDisplay(u) {
-            if (!u) return;
-            var emailEl = document.getElementById('userEmail');
-            var avatarEl = document.getElementById('userAvatar');
-            if (emailEl) emailEl.textContent = u.email || u.name || '';
-            if (avatarEl) avatarEl.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?');
-        }
-        function applyNavByRole() {
-            var role = (currentUser && currentUser.role) || '';
-            var supNav = document.querySelector('.nav-supervision');
-            var branchNav = document.querySelector('.nav-branches');
-            var staffNav = document.querySelector('.nav-staff-activity');
-            if (supNav) supNav.style.display = (role === 'owner') ? '' : 'none';
-            if (branchNav) branchNav.style.display = (role === 'owner' || role === 'admin') ? '' : 'none';
-            if (staffNav) staffNav.style.display = (role === 'owner' || role === 'admin' || role === 'manager') ? '' : 'none';
-        }
-        function showPage(page) {
-            if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
-            document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); if (l.getAttribute('data-page') === page) l.classList.add('active'); });
-            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
-            var ids = { conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat' };
-            if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = 'block'; el.classList.add('show'); } }
-            if (page === 'conversations') loadConversations();
-            if (page === 'customers') loadCustomers();
-            if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
-            if (page === 'users') { loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch']); }
-            if (page === 'tickets') loadTickets();
-            if (page === 'whatsapp') loadWhatsappStatus();
-            if (page === 'branches') { loadBranches(); }
-            if (page === 'staff-activity') loadStaffActivity();
-            if (page === 'profile') loadProfile();
-            if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
-            if (page === 'internal-chat') { loadInternalThreads(); loadInternalUsers(); }
-            if (page === 'supervision') { loadBranchesForSelect(['supBranch', 'supActBranch']); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
-        }
-
-        async function loadTickets() {
-            var list = document.getElementById('ticketList');
-            setLoading('ticketList', 4);
-            var res = await apiFetch('/api/tickets?limit=50');
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">خطا: ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🎫</span><br>تیکتی یافت نشد.</div>'; return; }
-            list.innerHTML = data.data.map(function(t) {
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + (t.creator && t.creator.name ? t.creator.name : '') + ' • ' + (t.status || '') + '</div></div><span class="badge ' + (t.status || '') + '">' + (t.status || '') + '</span></div>';
-            }).join('');
-        }
-
-        async function addTicket() {
-            var title = document.getElementById('ticketTitle').value.trim();
-            if (!title) { toast('عنوان تیکت الزامی است', true); return; }
-            var res = await apiFetch('/api/tickets', { method: 'POST', body: JSON.stringify({ title: title, description: document.getElementById('ticketDesc').value, priority: document.getElementById('ticketPriority').value }) });
-            if (res.needLogin) return;
-            if (res.ok) { document.getElementById('ticketTitle').value = ''; document.getElementById('ticketDesc').value = ''; toast('تیکت ثبت شد'); loadTickets(); } else { toast((res.data && res.data.error) || 'خطا', true); }
-        }
-
-        async function addDepartment() {
-            var name = document.getElementById('deptName').value.trim();
-            if (!name) { toast('نام دپارتمان الزامی است', true); return; }
-            var branchId = document.getElementById('deptBranch').value || null;
-            var res = await apiFetch('/api/departments', { method: 'POST', body: JSON.stringify({ name: name, description: document.getElementById('deptDesc').value, keywords: document.getElementById('deptKeywords').value, branchId: branchId }) });
-            if (res.needLogin) return;
-            if (res.ok) { document.getElementById('deptName').value = ''; document.getElementById('deptDesc').value = ''; document.getElementById('deptKeywords').value = ''; toast('دپارتمان اضافه شد'); loadDepartments(); } else { toast((res.data && res.data.error) || 'خطا', true); }
-        }
-
-        async function loadUsers() {
-            var list = document.getElementById('userList');
-            setLoading('userList', 4);
-            var res = await apiFetch('/api/users');
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">خطا: ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">👤</span><br>کاربری یافت نشد.</div>'; return; }
-            list.innerHTML = data.data.map(function(u) {
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(u.name) + '</span><div class="meta">' + escapeHtml(u.email) + ' • ' + (u.role || '') + '</div></div></div>';
-            }).join('');
-        }
-
-        async function loadDeptsForUser() {
-            var res = await apiFetch('/api/departments');
-            if (res.needLogin) return;
-            var sel = document.getElementById('userDept');
-            var arr = (res.data && res.data.data) || [];
-            sel.innerHTML = '<option value="">بدون دپارتمان</option>' + arr.map(function(d) { return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
-        }
-
-        async function addUser() {
-            var name = document.getElementById('userName').value.trim();
-            var email = document.getElementById('userEmailAdd').value.trim();
-            var password = document.getElementById('userPass').value;
-            if (!name || !email || !password) { toast('نام، ایمیل و رمز عبور الزامی است', true); return; }
-            var branchId = document.getElementById('userBranch').value || null;
-            var res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, email: email, password: password, role: document.getElementById('userRole').value, departmentId: document.getElementById('userDept').value || null, branchId: branchId }) });
-            if (res.needLogin) return;
-            if (res.ok) { document.getElementById('userName').value = ''; document.getElementById('userEmailAdd').value = ''; document.getElementById('userPass').value = ''; toast('کاربر اضافه شد'); loadUsers(); } else { toast((res.data && res.data.error) || 'خطا', true); }
-        }
-
-        var qrRefreshInterval = null;
-        async function loadWhatsappStatus() {
-            var st = document.getElementById('gatewayStatus');
-            var qrBox = document.getElementById('qrBox');
-            var qrImg = document.getElementById('qrImg');
-            var btn = document.getElementById('btnStartGateway');
-            if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
-            st.className = 'empty';
-            st.innerHTML = 'در حال بررسی وضعیت...';
-            btn.style.display = 'none';
-            qrBox.style.display = 'none';
-            var ping = await apiFetch('/api/ping', { auth: false });
-            if (ping.needLogin || (ping.data && !ping.data.ok)) {
-                st.className = 'empty';
-                st.innerHTML = 'سرور Backend پاسخ درست نمی‌دهد.<br>از پوشه <b>backend</b> دستور <b>node server.js</b> را اجرا کنید و صفحه را رفرش کنید.';
-                return;
-            }
-            var res = await apiFetch('/api/gateway/status');
-            if (res.needLogin) return;
-            var data = res.data;
-            if (data && data.error) {
-                st.className = 'empty';
-                st.textContent = 'Gateway روشن نیست. روی دکمه زیر کلیک کنید تا Gateway از همین سرور شروع شود.';
-                btn.style.display = 'inline-block';
-                return;
-            }
-            st.className = 'empty';
-            st.textContent = 'وضعیت واتساپ: ' + (data && data.whatsapp ? 'متصل ✓' : 'قطع') + ' | Redis: ' + (data && data.redis ? 'فعال' : 'غیرفعال');
-            btn.style.display = 'none';
-            if (data && data.whatsapp) { qrBox.style.display = 'none'; return; }
-            var qrRes = await apiFetch('/api/gateway/qr');
-            if (qrRes.needLogin) return;
-            var qrData = qrRes.data;
-            if (qrData && qrData.qr) { qrImg.src = qrData.qr; qrBox.style.display = 'block'; qrRefreshInterval = setInterval(loadWhatsappStatus, 5000); } else { qrBox.style.display = 'none'; }
-        }
-
-        async function startGateway() {
-            var res = await apiFetch('/api/admin/start-gateway', { method: 'POST' });
-            if (res.needLogin) return;
-            var msg = (res.data && (res.data.message || res.data.error)) || 'انجام شد';
-            toast(msg);
-            if (res.ok) setTimeout(loadWhatsappStatus, 3000);
-        }
-
-        async function loadDepartments() {
-            var list = document.getElementById('deptList');
-            setLoading('deptList', 4);
-            var res = await apiFetch('/api/departments');
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">خطا: ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🏢</span><br>دپارتمانی یافت نشد.</div>'; return; }
-            list.innerHTML = data.data.map(function(d) {
-                var branchName = (d.branch && d.branch.name) ? d.branch.name : '';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(d.name || '') + '</span><div class="meta">' + escapeHtml(d.description || '') + (branchName ? ' • ' + escapeHtml(branchName) : '') + '</div></div></div>';
-            }).join('');
-        }
-
-        async function loadBranchesForSelect(selectIds) {
-            var res = await apiFetch('/api/branches');
-            if (res.needLogin || !res.ok) return;
-            var arr = (res.data && res.data.data) || [];
-            var opt = '<option value="">بدون شعبه</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '') + (b.country ? ' (' + b.country + ')' : '')) + '</option>'; }).join('');
-            (selectIds || ['userBranch', 'deptBranch', 'supBranch', 'supActBranch']).forEach(function(id) {
-                var el = document.getElementById(id);
-                if (el) { el.innerHTML = (id === 'supBranch' || id === 'supActBranch') ? '<option value="">همه شعب</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '')) + '</option>'; }).join('') : opt; }
-            });
-        }
-
-        async function loadBranches() {
-            var list = document.getElementById('branchList');
-            if (!list) return;
-            setLoading('branchList', 4);
-            var res = await apiFetch('/api/branches');
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">خطا: ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🏛️</span><br>شعبه‌ای ثبت نشده. از فرم بالا اضافه کنید.</div>'; return; }
-            var role = (currentUser && currentUser.role) || '';
-            var canEdit = (role === 'owner' || role === 'admin');
-            list.innerHTML = data.data.map(function(b) {
-                var loc = [b.city, b.country].filter(Boolean).join('، ');
-                var name = (b.name || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                var city = (b.city || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                var country = (b.country || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                return '<div class="list-item" data-id="' + b.id + '" data-name="' + name + '" data-city="' + city + '" data-country="' + country + '"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + escapeHtml(loc || '—') + '</div></div>' + (canEdit ? '<button type="button" class="btn-secondary" style="margin:0; padding:6px 12px;" onclick="var li=this.closest(\'.list-item\'); editBranch(li.getAttribute(\'data-id\'), li.getAttribute(\'data-name\')||\'\', li.getAttribute(\'data-city\')||\'\', li.getAttribute(\'data-country\')||\'\')">ویرایش</button>' : '') + '</div>';
-            }).join('');
-        }
-
-        async function addBranch() {
-            var id = window._editingBranchId;
-            var name = document.getElementById('branchName').value.trim();
-            if (!name) { toast('نام شعبه الزامی است', true); return; }
-            var city = document.getElementById('branchCity').value.trim();
-            var country = document.getElementById('branchCountry').value.trim();
-            var res;
-            if (id) {
-                res = await apiFetch('/api/branches/' + id, { method: 'PUT', body: JSON.stringify({ name: name, city: city || null, country: country || null }) });
-                window._editingBranchId = null;
-            } else {
-                res = await apiFetch('/api/branches', { method: 'POST', body: JSON.stringify({ name: name, city: city || null, country: country || null }) });
-            }
-            if (res.needLogin) return;
-            if (res.ok) { document.getElementById('branchName').value = ''; document.getElementById('branchCity').value = ''; document.getElementById('branchCountry').value = ''; toast(id ? 'شعبه به‌روز شد' : 'شعبه اضافه شد'); loadBranches(); } else { toast((res.data && res.data.error) || 'خطا', true); }
-        }
-
-        function editBranch(id, name, city, country) {
-            document.getElementById('branchName').value = (name || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
-            document.getElementById('branchCity').value = (city || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
-            document.getElementById('branchCountry').value = (country || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
-            window._editingBranchId = id;
-            toast('فیلدها را ویرایش کنید و روی «افزودن شعبه» بزنید تا به‌روزرسانی شود.', false);
-        }
-
-        async function loadSupervisionPerformance() {
-            var el = document.getElementById('supPerformanceContent');
-            if (!el) return;
-            el.innerHTML = 'در حال بارگذاری...';
-            el.className = 'empty';
-            var res = await apiFetch('/api/supervision/performance');
-            if (res.needLogin) return;
-            if (!res.ok) { el.innerHTML = 'خطا: ' + (res.data && res.data.error ? res.data.error : ''); return; }
-            var d = res.data;
-            var summary = d.summary || {};
-            var html = '<div class="stat-cards"><div class="stat-card"><div class="val">' + (summary.conversationCount || 0) + '</div><div class="label">کل مکالمات</div></div><div class="stat-card"><div class="val">' + (summary.messageCount || 0) + '</div><div class="label">پیام ارسالی (خروجی)</div></div></div>';
-            if (d.branches && d.branches.length) {
-                html += '<h3 style="margin:16px 0 8px; font-size:1rem;">به تفکیک شعبه</h3><table class="sup-table"><thead><tr><th>شعبه</th><th>شهر/کشور</th><th>تعداد مکالمه</th></tr></thead><tbody>';
-                d.branches.forEach(function(b) { html += '<tr><td>' + escapeHtml(b.name) + '</td><td>' + escapeHtml((b.city || '') + ' ' + (b.country || '')) + '</td><td>' + (b.conversationCount || 0) + '</td></tr>'; });
-                html += '</tbody></table>';
-            }
-            if (d.users && d.users.length) {
-                html += '<h3 style="margin:16px 0 8px; font-size:1rem;">عملکرد کاربران (پیام ارسالی)</h3><table class="sup-table"><thead><tr><th>کاربر</th><th>ایمیل</th><th>شعبه</th><th>تعداد پیام ارسالی</th></tr></thead><tbody>';
-                d.users.forEach(function(u) { html += '<tr><td>' + escapeHtml(u.name) + '</td><td>' + escapeHtml(u.email || '') + '</td><td>' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '—') + '</td><td>' + (u.outgoingMessageCount || 0) + '</td></tr>'; });
-                html += '</tbody></table>';
-            }
-            el.className = '';
-            el.innerHTML = html || '<div class="empty">داده‌ای نیست.</div>';
-        }
-
-        async function loadSupervisionConversations() {
-            var list = document.getElementById('supConvList');
-            if (!list) return;
-            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var branchId = document.getElementById('supBranch') && document.getElementById('supBranch').value ? document.getElementById('supBranch').value : '';
-            var status = document.getElementById('supStatus') && document.getElementById('supStatus').value ? document.getElementById('supStatus').value : '';
-            var q = '?limit=50';
-            if (branchId) q += '&branchId=' + encodeURIComponent(branchId);
-            if (status) q += '&status=' + encodeURIComponent(status);
-            var res = await apiFetch('/api/supervision/conversations' + q);
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">خطا: ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data.data || [];
-            if (data.length === 0) { list.innerHTML = '<div class="empty">مکالمه‌ای یافت نشد.</div>'; return; }
-            list.innerHTML = '<table class="sup-table"><thead><tr><th>مشتری</th><th>شعبه</th><th>دپارتمان</th><th>کارمند</th><th>وضعیت</th></tr></thead><tbody>' + data.map(function(c) {
-                var cust = c.customer || {};
-                var branch = c.branch ? c.branch.name : '—';
-                var dept = c.department ? c.department.name : '—';
-                var assignee = c.assignee ? c.assignee.name : '—';
-                return '<tr><td>' + escapeHtml(cust.name || cust.phone || '—') + '</td><td>' + escapeHtml(branch) + '</td><td>' + escapeHtml(dept) + '</td><td>' + escapeHtml(assignee) + '</td><td>' + (c.status || '—') + '</td></tr>';
-            }).join('') + '</tbody></table>';
-        }
-
-        async function loadStaffActivity() {
-            var onlineList = document.getElementById('onlineStaffList');
-            var loginsList = document.getElementById('loginsList');
-            var countEl = document.getElementById('onlineCount');
-            if (onlineList) onlineList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            if (loginsList) loginsList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var onlineRes = await apiFetch('/api/supervision/online');
-            if (onlineRes.needLogin) return;
-            if (onlineRes.ok && onlineRes.data && onlineRes.data.data) {
-                var users = onlineRes.data.data;
-                if (countEl) countEl.textContent = users.length;
-                if (onlineList) {
-                    if (users.length === 0) onlineList.innerHTML = '<div class="empty">هیچ کارمند آنلاینی نیست.</div>';
-                    else onlineList.innerHTML = '<table class="sup-table"><thead><tr><th>نام</th><th>ایمیل</th><th>شعبه</th><th>وضعیت</th><th>آخرین ورود</th></tr></thead><tbody>' + users.map(function(u) {
-                        var statusClass = (u.status || 'offline').toLowerCase();
-                        var statusLabel = { online: 'آنلاین', away: 'دور', busy: 'مشغول', offline: 'آفلاین' }[statusClass] || u.status;
-                        var lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString('fa-IR') : '—';
-                        var branchName = (u.branch && u.branch.name) ? u.branch.name : '—';
-                        return '<tr><td>' + escapeHtml(u.name) + '</td><td>' + escapeHtml(u.email) + '</td><td>' + escapeHtml(branchName) + '</td><td><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td>' + lastLogin + '</td></tr>';
-                    }).join('') + '</tbody></table>';
-                }
-            } else { if (onlineList) onlineList.innerHTML = '<div class="empty">خطا در بارگذاری.</div>'; if (countEl) countEl.textContent = '0'; }
-            var loginsRes = await apiFetch('/api/supervision/logins?limit=50');
-            if (loginsRes.needLogin) return;
-            if (loginsRes.ok && loginsRes.data && loginsRes.data.data) {
-                var rows = loginsRes.data.data;
-                if (loginsList) {
-                    if (rows.length === 0) loginsList.innerHTML = '<div class="empty">هنوز ورودی ثبت نشده.</div>';
-                    else loginsList.innerHTML = '<table class="sup-table"><thead><tr><th>کاربر</th><th>ایمیل</th><th>شعبه</th><th>زمان ورود</th><th>خلاصه</th></tr></thead><tbody>' + rows.map(function(r) {
-                        var user = r.user || {};
-                        var branch = r.branch ? r.branch.name : '—';
-                        var time = r.createdAt ? new Date(r.createdAt).toLocaleString('fa-IR') : '';
-                        return '<tr><td>' + escapeHtml(user.name) + '</td><td>' + escapeHtml(user.email) + '</td><td>' + escapeHtml(branch) + '</td><td>' + time + '</td><td>' + escapeHtml(r.summary || '') + '</td></tr>';
-                    }).join('') + '</tbody></table>';
-                }
-            } else { if (loginsList) loginsList.innerHTML = '<div class="empty">خطا در بارگذاری ورودها.</div>'; }
-        }
-
-        async function loadSupervisionActivity() {
-            var list = document.getElementById('supActList');
-            if (!list) return;
-            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var branchId = document.getElementById('supActBranch') && document.getElementById('supActBranch').value ? document.getElementById('supActBranch').value : '';
-            var action = document.getElementById('supActAction') && document.getElementById('supActAction').value ? document.getElementById('supActAction').value : '';
-            var q = '?limit=100';
-            if (branchId) q += '&branchId=' + encodeURIComponent(branchId);
-            if (action) q += '&action=' + encodeURIComponent(action);
-            var res = await apiFetch('/api/supervision/activity' + q);
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">خطا: ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data.data || [];
-            if (data.length === 0) { list.innerHTML = '<div class="empty">فعالیتی یافت نشد.</div>'; return; }
-            list.innerHTML = '<table class="sup-table"><thead><tr><th>زمان</th><th>کاربر</th><th>شعبه</th><th>عملیات</th><th>خلاصه</th></tr></thead><tbody>' + data.map(function(a) {
-                var time = a.createdAt ? new Date(a.createdAt).toLocaleString('fa-IR') : '';
-                var user = a.user ? a.user.name : '—';
-                var branch = a.branch ? a.branch.name : '—';
-                return '<tr><td>' + time + '</td><td>' + escapeHtml(user) + '</td><td>' + escapeHtml(branch) + '</td><td>' + escapeHtml(a.action || '') + '</td><td>' + escapeHtml(a.summary || '') + '</td></tr>';
-            }).join('') + '</tbody></table>';
-        }
-
-        document.querySelectorAll('.sup-tab').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                var tab = this.getAttribute('data-tab');
-                document.querySelectorAll('.sup-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-tab') === tab) b.classList.add('active'); });
-                document.querySelectorAll('.sup-panel').forEach(function(p) { p.classList.remove('show'); if ((p.id === 'supPerformance' && tab === 'performance') || (p.id === 'supConversations' && tab === 'conversations') || (p.id === 'supActivity' && tab === 'activity')) p.classList.add('show'); });
-                if (tab === 'performance') loadSupervisionPerformance();
-                if (tab === 'conversations') loadSupervisionConversations();
-                if (tab === 'activity') loadSupervisionActivity();
-            });
-        });
-
-        document.querySelectorAll('.nav-link').forEach(function(link) {
-            link.addEventListener('click', function(e) {
-                e.preventDefault();
-                showPage(this.getAttribute('data-page'));
-            });
-        });
-        var fy = document.getElementById('footerYear');
-        if (fy) fy.textContent = '\u00A9 ' + new Date().getFullYear();
-
-        if (token) {
-            apiFetch('/api/auth/me').then(function(res) {
-                if (res.needLogin || !res.ok) { logout(); return; }
-                var u = res.data;
-                currentUser = u;
-                if (u && u.email) {
-                    setUserDisplay(u);
-                    document.getElementById('loginBox').style.display = 'none';
-                    document.getElementById('app').classList.add('show');
-                    applyNavByRole();
-                    loadConversations();
-                    startRatesInterval();
-                    startPresenceInterval();
-                } else { logout(); }
-            }).catch(function() { logout(); });
-        }
-    </script>
 </body>
 </html>

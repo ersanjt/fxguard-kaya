@@ -1,20 +1,64 @@
 const express = require('express');
 const router = express.Router();
-const { Conversation, Message } = require('../models');
+const { Conversation, Message, Customer, Ticket, Task, Announcement } = require('../models');
 const { Op } = require('sequelize');
+const { getAccessibleCustomerIds } = require('../lib/customerAccess');
+const { isMainAdmin } = require('../lib/permissions');
+
+function conversationWhere(req) {
+    if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role) !== -1) return {};
+    const where = {};
+    if (req.user.branchId) {
+        where[Op.or] = [{ branchId: req.user.branchId }, { assignedTo: req.userId }, { branchId: null, assignedTo: null }];
+    } else {
+        where[Op.or] = [{ assignedTo: req.userId }, { assignedTo: null }];
+    }
+    return where;
+}
 
 router.get('/dashboard', async (req, res) => {
     try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const openCount = await Conversation.count({ where: { status: 'open' } });
-        const todayMessages = await Message.count({
-            where: { timestamp: { [Op.gte]: today } }
-        });
-        res.json({
-            openConversations: openCount,
+        const convWhere = conversationWhere(req);
+
+        const convIds = await Conversation.findAll({ where: convWhere, attributes: ['id'], raw: true }).then(r => r.map(x => x.id));
+        const convIdList = convIds.length ? convIds : [null];
+
+        const [
+            totalConversations,
+            openConversations,
+            unreadConversations,
             todayMessages,
-            totalConversations: await Conversation.count()
+            customerCount,
+            ticketsOpen,
+            tasksPending,
+            announcementsCount
+        ] = await Promise.all([
+            Conversation.count({ where: convWhere }),
+            Conversation.count({ where: { ...convWhere, status: 'open' } }),
+            Conversation.count({ where: { ...convWhere, unreadCount: { [Op.gt]: 0 } } }),
+            convIdList[0] ? Message.count({ where: { conversationId: { [Op.in]: convIdList }, timestamp: { [Op.gte]: today } } }) : 0,
+            (async () => {
+                const ids = await getAccessibleCustomerIds(req);
+                if (ids === null) return Customer.count();
+                if (ids.length === 0) return 0;
+                return Customer.count({ where: { id: { [Op.in]: ids } } });
+            })(),
+            Ticket.count({ where: { status: { [Op.in]: ['open', 'in_progress'] } } }),
+            Task.count({ where: { status: { [Op.in]: ['pending', 'in_progress'] } } }),
+            Announcement.count()
+        ]);
+
+        res.json({
+            totalConversations,
+            openConversations,
+            unreadConversations,
+            todayMessages,
+            totalCustomers: customerCount,
+            ticketsOpen,
+            tasksPending,
+            announcementsCount
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

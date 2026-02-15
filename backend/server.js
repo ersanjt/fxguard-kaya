@@ -23,10 +23,14 @@ const customerRoutes = require('./routes/customers');
 const ticketRoutes = require('./routes/tickets');
 const branchRoutes = require('./routes/branches');
 const supervisionRoutes = require('./routes/supervision');
+const taskRoutes = require('./routes/tasks');
+const processRoutes = require('./routes/processes');
 
 // Database
 const models = require('./models');
 const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse } = models;
+const { MAIN_ADMIN_EMAIL } = require('./lib/permissions');
+const { MAIN_ADMIN_EMAIL } = require('./lib/permissions');
 const mongoose = require('mongoose');
 
 // ==================== Express Setup ====================
@@ -52,7 +56,10 @@ app.use(express.urlencoded({ extended: true }));
 // Rate Limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 دقیقه
-    max: 100 // حداکثر 100 درخواست
+    max: 300, // حداکثر 300 درخواست در 15 دقیقه
+    message: { error: 'تعداد درخواست‌ها زیاد است. چند دقیقه صبر کنید.' },
+    standardHeaders: true,
+    legacyHeaders: false
 });
 app.use('/api/', limiter);
 
@@ -141,7 +148,8 @@ async function connectDatabases() {
     }
 }
 
-// ایجاد کاربر ادمین پیش‌فرض اگر وجود نداشته باشد
+// ایجاد کاربر ادمین اصلی (بالاترین سطح دسترسی) اگر وجود نداشته باشد؛ اگر وجود داشت همیشه نقش owner و فعال است
+const MAIN_ADMIN_EMAIL_LOWER = MAIN_ADMIN_EMAIL.toLowerCase();
 async function ensureAdminUser() {
     try {
         let dept = await Department.findOne({ where: { isDefault: true } });
@@ -156,18 +164,29 @@ async function ensureAdminUser() {
             });
             logger.info('✅ دپارتمان پیش‌فرض ایجاد شد');
         }
-        const existing = await User.findOne({ where: { email: 'admin@company.com' } });
+        let existing = await User.findOne({
+            where: sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), MAIN_ADMIN_EMAIL_LOWER)
+        });
         if (!existing) {
             await User.create({
                 name: 'مالک شرکت',
-                email: 'admin@company.com',
-                password: 'Admin@123',
+                email: MAIN_ADMIN_EMAIL_LOWER,
+                password: '20231030',
                 role: 'owner',
                 branchId: null,
                 departmentId: dept.id,
                 isActive: true
             });
-            logger.info('✅ کاربر مالک ایجاد شد: admin@company.com / Admin@123');
+            logger.info('✅ کاربر مالک (ادمین اصلی) ایجاد شد: ' + MAIN_ADMIN_EMAIL_LOWER);
+        } else {
+            // این کاربر همیشه بالاترین دسترسی دارد — نقش و وضعیت را ثابت نگه می‌داریم
+            let changed = false;
+            if (existing.role !== 'owner') { existing.role = 'owner'; changed = true; }
+            if (!existing.isActive) { existing.isActive = true; changed = true; }
+            if (changed) {
+                await existing.save();
+                logger.info('✅ ادمین اصلی به نقش owner و وضعیت فعال به‌روز شد: ' + existing.email);
+            }
         }
     } catch (err) {
         logger.warn('⚠️ ensureAdminUser:', err.message);
@@ -205,6 +224,13 @@ async function processIncomingMessage(messageData) {
                 source: 'whatsapp'
             });
             logger.info(`✨ New customer created: ${phone}`);
+        } else {
+            const tsContact = timestamp ? new Date((timestamp < 1e12 ? timestamp * 1000 : timestamp)) : new Date();
+            const contactName = (contact && (contact.name || contact.pushname)) || null;
+            const updates = { lastContactAt: tsContact };
+            if (contactName && String(contactName).trim() && String(customer.name || '').trim() !== String(contactName).trim()) updates.name = String(contactName).trim();
+            if (contact && contact.profilePicUrl && contact.profilePicUrl !== customer.profilePic) updates.profilePic = contact.profilePicUrl;
+            await customer.update(updates);
         }
         
         // 2. پیدا کردن یا ایجاد مکالمه
@@ -554,51 +580,15 @@ apiRouter.use('/customers', authMiddleware, customerRoutes);
 apiRouter.use('/tickets', authMiddleware, ticketRoutes);
 apiRouter.use('/branches', authMiddleware, branchRoutes);
 apiRouter.use('/supervision', authMiddleware, supervisionRoutes);
+apiRouter.use('/tasks', authMiddleware, taskRoutes);
+apiRouter.use('/processes', authMiddleware, processRoutes);
+apiRouter.use('/upload', authMiddleware, require('./routes/upload'));
+apiRouter.use('/rates', authMiddleware, require('./routes/rates'));
+apiRouter.use('/services', authMiddleware, require('./routes/services'));
 const announcementRoutes = require('./routes/announcements');
 const internalRoutes = require('./routes/internal');
 apiRouter.use('/announcements', authMiddleware, announcementRoutes);
 apiRouter.use('/internal', authMiddleware, internalRoutes);
-
-// پروکسی قیمت ارز و طلا از نوسان (نوسان دات نت) — برای نوار قیمت داشبورد
-const NAVASAN_API_KEY = process.env.NAVASAN_API_KEY || 'premVIlUQHLNK4IGQzHnZNZyHCbJrknc';
-const NAVASAN_LATEST = `http://api.navasan.tech/latest/?api_key=${NAVASAN_API_KEY}`;
-// ارزهای مهم برای صرافی با دفاتر ایران، روسیه، دبی، استانبول، آذربایجان، چین
-const RATES_KEYS = [
-    { key: 'usd', label: 'دلار', apiKeys: ['usd_sell', 'usd_buy'] },
-    { key: 'eur', label: 'یورو', apiKeys: ['eur', 'mex_eur_sell'] },
-    { key: 'gbp', label: 'پوند', apiKeys: ['gbp', 'gbp_hav'] },
-    { key: 'try', label: 'لیر ترکیه', apiKeys: ['try', 'try_hav'] },
-    { key: 'aed', label: 'درهم امارات', apiKeys: ['aed_sell', 'dirham_dubai'] },
-    { key: 'rub', label: 'روبل روسیه', apiKeys: ['rub'] },
-    { key: 'azn', label: 'منات آذربایجان', apiKeys: ['azn'] },
-    { key: 'cny', label: 'یوان چین', apiKeys: ['cny', 'cny_hav'] },
-    { key: 'gold', label: 'طلا (گرم)', apiKeys: ['18ayar'] }
-];
-apiRouter.get('/rates', authMiddleware, (req, res) => {
-    axios.get(NAVASAN_LATEST, { timeout: 8000 })
-        .then(r => {
-            const raw = r.data || {};
-            const pick = (keys) => {
-                for (const k of keys) {
-                    const v = raw[k] && raw[k].value != null ? { value: raw[k].value, change: raw[k].change } : null;
-                    if (v) return v;
-                }
-                return { value: '—', change: null };
-            };
-            const items = RATES_KEYS.map(({ key, label, apiKeys }) => ({ key, label, ...pick(apiKeys) }));
-            res.json({
-                items,
-                updatedAt: raw.usd_sell && raw.usd_sell.date ? raw.usd_sell.date : new Date().toISOString()
-            });
-        })
-        .catch(err => {
-            logger.warn('Rates fetch failed:', err.message);
-            res.status(502).json({
-                error: 'دریافت قیمت‌ها ناموفق بود',
-                items: RATES_KEYS.map(({ key, label }) => ({ key, label, value: '—', change: null }))
-            });
-        });
-});
 
 apiRouter.post('/webhook/incoming-message', (req, res) => {
     processIncomingMessage(req.body).then(() => res.json({ ok: true })).catch(err => {
@@ -621,6 +611,7 @@ app.get('/health', (req, res) => {
 
 // فایل استاتیک و داشبورد فقط برای مسیرهای غیر از /api
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.get('/', (req, res) => res.redirect('/dashboard.html'));
 
 // Error handling

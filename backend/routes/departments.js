@@ -4,8 +4,9 @@ const { Department, User, Branch } = require('../models');
 
 router.get('/', async (req, res) => {
     try {
+        if (!req.canAccess('departments')) return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
         const where = { isActive: true };
-        if (req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.branchId) {
+        if (!req.canManageUsers() && req.user.branchId) {
             where.branchId = req.user.branchId;
         }
         const departments = await Department.findAll({
@@ -23,8 +24,9 @@ router.get('/', async (req, res) => {
 
 router.post('/', async (req, res) => {
     try {
+        if (!req.canAccess('departments')) return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
         const body = { ...req.body };
-        if (req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.branchId) {
+        if (!req.canManageUsers() && req.user.branchId) {
             body.branchId = req.user.branchId;
         }
         const dept = await Department.create(body);
@@ -36,6 +38,7 @@ router.post('/', async (req, res) => {
 
 router.get('/:id', async (req, res) => {
     try {
+        if (!req.canAccess('departments')) return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
         const dept = await Department.findByPk(req.params.id, {
             include: [{ model: User, as: 'users' }]
         });
@@ -48,6 +51,7 @@ router.get('/:id', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
     try {
+        if (!req.canAccess('departments')) return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
         const dept = await Department.findByPk(req.params.id);
         if (!dept) return res.status(404).json({ error: 'دپارتمان یافت نشد' });
         const { name, description, keywords, isDefault, isActive, color, branchId } = req.body;
@@ -57,7 +61,7 @@ router.put('/:id', async (req, res) => {
         if (isDefault !== undefined) dept.isDefault = !!isDefault;
         if (isActive !== undefined) dept.isActive = !!isActive;
         if (color !== undefined) dept.color = color;
-        if (branchId !== undefined && (req.user.role === 'owner' || req.user.role === 'admin')) dept.branchId = branchId || null;
+        if (branchId !== undefined && req.canManageUsers()) dept.branchId = branchId || null;
         await dept.save();
         res.json(dept);
     } catch (err) {

@@ -2,15 +2,16 @@ const express = require('express');
 const router = express.Router();
 const { Sequelize, Conversation, Message, User, Branch, Department, Customer, ActivityLog } = require('../models');
 const { Op } = require('sequelize');
+const { isMainAdmin } = require('../lib/permissions');
 
 function ownerOnly(req, res, next) {
-    if (req.user.role === 'owner') return next();
+    if (isMainAdmin(req.user) || req.user.role === 'owner') return next();
     return res.status(403).json({ error: 'فقط مالک شرکت به این بخش دسترسی دارد' });
 }
 
-// مالک، ادمین، مدیر — برای مشاهده ورودها و وضعیت آنلاین کارکنان
+// مالک، ادمین اصلی، ادمین، مدیر — برای مشاهده ورودها و وضعیت آنلاین کارکنان
 function canViewStaffActivity(req, res, next) {
-    if (['owner', 'admin', 'manager'].indexOf(req.user.role) !== -1) return next();
+    if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role) !== -1) return next();
     return res.status(403).json({ error: 'دسترسی به این بخش محدود است' });
 }
 

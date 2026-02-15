@@ -86,8 +86,14 @@ router.post('/threads/:id/messages', async (req, res) => {
         const part = await InternalThreadParticipant.findOne({ where: { threadId: req.params.id, userId: req.userId } });
         if (!part) return res.status(403).json({ error: 'دسترسی به این گفتگو ندارید' });
         const content = (req.body.content || '').trim();
-        if (!content) return res.status(400).json({ error: 'متن پیام الزامی است' });
-        const msg = await InternalMessage.create({ threadId: req.params.id, fromUserId: req.userId, content });
+        const attachments = Array.isArray(req.body.attachments) ? req.body.attachments : (req.body.attachments ? [req.body.attachments] : []);
+        if (!content && attachments.length === 0) return res.status(400).json({ error: 'متن پیام یا حداقل یک پیوست الزامی است' });
+        const msg = await InternalMessage.create({
+            threadId: req.params.id,
+            fromUserId: req.userId,
+            content: content || '(پیوست)',
+            attachments: attachments.map(a => typeof a === 'object' && a.url ? { name: a.name || a.url, url: a.url, size: a.size } : null).filter(Boolean)
+        });
         await InternalThread.update({ lastMessageAt: new Date() }, { where: { id: req.params.id } });
         const withUser = await InternalMessage.findByPk(msg.id, { include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'email'] }] });
         res.status(201).json(withUser);
@@ -100,7 +106,7 @@ router.post('/threads/:id/messages', async (req, res) => {
 router.get('/users', async (req, res) => {
     try {
         const where = { isActive: true, id: { [Op.ne]: req.userId } };
-        if (req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.branchId) where.branchId = req.user.branchId;
+        if (!require('../lib/permissions').isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.branchId) where.branchId = req.user.branchId;
         const users = await User.findAll({
             where,
             attributes: ['id', 'name', 'email'],

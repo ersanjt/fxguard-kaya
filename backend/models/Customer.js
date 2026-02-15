@@ -77,6 +77,9 @@ module.exports = (sequelize) => {
             through: 'CustomerTags',
             as: 'tags'
         });
+        if (models.CustomerNote) {
+            Customer.hasMany(models.CustomerNote, { foreignKey: 'customerId', as: 'customerNotes' });
+        }
     };
 
     return Customer;

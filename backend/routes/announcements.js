@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { Announcement, AnnouncementRead, User, Department } = require('../models');
 const { Op } = require('sequelize');
+const { isMainAdmin } = require('../lib/permissions');
 
 // لیست اعلان‌های برای من (با فلگ خوانده شده)
 router.get('/for-me', async (req, res) => {
@@ -65,7 +66,7 @@ router.post('/', async (req, res) => {
             if (!me.departmentId) return res.status(403).json({ error: 'شما به هیچ دپارتمانی تخصیص ندارید' });
             finalTargetId = me.departmentId;
             allowed = true;
-        } else if (me.role === 'owner' || me.role === 'admin') {
+        } else if (isMainAdmin(me) || me.role === 'owner' || me.role === 'admin') {
             if (['user', 'department', 'all'].indexOf(targetType) === -1) return res.status(400).json({ error: 'targetType باید user، department یا all باشد' });
             if (targetType !== 'all' && !targetId) return res.status(400).json({ error: 'برای user و department باید targetId بفرستید' });
             allowed = true;
@@ -91,7 +92,7 @@ router.post('/', async (req, res) => {
 // لیست کاربران و دپارتمان‌ها برای انتخاب گیرنده (فقط مالک/ادمین)
 router.get('/targets', async (req, res) => {
     try {
-        if (req.user.role !== 'owner' && req.user.role !== 'admin') return res.status(403).json({ error: 'فقط مالک یا ادمین' });
+        if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin') return res.status(403).json({ error: 'فقط مالک یا ادمین' });
         const [users, departments] = await Promise.all([
             User.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'email'], include: [{ model: Department, as: 'department', attributes: ['id', 'name'], required: false }] }),
             Department.findAll({ where: { isActive: true }, attributes: ['id', 'name'] })

@@ -39,7 +39,15 @@ const models = {
     AnnouncementRead: require('./AnnouncementRead')(sequelize),
     InternalThread: require('./InternalThread')(sequelize),
     InternalThreadParticipant: require('./InternalThreadParticipant')(sequelize),
-    InternalMessage: require('./InternalMessage')(sequelize)
+    InternalMessage: require('./InternalMessage')(sequelize),
+    Task: require('./Task')(sequelize),
+    TaskUpdate: require('./TaskUpdate')(sequelize),
+    RateAdjustment: require('./RateAdjustment')(sequelize),
+    ProcessTemplate: require('./ProcessTemplate')(sequelize),
+    ProcessInstance: require('./ProcessInstance')(sequelize),
+    ProcessInstanceStep: require('./ProcessInstanceStep')(sequelize),
+    ExchangeService: require('./ExchangeService')(sequelize),
+    CustomerNote: require('./CustomerNote')(sequelize)
 };
 
 // تعریف روابط

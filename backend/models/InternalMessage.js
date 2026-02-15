@@ -18,6 +18,11 @@ module.exports = (sequelize) => {
         content: {
             type: DataTypes.TEXT,
             allowNull: false
+        },
+        attachments: {
+            type: DataTypes.JSON,
+            defaultValue: [],
+            comment: 'آرایه { name, url, size } برای فایل‌های پیوست'
         }
     }, { timestamps: true, tableName: 'InternalMessages' });
 

@@ -1,0 +1,2165 @@
+(function() {
+            var LANG = localStorage.getItem('crm_lang') || 'fa';
+            var I18N = {
+                fa: {
+                    page_title: 'پ��رتا� کارک� ا�  کا�Rا | صراف�R کا�Rا',
+                    login_title: 'پ��رتا� کارک� ا�  کا�Rا',
+                    login_sub: '��ر��د ب�! پ��رتا� از سراسر د� �Rا',
+                    login_email: 'ا�R�&�R�',
+                    login_password: 'ر�&ز عب��ر',
+                    login_btn: '��ر��د',
+                    login_loading: 'در حا� ��ر��د...',
+                    login_totp_title: 'احراز �!���Rت د�� �&رح��!�Rا�R',
+                    login_totp_sub: 'کد شش�Rر��&�R اپ��Rک�Rش�  Google Authenticator را ��ارد ک� �Rد.',
+                    login_totp_code_ph: 'کد ۶ ر��&�R',
+                    login_totp_verify: 'تأ�R�Rد �� ��ر��د',
+                    login_back: 'بازگشت',
+                    login_err_connect: 'اتصا� ب�! سر��ر بر�رار � شد. �&ط�&ئ�  ش���Rد backend (node server.js) در حا� اجراست �� پ� � را از �!�&ا�  آدرس باز کرد�!�Rا�Rد (�&ث�ا�9 http://localhost:3002).',
+                    login_err_server_html: 'سر��ر ب�! جا�R JSON پاسخ داد. از پ��ش�! backend دست��ر node server.js را اجرا ک� �Rد.',
+                    login_err_invalid: 'پاسخ سر��ر � ا�&عتبر است.',
+                    login_err_429: 'تعداد درخ��است�R�!ا ز�Rاد شد�!. �Rک تا د�� د��R��! صبر ک� �Rد �� د��بار�! ��ر��د را بز� �Rد.',
+                    login_err_fail: '��ر��د � ا�&��ف�',
+                    login_totp_for: 'کد شش�Rر��&�R Google Authenticator را برا�R',
+                    login_totp_enter: '��ارد ک� �Rد.',
+                    login_totp_code_required: 'کد شش�Rر��&�R را ��ارد ک� �Rد',
+                    login_totp_retry: '�طفا�9 د��بار�! از �&رح��!� ا��� ��ارد ش���Rد',
+                    login_totp_bad: 'کد اشتبا�! �Rا �&� �ض�R است',
+                    lang_fa: 'فارس�R',
+                    lang_en: 'English',
+                    nav_communications: 'ارتباطات',
+                    nav_conversations: '�&کا��&ات',
+                    nav_customers: '�&شتر�Rا� ',
+                    nav_tickets: 'ت�Rکت�R�!ا�R داخ��R',
+                    nav_organization: 'ساز�&ا� ',
+                    nav_tasks: '��ظا�Rف �� تسک�R�!ا',
+                    nav_processes: 'فرا�R� د�!ا�R کسب�R��کار',
+                    nav_departments: 'دپارت�&ا� �R�!ا',
+                    nav_users: 'کاربرا� ',
+                    nav_branches: 'شعب',
+                    nav_supervision: '� ظارت (�&ا�ک)',
+                    nav_staff_activity: '��ر��د�!ا �� ��ضع�Rت آ� �ا�R� ',
+                    nav_settings: 'ت� ظ�R�&ات',
+                    nav_profile: 'پر��فا�R� �&� ',
+                    nav_internal_chat: '� ت داخ��R',
+                    nav_announcements: 'اع�ا� �R�!ا',
+                    nav_whatsapp: 'اتصا� ��اتساپ',
+                    nav_rates: '� رخ ارز�!ا',
+                    header_search: 'جستج�� در �&کا��&ات�R �&شتر�Rا� ...',
+                    header_logout: 'خر��ج',
+                    logo_kaya: 'صراف�R کا�Rا',
+                    page_conversations: '�&کا��&ات',
+                    page_customers: '�&شتر�Rا� ',
+                    page_departments: 'دپارت�&ا� �R�!ا',
+                    page_users: 'کاربرا� ',
+                    page_tickets: 'ت�Rکت�R�!ا�R داخ��R',
+                    page_tasks: '��ظا�Rف �� تسک�R�!ا',
+                    page_processes: '�&د�Rر فرا�R� د�!ا�R کسب�R��کار',
+                    page_profile: 'پر��فا�R� �&� ',
+                    page_announcements: 'اع�ا� �R�!ا',
+                    page_internal_chat: '� ت داخ��R',
+                    page_branches: 'شعب',
+                    page_staff_activity: '��ر��د�!ا �� ��ضع�Rت آ� �ا�R�  کارک� ا� ',
+                    page_supervision: '� ظارت �� �&��� �Rت��ر�R� گ (�&ا�ک)',
+                    page_whatsapp: 'اتصا� ��اتساپ',
+                    page_rates: 'ت� ظ�R�& � رخ ارز�!ا',
+                    page_customer_detail: 'تار�Rخ� �! �&شتر�R',
+                    btn_send: 'ارسا�',
+                    btn_save: 'ذخ�Rر�!',
+                    btn_back: 'بازگشت',
+                    btn_apply: 'اع�&ا�',
+                    msg_placeholder: 'پ�Rا�& خ��د را ب� ���Rس�Rد...',
+                    back_to_customers: '� � بازگشت ب�! �&شتر�Rا� ',
+                    back_to_list: '� � بازگشت ب�! ��Rست',
+                    loading: 'در حا� بارگذار�R...',
+                    empty_conv: '�!� ��ز �&کا��&�!�Rا�R � �Rست.',
+                    empty_customers: '�&شتر�R�R �Rافت � شد.',
+                    empty_dept: 'دپارت�&ا� �R �Rافت � شد.',
+                    empty_users: 'کاربر�R �Rافت � شد.',
+                    empty_tickets: 'ت�Rکت�R �Rافت � شد.',
+                    empty_tasks: 'تسک�R �Rافت � شد.',
+                    empty_branches: 'شعب�!�Rا�R ثبت � شد�!.',
+                    totp_banner: 'برا�R ا�&� �Rت ب�Rشتر احراز �!���Rت د�� �&رح��!�Rا�R (Google Authenticator) را فعا� ک� �Rد.',
+                    totp_enable: 'فعا��Rساز�R',
+                    totp_later: 'بعدا�9',
+                    profile_intro: '� ا�&�R ت�ف�  �� ر�&ز عب��ر �اب� ���Rرا�Rش است. ا�R�&�R� �� دپارت�&ا�  ت��سط �&د�Rر ت� ظ�R�& �&�R�Rش��د.',
+                    profile_avatar: 'عکس پر��فا�R� (آدرس URL)',
+                    profile_name: '� ا�&',
+                    profile_email_readonly: 'ا�R�&�R� (غ�Rر�اب� تغ�R�Rر)',
+                    profile_dept_readonly: 'دپارت�&ا�  (غ�Rر�اب� تغ�R�Rر)',
+                    profile_phone: 'ت�ف� ',
+                    profile_password_new: 'ر�&ز عب��ر جد�Rد (در ص��رت ت�&ا�R� ب�! تغ�R�Rر)',
+                    profile_password_ph: 'خا��R بگذار�Rد اگر � �&�R�Rخ��ا�!�Rد تغ�R�Rر ک� د',
+                    profile_save: 'ذخ�Rر�! تغ�R�Rرات',
+                    profile_totp_title: 'احراز �!���Rت د�� �&رح��!�Rا�R (Google Authenticator)',
+                    profile_totp_desc: '��ر��د ا�&� �Rتر با اپ��Rک�Rش�  Google Authenticator. �&�R�Rت��ا� �Rد از داخ� پ� � آ�  را فعا� �Rا غ�Rرفعا� ک� �Rد.',
+                    totp_active: 'فعا�',
+                    totp_inactive: 'غ�Rرفعا�',
+                    totp_disable_btn: 'غ�Rرفعا� کرد� ',
+                    totp_setup_btn: 'فعا��Rساز�R با Google Authenticator',
+                    modal_totp_setup: 'فعا��Rساز�R Google Authenticator',
+                    modal_totp_scan: 'با اپ��Rک�Rش�  Google Authenticator QR ز�Rر را اسک�  ک� �Rد (�Rا ک��Rد را دست�R ��ارد ک� �Rد):',
+                    modal_totp_secret: 'ک��Rد دست�R:',
+                    modal_totp_confirm: 'تأ�R�Rد �� فعا��Rساز�R',
+                    modal_totp_disable: 'غ�Rرفعا� کرد�  احراز د�� �&رح��!�Rا�R',
+                    modal_totp_enter_pw: 'ر�&ز عب��ر خ��د را ��ارد ک� �Rد:',
+                    modal_totp_password_ph: 'ر�&ز عب��ر',
+                    modal_user_edit: '���Rرا�Rش دسترس�R �� ��ضع�Rت کاربر',
+                    modal_user_active: 'حساب فعا� (غ�Rرفعا� = �&سد��د)',
+                    modal_user_perms: 'دسترس�R ب�! بخش�R�!ا:',
+                    modal_ann_title: 'اع�ا�  �&�!�&',
+                    modal_ann_gotit: '�&ت��ج�! شد�&',
+                    footer_text: 'صراف�R کا�Rا � پ��رتا� کارک� ا� ',
+                    section_conversations: '�&کا��&ات',
+                    section_customers: '�&شتر�Rا� ',
+                    section_tickets: 'ت�Rکت�R�!ا',
+                    section_tasks: '��ظا�Rف �� تسک�R�!ا',
+                    section_departments: 'دپارت�&ا� �R�!ا',
+                    section_users: 'کاربرا� ',
+                    section_branches: 'شعب',
+                    section_supervision: '� ظارت (�&ا�ک)',
+                    section_staff_activity: '��ر��د�!ا �� آ� �ا�R� ',
+                    section_announcements: 'اع�ا� �R�!ا',
+                    section_internal_chat: '� ت داخ��R',
+                    section_whatsapp: 'اتصا� ��اتساپ',
+                    section_rates: '� رخ ارز�!ا (ت� ظ�R�& � ��ار ��R�&ت)',
+                    section_processes: 'فرا�R� د�!ا�R کسب�R��کار',
+                    section_manage_users: '�&د�Rر�Rت کاربرا�  (���Rرا�Rش/�&سد��د)',
+                    status_online: 'آ� �ا�R� ',
+                    status_away: 'د��ر',
+                    status_busy: '�&شغ���',
+                    status_offline: 'آف�ا�R� ',
+                    err_generic: 'خطا',
+                    saved: 'ذخ�Rر�! شد',
+                    toast_ticket_created: 'ت�Rکت ثبت شد',
+                    toast_dept_added: 'دپارت�&ا�  اضاف�! شد',
+                    toast_user_added: 'کاربر اضاف�! شد',
+                    toast_branch_added: 'شعب�! اضاف�! شد',
+                    toast_branch_updated: 'شعب�! ب�!�Rر��ز شد',
+                    toast_reply_sent: 'پاسخ ثبت شد',
+                    toast_task_created: 'تسک ثبت شد',
+                    toast_status_updated: '��ضع�Rت ب�!�Rر��ز شد',
+                    toast_update_added: 'پ�Rگ�Rر�R ثبت شد',
+                    toast_totp_enabled: 'احراز د�� �&رح��!�Rا�R فعا� شد',
+                    toast_totp_disabled: 'احراز د�� �&رح��!�Rا�R غ�Rرفعا� شد',
+                    toast_rates_saved: 'تعد�R�ات ذخ�Rر�! شد.',
+                    no_branch: 'بد���  شعب�!',
+                    no_dept: 'بد���  دپارت�&ا� ',
+                    no_user: 'ا� تخاب کار�&� د',
+                    no_user_filter: '�!�&�! کار�&� دا� ',
+                    all_branches: '�!�&�! شعب',
+                    all_statuses: '�!�&�! ��ضع�Rت�R�!ا',
+                    all_depts: '�!�&�! دپارت�&ا� �R�!ا',
+                    ticker_loading: 'در حا� بارگذار�R ��R�&ت�R�!ا...',
+                    ticker_updated: 'آخر�R�  بر��زرسا� �R:',
+                    ticker_outside_hours: 'بر��زرسا� �R � رخ ف�ط ۶ تا ۲۰ ب�! ���ت ت�!را�  � �!ر ۱۰ د��R��!',
+                    ticker_last: 'آخر�R�  بر��زرسا� �R:',
+                    dept_branch: 'شعب�!', dept_name: '� ا�& دپارت�&ا� ', dept_desc: 'ت��ض�Rحات', dept_keywords: 'ک��&ات ک��Rد�R (با کا�&ا)', add_dept: 'افز��د�  دپارت�&ا� ',
+                    dept_ph_name: '�&ثا�: پشت�Rبا� �R ف� �R', dept_ph_optional: 'اخت�Rار�R', dept_ph_keywords: '�&ثا�: �&شک��R خراب�R�R پشت�Rبا� �R',
+                    users_intro: 'ف�ط �&د�Rر �&ج�&��ع�! �Rا کس�R ک�! دسترس�R «�&د�Rر�Rت کاربرا� » دارد �&�R�Rت��ا� د کاربر جد�Rد بسازد.',
+                    label_name: '� ا�&', label_email: 'ا�R�&�R�', label_password: 'ر�&ز عب��ر', label_role: '� �ش', label_dept: 'دپارت�&ا� ', label_branch: 'شعب�!',
+                    user_ph_name: '� ا�& کا�&�', user_ph_pass: 'حدا�� ۶ کاراکتر', add_user: 'افز��د�  کاربر', role_agent: 'کار�&� د', role_manager: '�&د�Rر', role_admin: 'اد�&�R� ',
+                    ticket_title: 'ع� ��ا�  ت�Rکت', ticket_desc: 'ت��ض�Rحات', ticket_priority: 'ا������Rت', create_ticket: 'ثبت ت�Rکت', ticket_ph_subject: '�&��ض��ع',
+                    reply_to_ticket: 'پاسخ ب�! ت�Rکت', reply_ph: '�&ت�  پاسخ...', file_attach: 'پ�R��ست فا�R� (اخت�Rار�R)', send_reply: 'ارسا� پاسخ',
+                    priority_normal: 'عاد�R', priority_high: '�&�!�&', priority_low: 'ک�&', priority_urgent: 'ف��ر�R',
+                    tasks_intro: 'پ�Rگ�Rر�R کار�!ا�R اختصاص�R�Rافت�! ب�! کار�&� د �Rا دپارت�&ا� .',
+                    new_task: 'تسک جد�Rد', label_title: 'ع� ��ا� ', task_ph_title: 'ع� ��ا�  ��ظ�Rف�!', task_ph_desc: 'شرح کار', assign_to: 'اختصاص ب�!',
+                    assign_user: 'کار�&� د', assign_dept: 'دپارت�&ا� ', select_dept: 'ا� تخاب دپارت�&ا� ', due_date: '�&�!�ت (اخت�Rار�R)', filter: 'ف�R�تر',
+                    all_statuses: '�!�&�! ��ضع�Rت�R�!ا', status_pending: 'در ا� تظار', status_in_progress: 'در حا� ا� جا�&', status_done: 'ا� جا�& شد�!', status_cancelled: '�غ��',
+                    add_task: 'ثبت تسک', add_update: 'افز��د�  پ�Rگ�Rر�R / گزارش', update_ph: '��ضع�Rت �Rا گزارش خ��د را ب� ���Rس�Rد...', save_update: 'ثبت پ�Rگ�Rر�R',
+                    change_status: 'تغ�R�Rر ��ضع�Rت', creator: 'ساز� د�!', updates: 'پ�Rگ�Rر�R�R�!ا', no_updates: '�!� ��ز پ�Rگ�Rر�R ثبت � شد�!.',
+                    ann_send_title: 'ارسا� اع�ا�  ب�! کارک� ا� ', ann_recipient: 'گ�Rر� د�!', ann_all: '�!�&�! کارک� ا� ', ann_one_dept: '�Rک دپارت�&ا� ', ann_one_user: '�Rک � فر',
+                    ann_select: 'ا� تخاب ک� �Rد', ann_title: 'ع� ��ا� ', ann_body: '�&ت� ', ann_ph_title: 'ع� ��ا�  اع�ا� ', ann_ph_body: '�&ت�  پ�Rا�&...',
+                    ann_important: 'پ�Rا�& �&�!�& (پاپ�Rآپ �� صدا برا�R گ�Rر� د�!)', send_ann: 'ارسا� اع�ا� ',
+                    new_chat: 'گفتگ���R جد�Rد', select_conversation: 'ا� تخاب گفتگ��', msg_ph_short: 'پ�Rا�&...', attach_file: 'پ�R��ست فا�R�',
+                    start_chat_with: 'شر��ع گفتگ�� با', start_chat: 'شر��ع � ت', cancel: 'ا� صراف',
+                    branch_name: '� ا�& شعب�!', branch_city: 'ش�!ر', branch_country: 'کش��ر', branch_ph_name: '�&ثا�: دفتر ت�!را� ', branch_ph_city: '�&ثا�: ت�!را� ', branch_ph_country: '�&ثا�: ا�Rرا� ', add_branch: 'افز��د�  شعب�!', edit: '���Rرا�Rش',
+                    staff_online: 'کارک� ا�  آ� �ا�R� ', staff_intro: 'آخر�R�  ��ر��د�!ا �� ��Rست کارک� ا�  آ� �ا�R�  � برا�R �&د�Rر �� با�اتر', last_logins: 'آخر�R�  ��ر��د�!ا',
+                    sup_performance: 'خ�اص�! ع�&�کرد', sup_conversations: '�&کا��&ات', sup_activity: '�اگ فعا��Rت', sup_branch_status: 'شعب�! / دپارت�&ا�  / ��ضع�Rت', apply_filter: 'اع�&ا� ف�R�تر',
+                    sup_by_branch: 'ب�! تفک�Rک شعب�!', sup_by_user: 'ع�&�کرد کاربرا�  (پ�Rا�& ارسا��R)', total_conversations: 'ک� �&کا��&ات', outgoing_messages: 'پ�Rا�& ارسا��R (خر��ج�R)',
+                    th_branch: 'شعب�!', th_city_country: 'ش�!ر/کش��ر', th_conv_count: 'تعداد �&کا��&�!', th_user: 'کاربر', th_email: 'ا�R�&�R�', th_status: '��ضع�Rت', th_last_login: 'آخر�R�  ��ر��د',
+                    th_customer: '�&شتر�R', th_dept: 'دپارت�&ا� ', th_assignee: 'کار�&� د', th_time: 'ز�&ا� ', th_action: 'ع�&��Rات', th_summary: 'خ�اص�!', th_login_time: 'ز�&ا�  ��ر��د',
+                    all_actions: '�!�&�! ع�&��Rات', action_message_sent: 'ارسا� پ�Rا�&', action_conv_assigned: 'تخص�Rص �&کا��&�!', status_open: 'باز', status_closed: 'بست�!', status_resolved: 'ح� شد�!',
+                    whatsapp_checking: 'در حا� بررس�R...', whatsapp_scan_qr: 'QR را با اپ��Rک�Rش�  ��اتساپ �&��با�R� اسک�  ک� �Rد', whatsapp_start_btn: 'شر��ع Gateway ��اتساپ',
+                    whatsapp_server_err: 'سر��ر Backend پاسخ درست � �&�R�Rد�!د.', whatsapp_gateway_off: 'Gateway ر��ش�  � �Rست. ر���R دک�&�! ز�Rر ک��Rک ک� �Rد.',
+                    whatsapp_status: '��ضع�Rت ��اتساپ:', whatsapp_connected: '�&تص� �S', whatsapp_disconnected: '�طع', redis: 'Redis', active: 'فعا�', inactive: 'غ�Rرفعا�', done_msg: 'ا� جا�& شد',
+                    rates_intro: '��R�&ت�R�!ا از API در�Rافت �&�R�Rش��� د �� در � ��ار ز�Rر پ� � برا�R �!�&�! � �&ا�Rش داد�! �&�R�Rش��� د.', rates_adjust_type: '� ��ع تعد�R�',
+                    rates_none: 'بد���  تغ�R�Rر', rates_fixed: 'ثابت', rates_delta: '± ت���&ا� ', rates_percent: '± درصد', rates_currency: 'ارز', rates_current: '��R�&ت فع��R (� �&ا�Rش در � ��ار)', rates_value: '�&�دار',
+                    no_data: 'داد�!�Rا�R � �Rست.', loading_err: 'خطا در بارگذار�R.', select_user: 'ا� تخاب کاربر',
+                    empty_conv_list: 'گفتگ���R�R ��ج��د � دارد. ر���R «گفتگ���R جد�Rد» ک��Rک ک� �Rد.', chat: '� ت', empty_internal_msgs: '�!� ��ز پ�Rا�&�R � �Rست.', file: 'فا�R�',
+                    empty_no_logins: '�!� ��ز ��ر��د�R ثبت � شد�!.', no_staff_online: '�!�R�  کار�&� د آ� �ا�R� �R � �Rست.', login_err_load: 'خطا در بارگذار�R ��ر��د�!ا.',
+                    required_name_email_pass: '� ا�&�R ا�R�&�R� �� ر�&ز عب��ر ا�زا�&�R است', select_user_first: '�Rک کاربر ا� تخاب ک� �Rد', select_conversation_first: '�Rک گفتگ�� ا� تخاب ک� �Rد',
+                    enter_text_or_file: '�&ت�  �Rا �Rک فا�R� ��ارد ک� �Rد', manage_users_required: 'دسترس�R �&د�Rر�Rت کاربرا�  �از�& است',
+                    branch_name_required: '� ا�& شعب�! ا�زا�&�R است', edit_branch_hint: 'ف�R�د�!ا را ���Rرا�Rش ک� �Rد �� ر���R «افز��د�  شعب�!» بز� �Rد تا ب�!�Rر��زرسا� �R ش��د.',
+                    ticket_title_required: 'ع� ��ا�  ت�Rکت ا�زا�&�R است', reply_or_file_required: '�&ت�  پاسخ �Rا �Rک فا�R� ا�زا�&�R است', task_title_required: 'ع� ��ا�  تسک ا�زا�&�R است',
+                    select_assignee: 'کار�&� د �Rا دپارت�&ا�  را ا� تخاب ک� �Rد', task_update_required: '�&ت�  پ�Rگ�Rر�R ا�زا�&�R است', dept_name_required: '� ا�& دپارت�&ا�  ا�زا�&�R است',
+                    enter_password: 'ر�&ز عب��ر را ��ارد ک� �Rد', enter_6_digit: 'کد شش�Rر��&�R را ��ارد ک� �Rد',
+                    creator_label: 'ساز� د�!:', assignee_label: 'اختصاص ب�!:', due_label: '�&�!�ت:', no_reply: 'پاسخ�R ثبت � شد�!.', conversation: '�&کا��&�!', history: 'تار�Rخ� �!:',
+                    by_dept: 'ب�! تفک�Rک دپارت�&ا� ', by_user: 'ب�! تفک�Rک کار�&� د', pending_count: 'در ا� تظار', in_progress_count: 'در حا� ا� جا�&', done_count: 'ا� جا�& شد�!',
+                    customer: '�&شتر�R', no_conv_history: '�!� ��ز �&کا��&�!�Rا�R ثبت � شد�!.', blocked: '�&سد��د', edit_access: '���Rرا�Rش / دسترس�R',
+                    usd: 'د�ار', eur: '�R��ر��', gbp: 'پ��� د', try: '��Rر', aed: 'در�!�&', rub: 'ر��ب�', azn: '�&� ات', cny: '�R��ا� ', gold: 'ط�ا (گر�&)',
+                    processes_intro: '�ا�ب�R�!ا�R فرا�R� د را تعر�Rف ک� �Rد �� � �&��� �!�R�!ا�R در حا� اجرا را پ�Rگ�Rر�R ک� �Rد.',
+                    process_templates: '�ا�ب�R�!ا�R فرا�R� د',
+                    process_instances: '� �&��� �!�R�!ا�R در حا� اجرا',
+                    process_add_template: 'افز��د�  �ا�ب فرا�R� د',
+                    process_template_name: '� ا�& �ا�ب',
+                    process_template_desc: 'ت��ض�Rحات',
+                    process_stages: '�&راح� (ب�! ترت�Rب)',
+                    process_stage_name: '� ا�& �&رح��!',
+                    process_add_stage: 'افز��د�  �&رح��!',
+                    process_start_instance: 'شر��ع � �&��� �!',
+                    process_instance_title: 'ع� ��ا�  � �&��� �!',
+                    process_current_stage: '�&رح��! فع��R',
+                    process_advance: 'تک�&�R� �� رفت�  ب�! �&رح��! بعد',
+                    process_complete: 'پا�Rا�  فرا�R� د',
+                    process_notes: '�Rادداشت (اخت�Rار�R)',
+                    status_active: 'فعا�',
+                    empty_process_templates: '�ا�ب فرا�R� د�R تعر�Rف � شد�!.',
+                    empty_process_instances: '� �&��� �!�Rا�R در حا� اجرا � �Rست.',
+                    all_templates: '�!�&�! �ا�ب�R�!ا',
+                    process_min_one_stage: 'حدا�� �Rک �&رح��! ��ارد ک� �Rد.',
+                    process_start_from_ticket: 'شر��ع فرا�R� د برا�R ا�R�  ت�Rکت'
+                },
+                en: {
+                    page_title: 'Kaya Staff Portal | Kaya Exchange',
+                    login_title: 'Kaya Staff Portal',
+                    login_sub: 'Sign in to the portal from anywhere',
+                    login_email: 'Email',
+                    login_email_or_username: 'Email or username',
+                    login_password: 'Password',
+                    login_btn: 'Sign in',
+                    login_loading: 'Signing in...',
+                    login_totp_title: 'Two-Factor Authentication',
+                    login_totp_sub: 'Enter the 6-digit code from your Google Authenticator app.',
+                    login_totp_code_ph: '6-digit code',
+                    login_totp_verify: 'Verify & sign in',
+                    login_back: 'Back',
+                    login_err_connect: 'Could not connect to server. Ensure the backend (node server.js) is running and you opened the panel from the same URL (e.g. http://localhost:3002).',
+                    login_err_server_html: 'Server returned non-JSON. Run node server.js from the backend folder.',
+                    login_err_invalid: 'Invalid server response.',
+                    login_err_429: 'Too many requests. Please wait a minute and try again.',
+                    login_err_fail: 'Sign in failed',
+                    login_totp_for: 'Enter the 6-digit Google Authenticator code for',
+                    login_totp_enter: '',
+                    login_totp_code_required: 'Please enter the 6-digit code',
+                    login_totp_retry: 'Please sign in again from step 1',
+                    login_totp_bad: 'Invalid or expired code',
+                    lang_fa: 'فارس�R',
+                    lang_en: 'English',
+                    nav_dashboard: 'Dashboard',
+                    nav_communications: 'Communications',
+                    nav_conversations: 'Conversations',
+                    nav_customers: 'Customers',
+                    nav_tickets: 'Internal tickets',
+                    nav_organization: 'Organization',
+                    nav_tasks: 'Tasks',
+                    nav_processes: 'Business processes',
+                    nav_departments: 'Departments',
+                    nav_users: 'Users',
+                    nav_branches: 'Branches',
+                    nav_supervision: 'Supervision (Owner)',
+                    nav_staff_activity: 'Logins & online status',
+                    nav_settings: 'Settings',
+                    nav_profile: 'My profile',
+                    nav_internal_chat: 'Internal chat',
+                    nav_announcements: 'Announcements',
+                    nav_whatsapp: 'WhatsApp connection',
+                    nav_rates: 'Exchange rates',
+                    nav_services: 'Exchange services',
+                    header_search: 'Search conversations, customers...',
+                    header_logout: 'Log out',
+                    logo_kaya: 'Kaya Exchange',
+                    page_dashboard: 'Dashboard',
+                    dashboard_welcome: 'Key information and quick access to panel sections',
+                    page_conversations: 'Conversations',
+                    page_customers: 'Customers',
+                    page_departments: 'Departments',
+                    page_users: 'Users',
+                    page_tickets: 'Internal tickets',
+                    page_tasks: 'Tasks',
+                    page_processes: 'Business process manager',
+                    page_profile: 'My profile',
+                    page_announcements: 'Announcements',
+                    page_internal_chat: 'Internal chat',
+                    page_branches: 'Branches',
+                    page_staff_activity: 'Staff logins & online status',
+                    page_supervision: 'Supervision & monitoring (Owner)',
+                    page_whatsapp: 'WhatsApp connection',
+                    page_rates: 'Exchange rate settings',
+                    page_customer_detail: 'Customer history',
+                    btn_send: 'Send',
+                    btn_save: 'Save',
+                    btn_back: 'Back',
+                    btn_apply: 'Apply',
+                    msg_placeholder: 'Type your message...',
+                    back_to_customers: '� � Back to customers',
+                    back_to_list: '� � Back to list',
+                    loading: 'Loading...',
+                    empty_conv: 'No conversations yet.',
+                    empty_customers: 'No customers found.',
+                    empty_dept: 'No departments found.',
+                    empty_users: 'No users found.',
+                    empty_tickets: 'No tickets found.',
+                    empty_tasks: 'No tasks found.',
+                    empty_branches: 'No branches added yet.',
+                    totp_banner: 'Enable two-factor authentication (Google Authenticator) for better security.',
+                    totp_enable: 'Enable',
+                    totp_later: 'Later',
+                    profile_intro: 'Name, phone and password are editable. Email and department are set by admin.',
+                    profile_avatar: 'Profile image (URL)',
+                    profile_name: 'Name',
+                    profile_email_readonly: 'Email (read-only)',
+                    profile_dept_readonly: 'Department (read-only)',
+                    profile_phone: 'Phone',
+                    profile_password_new: 'New password (optional)',
+                    profile_password_ph: 'Leave blank to keep current',
+                    profile_save: 'Save changes',
+                    profile_editable_section: 'Editable information',
+                    profile_readonly_section: 'Read-only information',
+                    profile_phone_ph: 'Phone number',
+                    profile_username: 'Username',
+                    profile_first_name: 'First name',
+                    profile_last_name: 'Last name',
+                    profile_date_of_birth: 'Date of birth',
+                    login_email_or_username: 'Email or username',
+                    profile_totp_title: 'Two-Factor Authentication (Google Authenticator)',
+                    profile_totp_desc: 'Sign in more securely with Google Authenticator. You can enable or disable it from this panel.',
+                    totp_active: 'Enabled',
+                    totp_inactive: 'Disabled',
+                    totp_disable_btn: 'Disable',
+                    totp_setup_btn: 'Enable with Google Authenticator',
+                    modal_totp_setup: 'Enable Google Authenticator',
+                    modal_totp_scan: 'Scan the QR code below with Google Authenticator (or enter the key manually):',
+                    modal_totp_secret: 'Manual key:',
+                    modal_totp_confirm: 'Confirm & enable',
+                    modal_totp_disable: 'Disable two-factor authentication',
+                    modal_totp_enter_pw: 'Enter your password:',
+                    modal_totp_password_ph: 'Password',
+                    modal_user_edit: 'Edit user access & status',
+                    modal_user_active: 'Account active (uncheck = blocked)',
+                    modal_user_perms: 'Section access:',
+                    modal_ann_title: 'Important notice',
+                    modal_ann_gotit: 'Got it',
+                    footer_text: 'Kaya Exchange � Staff portal',
+                    section_conversations: 'Conversations',
+                    section_customers: 'Customers',
+                    section_tickets: 'Tickets',
+                    section_tasks: 'Tasks',
+                    section_departments: 'Departments',
+                    section_users: 'Users',
+                    section_branches: 'Branches',
+                    section_supervision: 'Supervision (Owner)',
+                    section_staff_activity: 'Logins & online',
+                    section_announcements: 'Announcements',
+                    section_internal_chat: 'Internal chat',
+                    section_whatsapp: 'WhatsApp connection',
+                    section_rates: 'Exchange rates (ticker)',
+                    section_services: 'Exchange services',
+                    customer_notes: 'Reports & notes',
+                    customer_notes_intro: 'Save a note or report about this customer to refer back later.',
+                    customer_note_add: 'Add report / note',
+                    customer_note_ph: 'Note or report text...',
+                    section_processes: 'Business processes',
+                    page_services: 'Exchange services',
+                    services_intro: 'Define services your exchange offers (buy/sell, transfer, etc.).',
+                    service_add: 'Add service',
+                    service_name: 'Service name',
+                    service_code: 'Code (optional)',
+                    service_category: 'Category (optional)',
+                    service_description: 'Description (optional)',
+                    service_active: 'Active',
+                    section_manage_users: 'User management (edit/block)',
+                    status_online: 'Online',
+                    status_away: 'Away',
+                    status_busy: 'Busy',
+                    status_offline: 'Offline',
+                    err_generic: 'Error',
+                    saved: 'Saved',
+                    toast_ticket_created: 'Ticket created',
+                    toast_dept_added: 'Department added',
+                    toast_user_added: 'User added',
+                    toast_branch_added: 'Branch added',
+                    toast_branch_updated: 'Branch updated',
+                    toast_reply_sent: 'Reply sent',
+                    toast_task_created: 'Task created',
+                    toast_status_updated: 'Status updated',
+                    toast_update_added: 'Update added',
+                    toast_totp_enabled: 'Two-factor authentication enabled',
+                    toast_totp_disabled: 'Two-factor authentication disabled',
+                    toast_rates_saved: 'Rate adjustments saved.',
+                    no_branch: 'No branch',
+                    no_dept: 'No department',
+                    no_user: 'Select user',
+                    no_user_filter: 'All staff',
+                    all_branches: 'All branches',
+                    all_statuses: 'All statuses',
+                    all_depts: 'All departments',
+                    ticker_loading: 'Loading prices...',
+                    ticker_updated: 'Last updated:',
+                    ticker_outside_hours: 'Rates update 06:00�20:00 Tehran time � every 10 min',
+                    ticker_last: 'Last updated:',
+                    dept_branch: 'Branch', dept_name: 'Department name', dept_desc: 'Description', dept_keywords: 'Keywords (comma-separated)', add_dept: 'Add department',
+                    dept_ph_name: 'e.g. Technical support', dept_ph_optional: 'Optional', dept_ph_keywords: 'e.g. issue, support',
+                    users_intro: 'Only the owner or users with "User management" access can create users and edit permissions.',
+                    label_name: 'Name', label_email: 'Email', label_password: 'Password', label_role: 'Role', label_dept: 'Department', label_branch: 'Branch',
+                    user_ph_name: 'Full name', user_ph_pass: 'At least 6 characters', add_user: 'Add user', role_agent: 'Agent', role_manager: 'Manager', role_admin: 'Admin',
+                    ticket_title: 'Ticket title', ticket_desc: 'Description', ticket_priority: 'Priority', create_ticket: 'Create ticket', ticket_ph_subject: 'Subject',
+                    reply_to_ticket: 'Reply to ticket', reply_ph: 'Reply text...', file_attach: 'Attach file (optional)', send_reply: 'Send reply',
+                    priority_normal: 'Normal', priority_high: 'High', priority_low: 'Low', priority_urgent: 'Urgent',
+                    tasks_intro: 'Track tasks assigned to staff or departments.',
+                    new_task: 'New task', label_title: 'Title', task_ph_title: 'Task title', task_ph_desc: 'Description', assign_to: 'Assign to',
+                    assign_user: 'User', assign_dept: 'Department', select_dept: 'Select department', due_date: 'Due date (optional)', filter: 'Filter',
+                    all_statuses: 'All statuses', status_pending: 'Pending', status_in_progress: 'In progress', status_done: 'Done', status_cancelled: 'Cancelled',
+                    add_task: 'Create task', add_update: 'Add update / report', update_ph: 'Write your status or report...', save_update: 'Save update',
+                    change_status: 'Change status', creator: 'Creator', updates: 'Updates', no_updates: 'No updates yet.',
+                    ann_send_title: 'Send announcement to staff', ann_recipient: 'Recipient', ann_all: 'All staff', ann_one_dept: 'One department', ann_one_user: 'One user',
+                    ann_select: 'Select', ann_title: 'Title', ann_body: 'Message', ann_ph_title: 'Announcement title', ann_ph_body: 'Message text...',
+                    ann_important: 'Important (popup and sound for recipient)', send_ann: 'Send announcement',
+                    new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file',
+                    start_chat_with: 'Start conversation with', start_chat: 'Start chat', cancel: 'Cancel',
+                    branch_name: 'Branch name', branch_city: 'City', branch_country: 'Country', branch_ph_name: 'e.g. Tehran office', branch_ph_city: 'e.g. Tehran', branch_ph_country: 'e.g. Iran', add_branch: 'Add branch', edit: 'Edit',
+                    staff_online: 'Staff online', staff_intro: 'Recent logins and online staff � for managers and above', last_logins: 'Recent logins',
+                    sup_performance: 'Performance summary', sup_conversations: 'Conversations', sup_activity: 'Activity log', sup_branch_status: 'Branch / status', apply_filter: 'Apply filter',
+                    sup_by_branch: 'By branch', sup_by_user: 'User performance (outgoing messages)', total_conversations: 'Total conversations', outgoing_messages: 'Outgoing messages',
+                    th_branch: 'Branch', th_city_country: 'City/Country', th_conv_count: 'Conversations', th_user: 'User', th_email: 'Email', th_status: 'Status', th_last_login: 'Last login',
+                    th_customer: 'Customer', th_dept: 'Department', th_assignee: 'Assignee', th_time: 'Time', th_action: 'Action', th_summary: 'Summary', th_login_time: 'Login time',
+                    all_actions: 'All actions', action_message_sent: 'Message sent', action_conv_assigned: 'Conversation assigned', status_open: 'Open', status_closed: 'Closed', status_resolved: 'Resolved',
+                    whatsapp_checking: 'Checking...', whatsapp_scan_qr: 'Scan QR code with WhatsApp mobile app', whatsapp_start_btn: 'Start WhatsApp Gateway',
+                    whatsapp_server_err: 'Backend server is not responding correctly.', whatsapp_gateway_off: 'Gateway is not running. Click the button below to start it.',
+                    whatsapp_status: 'WhatsApp status:', whatsapp_connected: 'Connected �S', whatsapp_disconnected: 'Disconnected', redis: 'Redis', active: 'Active', inactive: 'Inactive', done_msg: 'Done',
+                    rates_intro: 'Prices are fetched from API and shown in the bottom bar for everyone.', rates_adjust_type: 'Adjustment type',
+                    rates_none: 'No change', rates_fixed: 'Fixed', rates_delta: '± Amount', rates_percent: '± Percent', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value',
+                    no_data: 'No data.', loading_err: 'Error loading.', select_user: 'Select user',
+                    empty_conv_list: 'No conversations. Click "New conversation".', chat: 'Chat', empty_internal_msgs: 'No messages yet.', file: 'File',
+                    empty_no_logins: 'No logins recorded yet.', no_staff_online: 'No staff online.', login_err_load: 'Error loading logins.',
+                    required_name_email_pass: 'Name, email and password are required', select_user_first: 'Please select a user', select_conversation_first: 'Please select a conversation',
+                    enter_text_or_file: 'Enter text or attach a file', manage_users_required: 'User management access required',
+                    branch_name_required: 'Branch name is required', edit_branch_hint: 'Edit the fields and click "Add branch" to update.',
+                    ticket_title_required: 'Ticket title is required', reply_or_file_required: 'Reply text or a file is required', task_title_required: 'Task title is required',
+                    select_assignee: 'Select user or department', task_update_required: 'Update text is required', dept_name_required: 'Department name is required',
+                    enter_password: 'Enter password', enter_6_digit: 'Enter the 6-digit code',
+                    creator_label: 'Creator:', assignee_label: 'Assigned to:', due_label: 'Due:', no_reply: 'No replies yet.', conversation: 'Conversation', history: 'History:',
+                    by_dept: 'By department', by_user: 'By user', pending_count: 'Pending', in_progress_count: 'In progress', done_count: 'Done',
+                    customer: 'Customer', no_conv_history: 'No conversations yet.', blocked: 'Blocked', edit_access: 'Edit / access',
+                    usd: 'USD', eur: 'EUR', gbp: 'GBP', try: 'TRY', aed: 'AED', rub: 'RUB', azn: 'AZN', cny: 'CNY', gold: 'Gold (g)',
+                    processes_intro: 'Define process templates and track running instances.',
+                    process_templates: 'Process templates',
+                    process_instances: 'Running instances',
+                    process_add_template: 'Add process template',
+                    process_template_name: 'Template name',
+                    process_template_desc: 'Description',
+                    process_stages: 'Stages (in order)',
+                    process_stage_name: 'Stage name',
+                    process_add_stage: 'Add stage',
+                    process_start_instance: 'Start instance',
+                    process_instance_title: 'Instance title',
+                    process_current_stage: 'Current stage',
+                    process_advance: 'Complete & go to next stage',
+                    process_complete: 'Complete process',
+                    process_notes: 'Notes (optional)',
+                    status_active: 'Active',
+                    empty_process_templates: 'No process templates defined.',
+                    empty_process_instances: 'No running instances.',
+                    all_templates: 'All templates',
+                    process_min_one_stage: 'Add at least one stage.',
+                    process_start_from_ticket: 'Start process for this ticket'
+                }
+            };
+            if (window.__I18N_FA) { for (var k in window.__I18N_FA) I18N.fa[k] = window.__I18N_FA[k]; }
+            window.LANG = LANG;
+            window.t = function(k) { return (I18N[LANG] && I18N[LANG][k]) || I18N.fa[k] || k; };
+            window.setLang = function(l) {
+                LANG = l;
+                localStorage.setItem('crm_lang', l);
+                document.documentElement.lang = l === 'en' ? 'en' : 'fa';
+                document.documentElement.dir = l === 'en' ? 'ltr' : 'rtl';
+                document.body.classList.toggle('ltr', l === 'en');
+                document.querySelectorAll('.lang-switch button').forEach(function(btn) {
+                    var onclick = btn.getAttribute('onclick') || '';
+                    if (onclick.indexOf("'fa'") >= 0) { if (l === 'fa') btn.classList.add('active'); else btn.classList.remove('active'); }
+                    else if (onclick.indexOf("'en'") >= 0) { if (l === 'en') btn.classList.add('active'); else btn.classList.remove('active'); }
+                });
+                if (typeof applyTranslations === 'function') applyTranslations();
+                try { document.title = t('page_title'); } catch (_) {}
+            };
+            window.applyTranslations = function() {
+                document.querySelectorAll('[data-i18n]').forEach(function(el) {
+                    var k = el.getAttribute('data-i18n');
+                    if (k && t(k)) el.textContent = t(k);
+                });
+                document.querySelectorAll('[data-i18n-ph]').forEach(function(el) {
+                    var k = el.getAttribute('data-i18n-ph');
+                    if (k && t(k)) el.placeholder = t(k);
+                });
+                document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
+                    var k = el.getAttribute('data-i18n-title');
+                    if (k && t(k)) el.title = t(k);
+                });
+            };
+        })();
+        const API = '';
+        let token = localStorage.getItem('crm_token');
+        let currentConvId = null;
+        let currentUser = null;
+        let ratesInterval = null;
+        let presenceInterval = null;
+
+        function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
+
+        function formatPrice(val) {
+            if (val == null || val === '' || val === '�') return '�';
+            var s = String(val).replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
+            var n = String(val).replace(/[^\d]/g, '');
+            if (n.length > 3) {
+                var out = ''; for (var i = n.length - 1, c = 0; i >= 0; i--, c++) { if (c && c % 3 === 0) out = ',' + out; out = n[i] + out; }
+                return out.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
+            }
+            return s;
+        }
+
+        function getTehranHour() {
+            try {
+                var h = new Intl.DateTimeFormat('en', { timeZone: 'Asia/Tehran', hour: 'numeric', hour12: false }).format(new Date());
+                return parseInt(h, 10);
+            } catch (e) { return 12; }
+        }
+        function isTehranRatesWindow() {
+            var h = getTehranHour();
+            return h >= 6 && h < 20;
+        }
+        async function fetchRates() {
+            if (!token) return;
+            var upEl = document.getElementById('tickerUpdated');
+            if (!isTehranRatesWindow()) {
+                if (upEl) upEl.textContent = t('ticker_outside_hours');
+                return;
+            }
+            var res = await apiFetch('/api/rates');
+            if (res.needLogin || !res.ok) return;
+            var data = res.data;
+            var items = (data && data.items) || [];
+            items.forEach(function(it) {
+                var valEl = document.querySelector('.ticker-value[data-key="' + it.key + '"]');
+                var chEl = document.querySelector('.ticker-change[data-key="' + it.key + '"]');
+                if (valEl) valEl.textContent = formatPrice(it.value);
+                if (chEl) {
+                    var ch = it.change;
+                    chEl.textContent = ch != null && ch !== '' ? (ch > 0 ? '+' + ch : ch) : '';
+                    chEl.className = 'ticker-change' + (ch > 0 ? ' up' : ch < 0 ? ' down' : '');
+                }
+            });
+            if (upEl) upEl.textContent = t('ticker_last') + ' ' + (data.updatedAt || '');
+        }
+
+        function startRatesInterval() {
+            if (ratesInterval) clearInterval(ratesInterval);
+            fetchRates();
+            ratesInterval = setInterval(fetchRates, 10 * 60 * 1000);
+        }
+        function rateLabel(key) { return t(key) || key; }
+        async function loadRatesAdjustments() {
+            var el = document.getElementById('ratesAdjustmentsTable');
+            if (!el) return;
+            el.innerHTML = t('loading');
+            var canAccess = (currentUser && currentUser.permissions && currentUser.permissions.rates);
+            if (!canAccess) { el.innerHTML = '<div class="empty">' + (LANG === 'en' ? 'You do not have access to this section.' : 'دسترس�R ب�! ا�R�  بخش � دار�Rد.') + '</div>'; return; }
+            var ratesRes = await apiFetch('/api/rates');
+            var adjRes = await apiFetch('/api/rates/adjustments');
+            if (ratesRes.needLogin || adjRes.needLogin) return;
+            if (!adjRes.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (adjRes.data && adjRes.data.error ? adjRes.data.error : '') + '</div>'; return; }
+            var items = (ratesRes.ok && ratesRes.data && ratesRes.data.items) ? ratesRes.data.items : [];
+            var adjList = (adjRes.data && adjRes.data.data) || [];
+            var adjMap = {};
+            adjList.forEach(function(a) { adjMap[a.currencyKey] = a; });
+            var html = '<table class="sup-table" style="margin-top:0;"><thead><tr><th>' + t('rates_currency') + '</th><th>' + t('rates_current') + '</th><th>' + t('rates_adjust_type') + '</th><th>' + t('rates_value') + '</th></tr></thead><tbody>';
+            items.forEach(function(it) {
+                var adj = adjMap[it.key] || { adjustmentType: 'none', value: null };
+                var type = adj.adjustmentType || 'none';
+                var val = adj.value != null ? adj.value : '';
+                var typeOpts = '<option value="none"' + (type === 'none' ? ' selected' : '') + '>' + t('rates_none') + '</option><option value="fixed"' + (type === 'fixed' ? ' selected' : '') + '>' + t('rates_fixed') + '</option><option value="delta_toman"' + (type === 'delta_toman' ? ' selected' : '') + '>' + t('rates_delta') + '</option><option value="percent"' + (type === 'percent' ? ' selected' : '') + '>' + t('rates_percent') + '</option>';
+                var disp = it.value != null && it.value !== '�' ? formatPrice(it.value) : '�';
+                var ph = type === 'percent' ? (LANG === 'en' ? 'e.g. 2 or -1' : '�&ث�ا�9 2 �Rا -1') : type === 'delta_toman' ? (LANG === 'en' ? 'e.g. 500 or -200' : '�&ث�ا�9 500 �Rا -200') : (LANG === 'en' ? 'Fixed price' : '��R�&ت ثابت');
+                html += '<tr><td>' + escapeHtml(rateLabel(it.key)) + '</td><td><strong>' + disp + '</strong></td><td><select data-rate-key="' + it.key + '" data-rate-type="type">' + typeOpts + '</select></td><td><input type="number" step="any" data-rate-key="' + it.key + '" data-rate-value="value" value="' + (val !== '' ? escapeHtml(String(val)) : '') + '" placeholder="' + ph + '" style="width:140px; padding:8px;"></td></tr>';
+            });
+            html += '</tbody></table>';
+            el.innerHTML = html;
+            el.querySelectorAll('select[data-rate-key]').forEach(function(sel) {
+                sel.addEventListener('change', function() {
+                    var key = this.getAttribute('data-rate-key');
+                    var inp = document.querySelector('input[data-rate-key="' + key + '"]');
+                    if (inp) inp.placeholder = this.value === 'percent' ? (LANG === 'en' ? 'e.g. 2 or -1' : '�&ث�ا�9 2 �Rا -1') : this.value === 'delta_toman' ? (LANG === 'en' ? 'e.g. 500 or -200' : '�&ث�ا�9 500 �Rا -200') : (LANG === 'en' ? 'Fixed price' : '��R�&ت ثابت');
+                });
+            });
+        }
+        async function saveRatesAdjustments() {
+            var table = document.getElementById('ratesAdjustmentsTable');
+            if (!table) return;
+            var rows = table.querySelectorAll('tbody tr');
+            var adjustments = [];
+            rows.forEach(function(tr) {
+                var typeSel = tr.querySelector('select[data-rate-key]');
+                var valInp = tr.querySelector('input[data-rate-key]');
+                if (!typeSel || !valInp) return;
+                var key = typeSel.getAttribute('data-rate-key');
+                var type = typeSel.value || 'none';
+                var val = valInp.value.trim();
+                adjustments.push({ currencyKey: key, adjustmentType: type, value: (type !== 'none' && val !== '') ? parseFloat(val) : null });
+            });
+            var res = await apiFetch('/api/rates/adjustments', { method: 'PUT', body: JSON.stringify({ adjustments: adjustments }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('toast_rates_saved')); fetchRates(); loadRatesAdjustments(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        async function loadServices() {
+            var list = document.getElementById('serviceList');
+            if (!list) return;
+            list.innerHTML = t('loading');
+            var res = await apiFetch('/api/services');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            var data = (res.data && res.data.data) || [];
+            if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هنوز سرویسی تعریف نشده. با دکمه افزودن سرویس اضافه کنید.' : 'No services yet. Add one with the button above.') + '</div>'; return; }
+            list.innerHTML = data.map(function(s) {
+                var badge = s.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(s.name) + '</span>' + (s.code ? '<div class="meta">' + escapeHtml(s.code) + '</div>' : '') + (s.category ? '<div class="meta">' + escapeHtml(s.category) + '</div>' : '') + (s.description ? '<div class="meta">' + escapeHtml((s.description || '').slice(0, 80)) + (s.description.length > 80 ? '…' : '') + '</div>' : '') + '</div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openServiceModal(\'' + s.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteService(\'' + s.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+            }).join('');
+        }
+        function openServiceModal(serviceId) {
+            var modal = document.getElementById('serviceModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            document.getElementById('serviceModalId').value = serviceId || '';
+            document.getElementById('serviceModalTitle').textContent = serviceId ? (LANG === 'fa' ? 'ویرایش سرویس' : 'Edit service') : t('service_add');
+            document.getElementById('serviceModalName').value = '';
+            document.getElementById('serviceModalCode').value = '';
+            document.getElementById('serviceModalCategory').value = '';
+            document.getElementById('serviceModalDescription').value = '';
+            document.getElementById('serviceModalActive').checked = true;
+            if (serviceId) {
+                apiFetch('/api/services/' + serviceId).then(function(r) {
+                    if (r.ok && r.data) {
+                        var s = r.data;
+                        document.getElementById('serviceModalName').value = s.name || '';
+                        document.getElementById('serviceModalCode').value = s.code || '';
+                        document.getElementById('serviceModalCategory').value = s.category || '';
+                        document.getElementById('serviceModalDescription').value = s.description || '';
+                        document.getElementById('serviceModalActive').checked = s.isActive !== false;
+                    }
+                });
+            }
+        }
+        function closeServiceModal() { var m = document.getElementById('serviceModal'); if (m) m.style.display = 'none'; }
+        async function saveServiceFromModal() {
+            var id = document.getElementById('serviceModalId').value.trim();
+            var name = document.getElementById('serviceModalName').value.trim();
+            var code = document.getElementById('serviceModalCode').value.trim();
+            var category = document.getElementById('serviceModalCategory').value.trim();
+            var description = document.getElementById('serviceModalDescription').value.trim();
+            var isActive = document.getElementById('serviceModalActive').checked;
+            if (!name) { toast(LANG === 'fa' ? 'نام سرویس الزامی است' : 'Service name required', true); return; }
+            if (id) {
+                var res = await apiFetch('/api/services/' + id, { method: 'PUT', body: JSON.stringify({ name: name, code: code || null, category: category || null, description: description || null, isActive: isActive }) });
+                if (res.needLogin) return;
+                if (res.ok) { closeServiceModal(); toast(t('btn_save')); loadServices(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            } else {
+                var res = await apiFetch('/api/services', { method: 'POST', body: JSON.stringify({ name: name, code: code || null, category: category || null, description: description || null, isActive: isActive }) });
+                if (res.needLogin) return;
+                if (res.ok) { closeServiceModal(); toast(t('btn_save')); loadServices(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            }
+        }
+        async function deleteService(id) {
+            if (!confirm(LANG === 'fa' ? 'حذف این سرویس؟' : 'Delete this service?')) return;
+            var res = await apiFetch('/api/services/' + id, { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadServices(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        function startPresenceInterval() {
+            if (presenceInterval) clearInterval(presenceInterval);
+            apiFetch('/api/auth/me/presence', { method: 'PATCH', body: JSON.stringify({ status: 'online' }) }).catch(function(){});
+            presenceInterval = setInterval(function() {
+                apiFetch('/api/auth/me/presence', { method: 'PATCH', body: JSON.stringify({ status: 'online' }) }).catch(function(){});
+            }, 30000);
+        }
+
+        function doHeaderSearch() {
+            var q = (document.getElementById('headerSearch') && document.getElementById('headerSearch').value) || '';
+            if (!q.trim()) return;
+            var active = document.querySelector('.nav-link.active');
+            var page = active ? active.getAttribute('data-page') : '';
+            if (page === 'conversations') { showPage('conversations'); toast(LANG === 'en' ? 'Search in conversations is supported via API filter.' : 'جستج�� در ��Rست �&کا��&ات از ف�R�تر API پشت�Rبا� �R �&�R�Rش��د.'); }
+            else if (page === 'customers') { showPage('customers'); toast(LANG === 'en' ? 'Search in customers is supported via API filter.' : 'جستج�� در �&شتر�Rا�  از ف�R�تر API پشت�Rبا� �R �&�R�Rش��د.'); }
+            else toast(LANG === 'en' ? 'Search in this section coming soon.' : 'جستج�� در ا�R�  بخش ب�! ز��د�R.'); 
+        }
+
+        function toast(msg, isErr) {
+            var el = document.getElementById('toast');
+            el.textContent = msg;
+            el.className = 'toast' + (isErr ? ' err' : '');
+            el.style.display = 'block';
+            setTimeout(function() { el.style.display = 'none'; }, 3500);
+        }
+
+        function setLoading(listId, count) {
+            var list = document.getElementById(listId);
+            if (!list) return;
+            var html = '';
+            for (var i = 0; i < (count || 5); i++) html += '<div class="loading-skeleton loading-row"></div>';
+            list.innerHTML = html;
+        }
+
+        async function apiFetch(url, opts) {
+            var opt = opts || {};
+            var h = opt.auth === false ? { 'Content-Type': 'application/json' } : headers();
+            var r = await fetch(API + url, { ...opt, headers: { ...h, ...opt.headers }, body: opt.body });
+            var text = await r.text();
+            if ((text || '').trim().startsWith('<')) {
+                if (token) { token = null; localStorage.removeItem('crm_token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show'); }
+                return { ok: false, needLogin: true, error: 'سر��ر ب�! جا�R JSON پاسخ داد. از پ��ش�! backend دست��ر node server.js را اجرا ک� �Rد.' };
+            }
+            var data;
+            try { data = JSON.parse(text); } catch (_) {
+                if (token) { token = null; localStorage.removeItem('crm_token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show'); }
+                return { ok: false, needLogin: true, error: 'پاسخ سر��ر � ا�&عتبر است' };
+            }
+            if (r.status === 401) {
+                token = null; localStorage.removeItem('crm_token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
+                return { ok: false, needLogin: true, error: data.error || '�طفا�9 د��بار�! ��ارد ش���Rد' };
+            }
+            return { ok: r.ok, status: r.status, data: data };
+        }
+
+        (function initLoginTogglePass() {
+            var wrap = document.querySelector('.login-box .password-wrap');
+            if (!wrap) return;
+            var input = wrap.querySelector('input');
+            var btn = document.getElementById('loginTogglePass');
+            if (!input || !btn) return;
+            btn.addEventListener('click', function() {
+                var show = input.type === 'password';
+                input.type = show ? 'text' : 'password';
+                btn.setAttribute('title', show ? (LANG === 'fa' ? 'مخفی کردن رمز' : 'Hide password') : (LANG === 'fa' ? 'نمایش رمز' : 'Show password'));
+                btn.setAttribute('aria-label', btn.getAttribute('title'));
+                var use = btn.querySelector('use');
+                if (use) use.setAttribute('href', show ? '#icon-eye-off' : '#icon-eye');
+            });
+        })();
+
+        async function login() {
+            var email = document.getElementById('email').value.trim();
+            var pass = document.getElementById('pass').value;
+            document.getElementById('loginErr').textContent = '';
+            var btn = document.getElementById('btnLogin');
+            btn.disabled = true;
+            btn.textContent = t('login_loading');
+            var r, text;
+            try {
+                r = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: pass }) });
+                text = await r.text();
+            } catch (e) {
+                btn.disabled = false;
+                btn.textContent = t('login_btn');
+                document.getElementById('loginErr').textContent = t('login_err_connect');
+                return;
+            }
+            btn.disabled = false;
+            btn.textContent = t('login_btn');
+            if ((text || '').trim().startsWith('<')) {
+                document.getElementById('loginErr').textContent = t('login_err_server_html');
+                return;
+            }
+            var data;
+            try { data = JSON.parse(text); } catch (_) {
+                var hint;
+                if (r.status === 0) hint = t('login_err_connect');
+                else if (r.status === 429) hint = t('login_err_429');
+                else hint = t('login_err_invalid') + ' (HTTP ' + r.status + ')';
+                document.getElementById('loginErr').textContent = hint;
+                return;
+            }
+            if (r.status === 429) {
+                document.getElementById('loginErr').textContent = (data && data.error) ? data.error : t('login_err_429');
+                return;
+            }
+            if (data.needTotp && data.tempToken) {
+                window._totpTempToken = data.tempToken;
+                document.getElementById('totpStepEmail').textContent = t('login_totp_for') + ' ' + (data.email || '') + ' ' + t('login_totp_enter');
+                document.getElementById('loginStep1').style.display = 'none';
+                document.getElementById('loginStepTotp').style.display = 'block';
+                document.getElementById('totpCode').value = '';
+                document.getElementById('totpErr').textContent = '';
+                document.getElementById('totpCode').focus();
+                return;
+            }
+            if (data.token) {
+                token = data.token;
+                localStorage.setItem('crm_token', token);
+                currentUser = data.user || {};
+                setUserDisplay(currentUser);
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('app').classList.add('show');
+                applyNavByRole();
+                loadDashboard();
+                startRatesInterval();
+                startPresenceInterval();
+                showTotpPromptIfNeeded();
+            } else {
+                document.getElementById('loginErr').textContent = data.error || t('login_err_fail');
+            }
+        }
+        function backToLoginStep1() {
+            document.getElementById('loginStepTotp').style.display = 'none';
+            document.getElementById('loginStep1').style.display = 'block';
+            window._totpTempToken = null;
+        }
+        async function verifyTotpLogin() {
+            var code = (document.getElementById('totpCode') && document.getElementById('totpCode').value || '').replace(/\s/g, '');
+            if (!code || code.length !== 6) { document.getElementById('totpErr').textContent = t('login_totp_code_required'); return; }
+            if (!window._totpTempToken) { document.getElementById('totpErr').textContent = t('login_totp_retry'); return; }
+            document.getElementById('totpErr').textContent = '';
+            document.getElementById('btnTotpVerify').disabled = true;
+            var r = await fetch(API + '/api/auth/totp/verify-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempToken: window._totpTempToken, code: code }) });
+            var data = await r.json().catch(function() { return {}; });
+            document.getElementById('btnTotpVerify').disabled = false;
+            if (data.token) {
+                window._totpTempToken = null;
+                token = data.token;
+                localStorage.setItem('crm_token', token);
+                currentUser = data.user || {};
+                setUserDisplay(currentUser);
+                document.getElementById('loginBox').style.display = 'none';
+                document.getElementById('app').classList.add('show');
+                applyNavByRole();
+                loadDashboard();
+                startRatesInterval();
+                startPresenceInterval();
+                showTotpPromptIfNeeded();
+            } else {
+                document.getElementById('totpErr').textContent = data.error || t('login_totp_bad');
+            }
+        }
+        function showTotpPromptIfNeeded() {
+            if (!currentUser) return;
+            if (currentUser.totpEnabled) return;
+            if (localStorage.getItem('totp_prompt_dismissed')) return;
+            var ban = document.getElementById('totpPromptBanner');
+            if (ban) ban.style.display = 'block';
+        }
+        function setElText(id, text) { var el = document.getElementById(id); if (el) el.textContent = text || '\u2014'; }
+        function updateProfileAvatarPreview(urlOrName) {
+            var el = document.getElementById('profileAvatarPreview');
+            if (!el) return;
+            var url = (typeof urlOrName === 'string' && urlOrName.trim().indexOf('http') === 0) ? urlOrName.trim() : null;
+            var name = (typeof urlOrName === 'string' && !url) ? urlOrName : (currentUser && currentUser.name) ? currentUser.name : '';
+            var initial = (name && name[0]) ? name[0].toUpperCase() : '?';
+            if (url) {
+                var img = new Image();
+                img.onload = function() { el.innerHTML = ''; el.appendChild(img); };
+                img.onerror = function() { el.innerHTML = '<span>' + escapeHtml(initial) + '</span>'; };
+                img.src = url;
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'cover';
+            } else {
+                el.innerHTML = '<span>' + escapeHtml(initial) + '</span>';
+            }
+        }
+        async function loadProfile() {
+            var u = currentUser;
+            if (!u) {
+                var res = await apiFetch('/api/users/me');
+                if (res.ok && res.data) u = currentUser = res.data;
+            }
+            if (u) {
+                var roleLabel = (LANG === 'fa' ? { owner: 'مالک', admin: 'ادمین', manager: 'مدیر', supervisor: 'ناظر', agent: 'کارمند' } : { owner: 'Owner', admin: 'Admin', manager: 'Manager', supervisor: 'Supervisor', agent: 'Agent' })[u.role] || u.role;
+                var branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
+                var deptName = (u.department && u.department.name) ? u.department.name : '\u2014';
+                var lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString(LANG === 'fa' ? 'fa-IR' : 'en-US', { dateStyle: 'short', timeStyle: 'short' }) : '\u2014';
+                var displayName = [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.name || '\u2014';
+                setElText('profileDisplayUsername', u.username ? '@' + u.username : '\u2014');
+                setElText('profileDisplayName', displayName);
+                setElText('profileDisplayEmail', u.email || '\u2014');
+                setElText('profileRoleBadge', roleLabel);
+                setElText('profileBranchBadge', branchName);
+                setElText('profileDepartmentText', (LANG === 'fa' ? 'دپارتمان: ' : 'Dept: ') + deptName);
+                setElText('profileLastLogin', (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLogin);
+                setElText('profileEmail', u.email);
+                setElText('profileDepartment', deptName);
+                var usernameEl = document.getElementById('profileUsername');
+                var firstEl = document.getElementById('profileFirstName');
+                var lastEl = document.getElementById('profileLastName');
+                var dobEl = document.getElementById('profileDateOfBirth');
+                if (usernameEl) usernameEl.value = u.username || '';
+                if (firstEl) firstEl.value = u.firstName || '';
+                if (lastEl) lastEl.value = u.lastName || '';
+                if (dobEl) dobEl.value = u.dateOfBirth || '';
+                if (document.getElementById('profileDepartment')) document.getElementById('profileDepartment').value = (u.department && u.department.name) ? u.department.name : '�';
+                if (document.getElementById('profilePhone')) document.getElementById('profilePhone').value = u.phone || '';
+                var avatarEl = document.getElementById('profileAvatar');
+                if (avatarEl) { avatarEl.value = u.avatar || ''; if (!avatarEl._bound) { avatarEl._bound = true; avatarEl.addEventListener('input', function() { updateProfileAvatarPreview(avatarEl.value); }); avatarEl.addEventListener('blur', function() { updateProfileAvatarPreview(avatarEl.value || displayName); }); } }
+                var avatarFileEl = document.getElementById('profileAvatarFile');
+                if (avatarFileEl && !avatarFileEl._bound) { avatarFileEl._bound = true; avatarFileEl.addEventListener('change', function() { if (avatarFileEl.files && avatarFileEl.files[0]) uploadProfileAvatar(avatarFileEl.files[0]); }); }
+                if (document.getElementById('profilePassword')) document.getElementById('profilePassword').value = '';
+                updateProfileAvatarPreview(u.avatar || displayName);
+            }
+            var statusEl = document.getElementById('profileTotpStatus');
+            var actionsEl = document.getElementById('profileTotpActions');
+            if (statusEl && actionsEl) {
+                var enabled = !!(u && u.totpEnabled);
+                statusEl.innerHTML = enabled ? '<span class="badge done">' + t('totp_active') + '</span>' : '<span class="badge pending">' + t('totp_inactive') + '</span>';
+                if (enabled) {
+                    actionsEl.innerHTML = '<button type="button" class="btn-secondary" onclick="openTotpDisableModal()">' + t('totp_disable_btn') + '</button>';
+                } else {
+                    actionsEl.innerHTML = '<button type="button" class="btn-primary" onclick="openTotpSetup()">' + t('totp_setup_btn') + '</button>';
+                }
+            }
+        }
+        async function uploadProfileAvatar(file) {
+            var formData = new FormData();
+            formData.append('file', file);
+            var r = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+            var data = await r.json().catch(function() { return {}; });
+            if (data.url) {
+                var avatarInput = document.getElementById('profileAvatar');
+                var fullUrl = (API && data.url.indexOf('http') !== 0) ? (API.replace(/\/$/, '') + data.url) : data.url;
+                if (avatarInput) { avatarInput.value = fullUrl; updateProfileAvatarPreview(fullUrl); }
+                toast(t('saved') || (LANG === 'fa' ? 'تصویر بارگذاری شد' : 'Image uploaded'));
+            } else { toast((data.error) || t('err_generic'), true); }
+        }
+        async function saveProfile() {
+            var username = document.getElementById('profileUsername') && document.getElementById('profileUsername').value;
+            var firstName = document.getElementById('profileFirstName') && document.getElementById('profileFirstName').value;
+            var lastName = document.getElementById('profileLastName') && document.getElementById('profileLastName').value;
+            var dateOfBirth = document.getElementById('profileDateOfBirth') && document.getElementById('profileDateOfBirth').value;
+            var phone = document.getElementById('profilePhone') && document.getElementById('profilePhone').value;
+            var avatar = document.getElementById('profileAvatar') && document.getElementById('profileAvatar').value;
+            var password = document.getElementById('profilePassword') && document.getElementById('profilePassword').value;
+            var body = { firstName: (firstName || '').trim() || null, lastName: (lastName || '').trim() || null, dateOfBirth: (dateOfBirth || '').trim() || null, phone: (phone || '').trim() || null, avatar: (avatar || '').trim() || null };
+            var usernameTrim = (username || '').trim();
+            if (usernameTrim) body.username = usernameTrim;
+            if (password) body.password = password;
+            var btn = document.getElementById('profileSaveBtn');
+            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ذخیره...' : 'Saving...'); }
+            var res = await apiFetch('/api/users/me', { method: 'PATCH', body: JSON.stringify(body) });
+            if (btn) { btn.disabled = false; btn.textContent = t('profile_save') || (LANG === 'fa' ? 'ذخیره تغییرات' : 'Save changes'); }
+            if (res.needLogin) return;
+            if (res.ok) {
+                toast(t('saved'));
+                if (res.data) currentUser = res.data;
+                var passEl = document.getElementById('profilePassword');
+                if (passEl) passEl.value = '';
+                setUserDisplay(currentUser);
+                loadProfile();
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
+        }
+        function closeTotpSetupModal() { document.getElementById('totpSetupModal').style.display = 'none'; }
+        async function openTotpSetup() {
+            var res = await apiFetch('/api/auth/totp/setup');
+            if (res.needLogin || !res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            var d = res.data;
+            document.getElementById('totpSetupQr').innerHTML = d.qrCode ? '<img src="' + d.qrCode + '" alt="QR" style="max-width:220px; height:auto;">' : '';
+            document.getElementById('totpSetupSecret').textContent = d.secret ? t('modal_totp_secret') + ' ' + d.secret : '';
+            document.getElementById('totpSetupCode').value = '';
+            document.getElementById('totpSetupModal').style.display = 'flex';
+        }
+        async function confirmTotpSetup() {
+            var code = (document.getElementById('totpSetupCode') && document.getElementById('totpSetupCode').value || '').replace(/\s/g, '');
+            if (!code || code.length !== 6) { toast(t('enter_6_digit'), true); return; }
+            var res = await apiFetch('/api/auth/totp/confirm-setup', { method: 'POST', body: JSON.stringify({ code: code }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('toast_totp_enabled')); closeTotpSetupModal(); currentUser.totpEnabled = true; loadProfile(); document.getElementById('totpPromptBanner').style.display = 'none'; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        function closeTotpDisableModal() { document.getElementById('totpDisableModal').style.display = 'none'; document.getElementById('totpDisablePassword').value = ''; }
+        function openTotpDisableModal() { document.getElementById('totpDisablePassword').value = ''; document.getElementById('totpDisableModal').style.display = 'flex'; }
+        async function disableTotpSubmit() {
+            var password = document.getElementById('totpDisablePassword') && document.getElementById('totpDisablePassword').value;
+            if (!password) { toast(t('enter_password'), true); return; }
+            var res = await apiFetch('/api/auth/totp/disable', { method: 'POST', body: JSON.stringify({ password: password }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('toast_totp_disabled')); closeTotpDisableModal(); currentUser.totpEnabled = false; loadProfile(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        async function logout() {
+            if (token) {
+                try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
+            }
+            if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
+            if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
+            token = null;
+            currentUser = null;
+            localStorage.removeItem('crm_token');
+            document.getElementById('loginBox').style.display = 'flex';
+            document.getElementById('app').classList.remove('show');
+        }
+
+        function escapeHtml(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
+
+        async function loadDashboard() {
+            var container = document.getElementById('dashboardCards');
+            if (!container) return;
+            var perms = (currentUser && currentUser.permissions) || {};
+            var can = function(section) { return section === 'profile' || perms[section] !== false; };
+            container.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var res = await apiFetch('/api/analytics/dashboard');
+            if (res.needLogin) return;
+            var stats = res.ok && res.data ? res.data : {};
+            var n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
+            var cards = [
+                { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread')) : (n(stats.openConversations) + ' ' + (LANG === 'fa' ? 'باز' : 'open')), badgeWarn: n(stats.unreadConversations) > 0 },
+                { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + (LANG === 'fa' ? ' مشتری' : ' customers') },
+                { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', stat: n(stats.ticketsOpen) + (LANG === 'fa' ? ' تیکت باز' : ' open') },
+                { page: 'tasks', section: 'tasks', title: t('nav_tasks'), icon: 'icon-task', stat: n(stats.tasksPending) + (LANG === 'fa' ? ' تسک در انتظار' : ' pending') },
+                { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-user-online', stat: n(stats.announcementsCount) + (LANG === 'fa' ? ' اعلان' : ' announcements') },
+                { page: 'departments', section: 'departments', title: t('nav_departments'), icon: 'icon-building', stat: null },
+                { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user', stat: null },
+                { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
+                { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-task', stat: null },
+                { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone', stat: null },
+                { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart', stat: null },
+                { page: 'services', section: 'services', title: t('nav_services'), icon: 'icon-building', stat: null },
+                { page: 'profile', section: 'profile', title: t('nav_profile'), icon: 'icon-user', stat: null },
+                { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
+                { page: 'supervision', section: 'supervision', title: t('nav_supervision'), icon: 'icon-chart', stat: null },
+                { page: 'staff-activity', section: 'staff_activity', title: t('nav_staff_activity'), icon: 'icon-user-online', stat: null }
+            ];
+            var html = '';
+            cards.forEach(function(c) {
+                if (!can(c.section)) return;
+                var badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
+                html += '<a href="#" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
+            });
+            container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : 'No sections available.') + '</div>');
+        }
+
+        async function loadConversations() {
+            var list = document.getElementById('convList');
+            setLoading('convList', 4);
+            var q = '?limit=50';
+            var statusEl = document.getElementById('convFilterStatus');
+            var priorityEl = document.getElementById('convFilterPriority');
+            var assigneeEl = document.getElementById('convFilterAssignee');
+            var unreadEl = document.getElementById('convFilterUnread');
+            var searchEl = document.getElementById('convSearch');
+            if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value);
+            if (priorityEl && priorityEl.value) q += '&priority=' + encodeURIComponent(priorityEl.value);
+            if (assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
+            if (unreadEl && unreadEl.checked) q += '&unread=true';
+            if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
+            var res = await apiFetch('/api/conversations' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty"><span class="empty-icon">�a�️</span><br>' + t('loading_err') + ' ' + (res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
+            var data = res.data;
+            if (!data.data || data.data.length === 0) {
+                list.innerHTML = '<div class="empty"><span class="empty-icon">�x�</span><br>' + t('empty_conv') + '</div>';
+                return;
+            }
+            list.innerHTML = data.data.map(function(c) {
+                var cust = c.customer || {};
+                var name = cust.name || cust.phone || t('customer');
+                var phone = cust.phone || '';
+                var safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                var safePhone = (phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                var assigneeName = userDisplay(c.assignee);
+                var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved' };
+                var statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
+                var priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
+                var unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
+                return '<div class="list-item" data-id="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\')"><div><span class="name">' + unreadBadge + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(phone) + (assigneeName ? ' \u25E2 ' + escapeHtml(assigneeName) : '') + '</div></div><div>' + priorityBadge + statusBadge + '</div></div>';
+            }).join('');
+        }
+
+        var currentConvDetail = null;
+        function openChat(id, name, phone) {
+            currentConvId = id;
+            currentConvDetail = null;
+            var headerEl = document.getElementById('chatHeader');
+            var barEl = document.getElementById('convDetailBar');
+            var metaEl = document.getElementById('convDetailMeta');
+            var actionsEl = document.getElementById('convDetailActions');
+            if (headerEl) headerEl.textContent = name || phone || t('customer');
+            document.getElementById('chatArea').classList.add('show');
+            if (barEl) barEl.style.display = 'none';
+            apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); });
+            loadMessages(id);
+            apiFetch('/api/conversations/' + id).then(function(res) {
+                if (!res.ok || !res.data) return;
+                currentConvDetail = res.data;
+                if (!barEl || !metaEl) return;
+                var d = res.data;
+                var assigneeName = userDisplay(d.assignee) || (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned');
+                var deptName = (d.department && d.department.name) ? d.department.name : '';
+                var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved' };
+                var prioT = LANG === 'fa' ? { low: 'کم', normal: 'عادی', high: 'مهم', urgent: 'فوری' } : { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
+                metaEl.textContent = (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + (statusT[d.status] || d.status) + ' | ' + (LANG === 'fa' ? 'اولویت: ' : 'Priority: ') + (prioT[d.priority] || d.priority) + ' | ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + assigneeName + (deptName ? ' | ' + deptName : '');
+                barEl.style.display = 'block';
+                var canManage = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager'));
+                if (actionsEl) actionsEl.style.display = canManage ? 'flex' : 'none';
+                if (canManage) {
+                    var statusSel = document.getElementById('convDetailStatus');
+                    var prioritySel = document.getElementById('convDetailPriority');
+                    var assigneeSel = document.getElementById('convDetailAssignee');
+                    if (statusSel) statusSel.value = d.status || 'open';
+                    if (prioritySel) prioritySel.value = d.priority || 'normal';
+                    if (assigneeSel) { assigneeSel.value = d.assignedTo || ''; loadConvAssignees(); }
+                }
+            });
+        }
+        async function loadConvAssignees() {
+            var selFilter = document.getElementById('convFilterAssignee');
+            var selDetail = document.getElementById('convDetailAssignee');
+            if (!selFilter && !selDetail) return;
+            var res = await apiFetch('/api/users');
+            if (!res.ok || !res.data || !res.data.data) return;
+            var users = res.data.data;
+            var opt = '<option value="">' + (LANG === 'fa' ? 'هر مسئول' : 'Any assignee') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            if (selFilter) selFilter.innerHTML = opt;
+            var optDetail = '<option value="">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            if (selDetail) selDetail.innerHTML = optDetail;
+        }
+        function applyConvFilters() { loadConversations(); }
+        async function updateConvFromDetail() {
+            if (!currentConvId) return;
+            var statusSel = document.getElementById('convDetailStatus');
+            var prioritySel = document.getElementById('convDetailPriority');
+            var assigneeSel = document.getElementById('convDetailAssignee');
+            var body = {};
+            if (statusSel) body.status = statusSel.value;
+            if (prioritySel) body.priority = prioritySel.value;
+            if (assigneeSel) body.assignedTo = assigneeSel.value || null;
+            var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; openChat(currentConvId, document.getElementById('chatHeader').textContent, ''); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+
+        function openChatFromHistory(el) {
+            var convId = el.getAttribute('data-convid');
+            var name = el.getAttribute('data-customername') || '';
+            if (convId) { openChat(convId, name, ''); showPage('conversations'); }
+        }
+
+        async function loadMessages(id) {
+            var el = document.getElementById('chatMessages');
+            el.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
+            var res = await apiFetch('/api/conversations/' + id + '/messages');
+            if (res.needLogin) return;
+            if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data;
+            if (!data.data || data.data.length === 0) { el.innerHTML = '<div class="empty"><span class="empty-icon">�x�</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
+            el.innerHTML = data.data.map(function(m) {
+                var isOut = m.direction === 'outgoing';
+                var time = m.timestamp ? new Date(m.timestamp).toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' }) : '';
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div><div class="time">' + time + '</div></div>';
+            }).join('');
+            el.scrollTop = el.scrollHeight;
+        }
+
+        async function sendMsg() {
+            var input = document.getElementById('msgInput');
+            var content = (input.value || '').trim();
+            if (!content || !currentConvId) return;
+            input.value = '';
+            var res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: content }) });
+            if (res.needLogin) return;
+            if (res.ok) loadMessages(currentConvId);
+            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسا�'), true);
+        }
+
+        async function loadCustomers() {
+            var list = document.getElementById('customerList');
+            setLoading('customerList', 5);
+            var q = '?limit=200';
+            var searchEl = document.getElementById('customerSearch');
+            var statusEl = document.getElementById('customerFilterStatus');
+            if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
+            if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value);
+            var res = await apiFetch('/api/customers' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty"><span class="empty-icon">�a�️</span><br>' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data;
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x�</span><br>' + t('empty_customers') + '</div>'; return; }
+            list.innerHTML = data.data.map(function(c) {
+                var initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+                var statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
+                var statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
+                var lastContact = c.lastContactAt ? new Date(c.lastContactAt).toLocaleDateString(LANG === 'en' ? 'en-US' : 'fa-IR') : '—';
+                return '<div class="list-item" onclick="showCustomerHistory(\'' + c.id + '\', \'' + (c.name || c.phone || '').replace(/'/g, "\\'") + '\')"><div class="list-item-avatar">' + initial + '</div><div><span class="name">' + escapeHtml(c.name || c.phone) + '</span><div class="meta">' + escapeHtml(c.phone || '') + (c.email ? ' ⬢ ' + escapeHtml(c.email) : '') + '</div><div class="meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div>';
+            }).join('');
+        }
+
+        function applyCustomerFilters() { loadCustomers(); }
+
+        var currentCustomerId = null;
+        var currentCustomerData = null;
+        async function showCustomerHistory(custId, name) {
+            currentCustomerId = custId;
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+            document.getElementById('pageCustomerDetail').style.display = 'block';
+            document.getElementById('pageCustomerDetail').classList.add('show');
+            document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); });
+            var cardEl = document.getElementById('customerDetailCard');
+            var list = document.getElementById('customerHistoryList');
+            if (cardEl) cardEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var resDetail = await apiFetch('/api/customers/' + custId);
+            if (resDetail.needLogin) return;
+            if (!resDetail.ok) { if (cardEl) cardEl.innerHTML = '<div class="empty">' + (resDetail.data && resDetail.data.error ? resDetail.data.error : '') + '</div>'; list.innerHTML = ''; return; }
+            currentCustomerData = resDetail.data;
+            var c = currentCustomerData;
+            var initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+            var statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
+            var firstContact = c.firstContactAt ? new Date(c.firstContactAt).toLocaleDateString(LANG === 'en' ? 'en-US' : 'fa-IR') : '—';
+            var lastContact = c.lastContactAt ? new Date(c.lastContactAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '—';
+            if (cardEl) cardEl.innerHTML = '<div class="customer-avatar">' + initial + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div><button type="button" class="btn-secondary" onclick="openCustomerModal(\'' + c.id + '\')" style="align-self:flex-start;">' + (LANG === 'fa' ? 'ویرایش مشتری' : 'Edit') + '</button>';
+            var res = await apiFetch('/api/customers/' + custId + '/conversations');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data;
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x9</span><br>' + t('no_conv_history') + '</div>'; } else {
+            var safeName = (name || '').replace(/'/g, '&#39;');
+            list.innerHTML = data.data.map(function(conv) {
+                var date = conv.lastMessageAt ? new Date(conv.lastMessageAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '';
+                return '<div class="list-item" data-convid="' + conv.id + '" data-customername="' + safeName + '" onclick="openChatFromHistory(this)"><div><span class="name">' + t('conversation') + ' ' + (conv.status || '') + '</span><div class="meta">' + (conv.messageCount || 0) + ' · ' + date + '</div></div></div>';
+                }).join('');
+            }
+            var noteContentEl = document.getElementById('customerNoteContent');
+            var noteAddBtn = document.getElementById('customerNoteAddBtn');
+            if (noteContentEl) noteContentEl.placeholder = t('customer_note_ph') || (LANG === 'fa' ? 'متن گزارش یا یادداشت...' : 'Note or report text...');
+            if (noteAddBtn && !noteAddBtn._bound) { noteAddBtn._bound = true; noteAddBtn.addEventListener('click', function() { addCustomerNote(custId); }); }
+            loadCustomerNotes(custId);
+        }
+        async function loadCustomerNotes(custId) {
+            var list = document.getElementById('customerNotesList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var res = await apiFetch('/api/customers/' + custId + '/notes');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            var data = res.data;
+            var notes = (data && data.data) ? data.data : [];
+            if (notes.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هنوز یادداشتی ثبت نشده.' : 'No notes yet.') + '</div>'; return; }
+            list.innerHTML = notes.map(function(n) {
+                var userName = userDisplay(n.user);
+                var date = n.createdAt ? new Date(n.createdAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '';
+                return '<div class="customer-note-item"><div class="customer-note-meta">' + escapeHtml(userName) + ' \u00B7 ' + date + '</div><div class="customer-note-content">' + escapeHtml((n.content || '').slice(0, 500)) + (n.content && n.content.length > 500 ? '\u2026' : '') + '</div></div>';
+            }).join('');
+        }
+        async function addCustomerNote(custId) {
+            var textarea = document.getElementById('customerNoteContent');
+            var content = (textarea && textarea.value || '').trim();
+            if (!content) { toast(LANG === 'fa' ? 'متن یادداشت الزامی است' : 'Note text required', true); return; }
+            var btn = document.getElementById('customerNoteAddBtn');
+            if (btn) btn.disabled = true;
+            var res = await apiFetch('/api/customers/' + custId + '/notes', { method: 'POST', body: JSON.stringify({ content: content }) });
+            if (btn) btn.disabled = false;
+            if (res.needLogin) return;
+            if (res.ok) { if (textarea) textarea.value = ''; toast(t('saved') || (LANG === 'fa' ? 'ذخیره شد' : 'Saved')); loadCustomerNotes(custId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        function openCustomerModal(customerId) {
+            var modal = document.getElementById('customerModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            document.getElementById('customerModalId').value = customerId || '';
+            document.getElementById('customerModalTitle').textContent = customerId ? (LANG === 'fa' ? 'ویرایش مشتری' : 'Edit customer') : t('customer_add');
+            document.getElementById('customerModalName').value = '';
+            document.getElementById('customerModalPhone').value = '';
+            document.getElementById('customerModalEmail').value = '';
+            document.getElementById('customerModalStatus').value = 'active';
+            document.getElementById('customerModalNotes').value = '';
+            if (customerId && currentCustomerData && currentCustomerData.id === customerId) {
+                document.getElementById('customerModalName').value = currentCustomerData.name || '';
+                document.getElementById('customerModalPhone').value = currentCustomerData.phone || '';
+                document.getElementById('customerModalEmail').value = currentCustomerData.email || '';
+                document.getElementById('customerModalStatus').value = currentCustomerData.status || 'active';
+                document.getElementById('customerModalNotes').value = currentCustomerData.notes || '';
+            }
+        }
+        function closeCustomerModal() { var m = document.getElementById('customerModal'); if (m) m.style.display = 'none'; }
+        async function saveCustomerFromModal() {
+            var id = document.getElementById('customerModalId').value.trim();
+            var name = document.getElementById('customerModalName').value.trim();
+            var phone = (document.getElementById('customerModalPhone').value || '').trim().replace(/\s/g, '');
+            var email = (document.getElementById('customerModalEmail').value || '').trim();
+            var status = document.getElementById('customerModalStatus').value || 'active';
+            var notes = (document.getElementById('customerModalNotes').value || '').trim();
+            if (!name) { toast(LANG === 'fa' ? 'نام الزامی است' : 'Name required', true); return; }
+            if (!id && !phone) { toast(LANG === 'fa' ? 'تلفن برای مشتری جدید الزامی است' : 'Phone required', true); return; }
+            if (id) {
+                var res = await apiFetch('/api/customers/' + id, { method: 'PUT', body: JSON.stringify({ name: name || undefined, phone: phone || undefined, email: email || undefined, status: status, notes: notes || undefined }) });
+                if (res.needLogin) return;
+                if (res.ok) { closeCustomerModal(); toast(t('btn_save')); if (currentCustomerId === id) currentCustomerData = res.data; showCustomerHistory(id, res.data.name || res.data.phone); loadCustomers(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+            } else {
+                var res = await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify({ name: name, phone: phone, email: email || undefined, status: status, notes: notes || undefined }) });
+                if (res.needLogin) return;
+                if (res.ok) { closeCustomerModal(); toast(t('btn_save')); loadCustomers(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+            }
+        }
+
+        function setUserDisplay(u) {
+            if (!u) return;
+            var emailEl = document.getElementById('userEmail');
+            var avatarEl = document.getElementById('userAvatar');
+            if (emailEl) emailEl.textContent = u.username || u.email || u.name || '';
+            if (avatarEl) avatarEl.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?');
+        }
+        function applyNavByRole() {
+            var perms = (currentUser && currentUser.permissions) || {};
+            document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
+                var section = link.getAttribute('data-section');
+                link.style.display = perms[section] !== false ? '' : 'none';
+            });
+        }
+        function showPage(page) {
+            if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
+            document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); if (l.getAttribute('data-page') === page) l.classList.add('active'); });
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+            var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices' };
+            if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = 'block'; el.classList.add('show'); } }
+            if (page === 'dashboard') loadDashboard();
+            if (page === 'conversations') loadConversations();
+            if (page === 'customers') loadCustomers();
+            if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
+            if (page === 'users') { document.getElementById('userFormBox').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? 'block' : 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch']); }
+            if (page === 'tickets') loadTickets();
+            if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); }
+            if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
+            if (page === 'whatsapp') loadWhatsappStatus();
+            if (page === 'rates') loadRatesAdjustments();
+            if (page === 'services') loadServices();
+            if (page === 'branches') { loadBranches(); }
+            if (page === 'staff-activity') loadStaffActivity();
+            if (page === 'profile') loadProfile();
+            if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
+            if (page === 'internal-chat') { loadInternalThreads(); loadInternalUsers(); }
+            if (page === 'supervision') { loadBranchesForSelect(['supBranch', 'supActBranch']); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
+        }
+
+        async function loadTickets() {
+            var list = document.getElementById('ticketList');
+            setLoading('ticketList', 4);
+            var res = await apiFetch('/api/tickets?limit=50');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data;
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x}�</span><br>' + t('empty_tickets') + '</div>'; return; }
+            list.innerHTML = data.data.map(function(t) {
+                var statusLabel = t.status === 'open' ? t('status_open') : t.status === 'in_progress' ? t('status_in_progress') : t.status === 'closed' ? t('status_closed') : t.status || '';
+                return '<div class="list-item" onclick="loadTicketDetail(\'' + t.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + userDisplay(t.creator) + ' ⬢ ' + statusLabel + '</div></div><span class="badge ' + (t.status || '') + '">' + statusLabel + '</span></div>';
+            }).join('');
+        }
+        var currentTicketId = null;
+        function showTicketList() {
+            document.getElementById('ticketDetail').style.display = 'none';
+            document.getElementById('ticketList').style.display = 'block';
+            currentTicketId = null;
+            document.getElementById('ticketReplyContent').value = '';
+            document.getElementById('ticketReplyFile').value = '';
+            document.getElementById('ticketReplyAttachments').textContent = '';
+            loadTickets();
+        }
+        async function loadTicketDetail(id) {
+            currentTicketId = id;
+            document.getElementById('ticketList').style.display = 'none';
+            document.getElementById('ticketDetail').style.display = 'block';
+            var res = await apiFetch('/api/tickets/' + id);
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showTicketList(); return; }
+            var t = res.data;
+            document.getElementById('ticketDetailTitle').textContent = t.title || '';
+            document.getElementById('ticketDetailMeta').textContent = t('creator_label') + ' ' + userDisplay(t.creator) + ' | ' + t('th_status') + ': ' + (t.status || '') + ' | ' + t('ticket_priority') + ': ' + (t.priority || '');
+            var repliesHtml = (t.replies || []).map(function(r) {
+                var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">�x} ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
+                return '<div class="msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + escapeHtml(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' � ' + (r.createdAt ? new Date(r.createdAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
+            }).join('');
+            document.getElementById('ticketReplies').innerHTML = repliesHtml || '<p class="text-muted" style="color:var(--text-muted);">' + t('no_reply') + '</p>';
+            document.getElementById('ticketReplyContent').value = '';
+            document.getElementById('ticketReplyFile').value = '';
+            document.getElementById('ticketReplyAttachments').textContent = '';
+        }
+        async function submitTicketReply() {
+            if (!currentTicketId) return;
+            var content = (document.getElementById('ticketReplyContent') && document.getElementById('ticketReplyContent').value) || '';
+            var fileInput = document.getElementById('ticketReplyFile');
+            var attachments = [];
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                var formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                var up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                var upData = await up.json();
+                if (upData.url) attachments.push({ url: upData.url, name: upData.name || 'فا�R�', size: upData.size });
+            }
+            if (!content.trim() && attachments.length === 0) { toast(t('reply_or_file_required'), true); return; }
+            var res = await apiFetch('/api/tickets/' + currentTicketId + '/replies', { method: 'POST', body: JSON.stringify({ content: content.trim() || '(پ�R��ست)', attachments: attachments }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('toast_reply_sent')); loadTicketDetail(currentTicketId); fileInput.value = ''; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        var currentTaskId = null;
+        function taskStatusLabel(s) { return { pending: t('status_pending'), in_progress: t('status_in_progress'), done: t('status_done'), cancelled: t('status_cancelled') }[s] || s; }
+        function taskPriorityLabel(s) { return { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[s] || s; }
+        function toggleTaskAssignTarget() {
+            var typeSel = document.getElementById('taskAssignType');
+            var userSel = document.getElementById('taskAssignUser');
+            var deptSel = document.getElementById('taskAssignDept');
+            var isUser = typeSel && typeSel.value === 'user';
+            if (userSel) userSel.style.display = isUser ? '' : 'none';
+            if (deptSel) deptSel.style.display = isUser ? 'none' : '';
+        }
+        function loadTasksFilters() {
+            Promise.all([apiFetch('/api/users'), apiFetch('/api/departments')]).then(function(ress) {
+                var users = (ress[0].data && ress[0].data.data) || [];
+                var depts = (ress[1].data && ress[1].data.data) || [];
+                if (userSel) userSel.innerHTML = '<option value="">' + t('no_user') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>'; }).join('');
+                if (deptSel) deptSel.innerHTML = '<option value="">' + t('select_dept') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
+                var filterDept = document.getElementById('taskFilterDept');
+                var filterUser = document.getElementById('taskFilterUser');
+                if (filterDept) filterDept.innerHTML = '<option value="">' + t('all_depts') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
+                if (filterUser) filterUser.innerHTML = '<option value="">' + t('no_user_filter') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>'; }).join('');
+            });
+        }
+        async function loadTasks() {
+            var list = document.getElementById('taskList');
+            if (!list) return;
+            setLoading('taskList', 4);
+            var status = (document.getElementById('taskFilterStatus') && document.getElementById('taskFilterStatus').value) || '';
+            var dept = (document.getElementById('taskFilterDept') && document.getElementById('taskFilterDept').value) || '';
+            var user = (document.getElementById('taskFilterUser') && document.getElementById('taskFilterUser').value) || '';
+            var q = '?limit=50';
+            if (status) q += '&status=' + encodeURIComponent(status);
+            if (dept) q += '&assignedToDepartmentId=' + encodeURIComponent(dept);
+            if (user) q += '&assignedTo=' + encodeURIComponent(user);
+            var res = await apiFetch('/api/tasks' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data;
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x9</span><br>' + t('empty_tasks') + '</div>'; return; }
+            list.innerHTML = data.data.map(function(t) {
+                var assign = userDisplay(t.assignee) || (t.department && t.department.name ? 'دپارت�&ا�  ' + t.department.name : '�');
+                var due = t.dueDate ? new Date(t.dueDate).toLocaleDateString('fa-IR') : '';
+                return '<div class="list-item" onclick="loadTaskDetail(\'' + t.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + assign + ' ⬢ ' + taskStatusLabel(t.status) + (due ? ' ⬢ ' + t('due_label') + ' ' + due : '') + '</div></div><span class="badge ' + (t.status || '') + '">' + taskStatusLabel(t.status) + '</span></div>';
+            }).join('');
+        }
+        async function loadTasksSummary() {
+            var box = document.getElementById('tasksSummaryBox');
+            if (!box) return;
+            var role = (currentUser && currentUser.role) || '';
+            if (role !== 'owner' && role !== 'admin' && role !== 'manager') { box.style.display = 'none'; return; }
+            var res = await apiFetch('/api/tasks/summary');
+            if (res.needLogin || !res.ok) { box.style.display = 'none'; return; }
+            var d = res.data;
+            var html = '';
+            if (d.byDepartment && d.byDepartment.length) {
+                html += '<div class="stat-card" style="min-width:200px;"><div class="label">' + t('by_dept') + '</div>';
+                d.byDepartment.forEach(function(x) {
+                    html += '<div style="margin-top:8px; font-size:0.9rem;">' + escapeHtml(x.department && x.department.name ? x.department.name : '') + ': ' + t('pending_count') + ' ' + (x.pending||0) + ', ' + t('in_progress_count') + ' ' + (x.in_progress||0) + ', ' + t('done_count') + ' ' + (x.done||0) + '</div>';
+                });
+                html += '</div>';
+            }
+            if (d.byUser && d.byUser.length) {
+                html += '<div class="stat-card" style="min-width:200px;"><div class="label">' + t('by_user') + '</div>';
+                d.byUser.forEach(function(x) {
+                    html += '<div style="margin-top:8px; font-size:0.9rem;">' + escapeHtml(userDisplay(x.user)) + ': ' + t('pending_count') + ' ' + (x.pending||0) + ', ' + t('in_progress_count') + ' ' + (x.in_progress||0) + ', ' + t('done_count') + ' ' + (x.done||0) + '</div>';
+                });
+                html += '</div>';
+            }
+            box.innerHTML = html || '';
+            box.style.display = (html ? 'flex' : 'none');
+        }
+        async function addTask() {
+            var title = (document.getElementById('taskTitle') && document.getElementById('taskTitle').value) || '';
+            if (!title.trim()) { toast(t('task_title_required'), true); return; }
+            var type = (document.getElementById('taskAssignType') && document.getElementById('taskAssignType').value) || 'user';
+            var userId = type === 'user' ? (document.getElementById('taskAssignUser') && document.getElementById('taskAssignUser').value) : null;
+            var deptId = type === 'department' ? (document.getElementById('taskAssignDept') && document.getElementById('taskAssignDept').value) : null;
+            if (!userId && !deptId) { toast(t('select_assignee'), true); return; }
+            var body = { title: title.trim(), description: (document.getElementById('taskDesc') && document.getElementById('taskDesc').value) || '', assignedTo: userId || undefined, assignedToDepartmentId: deptId || undefined, priority: (document.getElementById('taskPriority') && document.getElementById('taskPriority').value) || 'normal' };
+            var due = document.getElementById('taskDueDate') && document.getElementById('taskDueDate').value;
+            if (due) body.dueDate = new Date(due).toISOString();
+            var res = await apiFetch('/api/tasks', { method: 'POST', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) {
+                if (document.getElementById('taskTitle')) document.getElementById('taskTitle').value = '';
+                if (document.getElementById('taskDesc')) document.getElementById('taskDesc').value = '';
+                toast(t('toast_task_created'));
+                loadTasks();
+                loadTasksSummary();
+            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        function showTaskList() {
+            document.getElementById('taskDetailBox').style.display = 'none';
+            document.getElementById('taskList').style.display = 'block';
+            currentTaskId = null;
+            loadTasks();
+        }
+        async function loadTaskDetail(id) {
+            currentTaskId = id;
+            document.getElementById('taskList').style.display = 'none';
+            document.getElementById('taskDetailBox').style.display = 'block';
+            var res = await apiFetch('/api/tasks/' + id);
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showTaskList(); return; }
+            var t = res.data;
+            var assign = userDisplay(t.assignee) || (t.department && t.department.name ? 'دپارت�&ا�  ' + t.department.name : '�');
+            var creator = userDisplay(t.creator) || '�';
+            var due = t.dueDate ? new Date(t.dueDate).toLocaleString('fa-IR') : '�';
+            var statusOpts = ['pending','in_progress','done','cancelled'].map(function(s){ return '<option value="' + s + '"' + (t.status === s ? ' selected' : '') + '>' + taskStatusLabel(s) + '</option>'; }).join('');
+            document.getElementById('taskDetailContent').innerHTML =
+                '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(t.title) + '</h3>' +
+                (t.description ? '<p style="color:var(--text-secondary); margin:8px 0;">' + escapeHtml(t.description) + '</p>' : '') +
+                '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + escapeHtml(assign) + ' | ' + t('due_label') + ' ' + due + ' | ' + t('ticket_priority') + ': ' + taskPriorityLabel(t.priority) + '</p>' +
+                '<label>' + t('change_status') + '</label><select id="taskDetailStatus">' + statusOpts + '</select> <button type="button" class="btn-primary" onclick="updateTaskStatus()">' + t('btn_apply') + '</button></div>';
+            var updates = (t.updates || []).map(function(u) {
+                return '<div class="msg in" style="margin:8px 0;"><div>' + escapeHtml(u.content) + '</div><div class="time">' + userDisplay(u.user) + ' � ' + (u.createdAt ? new Date(u.createdAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
+            }).join('');
+            document.getElementById('taskUpdatesList').innerHTML = updates ? '<h4 style="font-size:1rem; margin:12px 0;">' + t('updates') + '</h4>' + updates : '<p class="text-muted" style="color:var(--text-muted);">' + t('no_updates') + '</p>';
+            document.getElementById('taskUpdateContent').value = '';
+        }
+        async function updateTaskStatus() {
+            if (!currentTaskId) return;
+            var sel = document.getElementById('taskDetailStatus');
+            var status = sel ? sel.value : '';
+            if (!status) return;
+            var res = await apiFetch('/api/tasks/' + currentTaskId, { method: 'PUT', body: JSON.stringify({ status: status }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('toast_status_updated')); loadTaskDetail(currentTaskId); loadTasks(); loadTasksSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function addTaskUpdate() {
+            if (!currentTaskId) return;
+            var content = (document.getElementById('taskUpdateContent') && document.getElementById('taskUpdateContent').value) || '';
+            if (!content.trim()) { toast(t('task_update_required'), true); return; }
+            var res = await apiFetch('/api/tasks/' + currentTaskId + '/updates', { method: 'POST', body: JSON.stringify({ content: content.trim() }) });
+            if (res.needLogin) return;
+            if (res.ok) { document.getElementById('taskUpdateContent').value = ''; toast(t('toast_update_added')); loadTaskDetail(currentTaskId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        function initProcessTabs() {
+            document.querySelectorAll('.process-tab').forEach(function(btn) {
+                btn.onclick = function() {
+                    var tab = this.getAttribute('data-tab');
+                    document.querySelectorAll('.process-tab').forEach(function(b){ b.classList.remove('active'); });
+                    this.classList.add('active');
+                    document.querySelectorAll('.process-panel').forEach(function(p){ p.classList.remove('show'); p.style.display = 'none'; });
+                    if (tab === 'templates') { document.getElementById('processTemplatesPanel').style.display = 'block'; document.getElementById('processTemplatesPanel').classList.add('show'); loadProcessTemplates(); }
+                    else { document.getElementById('processInstancesPanel').style.display = 'block'; document.getElementById('processInstancesPanel').classList.add('show'); loadProcessInstances(); }
+                };
+            });
+        }
+        async function loadProcessTemplateSelect() {
+            var sel = document.getElementById('processInstanceTemplate');
+            var startSel = document.getElementById('processStartTemplateId');
+            var res = await apiFetch('/api/processes/templates');
+            if (!res.ok || !res.data || !res.data.data) return;
+            var opts = '<option value="">' + t('all_templates') + '</option>' + res.data.data.filter(function(t){ return t.isActive; }).map(function(t){ return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join('');
+            if (sel) sel.innerHTML = opts;
+        }
+        async function loadProcessTemplates() {
+            var list = document.getElementById('processTemplatesList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var res = await apiFetch('/api/processes/templates');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
+            var data = (res.data && res.data.data) || [];
+            if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x9</span><br>' + t('empty_process_templates') + '</div>'; return; }
+            list.innerHTML = data.map(function(t) {
+                var stages = (t.stages || []).map(function(s){ return s.name; }).join(' �  ');
+                var cnt = (t.instanceCount || 0);
+                return '<div class="list-item" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">' +
+                    '<div><span class="name">' + escapeHtml(t.name) + '</span><div class="meta">' + (stages || '�') + ' | ' + (t('all_templates') === 'All templates' ? 'Instances: ' : '� �&��� �!: ') + cnt + '</div></div>' +
+                    '<div style="display:flex; gap:6px;"><button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessStartInstanceModal(\'' + t.id + '\')">' + t('process_start_instance') + '</button>' +
+                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessTemplateModal(\'' + t.id + '\')">' + t('edit') + '</button>' +
+                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="deleteProcessTemplate(\'' + t.id + '\')">�</button></div></div>';
+            }).join('');
+        }
+        async function loadProcessInstances() {
+            var list = document.getElementById('processInstancesList');
+            var box = document.getElementById('processInstanceDetailBox');
+            if (!list) return;
+            if (box && box.style.display !== 'none') return;
+            list.style.display = 'block';
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var status = (document.getElementById('processInstanceStatus') && document.getElementById('processInstanceStatus').value) || '';
+            var templateId = (document.getElementById('processInstanceTemplate') && document.getElementById('processInstanceTemplate').value) || '';
+            var q = '?limit=50';
+            if (status) q += '&status=' + encodeURIComponent(status);
+            if (templateId) q += '&templateId=' + encodeURIComponent(templateId);
+            var res = await apiFetch('/api/processes/instances' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
+            var data = (res.data && res.data.data) || [];
+            if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x</span><br>' + t('empty_process_instances') + '</div>'; return; }
+            list.innerHTML = data.map(function(i) {
+                var statusLabel = i.status === 'active' ? t('status_active') : i.status === 'completed' ? t('status_done') : t('status_cancelled');
+                var templateName = (i.template && i.template.name) ? i.template.name : '�';
+                var assignee = userDisplay(i.assignee) || '�';
+                return '<div class="list-item" onclick="loadProcessInstanceDetail(\'' + i.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(i.title) + '</span><div class="meta">' + escapeHtml(templateName) + ' ⬢ ' + assignee + ' ⬢ ' + statusLabel + '</div></div><span class="badge ' + (i.status || '') + '">' + statusLabel + '</span></div>';
+            }).join('');
+        }
+        var currentProcessInstanceId = null;
+        function showProcessInstancesList() {
+            document.getElementById('processInstanceDetailBox').style.display = 'none';
+            document.getElementById('processInstancesList').style.display = 'block';
+            currentProcessInstanceId = null;
+            loadProcessInstances();
+        }
+        async function loadProcessInstanceDetail(id) {
+            currentProcessInstanceId = id;
+            document.getElementById('processInstancesList').style.display = 'none';
+            document.getElementById('processInstanceDetailBox').style.display = 'block';
+            var res = await apiFetch('/api/processes/instances/' + id);
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showProcessInstancesList(); return; }
+            var i = res.data;
+            var template = i.template || {};
+            var stages = template.stages || [];
+            var currentIdx = i.currentStageIndex != null ? i.currentStageIndex : 0;
+            var currentStageName = (stages[currentIdx] && stages[currentIdx].name) ? stages[currentIdx].name : t('process_current_stage');
+            var assignee = userDisplay(i.assignee) || '�';
+            var creator = userDisplay(i.creator) || '�';
+            var stepsHtml = (i.steps || []).map(function(s) {
+                var done = s.completedAt ? '�S ' : '';
+                return '<div class="msg in" style="margin:6px 0;"><div>' + done + escapeHtml(s.stageName) + (s.notes ? ' � ' + escapeHtml(s.notes) : '') + '</div><div class="time">' + userDisplay(s.assignee) + ' ⬢ ' + (s.startedAt ? new Date(s.startedAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + (s.completedAt ? ' �  ' + new Date(s.completedAt).toLocaleString(LANG === 'en' ? 'en-US' : 'fa-IR') : '') + '</div></div>';
+            }).join('');
+            document.getElementById('processInstanceDetailContent').innerHTML =
+                '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(i.title) + '</h3>' +
+                '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + assignee + ' | ' + t('process_current_stage') + ': ' + escapeHtml(currentStageName) + '</p>' +
+                '<h4 style="font-size:1rem; margin:12px 0;">' + t('history') + '</h4>' + (stepsHtml || '<p class="text-muted">�</p>') + '</div>';
+            var advanceBox = document.getElementById('processInstanceAdvanceBox');
+            if (i.status !== 'active') { advanceBox.innerHTML = ''; return; }
+            var isLast = currentIdx >= stages.length - 1;
+            advanceBox.innerHTML = '<label>' + t('process_notes') + '</label><textarea id="processAdvanceNotes" rows="2" style="width:100%; margin-bottom:8px;"></textarea>' +
+                (isLast ? '<button type="button" class="btn-primary" onclick="advanceProcessInstance(true)">' + t('process_complete') + '</button>' : '<button type="button" class="btn-primary" onclick="advanceProcessInstance(false)">' + t('process_advance') + '</button>');
+        }
+        async function advanceProcessInstance(complete) {
+            if (!currentProcessInstanceId) return;
+            var notes = (document.getElementById('processAdvanceNotes') && document.getElementById('processAdvanceNotes').value) || '';
+            var res = await apiFetch('/api/processes/instances/' + currentProcessInstanceId + '/advance', { method: 'POST', body: JSON.stringify({ notes: notes }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('toast_status_updated')); loadProcessInstanceDetail(currentProcessInstanceId); loadProcessInstances(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        function openProcessTemplateModal(id) {
+            document.getElementById('processTemplateId').value = id || '';
+            document.getElementById('processTemplateName').value = '';
+            document.getElementById('processTemplateDesc').value = '';
+            document.getElementById('processTemplateStagesContainer').innerHTML = '';
+            document.getElementById('processTemplateModalTitle').textContent = id ? t('edit') : t('process_add_template');
+            if (id) {
+                apiFetch('/api/processes/templates/' + id).then(function(res) {
+                    if (res.ok && res.data) {
+                        var t = res.data;
+                        document.getElementById('processTemplateName').value = t.name || '';
+                        document.getElementById('processTemplateDesc').value = t.description || '';
+                        var stages = t.stages || [];
+                        stages.forEach(function(s) { addProcessTemplateStageRow(s.name); });
+                    }
+                });
+            } else { addProcessTemplateStageRow(); }
+            document.getElementById('modalProcessTemplate').style.display = 'flex';
+        }
+        function addProcessTemplateStageRow(name) {
+            var name = (typeof name === 'string') ? name : '';
+            var container = document.getElementById('processTemplateStagesContainer');
+            var div = document.createElement('div');
+            div.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center;';
+            div.innerHTML = '<input type="text" class="process-stage-name" data-i18n-ph="process_stage_name" placeholder="' + (t('process_stage_name') || '� ا�& �&رح��!') + '" value="' + escapeHtml(name) + '" style="flex:1;"> <button type="button" class="btn-secondary" style="padding:4px 10px;" onclick="this.parentElement.remove()">�</button>';
+            container.appendChild(div);
+        }
+        function closeProcessTemplateModal() { document.getElementById('modalProcessTemplate').style.display = 'none'; }
+        async function saveProcessTemplate() {
+            var id = document.getElementById('processTemplateId').value;
+            var name = (document.getElementById('processTemplateName') && document.getElementById('processTemplateName').value) || '';
+            if (!name.trim()) { toast(t('dept_name_required'), true); return; }
+            var desc = (document.getElementById('processTemplateDesc') && document.getElementById('processTemplateDesc').value) || '';
+            var inputs = document.querySelectorAll('#processTemplateStagesContainer .process-stage-name');
+            var stages = [];
+            inputs.forEach(function(inp, i) { var v = (inp.value || '').trim(); if (v) stages.push({ name: v, order: i }); });
+            if (stages.length === 0) { toast(t('process_min_one_stage'), true); return; }
+            var body = { name: name.trim(), description: desc, stages: stages };
+            var url = id ? '/api/processes/templates/' + id : '/api/processes/templates';
+            var method = id ? 'PUT' : 'POST';
+            var res = await apiFetch(url, { method: method, body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) { closeProcessTemplateModal(); loadProcessTemplates(); loadProcessTemplateSelect(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function deleteProcessTemplate(id) {
+            if (!confirm(LANG === 'en' ? 'Delete this template?' : 'ا�R�  �ا�ب حذف ش��د�x')) return;
+            var res = await apiFetch('/api/processes/templates/' + id, { method: 'DELETE' });
+            if (res.ok) { loadProcessTemplates(); loadProcessTemplateSelect(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        function openProcessStartInstanceModal(templateId, refType, refId, suggestedTitle) {
+            document.getElementById('processStartRefType').value = refType || '';
+            document.getElementById('processStartRefId').value = refId || '';
+            document.getElementById('processStartTitle').value = (suggestedTitle && suggestedTitle.trim()) ? suggestedTitle.trim() : '';
+            document.getElementById('processStartAssignedTo').value = '';
+            apiFetch('/api/processes/templates').then(function(res) {
+                var sel = document.getElementById('processStartTemplateSel');
+                if (!sel) return;
+                var list = (res.data && res.data.data) || [];
+                var active = list.filter(function(t){ return t.isActive !== false; });
+                sel.innerHTML = '<option value="">' + t('all_templates') + '</option>' + active.map(function(t){ return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join('');
+                if (templateId) sel.value = templateId;
+            });
+            apiFetch('/api/users').then(function(res) {
+                var sel = document.getElementById('processStartAssignedTo');
+                if (!sel) return;
+                var users = (res.data && res.data.data) || [];
+                sel.innerHTML = '<option value="">' + t('no_user') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>'; }).join('');
+            });
+            document.getElementById('modalProcessStartInstance').style.display = 'flex';
+        }
+        function closeProcessStartInstanceModal() { document.getElementById('modalProcessStartInstance').style.display = 'none'; }
+        async function startProcessInstance() {
+            var templateId = (document.getElementById('processStartTemplateSel') && document.getElementById('processStartTemplateSel').value) || '';
+            var title = (document.getElementById('processStartTitle') && document.getElementById('processStartTitle').value) || '';
+            if (!templateId || !title.trim()) { toast(t('ticket_title_required'), true); return; }
+            var assignedTo = (document.getElementById('processStartAssignedTo') && document.getElementById('processStartAssignedTo').value) || null;
+            var refType = (document.getElementById('processStartRefType') && document.getElementById('processStartRefType').value) || null;
+            var refId = (document.getElementById('processStartRefId') && document.getElementById('processStartRefId').value) || null;
+            var body = { templateId: templateId, title: title.trim(), assignedTo: assignedTo || undefined };
+            if (refType && refId) { body.referenceType = refType; body.referenceId = refId; }
+            var res = await apiFetch('/api/processes/instances', { method: 'POST', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) { closeProcessStartInstanceModal(); loadProcessInstances(); loadProcessTemplates(); toast(t('toast_task_created')); document.querySelectorAll('.process-tab').forEach(function(b){ if(b.getAttribute('data-tab')==='instances') b.click(); }); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        function startProcessFromTicket() {
+            if (!currentTicketId) return;
+            var titleEl = document.getElementById('ticketDetailTitle');
+            var suggestedTitle = titleEl ? titleEl.textContent : '';
+            showPage('processes');
+            setTimeout(function() {
+                loadProcessTemplateSelect();
+                openProcessStartInstanceModal(null, 'ticket', currentTicketId, suggestedTitle);
+            }, 400);
+        }
+
+        async function addTicket() {
+            var title = document.getElementById('ticketTitle').value.trim();
+            if (!title) { toast(t('ticket_title_required'), true); return; }
+            var res = await apiFetch('/api/tickets', { method: 'POST', body: JSON.stringify({ title: title, description: document.getElementById('ticketDesc').value, priority: document.getElementById('ticketPriority').value }) });
+            if (res.needLogin) return;
+            if (res.ok) { document.getElementById('ticketTitle').value = ''; document.getElementById('ticketDesc').value = ''; toast(t('toast_ticket_created')); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        async function addDepartment() {
+            var name = document.getElementById('deptName').value.trim();
+            if (!name) { toast(t('dept_name_required'), true); return; }
+            var branchId = document.getElementById('deptBranch').value || null;
+            var res = await apiFetch('/api/departments', { method: 'POST', body: JSON.stringify({ name: name, description: document.getElementById('deptDesc').value, keywords: document.getElementById('deptKeywords').value, branchId: branchId }) });
+            if (res.needLogin) return;
+            if (res.ok) { document.getElementById('deptName').value = ''; document.getElementById('deptDesc').value = ''; document.getElementById('deptKeywords').value = ''; toast(t('toast_dept_added')); loadDepartments(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        async function loadUsers() {
+            var list = document.getElementById('userList');
+            setLoading('userList', 4);
+            var res = await apiFetch('/api/users');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data;
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x�</span><br>' + t('empty_users') + '</div>'; return; }
+            var canManage = (currentUser && currentUser.permissions && currentUser.permissions.manage_users);
+            list.innerHTML = data.data.map(function(u) {
+                var activeLabel = u.isActive === false ? ' <span class="badge cancelled">' + t('blocked') + '</span>' : '';
+                var btn = canManage ? ' <button type="button" class="btn-secondary" style="margin:0; padding:6px 12px; font-size:0.8rem;" onclick="openUserEdit(\'' + u.id + '\')">' + t('edit_access') + '</button>' : '';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(u.name) + activeLabel + '</span><div class="meta">' + escapeHtml(u.email) + ' ⬢ ' + (u.role || '') + '</div></div>' + btn + '</div>';
+            }).join('');
+        }
+        var currentEditUserId = null;
+        var sectionLabels = { conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', manage_users: 'section_manage_users' };
+        function sectionLabel(k) { return t(sectionLabels[k] || k); }
+        function closeUserEditModal() { document.getElementById('userEditModal').style.display = 'none'; currentEditUserId = null; }
+        async function openUserEdit(userId) {
+            var res = await apiFetch('/api/users/' + userId);
+            if (res.needLogin || !res.ok) return;
+            var u = res.data;
+            currentEditUserId = userId;
+            document.getElementById('userEditName').textContent = u.name + ' (' + (u.email || '') + ')';
+            document.getElementById('userEditActive').checked = u.isActive !== false;
+            var perms = u.permissions || {};
+            var canGrantManageUsers = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
+            var html = Object.keys(sectionLabels).map(function(k) {
+                if (k === 'manage_users' && !canGrantManageUsers) return '';
+                var checked = perms[k] !== false ? ' checked' : '';
+                return '<label style="display:block; margin:6px 0;"><input type="checkbox" data-perm="' + k + '"' + checked + '> ' + sectionLabel(k) + '</label>';
+            }).join('');
+            document.getElementById('userEditPerms').innerHTML = html;
+            document.getElementById('userEditModal').style.display = 'flex';
+        }
+        async function saveUserEdit() {
+            if (!currentEditUserId) return;
+            var perms = {};
+            document.querySelectorAll('#userEditPerms input[data-perm]').forEach(function(cb) {
+                perms[cb.getAttribute('data-perm')] = cb.checked;
+            });
+            var res = await apiFetch('/api/users/' + currentEditUserId, { method: 'PUT', body: JSON.stringify({ isActive: document.getElementById('userEditActive').checked, permissions: perms }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('saved')); closeUserEditModal(); loadUsers(); if (currentEditUserId === (currentUser && currentUser.id)) { apiFetch('/api/users/me').then(function(r) { if (r.ok && r.data) { currentUser = r.data; applyNavByRole(); } }); } } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        async function loadDeptsForUser() {
+            var res = await apiFetch('/api/departments');
+            if (res.needLogin) return;
+            var sel = document.getElementById('userDept');
+            var arr = (res.data && res.data.data) || [];
+            sel.innerHTML = '<option value="">' + t('no_dept') + '</option>' + arr.map(function(d) { return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
+        }
+
+        async function addUser() {
+            if (!(currentUser && currentUser.permissions && currentUser.permissions.manage_users)) { toast(t('manage_users_required'), true); return; }
+            var name = document.getElementById('userName').value.trim();
+            var email = document.getElementById('userEmailAdd').value.trim();
+            var password = document.getElementById('userPass').value;
+            if (!name || !email || !password) { toast(t('required_name_email_pass'), true); return; }
+            var branchId = document.getElementById('userBranch').value || null;
+            var res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, email: email, password: password, role: document.getElementById('userRole').value, departmentId: document.getElementById('userDept').value || null, branchId: branchId }) });
+            if (res.needLogin) return;
+            if (res.ok) { document.getElementById('userName').value = ''; document.getElementById('userEmailAdd').value = ''; document.getElementById('userPass').value = ''; toast(t('toast_user_added')); loadUsers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        var currentInternalThreadId = null;
+        async function loadInternalThreads() {
+            var list = document.getElementById('internalThreadList');
+            if (!list) return;
+            list.innerHTML = t('loading');
+            var res = await apiFetch('/api/internal/threads');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; return; }
+            var data = (res.data && res.data.data) || [];
+            if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_conv_list') + '</div>'; return; }
+            list.innerHTML = data.map(function(t) {
+                var names = (t.participants || []).map(function(p) { return p.name; }).join('�R ');
+                var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 40) + (t.lastMessage.content && t.lastMessage.content.length > 40 ? '⬦' : '') : '�';
+                return '<div class="list-item" onclick="openInternalThread(\'' + t.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(last) + '</div></div></div>';
+            }).join('');
+        }
+        async function loadInternalUsers() {
+            var res = await apiFetch('/api/internal/users');
+            if (res.needLogin || !res.ok) return;
+            var sel = document.getElementById('internalNewChatUser');
+            var data = (res.data && res.data.data) || [];
+            sel.innerHTML = '<option value="">' + t('select_user') + '</option>' + data.map(function(u) { return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>'; }).join('');
+        }
+        function showNewChatForm() { document.getElementById('internalNewChatForm').style.display = 'block'; loadInternalUsers(); }
+        function hideNewChatForm() { document.getElementById('internalNewChatForm').style.display = 'none'; }
+        async function startInternalChat() {
+            var sel = document.getElementById('internalNewChatUser');
+            var userId = sel && sel.value;
+            if (!userId) { toast(t('select_user_first'), true); return; }
+            var res = await apiFetch('/api/internal/threads', { method: 'POST', body: JSON.stringify({ userId: userId }) });
+            if (res.needLogin) return;
+            if (res.ok) { hideNewChatForm(); openInternalThread(res.data.id); loadInternalThreads(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function openInternalThread(threadId) {
+            currentInternalThreadId = threadId;
+            document.getElementById('internalChatPane').style.display = 'block';
+            var partRes = await apiFetch('/api/internal/threads');
+            if (partRes.ok && partRes.data && partRes.data.data) {
+                var t = partRes.data.data.find(function(x) { return x.id === threadId; });
+                document.getElementById('internalChatHeader').textContent = t && t.participants ? t.participants.map(function(p) { return p.name; }).join('�R ') : t('chat');
+            }
+            loadInternalMessages(threadId);
+        }
+        async function loadInternalMessages(threadId) {
+            var list = document.getElementById('internalChatMessages');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var res = await apiFetch('/api/internal/threads/' + threadId + '/messages');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; return; }
+            var data = (res.data && res.data.data) || [];
+            var me = (currentUser && currentUser.id) || '';
+            list.innerHTML = data.length === 0 ? '<div class="empty">' + t('empty_internal_msgs') + '</div>' : data.map(function(m) {
+                var isOut = m.fromUserId === me;
+                var att = (m.attachments && m.attachments.length) ? m.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); display:block; margin-top:4px;">�x} ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' � ' + (m.createdAt ? new Date(m.createdAt).toLocaleTimeString('fa-IR') : '') + '</div></div>';
+            }).join('');
+            list.scrollTop = list.scrollHeight;
+        }
+        async function sendInternalMessage() {
+            if (!currentInternalThreadId) { toast(t('select_conversation_first'), true); return; }
+            var content = (document.getElementById('internalChatInput') && document.getElementById('internalChatInput').value) || '';
+            var fileInput = document.getElementById('internalChatFile');
+            var attachments = [];
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                var formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                var up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                var upData = await up.json();
+                if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size });
+            }
+            if (!content.trim() && attachments.length === 0) { toast(t('enter_text_or_file'), true); return; }
+            var res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content.trim() || '(پ�R��ست)', attachments: attachments }) });
+            if (res.needLogin) return;
+            if (res.ok) {
+                document.getElementById('internalChatInput').value = '';
+                if (fileInput) fileInput.value = '';
+                loadInternalMessages(currentInternalThreadId);
+                loadInternalThreads();
+            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        var qrRefreshInterval = null;
+        async function loadWhatsappStatus() {
+            var st = document.getElementById('gatewayStatus');
+            var qrBox = document.getElementById('qrBox');
+            var qrImg = document.getElementById('qrImg');
+            var btn = document.getElementById('btnStartGateway');
+            if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
+            st.className = 'empty';
+            st.innerHTML = t('whatsapp_checking');
+            btn.style.display = 'none';
+            qrBox.style.display = 'none';
+            var ping = await apiFetch('/api/ping', { auth: false });
+            if (ping.needLogin || (ping.data && !ping.data.ok)) {
+                st.className = 'empty';
+                st.innerHTML = t('whatsapp_server_err');
+                return;
+            }
+            var res = await apiFetch('/api/gateway/status');
+            if (res.needLogin) return;
+            var data = res.data;
+            if (data && data.error) {
+                st.className = 'empty';
+                st.textContent = t('whatsapp_gateway_off');
+                btn.style.display = 'inline-block';
+                return;
+            }
+            st.className = 'empty';
+            st.textContent = t('whatsapp_status') + ' ' + (data && data.whatsapp ? t('whatsapp_connected') : t('whatsapp_disconnected')) + ' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'));
+            btn.style.display = 'none';
+            if (data && data.whatsapp) { qrBox.style.display = 'none'; return; }
+            var qrRes = await apiFetch('/api/gateway/qr');
+            if (qrRes.needLogin) return;
+            var qrData = qrRes.data;
+            if (qrData && qrData.qr) { qrImg.src = qrData.qr; qrBox.style.display = 'block'; qrRefreshInterval = setInterval(loadWhatsappStatus, 5000); } else { qrBox.style.display = 'none'; }
+        }
+
+        async function startGateway() {
+            var res = await apiFetch('/api/admin/start-gateway', { method: 'POST' });
+            if (res.needLogin) return;
+            var msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
+            toast(msg);
+            if (res.ok) setTimeout(loadWhatsappStatus, 3000);
+        }
+
+        async function loadDepartments() {
+            var list = document.getElementById('deptList');
+            setLoading('deptList', 4);
+            var res = await apiFetch('/api/departments');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data;
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x��</span><br>' + t('empty_dept') + '</div>'; return; }
+            list.innerHTML = data.data.map(function(d) {
+                var branchName = (d.branch && d.branch.name) ? d.branch.name : '';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(d.name || '') + '</span><div class="meta">' + escapeHtml(d.description || '') + (branchName ? ' ⬢ ' + escapeHtml(branchName) : '') + '</div></div></div>';
+            }).join('');
+        }
+
+        async function loadBranchesForSelect(selectIds) {
+            var res = await apiFetch('/api/branches');
+            if (res.needLogin || !res.ok) return;
+            var arr = (res.data && res.data.data) || [];
+            var opt = '<option value="">' + t('no_branch') + '</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '') + (b.country ? ' (' + b.country + ')' : '')) + '</option>'; }).join('');
+            (selectIds || ['userBranch', 'deptBranch', 'supBranch', 'supActBranch']).forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) { el.innerHTML = (id === 'supBranch' || id === 'supActBranch') ? '<option value="">' + t('all_branches') + '</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '')) + '</option>'; }).join('') : opt; }
+            });
+        }
+
+        async function loadBranches() {
+            var list = document.getElementById('branchList');
+            if (!list) return;
+            setLoading('branchList', 4);
+            var res = await apiFetch('/api/branches');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data;
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x�:️</span><br>' + t('empty_branches') + '</div>'; return; }
+            var role = (currentUser && currentUser.role) || '';
+            var canEdit = (role === 'owner' || role === 'admin');
+            list.innerHTML = data.data.map(function(b) {
+                var loc = [b.city, b.country].filter(Boolean).join('�R ');
+                var name = (b.name || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                var city = (b.city || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                var country = (b.country || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                return '<div class="list-item" data-id="' + b.id + '" data-name="' + name + '" data-city="' + city + '" data-country="' + country + '"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + escapeHtml(loc || '�') + '</div></div>' + (canEdit ? '<button type="button" class="btn-secondary" style="margin:0; padding:6px 12px;" onclick="var li=this.closest(\'.list-item\'); editBranch(li.getAttribute(\'data-id\'), li.getAttribute(\'data-name\')||\'\', li.getAttribute(\'data-city\')||\'\', li.getAttribute(\'data-country\')||\'\')">' + t('edit') + '</button>' : '') + '</div>';
+            }).join('');
+        }
+
+        async function addBranch() {
+            var id = window._editingBranchId;
+            var name = document.getElementById('branchName').value.trim();
+            if (!name) { toast(t('branch_name_required'), true); return; }
+            var city = document.getElementById('branchCity').value.trim();
+            var country = document.getElementById('branchCountry').value.trim();
+            var res;
+            if (id) {
+                res = await apiFetch('/api/branches/' + id, { method: 'PUT', body: JSON.stringify({ name: name, city: city || null, country: country || null }) });
+                window._editingBranchId = null;
+            } else {
+                res = await apiFetch('/api/branches', { method: 'POST', body: JSON.stringify({ name: name, city: city || null, country: country || null }) });
+            }
+            if (res.needLogin) return;
+            if (res.ok) { document.getElementById('branchName').value = ''; document.getElementById('branchCity').value = ''; document.getElementById('branchCountry').value = ''; toast(id ? t('toast_branch_updated') : t('toast_branch_added')); loadBranches(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        function editBranch(id, name, city, country) {
+            document.getElementById('branchName').value = (name || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
+            document.getElementById('branchCity').value = (city || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
+            document.getElementById('branchCountry').value = (country || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
+            window._editingBranchId = id;
+            toast(t('edit_branch_hint'), false);
+        }
+
+        async function loadSupervisionPerformance() {
+            var el = document.getElementById('supPerformanceContent');
+            if (!el) return;
+            el.innerHTML = t('loading');
+            el.className = 'empty';
+            var res = await apiFetch('/api/supervision/performance');
+            if (res.needLogin) return;
+            if (!res.ok) { el.innerHTML = t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : ''); return; }
+            var d = res.data;
+            var summary = d.summary || {};
+            var html = '<div class="stat-cards"><div class="stat-card"><div class="val">' + (summary.conversationCount || 0) + '</div><div class="label">' + t('total_conversations') + '</div></div><div class="stat-card"><div class="val">' + (summary.messageCount || 0) + '</div><div class="label">' + t('outgoing_messages') + '</div></div></div>';
+            if (d.branches && d.branches.length) {
+                html += '<h3 style="margin:16px 0 8px; font-size:1rem;">' + t('sup_by_branch') + '</h3><table class="sup-table"><thead><tr><th>' + t('th_branch') + '</th><th>' + t('th_city_country') + '</th><th>' + t('th_conv_count') + '</th></tr></thead><tbody>';
+                d.branches.forEach(function(b) { html += '<tr><td>' + escapeHtml(b.name) + '</td><td>' + escapeHtml((b.city || '') + ' ' + (b.country || '')) + '</td><td>' + (b.conversationCount || 0) + '</td></tr>'; });
+                html += '</tbody></table>';
+            }
+            if (d.users && d.users.length) {
+                html += '<h3 style="margin:16px 0 8px; font-size:1rem;">' + t('sup_by_user') + '</h3><table class="sup-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('outgoing_messages') + '</th></tr></thead><tbody>';
+                d.users.forEach(function(u) { html += '<tr><td>' + escapeHtml(u.name) + '</td><td>' + escapeHtml(u.email || '') + '</td><td>' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '�') + '</td><td>' + (u.outgoingMessageCount || 0) + '</td></tr>'; });
+                html += '</tbody></table>';
+            }
+            el.className = '';
+            el.innerHTML = html || '<div class="empty">' + t('no_data') + '</div>';
+        }
+
+        async function loadSupervisionConversations() {
+            var list = document.getElementById('supConvList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var branchId = document.getElementById('supBranch') && document.getElementById('supBranch').value ? document.getElementById('supBranch').value : '';
+            var status = document.getElementById('supStatus') && document.getElementById('supStatus').value ? document.getElementById('supStatus').value : '';
+            var q = '?limit=50';
+            if (branchId) q += '&branchId=' + encodeURIComponent(branchId);
+            if (status) q += '&status=' + encodeURIComponent(status);
+            var res = await apiFetch('/api/supervision/conversations' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data.data || [];
+            if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_conv') + '</div>'; return; }
+            list.innerHTML = '<table class="sup-table"><thead><tr><th>' + t('th_customer') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_dept') + '</th><th>' + t('th_assignee') + '</th><th>' + t('th_status') + '</th></tr></thead><tbody>' + data.map(function(c) {
+                var cust = c.customer || {};
+                var branch = c.branch ? c.branch.name : '�';
+                var dept = c.department ? c.department.name : '�';
+                var assignee = userDisplay(c.assignee) || '�';
+                return '<tr><td>' + escapeHtml(cust.name || cust.phone || '�') + '</td><td>' + escapeHtml(branch) + '</td><td>' + escapeHtml(dept) + '</td><td>' + escapeHtml(assignee) + '</td><td>' + (c.status || '�') + '</td></tr>';
+            }).join('') + '</tbody></table>';
+        }
+
+        async function loadStaffActivity() {
+            var onlineList = document.getElementById('onlineStaffList');
+            var loginsList = document.getElementById('loginsList');
+            var countEl = document.getElementById('onlineCount');
+            if (onlineList) onlineList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            if (loginsList) loginsList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var onlineRes = await apiFetch('/api/supervision/online');
+            if (onlineRes.needLogin) return;
+            if (onlineRes.ok && onlineRes.data && onlineRes.data.data) {
+                var users = onlineRes.data.data;
+                if (countEl) countEl.textContent = users.length;
+                if (onlineList) {
+                    if (users.length === 0) onlineList.innerHTML = '<div class="empty">' + t('no_staff_online') + '</div>';
+                    else onlineList.innerHTML = '<table class="sup-table"><thead><tr><th>' + t('label_name') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_status') + '</th><th>' + t('th_last_login') + '</th></tr></thead><tbody>' + users.map(function(u) {
+                        var statusClass = (u.status || 'offline').toLowerCase();
+                        var statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
+                        var lastLogin = u.lastLoginAt ? new Date(u.lastLoginAt).toLocaleString('fa-IR') : '�';
+                        var branchName = (u.branch && u.branch.name) ? u.branch.name : '�';
+                        return '<tr><td>' + escapeHtml(userDisplay(u)) + '</td><td>' + escapeHtml(u.email || '\u2014') + '</td><td>' + escapeHtml(branchName) + '</td><td><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td>' + lastLogin + '</td></tr>';
+                    }).join('') + '</tbody></table>';
+                }
+            } else { if (onlineList) onlineList.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; if (countEl) countEl.textContent = '0'; }
+            var loginsRes = await apiFetch('/api/supervision/logins?limit=50');
+            if (loginsRes.needLogin) return;
+            if (loginsRes.ok && loginsRes.data && loginsRes.data.data) {
+                var rows = loginsRes.data.data;
+                if (loginsList) {
+                    if (rows.length === 0) loginsList.innerHTML = '<div class="empty">' + t('empty_no_logins') + '</div>';
+                    else loginsList.innerHTML = '<table class="sup-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
+                        var user = r.user || {};
+                        var branch = r.branch ? r.branch.name : '�';
+                        var time = r.createdAt ? new Date(r.createdAt).toLocaleString('fa-IR') : '';
+                        return '<tr><td>' + escapeHtml(userDisplay(user)) + '</td><td>' + escapeHtml(user.email || '\u2014') + '</td><td>' + escapeHtml(branch) + '</td><td>' + time + '</td><td>' + escapeHtml(r.summary || '') + '</td></tr>';
+                    }).join('') + '</tbody></table>';
+                }
+            } else { if (loginsList) loginsList.innerHTML = '<div class="empty">' + t('login_err_load') + '</div>'; }
+        }
+
+        async function loadSupervisionActivity() {
+            var list = document.getElementById('supActList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var branchId = document.getElementById('supActBranch') && document.getElementById('supActBranch').value ? document.getElementById('supActBranch').value : '';
+            var action = document.getElementById('supActAction') && document.getElementById('supActAction').value ? document.getElementById('supActAction').value : '';
+            var q = '?limit=100';
+            if (branchId) q += '&branchId=' + encodeURIComponent(branchId);
+            if (action) q += '&action=' + encodeURIComponent(action);
+            var res = await apiFetch('/api/supervision/activity' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            var data = res.data.data || [];
+            if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('no_data') + '</div>'; return; }
+            list.innerHTML = '<table class="sup-table"><thead><tr><th>' + t('th_time') + '</th><th>' + t('th_user') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_action') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + data.map(function(a) {
+                var time = a.createdAt ? new Date(a.createdAt).toLocaleString('fa-IR') : '';
+                var user = userDisplay(a.user) || '�';
+                var branch = a.branch ? a.branch.name : '�';
+                return '<tr><td>' + time + '</td><td>' + escapeHtml(user) + '</td><td>' + escapeHtml(branch) + '</td><td>' + escapeHtml(a.action || '') + '</td><td>' + escapeHtml(a.summary || '') + '</td></tr>';
+            }).join('') + '</tbody></table>';
+        }
+
+        document.querySelectorAll('.sup-tab').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var tab = this.getAttribute('data-tab');
+                document.querySelectorAll('.sup-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-tab') === tab) b.classList.add('active'); });
+                document.querySelectorAll('.sup-panel').forEach(function(p) { p.classList.remove('show'); if ((p.id === 'supPerformance' && tab === 'performance') || (p.id === 'supConversations' && tab === 'conversations') || (p.id === 'supActivity' && tab === 'activity')) p.classList.add('show'); });
+                if (tab === 'performance') loadSupervisionPerformance();
+                if (tab === 'conversations') loadSupervisionConversations();
+                if (tab === 'activity') loadSupervisionActivity();
+            });
+        });
+
+        document.querySelectorAll('.nav-link').forEach(function(link) {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                showPage(this.getAttribute('data-page'));
+            });
+        });
+        var fy = document.getElementById('footerYear');
+        if (fy) fy.textContent = '\u00A9 ' + new Date().getFullYear();
+
+        (function initLang() {
+            var l = localStorage.getItem('crm_lang') || 'fa';
+            setLang(l);
+        })();
+
+        if (token) {
+            apiFetch('/api/auth/me').then(function(res) {
+                if (res.needLogin || !res.ok) { logout(); return; }
+                var u = res.data;
+                currentUser = u;
+                if (u && u.email) {
+                    setUserDisplay(u);
+                    document.getElementById('loginBox').style.display = 'none';
+                    document.getElementById('app').classList.add('show');
+                    applyNavByRole();
+                    loadDashboard();
+                    startRatesInterval();
+                    startPresenceInterval();
+                    showTotpPromptIfNeeded();
+                } else { logout(); }
+            }).catch(function() { logout(); });
+        }

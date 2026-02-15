@@ -1,11 +1,12 @@
 require('dotenv').config();
 const models = require('./models');
-const { User, Department } = models;
+const { User, Department, sequelize } = models;
+const { MAIN_ADMIN_EMAIL } = require('./lib/permissions');
 
 async function seed() {
     try {
         await models.sequelize.authenticate();
-        await models.sequelize.sync({ alter: true });
+        // جدول‌ها با اجرای سرور (server.js) ساخته می‌شوند؛ اینجا فقط ادمین را ایجاد/به‌روز می‌کنیم
         let dept = await Department.findOne({ where: { isDefault: true } });
         if (!dept) {
             dept = await Department.create({
@@ -18,19 +19,28 @@ async function seed() {
             });
             console.log('✅ دپارتمان پیش‌فرض ایجاد شد');
         }
-        const existing = await User.findOne({ where: { email: 'admin@company.com' } });
+        const adminEmailLower = MAIN_ADMIN_EMAIL.toLowerCase();
+        let existing = await User.findOne({
+            where: sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), adminEmailLower)
+        });
         if (!existing) {
             await User.create({
                 name: 'مدیر سیستم',
-                email: 'admin@company.com',
-                password: 'Admin@123',
-                role: 'admin',
+                email: adminEmailLower,
+                password: '20231030',
+                role: 'owner',
+                branchId: null,
                 departmentId: dept.id,
                 isActive: true
             });
-            console.log('✅ کاربر ادمین ایجاد شد: admin@company.com / Admin@123');
+            console.log('✅ کاربر ادمین اصلی ایجاد شد: ' + adminEmailLower);
         } else {
-            console.log('ℹ️ کاربر ادمین از قبل وجود دارد');
+            existing.password = '20231030';
+            existing.role = 'owner';
+            existing.isActive = true;
+            existing.branchId = null;
+            await existing.save();
+            console.log('✅ کاربر ادمین اصلی به‌روزرسانی شد (رمز 20231030، نقش owner، فعال): ' + existing.email);
         }
         process.exit(0);
     } catch (err) {

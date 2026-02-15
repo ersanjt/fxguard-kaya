@@ -2,18 +2,19 @@ const express = require('express');
 const router = express.Router();
 const { Branch, User, Department, Conversation } = require('../models');
 const { Op } = require('sequelize');
+const { isMainAdmin } = require('../lib/permissions');
 
-// فقط مالک یا ادمین می‌تواند شعبه اضافه/ویرایش کند
+// ادمین اصلی پنل، مالک یا ادمین می‌توانند شعبه اضافه/ویرایش کنند
 function ownerOrAdmin(req, res, next) {
-    if (req.user.role === 'owner' || req.user.role === 'admin') return next();
+    if (isMainAdmin(req.user) || req.user.role === 'owner' || req.user.role === 'admin') return next();
     return res.status(403).json({ error: 'فقط مالک یا ادمین' });
 }
 
-// لیست شعب — مالک همه، بقیه فقط شعب خود
+// لیست شعب — ادمین اصلی/مالک/ادمین همه، بقیه فقط شعب خود
 router.get('/', async (req, res) => {
     try {
         const where = { isActive: true };
-        if (req.user.role !== 'owner' && req.user.role !== 'admin') {
+        if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin') {
             if (req.user.branchId) where.id = req.user.branchId;
             else return res.json({ data: [] });
         }
@@ -36,7 +37,7 @@ router.get('/:id', async (req, res) => {
     try {
         const branch = await Branch.findByPk(req.params.id);
         if (!branch) return res.status(404).json({ error: 'شعبه یافت نشد' });
-        if (req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.branchId !== branch.id) {
+        if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.branchId !== branch.id) {
             return res.status(403).json({ error: 'دسترسی غیرمجاز' });
         }
         res.json(branch);
