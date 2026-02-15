@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نحوه کار سیستم WhatsApp CRM</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 24px; background: #0f172a; color: #e2e8f0; max-width: 900px; margin: 0 auto; }
+        h1 { color: #38bdf8; border-bottom: 2px solid #334155; padding-bottom: 8px; }
+        h2 { color: #94a3b8; font-size: 1.1rem; margin-top: 24px; }
+        .flow { background: #1e293b; border-radius: 12px; padding: 20px; margin: 16px 0; line-height: 1.8; }
+        .flow ol { margin: 0; padding-right: 20px; }
+        .box { background: #334155; border-radius: 8px; padding: 12px 16px; margin: 8px 0; display: flex; align-items: center; gap: 12px; }
+        .status { width: 10px; height: 10px; border-radius: 50%; background: #64748b; }
+        .status.ok { background: #22c55e; }
+        .status.fail { background: #ef4444; }
+        .url { color: #38bdf8; font-size: 0.9rem; }
+        button { background: #38bdf8; color: #0f172a; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; margin-left: 8px; }
+        button:hover { background: #0ea5e9; }
+        .result { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px; margin-top: 12px; font-family: monospace; font-size: 12px; white-space: pre-wrap; word-break: break-all; }
+        .login-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin: 12px 0; }
+        .login-form input { padding: 8px 12px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: #e2e8f0; width: 200px; }
+        .diagram { background: #1e293b; padding: 20px; border-radius: 12px; font-family: monospace; font-size: 13px; overflow-x: auto; color: #94a3b8; line-height: 1.6; }
+    </style>
+</head>
+<body>
+    <h1>🟢 نحوه کار سیستم WhatsApp Enterprise CRM</h1>
+    <p style="background:#334155;padding:12px;border-radius:8px;color:#fbbf24;"><strong>توجه:</strong> اگر این فایل را از روی دیسک باز کرده‌اید، دکمه «ورود» اینجا کار نمی‌کند. برای تست ورود این آدرس را در مرورگر بزنید: <a href="http://localhost:3002/dashboard.html" style="color:#38bdf8;">http://localhost:3002/dashboard.html</a></p>
+
+    <h2>وضعیت سرویس‌ها</h2>
+    <div class="flow">
+        <div class="box">
+            <span class="status" id="st-backend"></span>
+            <span>Backend API (پورت 3002)</span>
+            <span class="url">http://localhost:3002</span>
+        </div>
+        <div class="box">
+            <span class="status" id="st-gateway"></span>
+            <span>WhatsApp Gateway (پورت 3001)</span>
+            <span class="url">http://localhost:3001</span>
+        </div>
+    </div>
+
+    <h2>جریان کار (Flow)</h2>
+    <div class="flow">
+        <ol>
+            <li><strong>Gateway</strong> با کتابخانه whatsapp-web.js به واتساپ متصل می‌شود (با اسکن QR).</li>
+            <li>وقتی کسی به شماره واتساپ شما پیام می‌دهد، Gateway آن را می‌گیرد و به صف <strong>RabbitMQ</strong> می‌فرستد (یا مستقیم به Backend).</li>
+            <li><strong>Backend</strong> پیام را از صف می‌خواند، مشتری را در دیتابیس پیدا/ایجاد می‌کند، مکالمه و پیام را ذخیره می‌کند.</li>
+            <li>قوانین <strong>پاسخ خودکار</strong> و <strong>تخصیص به دپارتمان/کارمند</strong> اجرا می‌شوند.</li>
+            <li>کارمند از داشبورد (یا API) مکالمات را می‌بیند و پاسخ می‌دهد؛ Backend پیام را در صف <strong>outgoing</strong> می‌گذارد و Gateway آن را در واتساپ ارسال می‌کند.</li>
+        </ol>
+    </div>
+
+    <h2>معماری ساده</h2>
+    <div class="diagram">
+        [واتساپ] ←→ Gateway (QR + ارسال/دریافت)
+                        ↓ صف پیام (RabbitMQ)
+        [CRM Backend] ←→ دیتابیس (PostgreSQL/SQLite)
+                        ↑
+        [داشبورد / API] ← لاگین، مکالمات، مشتریان، گزارش
+    </div>
+
+    <h2>تست ورود (Login)</h2>
+    <div class="flow">
+        <div class="login-form">
+            <input type="text" id="email" value="admin@company.com" placeholder="ایمیل">
+            <input type="password" id="pass" value="Admin@123" placeholder="رمز">
+            <button onclick="doLogin()">ورود و دریافت توکن</button>
+        </div>
+        <div class="result" id="loginResult">نتیجه اینجا نمایش داده می‌شود.</div>
+    </div>
+
+    <h2>لینک‌های مفید</h2>
+    <div class="flow">
+        <div class="box"><a href="http://localhost:3002/health" target="_blank" class="url">Backend Health</a></div>
+        <div class="box"><a href="http://localhost:3001/api/status" target="_blank" class="url">وضعیت Gateway</a></div>
+        <div class="box"><a href="http://localhost:3002/api/conversations" target="_blank" class="url">لیست مکالمات (نیاز به توکن)</a></div>
+    </div>
+
+    <script>
+        const API = 'http://localhost:3002';
+        const GATEWAY = 'http://localhost:3001';
+
+        async function checkBackend() {
+            try {
+                const r = await fetch(API + '/health');
+                const ok = r.ok;
+                document.getElementById('st-backend').className = 'status ' + (ok ? 'ok' : 'fail');
+                return ok;
+            } catch (e) {
+                document.getElementById('st-backend').className = 'status fail';
+                return false;
+            }
+        }
+        async function checkGateway() {
+            try {
+                const r = await fetch(GATEWAY + '/api/status');
+                const ok = r.ok;
+                document.getElementById('st-gateway').className = 'status ' + (ok ? 'ok' : 'fail');
+                return ok;
+            } catch (e) {
+                document.getElementById('st-gateway').className = 'status fail';
+                return false;
+            }
+        }
+        async function doLogin() {
+            const email = document.getElementById('email').value;
+            const pass = document.getElementById('pass').value;
+            const el = document.getElementById('loginResult');
+            el.textContent = 'در حال ارسال...';
+            try {
+                const r = await fetch(API + '/api/auth/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password: pass })
+                });
+                const data = await r.json();
+                if (data.token) {
+                    el.textContent = 'ورود موفق!\nتوکن: ' + data.token.substring(0, 50) + '...\nکاربر: ' + (data.user?.name || data.user?.email);
+                } else {
+                    el.textContent = 'خطا: ' + JSON.stringify(data, null, 2);
+                }
+            } catch (e) {
+                el.textContent = 'خطا: ' + e.message + '\nمطمئن شوید Backend روی پورت 3002 در حال اجراست.';
+            }
+        }
+
+        checkBackend();
+        checkGateway();
+        setInterval(() => { checkBackend(); checkGateway(); }, 5000);
+    </script>
+</body>
+</html>

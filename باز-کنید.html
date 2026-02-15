@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WhatsApp CRM - باز کردن</title>
+    <style>
+        body { font-family: Tahoma, Arial, sans-serif; padding: 30px; background: #1a1a2e; color: #eee; max-width: 500px; margin: 0 auto; }
+        h1 { color: #4ade80; font-size: 1.4rem; }
+        a { display: block; background: #2563eb; color: white; padding: 14px 20px; margin: 12px 0; border-radius: 8px; text-decoration: none; text-align: center; font-size: 1.1rem; }
+        a:hover { background: #1d4ed8; }
+        .note { background: #333; padding: 12px; border-radius: 8px; margin-top: 20px; font-size: 0.9rem; color: #aaa; }
+    </style>
+</head>
+<body>
+    <h1>لینک‌های سیستم CRM</h1>
+    <p>روی هر لینک کلیک کنید (اول Backend و Gateway باید روشن باشند):</p>
+
+    <a href="http://localhost:3002/health" target="_blank">۱) وضعیت Backend (پورت 3002)</a>
+    <a href="http://localhost:3001/api/status" target="_blank">۲) وضعیت Gateway واتساپ (پورت 3001)</a>
+    <a href="http://localhost:3002/api/auth/login" target="_blank">۳) صفحه Login API</a>
+
+    <p style="margin-top:24px">صفحه راهنما و تست:</p>
+    <a href="how-it-works.html" target="_blank">۴) راهنما و تست ورود (همین پوشه)</a>
+
+    <div class="note">
+        اگر لینک‌ها باز نشدند، Backend و Gateway را اجرا کنید:<br>
+        ترمینال ۱: cd backend → node server.js<br>
+        ترمینال ۲: cd gateway → node src/index.js
+    </div>
+</body>
+</html>
