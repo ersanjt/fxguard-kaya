@@ -5,6 +5,7 @@ node_modules/
 backend/database.sqlite
 backend/uploads/
 gateway/.wwebjs_auth/
+gateway/combined.log
 *.sqlite
 .env.local
 .env.*.local
