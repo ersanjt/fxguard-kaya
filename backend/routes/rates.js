@@ -4,7 +4,9 @@ const axios = require('axios');
 const { RateAdjustment } = require('../models');
 
 const NAVASAN_API_KEY = process.env.NAVASAN_API_KEY || 'premVIlUQHLNK4IGQzHnZNZyHCbJrknc';
-const NAVASAN_LATEST = `http://api.navasan.tech/latest/?api_key=${NAVASAN_API_KEY}`;
+const NAVASAN_LATEST = `https://api.navasan.tech/latest/?api_key=${NAVASAN_API_KEY}`;
+
+let lastRatesCache = null;
 
 const RATES_KEYS = [
     { key: 'usd', label: 'دلار', apiKeys: ['usd_sell', 'usd_buy'] },
@@ -45,12 +47,22 @@ function applyAdjustment(rawNum, adj) {
 // GET /api/rates — نرخ‌ها از API + اعمال تعدیلات؛ برای همه کاربران لاگین‌شده
 router.get('/', async (req, res) => {
     try {
-        const raw = await axios.get(NAVASAN_LATEST, { timeout: 8000 }).then(r => r.data || {}).catch(() => ({}));
-        const adjustments = await RateAdjustment.findAll().then(rows => {
-            const map = {};
-            rows.forEach(r => { map[r.currencyKey] = r; });
-            return map;
+        let raw = await axios.get(NAVASAN_LATEST, { timeout: 12000 }).then(r => r.data || {}).catch((e) => {
+            console.warn('Navasan API error:', e.message || e.code);
+            return null;
         });
+        if (!raw || Object.keys(raw).length === 0) {
+            raw = lastRatesCache || {};
+        } else {
+            lastRatesCache = raw;
+        }
+        let adjustments = {};
+        try {
+            const rows = await RateAdjustment.findAll();
+            rows.forEach(r => { adjustments[r.currencyKey] = r; });
+        } catch (dbErr) {
+            console.warn('RateAdjustment error:', dbErr.message);
+        }
 
         const items = RATES_KEYS.map(({ key, label, apiKeys }) => {
             const rawVal = pickValue(raw, apiKeys);
@@ -73,6 +85,17 @@ router.get('/', async (req, res) => {
             error: 'دریافت قیمت‌ها ناموفق بود',
             items: RATES_KEYS.map(({ key, label }) => ({ key, label, value: '—', change: null }))
         });
+    }
+});
+
+// GET /api/rates/health — تست دسترسی به API خارجی (نیاز به auth دارد)
+router.get('/health', async (req, res) => {
+    try {
+        const r = await axios.get(NAVASAN_LATEST, { timeout: 8000 });
+        const hasData = r.data && typeof r.data === 'object' && Object.keys(r.data).length > 0;
+        res.json({ ok: true, external: hasData });
+    } catch (e) {
+        res.json({ ok: false, external: false, error: e.message || e.code });
     }
 });
 
