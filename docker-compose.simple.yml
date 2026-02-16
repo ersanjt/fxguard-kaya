@@ -1,0 +1,53 @@
+# راه‌اندازی ساده CRM واتساپ — فقط Backend + Gateway با SQLite
+# بدون PostgreSQL, MongoDB, Redis, RabbitMQ
+# اجرا: docker-compose -f docker-compose.simple.yml up -d
+
+version: '3.8'
+
+services:
+  backend:
+    image: node:20-alpine
+    container_name: whatsapp-crm-backend
+    working_dir: /app
+    command: sh -c "npm install --omit=dev && node server.js"
+    environment:
+      NODE_ENV: production
+      PORT: 3002
+      USE_SQLITE: "true"
+      JWT_SECRET: ${JWT_SECRET:-YourSuperSecretJWTKey123456789!}
+      GATEWAY_URL: http://gateway:3001
+      CORS_ORIGINS: http://localhost:3000,http://localhost:3002
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "3002:3002"
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - gateway
+    networks:
+      - crm-simple
+    restart: unless-stopped
+
+  gateway:
+    image: node:20-alpine
+    container_name: whatsapp-crm-gateway
+    working_dir: /app
+    command: sh -c "npm install --omit=dev && node src/index.js"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      WHATSAPP_SESSION_PATH: /app/sessions
+      BACKEND_API_URL: http://backend:3002
+      FRONTEND_URL: http://localhost:3000
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./gateway:/app
+    networks:
+      - crm-simple
+    restart: unless-stopped
+
+networks:
+  crm-simple:
+    driver: bridge
+

@@ -432,6 +432,8 @@
                     whatsapp_checking: 'Checking...', whatsapp_scan_qr: 'Scan QR code with WhatsApp mobile app', whatsapp_start_btn: 'Start WhatsApp Gateway',
                     whatsapp_server_err: 'Backend server is not responding correctly.', whatsapp_gateway_off: 'Gateway is not running. Click the button below to start it.',
                     whatsapp_status: 'WhatsApp status:', whatsapp_connected: 'Connected �S', whatsapp_disconnected: 'Disconnected', redis: 'Redis', active: 'Active', inactive: 'Inactive', done_msg: 'Done',
+                    whatsapp_intro: 'WhatsApp messages are automatically saved in conversations. Auto-assignment to departments is based on keywords.',
+                    whatsapp_open_web: 'Open WhatsApp Web', whatsapp_manage_convs: 'Manage conversations', whatsapp_dept_routing: 'Auto-assign to department', whatsapp_dept_routing_hint: 'Based on keywords in the message, the conversation is routed to the relevant department.', whatsapp_unassigned: 'Unassigned conversations', whatsapp_unassigned_hint: 'These conversations need department or assignee assignment.',
                     rates_intro: 'Prices are fetched from API and shown in the bottom bar for everyone.', rates_adjust_type: 'Adjustment type',
                     rates_none: 'No change', rates_fixed: 'Fixed', rates_delta: '± Amount', rates_percent: '± Percent', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value',
                     no_data: 'No data.', loading_err: 'Error loading.', select_user: 'Select user',
@@ -1610,6 +1612,8 @@
                     var assignBtn = document.getElementById('btnAssignToMe');
                     if (assignBtn) assignBtn.style.display = (canManage || !isAssignedToMe) ? '' : 'none';
                     actionsEl.querySelectorAll('select').forEach(function(el){ el.style.display = canManage ? '' : 'none'; });
+                    var deptSel = document.getElementById('convDetailDept');
+                    if (deptSel) deptSel.style.display = canManage ? '' : 'none';
                     var applyBtn = actionsEl.querySelector('[onclick="updateConvFromDetail()"]');
                     if (applyBtn) applyBtn.style.display = canManage ? '' : 'none';
                 }
@@ -1617,16 +1621,21 @@
                     var statusSel = document.getElementById('convDetailStatus');
                     var prioritySel = document.getElementById('convDetailPriority');
                     var assigneeSel = document.getElementById('convDetailAssignee');
+                    var deptSel = document.getElementById('convDetailDept');
                     if (statusSel) statusSel.value = d.status || 'open';
                     if (prioritySel) prioritySel.value = d.priority || 'normal';
-                    if (assigneeSel) { assigneeSel.value = d.assignedTo || ''; loadConvAssignees(); }
+                    loadConvAssignees().then(function() {
+                        if (assigneeSel) assigneeSel.value = d.assignedTo || '';
+                        if (deptSel) deptSel.value = d.departmentId || '';
+                    });
                 }
             });
         }
         async function loadConvAssignees() {
             var selFilter = document.getElementById('convFilterAssignee');
             var selDetail = document.getElementById('convDetailAssignee');
-            if (!selFilter && !selDetail) return;
+            var selDetailDept = document.getElementById('convDetailDept');
+            if (!selFilter && !selDetail && !selDetailDept) return;
             var res = await apiFetch('/api/users');
             if (!res.ok || !res.data || !res.data.data) return;
             var users = res.data.data;
@@ -1634,6 +1643,13 @@
             if (selFilter) selFilter.innerHTML = opt;
             var optDetail = '<option value="">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
             if (selDetail) selDetail.innerHTML = optDetail;
+            if (selDetailDept) {
+                var deptRes = await apiFetch('/api/departments');
+                if (deptRes.ok && deptRes.data && deptRes.data.data) {
+                    var depts = deptRes.data.data;
+                    selDetailDept.innerHTML = '<option value="">' + (LANG === 'fa' ? 'بدون دپارتمان' : 'No department') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+                }
+            }
         }
         function applyConvFilters() { loadConversations(); }
         function openNewConvModal() {
@@ -1679,10 +1695,12 @@
             var statusSel = document.getElementById('convDetailStatus');
             var prioritySel = document.getElementById('convDetailPriority');
             var assigneeSel = document.getElementById('convDetailAssignee');
+            var deptSel = document.getElementById('convDetailDept');
             var body = {};
             if (statusSel) body.status = statusSel.value;
             if (prioritySel) body.priority = prioritySel.value;
             if (assigneeSel) body.assignedTo = assigneeSel.value || null;
+            if (deptSel) body.departmentId = deptSel.value || null;
             var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; openChat(currentConvId, document.getElementById('chatHeader').textContent, ''); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
@@ -1810,7 +1828,7 @@
                 };
             });
         }
-        var activityLabels = { message_sent: 'ارسال پیام', conversation_assigned: 'تخصیص مکالمه', customer_note_added: 'ثبت گزارش/یادداشت' };
+        var activityLabels = { message_sent: LANG === 'fa' ? 'ارسال پیام' : 'Message sent', conversation_assigned: LANG === 'fa' ? 'تخصیص مکالمه' : 'Conversation assigned', conversation_department_changed: LANG === 'fa' ? 'تغییر دپارتمان مکالمه' : 'Department changed', customer_note_added: LANG === 'fa' ? 'ثبت گزارش/یادداشت' : 'Note added' };
         async function loadCustomerTimeline(custId) {
             var list = document.getElementById('customerTimelineList');
             if (!list) return;
@@ -3130,7 +3148,13 @@
             st.className = 'empty';
             st.textContent = t('whatsapp_status') + ' ' + (data && data.whatsapp ? t('whatsapp_connected') : t('whatsapp_disconnected')) + ' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'));
             btn.style.display = 'none';
-            if (data && data.whatsapp) { qrBox.style.display = 'none'; return; }
+            if (data && data.whatsapp) {
+                qrBox.style.display = 'none';
+                loadWhatsappDeptRouting();
+                loadWhatsappUnassigned();
+                return;
+            }
+            loadWhatsappDeptRouting();
             var qrRes = await apiFetch('/api/gateway/qr');
             if (qrRes.needLogin) return;
             var qrData = qrRes.data;
@@ -3143,6 +3167,71 @@
             var msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
             toast(msg);
             if (res.ok) setTimeout(loadWhatsappStatus, 3000);
+        }
+        async function loadWhatsappDeptRouting() {
+            var box = document.getElementById('whatsappDeptRouting');
+            var list = document.getElementById('whatsappDeptList');
+            if (!box || !list) return;
+            box.style.display = 'block';
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var res = await apiFetch('/api/departments');
+            if (res.needLogin) return;
+            if (!res.ok || !res.data || !res.data.data) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
+            var depts = res.data.data.filter(function(d){ return d.isActive !== false; });
+            if (depts.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'دپارتمانی تعریف نشده' : 'No departments') + '</div>'; return; }
+            list.innerHTML = depts.map(function(d) {
+                var kw = (d.keywords || '').trim() || '—';
+                var def = d.isDefault ? ' <span class="badge" style="font-size:0.7rem;">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';
+                return '<div class="list-item" style="padding:10px 14px;"><span class="name">' + escapeHtml(d.name || '') + def + '</span><div class="meta" style="font-size:0.85rem; margin-top:4px;">' + (LANG === 'fa' ? 'کلمات کلیدی: ' : 'Keywords: ') + escapeHtml(kw) + '</div></div>';
+            }).join('');
+        }
+        async function loadWhatsappUnassigned() {
+            var box = document.getElementById('whatsappUnassignedBox');
+            var list = document.getElementById('whatsappUnassignedList');
+            if (!box || !list) return;
+            var res = await apiFetch('/api/conversations?status=open&unassigned=1&limit=15');
+            if (res.needLogin) return;
+            if (!res.ok || !res.data) return;
+            var convs = res.data.data || [];
+            if (convs.length === 0) { box.style.display = 'none'; return; }
+            box.style.display = 'block';
+            list.innerHTML = convs.map(function(c) {
+                var name = (c.customer && (c.customer.name || c.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                var preview = (c.lastMessagePreview || '').slice(0, 50);
+                if (preview.length >= 50) preview += '…';
+                return '<div class="list-item" data-convid="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'") + '\', \'\'); showPage(\'conversations\');" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
+            }).join('');
+        }
+        async function loadWhatsappDeptRouting() {
+            var box = document.getElementById('whatsappDeptRouting');
+            var list = document.getElementById('whatsappDeptList');
+            if (!box || !list) return;
+            box.style.display = 'block';
+            var res = await apiFetch('/api/departments');
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            var depts = (res.data && res.data.data) || [];
+            if (depts.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'دپارتمانی تعریف نشده' : 'No departments') + '</div>'; return; }
+            list.innerHTML = depts.map(function(d) {
+                var kw = (d.keywords || '').trim() || '—';
+                return '<div class="list-item" style="padding:10px 14px;"><span class="name">' + escapeHtml(d.name || '') + '</span><div class="meta" style="font-size:0.85rem; color:var(--text-muted);">' + (LANG === 'fa' ? 'کلمات کلیدی: ' : 'Keywords: ') + escapeHtml(kw) + '</div></div>';
+            }).join('');
+        }
+        async function loadWhatsappUnassigned() {
+            var box = document.getElementById('whatsappUnassignedBox');
+            var list = document.getElementById('whatsappUnassignedList');
+            if (!box || !list) return;
+            box.style.display = 'block';
+            var res = await apiFetch('/api/conversations?status=open&limit=30');
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            var rows = (res.data && res.data.data) || [];
+            var unassigned = rows.filter(function(c) { return !c.assignedTo && (c.status === 'open' || c.status === 'pending'); }).slice(0, 10);
+            if (unassigned.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'همه مکالمات تخصیص داده شده‌اند' : 'All conversations assigned') + '</div>'; return; }
+            list.innerHTML = unassigned.map(function(c) {
+                var name = (c.customer && (c.customer.name || c.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                var preview = (c.lastMessagePreview || '').slice(0, 40);
+                if (preview.length >= 40) preview += '…';
+                return '<div class="list-item" data-convid="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'") + '\', \'\'); showPage(\'conversations\');" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
+            }).join('');
         }
 
         async function loadDepartments() {

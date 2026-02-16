@@ -77,12 +77,13 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        const { status, priority, assignedTo, unread, branchId, departmentId, search, page = 1, limit = 20 } = req.query;
+        const { status, priority, assignedTo, unread, unassigned, branchId, departmentId, search, page = 1, limit = 20 } = req.query;
         const where = {};
 
         if (status) where.status = status;
         if (priority) where.priority = priority;
         if (assignedTo) where.assignedTo = assignedTo;
+        if (unassigned === '1' || unassigned === 'true') { where.assignedTo = null; where.departmentId = null; }
         if (unread === '1' || unread === 'true') where.unreadCount = { [Op.gt]: 0 };
         if (branchId) where.branchId = branchId;
         if (departmentId) where.departmentId = departmentId;
@@ -205,17 +206,30 @@ router.patch('/:id', async (req, res) => {
 
         await conversation.update(updateData);
 
-        if (assignedTo && updateData.assignedTo) {
+        if (assignedTo !== undefined && updateData.assignedTo) {
             await logActivity({
                 userId: req.userId,
                 branchId: conversation.branchId || req.user.branchId,
-                departmentId: conversation.departmentId || req.user.departmentId,
+                departmentId: updateData.departmentId || conversation.departmentId || req.user.departmentId,
                 action: 'conversation_assigned',
                 entityType: 'conversation',
                 entityId: conversation.id,
                 customerId: conversation.customerId,
                 summary: `مکالمه به کاربر تخصیص داده شد`,
-                metadata: { conversationId: conversation.id, assignedTo, customerPhone: conversation.customer && conversation.customer.phone }
+                metadata: { conversationId: conversation.id, assignedTo: updateData.assignedTo, customerPhone: conversation.customer && conversation.customer.phone }
+            });
+        }
+        if (departmentId !== undefined && updateData.departmentId !== undefined) {
+            await logActivity({
+                userId: req.userId,
+                branchId: conversation.branchId || req.user.branchId,
+                departmentId: updateData.departmentId || req.user.departmentId,
+                action: 'conversation_department_changed',
+                entityType: 'conversation',
+                entityId: conversation.id,
+                customerId: conversation.customerId,
+                summary: `دپارتمان مکالمه تغییر کرد`,
+                metadata: { conversationId: conversation.id, departmentId: updateData.departmentId, customerPhone: conversation.customer && conversation.customer.phone }
             });
         }
         const updated = await Conversation.findByPk(req.params.id, {
