@@ -90,7 +90,8 @@ router.get('/', async (req, res) => {
             ? visibleKeys.map(k => allItems.find(i => i.key === k)).filter(Boolean)
             : allItems;
 
-        const updatedAt = raw.usd_sell && raw.usd_sell.date ? raw.usd_sell.date : new Date().toISOString();
+        // همیشه زمان فعلی سرور به صورت ISO — تاریخ API ناواسان فرمت یکسانی ندارد و در مرورگر به اشتباه (مثلاً سال ۷۸۳/۸۰۷) تفسیر می‌شد
+        const updatedAt = new Date().toISOString();
         res.json({ items, allItems, visibleKeys: visibleKeys || RATES_KEYS.map(r => r.key), updatedAt });
     } catch (err) {
         res.status(502).json({

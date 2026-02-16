@@ -584,9 +584,10 @@
                 if (updatedAtStr) {
                     var s = String(updatedAtStr).trim();
                     if (s.indexOf(' ') >= 0 && s.indexOf('T') < 0) s = s.replace(' ', 'T');
-                    if (/^\d{4}-\d{2}-\d{2}/.test(s)) d = new Date(s);
+                    // فقط ISO (YYYY-MM-DD...) یا تایم‌استمپ عددی — جلوگیری از تفسیر اشتباه فرمت‌هایی مثل 06/09/783 یا 05/14/807 که سال غلط می‌داد
+                    if (/^\d{4}-\d{2}-\d{2}[T\s]/.test(s) || /^\d{4}-\d{2}-\d{2}$/.test(s)) d = new Date(s);
                     else if (/^\d{10,13}$/.test(s)) d = new Date(parseInt(s, 10));
-                    else d = new Date(s);
+                    else d = new Date();
                 } else d = new Date();
             } catch (e) { d = new Date(); }
             if (isNaN(d.getTime())) d = new Date();
@@ -601,7 +602,9 @@
                 var y = (parts.find(function(p){ return p.type === 'year'; }) || {}).value || '';
                 var m = (parts.find(function(p){ return p.type === 'month'; }) || {}).value || '';
                 var day = (parts.find(function(p){ return p.type === 'day'; }) || {}).value || '';
-                shamsi = y + '/' + m + '/' + day;
+                var yearNum = parseInt(y, 10);
+                if (yearNum >= 1300 && yearNum <= 1500) shamsi = y + '/' + m + '/' + day;
+                else shamsi = pf.format(d);
             } catch (e) {
                 shamsi = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             }
@@ -614,10 +617,17 @@
             var hijri = '';
             try {
                 var hf = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit' });
-                hijri = hf.format(d);
+                var hParts = hf.formatToParts(d);
+                var hy = (hParts.find(function(p){ return p.type === 'year'; }) || {}).value || '';
+                var hm = (hParts.find(function(p){ return p.type === 'month'; }) || {}).value || '';
+                var hd = (hParts.find(function(p){ return p.type === 'day'; }) || {}).value || '';
+                var hYearNum = parseInt(hy, 10);
+                if (hYearNum >= 1400 && hYearNum <= 1500) hijri = hm + '/' + hd + '/' + hy + ' AH';
+                else hijri = hf.format(d) + ' AH';
             } catch (e) {
                 try {
-                    hijri = new Intl.DateTimeFormat('en-u-ca-islamic', { timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+                    var hf2 = new Intl.DateTimeFormat('en-u-ca-islamic', { timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit' });
+                    hijri = hf2.format(d) + ' AH';
                 } catch (e2) { hijri = '—'; }
             }
             return {
