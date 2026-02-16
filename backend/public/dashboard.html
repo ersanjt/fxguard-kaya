@@ -501,12 +501,12 @@
                 </div>
                 <div id="pageInternalChat" class="page">
                     <h2 data-i18n="page_internal_chat">چت داخلی</h2>
-                    <div style="display:flex; gap:16px; flex-wrap:wrap;">
-                        <div style="flex:1; min-width:260px;">
+                    <div class="internal-chat-layout-wrap">
+                        <div class="internal-chat-thread-col">
                             <button type="button" class="btn-secondary" onclick="showNewChatForm()" data-i18n="new_chat">گفتگوی جدید</button>
-                            <div id="internalThreadList" class="empty" style="margin-top:12px;" data-i18n="loading">در حال بارگذاری...</div>
+                            <div id="internalThreadList" class="empty internal-chat-thread-list" data-i18n="loading">در حال بارگذاری...</div>
                         </div>
-                        <div id="internalChatPane" style="flex:2; min-width:300px; display:none;">
+                        <div id="internalChatPane" class="internal-chat-pane" style="display:none;">
                             <div class="chat-header internal-chat-header-row">
                                 <span id="internalChatHeader" data-i18n="select_conversation">انتخاب گفتگو</span>
                                 <div id="internalChatCallBtns" class="internal-chat-call-btns" style="display:none;">
@@ -528,7 +528,8 @@
                     </div>
                     <div id="internalNewChatForm" style="display:none; margin-top:12px;" class="form-box">
                         <label data-i18n="start_chat_with">شروع گفتگو با</label>
-                        <select id="internalNewChatUser"><option value="" data-i18n="select_user">انتخاب کاربر</option></select>
+                        <select id="internalNewChatUser" multiple style="min-height:80px;"><option value="" data-i18n="select_user">انتخاب کاربر</option></select>
+                        <small class="text-muted" style="display:block; margin-top:4px;" data-i18n="select_multiple_hint">برای گفتگوی گروهی، چند نفر را انتخاب کنید</small>
                         <button type="button" onclick="startInternalChat()" data-i18n="start_chat">شروع چت</button>
                         <button type="button" class="btn-secondary" onclick="hideNewChatForm()" data-i18n="cancel">انصراف</button>
                     </div>
@@ -717,17 +718,38 @@
                 <span class="app-footer-year" id="appFooterYear"></span>
             </footer>
         </div>
+        <div id="internalCallInviteModal" class="modal-overlay" style="display:none;">
+            <div class="modal-box" style="max-width:360px;">
+                <div class="modal-header"><h3 id="internalCallInviteTitle" data-i18n="invite_to_call">دعوت به تماس</h3><button type="button" class="modal-close" onclick="rejectInternalCallInvite()">&times;</button></div>
+                <div class="modal-body" style="text-align:center;">
+                    <p id="internalCallInviteText" style="margin:0 0 20px; color:var(--text-secondary);"></p>
+                    <div style="display:flex; gap:12px; justify-content:center;">
+                        <button type="button" class="internal-call-action-btn accept" onclick="acceptInternalCallInvite()" data-i18n="accept_call">پذیرش</button>
+                        <button type="button" class="internal-call-action-btn reject" onclick="rejectInternalCallInvite()" data-i18n="reject_call">رد</button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div id="internalCallModal" class="internal-call-modal" style="display:none;">
             <div class="internal-call-content">
                 <div id="internalCallStatus" class="internal-call-status"></div>
-                <div class="internal-call-videos">
-                    <video id="internalCallRemoteVideo" autoplay playsinline class="internal-call-remote-video"></video>
+                <div class="internal-call-videos" id="internalCallVideos">
+                    <div id="internalCallRemoteVideos" class="internal-call-remote-videos"></div>
                     <video id="internalCallLocalVideo" autoplay muted playsinline class="internal-call-local-video"></video>
                 </div>
                 <div class="internal-call-actions">
+                    <button type="button" id="internalCallAddBtn" class="internal-call-action-btn add" onclick="showAddToCallModal()" style="display:none;" data-i18n="add_to_call" title="افزودن به تماس">+</button>
                     <button type="button" id="internalCallAcceptBtn" class="internal-call-action-btn accept" onclick="acceptInternalCall()" style="display:none;" data-i18n="accept_call">پذیرش</button>
                     <button type="button" id="internalCallRejectBtn" class="internal-call-action-btn reject" onclick="rejectInternalCall()" data-i18n="reject_call">رد</button>
                     <button type="button" id="internalCallEndBtn" class="internal-call-action-btn end" onclick="endInternalCall()" style="display:none;" data-i18n="end_call">قطع تماس</button>
+                </div>
+            </div>
+        </div>
+        <div id="addToCallModal" class="modal-overlay" style="display:none;">
+            <div class="modal-box" style="max-width:400px;">
+                <div class="modal-header"><h3 data-i18n="add_to_call">افزودن به تماس</h3><button type="button" class="modal-close" onclick="closeAddToCallModal()">&times;</button></div>
+                <div class="modal-body">
+                    <div id="addToCallList" class="add-to-call-list"></div>
                 </div>
             </div>
         </div>
