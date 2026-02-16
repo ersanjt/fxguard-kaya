@@ -44,15 +44,18 @@
         .app { display: none; height: 100vh; flex-direction: column; }
         .app.show { display: flex; }
         /* Ù†ÙˆØ§Ø± Ù‚ÛŒÙ…Øª Ø§Ø±Ø² Ùˆ Ø·Ù„Ø§ â€” Ù‡Ù…ÛŒØ´Ù‡ Ø¯Ø± Ù¾Ø§ÛŒÛŒÙ† Ø¨Ø±Ø§ÛŒ Ù‡Ù…Ù‡ Ú©Ø§Ø±Ú©Ù†Ø§Ù† */
-        .price-ticker { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; background: linear-gradient(180deg, #0a0f1a 0%, #0d1525 50%, #0f1929 100%); border-top: 1px solid rgba(16,185,129,0.2); padding: 10px 20px; padding-bottom: max(10px, env(safe-area-inset-bottom)); display: flex; align-items: center; flex-wrap: wrap; gap: 16px 24px; font-size: 0.9rem; box-shadow: 0 -6px 24px rgba(0,0,0,0.4); }
+        .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; display: flex; flex-direction: column; }
+        .price-ticker { background: linear-gradient(180deg, #0a0f1a 0%, #0d1525 50%, #0f1929 100%); border-top: 1px solid rgba(16,185,129,0.2); padding: 10px 20px; padding-bottom: max(10px, env(safe-area-inset-bottom)); display: flex; align-items: center; flex-wrap: wrap; gap: 16px 24px; font-size: 0.9rem; box-shadow: 0 -6px 24px rgba(0,0,0,0.4); }
         .price-ticker .ticker-header { display: flex; align-items: center; margin-left: 0; margin-right: auto; flex-shrink: 0; }
         .price-ticker .ticker-datetime { display: flex; flex-direction: column; gap: 6px; font-size: 0.75rem; color: var(--text-muted); line-height: 1.4; min-width: 200px; }
         .price-ticker .ticker-datetime .ticker-loading { font-size: 0.75rem; }
         .price-ticker .ticker-times { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-weight: 500; color: rgba(255,255,255,0.9); }
         .price-ticker .ticker-dt-label { font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase; letter-spacing: 0.03em; margin-left: 4px; }
-        .price-ticker .ticker-time-block { display: inline-flex; align-items: baseline; gap: 4px; padding: 2px 6px; background: rgba(255,255,255,0.06); border-radius: 4px; }
+        .price-ticker .ticker-time-block { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 8px; background: rgba(255,255,255,0.06); border-radius: 4px; }
+        .price-ticker .ticker-time-row { display: flex; align-items: baseline; gap: 4px; }
         .price-ticker .ticker-tz { font-size: 0.65rem; font-weight: 600; color: rgba(255,255,255,0.65); }
         .price-ticker .ticker-time { font-size: 0.8rem; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; direction: ltr; }
+        .price-ticker .ticker-date-below { font-size: 0.6rem; color: rgba(255,255,255,0.55); font-variant-numeric: tabular-nums; direction: ltr; }
         .price-ticker .ticker-sep { font-size: 0.6rem; color: rgba(255,255,255,0.35); margin: 0 2px; }
         .price-ticker .ticker-dates { display: flex; align-items: center; gap: 6px; font-size: 0.7rem; opacity: 0.9; }
         .price-ticker .ticker-date-shamsi { font-weight: 600; color: rgba(255,255,255,0.85); font-variant-numeric: tabular-nums; direction: ltr; }
@@ -134,9 +137,11 @@
         .sidebar a.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; border-right: 3px solid var(--accent); margin-right: 9px; padding-right: 13px; }
         .sidebar .nav-icon { width: 24px; height: 24px; border-radius: 6px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
         .sidebar a.active .nav-icon { background: var(--accent-soft); }
-        .footer { padding: 12px 24px; background: var(--bg-card); border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; }
-        .footer a { color: var(--accent); text-decoration: none; }
-        .footer a:hover { text-decoration: underline; }
+        .announcement-marquee { overflow: hidden; background: linear-gradient(90deg, var(--accent) 0%, var(--accent-soft) 100%); border-bottom: 1px solid var(--accent); padding: 10px 0; flex-shrink: 0; direction: rtl; cursor: pointer; color: #fff; font-size: 0.9rem; }
+        .announcement-marquee-inner { display: inline-block; white-space: nowrap; animation: announcementMarqueeRtl 40s linear infinite; padding: 0 2em; }
+        .ticker-toggle-mobile { display: none; }
+        .app-footer { display: none; }
+        @keyframes announcementMarqueeRtl { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
         .content { flex: 1; overflow: auto; padding: 24px; }
         .content h2 { color: var(--text-primary); font-size: 1.2rem; font-weight: 600; margin: 0 0 20px; }
         .page { display: none; }
@@ -157,6 +162,11 @@
         .msg.out { background: var(--accent-soft); border: 1px solid var(--accent); margin-left: auto; border-bottom-left-radius: 4px; }
         .msg .time { font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; }
         .chat-send { display: flex; gap: 10px; padding: 14px; background: var(--bg-card); border-top: 1px solid var(--border); }
+        .internal-chat-file-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .internal-chat-file-wrap input[type="file"] { position: absolute; width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; z-index: -1; }
+        .internal-chat-attach-btn { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; -webkit-tap-highlight-color: transparent; }
+        .internal-chat-attach-btn:hover { background: var(--bg-hover); color: var(--accent); border-color: var(--accent); }
+        .internal-chat-file-option { display: none; font-size: 0.85rem; white-space: nowrap; color: var(--text-secondary); cursor: pointer; }
         .chat-send input { flex: 1; padding: 12px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 1rem; }
         .chat-send input:focus { outline: none; border-color: var(--accent); }
         .chat-send button { padding: 12px 24px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-weight: 600; cursor: pointer; }
@@ -217,6 +227,18 @@
         .task-item-badges .badge.urgent { background: rgba(239,68,68,0.2); color: #ef4444; }
         .task-item-badges .badge.high { background: rgba(245,158,11,0.2); color: #f59e0b; }
         .task-item-badges .badge.low { background: rgba(107,114,128,0.2); color: #6b7280; }
+        .task-item-badges .badge.overdue { background: rgba(239,68,68,0.2); color: #ef4444; }
+        .task-list-item.task-overdue { border-color: rgba(239,68,68,0.3); }
+        .task-page-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 16px; }
+        .task-page-header h2 { margin: 0; }
+        .task-page-desc { color: var(--text-secondary); font-size: 0.9rem; margin: 4px 0 0; }
+        .task-assign-row { display: flex; gap: 12px; flex-wrap: wrap; }
+        .task-form-row { display: flex; flex-wrap: wrap; gap: 16px 24px; }
+        .task-form-row > div { flex: 1; min-width: 160px; }
+        .task-filters-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .task-search-input { flex: 1; min-width: 180px; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; }
+        .task-search-input:focus { outline: none; border-color: var(--accent); }
+        .tasks-summary-cards .stat-card .label { font-size: 0.8rem; margin-bottom: 8px; }
         .new-conv-customer-list { max-height: 280px; overflow-y: auto; }
         .new-conv-customer-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: background 0.2s; border: 1px solid transparent; }
         .new-conv-customer-item:hover { background: var(--bg-hover); border-color: var(--border); }
@@ -305,6 +327,8 @@
         .sup-table th, .sup-table td { padding: 10px 12px; text-align: right; border-bottom: 1px solid var(--border); }
         .sup-table th { background: var(--bg-hover); color: var(--text-secondary); font-weight: 500; }
         .sup-table tr:hover { background: var(--bg-hover); }
+        .sup-table tr.staff-row { cursor: pointer; }
+        .sup-table tr.staff-row:hover { background: var(--accent-soft); }
         .stat-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
         .stat-card { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); min-width: 160px; }
         .stat-card .val { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
@@ -376,7 +400,7 @@
             .login-box h1 { font-size: 1.25rem; }
             .modal-overlay { padding: 12px; align-items: flex-start; overflow-y: auto; }
             .modal-box { max-width: 100% !important; padding: 16px; margin: auto 0; }
-            .toast { left: 12px; right: 12px; bottom: 70px; max-width: none; }
+            .toast { left: 12px; right: 12px; bottom: 100px; max-width: none; }
             .content { padding: 12px; }
             .content h2 { font-size: 1.1rem; margin-bottom: 12px; }
             .form-box { padding: 16px; margin-bottom: 16px; }
@@ -393,6 +417,8 @@
             .sup-tab, .process-tab { padding: 8px 12px; font-size: 0.85rem; }
             #totpPromptBanner { margin: 12px 12px 0; padding: 10px 14px; flex-wrap: wrap; }
             #totpPromptBanner button { margin-top: 8px; }
+            .app-footer { padding: 8px 12px; font-size: 0.7rem; }
+            .price-ticker.ticker-collapsed { max-height: 40px; }
         }
         .modal-body label { display: block; margin-top: 12px; margin-bottom: 4px; font-size: 0.9rem; color: var(--text-secondary); }
         .modal-body label:first-of-type { margin-top: 0; }
@@ -421,12 +447,19 @@
             .header .user-badge #userEmail { max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .login-box { padding: 24px; }
             .msg { max-width: 90%; }
-            .price-ticker { gap: 8px 12px; font-size: 0.8rem; padding: 8px 12px; padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); padding-bottom: max(8px, env(safe-area-inset-bottom)); flex-wrap: wrap; justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .price-ticker { gap: 8px 12px; font-size: 0.8rem; padding: 8px 12px 8px 48px; padding-inline-start: max(48px, calc(12px + env(safe-area-inset-inline-start))); padding-inline-end: max(12px, env(safe-area-inset-inline-end)); padding-bottom: max(8px, env(safe-area-inset-bottom)); flex-wrap: wrap; justify-content: flex-start; overflow-x: auto; -webkit-overflow-scrolling: touch; position: relative; transition: max-height 0.3s ease, padding 0.3s ease; }
+            .price-ticker.ticker-collapsed { max-height: 44px; overflow: hidden; padding-top: 8px; padding-bottom: 8px; }
+            .price-ticker.ticker-collapsed .ticker-header, .price-ticker.ticker-collapsed .ticker-items { display: none; }
+            .price-ticker.ticker-collapsed .ticker-toggle-mobile svg { transform: rotate(180deg); }
+            .ticker-toggle-mobile { display: flex; position: absolute; top: 50%; inset-inline-end: 8px; transform: translateY(-50%); width: 36px; height: 36px; min-width: 36px; padding: 0; border: none; background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); border-radius: 8px; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+            .ticker-toggle-mobile:hover { background: rgba(255,255,255,0.15); }
+            .ticker-toggle-mobile svg { transition: transform 0.2s; }
             .price-ticker .ticker-items { justify-content: flex-start; overflow-x: auto; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
-            .price-ticker .ticker-item { flex-shrink: 0; padding: 4px 10px; font-size: 0.85rem; }
-            .price-ticker .ticker-datetime { font-size: 0.65rem; min-width: 120px; }
-            .footer { flex-direction: column; gap: 4px; text-align: center; padding: 10px 16px; }
-            .main-wrap { padding-bottom: 56px; }
+            .price-ticker .ticker-item { flex-shrink: 0; padding: 4px 10px; font-size: 0.85rem; min-height: 36px; display: flex; align-items: center; }
+            .price-ticker .ticker-datetime { font-size: 0.65rem; min-width: 100px; }
+            .app-footer { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 16px; padding-bottom: max(10px, env(safe-area-inset-bottom)); background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.06); font-size: 0.75rem; color: rgba(255,255,255,0.6); flex-shrink: 0; }
+            .app-footer-brand { font-weight: 600; color: rgba(255,255,255,0.8); }
+            .main-wrap { padding-bottom: max(90px, calc(80px + env(safe-area-inset-bottom))); }
             .conv-layout { flex-direction: column; min-height: min(400px, 60vh); gap: 0; position: relative; }
             .conv-list-pane { flex: 0 0 auto; max-height: 220px; min-height: 120px; }
             .conv-layout .chat-area { display: none; }
@@ -447,12 +480,29 @@
             .modal-overlay { padding: 16px; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); align-items: flex-start; overflow-y: auto; -webkit-overflow-scrolling: touch; }
             .modal-box { max-width: 100%; }
             .btn-primary, .btn-secondary { min-height: 44px; padding: 12px 20px; }
-            .internal-chat-popup { left: max(16px, env(safe-area-inset-left)); bottom: max(calc(48px + env(safe-area-inset-bottom)), 60px); }
+            .toast { bottom: max(100px, calc(90px + env(safe-area-inset-bottom))); }
+            .internal-chat-popup { left: max(16px, env(safe-area-inset-left)); bottom: max(calc(90px + env(safe-area-inset-bottom)), 100px); }
+            .announcement-marquee { padding: 8px 12px; font-size: 0.85rem; }
+            #totpPromptBanner { margin: 12px 12px 0; padding: 12px 16px; flex-direction: column; align-items: stretch; }
+            #totpPromptBanner button { margin: 4px 0 0; width: 100%; }
+            .modal-footer { flex-direction: column; }
+            .modal-footer .btn-primary, .modal-footer .btn-secondary { width: 100%; }
+            .content { -webkit-overflow-scrolling: touch; touch-action: pan-y; }
+            .dashboard-card { min-height: 44px; -webkit-tap-highlight-color: transparent; }
+            .conv-filters { gap: 8px; }
+            .conv-filters .conv-filter-input { flex: 1 1 100%; }
+            .conv-filters select { min-width: 0; }
+            .page h2 { font-size: 1.1rem; }
+            .list-item { padding: 12px 14px; min-height: 44px; }
         }
         body.ltr .sidebar { right: auto; left: 0; transform: translateX(-100%); }
         body.ltr .sidebar.sidebar-open { transform: translateX(0); box-shadow: 8px 0 32px rgba(0,0,0,0.4); }
         /* ========== Responsive: 576px و کمتر ========== */
         @media (max-width: 576px) {
+            .task-page-header { flex-direction: column; align-items: stretch; }
+            .task-filters-row { flex-direction: column; align-items: stretch; }
+            .task-search-input { min-width: 0; }
+            .task-form-row > div { min-width: 0; }
             .user-list { grid-template-columns: 1fr; }
             .user-toolbar { flex-direction: column; align-items: stretch; }
             .user-search-wrap { min-width: 0; }
@@ -476,6 +526,8 @@
             .customer-detail-tab { padding: 8px 12px; font-size: 0.85rem; }
             .customer-notes-add textarea { max-width: 100%; }
             .form-box[style*="max-width"] { max-width: 100% !important; }
+            .app-footer { padding: 8px 12px; font-size: 0.7rem; }
+            .price-ticker.ticker-collapsed { max-height: 40px; }
         }
         body.ltr .sidebar { border-left: none; border-right: 1px solid var(--border); }
         body.ltr .sidebar a.active { border-right: none; border-left: 3px solid var(--accent); margin-right: 12px; margin-left: 9px; padding-right: 16px; padding-left: 13px; }

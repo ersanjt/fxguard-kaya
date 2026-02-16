@@ -526,7 +526,21 @@ io.on('connection', (socket) => {
         logger.info(`🔌 User disconnected: ${socket.userId}`);
         if (socket.userId) {
             try {
-                await User.update({ status: 'offline' }, { where: { id: socket.userId } });
+                const user = await User.findByPk(socket.userId);
+                if (user) {
+                    await user.update({ status: 'offline' });
+                    const { logActivity } = require('./services/activityLog');
+                    await logActivity({
+                        userId: user.id,
+                        branchId: user.branchId || null,
+                        departmentId: user.departmentId || null,
+                        action: 'user_logout',
+                        entityType: 'user',
+                        entityId: user.id,
+                        summary: 'خروج از پورتال (قطع اتصال)',
+                        metadata: { email: user.email }
+                    });
+                }
                 io.emit('user_status', { userId: socket.userId, status: 'offline' });
             } catch (e) { logger.warn('Disconnect status update:', e.message); }
         }

@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Sequelize, Conversation, Message, User, Branch, Department, Customer, ActivityLog } = require('../models');
+const { Sequelize, Conversation, Message, User, Branch, Department, Customer, ActivityLog, Ticket, TicketReply, Task } = require('../models');
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
 
@@ -45,6 +45,77 @@ router.get('/online', canViewStaffActivity, async (req, res) => {
             order: [['lastLoginAt', 'DESC']]
         });
         res.json({ data: users });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// جزئیات فعالیت کاربر — ورود/خروج، ساعات آنلاین، چت‌ها، تیکت‌ها، تسک‌ها (بدون اطلاع به کاربر)
+router.get('/user/:userId/detail', canViewStaffActivity, async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const user = await User.findByPk(userId, {
+            attributes: ['id', 'name', 'email', 'role', 'status', 'lastLoginAt'],
+            include: [{ model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false }]
+        });
+        if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
+
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+        const [logins, logouts, activities, convCount, msgCount, ticketsCreated, ticketsReplied, ticketsAssigned, tasksCompleted] = await Promise.all([
+            ActivityLog.findAll({ where: { userId, action: 'user_login' }, order: [['createdAt', 'DESC']], limit: 50 }),
+            ActivityLog.findAll({ where: { userId, action: 'user_logout' }, order: [['createdAt', 'DESC']], limit: 50 }),
+            ActivityLog.findAll({ where: { userId, action: { [Op.notIn]: ['user_login', 'user_logout'] } }, order: [['createdAt', 'DESC']], limit: 100 }),
+            Conversation.count({ where: { assignedTo: userId } }),
+            Message.count({ where: { userId, direction: 'outgoing' } }),
+            Ticket.count({ where: { createdBy: userId } }),
+            TicketReply.count({ where: { userId } }),
+            Ticket.count({ where: { assignedTo: userId } }),
+            Task.count({ where: { completedBy: userId, status: 'done' } })
+        ]);
+
+        const sessions = [];
+        const loginsMap = logins.map(l => ({ at: new Date(l.createdAt), type: 'login' }));
+        const logoutsMap = logouts.map(l => ({ at: new Date(l.createdAt), type: 'logout' }));
+        const allEvents = [...loginsMap, ...logoutsMap].sort((a, b) => a.at - b.at);
+        let onlineMinutes = 0;
+        let lastLogin = null;
+        for (const e of allEvents) {
+            if (e.type === 'login') lastLogin = e.at;
+            else if (e.type === 'logout' && lastLogin) {
+                onlineMinutes += (e.at - lastLogin) / (60 * 1000);
+                sessions.push({ loginAt: lastLogin, logoutAt: e.at, minutes: Math.round((e.at - lastLogin) / (60 * 1000)) });
+                lastLogin = null;
+            }
+        }
+        if (lastLogin && ['online', 'away', 'busy'].indexOf(user.status) !== -1) {
+            onlineMinutes += (now - lastLogin) / (60 * 1000);
+            sessions.push({ loginAt: lastLogin, logoutAt: null, minutes: Math.round((now - lastLogin) / (60 * 1000)) });
+        }
+
+        const recentLogins = logins.slice(0, 20).map(l => ({ createdAt: l.createdAt, summary: l.summary }));
+        const recentLogouts = logouts.slice(0, 20).map(l => ({ createdAt: l.createdAt, summary: l.summary }));
+        const recentActivities = activities.slice(0, 30).map(a => ({ createdAt: a.createdAt, action: a.action, summary: a.summary }));
+
+        res.json({
+            user: user.toJSON(),
+            stats: {
+                onlineMinutesTotal: Math.round(onlineMinutes),
+                onlineHoursTotal: (onlineMinutes / 60).toFixed(1),
+                sessionsCount: sessions.length,
+                conversationsAssigned: convCount,
+                messagesSent: msgCount,
+                ticketsCreated,
+                ticketsReplied,
+                ticketsAssigned,
+                tasksCompleted
+            },
+            sessions: sessions.slice(0, 20),
+            recentLogins,
+            recentLogouts,
+            recentActivities
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

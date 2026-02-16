@@ -65,13 +65,22 @@ const includeList = [
 router.get('/', async (req, res) => {
     try {
         const accessWhere = await taskAccessWhere(req);
-        const { status, assignedTo, assignedToDepartmentId, branchId, createdBy, page = 1, limit = 50 } = req.query;
+        const { status, assignedTo, assignedToDepartmentId, branchId, createdBy, search, page = 1, limit = 50 } = req.query;
         const where = { ...accessWhere };
         if (status) where.status = status;
         if (assignedTo) where.assignedTo = assignedTo;
         if (assignedToDepartmentId) where.assignedToDepartmentId = assignedToDepartmentId;
         if (branchId) where.branchId = branchId;
         if (createdBy) where.createdBy = createdBy;
+        if (search && String(search).trim()) {
+            const term = '%' + String(search).trim() + '%';
+            const searchOr = [
+                { title: { [Op.like]: term } },
+                { description: { [Op.like]: term } }
+            ];
+            where[Op.and] = where[Op.and] || [];
+            where[Op.and].push({ [Op.or]: searchOr });
+        }
 
         const { rows, count } = await Task.findAndCountAll({
             where,
@@ -166,7 +175,7 @@ router.put('/:id', async (req, res) => {
         const { ok, status, task } = await canAccessTask(req, req.params.id);
         if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
 
-        const { title, description, status: newStatus, assignedTo, assignedToDepartmentId, dueDate, priority } = req.body;
+        const { title, description, status: newStatus, assignedTo, assignedToDepartmentId, dueDate, priority, branchId } = req.body;
         if (title !== undefined) task.title = title.trim();
         if (description !== undefined) task.description = description;
         if (newStatus !== undefined) {
@@ -180,6 +189,7 @@ router.put('/:id', async (req, res) => {
         if (assignedToDepartmentId !== undefined) task.assignedToDepartmentId = assignedToDepartmentId || null;
         if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate) : null;
         if (priority !== undefined) task.priority = priority;
+        if (branchId !== undefined) task.branchId = branchId || null;
         await task.save();
         const updated = await Task.findByPk(task.id, { include: includeList });
         res.json(updated);
@@ -197,6 +207,15 @@ router.post('/:id/updates', async (req, res) => {
         const content = (req.body.content || '').trim();
         if (!content) return res.status(400).json({ error: 'متن پیگیری الزامی است' });
         const statusChange = req.body.statusChange || null;
+        const validStatuses = ['pending', 'in_progress', 'done', 'cancelled'];
+        if (statusChange && validStatuses.includes(statusChange)) {
+            task.status = statusChange;
+            if (statusChange === 'done' || statusChange === 'cancelled') {
+                task.completedAt = new Date();
+                task.completedBy = req.userId;
+            }
+            await task.save();
+        }
 
         const update = await TaskUpdate.create({
             taskId: task.id,

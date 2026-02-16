@@ -591,9 +591,9 @@
             } catch (e) { d = new Date(); }
             if (isNaN(d.getTime())) d = new Date();
             var opts = { hour: '2-digit', minute: '2-digit', hour12: false };
-            var iran = new Intl.DateTimeFormat('fa-IR', Object.assign({}, opts, { timeZone: 'Asia/Tehran' })).format(d);
-            var turkey = new Intl.DateTimeFormat('fa-IR', Object.assign({}, opts, { timeZone: 'Europe/Istanbul' })).format(d);
-            var uae = new Intl.DateTimeFormat('fa-IR', Object.assign({}, opts, { timeZone: 'Asia/Dubai' })).format(d);
+            var iran = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Asia/Tehran' })).format(d);
+            var turkey = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Europe/Istanbul' })).format(d);
+            var uae = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Asia/Dubai' })).format(d);
             var shamsi = '';
             try {
                 var pf = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -605,14 +605,28 @@
             } catch (e) {
                 shamsi = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             }
-            var tz = window.APP_TIMEZONE || 'Europe/Istanbul';
-            var miladi = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            var miladi = '';
+            try {
+                miladi = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            } catch (e) {
+                miladi = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+            }
+            var hijri = '';
+            try {
+                var hf = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit' });
+                hijri = hf.format(d);
+            } catch (e) {
+                try {
+                    hijri = new Intl.DateTimeFormat('en-u-ca-islamic', { timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+                } catch (e2) { hijri = '—'; }
+            }
             return {
                 iran: iran,
                 turkey: turkey,
                 uae: uae,
                 shamsi: shamsi,
                 miladi: miladi,
+                hijri: hijri,
                 label: t('ticker_last') || 'آخرین بروزرسانی',
                 iranLabel: t('ticker_iran') || 'ایران',
                 turkeyLabel: t('ticker_turkey') || 'ترکیه',
@@ -633,17 +647,14 @@
             if (loadingEl) loadingEl.style.display = 'none';
             if (timesEl) {
                 timesEl.innerHTML = '<span class="ticker-dt-label">' + escapeHtml(fmt.label) + '</span>' +
-                    '<span class="ticker-time-block"><span class="ticker-tz">' + escapeHtml(fmt.iranLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.iran) + '</span></span>' +
+                    '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.iranLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.iran) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.shamsi) + '</span></span>' +
                     '<span class="ticker-sep">·</span>' +
-                    '<span class="ticker-time-block"><span class="ticker-tz">' + escapeHtml(fmt.turkeyLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.turkey) + '</span></span>' +
+                    '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.turkeyLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.turkey) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.miladi) + '</span></span>' +
                     '<span class="ticker-sep">·</span>' +
-                    '<span class="ticker-time-block"><span class="ticker-tz">' + escapeHtml(fmt.uaeLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.uae) + '</span></span>';
+                    '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.uaeLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.uae) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.hijri) + '</span></span>';
                 timesEl.style.display = '';
             }
-            if (datesEl) {
-                datesEl.innerHTML = '<span class="ticker-date-shamsi">' + escapeHtml(fmt.shamsi) + '</span><span class="ticker-date-sep">·</span><span class="ticker-date-miladi">' + escapeHtml(fmt.miladi) + '</span>';
-                datesEl.style.display = '';
-            }
+            if (datesEl) { datesEl.style.display = 'none'; }
             if (itemsEl) {
                 itemsEl.innerHTML = items.map(function(it) {
                     var ch = it.change;
@@ -1144,11 +1155,10 @@
             }
         }
         async function loadProfile() {
-            var u = currentUser;
-            if (!u) {
-                var res = await apiFetch('/api/users/me');
-                if (res.ok && res.data) u = currentUser = res.data;
-            }
+            var u = null;
+            var res = await apiFetch('/api/users/me');
+            if (res.ok && res.data) { u = res.data; currentUser = res.data; }
+            else if (currentUser) u = currentUser;
             if (u) {
                 var roleLabel = (LANG === 'fa' ? { owner: 'مالک', admin: 'ادمین', manager: 'مدیر', supervisor: 'ناظر', agent: 'کارمند' } : { owner: 'Owner', admin: 'Admin', manager: 'Manager', supervisor: 'Supervisor', agent: 'Agent' })[u.role] || u.role;
                 var branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
@@ -1317,6 +1327,24 @@
             });
             container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : 'No sections available.') + '</div>');
             updateNavBadges(stats);
+        }
+
+        async function loadGeneralAnnouncementsMarquee() {
+            var banner = document.getElementById('announcementMarquee');
+            if (!banner) return;
+            try {
+                var res = await apiFetch('/api/announcements/for-me');
+                if (res.needLogin || !res.ok) { banner.style.display = 'none'; return; }
+                var list = (res.data && res.data.data) ? res.data.data : [];
+                var general = list.filter(function(a) { return a.targetType === 'all'; });
+                if (general.length === 0) { banner.style.display = 'none'; return; }
+                var parts = general.map(function(a) { return (a.title || '') + (a.body ? ': ' + a.body : ''); });
+                var full = parts.join('  •  ');
+                if (!full.trim()) { banner.style.display = 'none'; return; }
+                var inner = banner.querySelector('.announcement-marquee-inner');
+                if (inner) { inner.innerHTML = escapeHtml(full) + '  •  •  •  ' + escapeHtml(full); }
+                banner.style.display = 'block';
+            } catch (e) { banner.style.display = 'none'; }
         }
 
         async function loadConvFiltersInit() {
@@ -1785,7 +1813,7 @@
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
             if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }
             if (page === 'tickets') { loadTicketFiltersInit(); loadTickets(); }
-            if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); }
+            if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
             if (page === 'whatsapp') loadWhatsappStatus();
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); }
@@ -1941,6 +1969,15 @@
         var currentTaskId = null;
         function taskStatusLabel(s) { return { pending: t('status_pending'), in_progress: t('status_in_progress'), done: t('status_done'), cancelled: t('status_cancelled') }[s] || s; }
         function taskPriorityLabel(s) { return { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[s] || s; }
+        function toggleTaskForm() {
+            var box = document.getElementById('taskFormBox');
+            var btn = document.getElementById('btnTaskCreate');
+            if (box && btn) {
+                var show = box.style.display !== 'block';
+                box.style.display = show ? 'block' : 'none';
+                btn.textContent = show ? (t('cancel') || (LANG === 'fa' ? 'انصراف' : 'Cancel')) : (t('new_task') || (LANG === 'fa' ? 'تسک جدید' : 'New task'));
+            }
+        }
         function toggleTaskAssignTarget() {
             var typeSel = document.getElementById('taskAssignType');
             var userSel = document.getElementById('taskAssignUser');
@@ -1952,17 +1989,32 @@
         function loadTasksFilters() {
             var userSel = document.getElementById('taskAssignUser');
             var deptSel = document.getElementById('taskAssignDept');
-            Promise.all([apiFetch('/api/users'), apiFetch('/api/departments')]).then(function(ress) {
+            var branchSel = document.getElementById('taskBranch');
+            Promise.all([apiFetch('/api/users'), apiFetch('/api/departments'), apiFetch('/api/branches')]).then(function(ress) {
                 var users = (ress[0].data && ress[0].data.data) || [];
                 var depts = (ress[1].data && ress[1].data.data) || [];
-                if (userSel) userSel.innerHTML = '<option value="">' + t('no_user') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+                var branches = (ress[2].data && ress[2].data.data) || [];
+                if (userSel) userSel.innerHTML = '<option value="">' + t('select_user_task') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
                 if (deptSel) deptSel.innerHTML = '<option value="">' + t('select_dept') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
+                if (branchSel) branchSel.innerHTML = '<option value="">' + t('no_branch') + '</option>' + branches.map(function(b){ return '<option value="' + b.id + '">' + escapeHtml(b.name || '') + '</option>'; }).join('');
                 var filterDept = document.getElementById('taskFilterDept');
                 var filterUser = document.getElementById('taskFilterUser');
                 var myDeptOpt = (currentUser && currentUser.departmentId) ? '<option value="__my_dept__">' + (LANG === 'fa' ? 'دپارتمان من' : 'My department') + '</option>' : '';
                 if (filterDept) filterDept.innerHTML = '<option value="">' + t('all_depts') + '</option>' + myDeptOpt + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
-                if (filterUser) filterUser.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه کارمندان' : 'All') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+                if (filterUser) filterUser.innerHTML = '<option value="">' + t('filter_all_users') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+                var filterBranch = document.getElementById('taskFilterBranch');
+                if (filterBranch) filterBranch.innerHTML = '<option value="">' + t('all_branches') + '</option>' + branches.map(function(b){ return '<option value="' + b.id + '">' + escapeHtml(b.name || '') + '</option>'; }).join('');
             });
+        }
+        function initTaskSearchDebounce() {
+            var inp = document.getElementById('taskSearch');
+            if (inp && !inp._taskSearchBound) {
+                inp._taskSearchBound = true;
+                inp.addEventListener('input', function() {
+                    clearTimeout(window._taskSearchT);
+                    window._taskSearchT = setTimeout(function() { loadTasks(); }, 400);
+                });
+            }
         }
         async function loadTasks() {
             var list = document.getElementById('taskList');
@@ -1973,10 +2025,14 @@
             var dept = deptEl ? deptEl.value : '';
             if (dept === '__my_dept__' && currentUser && currentUser.departmentId) dept = currentUser.departmentId;
             var user = (document.getElementById('taskFilterUser') && document.getElementById('taskFilterUser').value) || '';
+            var branch = (document.getElementById('taskFilterBranch') && document.getElementById('taskFilterBranch').value) || '';
+            var search = (document.getElementById('taskSearch') && document.getElementById('taskSearch').value || '').trim();
             var q = '?limit=50';
             if (status) q += '&status=' + encodeURIComponent(status);
             if (dept && dept !== '__my_dept__') q += '&assignedToDepartmentId=' + encodeURIComponent(dept);
             if (user) q += '&assignedTo=' + encodeURIComponent(user);
+            if (branch) q += '&branchId=' + encodeURIComponent(branch);
+            if (search) q += '&search=' + encodeURIComponent(search);
             var res = await apiFetch('/api/tasks' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
@@ -1985,8 +2041,10 @@
             list.innerHTML = data.data.map(function(t) {
                 var assign = t.assignedToDepartmentId && t.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(t.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(t.assignee) || '—';
                 var due = t.dueDate ? fmtTZ(t.dueDate, 'date') : '';
+                var isOverdue = t.dueDate && (t.status === 'pending' || t.status === 'in_progress') && new Date(t.dueDate) < new Date();
+                var overdueBadge = isOverdue ? '<span class="badge overdue" title="' + (t('overdue') || 'مهلت گذشته') + '">' + (t('overdue') || 'مهلت گذشته') + '</span>' : '';
                 var prioBadge = t.priority && t.priority !== 'normal' ? '<span class="badge ' + t.priority + '">' + escapeHtml(taskPriorityLabel(t.priority)) + '</span>' : '';
-                return '<div class="task-list-item" onclick="loadTaskDetail(\'' + t.id + '\')"><div class="task-item-body"><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + assign + ' · ' + taskStatusLabel(t.status) + (due ? ' · ' + t('due_label') + ' ' + due : '') + '</div></div><div class="task-item-badges">' + prioBadge + '<span class="badge ' + (t.status || '') + '">' + taskStatusLabel(t.status) + '</span></div></div>';
+                return '<div class="task-list-item' + (isOverdue ? ' task-overdue' : '') + '" onclick="loadTaskDetail(\'' + t.id + '\')"><div class="task-item-body"><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + assign + ' · ' + taskStatusLabel(t.status) + (due ? ' · ' + t('due_label') + ' ' + due : '') + '</div></div><div class="task-item-badges">' + overdueBadge + prioBadge + '<span class="badge ' + (t.status || '') + '">' + taskStatusLabel(t.status) + '</span></div></div>';
             }).join('');
         }
         async function loadTasksSummary() {
@@ -1999,16 +2057,18 @@
             var d = res.data;
             var html = '';
             if (d.byDepartment && d.byDepartment.length) {
-                html += '<div class="stat-card" style="min-width:200px;"><div class="label">' + t('by_dept') + '</div>';
+                html += '<div class="stat-card" style="min-width:220px;"><div class="label" style="margin-bottom:12px;">' + t('by_dept') + '</div>';
                 d.byDepartment.forEach(function(x) {
-                    html += '<div style="margin-top:8px; font-size:0.9rem;">' + escapeHtml(x.department && x.department.name ? x.department.name : '') + ': ' + t('pending_count') + ' ' + (x.pending||0) + ', ' + t('in_progress_count') + ' ' + (x.in_progress||0) + ', ' + t('done_count') + ' ' + (x.done||0) + '</div>';
+                    var sep = LANG === 'fa' ? '، ' : ', ';
+                    html += '<div class="task-summary-row" style="margin-top:8px; font-size:0.9rem; padding:6px 0; border-bottom:1px solid var(--border);">' + escapeHtml(x.department && x.department.name ? x.department.name : '') + ': ' + t('status_pending') + ' ' + (x.pending||0) + sep + t('status_in_progress') + ' ' + (x.in_progress||0) + sep + t('status_done') + ' ' + (x.done||0) + '</div>';
                 });
                 html += '</div>';
             }
             if (d.byUser && d.byUser.length) {
-                html += '<div class="stat-card" style="min-width:200px;"><div class="label">' + t('by_user') + '</div>';
+                html += '<div class="stat-card" style="min-width:220px;"><div class="label" style="margin-bottom:12px;">' + t('by_user') + '</div>';
                 d.byUser.forEach(function(x) {
-                    html += '<div style="margin-top:8px; font-size:0.9rem;">' + escapeHtml(userDisplay(x.user)) + ': ' + t('pending_count') + ' ' + (x.pending||0) + ', ' + t('in_progress_count') + ' ' + (x.in_progress||0) + ', ' + t('done_count') + ' ' + (x.done||0) + '</div>';
+                    var sep = LANG === 'fa' ? '، ' : ', ';
+                    html += '<div class="task-summary-row" style="margin-top:8px; font-size:0.9rem; padding:6px 0; border-bottom:1px solid var(--border);">' + escapeHtml(userDisplay(x.user)) + ': ' + t('status_pending') + ' ' + (x.pending||0) + sep + t('status_in_progress') + ' ' + (x.in_progress||0) + sep + t('status_done') + ' ' + (x.done||0) + '</div>';
                 });
                 html += '</div>';
             }
@@ -2025,11 +2085,15 @@
             var body = { title: title.trim(), description: (document.getElementById('taskDesc') && document.getElementById('taskDesc').value) || '', assignedTo: userId || undefined, assignedToDepartmentId: deptId || undefined, priority: (document.getElementById('taskPriority') && document.getElementById('taskPriority').value) || 'normal' };
             var due = document.getElementById('taskDueDate') && document.getElementById('taskDueDate').value;
             if (due) body.dueDate = new Date(due).toISOString();
+            var branchId = document.getElementById('taskBranch') && document.getElementById('taskBranch').value;
+            if (branchId) body.branchId = branchId;
             var res = await apiFetch('/api/tasks', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) {
                 if (document.getElementById('taskTitle')) document.getElementById('taskTitle').value = '';
                 if (document.getElementById('taskDesc')) document.getElementById('taskDesc').value = '';
+                if (document.getElementById('taskBranch')) document.getElementById('taskBranch').value = '';
+                if (document.getElementById('taskDueDate')) document.getElementById('taskDueDate').value = '';
                 toast(t('toast_task_created'));
                 loadTasks();
                 loadTasksSummary();
@@ -2041,24 +2105,73 @@
             currentTaskId = null;
             loadTasks();
         }
+        function toggleTaskDetailAssign() {
+            var typeSel = document.getElementById('taskDetailAssignType');
+            var userSel = document.getElementById('taskDetailAssignUser');
+            var deptSel = document.getElementById('taskDetailAssignDept');
+            var isUser = typeSel && typeSel.value === 'user';
+            if (userSel) userSel.style.display = isUser ? '' : 'none';
+            if (deptSel) deptSel.style.display = isUser ? 'none' : '';
+        }
+        async function updateTaskFromDetail() {
+            if (!currentTaskId) return;
+            var typeSel = document.getElementById('taskDetailAssignType');
+            var userSel = document.getElementById('taskDetailAssignUser');
+            var deptSel = document.getElementById('taskDetailAssignDept');
+            var type = typeSel ? typeSel.value : 'user';
+            var userId = type === 'user' && userSel ? userSel.value : null;
+            var deptId = type === 'department' && deptSel ? deptSel.value : null;
+            if (!userId && !deptId) { toast(t('select_assignee'), true); return; }
+            var body = { assignedTo: type === 'user' ? userId : null, assignedToDepartmentId: type === 'department' ? deptId : null };
+            var statusSel = document.getElementById('taskDetailStatus');
+            if (statusSel && statusSel.value) body.status = statusSel.value;
+            var dueEl = document.getElementById('taskDetailDueDate');
+            if (dueEl) body.dueDate = dueEl.value ? new Date(dueEl.value).toISOString() : null;
+            var prioEl = document.getElementById('taskDetailPriority');
+            if (prioEl && prioEl.value) body.priority = prioEl.value;
+            var branchEl = document.getElementById('taskDetailBranch');
+            if (branchEl) body.branchId = branchEl.value || null;
+            var res = await apiFetch('/api/tasks/' + currentTaskId, { method: 'PUT', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('toast_status_updated')); loadTaskDetail(currentTaskId); loadTasks(); loadTasksSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
         async function loadTaskDetail(id) {
             currentTaskId = id;
             document.getElementById('taskList').style.display = 'none';
             document.getElementById('taskDetailBox').style.display = 'block';
-            var res = await apiFetch('/api/tasks/' + id);
-            if (res.needLogin) return;
-            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showTaskList(); return; }
-            var t = res.data;
-            var assign = t.assignedToDepartmentId && t.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(t.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(t.assignee) || '—';
-            var creator = userDisplay(t.creator) || '�';
-            var due = t.dueDate ? fmtTZ(t.dueDate, 'datetime') : '�';
-            var statusOpts = ['pending','in_progress','done','cancelled'].map(function(s){ return '<option value="' + s + '"' + (t.status === s ? ' selected' : '') + '>' + taskStatusLabel(s) + '</option>'; }).join('');
+            var ress = await Promise.all([apiFetch('/api/tasks/' + id), apiFetch('/api/users'), apiFetch('/api/departments'), apiFetch('/api/branches')]);
+            var taskRes = ress[0];
+            if (taskRes.needLogin) return;
+            if (!taskRes.ok) { toast((taskRes.data && taskRes.data.error) || t('err_generic'), true); showTaskList(); return; }
+            var taskData = taskRes.data;
+            var users = (ress[1].data && ress[1].data.data) || [];
+            var depts = (ress[2].data && ress[2].data.data) || [];
+            var branches = (ress[3].data && ress[3].data.data) || [];
+            var assign = taskData.assignedToDepartmentId && taskData.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(taskData.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(taskData.assignee) || '\u2014';
+            var creator = userDisplay(taskData.creator) || '\u2014';
+            var due = taskData.dueDate ? fmtTZ(taskData.dueDate, 'datetime') : '\u2014';
+            var statusOpts = ['pending','in_progress','done','cancelled'].map(function(s){ return '<option value="' + s + '"' + (taskData.status === s ? ' selected' : '') + '>' + taskStatusLabel(s) + '</option>'; }).join('');
+            var prioOpts = ['low','normal','high','urgent'].map(function(p){ return '<option value="' + p + '"' + ((taskData.priority || 'normal') === p ? ' selected' : '') + '>' + taskPriorityLabel(p) + '</option>'; }).join('');
+            var userOpts = users.map(function(u){ return '<option value="' + u.id + '"' + (taskData.assignedTo === u.id ? ' selected' : '') + '>' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            var deptOpts = depts.map(function(d){ return '<option value="' + d.id + '"' + (taskData.assignedToDepartmentId === d.id ? ' selected' : '') + '>' + escapeHtml(d.name) + '</option>'; }).join('');
+            var branchOpts = '<option value="">' + t('no_branch') + '</option>' + branches.map(function(b){ return '<option value="' + b.id + '"' + (taskData.branchId === b.id ? ' selected' : '') + '>' + escapeHtml(b.name || '') + '</option>'; }).join('');
+            var isDept = !!taskData.assignedToDepartmentId;
+            var dueVal = taskData.dueDate ? (function(){ var d=new Date(taskData.dueDate); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); })() : '';
+            var branchName = taskData.branch && taskData.branch.name ? escapeHtml(taskData.branch.name) : '\u2014';
+            var editHtml = '<div class="task-detail-edit" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">' +
+                '<label>' + t('assign_to') + '</label><div class="task-assign-row"><select id="taskDetailAssignType" onchange="toggleTaskDetailAssign()"><option value="user"' + (!isDept?' selected':'') + '>' + t('assign_user') + '</option><option value="department"' + (isDept?' selected':'') + '>' + t('assign_dept') + '</option></select>' +
+                '<select id="taskDetailAssignUser" style="min-width:180px;' + (isDept?' display:none':'') + '"><option value="">' + t('select_user_task') + '</option>' + userOpts + '</select>' +
+                '<select id="taskDetailAssignDept" style="min-width:180px;' + (!isDept?' display:none':'') + '"><option value="">' + t('select_dept') + '</option>' + deptOpts + '</select></div>' +
+                '<label>' + t('th_branch') + '</label><select id="taskDetailBranch">' + branchOpts + '</select>' +
+                '<div class="task-form-row"><div><label>' + t('due_date') + '</label><input id="taskDetailDueDate" type="datetime-local" value="' + dueVal + '"></div>' +
+                '<div><label>' + t('ticket_priority') + '</label><select id="taskDetailPriority">' + prioOpts + '</select></div></div>' +
+                '<label>' + t('change_status') + '</label><select id="taskDetailStatus">' + statusOpts + '</select>' +
+                ' <button type="button" class="btn-primary" onclick="updateTaskFromDetail()">' + t('btn_apply') + '</button></div>';
             document.getElementById('taskDetailContent').innerHTML =
-                '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(t.title) + '</h3>' +
-                (t.description ? '<p style="color:var(--text-secondary); margin:8px 0;">' + escapeHtml(t.description) + '</p>' : '') +
-                '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + escapeHtml(assign) + ' | ' + t('due_label') + ' ' + due + ' | ' + t('ticket_priority') + ': ' + taskPriorityLabel(t.priority) + '</p>' +
-                '<label>' + t('change_status') + '</label><select id="taskDetailStatus">' + statusOpts + '</select> <button type="button" class="btn-primary" onclick="updateTaskStatus()">' + t('btn_apply') + '</button></div>';
-            var updates = (t.updates || []).map(function(u) {
+                '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(taskData.title) + '</h3>' +
+                (taskData.description ? '<p style="color:var(--text-secondary); margin:8px 0;">' + escapeHtml(taskData.description) + '</p>' : '') +
+                '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + escapeHtml(assign) + ' | ' + t('due_label') + ' ' + due + ' | ' + t('th_branch') + ': ' + branchName + ' | ' + t('ticket_priority') + ': ' + taskPriorityLabel(taskData.priority) + '</p>' + editHtml;
+            var updates = (taskData.updates || []).map(function(u) {
                 return '<div class="msg in" style="margin:8px 0;"><div>' + escapeHtml(u.content) + '</div><div class="time">' + userDisplay(u.user) + ' � ' + (u.createdAt ? fmtTZ(u.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('taskUpdatesList').innerHTML = updates ? '<h4 style="font-size:1rem; margin:12px 0;">' + t('updates') + '</h4>' + updates : '<p class="text-muted" style="color:var(--text-muted);">' + t('no_updates') + '</p>';
@@ -2077,9 +2190,12 @@
             if (!currentTaskId) return;
             var content = (document.getElementById('taskUpdateContent') && document.getElementById('taskUpdateContent').value) || '';
             if (!content.trim()) { toast(t('task_update_required'), true); return; }
-            var res = await apiFetch('/api/tasks/' + currentTaskId + '/updates', { method: 'POST', body: JSON.stringify({ content: content.trim() }) });
+            var statusChange = document.getElementById('taskUpdateStatusChange') && document.getElementById('taskUpdateStatusChange').value;
+            var body = { content: content.trim() };
+            if (statusChange) body.statusChange = statusChange;
+            var res = await apiFetch('/api/tasks/' + currentTaskId + '/updates', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { document.getElementById('taskUpdateContent').value = ''; toast(t('toast_update_added')); loadTaskDetail(currentTaskId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { document.getElementById('taskUpdateContent').value = ''; var sc=document.getElementById('taskUpdateStatusChange'); if(sc)sc.value=''; toast(t('toast_update_added')); loadTaskDetail(currentTaskId); loadTasks(); loadTasksSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         function initProcessTabs() {
@@ -2817,7 +2933,7 @@
                         var statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
                         var lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '�';
                         var branchName = (u.branch && u.branch.name) ? u.branch.name : '�';
-                        return '<tr><td>' + escapeHtml(userDisplay(u)) + '</td><td>' + escapeHtml(u.email || '\u2014') + '</td><td>' + escapeHtml(branchName) + '</td><td><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td>' + lastLogin + '</td></tr>';
+                        return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer"><td>' + escapeHtml(userDisplay(u)) + '</td><td>' + escapeHtml(u.email || '\u2014') + '</td><td>' + escapeHtml(branchName) + '</td><td><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td>' + lastLogin + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
             } else { if (onlineList) onlineList.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; if (countEl) countEl.textContent = '0'; }
@@ -2831,10 +2947,75 @@
                         var user = r.user || {};
                         var branch = r.branch ? r.branch.name : '�';
                         var time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
-                        return '<tr><td>' + escapeHtml(userDisplay(user)) + '</td><td>' + escapeHtml(user.email || '\u2014') + '</td><td>' + escapeHtml(branch) + '</td><td>' + time + '</td><td>' + escapeHtml(r.summary || '') + '</td></tr>';
+                        var uid = r.userId || (user && user.id) || '';
+                        var rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
+                        return '<tr' + rowAttrs + '><td>' + escapeHtml(userDisplay(user)) + '</td><td>' + escapeHtml(user.email || '\u2014') + '</td><td>' + escapeHtml(branch) + '</td><td>' + time + '</td><td>' + escapeHtml(r.summary || '') + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
             } else { if (loginsList) loginsList.innerHTML = '<div class="empty">' + t('login_err_load') + '</div>'; }
+        }
+
+        function openStaffDetailModal(userId) {
+            if (!userId) return;
+            var modal = document.getElementById('staffDetailModal');
+            var loading = document.getElementById('staffDetailLoading');
+            var content = document.getElementById('staffDetailContent');
+            if (!modal || !loading || !content) return;
+            modal.style.display = 'flex';
+            loading.style.display = 'block';
+            content.style.display = 'none';
+            content.innerHTML = '';
+            loadStaffDetail(userId);
+        }
+        function closeStaffDetailModal() {
+            var modal = document.getElementById('staffDetailModal');
+            if (modal) modal.style.display = 'none';
+        }
+        async function loadStaffDetail(userId) {
+            var loading = document.getElementById('staffDetailLoading');
+            var content = document.getElementById('staffDetailContent');
+            if (!userId || !loading || !content) return;
+            try {
+                var res = await apiFetch('/api/supervision/user/' + encodeURIComponent(userId) + '/detail');
+                loading.style.display = 'none';
+                content.style.display = 'block';
+                if (res.needLogin || !res.ok) { content.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('loading_err')) + '</div>'; return; }
+                var d = res.data;
+                var u = d.user || {};
+                var s = d.stats || {};
+                var actLabels = { message_sent: t('action_message_sent'), conversation_assigned: t('action_conv_assigned'), customer_note_added: (LANG === 'fa' ? 'ثبت گزارش/یادداشت' : 'Customer note') };
+                var html = '<div class="staff-detail-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px;">';
+                html += '<div class="stat-card"><div class="val">' + (s.onlineHoursTotal || '0') + '</div><div class="label">' + (LANG === 'fa' ? 'ساعت آنلاین (کل)' : 'Hours online') + '</div></div>';
+                html += '<div class="stat-card"><div class="val">' + (s.sessionsCount || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'تعداد نشست' : 'Sessions') + '</div></div>';
+                html += '<div class="stat-card"><div class="val">' + (s.conversationsAssigned || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'مکالمه تخصیص‌یافته' : 'Conversations') + '</div></div>';
+                html += '<div class="stat-card"><div class="val">' + (s.messagesSent || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'پیام ارسالی' : 'Messages sent') + '</div></div>';
+                html += '<div class="stat-card"><div class="val">' + (s.ticketsCreated || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'تیکت ثبت‌شده' : 'Tickets created') + '</div></div>';
+                html += '<div class="stat-card"><div class="val">' + (s.ticketsReplied || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'پاسخ تیکت' : 'Ticket replies') + '</div></div>';
+                html += '<div class="stat-card"><div class="val">' + (s.tasksCompleted || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'تسک انجام‌شده' : 'Tasks completed') + '</div></div>';
+                html += '</div>';
+                if (d.sessions && d.sessions.length > 0) {
+                    html += '<h4 style="font-size:0.95rem;margin:16px 0 8px;">' + (LANG === 'fa' ? 'ورود و خروج' : 'Login & Logout') + '</h4>';
+                    html += '<table class="sup-table"><thead><tr><th>' + (LANG === 'fa' ? 'ورود' : 'Login') + '</th><th>' + (LANG === 'fa' ? 'خروج' : 'Logout') + '</th><th>' + (LANG === 'fa' ? 'دقایق' : 'Minutes') + '</th></tr></thead><tbody>';
+                    d.sessions.forEach(function(s) {
+                        var login = s.loginAt ? fmtTZ(s.loginAt, 'datetime') : '\u2014';
+                        var logout = s.logoutAt ? fmtTZ(s.logoutAt, 'datetime') : (LANG === 'fa' ? 'در حال حاضر' : 'Now');
+                        html += '<tr><td>' + login + '</td><td>' + logout + '</td><td>' + (s.minutes || 0) + '</td></tr>';
+                    });
+                    html += '</tbody></table>';
+                }
+                if (d.recentActivities && d.recentActivities.length > 0) {
+                    html += '<h4 style="font-size:0.95rem;margin:16px 0 8px;">' + (LANG === 'fa' ? 'آخرین فعالیت‌ها' : 'Recent activities') + '</h4>';
+                    html += '<table class="sup-table"><thead><tr><th>' + t('th_time') + '</th><th>' + t('th_action') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>';
+                    d.recentActivities.forEach(function(a) {
+                        html += '<tr><td>' + (a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '') + '</td><td>' + escapeHtml(actLabels[a.action] || a.action || '') + '</td><td>' + escapeHtml(a.summary || '') + '</td></tr>';
+                    });
+                    html += '</tbody></table>';
+                }
+                if (!d.sessions || d.sessions.length === 0) { if (!d.recentActivities || d.recentActivities.length === 0) html += '<p class="text-muted" style="font-size:0.9rem;">' + (LANG === 'fa' ? 'ورود/خروج ثبت‌شده‌ای یافت نشد. با خروج صحیح از سیستم، ساعات آنلاین دقیق‌تر محاسبه می‌شود.' : 'No login/logout records yet.') + '</p>'; }
+                content.innerHTML = html;
+                var titleEl = document.getElementById('staffDetailTitle');
+                if (titleEl) titleEl.textContent = (LANG === 'fa' ? 'جزئیات فعالیت: ' : 'Activity: ') + (userDisplay(u) || u.email || userId);
+            } catch (e) { loading.style.display = 'none'; content.style.display = 'block'; content.innerHTML = '<div class="empty">' + (e.message || t('loading_err')) + '</div>'; }
         }
 
         async function loadSupervisionActivity() {
@@ -2877,8 +3058,20 @@
             });
         });
         window.addEventListener('hashchange', function() { if (document.getElementById('app').classList.contains('show')) applyHashRoute(); });
-        var fy = document.getElementById('footerYear');
-        if (fy) fy.textContent = '\u00A9 ' + new Date().getFullYear();
+
+        (function initMobileTicker() {
+            var btn = document.getElementById('tickerToggleMobile');
+            var ticker = document.getElementById('priceTicker');
+            if (!btn || !ticker) return;
+            var isMobile = function() { return window.innerWidth <= 768; };
+            if (isMobile()) ticker.classList.add('ticker-collapsed');
+            window.addEventListener('resize', function() { if (!isMobile()) ticker.classList.remove('ticker-collapsed'); });
+            btn.addEventListener('click', function() { ticker.classList.toggle('ticker-collapsed'); });
+        })();
+        (function initFooterYear() {
+            var el = document.getElementById('appFooterYear');
+            if (el) el.textContent = '\u00A9 ' + new Date().getFullYear();
+        })();
 
         (function initLang() {
             var l = localStorage.getItem('crm_lang') || 'fa';
@@ -2897,6 +3090,7 @@
                     applyNavByRole();
                     applyHashRoute();
                     loadDashboard();
+                    loadGeneralAnnouncementsMarquee();
                     startRatesInterval();
                     startPresenceInterval();
                     connectSocket();

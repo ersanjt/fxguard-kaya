@@ -241,7 +241,18 @@ router.post('/totp/disable', authMiddleware, async (req, res) => {
 
 router.post('/logout', authMiddleware, async (req, res) => {
     try {
-        await req.user.update({ status: 'offline' });
+        const user = req.user;
+        await user.update({ status: 'offline' });
+        await logActivity({
+            userId: user.id,
+            branchId: user.branchId || null,
+            departmentId: user.departmentId || null,
+            action: 'user_logout',
+            entityType: 'user',
+            entityId: user.id,
+            summary: 'خروج از پورتال',
+            metadata: { email: user.email }
+        });
         res.json({ ok: true, message: 'خروج انجام شد' });
     } catch (err) {
         res.status(500).json({ error: err.message });
