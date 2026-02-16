@@ -583,15 +583,19 @@
             var out = s.replace(/\d/g, function(d) { return fa[d]; });
             return (num > 0 ? '+' : '−') + out;
         }
-        function formatTickerDateTime(updatedAtStr) {
+        function formatTickerDateTime(updatedAtStr, timestampSec) {
             var d;
             try {
-                if (updatedAtStr) {
+                if (timestampSec && (timestampSec > 0)) {
+                    d = new Date(parseInt(timestampSec, 10) * 1000);
+                } else if (updatedAtStr) {
                     var s = String(updatedAtStr).trim();
-                    if (s.indexOf(' ') >= 0 && s.indexOf('T') < 0) s = s.replace(' ', 'T');
-                    if (/^\d{4}-\d{2}-\d{2}/.test(s)) d = new Date(s);
-                    else if (/^\d{10,13}$/.test(s)) d = new Date(parseInt(s, 10));
-                    else d = new Date(s);
+                    if (/^\d{10,13}$/.test(s)) d = new Date(parseInt(s, 10) * (s.length <= 10 ? 1000 : 1));
+                    else {
+                        if (s.indexOf(' ') >= 0 && s.indexOf('T') < 0) s = s.replace(' ', 'T');
+                        if (/^\d{4}-\d{2}-\d{2}/.test(s) && !/^14\d{2}-/.test(s)) d = new Date(s);
+                        else d = new Date();
+                    }
                 } else d = new Date();
             } catch (e) { d = new Date(); }
             if (isNaN(d.getTime())) d = new Date();
@@ -612,9 +616,9 @@
             }
             var miladi = '';
             try {
-                miladi = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+                miladi = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             } catch (e) {
-                miladi = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
+                miladi = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             }
             var hijri = '';
             try {
@@ -648,7 +652,7 @@
             if (res.needLogin || !res.ok) return;
             var data = res.data;
             var items = (data && data.items) || [];
-            var fmt = formatTickerDateTime(data.updatedAt);
+            var fmt = formatTickerDateTime(data.updatedAt, data.updatedAtTimestamp);
             if (loadingEl) loadingEl.style.display = 'none';
             if (timesEl) {
                 timesEl.innerHTML = '<span class="ticker-dt-label">' + escapeHtml(fmt.label) + '</span>' +
