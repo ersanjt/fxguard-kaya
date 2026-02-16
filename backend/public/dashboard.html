@@ -507,7 +507,13 @@
                             <div id="internalThreadList" class="empty" style="margin-top:12px;" data-i18n="loading">در حال بارگذاری...</div>
                         </div>
                         <div id="internalChatPane" style="flex:2; min-width:300px; display:none;">
-                            <div class="chat-header" id="internalChatHeader" data-i18n="select_conversation">انتخاب گفتگو</div>
+                            <div class="chat-header internal-chat-header-row">
+                                <span id="internalChatHeader" data-i18n="select_conversation">انتخاب گفتگو</span>
+                                <div id="internalChatCallBtns" class="internal-chat-call-btns" style="display:none;">
+                                    <button type="button" class="internal-call-btn" onclick="startInternalCall('voice')" title="تماس صوتی" data-i18n-title="voice_call" aria-label="تماس صوتی"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-phone"/></svg></button>
+                                    <button type="button" class="internal-call-btn" onclick="startInternalCall('video')" title="تماس تصویری" data-i18n-title="video_call" aria-label="تماس تصویری"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
+                                </div>
+                            </div>
                             <div class="chat-messages" id="internalChatMessages" style="min-height:200px;"></div>
                             <div class="chat-send">
                                 <input type="text" id="internalChatInput" data-i18n-ph="msg_ph_short" placeholder="پیام..." onkeypress="if(event.key==='Enter')sendInternalMessage()">
@@ -710,6 +716,20 @@
                 <span class="app-footer-brand" data-i18n="logo_kaya">صرافی کایا</span>
                 <span class="app-footer-year" id="appFooterYear"></span>
             </footer>
+        </div>
+        <div id="internalCallModal" class="internal-call-modal" style="display:none;">
+            <div class="internal-call-content">
+                <div id="internalCallStatus" class="internal-call-status"></div>
+                <div class="internal-call-videos">
+                    <video id="internalCallLocalVideo" autoplay muted playsinline></video>
+                    <video id="internalCallRemoteVideo" autoplay playsinline></video>
+                </div>
+                <div class="internal-call-actions">
+                    <button type="button" id="internalCallAcceptBtn" class="internal-call-action-btn accept" onclick="acceptInternalCall()" style="display:none;" data-i18n="accept_call">پذیرش</button>
+                    <button type="button" id="internalCallRejectBtn" class="internal-call-action-btn reject" onclick="rejectInternalCall()" data-i18n="reject_call">رد</button>
+                    <button type="button" id="internalCallEndBtn" class="internal-call-action-btn end" onclick="endInternalCall()" style="display:none;" data-i18n="end_call">قطع تماس</button>
+                </div>
+            </div>
         </div>
         <div id="internalChatPopup" class="internal-chat-popup" style="display:none;">
             <div class="internal-chat-popup-header">

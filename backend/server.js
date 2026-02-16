@@ -509,6 +509,33 @@ io.on('connection', (socket) => {
         }
     });
     
+    // سیگنالینگ تماس تصویری/صوتی چت داخلی
+    socket.on('call_offer', (data) => {
+        const { toUserId, threadId, type, sdp } = data;
+        if (!toUserId || !threadId || !sdp) return;
+        io.to(`user_${toUserId}`).emit('call_offer', { fromUserId: socket.userId, threadId, type: type || 'voice', sdp });
+    });
+    socket.on('call_answer', (data) => {
+        const { toUserId, threadId, sdp } = data;
+        if (!toUserId || !threadId || !sdp) return;
+        io.to(`user_${toUserId}`).emit('call_answer', { fromUserId: socket.userId, threadId, sdp });
+    });
+    socket.on('call_ice', (data) => {
+        const { toUserId, threadId, candidate } = data;
+        if (!toUserId || !threadId) return;
+        io.to(`user_${toUserId}`).emit('call_ice', { fromUserId: socket.userId, threadId, candidate });
+    });
+    socket.on('call_end', (data) => {
+        const { toUserId, threadId } = data;
+        if (!toUserId || !threadId) return;
+        io.to(`user_${toUserId}`).emit('call_end', { fromUserId: socket.userId, threadId });
+    });
+    socket.on('call_reject', (data) => {
+        const { toUserId, threadId } = data;
+        if (!toUserId || !threadId) return;
+        io.to(`user_${toUserId}`).emit('call_reject', { fromUserId: socket.userId, threadId });
+    });
+
     // تغییر وضعیت کاربر
     socket.on('status_change', async (status) => {
         await User.update(
