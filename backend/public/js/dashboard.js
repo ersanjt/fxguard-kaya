@@ -2665,7 +2665,7 @@
             if (rejectBtn) rejectBtn.style.display = 'flex';
             if (endBtn) endBtn.style.display = showAccept ? 'none' : 'flex';
             if (localV) { localV.srcObject = null; localV.style.display = 'none'; }
-            if (remoteV) { remoteV.srcObject = null; remoteV.style.display = 'none'; }
+            if (remoteV) { remoteV.srcObject = null; remoteV.style.display = 'block'; }
             if (modal) modal.style.display = 'flex';
         }
         function hideInternalCallModal() {
@@ -2689,7 +2689,7 @@
                 internalCallPeerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
                 internalCallLocalStream.getTracks().forEach(function(t){ internalCallPeerConnection.addTrack(t, internalCallLocalStream); });
                 internalCallPeerConnection.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: currentInternalThreadOtherUserId, threadId: currentInternalThreadId, candidate: e.candidate }); };
-                internalCallPeerConnection.ontrack = function(e) { var rv = document.getElementById('internalCallRemoteVideo'); if (rv && e.streams[0]) { rv.srcObject = e.streams[0]; rv.style.display = 'block'; } };
+                internalCallPeerConnection.ontrack = function(e) { var rv = document.getElementById('internalCallRemoteVideo'); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
                 var offer = await internalCallPeerConnection.createOffer();
                 await internalCallPeerConnection.setLocalDescription(offer);
                 s.emit('call_offer', { toUserId: currentInternalThreadOtherUserId, threadId: currentInternalThreadId, type: type, sdp: offer });
@@ -2710,7 +2710,7 @@
                 internalCallPeerConnection = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
                 internalCallLocalStream.getTracks().forEach(function(t){ internalCallPeerConnection.addTrack(t, internalCallLocalStream); });
                 internalCallPeerConnection.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: toUserId, threadId: threadId, candidate: e.candidate }); };
-                internalCallPeerConnection.ontrack = function(e) { var rv = document.getElementById('internalCallRemoteVideo'); if (rv && e.streams[0]) { rv.srcObject = e.streams[0]; rv.style.display = 'block'; } };
+                internalCallPeerConnection.ontrack = function(e) { var rv = document.getElementById('internalCallRemoteVideo'); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
                 await internalCallPeerConnection.setRemoteDescription(new RTCSessionDescription(internalCallPendingOffer.sdp));
                 var answer = await internalCallPeerConnection.createAnswer();
                 await internalCallPeerConnection.setLocalDescription(answer);
