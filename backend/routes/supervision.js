@@ -9,9 +9,9 @@ function ownerOnly(req, res, next) {
     return res.status(403).json({ error: 'فقط مالک شرکت به این بخش دسترسی دارد' });
 }
 
-// مالک، ادمین اصلی، ادمین، مدیر — برای مشاهده ورودها و وضعیت آنلاین کارکنان
+// مالک، ادمین اصلی، ادمین، مدیر، ناظر — برای مشاهده ورودها و وضعیت آنلاین کارکنان
 function canViewStaffActivity(req, res, next) {
-    if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role) !== -1) return next();
+    if (isMainAdmin(req.user) || ['owner', 'admin', 'manager', 'supervisor'].indexOf(req.user.role) !== -1) return next();
     return res.status(403).json({ error: 'دسترسی به این بخش محدود است' });
 }
 
@@ -63,7 +63,7 @@ router.get('/user/:userId/detail', canViewStaffActivity, async (req, res) => {
         const now = new Date();
         const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
-        const [logins, logouts, activities, convCount, msgCount, ticketsCreated, ticketsReplied, ticketsAssigned, tasksCompleted] = await Promise.all([
+        const [logins, logouts, activities, convCount, msgCount, ticketsCreated, ticketsReplied, ticketsAssigned, tasksCompleted, conversations] = await Promise.all([
             ActivityLog.findAll({ where: { userId, action: 'user_login' }, order: [['createdAt', 'DESC']], limit: 50 }),
             ActivityLog.findAll({ where: { userId, action: 'user_logout' }, order: [['createdAt', 'DESC']], limit: 50 }),
             ActivityLog.findAll({ where: { userId, action: { [Op.notIn]: ['user_login', 'user_logout'] } }, order: [['createdAt', 'DESC']], limit: 100 }),
@@ -72,7 +72,13 @@ router.get('/user/:userId/detail', canViewStaffActivity, async (req, res) => {
             Ticket.count({ where: { createdBy: userId } }),
             TicketReply.count({ where: { userId } }),
             Ticket.count({ where: { assignedTo: userId } }),
-            Task.count({ where: { completedBy: userId, status: 'done' } })
+            Task.count({ where: { completedBy: userId, status: 'done' } }),
+            Conversation.findAll({
+                where: { assignedTo: userId },
+                include: [{ model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'email'], required: false }],
+                order: [['lastMessageAt', 'DESC']],
+                limit: 30
+            })
         ]);
 
         const sessions = [];
@@ -97,6 +103,12 @@ router.get('/user/:userId/detail', canViewStaffActivity, async (req, res) => {
         const recentLogins = logins.slice(0, 20).map(l => ({ createdAt: l.createdAt, summary: l.summary }));
         const recentLogouts = logouts.slice(0, 20).map(l => ({ createdAt: l.createdAt, summary: l.summary }));
         const recentActivities = activities.slice(0, 30).map(a => ({ createdAt: a.createdAt, action: a.action, summary: a.summary }));
+        const conversationsWithCustomers = (conversations || []).map(c => ({
+            id: c.id,
+            status: c.status,
+            lastMessageAt: c.lastMessageAt,
+            customer: c.customer ? { id: c.customer.id, name: c.customer.name, phone: c.customer.phone } : null
+        }));
 
         res.json({
             user: user.toJSON(),
@@ -114,7 +126,8 @@ router.get('/user/:userId/detail', canViewStaffActivity, async (req, res) => {
             sessions: sessions.slice(0, 20),
             recentLogins,
             recentLogouts,
-            recentActivities
+            recentActivities,
+            conversations: conversationsWithCustomers
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

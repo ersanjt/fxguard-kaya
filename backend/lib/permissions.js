@@ -55,8 +55,8 @@ const DEFAULT_BY_ROLE = {
     },
     supervisor: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
-        departments: false, users: false, branches: false, supervision: false,
-        staff_activity: false, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true,
+        departments: false, users: true, branches: false, supervision: false,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true,
         [MANAGE_USERS_KEY]: false,
     },
     agent: {

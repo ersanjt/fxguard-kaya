@@ -434,6 +434,7 @@ window.__I18N_FA = {
     no_conv_history: 'هنوز مکالمه‌ای ثبت نشده.',
     blocked: 'مسدود',
     edit_access: 'ویرایش / دسترسی',
+    view_activity: 'مشاهده فعالیت',
     usd: 'دلار',
     eur: 'یورو',
     gbp: 'پوند',

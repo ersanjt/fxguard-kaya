@@ -359,10 +359,12 @@
         .user-card-avatar .avatar-fallback { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
         .user-card-avatar img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
         .user-card-body { flex: 1; min-width: 0; }
-        .user-card-name { font-weight: 600; font-size: 1rem; color: var(--text-primary); margin-bottom: 4px; }
+        .user-card-name { font-weight: 600; font-size: 1rem; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .user-card-name .status-dot { flex-shrink: 0; }
         .user-card-meta { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
         .user-card-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-        .user-card-actions { flex-shrink: 0; }
+        .user-card-actions { flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .staff-conv-item:hover { background: var(--bg-hover) !important; border-color: var(--accent) !important; }
         .user-edit-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
         .user-edit-tab { padding: 8px 16px; background: none; border: none; color: var(--text-secondary); font-family: var(--font); cursor: pointer; font-size: 0.9rem; border-radius: var(--radius-sm); }
         .user-edit-tab:hover { background: var(--bg-hover); color: var(--text-primary); }

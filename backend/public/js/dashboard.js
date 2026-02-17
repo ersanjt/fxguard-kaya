@@ -451,7 +451,7 @@
                     enter_password: 'Enter password', enter_6_digit: 'Enter the 6-digit code',
                     creator_label: 'Creator:', assignee_label: 'Assigned to:', due_label: 'Due:', no_reply: 'No replies yet.', conversation: 'Conversation', history: 'History:',
                     by_dept: 'By department', by_user: 'By user', pending_count: 'Pending', in_progress_count: 'In progress', done_count: 'Done',
-                    customer: 'Customer', no_conv_history: 'No conversations yet.', blocked: 'Blocked', edit_access: 'Edit / access',
+                    customer: 'Customer', no_conv_history: 'No conversations yet.', blocked: 'Blocked', edit_access: 'Edit / access', view_activity: 'View activity',
                     usd: 'USD', eur: 'EUR', gbp: 'GBP', try: 'TRY', aed: 'AED', rub: 'RUB', azn: 'AZN', cny: 'CNY', gold: 'Gold (g)',
                     processes_intro: 'Define process templates and track running instances.',
                     process_templates: 'Process templates',
@@ -2750,7 +2750,9 @@
             var list = document.getElementById('userList');
             if (!list) return;
             var canManage = (currentUser && currentUser.permissions && currentUser.permissions.manage_users);
+            var canViewActivity = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
             var roleLabels = { owner: t('role_owner'), admin: t('role_admin'), manager: t('role_manager'), supervisor: t('role_supervisor'), agent: t('role_agent') };
+            var statusLabels = { online: t('status_online'), away: t('status_away') || 'دور', busy: t('status_busy') || 'مشغول', offline: t('status_offline') || 'آفلاین' };
             if (!users || users.length === 0) { list.innerHTML = '<div class="empty" style="grid-column:1/-1;"><span class="empty-icon">👤</span><br>' + t('empty_users') + '</div>'; return; }
             list.innerHTML = users.map(function(u) {
                 var initial = userInitial(u) || '?';
@@ -2761,11 +2763,18 @@
                 metaParts.push(roleLabels[u.role] || u.role);
                 if (u.department && u.department.name) metaParts.push(escapeHtml(u.department.name));
                 if (u.branch && u.branch.name) metaParts.push(escapeHtml(u.branch.name));
+                var statusClass = (u.status && ['online', 'away', 'busy'].indexOf(u.status) !== -1) ? u.status : 'offline';
+                var statusLabel = statusLabels[u.status] || statusLabels.offline;
+                var lastLoginStr = u.lastLoginAt ? timeAgo(u.lastLoginAt) : (LANG === 'fa' ? 'هرگز' : 'Never');
                 var inactiveClass = u.isActive === false ? ' inactive' : '';
                 var blockedBadge = u.isActive === false ? '<span class="badge cancelled">' + t('blocked') + '</span>' : '';
                 var roleBadge = '<span class="badge" style="background:var(--accent-soft);color:var(--accent);">' + escapeHtml(roleLabels[u.role] || u.role) + '</span>';
-                var btn = canManage ? '<button type="button" class="btn-secondary btn-sm" onclick="openUserEdit(\'' + u.id + '\')" style="margin:0;padding:6px 12px;font-size:0.8rem;">' + t('edit_access') + '</button>' : '';
-                return '<div class="user-card' + inactiveClass + '"><div class="user-card-avatar">' + avatarHtml + '</div><div class="user-card-body"><div class="user-card-name">' + escapeHtml(u.name) + ' ' + blockedBadge + '</div><div class="user-card-meta">' + metaParts.join(' · ') + '</div><div class="user-card-badges">' + roleBadge + '</div></div><div class="user-card-actions">' + btn + '</div></div>';
+                var statusBadge = '<span class="status-dot ' + statusClass + '" title="' + escapeHtml(statusLabel) + '"></span>';
+                var btns = [];
+                if (canViewActivity) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openStaffDetailModal(\'' + u.id + '\')" style="margin:0;padding:6px 12px;font-size:0.8rem;">' + t('view_activity') + '</button>');
+                if (canManage) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openUserEdit(\'' + u.id + '\')" style="margin:0;padding:6px 12px;font-size:0.8rem;">' + t('edit_access') + '</button>');
+                var btn = btns.join(' ');
+                return '<div class="user-card' + inactiveClass + '" onclick="' + (canViewActivity ? 'openStaffDetailModal(\'' + u.id + '\')' : '') + '" style="' + (canViewActivity ? 'cursor:pointer;' : '') + '"><div class="user-card-avatar">' + avatarHtml + '</div><div class="user-card-body"><div class="user-card-name">' + statusBadge + ' ' + escapeHtml(u.name) + ' ' + blockedBadge + '</div><div class="user-card-meta">' + metaParts.join(' · ') + '</div><div class="user-card-meta" style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;">' + (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLoginStr + '</div><div class="user-card-badges">' + roleBadge + '</div></div><div class="user-card-actions" onclick="event.stopPropagation();">' + btn + '</div></div>';
             }).join('');
         }
         function toggleUserForm() {
@@ -3553,6 +3562,17 @@
                     });
                     html += '</tbody></table>';
                 }
+                if (d.conversations && d.conversations.length > 0) {
+                    html += '<h4 style="font-size:0.95rem;margin:16px 0 8px;">' + (LANG === 'fa' ? 'مکالمات تخصیص‌یافته (با چه کسانی صحبت کرده)' : 'Assigned conversations (who they talked to)') + '</h4>';
+                    html += '<div class="staff-conv-list" style="max-height:200px;overflow-y:auto;">';
+                    d.conversations.forEach(function(c) {
+                        var custName = (c.customer && (c.customer.name || c.customer.phone)) ? (c.customer.name || c.customer.phone) : (LANG === 'fa' ? 'مشتری' : 'Customer');
+                        var lastMsg = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : '';
+                        var safeName = (custName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        html += '<div class="staff-conv-item" data-convid="' + escapeHtml(c.id) + '" data-custname="' + escapeHtml(safeName) + '" onclick="var el=event.currentTarget;openChat(el.getAttribute(\'data-convid\'),el.getAttribute(\'data-custname\')||\'\',\'\');showPage(\'conversations\');closeStaffDetailModal();" style="padding:10px 12px;margin-bottom:6px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:background 0.2s;"><div style="font-weight:600;">' + escapeHtml(custName) + '</div><div style="font-size:0.8rem;color:var(--text-muted);">' + lastMsg + '</div></div>';
+                    });
+                    html += '</div>';
+                }
                 if (d.recentActivities && d.recentActivities.length > 0) {
                     html += '<h4 style="font-size:0.95rem;margin:16px 0 8px;">' + (LANG === 'fa' ? 'آخرین فعالیت‌ها' : 'Recent activities') + '</h4>';
                     html += '<table class="sup-table"><thead><tr><th>' + t('th_time') + '</th><th>' + t('th_action') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>';
@@ -3561,7 +3581,7 @@
                     });
                     html += '</tbody></table>';
                 }
-                if (!d.sessions || d.sessions.length === 0) { if (!d.recentActivities || d.recentActivities.length === 0) html += '<p class="text-muted" style="font-size:0.9rem;">' + (LANG === 'fa' ? 'ورود/خروج ثبت‌شده‌ای یافت نشد. با خروج صحیح از سیستم، ساعات آنلاین دقیق‌تر محاسبه می‌شود.' : 'No login/logout records yet.') + '</p>'; }
+                if (!d.sessions || d.sessions.length === 0) { if (!d.recentActivities || d.recentActivities.length === 0) { if (!d.conversations || d.conversations.length === 0) html += '<p class="text-muted" style="font-size:0.9rem;">' + (LANG === 'fa' ? 'ورود/خروج ثبت‌شده‌ای یافت نشد. با خروج صحیح از سیستم، ساعات آنلاین دقیق‌تر محاسبه می‌شود.' : 'No login/logout records yet.') + '</p>'; } }
                 content.innerHTML = html;
                 var titleEl = document.getElementById('staffDetailTitle');
                 if (titleEl) titleEl.textContent = (LANG === 'fa' ? 'جزئیات فعالیت: ' : 'Activity: ') + (userDisplay(u) || u.email || userId);
