@@ -178,6 +178,9 @@
         .chat-area.show { display: flex; }
         .chat-header-wrap { display: flex; flex-direction: column; flex-shrink: 0; background: var(--bg-card); border-bottom: 1px solid var(--border); }
         .chat-header-main { display: flex; align-items: center; gap: 12px; padding: 12px 16px; min-height: 52px; }
+        .chat-header-avatar { width: 40px; height: 40px; min-width: 40px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; overflow: hidden; position: relative; flex-shrink: 0; }
+        .chat-header-avatar .avatar-fallback { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+        .chat-header-avatar img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
         .chat-header { font-weight: 600; font-size: 1rem; flex: 1; min-width: 0; color: var(--text-primary); }
         .chat-detail-toggle { width: 36px; height: 36px; padding: 0; border: none; border-radius: var(--radius-sm); background: var(--bg-hover); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
         .chat-detail-toggle:hover { background: var(--accent-soft); color: var(--accent); }
@@ -276,7 +279,9 @@
         .conv-list-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; margin-bottom: 8px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer; transition: all 0.2s; min-width: 0; }
         .conv-list-item:hover { background: var(--bg-hover); border-color: var(--border); }
         .conv-list-item.active { background: var(--accent-soft); border-color: var(--accent); }
-        .conv-item-avatar { width: 44px; height: 44px; min-width: 44px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; }
+        .conv-item-avatar { width: 44px; height: 44px; min-width: 44px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; overflow: hidden; position: relative; flex-shrink: 0; }
+        .conv-item-avatar .avatar-fallback { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+        .conv-item-avatar img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
         .conv-item-body { flex: 1; min-width: 0; }
         .conv-item-top { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
         .conv-item-top .name { font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

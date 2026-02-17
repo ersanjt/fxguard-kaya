@@ -1675,6 +1675,10 @@
                 var safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 var safePhone = (phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 var initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
+                var profilePic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
+                if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
+                profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
+                var avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
                 var assigneeName = userDisplay(c.assignee);
                 var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved' };
                 var statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
@@ -1688,7 +1692,7 @@
                     unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + (LANG === 'fa' ? mins + ' دقیقه' : mins + ' min') + '</span>';
                 }
                 var activeClass = (c.id === currentConvId) ? ' active' : '';
-                return '<div class="conv-list-item' + activeClass + '" data-id="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\')"><div class="conv-item-avatar">' + initial + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(phone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+                return '<div class="conv-list-item' + activeClass + '" data-id="' + c.id + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\', this.getAttribute(\'data-profile-pic\')||\'\')"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(phone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
         }
 
@@ -1717,16 +1721,28 @@
             }
         }
         if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
-        function openChat(id, name, phone) {
+        function openChat(id, name, phone, profilePic) {
             currentConvId = id;
             currentConvDetail = null;
             var headerEl = document.getElementById('chatHeader');
+            var avatarEl = document.getElementById('chatHeaderAvatar');
             var barEl = document.getElementById('convDetailBar');
             var badgesEl = document.getElementById('convDetailBadges');
             var actionsEl = document.getElementById('convDetailActions');
             var supPanel = document.getElementById('convSupervisionPanel');
             var supStats = document.getElementById('convSupervisionStats');
             if (headerEl) headerEl.textContent = name || phone || t('customer');
+            if (avatarEl) {
+                var pic = (profilePic || '').trim();
+                if (pic && pic.indexOf('/') === 0) pic = (window.location.origin || '') + pic;
+                pic = pic ? ensureHttpsUrl(pic) : '';
+                var initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
+                if (pic && pic.indexOf('http') === 0) {
+                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'">';
+                } else {
+                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                }
+            }
             var chatArea = document.getElementById('chatArea');
             var layout = chatArea && chatArea.closest('.conv-layout');
             if (chatArea) chatArea.classList.add('show');
@@ -1818,7 +1834,12 @@
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
             list.innerHTML = data.data.map(function(c) {
                 var name = c.name || c.phone || t('customer');
-                return '<div class="new-conv-customer-item" onclick="startNewConversation(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + ((name && name[0]) ? name[0].toUpperCase() : '?') + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
+                var initial = (name && name[0]) ? name[0].toUpperCase() : '?';
+                var profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
+                profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
+                var avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
+                return '<div class="new-conv-customer-item" onclick="startNewConversation(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
         async function startNewConversation(customerId, name) {
@@ -1828,7 +1849,8 @@
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
             var conv = res.data;
             var phone = (conv.customer && conv.customer.phone) || '';
-            openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone);
+            var pic = (conv.customer && conv.customer.profilePic) || '';
+            openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone, pic);
             loadConversations();
         }
         async function assignConvToMe() {
@@ -1850,7 +1872,7 @@
             if (deptSel) body.departmentId = deptSel.value || null;
             var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; openChat(currentConvId, document.getElementById('chatHeader').textContent, ''); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+            if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; var h = document.getElementById('chatHeader'); var activeItem = document.querySelector('.conv-list-item.active[data-id="' + currentConvId + '"]'); var pic = (activeItem && activeItem.getAttribute('data-profile-pic')) || (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.profilePic) || ''; openChat(currentConvId, h ? h.textContent : '', '', pic); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
 
         function openChatFromHistory(el) {
@@ -1983,8 +2005,9 @@
             if (res.needLogin) return;
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
             var conv = res.data;
+            var pic = (conv.customer && conv.customer.profilePic) || '';
             showPage('conversations');
-            setTimeout(function() { openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone || ''); loadConversations(); }, 100);
+            setTimeout(function() { openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone || '', pic); loadConversations(); }, 100);
         }
 
         function applyCustomerFilters() { loadCustomers(); }
