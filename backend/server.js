@@ -30,6 +30,7 @@ const processRoutes = require('./routes/processes');
 // Database
 const models = require('./models');
 const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse, WhatsappConfig } = models;
+const { Op } = require('sequelize');
 
 const mongoose = require('mongoose');
 
@@ -262,6 +263,7 @@ async function processIncomingMessage(messageData) {
         if ((body || '').length > 120) preview += '…';
         await conversation.update({
             lastMessageAt: ts,
+            lastIncomingMessageAt: ts,
             lastMessagePreview: preview,
             unreadCount: (conversation.unreadCount || 0) + 1
         });
@@ -393,7 +395,8 @@ async function sendAutoReply(conversation, responseText) {
         });
         var preview = (responseText || '').slice(0, 120);
         if ((responseText || '').length > 120) preview += '…';
-        await conversation.update({ lastMessageAt: new Date(), lastMessagePreview: preview });
+        const now = new Date();
+        await conversation.update({ lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview, unansweredAlertSentAt: null, escalatedAt: null });
         logger.info(`🤖 Auto-reply sent to ${customer.phone}`);
     } catch (error) {
         logger.error('Send auto-reply error:', error);
@@ -520,9 +523,13 @@ io.on('connection', (socket) => {
             }
             
             // بروزرسانی مکالمه
+            const now = new Date();
             await conversation.update({
-                lastMessageAt: new Date(),
-                unreadCount: 0
+                lastMessageAt: now,
+                lastOutgoingMessageAt: now,
+                unreadCount: 0,
+                unansweredAlertSentAt: null,
+                escalatedAt: null
             });
             
             // اطلاع‌رسانی به همه کاربران
@@ -764,12 +771,96 @@ app.use((err, req, res, next) => {
     });
 });
 
+// ==================== Unanswered Conversations: Alert & Escalation ====================
+async function checkUnansweredConversations() {
+    try {
+        const [cfg] = await WhatsappConfig.findOrCreate({
+            where: { id: 'default' },
+            defaults: { alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15 }
+        });
+        const alertMin = cfg.alertUnansweredAfterMinutes ?? 5;
+        const escalateMin = cfg.escalateUnansweredAfterMinutes ?? 15;
+        const escalationDeptId = cfg.escalationDepartmentId;
+
+        const now = new Date();
+        const alertThreshold = new Date(now.getTime() - alertMin * 60000);
+        const escalateThreshold = new Date(now.getTime() - escalateMin * 60000);
+
+        const unanswered = await Conversation.findAll({
+            where: {
+                status: { [Op.in]: ['open', 'pending'] },
+                lastIncomingMessageAt: { [Op.ne]: null },
+                [Op.or]: [
+                    { lastOutgoingMessageAt: null },
+                    sequelize.where(sequelize.col('lastIncomingMessageAt'), Op.gt, sequelize.col('lastOutgoingMessageAt'))
+                ]
+            },
+            include: [
+                { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'] },
+                { model: User, as: 'assignee', attributes: ['id', 'name'] },
+                { model: Department, as: 'department', attributes: ['id', 'name'] }
+            ]
+        });
+
+        for (const conv of unanswered) {
+            const lastIn = conv.lastIncomingMessageAt ? new Date(conv.lastIncomingMessageAt) : null;
+            if (!lastIn) continue;
+            const minsWaiting = Math.floor((now - lastIn) / 60000);
+
+            // Escalation: برگرداندن به دپارتمان پشتیبانی
+            if (lastIn < escalateThreshold && (!conv.escalatedAt || new Date(conv.escalatedAt) < lastIn)) {
+                let targetDept = null;
+                if (escalationDeptId) {
+                    targetDept = await Department.findByPk(escalationDeptId);
+                }
+                if (!targetDept) targetDept = await Department.findOne({ where: { isDefault: true } });
+                if (targetDept) {
+                    await conv.update({
+                        departmentId: targetDept.id,
+                        assignedTo: null,
+                        escalatedAt: now
+                    });
+                    io.emit('conversation_escalated', {
+                        conversationId: conv.id,
+                        customer: conv.customer,
+                        department: targetDept.name,
+                        minutesWaiting: minsWaiting
+                    });
+                    logger.info(`⬆️ Escalated conversation ${conv.id} to ${targetDept.name} (${minsWaiting} min unanswered)`);
+                }
+            }
+            // Alert: اعلان به مسئول/دپارتمان
+            else if (lastIn < alertThreshold && (!conv.unansweredAlertSentAt || new Date(conv.unansweredAlertSentAt) < lastIn)) {
+                const payload = {
+                    conversationId: conv.id,
+                    customer: conv.customer,
+                    minutesWaiting: minsWaiting,
+                    assignee: conv.assignee,
+                    department: conv.department
+                };
+                if (conv.assignedTo) {
+                    io.to(`user_${conv.assignedTo}`).emit('unanswered_alert', payload);
+                }
+                if (conv.departmentId) {
+                    io.to(`department_${conv.departmentId}`).emit('unanswered_alert', payload);
+                }
+                await conv.update({ unansweredAlertSentAt: now });
+                logger.info(`🔔 Unanswered alert sent for conversation ${conv.id} (${minsWaiting} min)`);
+            }
+        }
+    } catch (err) {
+        logger.error('checkUnansweredConversations:', err.message);
+    }
+}
+
 // ==================== Server Startup ====================
 async function startServer() {
     try {
         await connectDatabases();
         await ensureAdminUser();
         await connectRabbitMQ();
+
+        setInterval(checkUnansweredConversations, 60000);
         
         const PORT = process.env.PORT || 3002;
         server.listen(PORT, () => {

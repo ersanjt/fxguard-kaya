@@ -148,6 +148,7 @@
                     <div class="conv-quick-tabs" role="tablist">
                         <button type="button" class="conv-tab active" data-tab="all" onclick="setConvQuickTab('all')" data-i18n="filter_all">همه</button>
                         <button type="button" class="conv-tab" data-tab="unread" onclick="setConvQuickTab('unread')" data-i18n="filter_unread">خوانده‌نشده</button>
+                        <button type="button" class="conv-tab" data-tab="unanswered" onclick="setConvQuickTab('unanswered')" data-i18n="filter_unanswered">بدون پاسخ</button>
                         <button type="button" class="conv-tab" data-tab="open" onclick="setConvQuickTab('open')" data-i18n="filter_open">باز</button>
                         <button type="button" class="conv-tab" data-tab="mine" onclick="setConvQuickTab('mine')" data-i18n="conv_tab_mine">مشخص‌شده به من</button>
                     </div>
@@ -638,6 +639,16 @@
                         <label><input type="checkbox" id="whatsappWelcomeEnabled" checked> <span data-i18n="whatsapp_welcome_enabled">فعال</span></label>
                         <textarea id="whatsappWelcomeMessage" rows="4" data-i18n-ph="whatsapp_welcome_ph" placeholder="سلام! به صرافی کایا خوش آمدید. در خدمت شما هستیم." style="margin-top:12px; width:100%; padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-primary); font-family:var(--font); font-size:0.95rem;"></textarea>
                         <button type="button" class="btn-primary" onclick="saveWhatsappWelcomeConfig()" style="margin-top:12px;" data-i18n="btn_save">ذخیره</button>
+                    </div>
+                    <div id="whatsappUnansweredBox" class="form-box" style="margin-bottom:20px;">
+                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3>
+                        <p class="text-muted" style="font-size:0.85rem; margin:0 0 12px;" data-i18n="whatsapp_unanswered_hint">وقتی مشتری پیام می‌دهد و کسی جواب نمی‌دهد، بعد از مدت مشخص اعلان ارسال می‌شود و در صورت ادامه، مکالمه به دپارتمان پشتیبانی برگردانده می‌شود.</p>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
+                            <div><label data-i18n="whatsapp_alert_after">اعلان بعد از (دقیقه)</label><input type="number" id="whatsappAlertMinutes" min="1" max="120" value="5" style="width:100%; padding:8px; margin-top:4px;"></div>
+                            <div><label data-i18n="whatsapp_escalate_after">Escalation بعد از (دقیقه)</label><input type="number" id="whatsappEscalateMinutes" min="1" max="240" value="15" style="width:100%; padding:8px; margin-top:4px;"></div>
+                        </div>
+                        <div style="margin-top:12px;"><label data-i18n="whatsapp_escalation_dept">دپارتمان مقصد (خالی = پشتیبانی پیش‌فرض)</label><select id="whatsappEscalationDept" style="width:100%; padding:8px; margin-top:4px;"><option value="">پشتیبانی (پیش‌فرض)</option></select></div>
+                        <button type="button" class="btn-primary" onclick="saveWhatsappUnansweredConfig()" style="margin-top:12px;" data-i18n="btn_save">ذخیره</button>
                     </div>
                     <div id="gatewayStatus" class="empty" data-i18n="whatsapp_checking">در حال بررسی...</div>
                     <div class="qr-box" id="qrBox" style="display:none;">

@@ -17,6 +17,21 @@ module.exports = (sequelize) => {
             type: DataTypes.BOOLEAN,
             defaultValue: true,
             comment: 'فعال بودن پاسخ خودکار به اولین پیام'
+        },
+        alertUnansweredAfterMinutes: {
+            type: DataTypes.INTEGER,
+            defaultValue: 5,
+            comment: 'بعد از چند دقیقه بدون پاسخ، اعلان به مسئول/دپارتمان'
+        },
+        escalateUnansweredAfterMinutes: {
+            type: DataTypes.INTEGER,
+            defaultValue: 15,
+            comment: 'بعد از چند دقیقه بدون پاسخ، برگرداندن به دپارتمان پشتیبانی'
+        },
+        escalationDepartmentId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            comment: 'دپارتمان مقصد برای escalation؛ خالی = دپارتمان پیش‌فرض'
         }
     }, {
         timestamps: true,

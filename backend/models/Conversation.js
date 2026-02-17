@@ -45,6 +45,14 @@ const ConversationModel = (sequelize) => {
         lastMessageAt: {
             type: DataTypes.DATE
         },
+        lastIncomingMessageAt: {
+            type: DataTypes.DATE,
+            comment: 'زمان آخرین پیام ورودی مشتری — برای تشخیص مکالمات بدون پاسخ'
+        },
+        lastOutgoingMessageAt: {
+            type: DataTypes.DATE,
+            comment: 'زمان آخرین پاسخ ما — unanswered = lastIncoming > lastOutgoing'
+        },
         lastMessagePreview: {
             type: DataTypes.STRING(500),
             comment: 'پیش‌نمایش آخرین پیام برای لیست'
@@ -71,6 +79,14 @@ const ConversationModel = (sequelize) => {
         metadata: {
             type: DataTypes.JSON,
             defaultValue: {}
+        },
+        unansweredAlertSentAt: {
+            type: DataTypes.DATE,
+            comment: 'زمان آخرین اعلان بدون پاسخ'
+        },
+        escalatedAt: {
+            type: DataTypes.DATE,
+            comment: 'زمان آخرین escalation به پشتیبانی'
         }
     }, {
         timestamps: true,

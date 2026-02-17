@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
-const { Conversation, Customer, Message, User, Branch, Department } = require('../models');
+const { sequelize, Conversation, Customer, Message, User, Branch, Department } = require('../models');
 const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
@@ -77,7 +77,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        const { status, priority, assignedTo, unread, unassigned, branchId, departmentId, search, page = 1, limit = 20 } = req.query;
+        const { status, priority, assignedTo, unread, unassigned, unanswered, branchId, departmentId, search, page = 1, limit = 20 } = req.query;
         const where = {};
 
         if (status) where.status = status;
@@ -87,6 +87,17 @@ router.get('/', async (req, res) => {
         if (unread === '1' || unread === 'true') where.unreadCount = { [Op.gt]: 0 };
         if (branchId) where.branchId = branchId;
         if (departmentId) where.departmentId = departmentId;
+        // مکالمات بدون پاسخ: آخرین پیام از مشتری بوده و ما جواب نداده‌ایم (فقط باز/در انتظار)
+        if (unanswered === '1' || unanswered === 'true') {
+            where[Op.and] = (where[Op.and] || []).concat([
+                { status: { [Op.in]: ['open', 'pending'] } },
+                { lastIncomingMessageAt: { [Op.ne]: null } },
+                { [Op.or]: [
+                    { lastOutgoingMessageAt: null },
+                    sequelize.where(sequelize.col('lastIncomingMessageAt'), Op.gt, sequelize.col('lastOutgoingMessageAt'))
+                ] }
+            ]);
+        }
 
         if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.role !== 'manager') {
             if (req.user.branchId) {
@@ -353,7 +364,8 @@ router.post('/:id/send', async (req, res) => {
         });
         var preview = (content || '').slice(0, 120) || (hasMedia ? '📎 فایل' : '');
         if ((content || '').length > 120) preview += '…';
-        const updateData = { lastMessageAt: new Date(), lastMessagePreview: preview, unreadCount: 0 };
+        const now = new Date();
+        const updateData = { lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };
         if (!conversation.branchId && req.user.branchId) updateData.branchId = req.user.branchId;
         await conversation.update(updateData);
         const gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3001';

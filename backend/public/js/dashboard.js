@@ -443,7 +443,9 @@
                     conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me', conv_supervision_title: 'Manager oversight',
                     conv_page_desc: 'Manage customer conversations, respond and assign to departments.',
                     conv_search_ph: 'Search name or phone...', conv_list_title: 'Conversations', more_filters: 'More filters',
-                    filter_all: 'All', filter_unread: 'Unread', filter_open: 'Open', conv_tab_mine: 'Assigned to me',
+                    filter_all: 'All', filter_unread: 'Unread', filter_unanswered: 'Unanswered', filter_open: 'Open', conv_tab_mine: 'Assigned to me',
+                    whatsapp_unanswered_title: 'Unanswered alert & escalation', whatsapp_unanswered_hint: 'When a customer messages and no one replies, an alert is sent after the specified time. If still unanswered, the conversation is escalated to support.',
+                    whatsapp_alert_after: 'Alert after (minutes)', whatsapp_escalate_after: 'Escalate after (minutes)', whatsapp_escalation_dept: 'Target department (empty = default support)',
                     empty_no_logins: 'No logins recorded yet.', no_staff_online: 'No staff online.', login_err_load: 'Error loading logins.',
                     required_name_email_pass: 'Name, email and password are required', select_user_first: 'Please select a user', select_conversation_first: 'Please select a conversation',
                     enter_text_or_file: 'Enter text or attach a file', manage_users_required: 'User management access required',
@@ -1011,6 +1013,24 @@
                     socket.on('call_reject', function(data) {
                         if (data.threadId === currentInternalThreadId) { hideInternalCallModal(); internalCallPendingOffer = null; internalCallIsIncoming = false; toast(t('call_rejected')); }
                     });
+                    socket.on('unanswered_alert', function(data) {
+                        playInternalChatSound();
+                        var cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                        var mins = data.minutesWaiting || 0;
+                        var msg = (LANG === 'fa' ? 'مکالمه بدون پاسخ: ' : 'Unanswered: ') + cust + (LANG === 'fa' ? ' — ' + mins + ' دقیقه' : ' — ' + mins + ' min');
+                        toast(msg, 8000);
+                        var active = document.querySelector('.nav-link.active');
+                        if (active && active.getAttribute('data-page') === 'conversations') loadConversations();
+                    });
+                    socket.on('conversation_escalated', function(data) {
+                        playInternalChatSound();
+                        var cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                        var dept = data.department || (LANG === 'fa' ? 'پشتیبانی' : 'Support');
+                        var msg = (LANG === 'fa' ? 'Escalation: ' : 'Escalated: ') + cust + (LANG === 'fa' ? ' به ' : ' to ') + dept;
+                        toast(msg, 10000);
+                        var active = document.querySelector('.nav-link.active');
+                        if (active && active.getAttribute('data-page') === 'conversations') loadConversations();
+                    });
                     socket.on('connect_error', function() { socket = null; });
                 }
             } catch (e) { socket = null; }
@@ -1571,13 +1591,14 @@
             var assigneeEl = document.getElementById('convFilterAssignee');
             var searchEl = document.getElementById('convSearch');
             if (convQuickTab === 'unread') q += '&unread=true';
+            else if (convQuickTab === 'unanswered') q += '&unanswered=true';
             else if (convQuickTab === 'open') q += '&status=open';
             else if (convQuickTab === 'mine' && currentUser && currentUser.id) q += '&assignedTo=' + encodeURIComponent(currentUser.id);
             if (convQuickTab === 'all' || convQuickTab === 'unread') { if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value); }
             if (priorityEl && priorityEl.value) q += '&priority=' + encodeURIComponent(priorityEl.value);
             if (branchEl && branchEl.value) q += '&branchId=' + encodeURIComponent(branchEl.value);
             if (deptEl && deptEl.value) q += '&departmentId=' + encodeURIComponent(deptEl.value);
-            if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'open') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
+            if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
             var res = await apiFetch('/api/conversations' + q);
             if (res.needLogin) return;
@@ -1610,8 +1631,13 @@
                 var unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
                 var preview = (c.lastMessagePreview || '').trim();
                 var timeStr = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'time') : '';
+                var unansweredBadge = '';
+                if (c.lastIncomingMessageAt && (!c.lastOutgoingMessageAt || new Date(c.lastIncomingMessageAt) > new Date(c.lastOutgoingMessageAt))) {
+                    var mins = Math.floor((Date.now() - new Date(c.lastIncomingMessageAt).getTime()) / 60000);
+                    unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + (LANG === 'fa' ? mins + ' دقیقه' : mins + ' min') + '</span>';
+                }
                 var activeClass = (c.id === currentConvId) ? ' active' : '';
-                return '<div class="conv-list-item' + activeClass + '" data-id="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\')"><div class="conv-item-avatar">' + initial + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(phone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + priorityBadge + statusBadge + '</div></div>';
+                return '<div class="conv-list-item' + activeClass + '" data-id="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\')"><div class="conv-item-avatar">' + initial + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(phone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
         }
 
@@ -3352,13 +3378,41 @@
         async function loadWhatsappWelcomeConfig() {
             var ta = document.getElementById('whatsappWelcomeMessage');
             var cb = document.getElementById('whatsappWelcomeEnabled');
-            if (!ta || !cb) return;
+            var alertIn = document.getElementById('whatsappAlertMinutes');
+            var escalateIn = document.getElementById('whatsappEscalateMinutes');
+            var deptSel = document.getElementById('whatsappEscalationDept');
             var res = await apiFetch('/api/whatsapp/config');
             if (res.needLogin) return;
             if (res.ok && res.data) {
-                ta.value = res.data.welcomeMessage || '';
-                cb.checked = res.data.welcomeEnabled !== false;
+                if (ta) ta.value = res.data.welcomeMessage || '';
+                if (cb) cb.checked = res.data.welcomeEnabled !== false;
+                if (alertIn) alertIn.value = res.data.alertUnansweredAfterMinutes ?? 5;
+                if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
+                if (deptSel) {
+                    var deptRes = await apiFetch('/api/departments');
+                    if (deptRes.ok && deptRes.data && deptRes.data.data) {
+                        var opts = deptRes.data.data.filter(function(d){ return d.isActive !== false; }).map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; });
+                        deptSel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'پشتیبانی (پیش‌فرض)' : 'Support (default)') + '</option>' + opts.join('');
+                        deptSel.value = res.data.escalationDepartmentId || '';
+                    }
+                }
             }
+        }
+        async function saveWhatsappUnansweredConfig() {
+            var alertIn = document.getElementById('whatsappAlertMinutes');
+            var escalateIn = document.getElementById('whatsappEscalateMinutes');
+            var deptSel = document.getElementById('whatsappEscalationDept');
+            if (!alertIn || !escalateIn) return;
+            var res = await apiFetch('/api/whatsapp/config', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    alertUnansweredAfterMinutes: parseInt(alertIn.value) || 5,
+                    escalateUnansweredAfterMinutes: parseInt(escalateIn.value) || 15,
+                    escalationDepartmentId: (deptSel && deptSel.value) || null
+                })
+            });
+            if (res.needLogin) return;
+            toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
         }
         async function saveWhatsappWelcomeConfig() {
             var ta = document.getElementById('whatsappWelcomeMessage');
