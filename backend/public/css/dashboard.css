@@ -406,6 +406,33 @@
         .dept-list .list-item { cursor: default; }
         .dept-list .list-item.dept-inactive { opacity: 0.7; }
         .dept-list .list-item.dept-inactive .name { color: var(--text-muted); }
+        /* ========== صفحه شعب ========== */
+        .branch-page { display: flex; flex-direction: column; gap: 24px; max-width: 100%; min-width: 0; }
+        .branch-page-header h2 { margin: 0 0 8px; }
+        .branch-intro { color: var(--text-secondary); font-size: 0.9rem; margin: 0; line-height: 1.6; }
+        .branch-form-box { max-width: 100%; }
+        .branch-form-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+        .branch-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }
+        .branch-form-field-wide { grid-column: 1 / -1; }
+        .branch-form-field label { display: block; margin-bottom: 6px; font-size: 0.9rem; color: var(--text-secondary); }
+        .branch-form-field input { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; box-sizing: border-box; }
+        .branch-form-field input:focus { outline: none; border-color: var(--accent); }
+        .branch-form-actions { display: flex; gap: 12px; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); flex-wrap: wrap; }
+        .branch-form-actions .btn-primary, .branch-form-actions .btn-secondary { margin: 0; }
+        .branch-list-section { min-width: 0; }
+        .branch-list-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 16px; }
+        .branch-list.branch-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .branch-list.branch-cards .empty { grid-column: 1 / -1; }
+        .branch-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s; min-width: 0; }
+        .branch-card:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(16,185,129,0.12); }
+        .branch-card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; min-width: 0; }
+        .branch-card-title { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+        .branch-card-icon { width: 18px; height: 18px; flex-shrink: 0; color: var(--accent); display: flex; align-items: center; justify-content: center; }
+        .branch-card-icon svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .branch-card-name { font-weight: 600; font-size: 1.05rem; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .branch-card-meta { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+        .branch-card-actions { flex-shrink: 0; }
+        .branch-card-actions .btn-secondary, .branch-card-actions .branch-edit-btn { margin: 0; padding: 8px 14px; font-size: 0.85rem; }
         .empty { text-align: center; color: var(--text-muted); padding: 48px 24px; font-size: 0.95rem; }
         .empty .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
         .form-box { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; max-width: 520px; width: 100%; box-sizing: border-box; overflow-wrap: break-word; }
@@ -618,9 +645,9 @@
             .conv-quick-tabs { flex-wrap: wrap; gap: 6px; }
             .conv-stats { flex-wrap: wrap; gap: 8px; }
             .dept-list .list-item, #deptList .list-item { flex-wrap: wrap; min-width: 0; }
-            .dept-form-grid { grid-template-columns: 1fr; }
+            .dept-form-grid, .branch-form-grid { grid-template-columns: 1fr; }
             .dept-form-checks { flex-direction: column; align-items: flex-start; gap: 12px; }
-            .dept-list.dept-cards { grid-template-columns: 1fr; }
+            .dept-list.dept-cards, .branch-list.branch-cards { grid-template-columns: 1fr; }
             .user-add-form #userAddPerms { grid-template-columns: 1fr; }
             .ticker-config-list { flex-wrap: wrap; }
             #pageWhatsapp .form-box, #pageWhatsapp .qr-box, .qr-box { width: 100%; max-width: 100%; box-sizing: border-box; }
@@ -659,8 +686,8 @@
         }
         /* مونیتور ۲۷ اینچ و بالاتر (۲۵۶۰×۱۴۴۰ و ۴K) */
         @media (max-width: 640px) {
-            .dept-list.dept-cards { grid-template-columns: 1fr; }
-            .dept-form-grid { grid-template-columns: 1fr; }
+            .dept-list.dept-cards, .branch-list.branch-cards { grid-template-columns: 1fr; }
+            .dept-form-grid, .branch-form-grid { grid-template-columns: 1fr; }
         }
         @media (min-width: 2560px) {
             .app { width: 100%; min-height: 100dvh; }

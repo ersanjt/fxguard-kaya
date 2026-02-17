@@ -319,6 +319,7 @@ window.__I18N_FA = {
     invite_to_call: 'دعوت به تماس',
     select_multiple_hint: 'برای گفتگوی گروهی، چند نفر را انتخاب کنید',
     cancel: 'انصراف',
+    branch_intro: 'شعب برای تفکیک جغرافیایی و تخصیص کاربران و مکالمات استفاده می‌شوند.',
     branch_name: 'نام شعبه',
     branch_city: 'شهر',
     branch_country: 'کشور',

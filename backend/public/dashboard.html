@@ -629,18 +629,36 @@
                         <button type="button" class="btn-secondary" onclick="hideNewChatForm()" data-i18n="cancel">انصراف</button>
                     </div>
                 </div>
-                <div id="pageBranches" class="page">
-                    <h2 data-i18n="page_branches">شعب</h2>
-                    <div class="form-box">
-                        <label data-i18n="branch_name">نام شعبه</label>
-                        <input id="branchName" data-i18n-ph="branch_ph_name" placeholder="مثال: دفتر تهران">
-                        <label data-i18n="branch_city">شهر</label>
-                        <input id="branchCity" data-i18n-ph="branch_ph_city" placeholder="مثال: تهران">
-                        <label data-i18n="branch_country">کشور</label>
-                        <input id="branchCountry" data-i18n-ph="branch_ph_country" placeholder="مثال: ایران">
-                        <button type="button" onclick="addBranch()" data-i18n="add_branch">افزودن شعبه</button>
+                <div id="pageBranches" class="page branch-page">
+                    <div class="branch-page-header">
+                        <h2 data-i18n="page_branches">شعب</h2>
+                        <p class="branch-intro" data-i18n="branch_intro">شعب برای تفکیک جغرافیایی و تخصیص کاربران و مکالمات استفاده می‌شوند.</p>
                     </div>
-                    <div id="branchList"></div>
+                    <div class="branch-form-box form-box">
+                        <h3 class="branch-form-title" data-i18n="add_branch">افزودن شعبه</h3>
+                        <div class="branch-form-grid">
+                            <div class="branch-form-field">
+                                <label for="branchName" data-i18n="branch_name">نام شعبه</label>
+                                <input id="branchName" data-i18n-ph="branch_ph_name" placeholder="مثال: دفتر تهران">
+                            </div>
+                            <div class="branch-form-field">
+                                <label for="branchCity" data-i18n="branch_city">شهر</label>
+                                <input id="branchCity" data-i18n-ph="branch_ph_city" placeholder="مثال: تهران">
+                            </div>
+                            <div class="branch-form-field branch-form-field-wide">
+                                <label for="branchCountry" data-i18n="branch_country">کشور</label>
+                                <input id="branchCountry" data-i18n-ph="branch_ph_country" placeholder="مثال: ایران">
+                            </div>
+                        </div>
+                        <div class="branch-form-actions">
+                            <button type="button" class="btn-primary" id="btnBranchSave" onclick="addBranch()" data-i18n="add_branch">افزودن شعبه</button>
+                            <button type="button" class="btn-secondary" id="btnBranchCancel" onclick="cancelBranchEdit()" style="display:none;" data-i18n="cancel">انصراف</button>
+                        </div>
+                    </div>
+                    <div class="branch-list-section">
+                        <h3 class="branch-list-title" data-i18n="page_branches">شعب</h3>
+                        <div id="branchList" class="branch-list branch-cards"></div>
+                    </div>
                 </div>
                 <div id="pageStaffActivity" class="page">
                     <h2 data-i18n="page_staff_activity">ورودها و وضعیت آنلاین کارکنان</h2>

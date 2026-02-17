@@ -175,7 +175,7 @@
                     ann_important: 'پ�Rا�& �&�!�& (پاپ�Rآپ �� صدا برا�R گ�Rر� د�!)', send_ann: 'ارسا� اع�ا� ',
                     new_chat: 'گفتگ���R جد�Rد', select_conversation: 'ا� تخاب گفتگ��', msg_ph_short: 'پ�Rا�&...', attach_file: 'پ�R��ست فا�R�',
                     start_chat_with: 'شر��ع گفتگ�� با', start_chat: 'شر��ع � ت', internal_chat_open_full: 'باز کردن چت کامل', cancel: 'ا� صراف',
-                    branch_name: '� ا�& شعب�!', branch_city: 'ش�!ر', branch_country: 'کش��ر', branch_ph_name: '�&ثا�: دفتر ت�!را� ', branch_ph_city: '�&ثا�: ت�!را� ', branch_ph_country: '�&ثا�: ا�Rرا� ', add_branch: 'افز��د�  شعب�!', edit: '���Rرا�Rش',
+                    branch_intro: 'شعب برای تفکیک جغرافیایی و تخصیص کاربران و مکالمات استفاده می‌شوند.', branch_name: 'نام شعبه', branch_city: 'شهر', branch_country: 'کشور', branch_ph_name: 'مثال: دفتر تهران', branch_ph_city: 'مثال: تهران', branch_ph_country: 'مثال: ایران', add_branch: 'افزودن شعبه', edit: 'ویرایش',
                     staff_online: 'کارک� ا�  آ� �ا�R� ', staff_intro: 'آخر�R�  ��ر��د�!ا �� ��Rست کارک� ا�  آ� �ا�R�  � برا�R �&د�Rر �� با�اتر', last_logins: 'آخر�R�  ��ر��د�!ا',
                     sup_performance: 'خ�اص�! ع�&�کرد', sup_conversations: '�&کا��&ات', sup_activity: '�اگ فعا��Rت', sup_branch_status: 'شعب�! / دپارت�&ا�  / ��ضع�Rت', apply_filter: 'اع�&ا� ف�R�تر',
                     sup_by_branch: 'ب�! تفک�Rک شعب�!', sup_by_user: 'ع�&�کرد کاربرا�  (پ�Rا�& ارسا��R)', total_conversations: 'ک� �&کا��&ات', outgoing_messages: 'پ�Rا�& ارسا��R (خر��ج�R)',
@@ -428,7 +428,7 @@
                     call_rejected: 'Call rejected', user_offline: 'User is offline',
                     add_to_call: 'Add to call', invite_to_call: 'Invite to call',
                     select_multiple_hint: 'For group chat, select multiple users',
-                    branch_name: 'Branch name', branch_city: 'City', branch_country: 'Country', branch_ph_name: 'e.g. Tehran office', branch_ph_city: 'e.g. Tehran', branch_ph_country: 'e.g. Iran', add_branch: 'Add branch', edit: 'Edit',
+                    branch_intro: 'Branches are used for geographic separation and assigning users and conversations.', branch_name: 'Branch name', branch_city: 'City', branch_country: 'Country', branch_ph_name: 'e.g. Tehran office', branch_ph_city: 'e.g. Tehran', branch_ph_country: 'e.g. Iran', add_branch: 'Add branch', edit: 'Edit',
                     staff_online: 'Staff online', staff_intro: 'Recent logins and online staff � for managers and above', last_logins: 'Recent logins',
                     sup_performance: 'Performance summary', sup_conversations: 'Conversations', sup_activity: 'Activity log', sup_branch_status: 'Branch / status', apply_filter: 'Apply filter',
                     sup_by_branch: 'By branch', sup_by_user: 'User performance (outgoing messages)', total_conversations: 'Total conversations', outgoing_messages: 'Outgoing messages',
@@ -3616,15 +3616,22 @@
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x�:️</span><br>' + t('empty_branches') + '</div>'; return; }
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🏢</span><br>' + t('empty_branches') + '</div>'; return; }
             var role = (currentUser && currentUser.role) || '';
             var canEdit = (role === 'owner' || role === 'admin');
             list.innerHTML = data.data.map(function(b) {
-                var loc = [b.city, b.country].filter(Boolean).join('�R ');
+                var loc = [b.city, b.country].filter(Boolean).join(' — ');
                 var name = (b.name || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 var city = (b.city || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
                 var country = (b.country || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                return '<div class="list-item" data-id="' + b.id + '" data-name="' + name + '" data-city="' + city + '" data-country="' + country + '"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + escapeHtml(loc || '�') + '</div></div>' + (canEdit ? '<button type="button" class="btn-secondary" style="margin:0; padding:6px 12px;" onclick="var li=this.closest(\'.list-item\'); editBranch(li.getAttribute(\'data-id\'), li.getAttribute(\'data-name\')||\'\', li.getAttribute(\'data-city\')||\'\', li.getAttribute(\'data-country\')||\'\')">' + t('edit') + '</button>' : '') + '</div>';
+                var editBtn = canEdit ? '<button type="button" class="btn-secondary branch-edit-btn" onclick="var c=this.closest(\'.branch-card\'); editBranch(c.getAttribute(\'data-id\'), c.getAttribute(\'data-name\')||\'\', c.getAttribute(\'data-city\')||\'\', c.getAttribute(\'data-country\')||\'\')">' + t('edit') + '</button>' : '';
+                var iconHtml = '<span class="branch-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-building-2"/></svg></span>';
+                return '<div class="branch-card" data-id="' + b.id + '" data-name="' + name + '" data-city="' + city + '" data-country="' + country + '"><div class="branch-card-header"><div class="branch-card-title">' + iconHtml + '<span class="branch-card-name">' + escapeHtml(b.name) + '</span></div><div class="branch-card-actions">' + editBtn + '</div></div>' + (loc ? '<div class="branch-card-meta">' + escapeHtml(loc) + '</div>' : '') + '</div>';
+            }).join('');
+        }
+
+        async function _removed() { return;
+            '"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + escapeHtml(loc || '�') + '</div></div>' + (canEdit ? '<button type="button" class="btn-secondary" style="margin:0; padding:6px 12px;" onclick="var li=this.closest(\'.list-item\'); editBranch(li.getAttribute(\'data-id\'), li.getAttribute(\'data-name\')||\'\', li.getAttribute(\'data-city\')||\'\', li.getAttribute(\'data-country\')||\'\')">' + t('edit') + '</button>' : '') + '</div>';
             }).join('');
         }
 
@@ -3642,7 +3649,17 @@
                 res = await apiFetch('/api/branches', { method: 'POST', body: JSON.stringify({ name: name, city: city || null, country: country || null }) });
             }
             if (res.needLogin) return;
-            if (res.ok) { document.getElementById('branchName').value = ''; document.getElementById('branchCity').value = ''; document.getElementById('branchCountry').value = ''; toast(id ? t('toast_branch_updated') : t('toast_branch_added')); loadBranches(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) {
+                document.getElementById('branchName').value = '';
+                document.getElementById('branchCity').value = '';
+                document.getElementById('branchCountry').value = '';
+                var btnSave = document.getElementById('btnBranchSave');
+                var btnCancel = document.getElementById('btnBranchCancel');
+                if (btnSave) btnSave.textContent = t('add_branch');
+                if (btnCancel) btnCancel.style.display = 'none';
+                toast(id ? t('toast_branch_updated') : t('toast_branch_added'));
+                loadBranches();
+            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         function editBranch(id, name, city, country) {
@@ -3650,7 +3667,22 @@
             document.getElementById('branchCity').value = (city || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
             document.getElementById('branchCountry').value = (country || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
             window._editingBranchId = id;
+            var btnSave = document.getElementById('btnBranchSave');
+            var btnCancel = document.getElementById('btnBranchCancel');
+            if (btnSave) btnSave.textContent = t('edit');
+            if (btnCancel) btnCancel.style.display = 'inline-flex';
             toast(t('edit_branch_hint'), false);
+        }
+
+        function cancelBranchEdit() {
+            window._editingBranchId = null;
+            document.getElementById('branchName').value = '';
+            document.getElementById('branchCity').value = '';
+            document.getElementById('branchCountry').value = '';
+            var btnSave = document.getElementById('btnBranchSave');
+            var btnCancel = document.getElementById('btnBranchCancel');
+            if (btnSave) btnSave.textContent = t('add_branch');
+            if (btnCancel) btnCancel.style.display = 'none';
         }
 
         async function loadSupervisionPerformance() {
