@@ -1150,6 +1150,7 @@
             var allowDl = a.allowDownload !== false;
             var name = a.name || t('file');
             var fullUrl = (a.url && a.url.startsWith('/')) ? (window.API || '') + a.url : a.url;
+            fullUrl = ensureHttpsUrl(fullUrl);
             if (allowDl) return '<a href="' + escapeHtml(fullUrl) + '" target="_blank" rel="noopener" style="color:var(--accent); display:block; margin-top:4px;">📎 ' + escapeHtml(name) + '</a>';
             if (isImageExt(name)) return '<div class="internal-att-viewonly" style="margin-top:6px;"><img src="' + escapeHtml(fullUrl) + '" alt="" style="max-width:100%; max-height:200px; border-radius:6px; pointer-events:none; user-select:none;" oncontextmenu="return false;"><span class="badge" style="font-size:0.7rem; margin-top:4px; display:inline-block;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
             if (isPdfExt(name)) return '<div class="internal-att-viewonly" style="margin-top:6px;"><iframe src="' + escapeHtml(fullUrl) + '#toolbar=0" style="width:100%; height:200px; border:1px solid var(--border); border-radius:6px;" oncontextmenu="return false;"></iframe><span class="badge" style="font-size:0.7rem; margin-top:4px; display:inline-block;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
@@ -1521,6 +1522,7 @@
         }
 
         function escapeHtml(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         async function loadDashboard() {
@@ -1849,6 +1851,7 @@
                 var mediaHtml = '';
                 if (m.hasMedia && m.mediaData && m.mediaData.url) {
                     var mediaUrl = m.mediaData.url.startsWith('http') ? m.mediaData.url : (API + (m.mediaData.url.startsWith('/') ? '' : '/') + m.mediaData.url);
+                    mediaUrl = ensureHttpsUrl(mediaUrl);
                     if (m.type === 'image') {
                         var imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
                         mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy"></a></div>';

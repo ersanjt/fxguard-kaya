@@ -116,7 +116,7 @@
         .status-dot.busy { background: #ef4444; }
         .status-dot.offline { background: var(--text-muted); }
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 24px; }
-        .modal-box { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); max-width: 440px; width: 100%; padding: 24px; box-shadow: var(--shadow); }
+        .modal-box { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); max-width: 440px; width: 100%; padding: 24px; box-shadow: var(--shadow); box-sizing: border-box; max-width: min(440px, calc(100vw - 48px)); }
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
         .modal-header h3 { margin: 0; font-size: 1.1rem; color: var(--accent); }
         .modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 0 8px; line-height: 1; }
@@ -148,11 +148,11 @@
         .ticker-toggle-mobile { display: none; }
         .app-footer { display: none; }
         @keyframes announcementMarqueeRtl { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
-        .content { flex: 1; display: flex; flex-direction: column; overflow: auto; overflow-x: auto; padding: 24px; max-width: 100%; min-width: 0; min-height: 0; -webkit-overflow-scrolling: touch; }
+        .content { flex: 1; display: flex; flex-direction: column; overflow: auto; padding: 24px; max-width: 100%; min-width: 0; min-height: 0; -webkit-overflow-scrolling: touch; }
         .content:has(#pageConversations.show),
         .content.page-conversations { overflow: hidden; }
         .content h2 { color: var(--text-primary); font-size: 1.2rem; font-weight: 600; margin: 0 0 20px; }
-        .page { display: none; max-width: 100%; min-width: 0; }
+        .page { display: none; max-width: 100%; min-width: 0; width: 100%; overflow-x: hidden; }
         .page.show { display: block; }
         /* جدول‌ها و لیست‌های گسترده: اسکرول افقی داخل باکس تا کل صفحه بدون زوم درست دیده شود */
         #ratesAdjustmentsTable, #supPerformanceContent, #supConvList, #supActList, #onlineStaffList, #loginsList { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
@@ -185,7 +185,8 @@
         .msg-file-link { color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
         .msg-file-link:hover { text-decoration: underline; }
         .chat-send { display: flex; gap: 12px; padding: 16px; background: var(--bg-card); border-top: 1px solid var(--border); align-items: center; flex-shrink: 0; }
-        .chat-attach-btn { width: 44px; height: 44px; min-width: 44px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; -webkit-tap-highlight-color: transparent; }
+        .chat-attach-btn { width: 44px; height: 44px; min-width: 44px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; -webkit-tap-highlight-color: transparent; flex-shrink: 0; }
+        .chat-attach-btn svg { flex-shrink: 0; }
         .chat-attach-btn:hover { background: var(--bg-hover); color: var(--accent); border-color: var(--accent); }
         .internal-chat-file-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .internal-chat-file-wrap input[type="file"] { position: absolute; width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; z-index: -1; }
@@ -354,7 +355,7 @@
         .list-item .badge.unread { background: var(--accent-soft); color: var(--accent); margin-right: 6px; }
         .empty { text-align: center; color: var(--text-muted); padding: 48px 24px; font-size: 0.95rem; }
         .empty .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
-        .form-box { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; max-width: 520px; width: 100%; box-sizing: border-box; }
+        .form-box { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; max-width: 520px; width: 100%; box-sizing: border-box; overflow-wrap: break-word; }
         .user-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px 20px; }
         .user-form-grid label { margin-top: 0; }
         .user-add-form { max-width: 100%; }
@@ -555,6 +556,18 @@
             #totpPromptBanner button { margin-top: 8px; }
             .app-footer { padding: 8px 12px; font-size: 0.7rem; }
             .price-ticker.ticker-collapsed { max-height: 40px; }
+            .modal-box { max-width: calc(100vw - 24px) !important; margin: 12px; }
+            .page { width: 100%; max-width: 100%; }
+            .customer-list-grid { grid-template-columns: 1fr; min-width: 0; }
+            .ticket-list-item, .list-item { flex-wrap: wrap; min-width: 0; }
+            .chat-attach-btn { min-width: 44px; min-height: 44px; flex-shrink: 0; }
+            .chat-send { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+            .conv-quick-tabs { flex-wrap: wrap; gap: 6px; }
+            .conv-stats { flex-wrap: wrap; gap: 8px; }
+            .dept-list .list-item, #deptList .list-item { flex-wrap: wrap; min-width: 0; }
+            .user-add-form #userAddPerms { grid-template-columns: 1fr; }
+            .ticker-config-list { flex-wrap: wrap; }
+            #pageWhatsapp .form-box, #pageWhatsapp .qr-box, .qr-box { width: 100%; max-width: 100%; box-sizing: border-box; }
         }
         /* ========== 360px و کمتر (موبایل کوچک) ========== */
         @media (max-width: 360px) {

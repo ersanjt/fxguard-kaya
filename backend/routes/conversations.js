@@ -335,7 +335,8 @@ router.post('/:id/send', async (req, res) => {
         const content = (req.body.content || '').trim();
         const media = req.body.media || null;
         if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
-        const baseUrl = process.env.BACKEND_PUBLIC_URL || (req.protocol + '://' + req.get('host'));
+        const proto = req.get('x-forwarded-proto') || req.protocol;
+        const baseUrl = process.env.BACKEND_PUBLIC_URL || (proto + '://' + req.get('host'));
         let mediaUrl = null;
         let msgType = req.body.type || 'text';
         let hasMedia = false;
