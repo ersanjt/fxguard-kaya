@@ -24,6 +24,8 @@
                     login_totp_code_required: 'کد شش�Rر��&�R را ��ارد ک� �Rد',
                     login_totp_retry: '�طفا�9 د��بار�! از �&رح��!� ا��� ��ارد ش���Rد',
                     login_totp_bad: 'کد اشتبا�! �Rا �&� �ض�R است',
+                    login_cant_signin: 'نمی‌توانید وارد شوید؟',
+                    login_contact_support: 'با پشتیبانی تماس بگیرید',
                     lang_fa: 'فارس�R',
                     lang_en: 'English',
                     nav_communications: 'ارتباطات',
@@ -243,6 +245,8 @@
                     login_totp_code_required: 'Please enter the 6-digit code',
                     login_totp_retry: 'Please sign in again from step 1',
                     login_totp_bad: 'Invalid or expired code',
+                    login_cant_signin: "Can't sign in?",
+                    login_contact_support: 'Contact support',
                     lang_fa: 'فارس�R',
                     lang_en: 'English',
                     nav_dashboard: 'Dashboard',
@@ -533,7 +537,23 @@
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
-        fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){ if (c && c.timezone) window.APP_TIMEZONE = c.timezone; }).catch(function(){});
+        fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
+            if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
+            if (c && c.supportUrl) {
+                window.SUPPORT_URL = c.supportUrl;
+                var setSupportLink = function(wrapId, linkId) {
+                    var wrap = document.getElementById(wrapId);
+                    var link = document.getElementById(linkId);
+                    if (wrap && link) {
+                        link.href = c.supportUrl;
+                        link.target = c.supportUrl.startsWith('mailto:') ? '_self' : '_blank';
+                        link.rel = c.supportUrl.startsWith('mailto:') ? '' : 'noopener';
+                    }
+                };
+                setSupportLink('loginSupportWrap', 'loginSupportLink');
+                setSupportLink('loginSupportWrapTotp', 'loginSupportLinkTotp');
+            }
+        }).catch(function(){});
         function updateNavBadges(stats) {
             if (stats) {
                 window.navBadgeCounts.conversations = (stats.unreadConversations || 0);

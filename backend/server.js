@@ -680,9 +680,16 @@ apiRouter.get('/ping', (req, res) => {
     res.json({ ok: true, message: 'API در دسترس است' });
 });
 
-// تنظیمات عمومی (timezone و غیره) — بدون احراز هویت
+// تنظیمات عمومی (timezone، پشتیبانی و غیره) — بدون احراز هویت
 apiRouter.get('/config', (req, res) => {
-    res.json({ timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul' });
+    const supportUrl = process.env.SUPPORT_URL || null;
+    const supportEmail = process.env.SUPPORT_EMAIL || null;
+    const defaultEmail = process.env.MAIN_ADMIN_EMAIL || 'admin@kaya.local';
+    const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : 'mailto:' + defaultEmail);
+    res.json({
+        timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
+        supportUrl: supportLink
+    });
 });
 
 const gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3001';

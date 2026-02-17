@@ -38,6 +38,7 @@
     </svg>
     <div id="loginBox" class="login-wrap">
         <div class="login-box" id="loginStep1">
+            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
             <div class="lang-switch login-lang">
                 <button type="button" id="langFa" onclick="setLang('fa')" class="active">فارسی</button>
                 <button type="button" id="langEn" onclick="setLang('en')">English</button>
@@ -53,8 +54,13 @@
             </div>
             <button type="button" id="btnLogin" onclick="login()" data-i18n="login_btn">ورود</button>
             <div id="loginErr" class="login-err"></div>
+            <p class="login-support" id="loginSupportWrap">
+                <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
+                <a href="#" id="loginSupportLink" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
+            </p>
         </div>
         <div class="login-box" id="loginStepTotp" style="display:none;">
+            <div class="login-logo"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
             <div class="lang-switch login-lang">
                 <button type="button" onclick="setLang('fa')" data-i18n="lang_fa">فارسی</button>
                 <button type="button" onclick="setLang('en')" data-i18n="lang_en">English</button>
@@ -65,6 +71,10 @@
             <button type="button" id="btnTotpVerify" onclick="verifyTotpLogin()" data-i18n="login_totp_verify">تأیید و ورود</button>
             <button type="button" class="btn-secondary" onclick="backToLoginStep1()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
             <div id="totpErr" class="login-err"></div>
+            <p class="login-support" id="loginSupportWrapTotp">
+                <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
+                <a href="#" id="loginSupportLinkTotp" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
+            </p>
         </div>
     </div>
     <div id="app" class="app">
