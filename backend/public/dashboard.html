@@ -250,7 +250,8 @@
                 </div>
                 <div id="pageDepartments" class="page">
                     <h2 data-i18n="page_departments">دپارتمان‌ها</h2>
-                    <div class="form-box">
+                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="dept_intro">دپارتمان‌ها برای تخصیص خودکار مکالمات بر اساس کلمات کلیدی استفاده می‌شوند.</p>
+                    <div class="form-box dept-form-box">
                         <label data-i18n="dept_branch">شعبه</label>
                         <select id="deptBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
                         <label data-i18n="dept_name">نام دپارتمان</label>
@@ -259,9 +260,26 @@
                         <input id="deptDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری">
                         <label data-i18n="dept_keywords">کلمات کلیدی (با کاما)</label>
                         <input id="deptKeywords" data-i18n-ph="dept_ph_keywords" placeholder="مثال: مشکل، خرابی، پشتیبانی">
-                        <button type="button" onclick="addDepartment()" data-i18n="add_dept">افزودن دپارتمان</button>
+                        <div class="dept-form-row" style="display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
+                            <div>
+                                <label data-i18n="dept_color">رنگ</label>
+                                <input type="color" id="deptColor" value="#10b981" style="width:48px; height:36px; padding:2px; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer; background:var(--bg-secondary);">
+                            </div>
+                            <label class="dept-check-wrap" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:24px;">
+                                <input type="checkbox" id="deptIsDefault">
+                                <span data-i18n="dept_is_default">پیش‌فرض (مکالمات بدون تطابق)</span>
+                            </label>
+                            <label class="dept-check-wrap" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:24px;">
+                                <input type="checkbox" id="deptIsActive" checked>
+                                <span data-i18n="status_active">فعال</span>
+                            </label>
+                        </div>
+                        <div class="dept-form-actions" style="display:flex; gap:12px; margin-top:16px;">
+                            <button type="button" class="btn-primary" id="btnDeptSave" onclick="saveDepartment()" data-i18n="add_dept">افزودن دپارتمان</button>
+                            <button type="button" class="btn-secondary" id="btnDeptCancel" onclick="cancelDeptEdit()" style="display:none;" data-i18n="cancel">انصراف</button>
+                        </div>
                     </div>
-                    <div id="deptList"></div>
+                    <div id="deptList" class="dept-list"></div>
                 </div>
                 <div id="pageUsers" class="page">
                     <h2 data-i18n="page_users">کاربران</h2>

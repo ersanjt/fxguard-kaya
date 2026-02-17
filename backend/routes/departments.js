@@ -5,7 +5,8 @@ const { Department, User, Branch } = require('../models');
 router.get('/', async (req, res) => {
     try {
         if (!req.canAccess('departments')) return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
-        const where = { isActive: true };
+        const where = {};
+        if (req.query.all !== '1' || !req.canManageUsers()) where.isActive = true;
         if (!req.canManageUsers() && req.user.branchId) {
             where.branchId = req.user.branchId;
         }

@@ -131,7 +131,7 @@
                     status_busy: '�&شغ���',
                     status_offline: 'آف�ا�R� ',
                     err_generic: 'خطا',
-                    saved: 'ذخ�Rر�! شد',
+                    saved: 'ذخ�Rر�! شد', save_changes: 'ذخ�Rر�! تغ�R�Rرات',
                     toast_ticket_created: 'ت�Rکت ثبت شد',
                     toast_dept_added: 'دپارت�&ا�  اضاف�! شد',
                     toast_user_added: 'کاربر اضاف�! شد',
@@ -155,7 +155,8 @@
                     ticker_updated: 'آخر�R�  بر��زرسا� �R:',
                     ticker_outside_hours: 'بر��زرسا� �R � رخ ف�ط ۶ تا ۲۰ ب�! ���ت ت�!را�  � �!ر ۱۰ د��R��!',
                     ticker_last: 'آخر�R�  بر��زرسا� �R:',
-                    dept_branch: 'شعب�!', dept_name: '� ا�& دپارت�&ا� ', dept_desc: 'ت��ض�Rحات', dept_keywords: 'ک��&ات ک��Rد�R (با کا�&ا)', add_dept: 'افز��د�  دپارت�&ا� ',
+                    dept_branch: 'شعب�!', dept_name: '� ا�& دپارت�&ا� ', dept_desc: 'ت��ض�Rحات', dept_keywords: 'ک��&ات ک��Rد�R (با کا�&ا)', add_dept: 'افز��د�  دپارت�&ا� ', dept_intro: 'دپارت�&ا� �R�!ا برا�R تخص�Rص خودکار �&کا��&ات بر اساس ک��&ات ک��Rد�R استفاده �&�Rش��� د.',
+                    dept_color: 'ر�Rنگ', dept_is_default: 'پیش�Rفرض (�&کا��&ات بد��� تطاب�Rق)', dept_edit_hint: 'ف�R�د�!ا را ���Rرا�Rش ک� �Rد �� ر���R «ذخ�Rر�!» بز� �Rد.', toast_dept_updated: 'دپارت�&ا�  ب�!�Rر��ز شد',
                     dept_ph_name: '�&ثا�: پشت�Rبا� �R ف� �R', dept_ph_optional: 'اخت�Rار�R', dept_ph_keywords: '�&ثا�: �&شک��R خراب�R�R پشت�Rبا� �R',
                     users_intro: 'ف�ط �&د�Rر �&ج�&��ع�! �Rا کس�R ک�! دسترس�R «�&د�Rر�Rت کاربرا� » دارد �&�R�Rت��ا� د کاربر جد�Rد بسازد.',
                     label_name: '� ا�&', label_email: 'ا�R�&�R�', label_password: 'ر�&ز عب��ر', label_role: '� �ش', label_dept: 'دپارت�&ا� ', label_branch: 'شعب�!',
@@ -377,7 +378,7 @@
                     status_busy: 'Busy',
                     status_offline: 'Offline',
                     err_generic: 'Error',
-                    saved: 'Saved',
+                    saved: 'Saved', save_changes: 'Save changes',
                     toast_ticket_created: 'Ticket created',
                     toast_dept_added: 'Department added',
                     toast_user_added: 'User added',
@@ -401,7 +402,8 @@
                     ticker_updated: 'Last updated:',
                     ticker_outside_hours: 'Rates update 06:00�20:00 Tehran time � every 10 min',
                     ticker_last: 'Last updated:', ticker_current_time: 'Current time',
-                    dept_branch: 'Branch', dept_name: 'Department name', dept_desc: 'Description', dept_keywords: 'Keywords (comma-separated)', add_dept: 'Add department',
+                    dept_branch: 'Branch', dept_name: 'Department name', dept_desc: 'Description', dept_keywords: 'Keywords (comma-separated)', add_dept: 'Add department', dept_intro: 'Departments are used for auto-assigning conversations based on keywords.',
+                    dept_color: 'Color', dept_is_default: 'Default (unmatched conversations)', dept_edit_hint: 'Edit the fields and click Save to update.', toast_dept_updated: 'Department updated',
                     dept_ph_name: 'e.g. Technical support', dept_ph_optional: 'Optional', dept_ph_keywords: 'e.g. issue, support',
                     users_intro: 'Only the owner or users with "User management" access can create users and edit permissions.',
                     label_name: 'Name', label_email: 'Email', label_password: 'Password', label_role: 'Role', label_dept: 'Department', label_branch: 'Branch',
@@ -2805,13 +2807,58 @@
             if (res.ok) { document.getElementById('ticketTitle').value = ''; document.getElementById('ticketDesc').value = ''; var dueInp = document.getElementById('ticketDueDate'); if (dueInp) dueInp.value = ''; document.getElementById('ticketFormBox').style.display = 'none'; toast(t('toast_ticket_created')); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
-        async function addDepartment() {
+        var _editingDeptId = null;
+        function cancelDeptEdit() {
+            _editingDeptId = null;
+            document.getElementById('deptName').value = '';
+            document.getElementById('deptDesc').value = '';
+            document.getElementById('deptKeywords').value = '';
+            var colorEl = document.getElementById('deptColor'); if (colorEl) colorEl.value = '#10b981';
+            var defEl = document.getElementById('deptIsDefault'); if (defEl) defEl.checked = false;
+            var actEl = document.getElementById('deptIsActive'); if (actEl) actEl.checked = true;
+            var branchEl = document.getElementById('deptBranch'); if (branchEl) branchEl.value = '';
+            var btn = document.getElementById('btnDeptSave'); if (btn) { btn.textContent = t('add_dept'); btn.setAttribute('data-i18n', 'add_dept'); }
+            var cancelBtn = document.getElementById('btnDeptCancel'); if (cancelBtn) cancelBtn.style.display = 'none';
+        }
+        function editDepartment(idx) {
+            var list = window._deptListData;
+            if (!list || !list[idx]) return;
+            var d = list[idx];
+            _editingDeptId = d.id;
+            document.getElementById('deptName').value = d.name || '';
+            document.getElementById('deptDesc').value = d.description || '';
+            document.getElementById('deptKeywords').value = d.keywords || '';
+            var colorEl = document.getElementById('deptColor'); if (colorEl) colorEl.value = (d.color || '#10b981').replace(/^#?/, '#');
+            var defEl = document.getElementById('deptIsDefault'); if (defEl) defEl.checked = !!d.isDefault;
+            var actEl = document.getElementById('deptIsActive'); if (actEl) actEl.checked = d.isActive !== false;
+            var branchEl = document.getElementById('deptBranch'); if (branchEl) branchEl.value = d.branchId || '';
+            var btn = document.getElementById('btnDeptSave'); if (btn) { btn.textContent = t('save_changes'); btn.setAttribute('data-i18n', 'save_changes'); }
+            var cancelBtn = document.getElementById('btnDeptCancel'); if (cancelBtn) cancelBtn.style.display = '';
+            toast(t('dept_edit_hint'), false);
+        }
+        async function saveDepartment() {
             var name = document.getElementById('deptName').value.trim();
             if (!name) { toast(t('dept_name_required'), true); return; }
             var branchId = document.getElementById('deptBranch').value || null;
-            var res = await apiFetch('/api/departments', { method: 'POST', body: JSON.stringify({ name: name, description: document.getElementById('deptDesc').value, keywords: document.getElementById('deptKeywords').value, branchId: branchId }) });
+            var colorEl = document.getElementById('deptColor');
+            var defEl = document.getElementById('deptIsDefault');
+            var actEl = document.getElementById('deptIsActive');
+            var body = { name: name, description: document.getElementById('deptDesc').value, keywords: document.getElementById('deptKeywords').value, branchId: branchId };
+            if (colorEl) body.color = colorEl.value || '#10b981';
+            if (defEl) body.isDefault = defEl.checked;
+            if (actEl) body.isActive = actEl.checked;
+            var res;
+            if (_editingDeptId) {
+                res = await apiFetch('/api/departments/' + _editingDeptId, { method: 'PUT', body: JSON.stringify(body) });
+            } else {
+                res = await apiFetch('/api/departments', { method: 'POST', body: JSON.stringify(body) });
+            }
             if (res.needLogin) return;
-            if (res.ok) { document.getElementById('deptName').value = ''; document.getElementById('deptDesc').value = ''; document.getElementById('deptKeywords').value = ''; toast(t('toast_dept_added')); loadDepartments(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) {
+                cancelDeptEdit();
+                toast(_editingDeptId ? t('toast_dept_updated') : t('toast_dept_added'));
+                loadDepartments();
+            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         var userListData = [];
@@ -3527,14 +3574,23 @@
         async function loadDepartments() {
             var list = document.getElementById('deptList');
             setLoading('deptList', 4);
-            var res = await apiFetch('/api/departments');
+            var canEdit = currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager' || (currentUser.permissions && currentUser.permissions.manage_users));
+            var q = canEdit ? '?all=1' : '';
+            var res = await apiFetch('/api/departments' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x��</span><br>' + t('empty_dept') + '</div>'; return; }
-            list.innerHTML = data.data.map(function(d) {
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🏢</span><br>' + t('empty_dept') + '</div>'; return; }
+            window._deptListData = data.data;
+            list.innerHTML = data.data.map(function(d, idx) {
                 var branchName = (d.branch && d.branch.name) ? d.branch.name : '';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(d.name || '') + '</span><div class="meta">' + escapeHtml(d.description || '') + (branchName ? ' ⬢ ' + escapeHtml(branchName) : '') + '</div></div></div>';
+                var color = (d.color || '#10b981').replace(/^#?/, '#');
+                var kw = (d.keywords || '').trim();
+                var meta = [d.description, branchName].filter(Boolean).join(' · ');
+                var inactive = d.isActive === false;
+                var defBadge = d.isDefault ? '<span class="dept-badge" style="font-size:0.75rem; background:var(--accent-soft); color:var(--accent); padding:2px 8px; border-radius:4px; margin-right:6px;">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';
+                var editBtn = canEdit ? '<button type="button" class="btn-secondary" style="margin:0; padding:6px 12px;" onclick="editDepartment(' + idx + ')">' + t('edit') + '</button>' : '';
+                return '<div class="list-item dept-item' + (inactive ? ' dept-inactive' : '') + '" data-id="' + d.id + '"><div style="display:flex; align-items:center; gap:8px;"><span class="dept-color-dot" style="width:12px; height:12px; border-radius:50%; background:' + color + '; flex-shrink:0;"></span><div><span class="name">' + defBadge + escapeHtml(d.name || '') + '</span><div class="meta">' + (meta ? escapeHtml(meta) : '') + (kw ? (meta ? ' · ' : '') + '<span style="color:var(--text-muted);">' + escapeHtml(kw) + '</span>' : '') + '</div></div></div>' + editBtn + '</div>';
             }).join('');
         }
 

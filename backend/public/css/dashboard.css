@@ -364,6 +364,10 @@
         .list-item .badge.urgent { background: var(--danger-soft); color: var(--danger); }
         .list-item .badge.high { background: rgba(245, 158, 11, 0.2); color: #f59e0b; }
         .list-item .badge.unread { background: var(--accent-soft); color: var(--accent); margin-right: 6px; }
+        .dept-list .list-item { cursor: default; }
+        .dept-list .list-item.dept-inactive { opacity: 0.7; }
+        .dept-list .list-item.dept-inactive .name { color: var(--text-muted); }
+        .dept-form-box .dept-form-row label.dept-check-wrap { margin-top: 0; }
         .empty { text-align: center; color: var(--text-muted); padding: 48px 24px; font-size: 0.95rem; }
         .empty .empty-icon { font-size: 3rem; margin-bottom: 16px; opacity: 0.5; }
         .form-box { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px; max-width: 520px; width: 100%; box-sizing: border-box; overflow-wrap: break-word; }
