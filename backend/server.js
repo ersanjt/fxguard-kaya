@@ -207,6 +207,7 @@ function normalizePhone(val) {
 
 async function processIncomingMessage(messageData) {
     try {
+        if (messageData.isStatus) return;
         const { body, contact, from, timestamp, hasMedia, media } = messageData;
         const rawPhone = (contact && contact.number != null) ? contact.number : from;
         if (rawPhone == null || rawPhone === '') return;

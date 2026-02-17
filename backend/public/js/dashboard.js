@@ -864,6 +864,15 @@
                         var active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
                     });
+                    socket.on('new_message', function(data) {
+                        var active = document.querySelector('.nav-link.active');
+                        var onConv = active && active.getAttribute('data-page') === 'conversations';
+                        var convId = data.conversationId || (data.conversation && data.conversation.id);
+                        var viewingConv = onConv && currentConvId === convId;
+                        if (onConv) { loadConversations(); updateNavBadges(); }
+                        if (viewingConv && convId) loadMessages(convId);
+                        else if (data.customer && !viewingConv) toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + (data.customer.name || data.customer.phone || ''), false);
+                    });
                     socket.on('user_login', function() {
                         var active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
@@ -3129,18 +3138,21 @@
         }
 
         var qrRefreshInterval = null;
-        async function loadWhatsappStatus() {
+        var isWhatsappPolling = false;
+        async function loadWhatsappStatus(isInitial) {
             var st = document.getElementById('gatewayStatus');
             var qrBox = document.getElementById('qrBox');
             var qrImg = document.getElementById('qrImg');
             var btn = document.getElementById('btnStartGateway');
             var btnStartClient = document.getElementById('btnStartWhatsApp');
             if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
-            st.className = 'empty';
-            st.innerHTML = t('whatsapp_checking');
-            if (btn) btn.style.display = 'none';
-            if (btnStartClient) btnStartClient.style.display = 'none';
-            qrBox.style.display = 'none';
+            if (isInitial !== false) {
+                st.className = 'empty';
+                st.innerHTML = t('whatsapp_checking');
+                if (btn) btn.style.display = 'none';
+                if (btnStartClient) btnStartClient.style.display = 'none';
+                qrBox.style.display = 'none';
+            }
             var ping = await apiFetch('/api/ping', { auth: false });
             if (ping.needLogin || (ping.data && !ping.data.ok)) {
                 st.className = 'empty';
@@ -3160,6 +3172,8 @@
             var statusText = t('whatsapp_status') + ' ' + (data && data.whatsapp ? t('whatsapp_connected') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected'))) + ' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'));
             st.textContent = statusText;
             if (data && data.whatsapp) {
+                if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
+                isWhatsappPolling = false;
                 qrBox.style.display = 'none';
                 loadWhatsappDeptRouting();
                 loadWhatsappUnassigned();
@@ -3172,7 +3186,8 @@
             if (qrData && qrData.qr) {
                 qrImg.src = qrData.qr;
                 qrBox.style.display = 'block';
-                qrRefreshInterval = setInterval(loadWhatsappStatus, 5000);
+                isWhatsappPolling = true;
+                qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, 15000);
             } else {
                 qrBox.style.display = 'none';
                 if (btnStartClient) { btnStartClient.style.display = 'inline-block'; btnStartClient.textContent = t('whatsapp_start_client_btn'); }
