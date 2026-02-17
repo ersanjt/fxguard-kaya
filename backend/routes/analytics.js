@@ -7,13 +7,10 @@ const { isMainAdmin } = require('../lib/permissions');
 
 function conversationWhere(req) {
     if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role) !== -1) return {};
-    const where = {};
-    if (req.user.branchId) {
-        where[Op.or] = [{ branchId: req.user.branchId }, { assignedTo: req.userId }, { branchId: null, assignedTo: null }];
-    } else {
-        where[Op.or] = [{ assignedTo: req.userId }, { assignedTo: null }];
-    }
-    return where;
+    const orConditions = [{ assignedTo: req.userId }];
+    if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
+    if (req.user.branchId) orConditions.push({ branchId: req.user.branchId });
+    return { [Op.or]: orConditions };
 }
 
 router.get('/dashboard', async (req, res) => {

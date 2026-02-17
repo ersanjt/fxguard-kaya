@@ -12,6 +12,7 @@ async function getAccessibleCustomerIds(req) {
     if (isMainAdmin(req.user)) return null;
     if (req.user.role === 'owner' || req.user.role === 'admin' || req.user.role === 'manager') return null;
     const convWhere = { [Op.or]: [{ assignedTo: req.userId }] };
+    if (req.user.departmentId) convWhere[Op.or].push({ departmentId: req.user.departmentId });
     if (req.user.branchId) convWhere[Op.or].push({ branchId: req.user.branchId });
     const convs = await Conversation.findAll({ where: convWhere, attributes: ['customerId'], raw: true });
     const fromConvs = [...new Set(convs.map((c) => c.customerId).filter(Boolean))];

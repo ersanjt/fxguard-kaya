@@ -7,15 +7,15 @@ const { logActivity } = require('../services/activityLog');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
 
-/** آیا کاربر جاری به این مکالمه دسترسی دارد؟ (نقش، شعبه/تخصیص، مشارکت قبلی، یا دسترسی به مشتری) */
+/** آیا کاربر جاری به این مکالمه دسترسی دارد؟ (نقش، تخصیص، دپارتمان، شعبه، مشارکت قبلی) */
 async function canAccessConversation(req, conversation, accessibleCustomerIds) {
     if (!conversation) return false;
     if (isMainAdmin(req.user)) return true;
     const role = req.user.role;
     if (role === 'owner' || role === 'admin' || role === 'manager') return true;
     if (conversation.assignedTo === req.userId) return true;
+    if (req.user.departmentId && conversation.departmentId === req.user.departmentId) return true;
     if (req.user.branchId && conversation.branchId === req.user.branchId) return true;
-    if (!conversation.branchId && !conversation.assignedTo) return true;
     if (accessibleCustomerIds && conversation.customerId && accessibleCustomerIds.includes(conversation.customerId)) return true;
     const participated = await Message.findOne({ where: { conversationId: conversation.id, userId: req.userId }, attributes: ['id'] });
     if (participated) return true;
@@ -99,12 +99,12 @@ router.get('/', async (req, res) => {
             ]);
         }
 
+        // کارمند/ناظر فقط مکالمات تخصیص‌یافته به خود یا دپارتمانش را می‌بیند (نه همه بدون تخصیص)
         if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.role !== 'manager') {
-            if (req.user.branchId) {
-                where[Op.or] = [{ branchId: req.user.branchId }, { assignedTo: req.userId }, { branchId: null, assignedTo: null }];
-            } else {
-                where[Op.or] = [{ assignedTo: req.userId }, { assignedTo: null }];
-            }
+            const orConditions = [{ assignedTo: req.userId }];
+            if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
+            if (req.user.branchId) orConditions.push({ branchId: req.user.branchId });
+            where[Op.or] = orConditions;
         }
 
         const include = [
