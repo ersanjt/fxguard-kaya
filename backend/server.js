@@ -104,12 +104,16 @@ async function connectRabbitMQ() {
         
         logger.info('✅ Connected to RabbitMQ');
         
-        // مصرف پیام‌های دریافتی از WhatsApp Gateway
+        // مصرف پیام‌های دریافتی از WhatsApp Gateway — nack در صورت خطا تا پیام دوباره در صف قرار گیرد
         rabbitChannel.consume('whatsapp_messages', async (msg) => {
-            if (msg) {
+            if (!msg) return;
+            try {
                 const messageData = JSON.parse(msg.content.toString());
                 await processIncomingMessage(messageData);
                 rabbitChannel.ack(msg);
+            } catch (err) {
+                logger.error('processIncomingMessage failed, message requeued', { error: err?.message });
+                rabbitChannel.nack(msg, false, true);
             }
         });
         

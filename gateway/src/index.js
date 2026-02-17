@@ -101,8 +101,9 @@ let qrCodeData = null;
 let lastQrImageDataUrl = null;
 
 function buildClient() {
+  const sessionPath = process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth');
   const c = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({ dataPath: sessionPath }),
     puppeteer: {
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
@@ -221,16 +222,13 @@ function attachClientEvents(c) {
         }
       }
 
-      // Send to backend
+      // Send to backend (persistent: RabbitMQ keeps message if backend down)
       if (rabbitChannel) {
         rabbitChannel.sendToQueue(INCOMING_QUEUE, Buffer.from(JSON.stringify(messageData)), {
           persistent: true,
         });
       } else {
-        const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
-        axios
-          .post(`${backendUrl}/api/webhook/incoming-message`, messageData, { timeout: 10000 })
-          .catch((err) => logger.error('Backend webhook error', { error: err?.message }));
+        await sendToBackendWithRetry(messageData);
       }
 
       // realtime dashboard
@@ -260,6 +258,23 @@ async function ensureDir(dir) {
   try {
     await fs.mkdir(dir, { recursive: true });
   } catch (_) {}
+}
+
+async function sendToBackendWithRetry(messageData, maxRetries = 3) {
+  const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const res = await axios.post(`${backendUrl}/api/webhook/incoming-message`, messageData, {
+        timeout: 15000,
+        validateStatus: () => true,
+      });
+      if (res.status >= 200 && res.status < 300) return;
+    } catch (err) {
+      logger.warn('Backend webhook attempt failed', { attempt: i + 1, error: err?.message });
+    }
+    if (i < maxRetries - 1) await sleep(2000 * (i + 1));
+  }
+  logger.error('Backend webhook failed after retries – message may be lost', { from: messageData?.from });
 }
 
 function sleep(ms) {

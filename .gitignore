@@ -15,6 +15,9 @@ gateway/node_modules/
 *.sqlite
 backend/database.sqlite
 
+# backups
+backups/
+
 # uploads/runtime data
 backend/uploads/
 gateway/uploads/
