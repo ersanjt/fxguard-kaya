@@ -1801,11 +1801,15 @@
         }
         function scrollChatToEnd(el) {
             if (!el) return;
-            el.scrollTop = el.scrollHeight;
-            requestAnimationFrame(function() {
+            function doScroll() {
                 el.scrollTop = el.scrollHeight;
-                setTimeout(function() { el.scrollTop = el.scrollHeight; }, 50);
-            });
+                var last = el.lastElementChild;
+                if (last && last.scrollIntoView) last.scrollIntoView({ block: 'end' });
+            }
+            doScroll();
+            requestAnimationFrame(doScroll);
+            setTimeout(doScroll, 50);
+            setTimeout(doScroll, 200);
         }
         async function loadConvStats(convId, el) {
             if (!el) return;
@@ -2087,7 +2091,9 @@
             document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
             var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices' };
-            if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = 'block'; el.classList.add('show'); } }
+            if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations') ? 'flex' : 'block'; el.classList.add('show'); } }
+            var content = document.querySelector('.content');
+            if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
             if (page === 'dashboard') loadDashboard();
             if (page === 'conversations') { loadConvFiltersInit(); loadConversations(); }
             if (page === 'customers') loadCustomers();
