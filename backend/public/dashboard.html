@@ -138,22 +138,42 @@
                 </div>
                 <div id="pageConversations" class="page">
                     <div class="conv-page-header">
-                        <h2 data-i18n="page_conversations">مکالمات</h2>
+                        <div>
+                            <h2 data-i18n="page_conversations">مکالمات</h2>
+                            <p class="conv-page-desc" data-i18n="conv_page_desc">مدیریت مکالمات با مشتریان، پاسخ‌دهی و تخصیص به دپارتمان‌ها.</p>
+                        </div>
                         <button type="button" class="btn-primary" onclick="openNewConvModal()" data-i18n="conv_new">مکالمه جدید</button>
                     </div>
                     <div id="convStats" class="conv-stats" style="display:none;"></div>
-                    <div class="conv-filters">
-                        <input type="text" id="convSearch" data-i18n-ph="header_search" placeholder="جستجو نام یا شماره مشتری..." class="conv-filter-input" onkeypress="if(event.key==='Enter')applyConvFilters()">
-                        <select id="convFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
-                        <select id="convFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
-                        <select id="convFilterBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
-                        <select id="convFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
-                        <select id="convFilterAssignee"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
-                        <label class="conv-filter-check"><input type="checkbox" id="convFilterUnread"> <span data-i18n="filter_unread">فقط خوانده‌نشده</span></label>
-                        <button type="button" class="btn-secondary" onclick="applyConvFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
+                    <div class="conv-quick-tabs" role="tablist">
+                        <button type="button" class="conv-tab active" data-tab="all" onclick="setConvQuickTab('all')" data-i18n="filter_all">همه</button>
+                        <button type="button" class="conv-tab" data-tab="unread" onclick="setConvQuickTab('unread')" data-i18n="filter_unread">خوانده‌نشده</button>
+                        <button type="button" class="conv-tab" data-tab="open" onclick="setConvQuickTab('open')" data-i18n="filter_open">باز</button>
+                        <button type="button" class="conv-tab" data-tab="mine" onclick="setConvQuickTab('mine')" data-i18n="conv_tab_mine">مشخص‌شده به من</button>
+                    </div>
+                    <div class="conv-toolbar">
+                        <div class="conv-search-wrap">
+                            <span class="conv-search-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+                            <input type="text" id="convSearch" data-i18n-ph="conv_search_ph" placeholder="جستجو نام یا شماره مشتری..." class="conv-filter-input" onkeypress="if(event.key==='Enter')applyConvFilters()">
+                        </div>
+                        <button type="button" class="btn-filter-toggle" id="convFilterToggle" onclick="toggleConvAdvancedFilters()" aria-expanded="false" data-i18n="more_filters">فیلترهای بیشتر</button>
+                        <div class="conv-advanced-filters" id="convAdvancedFilters">
+                            <select id="convFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
+                            <select id="convFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                            <select id="convFilterBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                            <select id="convFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
+                            <select id="convFilterAssignee"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
+                            <button type="button" class="btn-secondary btn-sm" onclick="applyConvFilters()" data-i18n="apply_filter">اعمال</button>
+                        </div>
                     </div>
                     <div class="conv-layout">
-                        <div id="convList" class="conv-list-pane"></div>
+                        <div class="conv-list-wrap">
+                            <div class="conv-list-header">
+                                <span class="conv-list-title" data-i18n="conv_list_title">مکالمات</span>
+                                <span class="conv-list-count" id="convListCount"></span>
+                            </div>
+                            <div id="convList" class="conv-list-pane"></div>
+                        </div>
                         <div id="chatArea" class="chat-area">
                         <div class="chat-header-wrap">
                             <button type="button" class="chat-back-btn" onclick="closeChatMobile()" aria-label="بازگشت به لیست" data-i18n-title="back_to_list" title="بازگشت به لیست" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>

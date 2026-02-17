@@ -439,6 +439,9 @@
                     no_data: 'No data.', loading_err: 'Error loading.', select_user: 'Select user',
                     empty_conv_list: 'No conversations. Click "New conversation".', chat: 'Chat', empty_internal_msgs: 'No messages yet.', file: 'File',
                     conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me',
+                    conv_page_desc: 'Manage customer conversations, respond and assign to departments.',
+                    conv_search_ph: 'Search name or phone...', conv_list_title: 'Conversations', more_filters: 'More filters',
+                    filter_all: 'All', filter_unread: 'Unread', filter_open: 'Open', conv_tab_mine: 'Assigned to me',
                     empty_no_logins: 'No logins recorded yet.', no_staff_online: 'No staff online.', login_err_load: 'Error loading logins.',
                     required_name_email_pass: 'Name, email and password are required', select_user_first: 'Please select a user', select_conversation_first: 'Please select a conversation',
                     enter_text_or_file: 'Enter text or attach a file', manage_users_required: 'User management access required',
@@ -1516,6 +1519,17 @@
             } catch (e) { banner.style.display = 'none'; }
         }
 
+        var convQuickTab = 'all';
+        function setConvQuickTab(tab) {
+            convQuickTab = tab || 'all';
+            document.querySelectorAll('.conv-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === convQuickTab); });
+            applyConvFilters();
+        }
+        function toggleConvAdvancedFilters() {
+            var el = document.getElementById('convAdvancedFilters');
+            var btn = document.getElementById('convFilterToggle');
+            if (el && btn) { el.classList.toggle('show'); btn.setAttribute('aria-expanded', el.classList.contains('show')); }
+        }
         async function loadConvFiltersInit() {
             await loadConvAssignees();
             loadBranchesForSelect(['convFilterBranch']);
@@ -1538,18 +1552,19 @@
             var branchEl = document.getElementById('convFilterBranch');
             var deptEl = document.getElementById('convFilterDept');
             var assigneeEl = document.getElementById('convFilterAssignee');
-            var unreadEl = document.getElementById('convFilterUnread');
             var searchEl = document.getElementById('convSearch');
-            if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value);
+            if (convQuickTab === 'unread') q += '&unread=true';
+            else if (convQuickTab === 'open') q += '&status=open';
+            else if (convQuickTab === 'mine' && currentUser && currentUser.id) q += '&assignedTo=' + encodeURIComponent(currentUser.id);
+            if (convQuickTab === 'all' || convQuickTab === 'unread') { if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value); }
             if (priorityEl && priorityEl.value) q += '&priority=' + encodeURIComponent(priorityEl.value);
             if (branchEl && branchEl.value) q += '&branchId=' + encodeURIComponent(branchEl.value);
             if (deptEl && deptEl.value) q += '&departmentId=' + encodeURIComponent(deptEl.value);
-            if (assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
-            if (unreadEl && unreadEl.checked) q += '&unread=true';
+            if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'open') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
             var res = await apiFetch('/api/conversations' + q);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + (res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
+            if (!res.ok) { var ce = document.getElementById('convListCount'); if (ce) ce.textContent = ''; list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + (res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
             var data = res.data;
             if (statsEl && data.total != null) {
                 var open = (data.data || []).filter(function(c){ return c.status === 'open'; }).length;
@@ -1557,6 +1572,9 @@
                 statsEl.innerHTML = '<span class="conv-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</span><span class="conv-stat"><strong>' + open + '</strong> ' + (LANG === 'fa' ? 'باز' : 'open') + '</span><span class="conv-stat"><strong>' + unread + '</strong> ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread') + '</span>';
                 statsEl.style.display = 'flex';
             }
+            var countEl = document.getElementById('convListCount');
+            var totalCount = data.total != null ? data.total : (data.data || []).length;
+            if (countEl) countEl.textContent = totalCount > 0 ? '(' + totalCount + ')' : '';
             if (!data.data || data.data.length === 0) {
                 list.innerHTML = '<div class="empty conv-empty"><span class="empty-icon">💬</span><p>' + t('empty_conv') + '</p><button type="button" class="btn-primary" onclick="openNewConvModal()">' + (t('conv_new') || (LANG === 'fa' ? 'مکالمه جدید' : 'New conversation')) + '</button></div>';
                 return;
@@ -1575,7 +1593,8 @@
                 var unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
                 var preview = (c.lastMessagePreview || '').trim();
                 var timeStr = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'time') : '';
-                return '<div class="conv-list-item" data-id="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\')"><div class="conv-item-avatar">' + initial + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(phone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + priorityBadge + statusBadge + '</div></div>';
+                var activeClass = (c.id === currentConvId) ? ' active' : '';
+                return '<div class="conv-list-item' + activeClass + '" data-id="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\')"><div class="conv-item-avatar">' + initial + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(phone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + priorityBadge + statusBadge + '</div></div>';
             }).join('');
         }
 
