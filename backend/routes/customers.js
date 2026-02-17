@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Customer, Conversation, Message, CustomerNote, User, ActivityLog } = require('../models');
+const { Customer, Conversation, Message, CustomerNote, User, ActivityLog, Department } = require('../models');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
 
@@ -11,7 +11,7 @@ router.get('/', async (req, res) => {
         const customerIds = await getAccessibleCustomerIds(req);
         const where = {};
         if (customerIds && customerIds.length === 0) {
-            return res.json({ data: [], total: 0, page: parseInt(page) });
+            return res.json({ data: [], total: 0, page: parseInt(page), stats: { total: 0, active: 0, inactive: 0, blocked: 0 } });
         }
         if (customerIds) where.id = { [Op.in]: customerIds };
         if (status && ['active', 'inactive', 'blocked'].includes(status)) where.status = status;
@@ -23,13 +23,49 @@ router.get('/', async (req, res) => {
                 { email: { [Op.like]: term } }
             ];
         }
-        const { rows, count } = await Customer.findAndCountAll({
-            where,
-            order: [['lastContactAt', 'DESC']],
-            limit: Math.min(parseInt(limit) || 100, 200),
-            offset: (Math.max(1, parseInt(page)) - 1) * (parseInt(limit) || 100)
+        const statsWhere = customerIds ? { id: { [Op.in]: customerIds } } : {};
+        const [stats, { rows, count }] = await Promise.all([
+            !search ? Customer.findAll({
+                where: statsWhere,
+                attributes: ['status'],
+                raw: true
+            }).then(all => ({
+                total: all.length,
+                active: all.filter(c => c.status === 'active').length,
+                inactive: all.filter(c => c.status === 'inactive').length,
+                blocked: all.filter(c => c.status === 'blocked').length
+            })) : Promise.resolve(null),
+            Customer.findAndCountAll({
+                where,
+                order: [['lastContactAt', 'DESC']],
+                limit: Math.min(parseInt(limit) || 100, 200),
+                offset: (Math.max(1, parseInt(page)) - 1) * (parseInt(limit) || 100)
+            })
+        ]);
+        const custIds = rows.map(r => r.id);
+        const latestConvs = custIds.length > 0 ? await Conversation.findAll({
+            where: { customerId: { [Op.in]: custIds }, status: { [Op.ne]: 'closed' } },
+            include: [
+                { model: User, as: 'assignee', attributes: ['id', 'name'] },
+                { model: Department, as: 'department', attributes: ['id', 'name'], required: false }
+            ],
+            order: [['lastMessageAt', 'DESC']],
+            raw: false
+        }).then(convs => {
+            const byCust = {};
+            convs.forEach(c => { if (!byCust[c.customerId]) byCust[c.customerId] = c; });
+            return byCust;
+        }) : {};
+        const enriched = rows.map(c => {
+            const plain = c.get ? c.get({ plain: true }) : c;
+            const cid = plain.id;
+            const lc = latestConvs[cid];
+            return {
+                ...plain,
+                lastOpenConv: lc ? { id: lc.id, assignee: lc.assignee ? lc.assignee.get ? lc.assignee.get({ plain: true }) : lc.assignee : null, department: lc.department ? (lc.department.get ? lc.department.get({ plain: true }) : lc.department) : null, status: lc.status } : null
+            };
         });
-        res.json({ data: rows, total: count, page: parseInt(page) });
+        res.json({ data: enriched, total: count, page: parseInt(page), stats: stats || null });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -544,6 +544,21 @@
         }
 
         function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
+        function timeAgo(d) {
+            if (!d) return '';
+            var date = d instanceof Date ? d : new Date(d);
+            if (isNaN(date.getTime())) return '';
+            var now = new Date();
+            var sec = Math.floor((now - date) / 1000);
+            if (sec < 60) return (LANG === 'fa' ? 'همین الان' : 'Just now');
+            var min = Math.floor(sec / 60);
+            if (min < 60) return min + ' ' + (LANG === 'fa' ? 'دقیقه پیش' : 'min ago');
+            var hr = Math.floor(min / 60);
+            if (hr < 24) return hr + ' ' + (LANG === 'fa' ? 'ساعت پیش' : 'hr ago');
+            var day = Math.floor(hr / 24);
+            if (day < 7) return day + ' ' + (LANG === 'fa' ? 'روز پیش' : 'days ago');
+            return fmtTZ(d, 'date');
+        }
         function fmtTZ(d, opts) {
             if (!d) return '';
             var date = d instanceof Date ? d : new Date(d);
@@ -1826,6 +1841,8 @@
 
         async function loadCustomers() {
             var list = document.getElementById('customerList');
+            var statsEl = document.getElementById('customerStats');
+            var countEl = document.getElementById('customerListCount');
             setLoading('customerList', 5);
             var q = '?limit=200';
             var searchEl = document.getElementById('customerSearch');
@@ -1834,16 +1851,29 @@
             if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value);
             var res = await apiFetch('/api/customers' + q);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty"><span class="empty-icon">�a�️</span><br>' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty"><span class="empty-icon">&#128101;</span><br>' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x�</span><br>' + t('empty_customers') + '</div>'; return; }
+            if (statsEl && data.stats) { statsEl.style.display = 'flex'; statsEl.innerHTML = '<span class="customer-stat"><strong>' + data.stats.total + '</strong> ' + (LANG === 'fa' ? 'مشتری' : 'customers') + '</span><span class="customer-stat"><strong>' + data.stats.active + '</strong> ' + (LANG === 'fa' ? 'فعال' : 'active') + '</span><span class="customer-stat"><strong>' + data.stats.inactive + '</strong> ' + (LANG === 'fa' ? 'غیرفعال' : 'inactive') + '</span><span class="customer-stat"><strong>' + data.stats.blocked + '</strong> ' + (LANG === 'fa' ? 'مسدود' : 'blocked') + '</span>'; }
+            if (countEl) countEl.textContent = (data.total || 0) + ' ' + (LANG === 'fa' ? 'مشتری' : '');
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">&#128100;</span><br>' + t('empty_customers') + '</div>'; return; }
             list.innerHTML = data.data.map(function(c) {
                 var initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
                 var statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
                 var statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
-                var lastContact = c.lastContactAt ? fmtTZ(c.lastContactAt, 'date') : '—';
-                return '<div class="list-item" onclick="showCustomerHistory(\'' + c.id + '\', \'' + (c.name || c.phone || '').replace(/'/g, "\\'") + '\')"><div class="list-item-avatar">' + initial + '</div><div><span class="name">' + escapeHtml(c.name || c.phone) + '</span><div class="meta">' + escapeHtml(c.phone || '') + (c.email ? ' ⬢ ' + escapeHtml(c.email) : '') + '</div><div class="meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div>';
+                var lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
+                var loc = c.lastOpenConv;
+                var assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
+                var safeName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                return '<div class="customer-card" onclick="showCustomerHistory(\'' + c.id + '\', \'' + safeName + '\')"><div class="customer-card-main"><div class="customer-card-avatar">' + initial + '</div><div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" onclick="event.stopPropagation();startCustomerChat(\'' + c.id + '\', \'' + safeName + '\', \'' + (c.phone || '').replace(/'/g, "\\'") + '\')" data-i18n="btn_send">ارسال</button></div>';
             }).join('');
+        }
+        async function startCustomerChat(customerId, name, phone) {
+            var res = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customerId }) });
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            var conv = res.data;
+            showPage('conversations');
+            setTimeout(function() { openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone || ''); loadConversations(); }, 100);
         }
 
         function applyCustomerFilters() { loadCustomers(); }

@@ -211,9 +211,14 @@
                             <h2 data-i18n="page_customers_club">باشگاه مشتریان</h2>
                             <p class="customer-page-desc" data-i18n="customers_club_intro">مدیریت مشتریان، تاریخچه مکالمات، گزارش‌ها و فعالیت‌های انجام‌شده برای هر مشتری.</p>
                         </div>
+                        <button type="button" class="btn-primary" onclick="openCustomerModal()" data-i18n="customer_add">افزودن مشتری</button>
                     </div>
+                    <div id="customerStats" class="customer-stats" style="display:none;"></div>
                     <div class="customer-toolbar">
-                        <input type="text" id="customerSearch" class="customer-search" data-i18n-ph="customer_search_ph" placeholder="جستجو نام، تلفن یا ایمیل..." onkeypress="if(event.key==='Enter')applyCustomerFilters()">
+                        <div class="customer-search-wrap">
+                            <span class="customer-search-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+                            <input type="text" id="customerSearch" class="customer-search conv-filter-input" data-i18n-ph="customer_search_ph" placeholder="جستجو نام، تلفن یا ایمیل..." onkeypress="if(event.key==='Enter')applyCustomerFilters()" oninput="var v=this.value;clearTimeout(window._custSearchT);window._custSearchT=setTimeout(function(){applyCustomerFilters();},400);">
+                        </div>
                         <select id="customerFilterStatus">
                             <option value="" data-i18n="filter_all">همه</option>
                             <option value="active" data-i18n="status_active">فعال</option>
@@ -221,9 +226,12 @@
                             <option value="blocked" data-i18n="status_blocked">مسدود</option>
                         </select>
                         <button type="button" class="btn-secondary" onclick="applyCustomerFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
-                        <button type="button" class="btn-primary" onclick="openCustomerModal()" data-i18n="customer_add">افزودن مشتری</button>
                     </div>
-                    <div id="customerList"></div>
+                    <div class="customer-list-header">
+                        <span class="customer-list-title" data-i18n="conv_list_title">مشتریان</span>
+                        <span class="customer-list-count" id="customerListCount"></span>
+                    </div>
+                    <div id="customerList" class="customer-list-grid"></div>
                 </div>
                 <div id="pageDepartments" class="page">
                     <h2 data-i18n="page_departments">دپارتمان‌ها</h2>
