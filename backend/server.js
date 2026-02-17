@@ -1,4 +1,4 @@
-const MAIN_ADMIN_EMAIL = 'admin@kaya.local';
+const MAIN_ADMIN_EMAIL = process.env.MAIN_ADMIN_EMAIL || 'admin@kaya.local';
 const express = require('express');
 const path = require('path');
 const http = require('http');
@@ -34,6 +34,7 @@ const mongoose = require('mongoose');
 
 // ==================== Express Setup ====================
 const app = express();
+app.set("trust proxy", 1);
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
@@ -61,7 +62,10 @@ const limiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false
 });
-app.use('/api/', limiter);
+app.use('/api/', (req, res, next) => {
+  if (req.path === '/auth/login') return next();
+  return limiter(req, res, next);
+});
 
 // ==================== Logger ====================
 const logger = winston.createLogger({
