@@ -1599,6 +1599,14 @@
         }
 
         var currentConvDetail = null;
+        function toggleChatDetailBar() {
+            var bar = document.getElementById('convDetailBar');
+            var btn = document.getElementById('chatDetailToggle');
+            if (bar && btn) {
+                bar.classList.toggle('collapsed');
+                btn.classList.toggle('active', !bar.classList.contains('collapsed'));
+            }
+        }
         function closeChatMobile() {
             var chatArea = document.getElementById('chatArea');
             var layout = chatArea && chatArea.closest('.conv-layout');
@@ -1643,6 +1651,9 @@
                 var prioT = LANG === 'fa' ? { low: 'کم', normal: 'عادی', high: 'مهم', urgent: 'فوری' } : { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
                 metaEl.textContent = (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + (statusT[d.status] || d.status) + ' | ' + (LANG === 'fa' ? 'اولویت: ' : 'Priority: ') + (prioT[d.priority] || d.priority) + ' | ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + assigneeName + (deptName ? ' | ' + deptName : '');
                 barEl.style.display = 'block';
+                barEl.classList.remove('collapsed');
+                var toggleBtn = document.getElementById('chatDetailToggle');
+                if (toggleBtn) { toggleBtn.style.display = 'flex'; toggleBtn.classList.add('active'); }
                 var canManage = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager'));
                 var isAssignedToMe = d.assignedTo === (currentUser && currentUser.id);
                 if (actionsEl) {
