@@ -1247,16 +1247,16 @@
             var r = await fetch(API + url, { ...opt, headers: { ...h, ...opt.headers }, body: opt.body });
             var text = await r.text();
             if ((text || '').trim().startsWith('<')) {
-                if (token) { token = null; localStorage.removeItem('crm_token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show'); }
+                if (token) { token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show'); }
                 return { ok: false, needLogin: true, error: 'سر��ر ب�! جا�R JSON پاسخ داد. از پ��ش�! backend دست��ر node server.js را اجرا ک� �Rد.' };
             }
             var data;
             try { data = JSON.parse(text); } catch (_) {
-                if (token) { token = null; localStorage.removeItem('crm_token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show'); }
+                if (token) { token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show'); }
                 return { ok: false, needLogin: true, error: 'پاسخ سر��ر � ا�&عتبر است' };
             }
             if (r.status === 401) {
-                token = null; localStorage.removeItem('crm_token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
+                token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
                 return { ok: false, needLogin: true, error: data.error || '�طفا�9 د��بار�! ��ارد ش���Rد' };
             }
             return { ok: r.ok, status: r.status, data: data };
@@ -1540,6 +1540,7 @@
             token = null;
             currentUser = null;
             localStorage.removeItem('crm_token');
+            document.documentElement.classList.remove('auth-has-token');
             document.getElementById('loginBox').style.display = 'flex';
             document.getElementById('app').classList.remove('show');
         }
