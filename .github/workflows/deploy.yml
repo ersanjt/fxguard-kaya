@@ -16,16 +16,16 @@ jobs:
           host: 92.205.58.83
           username: fxguard
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-  set -e
+          sscript: |
+             set -e
+ 
+             cd /var/www/kayaCRM
 
-  cd /var/www/kayaCRM
+             git fetch origin
+             git reset --hard origin/master
+ 
+             cd backend
+             npm ci --only=production
 
-  git fetch origin
-  git reset --hard origin/master
-
-  cd backend
-  npm ci --only=production
-
-  pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js --update-env
-  pm2 save
+             pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js --update-env
+             pm2 save
