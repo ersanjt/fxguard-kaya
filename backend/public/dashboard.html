@@ -260,7 +260,7 @@
                         <div class="user-search-wrap" style="flex:1; min-width:200px;">
                             <input type="text" id="userSearchInput" class="conv-filter-input" placeholder="" data-i18n-ph="user_search_ph" style="margin:0;">
                         </div>
-                        <select id="userFilterRole" style="padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); font-size:0.9rem;">
+                        <select id="userFilterRole" style="padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); font-size:0.9rem; display:none;">
                             <option value="" data-i18n="all_roles">همه نقش‌ها</option>
                             <option value="owner" data-i18n="role_owner">مالک</option>
                             <option value="admin" data-i18n="role_admin">ادمین</option>
@@ -268,6 +268,14 @@
                             <option value="supervisor" data-i18n="role_supervisor">ناظر</option>
                             <option value="agent" data-i18n="role_agent">کارمند</option>
                         </select>
+                    </div>
+                    <div id="userRolePills" class="user-role-pills">
+                        <span class="pill active" data-role="" data-i18n="all_roles">همه نقش‌ها</span>
+                        <span class="pill" data-role="owner" data-i18n="role_owner">مالک</span>
+                        <span class="pill" data-role="admin" data-i18n="role_admin">ادمین</span>
+                        <span class="pill" data-role="manager" data-i18n="role_manager">مدیر</span>
+                        <span class="pill" data-role="supervisor" data-i18n="role_supervisor">ناظر</span>
+                        <span class="pill" data-role="agent" data-i18n="role_agent">کارمند</span>
                     </div>
                     <div id="userFormBox" class="form-box user-add-form" style="display:none;">
                         <h3 style="font-size:1rem; margin:0 0 16px;" data-i18n="user_add_title">کاربر جدید</h3>
@@ -280,7 +288,7 @@
                             <div><label data-i18n="label_dept">دپارتمان</label><select id="userDept"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select></div>
                             <div><label data-i18n="label_branch">شعبه</label><select id="userBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select></div>
                         </div>
-                        <div id="userAddPermsBox" style="margin-top:16px; display:none;"><strong data-i18n="modal_user_perms">دسترسی به بخش‌ها:</strong><div id="userAddPerms" style="margin-top:8px; max-height:180px; overflow-y:auto; display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:6px 16px;"></div></div>
+                        <div id="userAddPermsBox" style="display:none;"><strong data-i18n="modal_user_perms">دسترسی به بخش‌ها:</strong><div id="userAddPerms"></div></div>
                         <button type="button" class="btn-primary" onclick="addUser()" style="margin-top:16px;" data-i18n="user_submit">ثبت کاربر</button>
                     </div>
                     <div id="userList" class="user-list"></div>

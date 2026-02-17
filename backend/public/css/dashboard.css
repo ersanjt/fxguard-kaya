@@ -358,19 +358,33 @@
         .user-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px 20px; }
         .user-form-grid label { margin-top: 0; }
         .user-add-form { max-width: 100%; }
-        .user-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-        .user-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; display: flex; align-items: flex-start; gap: 14px; transition: border-color 0.2s, background 0.2s; }
-        .user-card:hover { border-color: var(--accent); background: var(--bg-hover); }
-        .user-card.inactive { opacity: 0.75; }
-        .user-card-avatar { width: 48px; height: 48px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; flex-shrink: 0; overflow: hidden; position: relative; }
+        .user-add-form #userAddPermsBox { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+        .user-add-form #userAddPerms { max-height: 220px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px 20px; padding: 12px 0; }
+        .user-add-form #userAddPerms label { margin: 0; padding: 8px 12px; background: var(--bg-hover); border-radius: var(--radius-sm); border: 1px solid transparent; cursor: pointer; transition: border-color 0.2s, background 0.2s; }
+        .user-add-form #userAddPerms label:hover { border-color: var(--border); }
+        .user-add-form #userAddPerms label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+        .user-add-form #userAddPerms label input { width: auto; margin: 0; margin-inline-start: 8px; vertical-align: middle; }
+        .user-role-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; align-items: center; }
+        .user-role-pills .pill { padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 500; cursor: pointer; background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); transition: all 0.2s; }
+        .user-role-pills .pill:hover { background: var(--border); color: var(--text-primary); }
+        .user-role-pills .pill.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+        .user-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+        .user-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0; display: flex; flex-direction: column; align-items: stretch; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s; overflow: hidden; }
+        .user-card:hover { border-color: var(--accent); background: var(--bg-hover); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        .user-card.inactive { opacity: 0.7; }
+        .user-card-header { padding: 24px 20px 16px; text-align: center; }
+        .user-card-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(16,185,129,0.25) 100%); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.4rem; margin: 0 auto 12px; overflow: hidden; position: relative; flex-shrink: 0; }
         .user-card-avatar .avatar-fallback { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
         .user-card-avatar img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
-        .user-card-body { flex: 1; min-width: 0; }
-        .user-card-name { font-weight: 600; font-size: 1rem; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .user-card-body { flex: 1; padding: 0 20px 16px; min-width: 0; }
+        .user-card-name { font-weight: 600; font-size: 1.05rem; color: var(--text-primary); margin-bottom: 4px; display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
         .user-card-name .status-dot { flex-shrink: 0; }
-        .user-card-meta { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.5; }
-        .user-card-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-        .user-card-actions { flex-shrink: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .user-card-email { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px; word-break: break-all; text-align: center; }
+        .user-card-meta { font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; text-align: center; margin-bottom: 12px; }
+        .user-card-badges { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 16px; }
+        .user-card-badges .badge { font-size: 0.75rem; padding: 4px 10px; }
+        .user-card-actions { padding: 12px 20px; background: rgba(0,0,0,0.15); border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+        .user-card-actions .btn-secondary { margin: 0; padding: 8px 16px; font-size: 0.85rem; }
         .staff-conv-item:hover { background: var(--bg-hover) !important; border-color: var(--accent) !important; }
         .user-edit-tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
         .user-edit-tab { padding: 8px 16px; background: none; border: none; color: var(--text-secondary); font-family: var(--font); cursor: pointer; font-size: 0.9rem; border-radius: var(--radius-sm); }

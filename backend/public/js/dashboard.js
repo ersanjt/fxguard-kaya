@@ -2769,7 +2769,21 @@
             var searchEl = document.getElementById('userSearchInput');
             var roleEl = document.getElementById('userFilterRole');
             if (searchEl) searchEl.oninput = searchEl.onkeyup = function() { filterAndRenderUsers(); };
-            if (roleEl) roleEl.onchange = function() { filterAndRenderUsers(); };
+            if (roleEl) roleEl.onchange = function() {
+                document.querySelectorAll('#userRolePills .pill').forEach(function(x) { x.classList.remove('active'); });
+                var p = document.querySelector('#userRolePills .pill[data-role="' + (roleEl.value || '') + '"]');
+                if (p) p.classList.add('active');
+                filterAndRenderUsers();
+            };
+            document.querySelectorAll('#userRolePills .pill').forEach(function(p) {
+                p.onclick = function() {
+                    document.querySelectorAll('#userRolePills .pill').forEach(function(x) { x.classList.remove('active'); });
+                    this.classList.add('active');
+                    var r = this.getAttribute('data-role') || '';
+                    if (roleEl) roleEl.value = r;
+                    filterAndRenderUsers();
+                };
+            });
         }
         function initUserEditTabs() {
             document.querySelectorAll('.user-edit-tab').forEach(function(btn) {
@@ -2813,11 +2827,9 @@
                 var initial = userInitial(u) || '?';
                 var avatarUrl = (u.avatar && String(u.avatar).trim()) ? ((u.avatar.indexOf('/') === 0 ? (window.location.origin || '') : '') + u.avatar) : '';
                 var avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : initial;
-                var metaParts = [];
-                if (u.email) metaParts.push(escapeHtml(u.email));
-                metaParts.push(roleLabels[u.role] || u.role);
-                if (u.department && u.department.name) metaParts.push(escapeHtml(u.department.name));
-                if (u.branch && u.branch.name) metaParts.push(escapeHtml(u.branch.name));
+                var deptBranch = [];
+                if (u.department && u.department.name) deptBranch.push(escapeHtml(u.department.name));
+                if (u.branch && u.branch.name) deptBranch.push(escapeHtml(u.branch.name));
                 var statusClass = (u.status && ['online', 'away', 'busy'].indexOf(u.status) !== -1) ? u.status : 'offline';
                 var statusLabel = statusLabels[u.status] || statusLabels.offline;
                 var lastLoginStr = u.lastLoginAt ? timeAgo(u.lastLoginAt) : (LANG === 'fa' ? 'هرگز' : 'Never');
@@ -2826,10 +2838,11 @@
                 var roleBadge = '<span class="badge" style="background:var(--accent-soft);color:var(--accent);">' + escapeHtml(roleLabels[u.role] || u.role) + '</span>';
                 var statusBadge = '<span class="status-dot ' + statusClass + '" title="' + escapeHtml(statusLabel) + '"></span>';
                 var btns = [];
-                if (canViewActivity) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openStaffDetailModal(\'' + u.id + '\')" style="margin:0;padding:6px 12px;font-size:0.8rem;">' + t('view_activity') + '</button>');
-                if (canManage) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openUserEdit(\'' + u.id + '\')" style="margin:0;padding:6px 12px;font-size:0.8rem;">' + t('edit_access') + '</button>');
+                if (canViewActivity) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openStaffDetailModal(\'' + u.id + '\')">' + t('view_activity') + '</button>');
+                if (canManage) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openUserEdit(\'' + u.id + '\')">' + t('edit_access') + '</button>');
                 var btn = btns.join(' ');
-                return '<div class="user-card' + inactiveClass + '" onclick="' + (canViewActivity ? 'openStaffDetailModal(\'' + u.id + '\')' : '') + '" style="' + (canViewActivity ? 'cursor:pointer;' : '') + '"><div class="user-card-avatar">' + avatarHtml + '</div><div class="user-card-body"><div class="user-card-name">' + statusBadge + ' ' + escapeHtml(u.name) + ' ' + blockedBadge + '</div><div class="user-card-meta">' + metaParts.join(' · ') + '</div><div class="user-card-meta" style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;">' + (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLoginStr + '</div><div class="user-card-badges">' + roleBadge + '</div></div><div class="user-card-actions" onclick="event.stopPropagation();">' + btn + '</div></div>';
+                var cardClick = canViewActivity ? 'onclick="openStaffDetailModal(\'' + u.id + '\')" style="cursor:pointer;"' : '';
+                return '<div class="user-card' + inactiveClass + '" ' + cardClick + '><div class="user-card-header"><div class="user-card-avatar">' + avatarHtml + '</div><div class="user-card-name">' + statusBadge + ' ' + escapeHtml(u.name) + ' ' + blockedBadge + '</div></div><div class="user-card-body"><div class="user-card-email">' + escapeHtml(u.email || '') + '</div><div class="user-card-meta">' + (deptBranch.length ? deptBranch.join(' · ') : '') + '</div><div class="user-card-meta">' + (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLoginStr + '</div><div class="user-card-badges">' + roleBadge + '</div></div><div class="user-card-actions" onclick="event.stopPropagation();">' + btn + '</div></div>';
             }).join('');
         }
         function toggleUserForm() {
