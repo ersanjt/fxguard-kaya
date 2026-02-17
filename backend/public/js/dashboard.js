@@ -1782,7 +1782,15 @@
                 }
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + senderLabel + '<div>' + escapeHtml(m.content || '') + '</div><div class="time">' + time + '</div></div>';
             }).join('');
+            scrollChatToEnd(el);
+        }
+        function scrollChatToEnd(el) {
+            if (!el) return;
             el.scrollTop = el.scrollHeight;
+            requestAnimationFrame(function() {
+                el.scrollTop = el.scrollHeight;
+                setTimeout(function() { el.scrollTop = el.scrollHeight; }, 50);
+            });
         }
         async function loadConvStats(convId, el) {
             if (!el) return;
