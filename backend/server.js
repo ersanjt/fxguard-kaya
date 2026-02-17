@@ -58,13 +58,13 @@ app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 // Rate Limiting
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 دقیقه
-    max: 300, // حداکثر 300 درخواست در 15 دقیقه
+    max: 1500, // حداکثر ۱۵۰۰ درخواست در ۱۵ دقیقه (~۱۰۰/دقیقه)
     message: { error: 'تعداد درخواست‌ها زیاد است. چند دقیقه صبر کنید.' },
     standardHeaders: true,
     legacyHeaders: false
 });
 app.use('/api/', (req, res, next) => {
-  if (req.path === '/auth/login') return next();
+  if (req.path === '/auth/login' || req.path === '/ping') return next();
   return limiter(req, res, next);
 });
 

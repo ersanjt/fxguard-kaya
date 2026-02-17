@@ -3333,7 +3333,8 @@
                 if (btnStartClient) btnStartClient.style.display = 'none';
                 qrBox.style.display = 'none';
             }
-            var ping = await apiFetch('/api/ping', { auth: false });
+            var ping;
+            try { ping = await apiFetch('/api/ping', { auth: false }); } catch (e) { ping = { needLogin: true }; }
             if (ping.needLogin || (ping.data && !ping.data.ok)) {
                 st.className = 'empty';
                 st.innerHTML = t('whatsapp_server_err');

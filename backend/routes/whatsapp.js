@@ -17,6 +17,15 @@ router.get('/config', async (req, res) => {
             escalationDepartmentId: cfg.escalationDepartmentId || null
         });
     } catch (err) {
+        if (/no such column|SQLITE_ERROR/i.test(err.message)) {
+            return res.json({
+                welcomeMessage: '',
+                welcomeEnabled: true,
+                alertUnansweredAfterMinutes: 5,
+                escalateUnansweredAfterMinutes: 15,
+                escalationDepartmentId: null
+            });
+        }
         res.status(500).json({ error: err.message });
     }
 });
@@ -43,6 +52,9 @@ router.put('/config', async (req, res) => {
             escalationDepartmentId: cfg.escalationDepartmentId
         });
     } catch (err) {
+        if (/no such column|SQLITE_ERROR/i.test(err.message)) {
+            return res.status(500).json({ error: 'لطفاً اسکریپت migration را اجرا کنید: node scripts/add-unanswered-columns.js' });
+        }
         res.status(500).json({ error: err.message });
     }
 });
