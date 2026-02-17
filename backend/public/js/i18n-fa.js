@@ -199,6 +199,7 @@ window.__I18N_FA = {
     ticker_updated: 'آخرین بروزرسانی:',
     ticker_outside_hours: 'بروزرسانی نرخ فقط ۶ تا ۲۰ به وقت تهران — هر ۱۰ دقیقه',
     ticker_last: 'آخرین بروزرسانی:',
+    ticker_current_time: 'ساعت فعلی',
     ticker_iran: 'ایران',
     ticker_turkey: 'ترکیه',
     ticker_uae: 'امارات',

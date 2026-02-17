@@ -396,7 +396,7 @@
                     ticker_loading: 'Loading prices...',
                     ticker_updated: 'Last updated:',
                     ticker_outside_hours: 'Rates update 06:00�20:00 Tehran time � every 10 min',
-                    ticker_last: 'Last updated:',
+                    ticker_last: 'Last updated:', ticker_current_time: 'Current time',
                     dept_branch: 'Branch', dept_name: 'Department name', dept_desc: 'Description', dept_keywords: 'Keywords (comma-separated)', add_dept: 'Add department',
                     dept_ph_name: 'e.g. Technical support', dept_ph_optional: 'Optional', dept_ph_keywords: 'e.g. issue, support',
                     users_intro: 'Only the owner or users with "User management" access can create users and edit permissions.',
@@ -510,6 +510,7 @@
         let currentConvId = null;
         let currentUser = null;
         let ratesInterval = null;
+        let tickerTimeInterval = null;
         let presenceInterval = null;
         let staffActivityInterval = null;
         let socket = null;
@@ -586,21 +587,7 @@
             return (num > 0 ? '+' : '−') + out;
         }
         function formatTickerDateTime(updatedAtStr, timestampSec) {
-            var d;
-            try {
-                if (timestampSec && (timestampSec > 0)) {
-                    d = new Date(parseInt(timestampSec, 10) * 1000);
-                } else if (updatedAtStr) {
-                    var s = String(updatedAtStr).trim();
-                    if (/^\d{10,13}$/.test(s)) d = new Date(parseInt(s, 10) * (s.length <= 10 ? 1000 : 1));
-                    else {
-                        if (s.indexOf(' ') >= 0 && s.indexOf('T') < 0) s = s.replace(' ', 'T');
-                        if (/^\d{4}-\d{2}-\d{2}[T\s]/.test(s) || /^\d{4}-\d{2}-\d{2}$/.test(s)) d = new Date(s);
-                        else d = new Date();
-                    }
-                } else d = new Date();
-            } catch (e) { d = new Date(); }
-            if (isNaN(d.getTime())) d = new Date();
+            var d = new Date();
             var opts = { hour: '2-digit', minute: '2-digit', hour12: false };
             var iran = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Asia/Tehran' })).format(d);
             var turkey = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Europe/Istanbul' })).format(d);
@@ -647,7 +634,7 @@
                 shamsi: shamsi,
                 miladi: miladi,
                 hijri: hijri,
-                label: t('ticker_last') || 'آخرین بروزرسانی',
+                label: t('ticker_current_time') || 'ساعت فعلی',
                 iranLabel: t('ticker_iran') || 'ایران',
                 turkeyLabel: t('ticker_turkey') || 'ترکیه',
                 uaeLabel: t('ticker_uae') || 'امارات'
@@ -685,10 +672,23 @@
             }
         }
 
+        function updateTickerTimeOnly() {
+            var timesEl = document.getElementById('tickerTimes');
+            if (!timesEl || timesEl.style.display === 'none') return;
+            var fmt = formatTickerDateTime();
+            timesEl.innerHTML = '<span class="ticker-dt-label">' + escapeHtml(fmt.label) + '</span>' +
+                '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.iranLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.iran) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.shamsi) + '</span></span>' +
+                '<span class="ticker-sep">·</span>' +
+                '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.turkeyLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.turkey) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.miladi) + '</span></span>' +
+                '<span class="ticker-sep">·</span>' +
+                '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.uaeLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.uae) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.hijri) + '</span></span>';
+        }
         function startRatesInterval() {
             if (ratesInterval) clearInterval(ratesInterval);
+            if (tickerTimeInterval) clearInterval(tickerTimeInterval);
             fetchRates();
             ratesInterval = setInterval(fetchRates, 10 * 60 * 1000);
+            tickerTimeInterval = setInterval(updateTickerTimeOnly, 60 * 1000);
         }
         function rateLabel(key) { return t(key) || key; }
         async function loadRatesAdjustments() {
@@ -1446,6 +1446,7 @@
             }
             if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
             if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
+            if (tickerTimeInterval) { clearInterval(tickerTimeInterval); tickerTimeInterval = null; }
             stopStaffActivityLive();
             stopNavBadgeRefresh();
             disconnectSocket();
