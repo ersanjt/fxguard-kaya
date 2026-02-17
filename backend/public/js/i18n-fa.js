@@ -354,6 +354,7 @@ window.__I18N_FA = {
     whatsapp_checking: 'در حال بررسی...',
     whatsapp_scan_qr: 'QR را با اپلیکیشن واتساپ موبایل اسکن کنید',
     whatsapp_start_btn: 'شروع Gateway واتساپ',
+    whatsapp_start_client_btn: 'شروع واتساپ',
     whatsapp_server_err: 'سرور Backend پاسخ درست نمی‌دهد.',
     whatsapp_gateway_off: 'Gateway روشن نیست. روی دکمه زیر کلیک کنید.',
     whatsapp_status: 'وضعیت واتساپ:',

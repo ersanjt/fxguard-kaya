@@ -661,6 +661,14 @@ apiRouter.get('/gateway/qr', authMiddleware, (req, res) => {
         .catch(() => res.status(503).json({ error: 'Gateway در دسترس نیست' }));
 });
 
+// پراکسی شروع واتساپ به Gateway (وقتی Gateway در دسترس است)
+apiRouter.post('/gateway/start', authMiddleware, (req, res) => {
+    if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
+    axios.post(gatewayUrl + '/api/start', {}, { timeout: 10000 })
+        .then(r => res.json(r.data))
+        .catch(e => res.status(503).json({ error: e.response?.data?.error || 'Gateway در دسترس نیست' }));
+});
+
 apiRouter.post('/admin/start-gateway', authMiddleware, (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
     if (gatewayProcess) return res.json({ message: 'Gateway از قبل در حال اجراست' });

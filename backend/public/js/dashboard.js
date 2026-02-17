@@ -429,7 +429,7 @@
                     th_branch: 'Branch', th_city_country: 'City/Country', th_conv_count: 'Conversations', th_user: 'User', th_email: 'Email', th_status: 'Status', th_last_login: 'Last login',
                     th_customer: 'Customer', th_dept: 'Department', th_assignee: 'Assignee', th_time: 'Time', th_action: 'Action', th_summary: 'Summary', th_login_time: 'Login time',
                     all_actions: 'All actions', action_message_sent: 'Message sent', action_conv_assigned: 'Conversation assigned', status_open: 'Open', status_closed: 'Closed', status_resolved: 'Resolved',
-                    whatsapp_checking: 'Checking...', whatsapp_scan_qr: 'Scan QR code with WhatsApp mobile app', whatsapp_start_btn: 'Start WhatsApp Gateway',
+                    whatsapp_checking: 'Checking...', whatsapp_scan_qr: 'Scan QR code with WhatsApp mobile app', whatsapp_start_btn: 'Start WhatsApp Gateway', whatsapp_start_client_btn: 'Start WhatsApp',
                     whatsapp_server_err: 'Backend server is not responding correctly.', whatsapp_gateway_off: 'Gateway is not running. Click the button below to start it.',
                     whatsapp_status: 'WhatsApp status:', whatsapp_connected: 'Connected �S', whatsapp_disconnected: 'Disconnected', redis: 'Redis', active: 'Active', inactive: 'Inactive', done_msg: 'Done',
                     whatsapp_intro: 'WhatsApp messages are automatically saved in conversations. Auto-assignment to departments is based on keywords.',
@@ -3134,10 +3134,12 @@
             var qrBox = document.getElementById('qrBox');
             var qrImg = document.getElementById('qrImg');
             var btn = document.getElementById('btnStartGateway');
+            var btnStartClient = document.getElementById('btnStartWhatsApp');
             if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             st.className = 'empty';
             st.innerHTML = t('whatsapp_checking');
-            btn.style.display = 'none';
+            if (btn) btn.style.display = 'none';
+            if (btnStartClient) btnStartClient.style.display = 'none';
             qrBox.style.display = 'none';
             var ping = await apiFetch('/api/ping', { auth: false });
             if (ping.needLogin || (ping.data && !ping.data.ok)) {
@@ -3151,12 +3153,12 @@
             if (data && data.error) {
                 st.className = 'empty';
                 st.textContent = t('whatsapp_gateway_off');
-                btn.style.display = 'inline-block';
+                if (btn) { btn.style.display = 'inline-block'; btn.textContent = t('whatsapp_start_btn'); }
                 return;
             }
             st.className = 'empty';
-            st.textContent = t('whatsapp_status') + ' ' + (data && data.whatsapp ? t('whatsapp_connected') : t('whatsapp_disconnected')) + ' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'));
-            btn.style.display = 'none';
+            var statusText = t('whatsapp_status') + ' ' + (data && data.whatsapp ? t('whatsapp_connected') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected'))) + ' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'));
+            st.textContent = statusText;
             if (data && data.whatsapp) {
                 qrBox.style.display = 'none';
                 loadWhatsappDeptRouting();
@@ -3167,11 +3169,25 @@
             var qrRes = await apiFetch('/api/gateway/qr');
             if (qrRes.needLogin) return;
             var qrData = qrRes.data;
-            if (qrData && qrData.qr) { qrImg.src = qrData.qr; qrBox.style.display = 'block'; qrRefreshInterval = setInterval(loadWhatsappStatus, 5000); } else { qrBox.style.display = 'none'; }
+            if (qrData && qrData.qr) {
+                qrImg.src = qrData.qr;
+                qrBox.style.display = 'block';
+                qrRefreshInterval = setInterval(loadWhatsappStatus, 5000);
+            } else {
+                qrBox.style.display = 'none';
+                if (btnStartClient) { btnStartClient.style.display = 'inline-block'; btnStartClient.textContent = t('whatsapp_start_client_btn'); }
+            }
         }
 
         async function startGateway() {
             var res = await apiFetch('/api/admin/start-gateway', { method: 'POST' });
+            if (res.needLogin) return;
+            var msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
+            toast(msg);
+            if (res.ok) setTimeout(loadWhatsappStatus, 3000);
+        }
+        async function startWhatsAppClient() {
+            var res = await apiFetch('/api/gateway/start', { method: 'POST' });
             if (res.needLogin) return;
             var msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
             toast(msg);
@@ -3208,37 +3224,6 @@
                 var name = (c.customer && (c.customer.name || c.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                 var preview = (c.lastMessagePreview || '').slice(0, 50);
                 if (preview.length >= 50) preview += '…';
-                return '<div class="list-item" data-convid="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'") + '\', \'\'); showPage(\'conversations\');" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
-            }).join('');
-        }
-        async function loadWhatsappDeptRouting() {
-            var box = document.getElementById('whatsappDeptRouting');
-            var list = document.getElementById('whatsappDeptList');
-            if (!box || !list) return;
-            box.style.display = 'block';
-            var res = await apiFetch('/api/departments');
-            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
-            var depts = (res.data && res.data.data) || [];
-            if (depts.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'دپارتمانی تعریف نشده' : 'No departments') + '</div>'; return; }
-            list.innerHTML = depts.map(function(d) {
-                var kw = (d.keywords || '').trim() || '—';
-                return '<div class="list-item" style="padding:10px 14px;"><span class="name">' + escapeHtml(d.name || '') + '</span><div class="meta" style="font-size:0.85rem; color:var(--text-muted);">' + (LANG === 'fa' ? 'کلمات کلیدی: ' : 'Keywords: ') + escapeHtml(kw) + '</div></div>';
-            }).join('');
-        }
-        async function loadWhatsappUnassigned() {
-            var box = document.getElementById('whatsappUnassignedBox');
-            var list = document.getElementById('whatsappUnassignedList');
-            if (!box || !list) return;
-            box.style.display = 'block';
-            var res = await apiFetch('/api/conversations?status=open&limit=30');
-            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
-            var rows = (res.data && res.data.data) || [];
-            var unassigned = rows.filter(function(c) { return !c.assignedTo && (c.status === 'open' || c.status === 'pending'); }).slice(0, 10);
-            if (unassigned.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'همه مکالمات تخصیص داده شده‌اند' : 'All conversations assigned') + '</div>'; return; }
-            list.innerHTML = unassigned.map(function(c) {
-                var name = (c.customer && (c.customer.name || c.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
-                var preview = (c.lastMessagePreview || '').slice(0, 40);
-                if (preview.length >= 40) preview += '…';
                 return '<div class="list-item" data-convid="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'") + '\', \'\'); showPage(\'conversations\');" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
             }).join('');
         }
