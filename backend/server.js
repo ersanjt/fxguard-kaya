@@ -29,7 +29,7 @@ const processRoutes = require('./routes/processes');
  
 // Database
 const models = require('./models');
-const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse } = models;
+const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse, WhatsappConfig } = models;
 
 const mongoose = require('mongoose');
 
@@ -278,6 +278,12 @@ async function processIncomingMessage(messageData) {
             timestamp: ts
         });
         
+        // 3.5. پاسخ خودکار به اولین پیام (خوش‌آمدگویی)
+        const incomingCount = await Message.count({ where: { customerId: customer.id, direction: 'incoming' } });
+        if (incomingCount === 1) {
+            await sendFirstMessageWelcome(conversation, customer);
+        }
+        
         // 4. بررسی Auto-Response Rules
         await checkAutoResponse(conversation, newMessage);
         
@@ -322,6 +328,21 @@ async function processIncomingMessage(messageData) {
         
     } catch (error) {
         logger.error('Error processing incoming message:', error);
+    }
+}
+
+// ==================== First Message Welcome ====================
+async function sendFirstMessageWelcome(conversation, customer) {
+    try {
+        const [cfg] = await WhatsappConfig.findOrCreate({
+            where: { id: 'default' },
+            defaults: { welcomeMessage: null, welcomeEnabled: true }
+        });
+        if (!cfg.welcomeEnabled || !cfg.welcomeMessage || !String(cfg.welcomeMessage).trim()) return;
+        await sendAutoReply(conversation, String(cfg.welcomeMessage).trim());
+        logger.info(`👋 Welcome message sent to ${customer.phone} (first contact)`);
+    } catch (error) {
+        logger.error('First message welcome error:', error);
     }
 }
 
@@ -701,6 +722,7 @@ apiRouter.use('/processes', authMiddleware, processRoutes);
 apiRouter.use('/upload', authMiddleware, require('./routes/upload'));
 apiRouter.use('/rates', authMiddleware, require('./routes/rates'));
 apiRouter.use('/services', authMiddleware, require('./routes/services'));
+apiRouter.use('/whatsapp', authMiddleware, require('./routes/whatsapp'));
 const announcementRoutes = require('./routes/announcements');
 const internalRoutes = require('./routes/internal');
 apiRouter.use('/announcements', authMiddleware, announcementRoutes);

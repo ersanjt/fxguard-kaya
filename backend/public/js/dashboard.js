@@ -433,7 +433,9 @@
                     whatsapp_server_err: 'Backend server is not responding correctly.', whatsapp_gateway_off: 'Gateway is not running. Click the button below to start it.',
                     whatsapp_status: 'WhatsApp status:', whatsapp_connected: 'Connected �S', whatsapp_disconnected: 'Disconnected', redis: 'Redis', active: 'Active', inactive: 'Inactive', done_msg: 'Done',
                     whatsapp_intro: 'WhatsApp messages are automatically saved in conversations. Auto-assignment to departments is based on keywords.',
-                    whatsapp_open_web: 'Open WhatsApp Web', whatsapp_manage_convs: 'Manage conversations', whatsapp_dept_routing: 'Auto-assign to department', whatsapp_dept_routing_hint: 'Based on keywords in the message, the conversation is routed to the relevant department.', whatsapp_unassigned: 'Unassigned conversations', whatsapp_unassigned_hint: 'These conversations need department or assignee assignment.',
+                    whatsapp_open_web: 'Open WhatsApp Web', whatsapp_manage_convs: 'Manage conversations',
+                    whatsapp_welcome_title: 'Auto-reply to first message', whatsapp_welcome_hint: 'When someone messages you for the first time, this text is sent automatically. Empty = disabled', whatsapp_welcome_enabled: 'Enabled', whatsapp_welcome_ph: 'Hello! Welcome to Kaya Exchange. How can we help you?',
+                    whatsapp_dept_routing: 'Auto-assign to department', whatsapp_dept_routing_hint: 'Based on keywords in the message, the conversation is routed to the relevant department.', whatsapp_unassigned: 'Unassigned conversations', whatsapp_unassigned_hint: 'These conversations need department or assignee assignment.',
                     rates_intro: 'Prices are fetched from API and shown in the bottom bar for everyone.', rates_adjust_type: 'Adjustment type',
                     rates_none: 'No change', rates_fixed: 'Fixed', rates_delta: '± Amount', rates_percent: '± Percent', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value',
                     no_data: 'No data.', loading_err: 'Error loading.', select_user: 'Select user',
@@ -2129,7 +2131,7 @@
             if (page === 'tickets') { loadTicketFiltersInit(); loadTickets(); }
             if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
-            if (page === 'whatsapp') loadWhatsappStatus();
+            if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); }
             if (page === 'services') loadServices();
             if (page === 'branches') { loadBranches(); }
@@ -3346,6 +3348,28 @@
             var msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
             toast(msg);
             if (res.ok) setTimeout(loadWhatsappStatus, 3000);
+        }
+        async function loadWhatsappWelcomeConfig() {
+            var ta = document.getElementById('whatsappWelcomeMessage');
+            var cb = document.getElementById('whatsappWelcomeEnabled');
+            if (!ta || !cb) return;
+            var res = await apiFetch('/api/whatsapp/config');
+            if (res.needLogin) return;
+            if (res.ok && res.data) {
+                ta.value = res.data.welcomeMessage || '';
+                cb.checked = res.data.welcomeEnabled !== false;
+            }
+        }
+        async function saveWhatsappWelcomeConfig() {
+            var ta = document.getElementById('whatsappWelcomeMessage');
+            var cb = document.getElementById('whatsappWelcomeEnabled');
+            if (!ta || !cb) return;
+            var res = await apiFetch('/api/whatsapp/config', {
+                method: 'PUT',
+                body: JSON.stringify({ welcomeMessage: ta.value.trim(), welcomeEnabled: cb.checked })
+            });
+            if (res.needLogin) return;
+            toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
         }
         async function loadWhatsappDeptRouting() {
             var box = document.getElementById('whatsappDeptRouting');

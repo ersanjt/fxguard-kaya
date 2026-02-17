@@ -632,6 +632,13 @@
                 <div id="pageWhatsapp" class="page">
                     <h2 data-i18n="page_whatsapp">اتصال واتساپ</h2>
                     <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="whatsapp_intro">پیام‌های واتساپ به‌صورت خودکار در مکالمات ذخیره می‌شوند. بر اساس کلمات کلیدی دپارتمان‌ها، تخصیص خودکار انجام می‌شود.</p>
+                    <div id="whatsappWelcomeBox" class="form-box" style="margin-bottom:20px;">
+                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="whatsapp_welcome_title">پاسخ خودکار به اولین پیام</h3>
+                        <p class="text-muted" style="font-size:0.85rem; margin:0 0 12px;" data-i18n="whatsapp_welcome_hint">هر کسی که برای اولین بار به شما پیام می‌دهد، این متن به‌صورت خودکار برایش ارسال می‌شود. خالی = غیرفعال</p>
+                        <label><input type="checkbox" id="whatsappWelcomeEnabled" checked> <span data-i18n="whatsapp_welcome_enabled">فعال</span></label>
+                        <textarea id="whatsappWelcomeMessage" rows="4" data-i18n-ph="whatsapp_welcome_ph" placeholder="سلام! به صرافی کایا خوش آمدید. در خدمت شما هستیم." style="margin-top:12px; width:100%; padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-primary); font-family:var(--font); font-size:0.95rem;"></textarea>
+                        <button type="button" class="btn-primary" onclick="saveWhatsappWelcomeConfig()" style="margin-top:12px;" data-i18n="btn_save">ذخیره</button>
+                    </div>
                     <div id="gatewayStatus" class="empty" data-i18n="whatsapp_checking">در حال بررسی...</div>
                     <div class="qr-box" id="qrBox" style="display:none;">
                         <p data-i18n="whatsapp_scan_qr">QR را با اپلیکیشن واتساپ موبایل اسکن کنید</p>
