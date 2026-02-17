@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const MAIN_ADMIN_EMAIL = process.env.MAIN_ADMIN_EMAIL || 'admin@kaya.local';
 const express = require('express');
 const path = require('path');
@@ -10,7 +12,6 @@ const amqp = require('amqplib');
 const redis = require('redis');
 const winston = require('winston');
 const axios = require('axios');
-require('dotenv').config();
 
 // Import Routes
 const authRoutes = require('./routes/auth');
@@ -51,7 +52,6 @@ app.use(cors({
     credentials: true
 }));
 app.use(express.json({ limit: "25mb" }));
-app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 // Rate Limiting
