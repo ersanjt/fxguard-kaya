@@ -139,12 +139,13 @@ router.use(ownerOnly);
 // همه مکالمات با جزئیات شعبه، دپارتمان، کارمند — برای نظارت مالک
 router.get('/conversations', async (req, res) => {
     try {
-        const { branchId, departmentId, userId, status, limit = 50, page = 1 } = req.query;
+        const { branchId, departmentId, userId, status, unassigned, limit = 50, page = 1 } = req.query;
         const where = {};
         if (branchId) where.branchId = branchId;
         if (departmentId) where.departmentId = departmentId;
         if (userId) where.assignedTo = userId;
         if (status) where.status = status;
+        if (unassigned === '1' || unassigned === 'true') where.assignedTo = null;
         const { rows, count } = await Conversation.findAndCountAll({
             where,
             include: [
@@ -191,11 +192,15 @@ router.get('/activity', async (req, res) => {
 // خلاصه عملکرد به تفکیک شعبه و کاربر — برای مالک
 router.get('/performance', async (req, res) => {
     try {
-        const [branches, users, conversationCount, messageCount] = await Promise.all([
+        const [branches, users, conversationCount, messageCount, openCount, pendingCount, unassignedCount, todayMsgCount] = await Promise.all([
             Branch.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'city', 'country'], order: [['name', 'ASC']] }),
             User.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'email', 'role', 'branchId'], include: [{ model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false }] }),
             Conversation.count(),
-            Message.count({ where: { direction: 'outgoing' } })
+            Message.count({ where: { direction: 'outgoing' } }),
+            Conversation.count({ where: { status: 'open' } }),
+            Conversation.count({ where: { status: 'pending' } }),
+            Conversation.count({ where: { assignedTo: null } }),
+            Message.count({ where: { direction: 'outgoing', createdAt: { [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0)) } } })
         ]);
         const branchIds = branches.map(b => b.id);
         const convCountByBranch = await Conversation.findAll({
@@ -215,7 +220,14 @@ router.get('/performance', async (req, res) => {
         const countByUser = {};
         msgCountByUser.forEach(r => { countByUser[r.userId] = parseInt(r.count, 10); });
         res.json({
-            summary: { conversationCount, messageCount },
+            summary: {
+                conversationCount,
+                messageCount,
+                openCount,
+                pendingCount,
+                unassignedCount,
+                todayMessageCount: todayMsgCount
+            },
             branches: branches.map(b => ({ ...b.toJSON(), conversationCount: countByBranch[b.id] || 0 })),
             users: users.map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role, branch: u.branch, outgoingMessageCount: countByUser[u.id] || 0 }))
         });

@@ -671,8 +671,11 @@
                     <h3 style="font-size:1rem; margin:24px 0 8px;" data-i18n="last_logins">آخرین ورودها</h3>
                     <div id="loginsList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
                 </div>
-                <div id="pageSupervision" class="page">
-                    <h2 data-i18n="page_supervision">نظارت و مونیتورینگ (مالک)</h2>
+                <div id="pageSupervision" class="page sup-page">
+                    <div class="sup-page-header">
+                        <h2 data-i18n="page_supervision">نظارت و مونیتورینگ (مالک)</h2>
+                        <p class="sup-intro" data-i18n="sup_intro">خلاصه عملکرد، مکالمات و لاگ فعالیت کارکنان — برای مالک مجموعه</p>
+                    </div>
                     <div class="supervision-tabs">
                         <button type="button" class="sup-tab active" data-tab="performance" data-i18n="sup_performance">خلاصه عملکرد</button>
                         <button type="button" class="sup-tab" data-tab="conversations" data-i18n="sup_conversations">مکالمات</button>
@@ -682,23 +685,27 @@
                         <div id="supPerformanceContent" class="empty" data-i18n="loading">در حال بارگذاری...</div>
                     </div>
                     <div id="supConversations" class="sup-panel">
-                        <div class="form-box" style="max-width:100%;">
-                            <label data-i18n="sup_branch_status">شعبه / دپارتمان / وضعیت</label>
-                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                        <div class="form-box sup-filter-box">
+                            <label data-i18n="sup_branch_status">شعبه / دپارتمان / مسئول / وضعیت</label>
+                            <div class="sup-filter-row">
                                 <select id="supBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                                <select id="supDept"><option value="" data-i18n="all_departments">همه دپارتمان‌ها</option></select>
+                                <select id="supUser"><option value="" data-i18n="any_assignee">هر مسئول</option></select>
                                 <select id="supStatus"><option value="" data-i18n="all_statuses">همه وضعیت‌ها</option><option value="open" data-i18n="status_open">باز</option><option value="closed" data-i18n="status_closed">بسته</option><option value="pending" data-i18n="status_pending">در انتظار</option><option value="resolved" data-i18n="status_resolved">حل شده</option></select>
-                                <button type="button" onclick="loadSupervisionConversations()" data-i18n="apply_filter">اعمال فیلتر</button>
+                                <label class="sup-check-wrap"><input type="checkbox" id="supUnassigned"> <span data-i18n="sup_unassigned_only">فقط بدون تخصیص</span></label>
+                                <button type="button" class="btn-primary" onclick="loadSupervisionConversations()" data-i18n="apply_filter">اعمال فیلتر</button>
                             </div>
                         </div>
                         <div id="supConvList"></div>
                     </div>
                     <div id="supActivity" class="sup-panel">
-                        <div class="form-box" style="max-width:100%;">
+                        <div class="form-box sup-filter-box">
                             <label data-i18n="filter">فیلتر</label>
-                            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                            <div class="sup-filter-row">
                                 <select id="supActBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
-                                <select id="supActAction"><option value="" data-i18n="all_actions">همه عملیات</option><option value="message_sent" data-i18n="action_message_sent">ارسال پیام</option><option value="conversation_assigned" data-i18n="action_conv_assigned">تخصیص مکالمه</option></select>
-                                <button type="button" onclick="loadSupervisionActivity()" data-i18n="btn_apply">اعمال</button>
+                                <select id="supActUser"><option value="" data-i18n="all_users">همه کاربران</option></select>
+                                <select id="supActAction"><option value="" data-i18n="all_actions">همه عملیات</option><option value="message_sent" data-i18n="action_message_sent">ارسال پیام</option><option value="conversation_assigned" data-i18n="action_conv_assigned">تخصیص مکالمه</option><option value="conversation_department_changed" data-i18n="action_dept_changed">تغییر دپارتمان</option><option value="customer_note_added" data-i18n="action_note_added">ثبت گزارش/یادداشت</option><option value="user_login" data-i18n="action_login">ورود</option><option value="user_logout" data-i18n="action_logout">خروج</option></select>
+                                <button type="button" class="btn-primary" onclick="loadSupervisionActivity()" data-i18n="btn_apply">اعمال</button>
                             </div>
                         </div>
                         <div id="supActList"></div>

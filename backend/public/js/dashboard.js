@@ -2217,7 +2217,7 @@
             if (page === 'profile') loadProfile();
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
             if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); var popupTid = currentInternalThreadId; closeInternalChatPopup(); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
-            if (page === 'supervision') { loadBranchesForSelect(['supBranch', 'supActBranch']); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
+            if (page === 'supervision') { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
         }
 
         function toggleTicketForm() {
@@ -3685,26 +3685,49 @@
             if (btnCancel) btnCancel.style.display = 'none';
         }
 
+        async function loadSupervisionFiltersInit() {
+            await loadBranchesForSelect(['supBranch', 'supActBranch']);
+            var deptRes = await apiFetch('/api/departments?all=1');
+            if (deptRes.ok && deptRes.data && deptRes.data.data) {
+                var sel = document.getElementById('supDept');
+                if (sel) sel.innerHTML = '<option value="">' + t('all_departments') + '</option>' + deptRes.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+            }
+            var userRes = await apiFetch('/api/users');
+            if (userRes.ok && userRes.data && userRes.data.data) {
+                var anyOpt = '<option value="">' + t('any_assignee') + '</option>' + userRes.data.data.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email || '') + '</option>'; }).join('');
+                var allOpt = '<option value="">' + t('all_users') + '</option>' + userRes.data.data.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email || '') + '</option>'; }).join('');
+                var u1 = document.getElementById('supUser'); if (u1) u1.innerHTML = anyOpt;
+                var u2 = document.getElementById('supActUser'); if (u2) u2.innerHTML = allOpt;
+            }
+        }
+
         async function loadSupervisionPerformance() {
             var el = document.getElementById('supPerformanceContent');
             if (!el) return;
-            el.innerHTML = t('loading');
+            el.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
             el.className = 'empty';
             var res = await apiFetch('/api/supervision/performance');
             if (res.needLogin) return;
             if (!res.ok) { el.innerHTML = t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : ''); return; }
             var d = res.data;
             var summary = d.summary || {};
-            var html = '<div class="stat-cards"><div class="stat-card"><div class="val">' + (summary.conversationCount || 0) + '</div><div class="label">' + t('total_conversations') + '</div></div><div class="stat-card"><div class="val">' + (summary.messageCount || 0) + '</div><div class="label">' + t('outgoing_messages') + '</div></div></div>';
+            var html = '<div class="sup-stat-cards stat-cards">';
+            html += '<div class="stat-card"><div class="val">' + (summary.conversationCount || 0) + '</div><div class="label">' + t('total_conversations') + '</div></div>';
+            html += '<div class="stat-card"><div class="val">' + (summary.messageCount || 0) + '</div><div class="label">' + t('outgoing_messages') + '</div></div>';
+            html += '<div class="stat-card stat-card-accent"><div class="val">' + (summary.openCount || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'باز' : 'Open') + '</div></div>';
+            html += '<div class="stat-card"><div class="val">' + (summary.pendingCount || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'در انتظار' : 'Pending') + '</div></div>';
+            html += '<div class="stat-card"><div class="val">' + (summary.unassignedCount || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</div></div>';
+            html += '<div class="stat-card"><div class="val">' + (summary.todayMessageCount || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'پیام امروز' : 'Today') + '</div></div>';
+            html += '</div>';
             if (d.branches && d.branches.length) {
-                html += '<h3 style="margin:16px 0 8px; font-size:1rem;">' + t('sup_by_branch') + '</h3><table class="sup-table"><thead><tr><th>' + t('th_branch') + '</th><th>' + t('th_city_country') + '</th><th>' + t('th_conv_count') + '</th></tr></thead><tbody>';
-                d.branches.forEach(function(b) { html += '<tr><td>' + escapeHtml(b.name) + '</td><td>' + escapeHtml((b.city || '') + ' ' + (b.country || '')) + '</td><td>' + (b.conversationCount || 0) + '</td></tr>'; });
-                html += '</tbody></table>';
+                html += '<h3 class="sup-section-title">' + t('sup_by_branch') + '</h3><div class="sup-branch-cards">';
+                d.branches.forEach(function(b) { html += '<div class="sup-branch-card"><div class="sup-branch-name">' + escapeHtml(b.name) + '</div><div class="sup-branch-meta">' + escapeHtml((b.city || '') + (b.city && b.country ? ' \u00B7 ' : '') + (b.country || '')) + '</div><div class="sup-branch-count">' + (b.conversationCount || 0) + '</div></div>'; });
+                html += '</div>';
             }
             if (d.users && d.users.length) {
-                html += '<h3 style="margin:16px 0 8px; font-size:1rem;">' + t('sup_by_user') + '</h3><table class="sup-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('outgoing_messages') + '</th></tr></thead><tbody>';
-                d.users.forEach(function(u) { html += '<tr><td>' + escapeHtml(u.name) + '</td><td>' + escapeHtml(u.email || '') + '</td><td>' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '�') + '</td><td>' + (u.outgoingMessageCount || 0) + '</td></tr>'; });
-                html += '</tbody></table>';
+                html += '<h3 class="sup-section-title">' + t('sup_by_user') + '</h3><div class="sup-user-cards">';
+                d.users.forEach(function(u) { var bn = (u.branch && u.branch.name) ? u.branch.name : ''; html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '�') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div></div>'; });
+                html += '</div>';
             }
             el.className = '';
             el.innerHTML = html || '<div class="empty">' + t('no_data') + '</div>';
@@ -3715,16 +3738,24 @@
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             var branchId = document.getElementById('supBranch') && document.getElementById('supBranch').value ? document.getElementById('supBranch').value : '';
+            var deptId = document.getElementById('supDept') && document.getElementById('supDept').value ? document.getElementById('supDept').value : '';
+            var userId = document.getElementById('supUser') && document.getElementById('supUser').value ? document.getElementById('supUser').value : '';
             var status = document.getElementById('supStatus') && document.getElementById('supStatus').value ? document.getElementById('supStatus').value : '';
+            var unassigned = document.getElementById('supUnassigned') && document.getElementById('supUnassigned').checked;
             var q = '?limit=50';
             if (branchId) q += '&branchId=' + encodeURIComponent(branchId);
+            if (deptId) q += '&departmentId=' + encodeURIComponent(deptId);
+            if (userId) q += '&userId=' + encodeURIComponent(userId);
             if (status) q += '&status=' + encodeURIComponent(status);
+            if (unassigned) q += '&unassigned=1';
             var res = await apiFetch('/api/supervision/conversations' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data.data || [];
+            var total = res.data.total || data.length;
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_conv') + '</div>'; return; }
-            list.innerHTML = '<table class="sup-table"><thead><tr><th>' + t('th_customer') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_dept') + '</th><th>' + t('th_assignee') + '</th><th>' + t('th_status') + '</th></tr></thead><tbody>' + data.map(function(c) {
+            var dash = '\u2014';
+            list.innerHTML = '<div class="sup-conv-count">' + total + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conversations') + '</div><table class="sup-table sup-conv-table"><thead><tr><th>' + t('th_customer') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_dept') + '</th><th>' + t('th_assignee') + '</th><th>' + t('th_status') + '</th><th>' + (LANG === 'fa' ? 'آخرین پیام' : 'Last') + '</th></tr></thead><tbody>' + data.map(function(c) {
                 var cust = c.customer || {};
                 var branch = c.branch ? c.branch.name : '�';
                 var dept = c.department ? c.department.name : '�';
@@ -3852,9 +3883,11 @@
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             var branchId = document.getElementById('supActBranch') && document.getElementById('supActBranch').value ? document.getElementById('supActBranch').value : '';
+            var userId = document.getElementById('supActUser') && document.getElementById('supActUser').value ? document.getElementById('supActUser').value : '';
             var action = document.getElementById('supActAction') && document.getElementById('supActAction').value ? document.getElementById('supActAction').value : '';
             var q = '?limit=100';
             if (branchId) q += '&branchId=' + encodeURIComponent(branchId);
+            if (userId) q += '&userId=' + encodeURIComponent(userId);
             if (action) q += '&action=' + encodeURIComponent(action);
             var res = await apiFetch('/api/supervision/activity' + q);
             if (res.needLogin) return;
@@ -3905,6 +3938,17 @@
         (function initLang() {
             var l = localStorage.getItem('crm_lang') || 'fa';
             setLang(l);
+        })();
+
+        (function exposeOnclickHandlers() {
+            window.login = login;
+            window.logout = logout;
+            window.showPage = showPage;
+            window.verifyTotpLogin = verifyTotpLogin;
+            window.backToLoginStep1 = backToLoginStep1;
+            window.closeSidebarMobile = closeSidebarMobile;
+            window.toggleSidebarMobile = toggleSidebarMobile;
+            window.doHeaderSearch = doHeaderSearch;
         })();
 
         if (token) {

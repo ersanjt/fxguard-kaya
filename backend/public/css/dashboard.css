@@ -500,6 +500,26 @@
         .toast { position: fixed; bottom: 24px; right: 24px; left: 24px; max-width: 400px; margin: 0 auto; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); z-index: 9999; font-size: 0.9rem; animation: toastIn 0.3s ease; }
         .toast.err { border-color: var(--danger); background: var(--danger-soft); }
         @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .sup-page-header h2 { margin: 0 0 8px; }
+        .sup-intro { color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 20px; line-height: 1.6; }
+        .sup-filter-box { max-width: 100%; margin-bottom: 16px; }
+        .sup-filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        .sup-filter-row select { padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; }
+        .sup-check-wrap { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary); }
+        .sup-check-wrap input { accent-color: var(--accent); }
+        .sup-stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 12px; }
+        .stat-card-accent { border-color: var(--accent); background: var(--accent-soft); }
+        .stat-card-accent .val { color: var(--accent); }
+        .sup-section-title { font-size: 1rem; font-weight: 600; margin: 16px 0 12px; color: var(--text-primary); }
+        .sup-branch-cards, .sup-user-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+        .sup-branch-card, .sup-user-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; transition: border-color 0.2s, box-shadow 0.2s; }
+        .sup-branch-card:hover, .sup-user-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(16,185,129,0.1); }
+        .sup-user-card { cursor: pointer; }
+        .sup-branch-name, .sup-user-name { font-weight: 600; font-size: 1rem; color: var(--text-primary); margin-bottom: 4px; }
+        .sup-branch-meta, .sup-user-meta { font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; }
+        .sup-branch-count, .sup-user-count { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
+        .sup-conv-count { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px; }
+        .sup-conv-table tr.sup-conv-row:hover { background: var(--accent-soft); }
         .supervision-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
         .sup-tab { padding: 10px 18px; background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font); cursor: pointer; font-size: 0.9rem; }
         .sup-tab:hover { background: var(--border); color: var(--text-primary); }
