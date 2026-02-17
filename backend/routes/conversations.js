@@ -138,7 +138,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// ——— پیام‌های مکالمه
+// ——— پیام‌های مکالمه (شامل کاربر ارسال‌کننده برای پیام‌های خروجی)
 router.get('/:id/messages', async (req, res) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
@@ -148,9 +148,61 @@ router.get('/:id/messages', async (req, res) => {
         if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         const messages = await Message.findAll({
             where: { conversationId: req.params.id },
+            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username'], required: false }],
             order: [['timestamp', 'ASC']]
         });
         res.json({ data: messages });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ——— آمار مکالمه برای نظارت مدیر (زمان اولین پاسخ، پاسخ‌دهندگان، خوانده‌شدن)
+router.get('/:id/stats', async (req, res) => {
+    try {
+        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        const conversation = await Conversation.findByPk(req.params.id);
+        if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
+        const accessibleCustomerIds = await getAccessibleCustomerIds(req);
+        if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        const messages = await Message.findAll({
+            where: { conversationId: req.params.id },
+            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username'], required: false }],
+            order: [['timestamp', 'ASC']]
+        });
+        let firstResponseTimeMin = null;
+        let firstIncomingAt = null;
+        let firstOutgoingAfterIncoming = null;
+        const responders = [];
+        const responderIds = new Set();
+        for (const m of messages) {
+            const ts = m.timestamp ? new Date(m.timestamp) : null;
+            if (m.direction === 'incoming' && ts) {
+                if (!firstIncomingAt || ts < firstIncomingAt) firstIncomingAt = ts;
+            }
+            if (m.direction === 'outgoing' && ts) {
+                const name = (m.user && (m.user.name || m.user.username)) || null;
+                if (m.userId && !responderIds.has(m.userId)) {
+                    responderIds.add(m.userId);
+                    responders.push({ id: m.userId, name: name || '—' });
+                }
+                if (firstIncomingAt && ts >= firstIncomingAt && (!firstOutgoingAfterIncoming || ts < firstOutgoingAfterIncoming)) {
+                    firstOutgoingAfterIncoming = ts;
+                }
+            }
+        }
+        if (firstIncomingAt && firstOutgoingAfterIncoming) {
+            firstResponseTimeMin = Math.round((firstOutgoingAfterIncoming - firstIncomingAt) / 60000);
+        }
+        res.json({
+            firstResponseTimeMin,
+            firstIncomingAt: firstIncomingAt ? firstIncomingAt.toISOString() : null,
+            firstOutgoingAt: firstOutgoingAfterIncoming ? firstOutgoingAfterIncoming.toISOString() : null,
+            responders,
+            messageCount: messages.length,
+            outgoingCount: messages.filter(m => m.direction === 'outgoing').length,
+            unreadCount: conversation.unreadCount || 0
+        });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

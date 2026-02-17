@@ -182,7 +182,11 @@
                                 <button type="button" class="chat-detail-toggle" id="chatDetailToggle" onclick="toggleChatDetailBar()" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
                             </div>
                             <div id="convDetailBar" class="conv-detail-bar" style="display:none;">
-                                <span id="convDetailMeta" class="conv-detail-meta"></span>
+                                <div class="conv-detail-badges" id="convDetailBadges"></div>
+                                <div id="convSupervisionPanel" class="conv-supervision-panel" style="display:none;">
+                                    <div class="conv-supervision-title" data-i18n="conv_supervision_title">نظارت مدیر</div>
+                                    <div id="convSupervisionStats" class="conv-supervision-stats"></div>
+                                </div>
                                 <div id="convDetailActions" class="conv-detail-actions" style="display:none;">
                                     <button type="button" id="btnAssignToMe" class="btn-secondary btn-sm" onclick="assignConvToMe()" data-i18n="conv_assign_me">تخصیص به من</button>
                                     <select id="convDetailStatus"><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>

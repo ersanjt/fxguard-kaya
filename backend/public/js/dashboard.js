@@ -438,7 +438,7 @@
                     rates_none: 'No change', rates_fixed: 'Fixed', rates_delta: '± Amount', rates_percent: '± Percent', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value',
                     no_data: 'No data.', loading_err: 'Error loading.', select_user: 'Select user',
                     empty_conv_list: 'No conversations. Click "New conversation".', chat: 'Chat', empty_internal_msgs: 'No messages yet.', file: 'File',
-                    conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me',
+                    conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me', conv_supervision_title: 'Manager oversight',
                     conv_page_desc: 'Manage customer conversations, respond and assign to departments.',
                     conv_search_ph: 'Search name or phone...', conv_list_title: 'Conversations', more_filters: 'More filters',
                     filter_all: 'All', filter_unread: 'Unread', filter_open: 'Open', conv_tab_mine: 'Assigned to me',
@@ -1628,8 +1628,10 @@
             currentConvDetail = null;
             var headerEl = document.getElementById('chatHeader');
             var barEl = document.getElementById('convDetailBar');
-            var metaEl = document.getElementById('convDetailMeta');
+            var badgesEl = document.getElementById('convDetailBadges');
             var actionsEl = document.getElementById('convDetailActions');
+            var supPanel = document.getElementById('convSupervisionPanel');
+            var supStats = document.getElementById('convSupervisionStats');
             if (headerEl) headerEl.textContent = name || phone || t('customer');
             var chatArea = document.getElementById('chatArea');
             var layout = chatArea && chatArea.closest('.conv-layout');
@@ -1640,16 +1642,18 @@
             if (barEl) barEl.style.display = 'none';
             apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); });
             loadMessages(id);
+            var canViewSupervision = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
+            if (canViewSupervision && supPanel && supStats) { loadConvStats(id, supStats); supPanel.style.display = 'block'; } else if (supPanel) supPanel.style.display = 'none';
             apiFetch('/api/conversations/' + id).then(function(res) {
                 if (!res.ok || !res.data) return;
                 currentConvDetail = res.data;
-                if (!barEl || !metaEl) return;
+                if (!barEl || !badgesEl) return;
                 var d = res.data;
                 var assigneeName = userDisplay(d.assignee) || (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned');
                 var deptName = (d.department && d.department.name) ? d.department.name : '';
                 var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved' };
                 var prioT = LANG === 'fa' ? { low: 'کم', normal: 'عادی', high: 'مهم', urgent: 'فوری' } : { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
-                metaEl.textContent = (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + (statusT[d.status] || d.status) + ' | ' + (LANG === 'fa' ? 'اولویت: ' : 'Priority: ') + (prioT[d.priority] || d.priority) + ' | ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + assigneeName + (deptName ? ' | ' + deptName : '');
+                badgesEl.innerHTML = '<span class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</span>' + (statusT[d.status] || d.status) + '</span><span class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'اولویت' : 'Priority') + '</span>' + (prioT[d.priority] || d.priority) + '</span><span class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + (LANG === 'fa' ? 'مسئول' : 'Assignee') + '</span>' + escapeHtml(assigneeName) + '</span>' + (deptName ? '<span class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + (LANG === 'fa' ? 'دپارتمان' : 'Dept') + '</span>' + escapeHtml(deptName) + '</span>' : '');
                 barEl.style.display = 'block';
                 barEl.classList.remove('collapsed');
                 var toggleBtn = document.getElementById('chatDetailToggle');
@@ -1772,9 +1776,33 @@
             el.innerHTML = data.data.map(function(m) {
                 var isOut = m.direction === 'outgoing';
                 var time = m.timestamp ? fmtTZ(m.timestamp, 'time') : '';
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div><div class="time">' + time + '</div></div>';
+                var senderLabel = '';
+                if (isOut && m.user && (m.user.name || m.user.username)) {
+                    senderLabel = '<div class="msg-sender">' + escapeHtml(m.user.name || m.user.username) + '</div>';
+                }
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + senderLabel + '<div>' + escapeHtml(m.content || '') + '</div><div class="time">' + time + '</div></div>';
             }).join('');
             el.scrollTop = el.scrollHeight;
+        }
+        async function loadConvStats(convId, el) {
+            if (!el) return;
+            el.innerHTML = '<span class="loading-skeleton" style="display:inline-block;width:120px;height:20px;border-radius:4px;"></span>';
+            var res = await apiFetch('/api/conversations/' + convId + '/stats');
+            if (res.needLogin || !res.ok) { el.innerHTML = ''; return; }
+            var s = res.data;
+            var parts = [];
+            if (s.firstResponseTimeMin != null) {
+                var timeLabel = s.firstResponseTimeMin < 60 ? (s.firstResponseTimeMin + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')) : (Math.floor(s.firstResponseTimeMin / 60) + ' ' + (LANG === 'fa' ? 'ساعت' : 'hr'));
+                parts.push('<span class="conv-stat-item"><span class="conv-stat-label">' + (LANG === 'fa' ? 'اولین پاسخ' : 'First response') + '</span>' + timeLabel + '</span>');
+            }
+            if (s.responders && s.responders.length > 0) {
+                parts.push('<span class="conv-stat-item"><span class="conv-stat-label">' + (LANG === 'fa' ? 'پاسخ‌دهندگان' : 'Responders') + '</span>' + s.responders.map(function(r){ return escapeHtml(r.name); }).join(', ') + '</span>');
+            }
+            if (s.unreadCount > 0) {
+                parts.push('<span class="conv-stat-item conv-stat-unread"><span class="conv-stat-label">' + (LANG === 'fa' ? 'خوانده‌نشده' : 'Unread') + '</span>' + s.unreadCount + '</span>');
+            }
+            parts.push('<span class="conv-stat-item"><span class="conv-stat-label">' + (LANG === 'fa' ? 'پیام‌ها' : 'Messages') + '</span>' + (s.messageCount || 0) + '</span>');
+            el.innerHTML = parts.length ? parts.join('') : (LANG === 'fa' ? '—' : '—');
         }
 
         async function sendMsg() {

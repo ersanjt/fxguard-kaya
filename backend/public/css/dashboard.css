@@ -320,7 +320,18 @@
         .chat-back-btn:hover { background: var(--border); }
         .conv-detail-bar { padding: 12px 18px; font-size: 0.82rem; color: var(--text-secondary); border-top: 1px solid var(--border); min-width: 0; overflow: hidden; background: rgba(0,0,0,0.15); transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s; }
         .conv-detail-bar.collapsed { display: none !important; }
-        .conv-detail-meta { display: block; margin-bottom: 10px; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.4; }
+        .conv-detail-badges { display: flex; flex-wrap: wrap; gap: 10px 16px; margin-bottom: 12px; align-items: center; }
+        .conv-detail-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.85rem; }
+        .conv-detail-badge .conv-badge-label { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.03em; }
+        .conv-detail-badge.conv-badge-assignee, .conv-detail-badge.conv-badge-dept { background: var(--accent-soft); border-color: rgba(16,185,129,0.3); color: var(--accent); }
+        .conv-supervision-panel { margin-bottom: 12px; padding: 10px 14px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: var(--radius-sm); }
+        .conv-supervision-title { font-size: 0.75rem; font-weight: 600; color: var(--accent); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+        .conv-supervision-stats { display: flex; flex-wrap: wrap; gap: 12px 20px; font-size: 0.85rem; }
+        .conv-stat-item { display: inline-flex; align-items: baseline; gap: 6px; }
+        .conv-stat-item .conv-stat-label { color: var(--text-muted); font-size: 0.8rem; }
+        .conv-stat-unread .conv-stat-label { color: var(--accent); }
+        .msg-sender { font-size: 0.7rem; opacity: 0.9; margin-bottom: 2px; font-weight: 500; }
+        .msg.out .msg-sender { color: rgba(255,255,255,0.9); }
         .conv-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
         .conv-detail-actions select { padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.85rem; }
         .btn-sm { padding: 6px 12px; font-size: 0.85rem; }

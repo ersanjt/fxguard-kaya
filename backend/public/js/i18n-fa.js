@@ -60,6 +60,7 @@ window.__I18N_FA = {
     conv_tab_mine: 'مشخص‌شده به من',
     conv_select_customer: 'انتخاب مشتری',
     conv_assign_me: 'تخصیص به من',
+    conv_supervision_title: 'نظارت مدیر',
     page_customers: 'مشتریان',
     page_customers_club: 'باشگاه مشتریان',
     customers_club_intro: 'مدیریت مشتریان، تاریخچه مکالمات، گزارش‌ها و فعالیت‌های انجام‌شده برای هر مشتری.',
