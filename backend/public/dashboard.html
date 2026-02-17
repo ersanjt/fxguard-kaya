@@ -164,6 +164,7 @@
                                     <button type="button" id="btnAssignToMe" class="btn-secondary btn-sm" onclick="assignConvToMe()" data-i18n="conv_assign_me">تخصیص به من</button>
                                     <select id="convDetailStatus"><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
                                     <select id="convDetailPriority"><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                                    <select id="convDetailDept" data-i18n-title="label_dept" title="دپارتمان"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
                                     <select id="convDetailAssignee"><option value="">بدون تخصیص</option></select>
                                     <button type="button" class="btn-secondary btn-sm" onclick="updateConvFromDetail()" data-i18n="btn_apply">اعمال</button>
                                 </div>
@@ -501,13 +502,19 @@
                 </div>
                 <div id="pageInternalChat" class="page">
                     <h2 data-i18n="page_internal_chat">چت داخلی</h2>
-                    <div style="display:flex; gap:16px; flex-wrap:wrap;">
-                        <div style="flex:1; min-width:260px;">
+                    <div class="internal-chat-layout-wrap">
+                        <div class="internal-chat-thread-col">
                             <button type="button" class="btn-secondary" onclick="showNewChatForm()" data-i18n="new_chat">گفتگوی جدید</button>
-                            <div id="internalThreadList" class="empty" style="margin-top:12px;" data-i18n="loading">در حال بارگذاری...</div>
+                            <div id="internalThreadList" class="empty internal-chat-thread-list" data-i18n="loading">در حال بارگذاری...</div>
                         </div>
-                        <div id="internalChatPane" style="flex:2; min-width:300px; display:none;">
-                            <div class="chat-header" id="internalChatHeader" data-i18n="select_conversation">انتخاب گفتگو</div>
+                        <div id="internalChatPane" class="internal-chat-pane" style="display:none;">
+                            <div class="chat-header internal-chat-header-row">
+                                <span id="internalChatHeader" data-i18n="select_conversation">انتخاب گفتگو</span>
+                                <div id="internalChatCallBtns" class="internal-chat-call-btns" style="display:none;">
+                                    <button type="button" class="internal-call-btn" onclick="startInternalCall('voice')" title="تماس صوتی" data-i18n-title="voice_call" aria-label="تماس صوتی"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-phone"/></svg></button>
+                                    <button type="button" class="internal-call-btn" onclick="startInternalCall('video')" title="تماس تصویری" data-i18n-title="video_call" aria-label="تماس تصویری"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
+                                </div>
+                            </div>
                             <div class="chat-messages" id="internalChatMessages" style="min-height:200px;"></div>
                             <div class="chat-send">
                                 <input type="text" id="internalChatInput" data-i18n-ph="msg_ph_short" placeholder="پیام..." onkeypress="if(event.key==='Enter')sendInternalMessage()">
@@ -522,7 +529,8 @@
                     </div>
                     <div id="internalNewChatForm" style="display:none; margin-top:12px;" class="form-box">
                         <label data-i18n="start_chat_with">شروع گفتگو با</label>
-                        <select id="internalNewChatUser"><option value="" data-i18n="select_user">انتخاب کاربر</option></select>
+                        <select id="internalNewChatUser" multiple style="min-height:80px;"><option value="" data-i18n="select_user">انتخاب کاربر</option></select>
+                        <small class="text-muted" style="display:block; margin-top:4px;" data-i18n="select_multiple_hint">برای گفتگوی گروهی، چند نفر را انتخاب کنید</small>
                         <button type="button" onclick="startInternalChat()" data-i18n="start_chat">شروع چت</button>
                         <button type="button" class="btn-secondary" onclick="hideNewChatForm()" data-i18n="cancel">انصراف</button>
                     </div>
@@ -586,12 +594,28 @@
                 </div>
                 <div id="pageWhatsapp" class="page">
                     <h2 data-i18n="page_whatsapp">اتصال واتساپ</h2>
+                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="whatsapp_intro">پیام‌های واتساپ به‌صورت خودکار در مکالمات ذخیره می‌شوند. بر اساس کلمات کلیدی دپارتمان‌ها، تخصیص خودکار انجام می‌شود.</p>
                     <div id="gatewayStatus" class="empty" data-i18n="whatsapp_checking">در حال بررسی...</div>
                     <div class="qr-box" id="qrBox" style="display:none;">
                         <p data-i18n="whatsapp_scan_qr">QR را با اپلیکیشن واتساپ موبایل اسکن کنید</p>
                         <img id="qrImg" alt="QR Code">
                     </div>
-                    <button type="button" id="btnStartGateway" class="btn-primary" onclick="startGateway()" style="display:none; margin-top:12px;" data-i18n="whatsapp_start_btn">شروع Gateway واتساپ</button>
+                    <div class="whatsapp-actions" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:16px;">
+                        <button type="button" id="btnStartGateway" class="btn-primary" onclick="startGateway()" style="display:none;" data-i18n="whatsapp_start_btn">شروع Gateway واتساپ</button>
+                        <a href="https://web.whatsapp.com" target="_blank" rel="noopener" class="btn-secondary" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none;" data-i18n="whatsapp_open_web">باز کردن واتساپ وب</a>
+                        <a href="#conversations" class="btn-secondary" onclick="showPage('conversations')" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
+                    </div>
+                    <div id="whatsappDeptRouting" class="form-box" style="margin-top:24px; display:none;">
+                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="whatsapp_dept_routing">تخصیص خودکار به دپارتمان</h3>
+                        <p class="text-muted" style="font-size:0.85rem; margin:0 0 12px;" data-i18n="whatsapp_dept_routing_hint">بر اساس کلمات کلیدی در متن پیام، مکالمه به دپارتمان مربوطه هدایت می‌شود.</p>
+                        <div id="whatsappDeptList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    </div>
+                    <div id="whatsappUnassignedBox" class="form-box" style="margin-top:24px; display:none;">
+                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="whatsapp_unassigned">مکالمات بدون تخصیص</h3>
+                        <p class="text-muted" style="font-size:0.85rem; margin:0 0 12px;" data-i18n="whatsapp_unassigned_hint">این مکالمات نیاز به تخصیص دپارتمان یا مسئول دارند.</p>
+                        <div id="whatsappUnassignedList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                        <a href="#conversations" class="btn-secondary" onclick="showPage('conversations')" style="margin-top:12px; display:inline-block; text-decoration:none;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
+                    </div>
                 </div>
                 <div id="pageRates" class="page">
                     <h2 data-i18n="page_rates">تنظیم نرخ ارزها</h2>
@@ -710,6 +734,41 @@
                 <span class="app-footer-brand" data-i18n="logo_kaya">صرافی کایا</span>
                 <span class="app-footer-year" id="appFooterYear"></span>
             </footer>
+        </div>
+        <div id="internalCallInviteModal" class="modal-overlay" style="display:none;">
+            <div class="modal-box" style="max-width:360px;">
+                <div class="modal-header"><h3 id="internalCallInviteTitle" data-i18n="invite_to_call">دعوت به تماس</h3><button type="button" class="modal-close" onclick="rejectInternalCallInvite()">&times;</button></div>
+                <div class="modal-body" style="text-align:center;">
+                    <p id="internalCallInviteText" style="margin:0 0 20px; color:var(--text-secondary);"></p>
+                    <div style="display:flex; gap:12px; justify-content:center;">
+                        <button type="button" class="internal-call-action-btn accept" onclick="acceptInternalCallInvite()" data-i18n="accept_call">پذیرش</button>
+                        <button type="button" class="internal-call-action-btn reject" onclick="rejectInternalCallInvite()" data-i18n="reject_call">رد</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="internalCallModal" class="internal-call-modal" style="display:none;">
+            <div class="internal-call-content">
+                <div id="internalCallStatus" class="internal-call-status"></div>
+                <div class="internal-call-videos" id="internalCallVideos">
+                    <div id="internalCallRemoteVideos" class="internal-call-remote-videos"></div>
+                    <video id="internalCallLocalVideo" autoplay muted playsinline class="internal-call-local-video"></video>
+                </div>
+                <div class="internal-call-actions">
+                    <button type="button" id="internalCallAddBtn" class="internal-call-action-btn add" onclick="showAddToCallModal()" style="display:none;" data-i18n="add_to_call" title="افزودن به تماس">+</button>
+                    <button type="button" id="internalCallAcceptBtn" class="internal-call-action-btn accept" onclick="acceptInternalCall()" style="display:none;" data-i18n="accept_call">پذیرش</button>
+                    <button type="button" id="internalCallRejectBtn" class="internal-call-action-btn reject" onclick="rejectInternalCall()" data-i18n="reject_call">رد</button>
+                    <button type="button" id="internalCallEndBtn" class="internal-call-action-btn end" onclick="endInternalCall()" style="display:none;" data-i18n="end_call">قطع تماس</button>
+                </div>
+            </div>
+        </div>
+        <div id="addToCallModal" class="modal-overlay" style="display:none;">
+            <div class="modal-box" style="max-width:400px;">
+                <div class="modal-header"><h3 data-i18n="add_to_call">افزودن به تماس</h3><button type="button" class="modal-close" onclick="closeAddToCallModal()">&times;</button></div>
+                <div class="modal-body">
+                    <div id="addToCallList" class="add-to-call-list"></div>
+                </div>
+            </div>
         </div>
         <div id="internalChatPopup" class="internal-chat-popup" style="display:none;">
             <div class="internal-chat-popup-header">

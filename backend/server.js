@@ -1,3 +1,4 @@
+const MAIN_ADMIN_EMAIL = 'admin@kaya.local';
 const express = require('express');
 const path = require('path');
 const http = require('http');
@@ -28,7 +29,6 @@ const processRoutes = require('./routes/processes');
 // Database
 const models = require('./models');
 const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse } = models;
-const { MAIN_ADMIN_EMAIL } = require('./lib/permissions');
 
 const mongoose = require('mongoose');
 
@@ -49,8 +49,9 @@ app.use(cors({
     origin: (origin, cb) => { if (!origin || allowedOrigins.includes(origin)) cb(null, true); else cb(null, allowedOrigins[0]); },
     credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -442,6 +443,9 @@ async function autoAssignment(conversation, messageContent) {
 // ==================== Socket.IO ====================
 const socketAuth = require('./middleware/socketAuth');
 
+// اتاق‌های تماس گروهی: { threadId: { participants: Set<userId>, type: 'voice'|'video' } }
+const callRooms = {};
+
 app.set('io', io);
 io.use(socketAuth);
 
@@ -509,6 +513,67 @@ io.on('connection', (socket) => {
         }
     });
     
+    // سیگنالینگ تماس تصویری/صوتی چت داخلی
+    socket.on('call_offer', (data) => {
+        const { toUserId, threadId, type, sdp } = data;
+        if (!toUserId || !threadId || !sdp) return;
+        if (!callRooms[threadId]) callRooms[threadId] = { participants: new Set(), type: type || 'voice' };
+        callRooms[threadId].participants.add(String(socket.userId));
+        io.to(`user_${toUserId}`).emit('call_offer', { fromUserId: socket.userId, threadId, type: type || 'voice', sdp });
+    });
+    socket.on('call_answer', (data) => {
+        const { toUserId, threadId, sdp } = data;
+        if (!toUserId || !threadId || !sdp) return;
+        if (callRooms[threadId]) callRooms[threadId].participants.add(String(socket.userId));
+        io.to(`user_${toUserId}`).emit('call_answer', { fromUserId: socket.userId, threadId, sdp });
+    });
+    socket.on('call_ice', (data) => {
+        const { toUserId, threadId, candidate } = data;
+        if (!toUserId || !threadId) return;
+        io.to(`user_${toUserId}`).emit('call_ice', { fromUserId: socket.userId, threadId, candidate });
+    });
+    socket.on('call_end', (data) => {
+        const { threadId } = data;
+        if (!threadId) return;
+        const room = callRooms[threadId];
+        if (room) {
+            room.participants.delete(String(socket.userId));
+            room.participants.forEach(uid => io.to(`user_${uid}`).emit('call_participant_left', { userId: socket.userId, threadId }));
+            if (room.participants.size === 0) delete callRooms[threadId];
+        }
+    });
+    socket.on('call_reject', (data) => {
+        const { toUserId, threadId } = data;
+        if (!toUserId || !threadId) return;
+        io.to(`user_${toUserId}`).emit('call_reject', { fromUserId: socket.userId, threadId });
+    });
+    socket.on('call_invite', async (data) => {
+        const { toUserId, threadId, type, participantIds } = data;
+        if (!toUserId || !threadId) return;
+        const room = callRooms[threadId];
+        if (!room || !room.participants.has(String(socket.userId))) return;
+        const fromUser = await User.findByPk(socket.userId, { attributes: ['name', 'email'] });
+        const fromUserName = (fromUser && (fromUser.name || fromUser.email)) || '';
+        io.to(`user_${toUserId}`).emit('call_invite', { fromUserId: socket.userId, fromUserName, threadId, type: type || room.type, participantIds: participantIds || Array.from(room.participants) });
+    });
+    socket.on('call_invite_accept', (data) => {
+        const { threadId, type } = data;
+        if (!threadId) return;
+        const room = callRooms[threadId];
+        if (!room) return;
+        const participants = Array.from(room.participants);
+        room.participants.add(String(socket.userId));
+        participants.forEach(uid => io.to(`user_${uid}`).emit('call_participant_joined', { userId: socket.userId, threadId }));
+        io.to(`user_${socket.userId}`).emit('call_room_info', { threadId, participantIds: participants, type: type || room.type });
+    });
+    socket.on('call_invite_reject', async (data) => {
+        const { fromUserId, threadId } = data;
+        if (!fromUserId || !threadId) return;
+        const rejecter = await User.findByPk(socket.userId, { attributes: ['name', 'email'] });
+        const userName = (rejecter && (rejecter.name || rejecter.email)) || '';
+        io.to(`user_${fromUserId}`).emit('call_invite_reject', { userId: socket.userId, userName, threadId });
+    });
+
     // تغییر وضعیت کاربر
     socket.on('status_change', async (status) => {
         await User.update(
@@ -524,6 +589,14 @@ io.on('connection', (socket) => {
     
     socket.on('disconnect', async () => {
         logger.info(`🔌 User disconnected: ${socket.userId}`);
+        Object.keys(callRooms).forEach(threadId => {
+            const room = callRooms[threadId];
+            if (room && room.participants.has(String(socket.userId))) {
+                room.participants.delete(String(socket.userId));
+                room.participants.forEach(uid => io.to(`user_${uid}`).emit('call_participant_left', { userId: socket.userId, threadId }));
+                if (room.participants.size === 0) delete callRooms[threadId];
+            }
+        });
         if (socket.userId) {
             try {
                 const user = await User.findByPk(socket.userId);

@@ -147,14 +147,13 @@ certbot --nginx -d yourdomain.com
 
 ## به‌روزرسانی بعدی (بعد از تغییر در گیت)
 
-روی سرور:
+**خودکار:** با هر push به `master`، GitHub Actions سرور را به‌روز می‌کند. راهنما: [DEPLOY-SETUP.md](DEPLOY-SETUP.md)
+
+**دستی** روی سرور:
 
 ```bash
 cd /var/www/kayaCRM
-git pull origin master
-cd backend
-npm install --production
-pm2 restart crm-backend
+bash scripts/deploy.sh
 ```
 
 ---

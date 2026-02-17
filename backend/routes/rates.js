@@ -90,9 +90,9 @@ router.get('/', async (req, res) => {
             ? visibleKeys.map(k => allItems.find(i => i.key === k)).filter(Boolean)
             : allItems;
 
-        // همیشه زمان فعلی سرور به صورت ISO — تاریخ API ناواسان فرمت یکسانی ندارد و در مرورگر به اشتباه (مثلاً سال ۷۸۳/۸۰۷) تفسیر می‌شد
-        const updatedAt = new Date().toISOString();
-        res.json({ items, allItems, visibleKeys: visibleKeys || RATES_KEYS.map(r => r.key), updatedAt });
+        const ts = raw.usd_sell && raw.usd_sell.timestamp ? raw.usd_sell.timestamp : null;
+        const updatedAt = ts ? new Date(ts * 1000).toISOString() : new Date().toISOString();
+        res.json({ items, allItems, visibleKeys: visibleKeys || RATES_KEYS.map(r => r.key), updatedAt, updatedAtTimestamp: ts || null });
     } catch (err) {
         res.status(502).json({
             error: 'دریافت قیمت‌ها ناموفق بود',
