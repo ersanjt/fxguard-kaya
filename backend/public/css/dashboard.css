@@ -179,7 +179,14 @@
         .msg.out { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); border: none; color: #fff; margin-left: auto; margin-right: 0; border-bottom-left-radius: 4px; }
         .msg.out .time { color: rgba(255,255,255,0.85); }
         .msg .time { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+        .msg-media { margin: 6px 0; }
+        .msg-media-image img { max-width: 100%; max-height: 240px; border-radius: 12px; display: block; }
+        .msg-media-image a { display: inline-block; }
+        .msg-file-link { color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
+        .msg-file-link:hover { text-decoration: underline; }
         .chat-send { display: flex; gap: 12px; padding: 16px; background: var(--bg-card); border-top: 1px solid var(--border); align-items: center; flex-shrink: 0; }
+        .chat-attach-btn { width: 44px; height: 44px; min-width: 44px; padding: 0; display: flex; align-items: center; justify-content: center; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; -webkit-tap-highlight-color: transparent; }
+        .chat-attach-btn:hover { background: var(--bg-hover); color: var(--accent); border-color: var(--accent); }
         .internal-chat-file-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .internal-chat-file-wrap input[type="file"] { position: absolute; width: 0.1px; height: 0.1px; opacity: 0; overflow: hidden; z-index: -1; }
         .internal-chat-attach-btn { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; -webkit-tap-highlight-color: transparent; }

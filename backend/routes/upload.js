@@ -18,12 +18,7 @@ const storage = multer.diskStorage({
 const upload = multer({
     storage,
     limits: { fileSize: 15 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-        const allowed = /\.(pdf|doc|docx|xls|xlsx|txt|zip|rar|png|jpg|jpeg|gif|webp)$/i;
-        const name = file.originalname || '';
-        if (allowed.test(name)) return cb(null, true);
-        cb(null, true);
-    }
+    fileFilter: (req, file, cb) => { cb(null, true); }
 });
 
 router.post('/', upload.single('file'), (req, res) => {

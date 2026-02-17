@@ -1795,7 +1795,22 @@
                 if (isOut && m.user && (m.user.name || m.user.username)) {
                     senderLabel = '<div class="msg-sender">' + escapeHtml(m.user.name || m.user.username) + '</div>';
                 }
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + senderLabel + '<div>' + escapeHtml(m.content || '') + '</div><div class="time">' + time + '</div></div>';
+                var mediaHtml = '';
+                if (m.hasMedia && m.mediaData && m.mediaData.url) {
+                    var mediaUrl = m.mediaData.url.startsWith('http') ? m.mediaData.url : (API + (m.mediaData.url.startsWith('/') ? '' : '/') + m.mediaData.url);
+                    if (m.type === 'image') {
+                        var imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
+                        mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy"></a></div>';
+                    } else if (m.type === 'video') {
+                        mediaHtml = '<div class="msg-media"><video src="' + escapeHtml(mediaUrl) + '" controls style="max-width:100%;max-height:200px;"></video></div>';
+                    } else if (m.type === 'audio') {
+                        mediaHtml = '<div class="msg-media"><audio src="' + escapeHtml(mediaUrl) + '" controls></audio></div>';
+                    } else {
+                        mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener" class="msg-file-link">📎 ' + escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'فایل' : 'File')) + '</a></div>';
+                    }
+                }
+                var contentHtml = (m.content || '') ? '<div>' + escapeHtml(m.content) + '</div>' : '';
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="time">' + time + '</div></div>';
             }).join('');
             scrollChatToEnd(el);
         }
@@ -1834,13 +1849,25 @@
 
         async function sendMsg() {
             var input = document.getElementById('msgInput');
+            var fileInput = document.getElementById('msgFileInput');
             var content = (input.value || '').trim();
-            if (!content || !currentConvId) return;
+            var file = fileInput && fileInput.files && fileInput.files[0];
+            if ((!content && !file) || !currentConvId) return;
+            var media = null;
+            if (file) {
+                var fd = new FormData();
+                fd.append('file', file);
+                var uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+                var uploadData = await uploadRes.json().catch(function() { return {}; });
+                if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
+                media = { url: uploadData.url, filename: uploadData.name || file.name, mimetype: file.type };
+                fileInput.value = '';
+            }
             input.value = '';
-            var res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: content }) });
+            var res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: content || '', media: media }) });
             if (res.needLogin) return;
             if (res.ok) loadMessages(currentConvId);
-            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسا�'), true);
+            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
         }
 
         async function loadCustomers() {

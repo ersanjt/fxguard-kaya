@@ -313,7 +313,7 @@ router.post('/:id/read', async (req, res) => {
     }
 });
 
-// ——— ارسال پیام
+// ——— ارسال پیام (متن یا فایل/عکس)
 router.post('/:id/send', async (req, res) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
@@ -322,27 +322,44 @@ router.post('/:id/send', async (req, res) => {
         const accessibleCustomerIds = await getAccessibleCustomerIds(req);
         if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         const content = (req.body.content || '').trim();
-        if (!content) return res.status(400).json({ error: 'متن پیام الزامی است' });
+        const media = req.body.media || null;
+        if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
+        const baseUrl = process.env.BACKEND_PUBLIC_URL || (req.protocol + '://' + req.get('host'));
+        let mediaUrl = null;
+        let msgType = req.body.type || 'text';
+        let hasMedia = false;
+        let mediaData = null;
+        if (media && (media.url || media.filename)) {
+            hasMedia = true;
+            const relPath = media.url || ('/uploads/' + media.filename);
+            mediaUrl = relPath.startsWith('http') ? relPath : baseUrl + (relPath.startsWith('/') ? '' : '/') + relPath;
+            const mime = media.mimetype || '';
+            if (mime.startsWith('image/')) msgType = 'image';
+            else if (mime.startsWith('video/')) msgType = 'video';
+            else if (mime.startsWith('audio/')) msgType = 'audio';
+            else msgType = 'document';
+            mediaData = { url: mediaUrl, filename: media.filename || media.name, mimetype: media.mimetype };
+        }
         const msg = await Message.create({
             conversationId: conversation.id,
             customerId: conversation.customerId,
             userId: req.userId,
             direction: 'outgoing',
-            content,
-            type: req.body.type || 'text',
+            content: content || (hasMedia ? (media.filename || media.name || '') : ''),
+            type: msgType,
+            hasMedia,
+            mediaData,
             timestamp: new Date()
         });
-        var preview = (content || '').slice(0, 120);
+        var preview = (content || '').slice(0, 120) || (hasMedia ? '📎 فایل' : '');
         if ((content || '').length > 120) preview += '…';
         const updateData = { lastMessageAt: new Date(), lastMessagePreview: preview, unreadCount: 0 };
         if (!conversation.branchId && req.user.branchId) updateData.branchId = req.user.branchId;
         await conversation.update(updateData);
         const gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3001';
-        await axios.post(gatewayUrl + '/api/send-message', {
-            to: conversation.customer.phone,
-            message: content,
-            media: req.body.media || null
-        }, { timeout: 10000 }).catch(() => {});
+        const payload = { to: conversation.customer.phone, message: content };
+        if (mediaUrl) payload.media = { url: mediaUrl };
+        await axios.post(gatewayUrl + '/api/send-message', payload, { timeout: 10000 }).catch(() => {});
         await logActivity({
             userId: req.userId,
             branchId: req.user.branchId || conversation.branchId,
@@ -352,7 +369,7 @@ router.post('/:id/send', async (req, res) => {
             entityId: msg.id,
             customerId: conversation.customerId,
             summary: `پیام به مشتری ${conversation.customer.phone || conversation.customerId}`,
-            metadata: { conversationId: conversation.id, contentLength: content.length }
+            metadata: { conversationId: conversation.id, contentLength: (content || '').length, hasMedia: !!hasMedia }
         });
         res.json(msg);
     } catch (err) {
