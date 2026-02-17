@@ -1,3 +1,4 @@
+const MAIN_ADMIN_EMAIL = 'admin@kaya.local';
 const express = require('express');
 const path = require('path');
 const http = require('http');
@@ -28,7 +29,6 @@ const processRoutes = require('./routes/processes');
 // Database
 const models = require('./models');
 const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse } = models;
-const { MAIN_ADMIN_EMAIL } = require('./lib/permissions');
 
 const mongoose = require('mongoose');
 
@@ -49,8 +49,9 @@ app.use(cors({
     origin: (origin, cb) => { if (!origin || allowedOrigins.includes(origin)) cb(null, true); else cb(null, allowedOrigins[0]); },
     credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "25mb" }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
+app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
 // Rate Limiting
 const limiter = rateLimit({
