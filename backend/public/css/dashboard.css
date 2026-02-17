@@ -88,6 +88,37 @@
         .ticker-config-available { display: flex; flex-wrap: wrap; gap: 8px; }
         .ticker-config-available .ticker-config-add { padding: 6px 12px; background: var(--bg-hover); border: 1px dashed var(--border); border-radius: 8px; font-size: 0.85rem; color: var(--text-secondary); cursor: pointer; }
         .ticker-config-available .ticker-config-add:hover { background: var(--border); color: var(--text-primary); border-color: var(--accent); }
+        /* صفحه نرخ ارزها */
+        .rates-page { display: flex; flex-direction: column; gap: 24px; max-width: 100%; min-width: 0; }
+        .rates-page-header h2 { margin: 0 0 8px; }
+        .rates-intro { color: var(--text-secondary); font-size: 0.9rem; margin: 0; line-height: 1.6; }
+        .rates-ticker-section { max-width: 100% !important; width: 100%; }
+        .rates-section-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 12px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
+        .rates-section-hint { font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 16px; line-height: 1.5; }
+        .rates-adjust-types-info { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+        .rates-adjust-types-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px 24px; }
+        .rates-adjust-type-item { display: flex; flex-direction: column; gap: 2px; padding: 10px 14px; background: var(--bg-hover); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+        .rates-adjust-type-label { font-weight: 600; font-size: 0.9rem; color: var(--text-primary); }
+        .rates-adjust-type-desc { font-size: 0.8rem; color: var(--text-muted); }
+        .rates-adjustments-section { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+        .rates-adjustments-content { min-width: 0; }
+        .rates-adjustments-content.empty { text-align: center; color: var(--text-muted); padding: 32px 24px; font-size: 0.95rem; }
+        .rates-table-wrap { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }
+        .rates-adjustments-content .sup-table { width: 100%; min-width: 400px; margin-top: 0; }
+        .rates-adjustments-content .sup-table th, .rates-adjustments-content .sup-table td { padding: 12px 16px; }
+        .rates-adjustments-content .sup-table select { width: 100%; min-width: 120px; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); }
+        .rates-adjustments-content .sup-table input[type="number"] { width: 100%; min-width: 100px; max-width: 160px; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); }
+        .rates-adjustments-actions { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+        .rates-cards { display: none; grid-template-columns: 1fr; gap: 12px; }
+        .rates-cards-wrap { display: none; }
+        .rate-card { background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; align-items: center; transition: border-color 0.2s; }
+        .rate-card:hover { border-color: var(--accent); }
+        .rate-card-currency { grid-column: 1; font-weight: 600; color: var(--text-primary); font-size: 1rem; }
+        .rate-card-price { grid-column: 2; font-weight: 700; color: var(--accent); font-size: 1rem; text-align: left; }
+        .rate-card-type { grid-column: 1; }
+        .rate-card-type label, .rate-card-value label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
+        .rate-card-value { grid-column: 2; }
+        .rate-card-type select, .rate-card-value input { width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); }
         .main-wrap { display: flex; flex: 1; overflow: hidden; flex-direction: column; padding-bottom: max(48px, calc(40px + env(safe-area-inset-bottom))); min-height: 0; }
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9998; opacity: 0; transition: opacity 0.25s; -webkit-tap-highlight-color: transparent; pointer-events: none; }
         .sidebar-overlay.show { opacity: 1; pointer-events: auto; }
@@ -162,6 +193,8 @@
         .content { flex: 1; display: flex; flex-direction: column; overflow: auto; padding: 24px; max-width: 100%; min-width: 0; min-height: 0; -webkit-overflow-scrolling: touch; }
         .content:has(#pageConversations.show),
         .content.page-conversations { overflow: hidden; }
+        .content:has(#pageInternalChat.show) { overflow: hidden; }
+        .content:has(#pageInternalChat.show) #pageInternalChat { flex: 1; min-height: 0; }
         .content h2 { color: var(--text-primary); font-size: 1.2rem; font-weight: 600; margin: 0 0 20px; }
         .page { display: none; max-width: 100%; min-width: 0; width: 100%; overflow-x: hidden; }
         .page.show { display: block; }
@@ -676,6 +709,15 @@
             .user-add-form #userAddPerms { grid-template-columns: 1fr; }
             .ticker-config-list { flex-wrap: wrap; }
             #pageWhatsapp .form-box, #pageWhatsapp .qr-box, .qr-box { width: 100%; max-width: 100%; box-sizing: border-box; }
+            /* صفحه نرخ ارز — موبایل: کارت‌ها به‌جای جدول */
+            .rates-adjust-types-grid { grid-template-columns: 1fr; }
+            .rates-table-wrap { display: none !important; }
+            .rates-cards-wrap { display: grid !important; grid-template-columns: 1fr; gap: 12px; }
+            .rates-adjustments-section { padding: 16px; }
+        }
+        @media (min-width: 769px) {
+            .rates-table-wrap { display: block; }
+            .rates-cards-wrap { display: none !important; }
         }
         /* ========== 360px و کمتر (موبایل کوچک) ========== */
         @media (max-width: 360px) {
@@ -900,7 +942,7 @@
         .internal-chat-popup-send button { padding: 10px 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-weight: 600; cursor: pointer; font-size: 0.9rem; }
         .internal-chat-popup-send button:hover { background: var(--accent-hover); }
         /* ========== Internal Chat — Full Responsive (EN/FA, RTL/LTR) ========== */
-        #pageInternalChat { display: flex; flex-direction: column; min-height: 0; }
+        #pageInternalChat { display: flex; flex-direction: column; min-height: 0; flex: 1; }
         #pageInternalChat.show { display: flex; }
         #pageInternalChat > h2 { margin: 0 0 16px; flex-shrink: 0; }
         .internal-chat-layout-wrap { display: flex; gap: 16px; flex-wrap: wrap; flex: 1; min-height: 0; overflow: hidden; }
@@ -909,10 +951,14 @@
         .internal-chat-thread-list { flex: 1; margin-top: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 200px; }
         .internal-chat-pane { flex: 2; min-width: 300px; display: flex; flex-direction: column; min-height: 320px; }
         #internalChatPane { display: flex; flex-direction: column; min-height: 320px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-secondary); overflow: hidden; }
-        #internalChatPane .chat-header { flex-shrink: 0; padding: 12px 16px; }
+        #internalChatPane .chat-header { flex-shrink: 0; padding: 12px 16px; padding-top: max(12px, env(safe-area-inset-top)); }
         #internalChatPane .chat-messages { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; }
         #internalChatPane .chat-send { flex-shrink: 0; padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
         .internal-chat-header-row { flex-wrap: wrap; gap: 8px; }
+        .internal-chat-back-btn { display: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; border: none; background: var(--bg-secondary); color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; align-items: center; justify-content: center; flex-shrink: 0; -webkit-tap-highlight-color: transparent; transition: background 0.2s, color 0.2s; }
+        .internal-chat-back-btn:hover { background: var(--bg-hover); color: var(--accent); }
+        [dir="rtl"] .internal-chat-back-btn svg { transform: scaleX(-1); }
+        .internal-chat-header-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .internal-call-btn { min-width: 44px; min-height: 44px; -webkit-tap-highlight-color: transparent; }
         #internalNewChatForm { padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); }
         #internalNewChatForm select { min-height: 80px; }
@@ -934,7 +980,6 @@
             .internal-chat-pane { min-height: 280px; flex: 1; }
         }
         @media (max-width: 992px) {
-            #pageInternalChat .content { padding: 16px; }
             #internalChatPane .chat-messages { padding: 12px; }
             #internalChatPane .chat-send { padding: 10px 12px; gap: 8px; flex-wrap: wrap; }
             .internal-call-content { padding: 16px; }
@@ -942,7 +987,11 @@
             .internal-call-local-video { width: 100px; height: 75px; }
         }
         @media (max-width: 768px) {
-            .internal-chat-thread-col { max-height: 180px; }
+            .internal-chat-back-btn { display: flex; }
+            .internal-chat-layout-wrap.internal-chat-mobile-chat-open .internal-chat-thread-col { display: none !important; }
+            .internal-chat-layout-wrap.internal-chat-mobile-chat-open .internal-chat-pane { flex: 1; min-height: 0; min-width: 0; }
+            .internal-chat-layout-wrap.internal-chat-mobile-chat-open #internalChatPane { min-height: 280px; flex: 1; }
+            .internal-chat-thread-col { max-height: 55vh; flex: 1; min-height: 200px; }
             #internalThreadList .list-item { padding: 12px 14px; min-height: 44px; }
             #internalChatPane .chat-header { padding: 10px 12px; }
             #internalChatPane .chat-messages { padding: 10px; min-height: 160px; }
@@ -962,7 +1011,7 @@
         @media (max-width: 576px) {
             #pageInternalChat > h2 { font-size: 1.1rem; margin-bottom: 12px; }
             .internal-chat-layout-wrap { flex-direction: column; gap: 12px; }
-            .internal-chat-thread-col { min-width: 0 !important; flex: 0 0 auto; max-height: 160px; }
+            .internal-chat-thread-col { min-width: 0 !important; flex: 1; max-height: 50vh; min-height: 180px; }
             .internal-chat-pane { min-width: 0 !important; min-height: 240px; flex: 1; }
             #internalChatPane .chat-messages { padding: 8px; min-height: 120px; }
             #internalChatPane .chat-send { padding: 8px 10px; gap: 6px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
@@ -986,7 +1035,7 @@
             #internalCallInviteModal .internal-call-action-btn { min-width: 100px; }
         }
         @media (max-width: 380px) {
-            .internal-chat-thread-col { max-height: 140px; }
+            .internal-chat-thread-col { max-height: 45vh; min-height: 160px; }
             .internal-chat-popup { width: calc(100vw - 16px); inset-inline-start: 8px; }
             [dir="rtl"] .internal-chat-popup { right: 8px; left: 8px; }
             body.ltr .internal-chat-popup { left: 8px; right: 8px; }

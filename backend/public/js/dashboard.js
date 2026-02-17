@@ -443,7 +443,7 @@
                     whatsapp_welcome_title: 'Auto-reply to first message', whatsapp_welcome_hint: 'When someone messages you for the first time, this text is sent automatically. Empty = disabled', whatsapp_welcome_enabled: 'Enabled', whatsapp_welcome_ph: 'Hello! Welcome to Kaya Exchange. How can we help you?',
                     whatsapp_dept_routing: 'Auto-assign to department', whatsapp_dept_routing_hint: 'Based on keywords in the message, the conversation is routed to the relevant department.', whatsapp_unassigned: 'Unassigned conversations', whatsapp_unassigned_hint: 'These conversations need department or assignee assignment.',
                     rates_intro: 'Prices are fetched from API and shown in the bottom bar for everyone.', rates_adjust_type: 'Adjustment type',
-                    rates_none: 'No change', rates_fixed: 'Fixed', rates_delta: '± Amount', rates_percent: '± Percent', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value',
+                    rates_none: 'No change', rates_fixed: 'Fixed', rates_delta: '± Amount', rates_percent: '± Percent', rates_adjustments: 'Rate adjustments', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value', rates_ph_percent: 'e.g. 2 or -1', rates_ph_delta: 'e.g. 500 or -200', rates_ph_fixed: 'Fixed price', rates_no_access: 'You do not have access to this section.',
                     no_data: 'No data.', loading_err: 'Error loading.', select_user: 'Select user',
                     empty_conv_list: 'No conversations. Click "New conversation".', chat: 'Chat', empty_internal_msgs: 'No messages yet.', file: 'File',
                     conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me', conv_supervision_title: 'Manager oversight',
@@ -749,7 +749,7 @@
             if (!el) return;
             el.innerHTML = t('loading');
             var canAccess = (currentUser && currentUser.permissions && currentUser.permissions.rates);
-            if (!canAccess) { el.innerHTML = '<div class="empty">' + (LANG === 'en' ? 'You do not have access to this section.' : 'دسترس�R ب�! ا�R�  بخش � دار�Rد.') + '</div>'; return; }
+            if (!canAccess) { el.innerHTML = '<div class="empty">' + t('rates_no_access') + '</div>'; return; }
             var ratesRes = await apiFetch('/api/rates');
             var adjRes = await apiFetch('/api/rates/adjustments');
             if (ratesRes.needLogin || adjRes.needLogin) return;
@@ -758,34 +758,39 @@
             var adjList = (adjRes.data && adjRes.data.data) || [];
             var adjMap = {};
             adjList.forEach(function(a) { adjMap[a.currencyKey] = a; });
-            var html = '<table class="sup-table" style="margin-top:0;"><thead><tr><th>' + t('rates_currency') + '</th><th>' + t('rates_current') + '</th><th>' + t('rates_adjust_type') + '</th><th>' + t('rates_value') + '</th></tr></thead><tbody>';
+            function getRatePlaceholder(type) { return type === 'percent' ? t('rates_ph_percent') : type === 'delta_toman' ? t('rates_ph_delta') : t('rates_ph_fixed'); }
+            var tableHtml = '<table class="sup-table" style="margin-top:0;"><thead><tr><th>' + t('rates_currency') + '</th><th>' + t('rates_current') + '</th><th>' + t('rates_adjust_type') + '</th><th>' + t('rates_value') + '</th></tr></thead><tbody>';
+            var cardsHtml = '';
             items.forEach(function(it) {
                 var adj = adjMap[it.key] || { adjustmentType: 'none', value: null };
                 var type = adj.adjustmentType || 'none';
                 var val = adj.value != null ? adj.value : '';
                 var typeOpts = '<option value="none"' + (type === 'none' ? ' selected' : '') + '>' + t('rates_none') + '</option><option value="fixed"' + (type === 'fixed' ? ' selected' : '') + '>' + t('rates_fixed') + '</option><option value="delta_toman"' + (type === 'delta_toman' ? ' selected' : '') + '>' + t('rates_delta') + '</option><option value="percent"' + (type === 'percent' ? ' selected' : '') + '>' + t('rates_percent') + '</option>';
-                var disp = it.value != null && it.value !== '�' ? formatPrice(it.value) : '�';
-                var ph = type === 'percent' ? (LANG === 'en' ? 'e.g. 2 or -1' : '�&ث�ا�9 2 �Rا -1') : type === 'delta_toman' ? (LANG === 'en' ? 'e.g. 500 or -200' : '�&ث�ا�9 500 �Rا -200') : (LANG === 'en' ? 'Fixed price' : '��R�&ت ثابت');
-                html += '<tr><td>' + escapeHtml(rateLabel(it.key)) + '</td><td><strong>' + disp + '</strong></td><td><select data-rate-key="' + it.key + '" data-rate-type="type">' + typeOpts + '</select></td><td><input type="number" step="any" data-rate-key="' + it.key + '" data-rate-value="value" value="' + (val !== '' ? escapeHtml(String(val)) : '') + '" placeholder="' + ph + '" style="width:140px; padding:8px;"></td></tr>';
+                var disp = (it.value != null && it.value !== '' && !isNaN(parseFloat(it.value))) ? formatPrice(it.value) : '—';
+                var ph = getRatePlaceholder(type);
+                tableHtml += '<tr><td>' + escapeHtml(rateLabel(it.key)) + '</td><td><strong>' + disp + '</strong></td><td><select data-rate-key="' + escapeHtml(it.key) + '" data-rate-type="type">' + typeOpts + '</select></td><td><input type="number" step="any" data-rate-key="' + escapeHtml(it.key) + '" data-rate-value="value" value="' + (val !== '' ? escapeHtml(String(val)) : '') + '" placeholder="' + escapeHtml(ph) + '"></td></tr>';
+                cardsHtml += '<div class="rate-card" data-rate-key="' + escapeHtml(it.key) + '"><div class="rate-card-currency">' + escapeHtml(rateLabel(it.key)) + '</div><div class="rate-card-price">' + disp + '</div><div class="rate-card-type"><label>' + t('rates_adjust_type') + '</label><select data-rate-key="' + escapeHtml(it.key) + '" data-rate-type="type">' + typeOpts + '</select></div><div class="rate-card-value"><label>' + t('rates_value') + '</label><input type="number" step="any" data-rate-key="' + escapeHtml(it.key) + '" data-rate-value="value" value="' + (val !== '' ? escapeHtml(String(val)) : '') + '" placeholder="' + escapeHtml(ph) + '"></div></div>';
             });
-            html += '</tbody></table>';
-            el.innerHTML = html;
+            tableHtml += '</tbody></table>';
+            el.innerHTML = '<div class="rates-table-wrap">' + tableHtml + '</div><div class="rates-cards-wrap">' + cardsHtml + '</div>';
             el.querySelectorAll('select[data-rate-key]').forEach(function(sel) {
                 sel.addEventListener('change', function() {
                     var key = this.getAttribute('data-rate-key');
-                    var inp = document.querySelector('input[data-rate-key="' + key + '"]');
-                    if (inp) inp.placeholder = this.value === 'percent' ? (LANG === 'en' ? 'e.g. 2 or -1' : '�&ث�ا�9 2 �Rا -1') : this.value === 'delta_toman' ? (LANG === 'en' ? 'e.g. 500 or -200' : '�&ث�ا�9 500 �Rا -200') : (LANG === 'en' ? 'Fixed price' : '��R�&ت ثابت');
+                    var inps = document.querySelectorAll('input[data-rate-key="' + key.replace(/"/g, '\\"') + '"]');
+                    var ph = getRatePlaceholder(this.value);
+                    inps.forEach(function(inp) { inp.placeholder = ph; });
                 });
             });
         }
         async function saveRatesAdjustments() {
-            var table = document.getElementById('ratesAdjustmentsTable');
-            if (!table) return;
-            var rows = table.querySelectorAll('tbody tr');
+            var container = document.getElementById('ratesAdjustmentsTable');
+            if (!container) return;
+            var isMobile = window.matchMedia('(max-width: 768px)').matches;
+            var items = isMobile ? container.querySelectorAll('.rate-card') : container.querySelectorAll('tbody tr');
             var adjustments = [];
-            rows.forEach(function(tr) {
-                var typeSel = tr.querySelector('select[data-rate-key]');
-                var valInp = tr.querySelector('input[data-rate-key]');
+            items.forEach(function(el) {
+                var typeSel = el.querySelector('select[data-rate-key]');
+                var valInp = el.querySelector('input[data-rate-key]');
                 if (!typeSel || !valInp) return;
                 var key = typeSel.getAttribute('data-rate-key');
                 var type = typeSel.value || 'none';
@@ -2239,7 +2244,7 @@
             if (page === 'staff-activity') { loadStaffActivity(); startStaffActivityLive(); } else { stopStaffActivityLive(); }
             if (page === 'profile') loadProfile();
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
-            if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); var popupTid = currentInternalThreadId; closeInternalChatPopup(); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
+            if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); var popupTid = currentInternalThreadId; closeInternalChatPopup(); var wrap = document.getElementById('internalChatLayoutWrap'); if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open'); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
             if (page === 'supervision') { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
         }
 
@@ -3309,10 +3314,20 @@
             if (res.needLogin) return;
             if (res.ok) { hideNewChatForm(); openInternalThread(res.data.id); loadInternalThreads(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
+        function backToInternalChatList() {
+            var wrap = document.getElementById('internalChatLayoutWrap');
+            var pane = document.getElementById('internalChatPane');
+            if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open');
+            if (pane) pane.style.display = 'none';
+        }
+        function isInternalChatMobile() { return window.matchMedia('(max-width: 768px)').matches; }
         async function openInternalThread(threadId) {
             currentInternalThreadId = threadId;
             currentInternalThreadOtherUserId = null;
-            document.getElementById('internalChatPane').style.display = 'block';
+            var pane = document.getElementById('internalChatPane');
+            var wrap = document.getElementById('internalChatLayoutWrap');
+            pane.style.display = 'block';
+            if (wrap && isInternalChatMobile()) wrap.classList.add('internal-chat-mobile-chat-open');
             var partRes = await apiFetch('/api/internal/threads');
             if (partRes.ok && partRes.data && partRes.data.data) {
                 var t = partRes.data.data.find(function(x) { return x.id === threadId; });
