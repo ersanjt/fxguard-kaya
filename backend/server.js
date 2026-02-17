@@ -8,6 +8,7 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const compression = require('compression');
 const amqp = require('amqplib');
 const redis = require('redis');
 const winston = require('winston');
@@ -52,6 +53,7 @@ app.use(cors({
     origin: (origin, cb) => { if (!origin || allowedOrigins.includes(origin)) cb(null, true); else cb(null, allowedOrigins[0]); },
     credentials: true
 }));
+app.use(compression());
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
@@ -122,8 +124,12 @@ async function connectRabbitMQ() {
 async function connectDatabases() {
     try {
         await sequelize.authenticate();
+        if (sequelize.getDialect() === 'sqlite') {
+            await sequelize.query('PRAGMA journal_mode=WAL;');
+            await sequelize.query('PRAGMA synchronous=NORMAL;');
+        }
         await sequelize.sync();
-        logger.info(process.env.USE_SQLITE ? '✅ SQLite Connected' : '✅ PostgreSQL Connected');
+        logger.info(process.env.USE_SQLITE ? '✅ SQLite Connected (WAL)' : '✅ PostgreSQL Connected');
         
         if (!process.env.USE_SQLITE) {
             try {
@@ -782,6 +788,12 @@ async function checkUnansweredConversations() {
         const escalateMin = cfg.escalateUnansweredAfterMinutes ?? 15;
         const escalationDeptId = cfg.escalationDepartmentId;
 
+        let targetDeptCache = null;
+        if (escalationDeptId) {
+            targetDeptCache = await Department.findByPk(escalationDeptId);
+        }
+        if (!targetDeptCache) targetDeptCache = await Department.findOne({ where: { isDefault: true } });
+
         const now = new Date();
         const alertThreshold = new Date(now.getTime() - alertMin * 60000);
         const escalateThreshold = new Date(now.getTime() - escalateMin * 60000);
@@ -809,24 +821,19 @@ async function checkUnansweredConversations() {
 
             // Escalation: برگرداندن به دپارتمان پشتیبانی
             if (lastIn < escalateThreshold && (!conv.escalatedAt || new Date(conv.escalatedAt) < lastIn)) {
-                let targetDept = null;
-                if (escalationDeptId) {
-                    targetDept = await Department.findByPk(escalationDeptId);
-                }
-                if (!targetDept) targetDept = await Department.findOne({ where: { isDefault: true } });
-                if (targetDept) {
+                if (targetDeptCache) {
                     await conv.update({
-                        departmentId: targetDept.id,
+                        departmentId: targetDeptCache.id,
                         assignedTo: null,
                         escalatedAt: now
                     });
                     io.emit('conversation_escalated', {
                         conversationId: conv.id,
                         customer: conv.customer,
-                        department: targetDept.name,
+                        department: targetDeptCache.name,
                         minutesWaiting: minsWaiting
                     });
-                    logger.info(`⬆️ Escalated conversation ${conv.id} to ${targetDept.name} (${minsWaiting} min unanswered)`);
+                    logger.info(`⬆️ Escalated conversation ${conv.id} to ${targetDeptCache.name} (${minsWaiting} min unanswered)`);
                 }
             }
             // Alert: اعلان به مسئول/دپارتمان

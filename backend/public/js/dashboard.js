@@ -521,6 +521,15 @@
         let presenceInterval = null;
         let staffActivityInterval = null;
         let socket = null;
+        let loadConversationsDebounceTimer = null;
+        function debouncedLoadConversations(ms) {
+            ms = ms || 400;
+            if (loadConversationsDebounceTimer) clearTimeout(loadConversationsDebounceTimer);
+            loadConversationsDebounceTimer = setTimeout(function() {
+                loadConversationsDebounceTimer = null;
+                loadConversations();
+            }, ms);
+        }
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
@@ -891,7 +900,7 @@
                         var onConv = active && active.getAttribute('data-page') === 'conversations';
                         var convId = data.conversationId || (data.conversation && data.conversation.id);
                         var viewingConv = onConv && currentConvId === convId;
-                        if (onConv) { loadConversations(); updateNavBadges(); }
+                        if (onConv) { debouncedLoadConversations(400); updateNavBadges(); }
                         if (viewingConv && convId) loadMessages(convId);
                         else if (data.customer && !viewingConv) toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + (data.customer.name || data.customer.phone || ''), false);
                     });
@@ -1020,7 +1029,7 @@
                         var msg = (LANG === 'fa' ? 'مکالمه بدون پاسخ: ' : 'Unanswered: ') + cust + (LANG === 'fa' ? ' — ' + mins + ' دقیقه' : ' — ' + mins + ' min');
                         toast(msg, 8000);
                         var active = document.querySelector('.nav-link.active');
-                        if (active && active.getAttribute('data-page') === 'conversations') loadConversations();
+                        if (active && active.getAttribute('data-page') === 'conversations') debouncedLoadConversations(400);
                     });
                     socket.on('conversation_escalated', function(data) {
                         playInternalChatSound();
@@ -1029,7 +1038,7 @@
                         var msg = (LANG === 'fa' ? 'Escalation: ' : 'Escalated: ') + cust + (LANG === 'fa' ? ' به ' : ' to ') + dept;
                         toast(msg, 10000);
                         var active = document.querySelector('.nav-link.active');
-                        if (active && active.getAttribute('data-page') === 'conversations') loadConversations();
+                        if (active && active.getAttribute('data-page') === 'conversations') debouncedLoadConversations(400);
                     });
                     socket.on('connect_error', function() { socket = null; });
                 }
@@ -1163,12 +1172,26 @@
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
+        var STAFF_ACTIVITY_INTERVAL_VISIBLE = 15000;
+        var STAFF_ACTIVITY_INTERVAL_HIDDEN = 30000;
         function startStaffActivityLive() {
             if (staffActivityInterval) clearInterval(staffActivityInterval);
-            staffActivityInterval = setInterval(loadStaffActivity, 15000);
+            var ms = (typeof document !== 'undefined' && document.hidden) ? STAFF_ACTIVITY_INTERVAL_HIDDEN : STAFF_ACTIVITY_INTERVAL_VISIBLE;
+            staffActivityInterval = setInterval(loadStaffActivity, ms);
+            if (typeof document !== 'undefined' && document.addEventListener) {
+                document.removeEventListener('visibilitychange', _staffActivityVisibilityHandler);
+                document.addEventListener('visibilitychange', _staffActivityVisibilityHandler);
+            }
+        }
+        function _staffActivityVisibilityHandler() {
+            if (!staffActivityInterval) return;
+            clearInterval(staffActivityInterval);
+            var ms = document.hidden ? STAFF_ACTIVITY_INTERVAL_HIDDEN : STAFF_ACTIVITY_INTERVAL_VISIBLE;
+            staffActivityInterval = setInterval(loadStaffActivity, ms);
         }
         function stopStaffActivityLive() {
             if (staffActivityInterval) { clearInterval(staffActivityInterval); staffActivityInterval = null; }
+            if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', _staffActivityVisibilityHandler);
         }
 
         function doHeaderSearch() {

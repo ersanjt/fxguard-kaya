@@ -97,7 +97,10 @@ const ConversationModel = (sequelize) => {
             { fields: ['departmentId'] },
             { fields: ['branchId'] },
             { fields: ['status', 'lastMessageAt'] },
-            { fields: ['lastMessageAt'] }
+            { fields: ['lastMessageAt'] },
+            { fields: ['lastIncomingMessageAt'] },
+            { fields: ['lastOutgoingMessageAt'] },
+            { fields: ['status', 'lastIncomingMessageAt'] }
         ]
     });
 
