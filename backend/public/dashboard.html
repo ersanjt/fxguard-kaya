@@ -45,11 +45,11 @@
             </div>
             <h1 data-i18n="login_title">پورتال کارکنان کایا</h1>
             <p class="sub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
-            <input type="text" id="email" data-i18n-ph="login_email_or_username" placeholder="ایمیل یا نام کاربری" value="admin@company.com" autocomplete="username">
+            <input type="text" id="email" data-i18n-ph="login_email_or_username" placeholder="ایمیل یا نام کاربری" autocomplete="username">
             <div class="password-wrap">
-                <input type="password" id="pass" data-i18n-ph="login_password" placeholder="رمز عبور" value="Admin@123" autocomplete="current-password">
-                <button type="button" id="loginTogglePass" class="toggle-password" title="نمایش رمز" aria-label="نمایش رمز عبور">
-                    <svg class="icon-eye" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-eye"/></svg>
+                <input type="password" id="pass" data-i18n-ph="login_password" placeholder="رمز عبور" autocomplete="current-password">
+                <button type="button" id="loginTogglePass" class="toggle-password" title="نمایش رمز" aria-label="نمایش رمز عبور" aria-pressed="false">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-eye"/></svg>
                 </button>
             </div>
             <button type="button" id="btnLogin" onclick="login()" data-i18n="login_btn">ورود</button>

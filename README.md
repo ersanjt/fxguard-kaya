@@ -1,6 +1,6 @@
 # 🚀 WhatsApp Enterprise CRM - راهنمای نصب و راه‌اندازی
 
-> **شروع سریع (بدون Docker):** فقط Node.js لازم است. از پوشه پروژه اجرا کنید: `.\start-all.ps1` (ویندوز) یا `./start-all.sh` (لینوکس/مک). سپس در مرورگر باز کنید: **http://localhost:3002/dashboard** — ورود: `admin@company.com` / `Admin@123`.  
+> **شروع سریع (بدون Docker):** فقط Node.js لازم است. از پوشه پروژه اجرا کنید: `.\start-all.ps1` (ویندوز) یا `./start-all.sh` (لینوکس/مک). سپس در مرورگر باز کنید: **http://localhost:3002/** — ورود: `admin@company.com` / `Admin@123`.  
 > راهنمای تحویل به مشتری و استفاده روزمره: **[README-تحویل-مشتری.md](README-تحویل-مشتری.md)** | خلاصه راه‌اندازی: **[راه‌اندازی-سریع.md](راه‌اندازی-سریع.md)**
 
 ---
@@ -26,7 +26,7 @@ docker-compose -f docker-compose.simple.yml up -d
 ```
 
 بعد از اجرا:
-- **داشبورد:** http://localhost:3002/dashboard  
+- **داشبورد:** http://localhost:3002/  
 - **ورود:** `admin@company.com` / `Admin@123`  
 - به بخش «اتصال واتساپ» بروید و QR را با گوشی اسکن کنید.
 

@@ -771,11 +771,11 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date(), uptime: process.uptime() });
 });
 
-// ساختار استاندارد لینک‌ها: / و /dashboard → پنل، /dashboard#صفحه → صفحات
-app.get('/', (req, res) => res.redirect('/dashboard'));
-app.get('/dashboard.html', (req, res) => res.redirect('/dashboard'));
-app.get('/dashboard', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
-app.get('/dashboard/', (req, res) => res.redirect('/dashboard'));
+// ساختار لینک‌ها: / → پنل (https://kaya.fxguard.io/)، /dashboard و /dashboard.html → ریدایرکت به /
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+app.get('/dashboard.html', (req, res) => res.redirect('/'));
+app.get('/dashboard', (req, res) => res.redirect('/'));
+app.get('/dashboard/', (req, res) => res.redirect('/'));
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 

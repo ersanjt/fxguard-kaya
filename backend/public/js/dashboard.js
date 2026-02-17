@@ -1271,8 +1271,11 @@
             btn.addEventListener('click', function() {
                 var show = input.type === 'password';
                 input.type = show ? 'text' : 'password';
-                btn.setAttribute('title', show ? (LANG === 'fa' ? 'مخفی کردن رمز' : 'Hide password') : (LANG === 'fa' ? 'نمایش رمز' : 'Show password'));
-                btn.setAttribute('aria-label', btn.getAttribute('title'));
+                var title = show ? (LANG === 'fa' ? 'مخفی کردن رمز' : 'Hide password') : (LANG === 'fa' ? 'نمایش رمز' : 'Show password');
+                btn.setAttribute('title', title);
+                btn.setAttribute('aria-label', title);
+                btn.setAttribute('aria-pressed', show ? 'true' : 'false');
+                btn.classList.toggle('active', show);
                 var use = btn.querySelector('use');
                 if (use) use.setAttribute('href', show ? '#icon-eye-off' : '#icon-eye');
             });
@@ -2188,7 +2191,7 @@
         function showPage(page) {
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
-            if (page && window.location.hash !== '#' + page) { var base = (window.location.pathname === '/dashboard.html') ? '/dashboard' : (window.location.pathname || '/dashboard'); try { window.history.replaceState(null, '', base + '#' + page); } catch (e) {} }
+            if (page && window.location.hash !== '#' + page) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#' + page); } catch (e) {} }
             document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
             var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices' };

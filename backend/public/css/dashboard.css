@@ -33,10 +33,13 @@
         .login-box .password-wrap:focus-within { border-color: var(--accent); outline: none; }
         .login-box .password-wrap input { flex: 1; margin: 0; padding: 14px 16px; padding-inline-start: 48px; border: none; background: transparent; border-radius: var(--radius-sm); min-width: 0; }
         .login-box .password-wrap input:focus { outline: none; box-shadow: none; }
-        .login-box .password-wrap .toggle-password { position: absolute; inset-inline-start: 0; top: 0; bottom: 0; width: 48px; padding: 0; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm); transition: color 0.2s, background 0.2s; flex-shrink: 0; }
+        .login-box .password-wrap .toggle-password { position: absolute; inset-inline-start: 0; top: 0; bottom: 0; width: 48px; min-width: 48px; padding: 0; display: flex; align-items: center; justify-content: center; background: none; border: none; color: var(--text-muted); cursor: pointer; border-radius: var(--radius-sm); transition: color 0.2s, background 0.2s, transform 0.15s; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
         .login-box .password-wrap .toggle-password:hover { color: var(--accent); background: var(--accent-soft); }
         .login-box .password-wrap .toggle-password:focus { outline: none; color: var(--accent); }
-        .login-box .password-wrap .toggle-password svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; }
+        .login-box .password-wrap .toggle-password:focus-visible { box-shadow: 0 0 0 2px var(--accent-soft); }
+        .login-box .password-wrap .toggle-password:active { transform: scale(0.95); }
+        .login-box .password-wrap .toggle-password.active { color: var(--accent); }
+        .login-box .password-wrap .toggle-password svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; pointer-events: none; transition: opacity 0.15s; }
         .login-box input:focus { outline: none; border-color: var(--accent); }
         .login-box input::placeholder { color: var(--text-muted); }
         .login-box button { width: 100%; padding: 14px; margin-top: 16px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-size: 1rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }

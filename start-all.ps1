@@ -1,6 +1,6 @@
 # راه‌اندازی کامل سیستم واتساپ CRM (Backend + Gateway)
 # یک شماره، همه کارمندان از پنل پاسخ می‌دهند
-# داشبورد: http://localhost:3002/dashboard
+# داشبورد: http://localhost:3002/
 
 $ErrorActionPreference = "Stop"
 $rootPath = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }
@@ -67,7 +67,7 @@ Write-Host "شروع Backend روی پورت 3002..." -ForegroundColor Green
 Write-Host "شروع Gateway روی پورت 3001..." -ForegroundColor Green
 Write-Host ""
 Write-Host "  داشبورد: " -NoNewline
-Write-Host "http://localhost:3002/dashboard" -ForegroundColor Cyan
+Write-Host "http://localhost:3002/" -ForegroundColor Cyan
 Write-Host "  ورود پیش‌فرض: admin@company.com / Admin@123" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  پس از ورود، به بخش «اتصال واتساپ» بروید و QR را اسکن کنید." -ForegroundColor Gray

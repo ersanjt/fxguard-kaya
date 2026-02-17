@@ -1,7 +1,7 @@
 #!/bin/bash
 # راه‌اندازی کامل سیستم واتساپ CRM (Backend + Gateway)
 # یک شماره، همه کارمندان از پنل پاسخ می‌دهند
-# داشبورد: http://localhost:3002/dashboard
+# داشبورد: http://localhost:3002/
 
 set -e
 ROOT="$(cd "$(dirname "$0")" && pwd)"
@@ -51,7 +51,7 @@ mkdir -p backend/database gateway/sessions gateway/uploads backend/uploads gatew
 echo ""
 echo "شروع Backend و Gateway..."
 echo ""
-echo "  داشبورد: http://localhost:3002/dashboard"
+echo "  داشبورد: http://localhost:3002/"
 echo "  ورود پیش‌فرض: admin@company.com / Admin@123"
 echo ""
 echo "  پس از ورود، به بخش «اتصال واتساپ» بروید و QR را اسکن کنید."
