@@ -98,6 +98,7 @@ async function connectRabbitMQ() {
     try {
         const connection = await amqp.connect(process.env.RABBITMQ_URL || 'amqp://localhost');
         rabbitChannel = await connection.createChannel();
+        require('./services/autoMessages').setRabbitChannel(rabbitChannel);
         
         await rabbitChannel.assertQueue('whatsapp_messages', { durable: true });
         await rabbitChannel.assertQueue('outgoing_messages', { durable: true });
@@ -120,6 +121,7 @@ async function connectRabbitMQ() {
     } catch (error) {
         logger.warn('⚠️ RabbitMQ not available - continuing without queue');
         rabbitChannel = null;
+        try { require('./services/autoMessages').setRabbitChannel(null); } catch (_) {}
         if (!process.env.USE_SQLITE) setTimeout(connectRabbitMQ, 5000);
     }
 }
@@ -413,6 +415,8 @@ async function sendAutoReply(conversation, responseText) {
     }
 }
 
+const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./services/autoMessages');
+
 // ==================== Auto Assignment ====================
 async function autoAssignment(conversation, messageContent) {
     try {
@@ -469,8 +473,8 @@ async function autoAssignment(conversation, messageContent) {
                     assignedTo: selectedUser.id,
                     assignedAt: new Date()
                 });
-                
                 logger.info(`👤 Conversation assigned to ${selectedUser.name} (${assignedDepartment.name})`);
+                await sendDeptAssignedMessage(conversation, assignedDepartment);
             }
         }
         
@@ -505,11 +509,18 @@ io.on('connection', (socket) => {
             const { conversationId, content, type, media } = data;
             
             const conversation = await Conversation.findByPk(conversationId, {
-                include: ['customer']
+                include: ['customer', { model: Department, as: 'department', required: false }]
             });
             
             if (!conversation) {
                 return socket.emit('error', { message: 'Conversation not found' });
+            }
+            
+            // معرفی کارمند قبل از اولین پاسخ او
+            if (socket.userId) {
+                const user = await User.findByPk(socket.userId, { include: [{ model: Department, as: 'department', required: false }] });
+                const dept = conversation.department || (user && user.department) || null;
+                await maybeSendEmployeeIntro(conversation, socket.userId, user, dept);
             }
             
             // ذخیره پیام

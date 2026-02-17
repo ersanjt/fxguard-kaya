@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const { sequelize, Conversation, Customer, Message, User, Branch, Department } = require('../models');
+const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
@@ -283,6 +284,11 @@ router.patch('/:id', async (req, res) => {
             });
         }
         if (departmentId !== undefined && updateData.departmentId !== undefined) {
+            if (updateData.departmentId) {
+                const dept = await Department.findByPk(updateData.departmentId);
+                const convForDept = await Conversation.findByPk(req.params.id, { include: [{ model: Department, as: 'department' }] });
+                if (convForDept && dept) await sendDeptAssignedMessage(convForDept, dept);
+            }
             await logActivity({
                 userId: req.userId,
                 branchId: conversation.branchId || req.user.branchId,
@@ -328,13 +334,19 @@ router.post('/:id/read', async (req, res) => {
 router.post('/:id/send', async (req, res) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        const conversation = await Conversation.findByPk(req.params.id, { include: [{ model: Customer, as: 'customer' }] });
+        const conversation = await Conversation.findByPk(req.params.id, { include: [{ model: Customer, as: 'customer' }, { model: Department, as: 'department', required: false }] });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
         const accessibleCustomerIds = await getAccessibleCustomerIds(req);
         if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         const content = (req.body.content || '').trim();
         const media = req.body.media || null;
         if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
+        // معرفی کارمند قبل از اولین پاسخ او
+        if (req.userId) {
+            const user = await User.findByPk(req.userId, { include: [{ model: Department, as: 'department', required: false }] });
+            const dept = conversation.department || (user && user.department) || null;
+            await maybeSendEmployeeIntro(conversation, req.userId, user, dept);
+        }
         const proto = req.get('x-forwarded-proto') || req.protocol;
         const baseUrl = process.env.BACKEND_PUBLIC_URL || (proto + '://' + req.get('host'));
         let mediaUrl = null;
