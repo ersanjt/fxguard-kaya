@@ -156,7 +156,7 @@
                     ticker_outside_hours: 'بر��زرسا� �R � رخ ف�ط ۶ تا ۲۰ ب�! ���ت ت�!را�  � �!ر ۱۰ د��R��!',
                     ticker_last: 'آخر�R�  بر��زرسا� �R:',
                     dept_branch: 'شعب�!', dept_name: '� ا�& دپارت�&ا� ', dept_desc: 'ت��ض�Rحات', dept_keywords: 'ک��&ات ک��Rد�R (با کا�&ا)', add_dept: 'افز��د�  دپارت�&ا� ', dept_intro: 'دپارت�&ا� �R�!ا برا�R تخص�Rص خودکار �&کا��&ات بر اساس ک��&ات ک��Rد�R استفاده �&�Rش��� د.',
-                    dept_color: 'ر�Rنگ', dept_is_default: 'پیش�Rفرض (�&کا��&ات بد��� تطاب�Rق)', dept_edit_hint: 'ف�R�د�!ا را ���Rرا�Rش ک� �Rد �� ر���R «ذخ�Rر�!» بز� �Rد.', toast_dept_updated: 'دپارت�&ا�  ب�!�Rر��ز شد',
+                    dept_color: 'ر�Rنگ', dept_is_default: 'پیش�Rفرض (�&کا��&ات بد��� تطاب�Rق)', dept_edit_hint: 'ف�R�د�!ا را ���Rرا�Rش ک� �Rد �� ر���R «ذخ�Rر�!» بز� �Rد.', toast_dept_updated: 'دپارت�&ا�  ب�!�Rر��ز شد', dept_list_title: 'دپارت�&ا� �R�!ا�R �&ج��د',
                     dept_ph_name: '�&ثا�: پشت�Rبا� �R ف� �R', dept_ph_optional: 'اخت�Rار�R', dept_ph_keywords: '�&ثا�: �&شک��R خراب�R�R پشت�Rبا� �R',
                     users_intro: 'ف�ط �&د�Rر �&ج�&��ع�! �Rا کس�R ک�! دسترس�R «�&د�Rر�Rت کاربرا� » دارد �&�R�Rت��ا� د کاربر جد�Rد بسازد.',
                     label_name: '� ا�&', label_email: 'ا�R�&�R�', label_password: 'ر�&ز عب��ر', label_role: '� �ش', label_dept: 'دپارت�&ا� ', label_branch: 'شعب�!',
@@ -403,7 +403,7 @@
                     ticker_outside_hours: 'Rates update 06:00�20:00 Tehran time � every 10 min',
                     ticker_last: 'Last updated:', ticker_current_time: 'Current time',
                     dept_branch: 'Branch', dept_name: 'Department name', dept_desc: 'Description', dept_keywords: 'Keywords (comma-separated)', add_dept: 'Add department', dept_intro: 'Departments are used for auto-assigning conversations based on keywords.',
-                    dept_color: 'Color', dept_is_default: 'Default (unmatched conversations)', dept_edit_hint: 'Edit the fields and click Save to update.', toast_dept_updated: 'Department updated',
+                    dept_color: 'Color', dept_is_default: 'Default (unmatched conversations)', dept_edit_hint: 'Edit the fields and click Save to update.', toast_dept_updated: 'Department updated', dept_list_title: 'Departments',
                     dept_ph_name: 'e.g. Technical support', dept_ph_optional: 'Optional', dept_ph_keywords: 'e.g. issue, support',
                     users_intro: 'Only the owner or users with "User management" access can create users and edit permissions.',
                     label_name: 'Name', label_email: 'Email', label_password: 'Password', label_role: 'Role', label_dept: 'Department', label_branch: 'Branch',
@@ -3588,9 +3588,11 @@
                 var kw = (d.keywords || '').trim();
                 var meta = [d.description, branchName].filter(Boolean).join(' · ');
                 var inactive = d.isActive === false;
-                var defBadge = d.isDefault ? '<span class="dept-badge" style="font-size:0.75rem; background:var(--accent-soft); color:var(--accent); padding:2px 8px; border-radius:4px; margin-right:6px;">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';
-                var editBtn = canEdit ? '<button type="button" class="btn-secondary" style="margin:0; padding:6px 12px;" onclick="editDepartment(' + idx + ')">' + t('edit') + '</button>' : '';
-                return '<div class="list-item dept-item' + (inactive ? ' dept-inactive' : '') + '" data-id="' + d.id + '"><div style="display:flex; align-items:center; gap:8px;"><span class="dept-color-dot" style="width:12px; height:12px; border-radius:50%; background:' + color + '; flex-shrink:0;"></span><div><span class="name">' + defBadge + escapeHtml(d.name || '') + '</span><div class="meta">' + (meta ? escapeHtml(meta) : '') + (kw ? (meta ? ' · ' : '') + '<span style="color:var(--text-muted);">' + escapeHtml(kw) + '</span>' : '') + '</div></div></div>' + editBtn + '</div>';
+                var defBadge = d.isDefault ? '<span class="dept-card-badge">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';
+                var editBtn = canEdit ? '<button type="button" class="btn-secondary dept-edit-btn" onclick="editDepartment(' + idx + ')">' + t('edit') + '</button>' : '';
+                var metaHtml = meta ? '<div class="dept-card-meta">' + escapeHtml(meta) + '</div>' : '';
+                var kwHtml = kw ? '<div class="dept-card-keywords">' + escapeHtml(kw) + '</div>' : '';
+                return '<div class="dept-card' + (inactive ? ' dept-inactive' : '') + '" data-id="' + d.id + '"><div class="dept-card-header"><div class="dept-card-title"><span class="dept-card-color" style="background:' + color + ';"></span><span class="dept-card-name">' + defBadge + escapeHtml(d.name || '') + '</span></div><div class="dept-card-actions">' + editBtn + '</div></div>' + metaHtml + kwHtml + '</div>';
             }).join('');
         }
 

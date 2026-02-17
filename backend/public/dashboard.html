@@ -248,38 +248,56 @@
                     </div>
                     <div id="customerList" class="customer-list-grid"></div>
                 </div>
-                <div id="pageDepartments" class="page">
-                    <h2 data-i18n="page_departments">دپارتمان‌ها</h2>
-                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="dept_intro">دپارتمان‌ها برای تخصیص خودکار مکالمات بر اساس کلمات کلیدی استفاده می‌شوند.</p>
-                    <div class="form-box dept-form-box">
-                        <label data-i18n="dept_branch">شعبه</label>
-                        <select id="deptBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
-                        <label data-i18n="dept_name">نام دپارتمان</label>
-                        <input id="deptName" data-i18n-ph="dept_ph_name" placeholder="مثال: پشتیبانی فنی">
-                        <label data-i18n="dept_desc">توضیحات</label>
-                        <input id="deptDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری">
-                        <label data-i18n="dept_keywords">کلمات کلیدی (با کاما)</label>
-                        <input id="deptKeywords" data-i18n-ph="dept_ph_keywords" placeholder="مثال: مشکل، خرابی، پشتیبانی">
-                        <div class="dept-form-row" style="display:flex; flex-wrap:wrap; gap:16px; align-items:center;">
-                            <div>
-                                <label data-i18n="dept_color">رنگ</label>
-                                <input type="color" id="deptColor" value="#10b981" style="width:48px; height:36px; padding:2px; border-radius:var(--radius-sm); border:1px solid var(--border); cursor:pointer; background:var(--bg-secondary);">
+                <div id="pageDepartments" class="page dept-page">
+                    <div class="dept-page-header">
+                        <h2 data-i18n="page_departments">دپارتمان‌ها</h2>
+                        <p class="dept-intro" data-i18n="dept_intro">دپارتمان‌ها برای تخصیص خودکار مکالمات بر اساس کلمات کلیدی استفاده می‌شوند.</p>
+                    </div>
+                    <div class="dept-form-box form-box">
+                        <h3 class="dept-form-title" data-i18n="add_dept">افزودن دپارتمان</h3>
+                        <div class="dept-form-grid">
+                            <div class="dept-form-field">
+                                <label data-i18n="dept_branch">شعبه</label>
+                                <select id="deptBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
                             </div>
-                            <label class="dept-check-wrap" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:24px;">
-                                <input type="checkbox" id="deptIsDefault">
-                                <span data-i18n="dept_is_default">پیش‌فرض (مکالمات بدون تطابق)</span>
-                            </label>
-                            <label class="dept-check-wrap" style="display:flex; align-items:center; gap:8px; cursor:pointer; margin-top:24px;">
-                                <input type="checkbox" id="deptIsActive" checked>
-                                <span data-i18n="status_active">فعال</span>
-                            </label>
+                            <div class="dept-form-field dept-form-field-wide">
+                                <label data-i18n="dept_name">نام دپارتمان</label>
+                                <input id="deptName" data-i18n-ph="dept_ph_name" placeholder="مثال: پشتیبانی فنی">
+                            </div>
+                            <div class="dept-form-field dept-form-field-wide">
+                                <label data-i18n="dept_desc">توضیحات</label>
+                                <input id="deptDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری">
+                            </div>
+                            <div class="dept-form-field dept-form-field-wide">
+                                <label data-i18n="dept_keywords">کلمات کلیدی (با کاما)</label>
+                                <input id="deptKeywords" data-i18n-ph="dept_ph_keywords" placeholder="مثال: مشکل، خرابی، پشتیبانی">
+                            </div>
+                            <div class="dept-form-field dept-form-options">
+                                <label data-i18n="dept_color">رنگ</label>
+                                <div class="dept-color-wrap">
+                                    <input type="color" id="deptColor" value="#10b981" class="dept-color-input" aria-label="رنگ دپارتمان">
+                                </div>
+                            </div>
+                            <div class="dept-form-field dept-form-checks">
+                                <label class="dept-check-wrap">
+                                    <input type="checkbox" id="deptIsDefault">
+                                    <span data-i18n="dept_is_default">پیش‌فرض (مکالمات بدون تطابق)</span>
+                                </label>
+                                <label class="dept-check-wrap">
+                                    <input type="checkbox" id="deptIsActive" checked>
+                                    <span data-i18n="status_active">فعال</span>
+                                </label>
+                            </div>
                         </div>
-                        <div class="dept-form-actions" style="display:flex; gap:12px; margin-top:16px;">
+                        <div class="dept-form-actions">
                             <button type="button" class="btn-primary" id="btnDeptSave" onclick="saveDepartment()" data-i18n="add_dept">افزودن دپارتمان</button>
                             <button type="button" class="btn-secondary" id="btnDeptCancel" onclick="cancelDeptEdit()" style="display:none;" data-i18n="cancel">انصراف</button>
                         </div>
                     </div>
-                    <div id="deptList" class="dept-list"></div>
+                    <div class="dept-list-section">
+                        <h3 class="dept-list-title" data-i18n="page_departments">دپارتمان‌ها</h3>
+                        <div id="deptList" class="dept-list dept-cards"></div>
+                    </div>
                 </div>
                 <div id="pageUsers" class="page">
                     <h2 data-i18n="page_users">کاربران</h2>
