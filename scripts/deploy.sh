@@ -12,6 +12,15 @@ echo "==> Deploying from $PROJECT_ROOT"
 echo "==> Git pull..."
 git pull origin master
 
+echo "==> Ensure .env files exist..."
+cd "$PROJECT_ROOT/backend"
+cp -n .env.example .env 2>/dev/null || true
+grep -q "MAIN_ADMIN_EMAIL" .env 2>/dev/null || echo "MAIN_ADMIN_EMAIL=admin@kaya.local" >> .env
+
+cd "$PROJECT_ROOT/gateway"
+cp -n .env.example .env 2>/dev/null || true
+
+cd "$PROJECT_ROOT"
 mkdir -p backend/logs gateway/logs
 
 echo "==> Install backend dependencies..."

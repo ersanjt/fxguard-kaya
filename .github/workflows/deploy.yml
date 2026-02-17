@@ -1,6 +1,5 @@
-name: Deploy to VPS
+name: Deploy to Server
 
-# با هر push به master، سرور به‌صورت خودکار به‌روزرسانی می‌شود
 on:
   push:
     branches:
@@ -9,13 +8,17 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.DEPLOY_HOST || '92.205.58.83' }}
-          username: ${{ secrets.DEPLOY_USER || 'fxguard' }}
+          host: 92.205.58.83
+          username: fxguard
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd ${{ secrets.DEPLOY_PATH || '/var/www/kayaCRM' }}
-            bash scripts/deploy.sh
+            cd /var/www/kayaCRM
+            git pull origin master
+            cd backend
+            npm install
+            pm2 reload kayaCRM || pm2 reload crm-backend
