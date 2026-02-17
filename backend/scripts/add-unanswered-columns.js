@@ -30,6 +30,7 @@ async function run() {
         }
 
         const wcTable = WhatsappConfig.tableName || 'whatsapp_configs';
+        await WhatsappConfig.sync();
         const wcDesc = await qi.describeTable(wcTable).catch(() => ({}));
         const wcCols = [
             { name: 'alertUnansweredAfterMinutes', def: { type: DataTypes.INTEGER, allowNull: true, defaultValue: 5 } },
