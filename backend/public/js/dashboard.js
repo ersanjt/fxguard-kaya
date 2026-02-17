@@ -3630,10 +3630,6 @@
             }).join('');
         }
 
-        async function _removed() { return;
-            '"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + escapeHtml(loc || '�') + '</div></div>' + (canEdit ? '<button type="button" class="btn-secondary" style="margin:0; padding:6px 12px;" onclick="var li=this.closest(\'.list-item\'); editBranch(li.getAttribute(\'data-id\'), li.getAttribute(\'data-name\')||\'\', li.getAttribute(\'data-city\')||\'\', li.getAttribute(\'data-country\')||\'\')">' + t('edit') + '</button>' : '') + '</div>';
-            }).join('');
-        }
 
         async function addBranch() {
             var id = window._editingBranchId;
