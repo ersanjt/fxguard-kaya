@@ -23,3 +23,4 @@ gateway/uploads/
 gateway/.wwebjs_auth/
 gateway/.wwebjs_cache/
 
+backend/.env
