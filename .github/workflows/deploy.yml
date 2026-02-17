@@ -17,8 +17,15 @@ jobs:
           username: fxguard
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            cd /var/www/kayaCRM
-            git pull origin master
-            cd backend
-            npm install
-            pm2 reload kayaCRM || pm2 reload crm-backend
+  set -e
+
+  cd /var/www/kayaCRM
+
+  git fetch origin
+  git reset --hard origin/master
+
+  cd backend
+  npm ci --only=production
+
+  pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js --update-env
+  pm2 save

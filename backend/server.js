@@ -27,7 +27,6 @@ const supervisionRoutes = require('./routes/supervision');
 const taskRoutes = require('./routes/tasks');
 const processRoutes = require('./routes/processes');
  
-
 // Database
 const models = require('./models');
 const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse } = models;
