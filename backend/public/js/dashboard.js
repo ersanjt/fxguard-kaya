@@ -2639,8 +2639,9 @@
                     return 'document';
                 }
                 if (m.hasMedia && m.mediaData && m.mediaData.url) {
-                    var rawUrl = m.mediaData.url;
-                    var mediaUrl = (rawUrl && rawUrl.startsWith('http')) ? rawUrl : (baseUrl + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
+                    var rawUrl = (m.mediaData.url || '').trim();
+                    var mediaBase = (rawUrl && rawUrl.startsWith('http')) ? '' : (window.location.origin || baseUrl);
+                    var mediaUrl = (rawUrl && rawUrl.startsWith('http')) ? rawUrl : (mediaBase + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
                     mediaUrl = ensureHttpsUrl(mediaUrl);
                     var mediaType = inferMediaType(m);
                     if (mediaType === 'image') {
@@ -4854,12 +4855,14 @@
             var qrImg = document.getElementById('qrImg');
             var btn = document.getElementById('btnStartGateway');
             var btnStartClient = document.getElementById('btnStartWhatsApp');
+            var btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
             if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             if (isInitial !== false) {
                 st.className = 'empty';
                 st.innerHTML = t('whatsapp_checking');
                 if (btn) btn.style.display = 'none';
                 if (btnStartClient) btnStartClient.style.display = 'none';
+                if (btnDisconnect) btnDisconnect.style.display = 'none';
                 qrBox.style.display = 'none';
             }
             var ping;
@@ -4885,10 +4888,12 @@
                 if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
                 isWhatsappPolling = false;
                 qrBox.style.display = 'none';
+                if (btnDisconnect) { btnDisconnect.style.display = 'inline-block'; btnDisconnect.textContent = t('whatsapp_disconnect_btn'); }
                 loadWhatsappDeptRouting();
                 loadWhatsappUnassigned();
                 return;
             }
+            if (btnDisconnect) btnDisconnect.style.display = 'none';
             loadWhatsappDeptRouting();
             var qrRes = await apiFetch('/api/gateway/qr');
             if (qrRes.needLogin) return;

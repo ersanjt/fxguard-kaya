@@ -362,7 +362,7 @@ router.post('/:id/send', async (req, res) => {
             else if (mime.startsWith('video/')) msgType = 'video';
             else if (mime.startsWith('audio/')) msgType = 'audio';
             else msgType = 'document';
-            mediaData = { url: mediaUrl, filename: media.filename || media.name, mimetype: media.mimetype };
+            mediaData = { url: relPath, filename: media.filename || media.name, mimetype: media.mimetype };
         }
         const msg = await Message.create({
             conversationId: conversation.id,
