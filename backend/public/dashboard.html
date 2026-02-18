@@ -1004,38 +1004,79 @@
                         <div id="transactionList" class="transaction-list"></div>
                     </div>
                 </div>
-                <div id="pagePanelSettings" class="page">
+                <div id="pagePanelSettings" class="page page-panel-settings">
                     <h2 data-i18n="page_panel_settings">ظاهر پنل</h2>
-                    <p class="text-muted" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
-                    <div class="panel-settings-form card" style="max-width: 560px;">
-                        <div class="form-group">
-                            <label for="panelSettingSiteName" data-i18n="panel_site_name">نام سایت</label>
-                            <input type="text" id="panelSettingSiteName" placeholder="مثال: صرافی کایا">
+                    <p class="panel-settings-intro text-muted" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
+
+                    <div id="panelSettingsLoading" class="panel-settings-loading" style="display:none;">
+                        <span class="loading-spinner" aria-hidden="true"></span>
+                        <span data-i18n="loading">در حال بارگذاری...</span>
+                    </div>
+                    <div id="panelSettingsContent" class="panel-settings-content">
+                        <div class="panel-settings-preview-card card">
+                            <h3 class="panel-settings-preview-title" data-i18n="panel_live_preview">پیش‌نمایش زنده</h3>
+                            <div class="panel-settings-preview-bar">
+                                <div class="panel-preview-tab">
+                                    <img id="panelPreviewFavicon" class="panel-preview-tab-favicon" src="" alt="" onerror="this.style.display='none'">
+                                    <span id="panelPreviewPageTitle" class="panel-preview-tab-title">پورتال کارکنان | صرافی کایا</span>
+                                </div>
+                                <div class="panel-preview-header">
+                                    <span class="panel-preview-logo-wrap">
+                                        <img id="panelPreviewLogo" class="panel-preview-logo-img" src="" alt="" onerror="this.style.display='none'">
+                                        <span id="panelPreviewLogoPlaceholder" class="panel-preview-logo-placeholder">◫</span>
+                                    </span>
+                                    <span id="panelPreviewSiteName" class="panel-preview-site-name">صرافی کایا</span>
+                                </div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">آدرس لوگو (URL)</label>
-                            <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png" oninput="previewPanelLogo(this.value)">
-                            <div class="panel-setting-preview" id="panelLogoPreview" style="margin-top:8px;display:none;"><span class="text-muted" style="font-size:0.85rem;" data-i18n="panel_preview">پیش‌نمایش</span>: <img id="panelLogoPreviewImg" src="" alt="" style="max-height:32px;max-width:120px;object-fit:contain;vertical-align:middle;" onerror="this.style.display='none'"></div>
+
+                        <div class="panel-settings-sections">
+                            <section class="panel-settings-section card">
+                                <h3 class="panel-settings-section-title" data-i18n="panel_section_branding">برندینگ</h3>
+                                <div class="form-group">
+                                    <label for="panelSettingSiteName" data-i18n="panel_site_name">نام سایت</label>
+                                    <input type="text" id="panelSettingSiteName" placeholder="مثال: صرافی کایا" oninput="updatePanelLivePreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">آدرس لوگو (URL)</label>
+                                    <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png" oninput="previewPanelLogo(this.value); updatePanelLivePreview();">
+                                    <div class="panel-setting-preview" id="panelLogoPreview" style="display:none;">
+                                        <span class="text-muted panel-preview-label" data-i18n="panel_preview">پیش‌نمایش</span>
+                                        <img id="panelLogoPreviewImg" src="" alt="" class="panel-logo-preview-img" onerror="this.style.display='none'">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">آدرس فاویکون (URL)</label>
+                                    <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico" oninput="previewPanelFavicon(this.value); updatePanelLivePreview();">
+                                    <div class="panel-setting-preview" id="panelFaviconPreview" style="display:none;">
+                                        <span class="text-muted panel-preview-label" data-i18n="panel_preview">پیش‌نمایش</span>
+                                        <img id="panelFaviconPreviewImg" src="" alt="" class="panel-favicon-preview-img" onerror="this.style.display='none'">
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="panel-settings-section card">
+                                <h3 class="panel-settings-section-title" data-i18n="panel_section_titles">عنوان‌ها</h3>
+                                <div class="form-group">
+                                    <label for="panelSettingLoginTitle" data-i18n="panel_login_title">عنوان صفحه ورود</label>
+                                    <input type="text" id="panelSettingLoginTitle" placeholder="پورتال کارکنان کایا" oninput="updatePanelLivePreview()">
+                                </div>
+                                <div class="form-group">
+                                    <label for="panelSettingPageTitle" data-i18n="panel_page_title">عنوان تب مرورگر</label>
+                                    <input type="text" id="panelSettingPageTitle" placeholder="پورتال کارکنان | صرافی کایا" oninput="updatePanelLivePreview()">
+                                </div>
+                            </section>
+                            <section class="panel-settings-section card">
+                                <h3 class="panel-settings-section-title" data-i18n="panel_section_footer">فوتر</h3>
+                                <div class="form-group">
+                                    <label for="panelSettingFooterText" data-i18n="panel_footer_text">متن فوتر</label>
+                                    <input type="text" id="panelSettingFooterText" placeholder="صرافی کایا — پورتال کارکنان">
+                                </div>
+                            </section>
                         </div>
-                        <div class="form-group">
-                            <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">آدرس فاویکون (URL)</label>
-                            <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico" oninput="previewPanelFavicon(this.value)">
-                            <div class="panel-setting-preview" id="panelFaviconPreview" style="margin-top:8px;display:none;"><span class="text-muted" style="font-size:0.85rem;" data-i18n="panel_preview">پیش‌نمایش</span>: <img id="panelFaviconPreviewImg" src="" alt="" style="width:16px;height:16px;vertical-align:middle;" onerror="this.style.display='none'"></div>
-                        </div>
-                        <div class="form-group">
-                            <label for="panelSettingLoginTitle" data-i18n="panel_login_title">عنوان صفحه ورود</label>
-                            <input type="text" id="panelSettingLoginTitle" placeholder="پورتال کارکنان کایا">
-                        </div>
-                        <div class="form-group">
-                            <label for="panelSettingPageTitle" data-i18n="panel_page_title">عنوان تب مرورگر</label>
-                            <input type="text" id="panelSettingPageTitle" placeholder="پورتال کارکنان | صرافی کایا">
-                        </div>
-                        <div class="form-group">
-                            <label for="panelSettingFooterText" data-i18n="panel_footer_text">متن فوتر</label>
-                            <input type="text" id="panelSettingFooterText" placeholder="صرافی کایا — پورتال کارکنان">
-                        </div>
-                        <div class="form-actions">
-                            <button type="button" class="btn-primary" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
+
+                        <div class="panel-settings-actions card">
+                            <button type="button" id="panelSettingsSaveBtn" class="btn-primary" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
+                            <span id="panelSettingsSaveStatus" class="panel-settings-save-status" style="display:none;"></span>
                         </div>
                     </div>
                 </div>
@@ -1273,11 +1314,14 @@
         <div id="internalCallModal" class="internal-call-modal" style="display:none;">
             <div class="internal-call-content">
                 <div id="internalCallStatus" class="internal-call-status"></div>
+                <div id="internalCallConnectionStatus" class="internal-call-connection-status" style="display:none;"></div>
                 <div class="internal-call-videos" id="internalCallVideos">
                     <div id="internalCallRemoteVideos" class="internal-call-remote-videos"></div>
                     <video id="internalCallLocalVideo" autoplay muted playsinline class="internal-call-local-video"></video>
                 </div>
                 <div class="internal-call-actions">
+                    <button type="button" id="internalCallMicBtn" class="internal-call-action-btn toggle-mic" onclick="toggleInternalCallMic()" style="display:none;" title="قطع/وصل میکروفون" data-i18n-title="call_mute" aria-label="میکروفون"><svg class="icon-mic-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 1 3 3v8a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><svg class="icon-mic-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M1 1l22 22"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/></svg></button>
+                    <button type="button" id="internalCallCameraBtn" class="internal-call-action-btn toggle-camera" onclick="toggleInternalCallCamera()" style="display:none;" title="قطع/وصل دوربین" data-i18n-title="call_camera_off" aria-label="دوربین"><svg class="icon-camera-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg><svg class="icon-camera-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M1 1l22 22"/><path d="M16 16v2a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2"/><path d="M23 7v10a2 2 0 0 1-2 2h-4"/><path d="M15 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
                     <button type="button" id="internalCallAddBtn" class="internal-call-action-btn add" onclick="showAddToCallModal()" style="display:none;" data-i18n="add_to_call" title="افزودن به تماس">+</button>
                     <button type="button" id="internalCallAcceptBtn" class="internal-call-action-btn accept" onclick="acceptInternalCall()" style="display:none;" data-i18n="accept_call">پذیرش</button>
                     <button type="button" id="internalCallRejectBtn" class="internal-call-action-btn reject" onclick="rejectInternalCall()" data-i18n="reject_call">رد</button>

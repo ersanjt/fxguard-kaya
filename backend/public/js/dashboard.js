@@ -57,6 +57,10 @@
                     panel_login_title: 'عنوان صفحه ورود',
                     panel_page_title: 'عنوان تب مرورگر',
                     panel_footer_text: 'متن فوتر',
+                    panel_live_preview: 'پیش‌نمایش زنده',
+                    panel_section_branding: 'برندینگ',
+                    panel_section_titles: 'عنوان‌ها',
+                    panel_section_footer: 'فوتر',
                     header_search: 'جستج�� در �&کا��&ات�R �&شتر�Rا� ...',
                     header_search_aria: 'جستج�� در �&کا��&ات �� �&شتر�Rا� ',
                     header_logout: 'خر��ج',
@@ -325,6 +329,10 @@
                     panel_login_title: 'Login page title',
                     panel_page_title: 'Browser tab title',
                     panel_footer_text: 'Footer text',
+                    panel_live_preview: 'Live preview',
+                    panel_section_branding: 'Branding',
+                    panel_section_titles: 'Titles',
+                    panel_section_footer: 'Footer',
                     panel_preview: 'Preview',
                     page_customer_detail: 'Customer history',
                     btn_send: 'Send',
@@ -471,6 +479,8 @@
                     voice_call: 'Voice call', video_call: 'Video call', incoming_voice_call: 'Incoming voice call...', incoming_video_call: 'Incoming video call...',
                     calling_voice: 'Calling...', calling_video: 'Video calling...', in_call: 'In call', accept_call: 'Accept', reject_call: 'Reject', end_call: 'End call',
                     call_rejected: 'Call rejected', user_offline: 'User is offline',
+                    call_mute: 'Mute mic', call_unmute: 'Unmute mic', call_camera_off: 'Turn off camera', call_camera_on: 'Turn on camera',
+                    call_connecting: 'Connecting...', call_connected: 'Connected', call_failed: 'Connection failed',
                     add_to_call: 'Add to call', invite_to_call: 'Invite to call',
                     select_multiple_hint: 'For group chat, select multiple users',
                     branch_intro: 'Branches are used for geographic separation and assigning users and conversations.', branch_name: 'Branch name', branch_city: 'City', branch_country: 'Country', branch_ph_name: 'e.g. Tehran office', branch_ph_city: 'e.g. Tehran', branch_ph_country: 'e.g. Iran', add_branch: 'Add branch', edit: 'Edit',
@@ -1374,8 +1384,9 @@
                         if (data.threadId !== currentInternalThreadId || !internalCallLocalStream) return;
                         var newUserId = data.userId;
                         if (internalCallPeers[newUserId]) return;
-                        var pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+                        var pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
                         internalCallPeers[newUserId] = pc;
+                        attachPeerConnectionStateHandlers(pc, newUserId);
                         internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
                         pc.onicecandidate = function(e) { var sk = getSocket(); if (e.candidate && sk) sk.emit('call_ice', { toUserId: newUserId, threadId: currentInternalThreadId, candidate: e.candidate }); };
                         pc.ontrack = function(e) { var rv = getOrCreateRemoteVideoEl(newUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
@@ -2908,7 +2919,13 @@
             fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null)) applyBranding(data); }).catch(function() {});
         }
         async function loadPanelSettings() {
+            var loadingEl = document.getElementById('panelSettingsLoading');
+            var contentEl = document.getElementById('panelSettingsContent');
+            if (loadingEl) loadingEl.style.display = 'flex';
+            if (contentEl) contentEl.style.display = 'none';
             var res = await apiFetch('/api/panel-settings');
+            if (loadingEl) loadingEl.style.display = 'none';
+            if (contentEl) contentEl.style.display = 'block';
             if (!res.ok) { toast(res.data && res.data.error ? res.data.error : t('err_generic'), true); return; }
             var d = res.data || {};
             var set = function(id, v) { var el = document.getElementById(id); if (el) el.value = v != null ? v : ''; };
@@ -2920,6 +2937,22 @@
             set('panelSettingFooterText', d.footerText);
             previewPanelLogo(d.logoUrl || '');
             previewPanelFavicon(d.faviconUrl || '');
+            updatePanelLivePreview();
+        }
+        function updatePanelLivePreview() {
+            var siteName = (document.getElementById('panelSettingSiteName') && document.getElementById('panelSettingSiteName').value.trim()) || (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
+            var pageTitle = (document.getElementById('panelSettingPageTitle') && document.getElementById('panelSettingPageTitle').value.trim()) || (LANG === 'fa' ? 'پورتال کارکنان | صرافی کایا' : 'Staff Portal | Kaya Exchange');
+            var logoUrl = (document.getElementById('panelSettingLogoUrl') && document.getElementById('panelSettingLogoUrl').value.trim()) || '';
+            var faviconUrl = (document.getElementById('panelSettingFaviconUrl') && document.getElementById('panelSettingFaviconUrl').value.trim()) || '';
+            var titleEl = document.getElementById('panelPreviewPageTitle');
+            var siteNameEl = document.getElementById('panelPreviewSiteName');
+            var logoEl = document.getElementById('panelPreviewLogo');
+            var logoPlaceholder = document.getElementById('panelPreviewLogoPlaceholder');
+            var faviconEl = document.getElementById('panelPreviewFavicon');
+            if (titleEl) titleEl.textContent = pageTitle;
+            if (siteNameEl) siteNameEl.textContent = siteName;
+            if (logoEl) { if (logoUrl) { logoEl.src = logoUrl; logoEl.style.display = ''; if (logoPlaceholder) logoPlaceholder.style.display = 'none'; } else { logoEl.removeAttribute('src'); logoEl.style.display = 'none'; if (logoPlaceholder) logoPlaceholder.style.display = ''; } }
+            if (faviconEl) { if (faviconUrl) { faviconEl.src = faviconUrl; faviconEl.style.display = ''; } else { faviconEl.removeAttribute('src'); faviconEl.style.display = 'none'; } }
         }
         function previewPanelLogo(url) {
             var wrap = document.getElementById('panelLogoPreview');
@@ -2936,9 +2969,21 @@
             if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = ''; img.onerror = function() { img.style.display = 'none'; }; } else { wrap.style.display = 'none'; }
         }
         async function savePanelSettings() {
+            var btn = document.getElementById('panelSettingsSaveBtn');
+            var statusEl = document.getElementById('panelSettingsSaveStatus');
+            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ذخیره...' : 'Saving...'); }
+            if (statusEl) { statusEl.style.display = 'none'; statusEl.className = 'panel-settings-save-status'; }
             var payload = { siteName: document.getElementById('panelSettingSiteName').value.trim(), logoUrl: document.getElementById('panelSettingLogoUrl').value.trim(), faviconUrl: document.getElementById('panelSettingFaviconUrl').value.trim(), loginTitle: document.getElementById('panelSettingLoginTitle').value.trim(), pageTitle: document.getElementById('panelSettingPageTitle').value.trim(), footerText: document.getElementById('panelSettingFooterText').value.trim() };
             var res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
-            if (res.ok && res.data) { applyBranding(res.data); toast(t('saved')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (btn) { btn.disabled = false; btn.textContent = t('btn_save'); }
+            if (res.ok && res.data) {
+                applyBranding(res.data);
+                toast(t('saved'));
+                if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ذخیره شد' : 'Saved'); statusEl.className = 'panel-settings-save-status saved'; statusEl.style.display = 'inline'; setTimeout(function() { statusEl.style.display = 'none'; }, 3000); }
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+                if (statusEl) { statusEl.textContent = (res.data && res.data.error) || t('err_generic'); statusEl.className = 'panel-settings-save-status error'; statusEl.style.display = 'inline'; }
+            }
         }
         var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','services','panel-settings'];
         function applyHashRoute() {
@@ -3946,7 +3991,30 @@
         var internalCallIsIncoming = false;
         var internalCallIsJoining = false;
         var internalCallType = 'voice';
+        var internalCallMicMuted = false;
+        var internalCallCameraOff = false;
+        var INTERNAL_CALL_ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }];
         function getSocket() { return socket; }
+        function updateInternalCallConnectionStatus(text, stateClass) {
+            var el = document.getElementById('internalCallConnectionStatus');
+            if (!el) return;
+            el.textContent = text || '';
+            el.style.display = text ? 'block' : 'none';
+            el.className = 'internal-call-connection-status' + (stateClass ? ' ' + stateClass : '');
+        }
+        function attachPeerConnectionStateHandlers(pc, userId) {
+            if (!pc) return;
+            function updateState() {
+                var state = pc.iceConnectionState || (pc.connectionState || '');
+                if (state === 'connected' || state === 'completed') updateInternalCallConnectionStatus(t('call_connected') || 'متصل', 'connected');
+                else if (state === 'connecting' || state === 'checking') updateInternalCallConnectionStatus(t('call_connecting') || 'در حال اتصال...', 'connecting');
+                else if (state === 'failed') updateInternalCallConnectionStatus(t('call_failed') || 'خطا در اتصال', 'failed');
+                else if (state === 'disconnected') updateInternalCallConnectionStatus(t('call_connecting') || 'در حال اتصال...', 'connecting');
+            }
+            pc.oniceconnectionstatechange = updateState;
+            try { pc.onconnectionstatechange = updateState; } catch (e) {}
+            updateState();
+        }
         function getOrCreateRemoteVideoEl(userId) {
             var container = document.getElementById('internalCallRemoteVideos');
             if (!container) return null;
@@ -4073,17 +4141,23 @@
         function showInternalCallModal(statusText, showAccept) {
             var modal = document.getElementById('internalCallModal');
             var statusEl = document.getElementById('internalCallStatus');
+            var connEl = document.getElementById('internalCallConnectionStatus');
             var acceptBtn = document.getElementById('internalCallAcceptBtn');
             var rejectBtn = document.getElementById('internalCallRejectBtn');
             var endBtn = document.getElementById('internalCallEndBtn');
             var addBtn = document.getElementById('internalCallAddBtn');
+            var micBtn = document.getElementById('internalCallMicBtn');
+            var cameraBtn = document.getElementById('internalCallCameraBtn');
             var localV = document.getElementById('internalCallLocalVideo');
             var container = document.getElementById('internalCallRemoteVideos');
             if (statusEl) statusEl.textContent = statusText || '';
+            if (connEl) { connEl.style.display = 'none'; connEl.textContent = ''; connEl.className = 'internal-call-connection-status'; }
             if (acceptBtn) acceptBtn.style.display = showAccept ? 'flex' : 'none';
             if (rejectBtn) rejectBtn.style.display = 'flex';
             if (endBtn) endBtn.style.display = showAccept ? 'none' : 'flex';
             if (addBtn) addBtn.style.display = 'none';
+            if (micBtn) { micBtn.style.display = showAccept ? 'none' : 'flex'; micBtn.classList.toggle('muted', internalCallMicMuted); micBtn.title = internalCallMicMuted ? (t('call_unmute') || 'وصل میکروفون') : (t('call_mute') || 'قطع میکروفون'); }
+            if (cameraBtn) { cameraBtn.style.display = (showAccept || internalCallType !== 'video') ? 'none' : 'flex'; cameraBtn.classList.toggle('off', internalCallCameraOff); cameraBtn.title = internalCallCameraOff ? (t('call_camera_on') || 'روشن کردن دوربین') : (t('call_camera_off') || 'خاموش کردن دوربین'); }
             if (localV) { localV.srcObject = null; localV.style.display = 'none'; }
             if (container) container.innerHTML = '';
             if (modal) modal.style.display = 'flex';
@@ -4102,6 +4176,30 @@
             internalCallPendingOffer = null;
             internalCallPendingInvite = null;
             internalCallIsIncoming = false;
+            internalCallMicMuted = false;
+            internalCallCameraOff = false;
+            updateInternalCallConnectionStatus('', '');
+        }
+        function toggleInternalCallMic() {
+            if (!internalCallLocalStream) return;
+            var audioTracks = internalCallLocalStream.getAudioTracks();
+            var currentlyEnabled = audioTracks.length > 0 && audioTracks[0].enabled;
+            internalCallMicMuted = currentlyEnabled;
+            if (audioTracks.length) audioTracks[0].enabled = !currentlyEnabled;
+            var micBtn = document.getElementById('internalCallMicBtn');
+            if (micBtn) { micBtn.classList.toggle('muted', internalCallMicMuted); micBtn.title = internalCallMicMuted ? (t('call_unmute') || 'وصل میکروفون') : (t('call_mute') || 'قطع میکروفون'); }
+        }
+        function toggleInternalCallCamera() {
+            if (!internalCallLocalStream) return;
+            var videoTracks = internalCallLocalStream.getVideoTracks();
+            if (videoTracks.length) {
+                internalCallCameraOff = videoTracks[0].enabled;
+                videoTracks[0].enabled = !internalCallCameraOff;
+            } else internalCallCameraOff = true;
+            var localV = document.getElementById('internalCallLocalVideo');
+            if (localV) localV.style.display = internalCallCameraOff ? 'none' : 'block';
+            var cameraBtn = document.getElementById('internalCallCameraBtn');
+            if (cameraBtn) { cameraBtn.classList.toggle('off', internalCallCameraOff); cameraBtn.title = internalCallCameraOff ? (t('call_camera_on') || 'روشن کردن دوربین') : (t('call_camera_off') || 'خاموش کردن دوربین'); }
         }
         async function startInternalCall(type) {
             if (!currentInternalThreadId || !currentInternalThreadOtherUserId) { toast(t('select_conversation_first'), true); return; }
@@ -4110,9 +4208,10 @@
             try {
                 internalCallType = type;
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
-                var pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+                var pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
                 var toId = currentInternalThreadOtherUserId;
                 internalCallPeers[toId] = pc;
+                attachPeerConnectionStateHandlers(pc, toId);
                 internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
                 pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: toId, threadId: currentInternalThreadId, candidate: e.candidate }); };
                 pc.ontrack = function(e) { var rv = getOrCreateRemoteVideoEl(toId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
@@ -4124,6 +4223,10 @@
                 if (localV) { localV.srcObject = internalCallLocalStream; localV.style.display = type === 'video' ? 'block' : 'none'; }
                 var addBtn = document.getElementById('internalCallAddBtn');
                 if (addBtn) addBtn.style.display = 'flex';
+                var micBtn = document.getElementById('internalCallMicBtn');
+                if (micBtn) { micBtn.style.display = 'flex'; micBtn.classList.toggle('muted', internalCallMicMuted); }
+                var cameraBtn = document.getElementById('internalCallCameraBtn');
+                if (cameraBtn) { cameraBtn.style.display = type === 'video' ? 'flex' : 'none'; cameraBtn.classList.toggle('off', internalCallCameraOff); }
             } catch (e) { toast((e.name || 'Error') + ': ' + (e.message || ''), true); hideInternalCallModal(); }
         }
         async function acceptInternalCall() {
@@ -4136,8 +4239,9 @@
                 var type = internalCallPendingOffer.type || 'voice';
                 internalCallType = type;
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
-                var pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+                var pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
                 internalCallPeers[toUserId] = pc;
+                attachPeerConnectionStateHandlers(pc, toUserId);
                 internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
                 pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: toUserId, threadId: threadId, candidate: e.candidate }); };
                 pc.ontrack = function(e) { var rv = getOrCreateRemoteVideoEl(toUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
@@ -4152,6 +4256,10 @@
                 if (localV) { localV.srcObject = internalCallLocalStream; localV.style.display = type === 'video' ? 'block' : 'none'; }
                 var addBtn = document.getElementById('internalCallAddBtn');
                 if (addBtn) addBtn.style.display = 'flex';
+                var micBtn = document.getElementById('internalCallMicBtn');
+                if (micBtn) { micBtn.style.display = 'flex'; micBtn.classList.toggle('muted', internalCallMicMuted); }
+                var cameraBtn = document.getElementById('internalCallCameraBtn');
+                if (cameraBtn) { cameraBtn.style.display = type === 'video' ? 'flex' : 'none'; cameraBtn.classList.toggle('off', internalCallCameraOff); }
                 internalCallPendingOffer = null;
                 internalCallIsIncoming = false;
                 playCallConnected();
@@ -4175,8 +4283,9 @@
             var s = getSocket();
             if (!s || threadId !== currentInternalThreadId || internalCallPeers[fromUserId]) return;
             try {
-                var pc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+                var pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
                 internalCallPeers[fromUserId] = pc;
+                attachPeerConnectionStateHandlers(pc, fromUserId);
                 internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
                 pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: fromUserId, threadId: threadId, candidate: e.candidate }); };
                 pc.ontrack = function(e) { var rv = getOrCreateRemoteVideoEl(fromUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
@@ -4194,6 +4303,7 @@
             if (!s || !s.connected) return;
             try {
                 document.getElementById('internalCallInviteModal').style.display = 'none';
+                currentInternalThreadId = threadId;
                 internalCallType = type;
                 internalCallIsJoining = true;
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
@@ -4203,6 +4313,10 @@
                 if (localV) { localV.srcObject = internalCallLocalStream; localV.style.display = type === 'video' ? 'block' : 'none'; }
                 var addBtn = document.getElementById('internalCallAddBtn');
                 if (addBtn) addBtn.style.display = 'flex';
+                var micBtn = document.getElementById('internalCallMicBtn');
+                if (micBtn) { micBtn.style.display = 'flex'; micBtn.classList.toggle('muted', internalCallMicMuted); }
+                var cameraBtn = document.getElementById('internalCallCameraBtn');
+                if (cameraBtn) { cameraBtn.style.display = type === 'video' ? 'flex' : 'none'; cameraBtn.classList.toggle('off', internalCallCameraOff); }
                 internalCallPendingInvite = null;
                 playCallConnected();
                 setTimeout(function() { internalCallIsJoining = false; }, 5000);
@@ -5072,6 +5186,7 @@
             window.loadPanelSettings = loadPanelSettings;
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
+            window.updatePanelLivePreview = updatePanelLivePreview;
             window.verifyTotpLogin = verifyTotpLogin;
             window.backToLoginStep1 = backToLoginStep1;
             window.closeSidebarMobile = closeSidebarMobile;
@@ -5151,6 +5266,7 @@
             window.loadPanelSettings = loadPanelSettings;
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
+            window.updatePanelLivePreview = updatePanelLivePreview;
             window.openSupInternalChatDetail = openSupInternalChatDetail;
             window.closeSupInternalChatModal = closeSupInternalChatModal;
             window.filterInternalThreads = filterInternalThreads;
