@@ -49,7 +49,10 @@ const models = {
     ProcessInstance: require('./ProcessInstance')(sequelize),
     ProcessInstanceStep: require('./ProcessInstanceStep')(sequelize),
     ExchangeService: require('./ExchangeService')(sequelize),
-    CustomerNote: require('./CustomerNote')(sequelize)
+    CustomerNote: require('./CustomerNote')(sequelize),
+    CashBox: require('./CashBox')(sequelize),
+    BankAccount: require('./BankAccount')(sequelize),
+    Transaction: require('./Transaction')(sequelize)
 };
 
 // تعریف روابط

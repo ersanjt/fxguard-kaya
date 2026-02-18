@@ -42,6 +42,9 @@ module.exports = (sequelize) => {
         Branch.hasMany(models.Department, { foreignKey: 'branchId', as: 'departments' });
         Branch.hasMany(models.Conversation, { foreignKey: 'branchId', as: 'conversations' });
         Branch.hasMany(models.ActivityLog, { foreignKey: 'branchId', as: 'activities' });
+        if (models.CashBox) Branch.hasMany(models.CashBox, { foreignKey: 'branchId', as: 'cashBoxes' });
+        if (models.BankAccount) Branch.hasMany(models.BankAccount, { foreignKey: 'branchId', as: 'bankAccounts' });
+        if (models.Transaction) Branch.hasMany(models.Transaction, { foreignKey: 'branchId', as: 'transactions' });
     };
 
     return Branch;

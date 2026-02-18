@@ -844,6 +844,219 @@
             if (res.ok) { toast(t('toast_rates_saved')); fetchRates(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
+        function initServicesTabs() {
+            var tabs = document.querySelectorAll('.services-tab');
+            var panels = document.querySelectorAll('.services-panel');
+            tabs.forEach(function(tab) {
+                tab.onclick = function() {
+                    var t = tab.getAttribute('data-tab');
+                    tabs.forEach(function(x) { x.classList.remove('active'); });
+                    panels.forEach(function(p) { p.classList.remove('show'); });
+                    tab.classList.add('active');
+                    var panel = document.getElementById('services' + (t === 'summary' ? 'Summary' : t === 'services' ? 'Services' : t === 'cashboxes' ? 'Cashboxes' : t === 'bankaccounts' ? 'Bankaccounts' : 'Transactions') + 'Panel');
+                    if (panel) { panel.classList.add('show'); }
+                    if (t === 'summary') loadServicesSummary();
+                    else if (t === 'services') loadServices();
+                    else if (t === 'cashboxes') loadCashBoxes();
+                    else if (t === 'bankaccounts') loadBankAccounts();
+                    else if (t === 'transactions') loadTransactions();
+                };
+            });
+        }
+        function loadServicesPage() {
+            var active = document.querySelector('.services-tab.active');
+            var t = active ? active.getAttribute('data-tab') : 'summary';
+            if (t === 'summary') loadServicesSummary();
+            else if (t === 'services') loadServices();
+            else if (t === 'cashboxes') loadCashBoxes();
+            else if (t === 'bankaccounts') loadBankAccounts();
+            else if (t === 'transactions') loadTransactions();
+        }
+        function formatMoney(n, curr) { var x = parseFloat(n) || 0; return x.toLocaleString('fa-IR') + (curr === 'USD' ? ' $' : curr === 'EUR' ? ' €' : ' تومان'); }
+        async function loadServicesSummary() {
+            var res = await apiFetch('/api/exchange/summary');
+            if (res.needLogin || !res.ok) return;
+            var d = res.data || {};
+            document.getElementById('summaryTotalCash').textContent = formatMoney(d.totalCash, 'IRR');
+            document.getElementById('summaryTotalBank').textContent = formatMoney(d.totalBank, 'IRR');
+            document.getElementById('summaryTotal').textContent = formatMoney(d.total, 'IRR');
+            var cb = document.getElementById('summaryCashBoxes');
+            var ba = document.getElementById('summaryBankAccounts');
+            if (cb) cb.innerHTML = (d.cashBoxes || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده' : 'No cash boxes') + '</div>';
+            if (ba) ba.innerHTML = (d.bankAccounts || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'حساب بانکی تعریف نشده' : 'No bank accounts') + '</div>';
+        }
+        async function loadCashBoxes() {
+            var list = document.getElementById('cashBoxList');
+            if (!list) return;
+            list.innerHTML = t('loading');
+            var res = await apiFetch('/api/exchange/cash-boxes');
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            var data = res.data || [];
+            if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده. افزودن صندوق کنید.' : 'No cash boxes. Add one.') + '</div>'; return; }
+            list.innerHTML = data.map(function(b) {
+                var badge = b.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.branch ? escapeHtml(b.branch.name) : '') + ' · ' + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openCashBoxModal(\'' + b.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteCashBox(\'' + b.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+            }).join('');
+        }
+        async function loadBankAccounts() {
+            var list = document.getElementById('bankAccountList');
+            if (!list) return;
+            list.innerHTML = t('loading');
+            var res = await apiFetch('/api/exchange/bank-accounts');
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            var data = res.data || [];
+            if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'حساب بانکی تعریف نشده. افزودن حساب کنید.' : 'No bank accounts. Add one.') + '</div>'; return; }
+            list.innerHTML = data.map(function(b) {
+                var badge = b.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.bankName ? escapeHtml(b.bankName) + ' · ' : '') + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openBankAccountModal(\'' + b.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteBankAccount(\'' + b.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+            }).join('');
+        }
+        async function loadTransactions() {
+            var list = document.getElementById('transactionList');
+            if (!list) return;
+            list.innerHTML = t('loading');
+            var params = [];
+            var from = document.getElementById('txFromDate'); if (from && from.value) params.push('fromDate=' + encodeURIComponent(from.value));
+            var to = document.getElementById('txToDate'); if (to && to.value) params.push('toDate=' + encodeURIComponent(to.value));
+            var typ = document.getElementById('txTypeFilter'); if (typ && typ.value) params.push('type=' + encodeURIComponent(typ.value));
+            var res = await apiFetch('/api/exchange/transactions?' + params.join('&'));
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            var rows = (res.data && res.data.rows) || [];
+            if (rows.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'تراکنشی یافت نشد' : 'No transactions') + '</div>'; return; }
+            var typeLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه' };
+            list.innerHTML = rows.map(function(tx) {
+                var isIn = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(tx.type) >= 0;
+                var amt = parseFloat(tx.amount) || 0;
+                var desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '…' : '');
+                var ref = tx.reference ? ' · ' + escapeHtml(tx.reference) : '';
+                return '<div class="transaction-row"><div><span class="tx-type">' + (typeLabels[tx.type] || tx.type) + '</span><div class="meta" style="margin-top:4px;">' + escapeHtml(desc) + ref + '</div><div class="meta">' + (tx.transactionDate || '') + '</div></div><div><span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span></div></div>';
+            }).join('');
+        }
+        function openCashBoxModal(id) {
+            var m = document.getElementById('cashBoxModal'); if (!m) return;
+            m.style.display = 'flex';
+            document.getElementById('cashBoxModalId').value = id || '';
+            document.getElementById('cashBoxModalTitle').textContent = id ? (LANG === 'fa' ? 'ویرایش صندوق' : 'Edit cash box') : t('cashbox_add');
+            document.getElementById('cashBoxModalName').value = '';
+            document.getElementById('cashBoxModalBranch').value = '';
+            document.getElementById('cashBoxModalCurrency').value = 'IRR';
+            document.getElementById('cashBoxModalBalance').value = '0';
+            document.getElementById('cashBoxModalDescription').value = '';
+            document.getElementById('cashBoxModalActive').checked = true;
+            loadBranchesForSelect(['cashBoxModalBranch']);
+            if (id) apiFetch('/api/exchange/cash-boxes').then(function(r) { var b = (r.data || []).find(function(x) { return x.id === id; }); if (b) { document.getElementById('cashBoxModalName').value = b.name || ''; document.getElementById('cashBoxModalBranch').value = b.branchId || ''; document.getElementById('cashBoxModalCurrency').value = b.currency || 'IRR'; document.getElementById('cashBoxModalBalance').value = b.balance || 0; document.getElementById('cashBoxModalDescription').value = b.description || ''; document.getElementById('cashBoxModalActive').checked = b.isActive !== false; } });
+        }
+        function closeCashBoxModal() { var m = document.getElementById('cashBoxModal'); if (m) m.style.display = 'none'; }
+        async function saveCashBoxFromModal() {
+            var id = document.getElementById('cashBoxModalId').value.trim();
+            var name = document.getElementById('cashBoxModalName').value.trim();
+            var branchId = document.getElementById('cashBoxModalBranch').value || null;
+            var currency = document.getElementById('cashBoxModalCurrency').value;
+            var balance = parseFloat(document.getElementById('cashBoxModalBalance').value) || 0;
+            var description = document.getElementById('cashBoxModalDescription').value.trim() || null;
+            var isActive = document.getElementById('cashBoxModalActive').checked;
+            if (!name) { toast(LANG === 'fa' ? 'نام صندوق الزامی است' : 'Name required', true); return; }
+            var body = { name, branchId, currency, balance, description, isActive };
+            var res = id ? await apiFetch('/api/exchange/cash-boxes/' + id, { method: 'PUT', body: JSON.stringify(body) }) : await apiFetch('/api/exchange/cash-boxes', { method: 'POST', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) { closeCashBoxModal(); toast(t('btn_save')); loadCashBoxes(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function deleteCashBox(id) { if (!confirm(LANG === 'fa' ? 'حذف این صندوق؟' : 'Delete this cash box?')) return; var res = await apiFetch('/api/exchange/cash-boxes/' + id, { method: 'DELETE' }); if (res.needLogin) return; if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadCashBoxes(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); } }
+        function openBankAccountModal(id) {
+            var m = document.getElementById('bankAccountModal'); if (!m) return;
+            m.style.display = 'flex';
+            document.getElementById('bankAccountModalId').value = id || '';
+            document.getElementById('bankAccountModalTitle').textContent = id ? (LANG === 'fa' ? 'ویرایش حساب بانکی' : 'Edit bank account') : t('bankaccount_add');
+            document.getElementById('bankAccountModalName').value = '';
+            document.getElementById('bankAccountModalBankName').value = '';
+            document.getElementById('bankAccountModalAccountNumber').value = '';
+            document.getElementById('bankAccountModalIban').value = '';
+            document.getElementById('bankAccountModalBranch').value = '';
+            document.getElementById('bankAccountModalCurrency').value = 'IRR';
+            document.getElementById('bankAccountModalBalance').value = '0';
+            document.getElementById('bankAccountModalDescription').value = '';
+            document.getElementById('bankAccountModalActive').checked = true;
+            loadBranchesForSelect(['bankAccountModalBranch']);
+            if (id) apiFetch('/api/exchange/bank-accounts').then(function(r) { var b = (r.data || []).find(function(x) { return x.id === id; }); if (b) { document.getElementById('bankAccountModalName').value = b.name || ''; document.getElementById('bankAccountModalBankName').value = b.bankName || ''; document.getElementById('bankAccountModalAccountNumber').value = b.accountNumber || ''; document.getElementById('bankAccountModalIban').value = b.iban || ''; document.getElementById('bankAccountModalBranch').value = b.branchId || ''; document.getElementById('bankAccountModalCurrency').value = b.currency || 'IRR'; document.getElementById('bankAccountModalBalance').value = b.balance || 0; document.getElementById('bankAccountModalDescription').value = b.description || ''; document.getElementById('bankAccountModalActive').checked = b.isActive !== false; } });
+        }
+        function closeBankAccountModal() { var m = document.getElementById('bankAccountModal'); if (m) m.style.display = 'none'; }
+        async function saveBankAccountFromModal() {
+            var id = document.getElementById('bankAccountModalId').value.trim();
+            var name = document.getElementById('bankAccountModalName').value.trim();
+            var bankName = document.getElementById('bankAccountModalBankName').value.trim() || null;
+            var accountNumber = document.getElementById('bankAccountModalAccountNumber').value.trim() || null;
+            var iban = document.getElementById('bankAccountModalIban').value.trim() || null;
+            var branchId = document.getElementById('bankAccountModalBranch').value || null;
+            var currency = document.getElementById('bankAccountModalCurrency').value;
+            var balance = parseFloat(document.getElementById('bankAccountModalBalance').value) || 0;
+            var description = document.getElementById('bankAccountModalDescription').value.trim() || null;
+            var isActive = document.getElementById('bankAccountModalActive').checked;
+            if (!name) { toast(LANG === 'fa' ? 'نام حساب الزامی است' : 'Name required', true); return; }
+            var body = { name, bankName, accountNumber, iban, branchId, currency, balance, description, isActive };
+            var res = id ? await apiFetch('/api/exchange/bank-accounts/' + id, { method: 'PUT', body: JSON.stringify(body) }) : await apiFetch('/api/exchange/bank-accounts', { method: 'POST', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) { closeBankAccountModal(); toast(t('btn_save')); loadBankAccounts(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function deleteBankAccount(id) { if (!confirm(LANG === 'fa' ? 'حذف این حساب بانکی؟' : 'Delete this bank account?')) return; var res = await apiFetch('/api/exchange/bank-accounts/' + id, { method: 'DELETE' }); if (res.needLogin) return; if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadBankAccounts(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); } }
+        function openTransactionModal() {
+            var m = document.getElementById('transactionModal'); if (!m) return;
+            m.style.display = 'flex';
+            document.getElementById('txModalType').value = 'cash_in';
+            document.getElementById('txModalAmount').value = '';
+            document.getElementById('txModalCurrency').value = 'IRR';
+            document.getElementById('txModalFromCashBox').value = '';
+            document.getElementById('txModalToCashBox').value = '';
+            document.getElementById('txModalFromBankAccount').value = '';
+            document.getElementById('txModalToBankAccount').value = '';
+            document.getElementById('txModalDescription').value = '';
+            document.getElementById('txModalReference').value = '';
+            document.getElementById('txModalDate').value = new Date().toISOString().slice(0, 10);
+            txModalUpdateFields();
+            loadCashBoxesForTxSelect();
+            loadBankAccountsForTxSelect();
+        }
+        function txModalUpdateFields() {
+            var t = document.getElementById('txModalType').value;
+            var fromBox = document.getElementById('txModalFromBoxWrap'); var toBox = document.getElementById('txModalToBoxWrap');
+            var fromBank = document.getElementById('txModalFromBankWrap'); var toBank = document.getElementById('txModalToBankWrap');
+            if (fromBox) fromBox.style.display = ['cash_out','transfer_box','bank_deposit','expense'].indexOf(t) >= 0 ? 'block' : 'none';
+            if (toBox) toBox.style.display = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(t) >= 0 ? 'block' : 'none';
+            if (fromBank) fromBank.style.display = ['bank_withdraw','transfer_account'].indexOf(t) >= 0 ? 'block' : 'none';
+            if (toBank) toBank.style.display = ['bank_deposit','transfer_account'].indexOf(t) >= 0 ? 'block' : 'none';
+        }
+        async function loadCashBoxesForTxSelect() {
+            var res = await apiFetch('/api/exchange/cash-boxes');
+            var list = (res.data || []).filter(function(b) { return b.isActive; });
+            var from = document.getElementById('txModalFromCashBox'); var to = document.getElementById('txModalToCashBox');
+            if (from) { from.innerHTML = '<option value="">انتخاب صندوق</option>' + list.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + ' (' + formatMoney(b.balance, b.currency) + ')</option>'; }).join(''); }
+            if (to) { to.innerHTML = '<option value="">انتخاب صندوق</option>' + list.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + ' (' + formatMoney(b.balance, b.currency) + ')</option>'; }).join(''); }
+        }
+        async function loadBankAccountsForTxSelect() {
+            var res = await apiFetch('/api/exchange/bank-accounts');
+            var list = (res.data || []).filter(function(b) { return b.isActive; });
+            var from = document.getElementById('txModalFromBankAccount'); var to = document.getElementById('txModalToBankAccount');
+            if (from) { from.innerHTML = '<option value="">انتخاب حساب</option>' + list.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + ' (' + formatMoney(b.balance, b.currency) + ')</option>'; }).join(''); }
+            if (to) { to.innerHTML = '<option value="">انتخاب حساب</option>' + list.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + ' (' + formatMoney(b.balance, b.currency) + ')</option>'; }).join(''); }
+        }
+        (function(){ var el = document.getElementById('txModalType'); if (el) el.addEventListener('change', txModalUpdateFields); })();
+        function closeTransactionModal() { var m = document.getElementById('transactionModal'); if (m) m.style.display = 'none'; }
+        async function saveTransactionFromModal() {
+            var type = document.getElementById('txModalType').value;
+            var amount = parseFloat(document.getElementById('txModalAmount').value);
+            var currency = document.getElementById('txModalCurrency').value;
+            var fromBox = document.getElementById('txModalFromCashBox').value || null;
+            var toBox = document.getElementById('txModalToCashBox').value || null;
+            var fromBank = document.getElementById('txModalFromBankAccount').value || null;
+            var toBank = document.getElementById('txModalToBankAccount').value || null;
+            var description = document.getElementById('txModalDescription').value.trim() || null;
+            var reference = document.getElementById('txModalReference').value.trim() || null;
+            var date = document.getElementById('txModalDate').value || new Date().toISOString().slice(0, 10);
+            if (!amount || amount <= 0) { toast(LANG === 'fa' ? 'مبلغ معتبر وارد کنید' : 'Enter valid amount', true); return; }
+            var body = { type, amount, currency, fromCashBoxId: fromBox, toCashBoxId: toBox, fromBankAccountId: fromBank, toBankAccountId: toBank, description, reference, transactionDate: date };
+            var res = await apiFetch('/api/exchange/transactions', { method: 'POST', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) { closeTransactionModal(); toast(LANG === 'fa' ? 'ثبت شد' : 'Saved'); loadTransactions(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
         async function loadServices() {
             var list = document.getElementById('serviceList');
             if (!list) return;
@@ -2357,7 +2570,7 @@
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
             if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); }
-            if (page === 'services') loadServices();
+            if (page === 'services') { initServicesTabs(); loadServicesPage(); }
             if (page === 'branches') { loadBranches(); }
             if (page === 'staff-activity') { loadStaffActivity(); startStaffActivityLive(); } else { stopStaffActivityLive(); }
             if (page === 'profile') loadProfile();

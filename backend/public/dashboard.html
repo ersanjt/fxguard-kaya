@@ -841,11 +841,57 @@
                         </div>
                     </div>
                 </div>
-                <div id="pageServices" class="page">
+                <div id="pageServices" class="page services-page">
                     <h2 data-i18n="page_services">خدمات صرافی</h2>
-                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="services_intro">سرویس‌هایی که صرافی ارائه می‌دهد (خرید/فروش ارز، حواله و غیره) را تعریف کنید.</p>
-                    <button type="button" class="btn-primary" onclick="openServiceModal()" style="margin-bottom:16px;" data-i18n="service_add">افزودن سرویس</button>
-                    <div id="serviceList"></div>
+                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="services_intro_full">مدیریت سرویس‌ها، صندوق‌ها، حساب‌های بانکی و تراکنش‌های مالی صرافی.</p>
+                    <div class="services-tabs">
+                        <button type="button" class="services-tab active" data-tab="summary" data-i18n="tab_summary">خلاصه موجودی</button>
+                        <button type="button" class="services-tab" data-tab="services" data-i18n="tab_services">سرویس‌ها</button>
+                        <button type="button" class="services-tab" data-tab="cashboxes" data-i18n="tab_cashboxes">صندوق‌ها</button>
+                        <button type="button" class="services-tab" data-tab="bankaccounts" data-i18n="tab_bankaccounts">حساب‌های بانکی</button>
+                        <button type="button" class="services-tab" data-tab="transactions" data-i18n="tab_transactions">تراکنش‌ها</button>
+                    </div>
+                    <div id="servicesSummaryPanel" class="services-panel show">
+                        <div class="exchange-summary-cards">
+                            <div class="exchange-summary-card"><div class="label" data-i18n="total_cash">مجموع صندوق‌ها</div><div class="value" id="summaryTotalCash">۰</div></div>
+                            <div class="exchange-summary-card"><div class="label" data-i18n="total_bank">مجموع حساب‌های بانکی</div><div class="value" id="summaryTotalBank">۰</div></div>
+                            <div class="exchange-summary-card accent"><div class="label" data-i18n="total_balance">مجموع کل</div><div class="value" id="summaryTotal">۰</div></div>
+                        </div>
+                        <div class="exchange-summary-grid">
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="tab_cashboxes">صندوق‌ها</h4>
+                                <div id="summaryCashBoxes" class="exchange-summary-list"></div>
+                            </div>
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="tab_bankaccounts">حساب‌های بانکی</h4>
+                                <div id="summaryBankAccounts" class="exchange-summary-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="servicesServicesPanel" class="services-panel">
+                        <button type="button" class="btn-primary" onclick="openServiceModal()" style="margin-bottom:16px;" data-i18n="service_add">افزودن سرویس</button>
+                        <div id="serviceList"></div>
+                    </div>
+                    <div id="servicesCashboxesPanel" class="services-panel">
+                        <button type="button" class="btn-primary" onclick="openCashBoxModal()" style="margin-bottom:16px;" data-i18n="cashbox_add">افزودن صندوق</button>
+                        <div id="cashBoxList"></div>
+                    </div>
+                    <div id="servicesBankaccountsPanel" class="services-panel">
+                        <button type="button" class="btn-primary" onclick="openBankAccountModal()" style="margin-bottom:16px;" data-i18n="bankaccount_add">افزودن حساب بانکی</button>
+                        <div id="bankAccountList"></div>
+                    </div>
+                    <div id="servicesTransactionsPanel" class="services-panel">
+                        <div class="transaction-toolbar">
+                            <button type="button" class="btn-primary" onclick="openTransactionModal()" data-i18n="transaction_add">ثبت تراکنش</button>
+                            <div class="transaction-filters">
+                                <input type="date" id="txFromDate" data-i18n-ph="from_date">
+                                <input type="date" id="txToDate" data-i18n-ph="to_date">
+                                <select id="txTypeFilter"><option value="" data-i18n="filter_all">همه</option><option value="cash_in">ورود به صندوق</option><option value="cash_out">خروج از صندوق</option><option value="transfer_box">انتقال بین صندوق‌ها</option><option value="bank_deposit">واریز به بانک</option><option value="bank_withdraw">برداشت از بانک</option><option value="transfer_account">انتقال بین حساب‌ها</option><option value="income">درآمد</option><option value="expense">هزینه</option></select>
+                                <button type="button" class="btn-secondary" onclick="loadTransactions()" data-i18n="apply_filter">اعمال</button>
+                            </div>
+                        </div>
+                        <div id="transactionList"></div>
+                    </div>
                 </div>
                 <div id="serviceModal" class="modal-overlay" style="display:none;">
                     <div class="modal-box">
@@ -865,6 +911,94 @@
                         <div class="modal-footer">
                             <button type="button" class="btn-secondary" onclick="closeServiceModal()" data-i18n="btn_cancel">انصراف</button>
                             <button type="button" class="btn-primary" onclick="saveServiceFromModal()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="cashBoxModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box">
+                        <div class="modal-header"><h3 id="cashBoxModalTitle" data-i18n="cashbox_add">افزودن صندوق</h3><button type="button" class="modal-close" onclick="closeCashBoxModal()">&times;</button></div>
+                        <div class="modal-body">
+                            <input type="hidden" id="cashBoxModalId" value="">
+                            <label data-i18n="cashbox_name">نام صندوق</label>
+                            <input type="text" id="cashBoxModalName" placeholder="مثال: صندوق ۱" required>
+                            <label data-i18n="branch">شعبه</label>
+                            <select id="cashBoxModalBranch"><option value="">بدون شعبه</option></select>
+                            <label data-i18n="currency">واحد پول</label>
+                            <select id="cashBoxModalCurrency"><option value="IRR">تومان</option><option value="USD">دلار</option><option value="EUR">یورو</option></select>
+                            <label data-i18n="balance">موجودی اولیه</label>
+                            <input type="number" id="cashBoxModalBalance" placeholder="0" step="0.01" value="0">
+                            <label data-i18n="description">توضیح</label>
+                            <textarea id="cashBoxModalDescription" rows="2"></textarea>
+                            <label><input type="checkbox" id="cashBoxModalActive" checked> <span data-i18n="active">فعال</span></label>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeCashBoxModal()" data-i18n="btn_cancel">انصراف</button>
+                            <button type="button" class="btn-primary" onclick="saveCashBoxFromModal()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="bankAccountModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box">
+                        <div class="modal-header"><h3 id="bankAccountModalTitle" data-i18n="bankaccount_add">افزودن حساب بانکی</h3><button type="button" class="modal-close" onclick="closeBankAccountModal()">&times;</button></div>
+                        <div class="modal-body">
+                            <input type="hidden" id="bankAccountModalId" value="">
+                            <label data-i18n="bankaccount_name">نام حساب</label>
+                            <input type="text" id="bankAccountModalName" placeholder="مثال: حساب تجاری بانک ملی" required>
+                            <label data-i18n="bank_name">نام بانک</label>
+                            <input type="text" id="bankAccountModalBankName" placeholder="مثال: بانک ملی">
+                            <label data-i18n="account_number">شماره حساب</label>
+                            <input type="text" id="bankAccountModalAccountNumber" placeholder="شماره حساب">
+                            <label data-i18n="iban">شماره شبا</label>
+                            <input type="text" id="bankAccountModalIban" placeholder="IR..." dir="ltr">
+                            <label data-i18n="branch">شعبه</label>
+                            <select id="bankAccountModalBranch"><option value="">بدون شعبه</option></select>
+                            <label data-i18n="currency">واحد پول</label>
+                            <select id="bankAccountModalCurrency"><option value="IRR">تومان</option><option value="USD">دلار</option><option value="EUR">یورو</option></select>
+                            <label data-i18n="balance">موجودی اولیه</label>
+                            <input type="number" id="bankAccountModalBalance" placeholder="0" step="0.01" value="0">
+                            <label data-i18n="description">توضیح</label>
+                            <textarea id="bankAccountModalDescription" rows="2"></textarea>
+                            <label><input type="checkbox" id="bankAccountModalActive" checked> <span data-i18n="active">فعال</span></label>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeBankAccountModal()" data-i18n="btn_cancel">انصراف</button>
+                            <button type="button" class="btn-primary" onclick="saveBankAccountFromModal()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="transactionModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box" style="max-width:480px;">
+                        <div class="modal-header"><h3 data-i18n="transaction_add">ثبت تراکنش</h3><button type="button" class="modal-close" onclick="closeTransactionModal()">&times;</button></div>
+                        <div class="modal-body">
+                            <label data-i18n="transaction_type">نوع تراکنش</label>
+                            <select id="txModalType">
+                                <option value="cash_in">ورود به صندوق</option>
+                                <option value="cash_out">خروج از صندوق</option>
+                                <option value="transfer_box">انتقال بین صندوق‌ها</option>
+                                <option value="bank_deposit">واریز به بانک</option>
+                                <option value="bank_withdraw">برداشت از بانک</option>
+                                <option value="transfer_account">انتقال بین حساب‌ها</option>
+                                <option value="income">درآمد</option>
+                                <option value="expense">هزینه</option>
+                            </select>
+                            <label data-i18n="amount">مبلغ</label>
+                            <input type="number" id="txModalAmount" placeholder="0" step="0.01" required>
+                            <label data-i18n="currency">واحد پول</label>
+                            <select id="txModalCurrency"><option value="IRR">تومان</option><option value="USD">دلار</option><option value="EUR">یورو</option></select>
+                            <div id="txModalFromBoxWrap" class="tx-field-wrap"><label>از صندوق</label><select id="txModalFromCashBox"><option value="">انتخاب صندوق</option></select></div>
+                            <div id="txModalToBoxWrap" class="tx-field-wrap"><label>به صندوق</label><select id="txModalToCashBox"><option value="">انتخاب صندوق</option></select></div>
+                            <div id="txModalFromBankWrap" class="tx-field-wrap" style="display:none;"><label>از حساب بانکی</label><select id="txModalFromBankAccount"><option value="">انتخاب حساب</option></select></div>
+                            <div id="txModalToBankWrap" class="tx-field-wrap" style="display:none;"><label>به حساب بانکی</label><select id="txModalToBankAccount"><option value="">انتخاب حساب</option></select></div>
+                            <label data-i18n="description">شرح</label>
+                            <input type="text" id="txModalDescription" placeholder="شرح تراکنش">
+                            <label data-i18n="reference">شماره مرجع / رسید</label>
+                            <input type="text" id="txModalReference" placeholder="اختیاری">
+                            <label data-i18n="transaction_date">تاریخ</label>
+                            <input type="date" id="txModalDate">
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeTransactionModal()" data-i18n="btn_cancel">انصراف</button>
+                            <button type="button" class="btn-primary" onclick="saveTransactionFromModal()" data-i18n="btn_save">ثبت</button>
                         </div>
                     </div>
                 </div>

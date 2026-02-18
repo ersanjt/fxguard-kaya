@@ -757,6 +757,7 @@ apiRouter.use('/processes', authMiddleware, processRoutes);
 apiRouter.use('/upload', authMiddleware, require('./routes/upload'));
 apiRouter.use('/rates', authMiddleware, require('./routes/rates'));
 apiRouter.use('/services', authMiddleware, require('./routes/services'));
+apiRouter.use('/exchange', authMiddleware, require('./routes/exchange'));
 apiRouter.use('/whatsapp', authMiddleware, require('./routes/whatsapp'));
 const announcementRoutes = require('./routes/announcements');
 const internalRoutes = require('./routes/internal');
