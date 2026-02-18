@@ -1407,6 +1407,15 @@
                         var active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'conversations') debouncedLoadConversations(400);
                     });
+                    socket.on('important_announcement', function(data) {
+                        playInternalChatSound();
+                        window._lastImportantAnnouncementId = data.id;
+                        var a = { id: data.id, title: data.title, body: data.body, fromUser: data.fromUser, targetType: 'all', targetId: null, createdAt: new Date().toISOString() };
+                        showAnnouncementModal(a);
+                        loadAnnouncements();
+                        loadGeneralAnnouncementsMarquee();
+                        if (typeof updateNavBadges === 'function') updateNavBadges();
+                    });
                     socket.on('connect_error', function() { socket = null; });
                 }
             } catch (e) { socket = null; }
@@ -1988,12 +1997,14 @@
                 if (res.needLogin || !res.ok) { banner.style.display = 'none'; return; }
                 var list = (res.data && res.data.data) ? res.data.data : [];
                 var general = list.filter(function(a) { return a.targetType === 'all'; });
+                var seenIds = {};
+                general = general.filter(function(a) { if (a.id && seenIds[a.id]) return false; if (a.id) seenIds[a.id] = true; return true; });
                 if (general.length === 0) { banner.style.display = 'none'; return; }
                 var parts = general.map(function(a) { return (a.title || '') + (a.body ? ': ' + a.body : ''); });
                 var full = parts.join('  •  ');
                 if (!full.trim()) { banner.style.display = 'none'; return; }
                 var inner = banner.querySelector('.announcement-marquee-inner');
-                if (inner) { inner.innerHTML = escapeHtml(full) + '  •  •  •  ' + escapeHtml(full); }
+                if (inner) { inner.innerHTML = escapeHtml(full) + '  \u2003\u2003\u2003  ' + escapeHtml(full); }
                 banner.style.display = 'block';
             } catch (e) { banner.style.display = 'none'; }
         }
@@ -2122,7 +2133,14 @@
                 if (typeof updateNavBadges === 'function') updateNavBadges();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
-        function closeAnnouncementModal() { var m = document.getElementById('announcementModal'); if (m) m.style.display = 'none'; }
+        function closeAnnouncementModal() {
+            var id = window._lastImportantAnnouncementId;
+            if (id) {
+                window._lastImportantAnnouncementId = null;
+                apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadAnnouncements(); loadGeneralAnnouncementsMarquee(); if (typeof updateNavBadges === 'function') updateNavBadges(); });
+            }
+            var m = document.getElementById('announcementModal'); if (m) m.style.display = 'none';
+        }
         async function deleteAnnouncement(id) {
             if (!id) return;
             if (!confirm(t('ann_delete_confirm') || (LANG === 'fa' ? 'حذف این اعلان؟' : 'Delete this announcement?'))) return;

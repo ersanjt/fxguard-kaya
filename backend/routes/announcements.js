@@ -91,6 +91,24 @@ router.post('/', async (req, res) => {
             targetId: finalTargetId
         });
         const withUser = await Announcement.findByPk(ann.id, { include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'email'] }] });
+        if (ann.isImportant) {
+            let recipientIds = [];
+            if (finalTargetType === 'all') {
+                const allUsers = await User.findAll({ where: { isActive: true }, attributes: ['id'] });
+                recipientIds = allUsers.map(u => u.id);
+            } else if (finalTargetType === 'department' && finalTargetId) {
+                const deptUsers = await User.findAll({ where: { departmentId: finalTargetId, isActive: true }, attributes: ['id'] });
+                recipientIds = deptUsers.map(u => u.id);
+            } else if (finalTargetType === 'user' && finalTargetId) {
+                recipientIds = [finalTargetId];
+            }
+            recipientIds = recipientIds.filter(id => String(id) !== String(me.id));
+            const io = req.app.get('io');
+            if (io && recipientIds.length > 0) {
+                const payload = { id: ann.id, title: ann.title, body: ann.body, fromUser: withUser.fromUser };
+                recipientIds.forEach(userId => io.to('user_' + userId).emit('important_announcement', payload));
+            }
+        }
         res.status(201).json(withUser);
     } catch (err) {
         res.status(500).json({ error: err.message });
