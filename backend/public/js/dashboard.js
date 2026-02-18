@@ -751,20 +751,22 @@
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(formatPrice(it.value)) + '</span>' + (chText ? '<span class="ticker-change' + chClass + '">' + escapeHtml(chText) + '</span>' : '') + '</span>';
                 }).join('');
                 if (trackEl && items.length > 0) {
+                    var fullSet = itemsHtml + itemsHtml;
                     var copyCount = 2;
-                    trackEl.innerHTML = itemsHtml + itemsHtml;
-                    requestAnimationFrame(function() {
-                        var containerW = itemsEl.clientWidth;
+                    trackEl.innerHTML = fullSet;
+                    while (copyCount < 8) {
                         var trackW = trackEl.scrollWidth;
-                        while (trackW < containerW * 2.2 && copyCount < 8) {
-                            copyCount++;
-                            trackEl.innerHTML = trackEl.innerHTML + itemsHtml;
-                            trackW = trackEl.scrollWidth;
-                        }
-                        itemsEl.classList.remove('ticker-auto-scroll');
-                        if (trackEl.scrollWidth > itemsEl.clientWidth) {
+                        var containerW = itemsEl.clientWidth || 400;
+                        if (trackW >= containerW * 2) break;
+                        fullSet = fullSet + itemsHtml;
+                        trackEl.innerHTML = fullSet;
+                        copyCount++;
+                    }
+                    itemsEl.classList.remove('ticker-auto-scroll');
+                    requestAnimationFrame(function() {
+                        if (trackEl.scrollWidth > (itemsEl.clientWidth || 1)) {
                             itemsEl.classList.add('ticker-auto-scroll');
-                            trackEl.style.setProperty('--ticker-step', (-100 / copyCount) + '%');
+                            trackEl.style.setProperty('--ticker-step', '-50%');
                         } else {
                             itemsEl.classList.remove('ticker-auto-scroll');
                         }
