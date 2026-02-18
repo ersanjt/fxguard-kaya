@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { User, Department, Branch, Conversation, Task, Ticket, ProcessInstance, ProcessInstanceStep } = require('../models');
+const { User, Department, Branch, Conversation, Message, Task, Ticket, ProcessInstance, ProcessInstanceStep, ActivityLog, TaskUpdate, TicketReply, AnnouncementRead, InternalThreadParticipant, InternalMessage, CustomerNote, Transaction, PasswordResetToken } = require('../models');
 const { getPermissions, isMainAdmin } = require('../lib/permissions');
 
 router.get('/', async (req, res) => {
@@ -228,6 +228,49 @@ router.post('/:id/delete-with-transfer', async (req, res) => {
         const u = user.toJSON();
         delete u.password;
         res.json({ message: 'کاربر غیرفعال شد و داده‌ها منتقل شد', user: u });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// حذف دائمی کاربر از سیستم (انتقال داده‌ها سپس حذف رکورد)
+router.post('/:id/permanent-delete', async (req, res) => {
+    try {
+        if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر را حذف کند' });
+        const userId = req.params.id;
+        const { transferToUserId } = req.body;
+        if (!transferToUserId) return res.status(400).json({ error: 'انتخاب کاربر برای انتقال داده‌ها الزامی است' });
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
+        if (isMainAdmin(user)) return res.status(403).json({ error: 'امکان حذف ادمین اصلی وجود ندارد' });
+        const transferTo = await User.findByPk(transferToUserId);
+        if (!transferTo || !transferTo.isActive) return res.status(400).json({ error: 'کاربر مقصد معتبر نیست' });
+        if (transferTo.id === userId) return res.status(400).json({ error: 'کاربر مقصد نمی‌تواند خود کاربر حذفشونده باشد' });
+
+        await Conversation.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
+        await Conversation.update({ closedBy: transferToUserId }, { where: { closedBy: userId } });
+        if (Message) await Message.update({ userId: transferToUserId }, { where: { userId } });
+        await Task.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
+        await Task.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
+        await Ticket.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
+        await Ticket.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
+        await ProcessInstance.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
+        await ProcessInstance.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
+        await ProcessInstanceStep.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
+
+        if (ActivityLog) await ActivityLog.update({ userId: transferToUserId }, { where: { userId } });
+        if (TaskUpdate) await TaskUpdate.update({ userId: transferToUserId }, { where: { userId } });
+        if (TicketReply) await TicketReply.update({ userId: transferToUserId }, { where: { userId } });
+        if (CustomerNote) await CustomerNote.update({ userId: transferToUserId }, { where: { userId } });
+        if (Transaction) await Transaction.update({ userId: transferToUserId }, { where: { userId } });
+
+        if (AnnouncementRead) await AnnouncementRead.destroy({ where: { userId } });
+        if (InternalThreadParticipant) await InternalThreadParticipant.destroy({ where: { userId } });
+        if (InternalMessage) await InternalMessage.update({ fromUserId: transferToUserId }, { where: { fromUserId: userId } });
+        if (PasswordResetToken) await PasswordResetToken.destroy({ where: { userId } });
+
+        await user.destroy();
+        res.json({ message: 'کاربر به‌طور دائمی از سیستم حذف شد' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -290,6 +290,35 @@ async function resolveIncomingMedia(media) {
     }
 }
 
+/** اگر media.data (base64) داشته باشد، فایل را در uploads ذخیره و آدرس نسبی برمی‌گرداند (مثلاً وقتی گیت‌وی رسانه را به صورت base64 می‌فرستد). */
+function resolveIncomingMediaFromBase64(media) {
+    if (!media || !media.data) return media;
+    try {
+        const buf = Buffer.from(media.data, 'base64');
+        const suggestedName = media.filename || media.caption || 'file';
+        const ct = (media.mimetype || '').split(';')[0].trim().toLowerCase();
+        let ext = (path.extname(suggestedName) || '').toLowerCase();
+        if (!ext && ct) {
+            if (ct.includes('image/jpeg') || ct.includes('image/jpg')) ext = '.jpg';
+            else if (ct.includes('image/png')) ext = '.png';
+            else if (ct.includes('image/gif')) ext = '.gif';
+            else if (ct.includes('image/webp')) ext = '.webp';
+            else if (ct.includes('video/')) ext = '.mp4';
+            else if (ct.includes('audio/')) ext = '.mp3';
+            else if (ct.includes('pdf')) ext = '.pdf';
+            else ext = '.bin';
+        }
+        if (!ext) ext = '.bin';
+        const safeName = (Date.now() + '-' + suggestedName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)) + (ext.startsWith('.') ? ext : '.' + ext);
+        const filePath = path.join(uploadsDir, safeName);
+        fs.writeFileSync(filePath, buf);
+        return { url: '/uploads/' + safeName, filename: media.filename || suggestedName, mimetype: media.mimetype || ct || null };
+    } catch (err) {
+        logger.warn('resolveIncomingMediaFromBase64 failed', { error: err.message });
+        return media;
+    }
+}
+
 function inferMessageTypeFromMedia(media) {
     if (!media) return 'text';
     const mime = (media.mimetype || '').toLowerCase();
@@ -317,8 +346,12 @@ async function processIncomingMessage(messageData) {
         
         let resolvedMedia = media || null;
         let msgType = messageData.type || 'text';
-        if (hasMedia && media && media.url) {
-            resolvedMedia = await resolveIncomingMedia(media);
+        if (hasMedia && media) {
+            if (media.url && (String(media.url).trim().startsWith('http://') || String(media.url).trim().startsWith('https://'))) {
+                resolvedMedia = await resolveIncomingMedia(media);
+            } else if (media.data) {
+                resolvedMedia = resolveIncomingMediaFromBase64(media);
+            }
             if (resolvedMedia && (resolvedMedia.url || resolvedMedia.filename)) msgType = inferMessageTypeFromMedia(resolvedMedia);
         }
         
@@ -858,6 +891,8 @@ apiRouter.use('/announcements', authMiddleware, announcementRoutes);
 apiRouter.use('/internal', authMiddleware, internalRoutes(io));
 apiRouter.use('/panel-settings', require('./routes/panelSettings'));
 
+// وب‌هوک پیام ورودی واتساپ. بدنه: from/contact, body, timestamp, hasMedia, type؟, media؟
+// رسانه: اگر media.url با http/https باشد → دانلود و ذخیره در uploads و mediaData.url نسبی؛ اگر media.data (base64) باشد → ذخیره در uploads و mediaData.url. نوع پیام از mimetype/filename استنتاج می‌شود.
 apiRouter.post('/webhook/incoming-message', (req, res) => {
     processIncomingMessage(req.body).then(() => res.json({ ok: true })).catch(err => {
         logger.error('Webhook process error:', err);

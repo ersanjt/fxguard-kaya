@@ -289,19 +289,13 @@ function attachClientEvents(c) {
 
       if (msg.hasMedia) {
         try {
-          await ensureDir(UPLOADS_DIR);
           const media = await msg.downloadMedia();
           if (media) {
-            const safeName = (media.filename || 'file').replace(/[^\w.\-]/g, '_');
-            const filename = `${Date.now()}_${safeName}`;
-            const filepath = path.join(UPLOADS_DIR, filename);
-
-            await fs.writeFile(filepath, media.data, 'base64');
-
+            // برای نمایش در پنل: بک‌اند باید فایل را داشته باشد. ارسال data (base64) تا بک‌اند در uploads ذخیره و mediaData.url بگذارد.
             messageData.media = {
               mimetype: media.mimetype,
               filename: media.filename || null,
-              filepath,
+              data: media.data,
             };
           }
         } catch (error) {

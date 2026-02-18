@@ -302,6 +302,8 @@ window.__I18N_FA = {
     filter_all: 'همه',
     filter_active_only: 'فقط فعال',
     filter_blocked_only: 'فقط مسدود',
+    user_delete_permanent_label: 'حذف دائمی از سیستم (غیرقابل بازگشت)',
+    user_permanent_deleted: 'کاربر به‌طور دائمی حذف شد',
     user_tab_info: 'اطلاعات پایه',
     user_tab_perms: 'دسترسی‌ها',
     user_perms_hint: 'بخش‌هایی که این کاربر می‌تواند در پنل ببیند و استفاده کند.',

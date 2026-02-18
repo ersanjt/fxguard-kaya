@@ -1507,6 +1507,10 @@
                 <select id="deleteUserTransferTo" style="width:100%; margin-top:8px; padding:10px; border-radius:8px; border:1px solid var(--border);">
                     <option value="" data-i18n="select_user_task">انتخاب کاربر</option>
                 </select>
+                <label style="display:flex; align-items:center; gap:8px; margin-top:14px; cursor:pointer;">
+                    <input type="checkbox" id="deleteUserPermanent" style="width:auto;">
+                    <span data-i18n="user_delete_permanent_label">حذف دائمی از سیستم (غیرقابل بازگشت)</span>
+                </label>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" onclick="closeDeleteUserModal()" data-i18n="btn_cancel">انصراف</button>

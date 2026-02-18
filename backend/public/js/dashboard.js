@@ -423,6 +423,8 @@
                     user_transfer_to: 'Transfer conversations, tasks, tickets and processes to:',
                     user_delete_confirm_btn: 'Delete & transfer',
                     user_deleted_transferred: 'User deactivated and data transferred',
+                    user_delete_permanent_label: 'Permanently delete from system (cannot be undone)',
+                    user_permanent_deleted: 'User permanently deleted',
                     modal_user_perms: 'Section access:',
                     modal_ann_title: 'Important notice',
                     modal_ann_gotit: 'Got it',
@@ -573,7 +575,10 @@
             };
             if (window.__I18N_FA) { for (var k in window.__I18N_FA) I18N.fa[k] = window.__I18N_FA[k]; }
             window.LANG = LANG;
-            window.t = function(k) { return (I18N[LANG] && I18N[LANG][k]) || I18N.fa[k] || k; };
+            window.t = function(k) {
+                if (LANG === 'fa' && window.__I18N_FA && window.__I18N_FA[k] !== undefined) return window.__I18N_FA[k];
+                return (I18N[LANG] && I18N[LANG][k]) || I18N.fa[k] || k;
+            };
             window.setLang = function(l) {
                 LANG = l;
                 localStorage.setItem('crm_lang', l);
@@ -4022,7 +4027,7 @@
             { key: 'settings', title: 'user_perms_group_settings', keys: ['rates', 'services', 'panel_settings'] },
             { key: 'special', title: 'user_perms_group_special', keys: ['manage_users', 'manage_tickets'] }
         ];
-        function sectionLabel(k) { return t(sectionLabels[k] || k); }
+        function sectionLabel(k) { var lbl = t(sectionLabels[k] || k); return (lbl && String(lbl).trim()) ? lbl : (sectionLabels[k] || k); }
         function closeUserEditModal() { document.getElementById('userEditModal').style.display = 'none'; currentEditUserId = null; }
         function userPermsSelectAll(checked) {
             document.querySelectorAll('#userEditPerms input[data-perm]').forEach(function(cb) { cb.checked = !!checked; });
@@ -4063,7 +4068,8 @@
                 html += '<div class="user-edit-perm-group-items">';
                 visibleKeys.forEach(function(k) {
                     var checked = perms[k] !== false ? ' checked' : '';
-                    html += '<label class="user-edit-perm-item"><input type="checkbox" data-perm="' + k + '"' + checked + '><span>' + sectionLabel(k) + '</span></label>';
+                    var lbl = sectionLabel(k);
+                    html += '<label class="user-edit-perm-item"><input type="checkbox" data-perm="' + k + '"' + checked + '><span class="user-edit-perm-label">' + escapeHtml(lbl) + '</span></label>';
                 });
                 html += '</div></div>';
             });
@@ -4080,6 +4086,8 @@
             var sel = document.getElementById('deleteUserTransferTo');
             var others = userListData.filter(function(x) { return x.id !== currentEditUserId && x.isActive !== false; });
             sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'انتخاب کاربر' : 'Select user') + '</option>' + others.map(function(x) { return '<option value="' + x.id + '">' + escapeHtml(x.name || x.username || x.email) + '</option>'; }).join('');
+            var permCb = document.getElementById('deleteUserPermanent');
+            if (permCb) permCb.checked = false;
             document.getElementById('deleteUserModal').style.display = 'flex';
         }
         function closeDeleteUserModal() { document.getElementById('deleteUserModal').style.display = 'none'; }
@@ -4087,12 +4095,17 @@
             if (!currentEditUserId) return;
             var transferTo = document.getElementById('deleteUserTransferTo').value;
             if (!transferTo) { toast(LANG === 'fa' ? 'انتخاب کاربر برای انتقال الزامی است' : 'Select user to transfer data to', true); return; }
+            var permanent = document.getElementById('deleteUserPermanent') && document.getElementById('deleteUserPermanent').checked;
+            var endpoint = permanent ? '/api/users/' + currentEditUserId + '/permanent-delete' : '/api/users/' + currentEditUserId + '/delete-with-transfer';
             var btn = document.getElementById('btnConfirmDeleteUser');
             if (btn) { btn.disabled = true; btn.textContent = LANG === 'fa' ? 'در حال پردازش...' : 'Processing...'; }
-            var res = await apiFetch('/api/users/' + currentEditUserId + '/delete-with-transfer', { method: 'POST', body: JSON.stringify({ transferToUserId: transferTo }) });
+            var res = await apiFetch(endpoint, { method: 'POST', body: JSON.stringify({ transferToUserId: transferTo }) });
             if (btn) { btn.disabled = false; btn.textContent = t('user_delete_confirm_btn') || (LANG === 'fa' ? 'حذف و انتقال' : 'Delete & transfer'); }
             if (res.needLogin) return;
-            if (res.ok) { toast(t('user_deleted_transferred') || (LANG === 'fa' ? 'کاربر غیرفعال و داده‌ها منتقل شد' : 'User deactivated and data transferred')); closeDeleteUserModal(); closeUserEditModal(); loadUsers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) {
+                toast(permanent ? (t('user_permanent_deleted') || (LANG === 'fa' ? 'کاربر به‌طور دائمی حذف شد' : 'User permanently deleted')) : (t('user_deleted_transferred') || (LANG === 'fa' ? 'کاربر غیرفعال و داده‌ها منتقل شد' : 'User deactivated and data transferred')));
+                closeDeleteUserModal(); closeUserEditModal(); loadUsers();
+            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function saveUserEdit() {
             if (!currentEditUserId) return;

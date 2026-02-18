@@ -785,23 +785,25 @@
         .user-edit-tab { padding: 8px 16px; background: none; border: none; color: var(--text-secondary); font-family: var(--font); cursor: pointer; font-size: 0.9rem; border-radius: var(--radius-sm); }
         .user-edit-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
         .user-edit-tab.active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
-        .user-edit-tab-panel { display: none; }
+        .user-edit-tab-panel { display: none; padding-inline-start: 2px; padding-inline-end: 2px; }
         .user-edit-tab-panel.active { display: block; }
-        .user-edit-perms-hint { font-size: 0.9rem; margin: 0 0 12px; }
+        .user-edit-perms-hint { font-size: 0.9rem; margin: 0 0 12px; padding-inline-start: 2px; }
         .user-edit-perms-actions { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
         .btn-user-perms-toggle { padding: 6px 14px; font-size: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); font-family: var(--font); cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s; }
         .btn-user-perms-toggle:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
         .user-edit-perms-grid { display: flex; flex-direction: column; gap: 16px; max-height: 320px; overflow-y: auto; padding-inline-end: 4px; }
         .user-edit-perm-group { border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; background: var(--bg-secondary); }
         .user-edit-perm-group-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 14px; background: rgba(0,0,0,0.06); border-bottom: 1px solid var(--border); }
-        .user-edit-perm-group-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); }
+        .user-edit-perm-group-title { font-size: 0.9rem; font-weight: 600; color: var(--text-primary); min-width: 0; overflow-wrap: break-word; }
         .user-edit-perm-group-toggles { display: flex; gap: 6px; }
         .btn-user-perms-group { padding: 4px 10px; font-size: 0.8rem; border-radius: 6px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-family: var(--font); cursor: pointer; transition: background 0.2s, border-color 0.2s; }
         .btn-user-perms-group:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-        .user-edit-perm-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 6px 14px; padding: 12px 14px; }
-        .user-edit-perm-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary); margin: 0; }
+        .user-edit-perm-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px 14px; padding: 12px 14px; }
+        .user-edit-perm-item { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary); margin: 0; min-width: 0; }
         .user-edit-perm-item input { margin: 0; flex-shrink: 0; }
+        .user-edit-perm-item .user-edit-perm-label { flex: 1; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
         .user-edit-modal { max-width: 600px; }
+        .user-edit-modal .modal-body { padding-inline-start: 4px; padding-inline-end: 4px; }
         .user-edit-check { margin: 16px 0 12px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
         .user-edit-password { margin-top: 12px; }
         .form-box label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; margin-top: 12px; }
