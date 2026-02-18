@@ -951,6 +951,9 @@
         .qr-box-img-wrap { display: inline-block; padding: 16px; background: #fff; border-radius: var(--radius-sm); border: 2px solid var(--border); }
         .qr-box-img { display: block; max-width: 260px; height: auto; border-radius: 4px; }
         .qr-waiting-msg { font-size: 0.9rem; color: var(--accent); margin-top: 12px; }
+        .qr-box-troubleshoot { margin-top: 16px; padding: 12px 14px; background: var(--bg-hover); border-radius: var(--radius-sm); border-left: 3px solid var(--accent); }
+        .qr-box-troubleshoot-title { margin: 0 0 6px 0; font-size: 0.85rem; font-weight: 600; color: var(--text-primary); }
+        .qr-box-troubleshoot-text { margin: 0; font-size: 0.8rem; color: var(--text-secondary); line-height: 1.45; }
         .qr-unavailable { padding: 16px; background: var(--bg-hover); border-radius: var(--radius-sm); margin: 12px 0; }
         .qr-unavailable p { margin: 0; font-size: 0.9rem; color: var(--text-secondary); }
         .whatsapp-connection-card .whatsapp-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 16px; }

@@ -183,3 +183,41 @@ pm2 save && pm2 startup
 ```
 
 بعد از ساخت و فعال کردن سایت Nginx، با `http://92.205.58.83` یا دامنه‌ی خود به سیستم دسترسی دارید.
+
+---
+
+## اگر دیپلوی GitHub Actions خطای «i/o timeout» داد
+
+وقتی در GitHub Actions خطای `dial tcp 92.205.58.83:22: i/o timeout` می‌بینید، یعنی رانر GitHub به پورت ۲۲ سرور شما وصل نمی‌شود (فایروال، یا سرور از IPهای GitHub در دسترس نیست). در این حالت می‌توانید **دیپلوی دستی** انجام دهید.
+
+### از کامپیوتر خود (با SSH به سرور)
+
+۱. مطمئن شوید آخرین کد روی `master` در GitHub است (push کرده‌اید).  
+۲. با SSH به سرور وصل شوید (با همان کاربری که در workflow استفاده می‌کنید، مثلاً `fxguard`):
+
+```bash
+ssh fxguard@92.205.58.83
+```
+
+۳. روی سرور این دستورات را بزنید (همان منطق workflow):
+
+```bash
+set -e
+cd /var/www/kayaCRM
+git fetch origin
+git reset --hard origin/master
+cd backend
+node scripts/backup-database.js || true
+npm ci --only=production
+node scripts/add-unanswered-columns.js
+node scripts/add-conversation-indexes.js
+pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js --update-env
+pm2 save
+```
+
+بعد از این، نسخهٔ جدید (از جمله تغییرات واتساپ/QR) روی سرور فعال است.
+
+### اگر می‌خواهید دیپلوی خودکار دوباره کار کند
+
+- در فایروال سرور (یا پنل هاست) مطمئن شوید پورت **۲۲** از اینترنت (یا حداقل از محدودهٔ IPهای GitHub Actions) باز است.
+- گاهی ارائه‌دهندهٔ سرور فقط از IP خاصی SSH را باز می‌کند؛ در آن صورت یا محدودهٔ GitHub را اضافه کنید یا فقط از دیپلوی دستی استفاده کنید.
