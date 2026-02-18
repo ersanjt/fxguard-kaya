@@ -356,10 +356,15 @@
                     <div class="ticket-filters-wrap">
                         <div class="ticket-filters">
                             <input type="text" id="ticketSearch" class="ticket-search-input" data-i18n-ph="ticket_ph_search" placeholder="جستجو شماره یا عنوان..." onkeypress="if(event.key==='Enter')applyTicketFilters()">
-                            <select id="ticketFilterStatus" class="ticket-filter-select"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="in_progress">در حال انجام</option><option value="resolved">حل‌شده</option><option value="closed">بسته</option></select>
-                            <select id="ticketFilterPriority" class="ticket-filter-select"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                            <select id="ticketFilterStatus" class="ticket-filter-select"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open" data-i18n="status_open">باز</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option><option value="closed" data-i18n="status_closed">بسته</option></select>
+                            <select id="ticketFilterPriority" class="ticket-filter-select"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
                             <select id="ticketFilterAssignee" class="ticket-filter-select"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
                             <select id="ticketFilterDept" class="ticket-filter-select"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
+                            <select id="ticketFilterSort" class="ticket-filter-select" title="مرتب‌سازی">
+                                <option value="newest" data-i18n="sort_newest">جدیدترین</option>
+                                <option value="oldest" data-i18n="sort_oldest">قدیمی‌ترین</option>
+                                <option value="priority" data-i18n="sort_priority">بر اساس اولویت</option>
+                            </select>
                             <button type="button" class="btn-primary ticket-filter-btn" onclick="applyTicketFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
                         </div>
                     </div>
@@ -402,9 +407,9 @@
                         <div class="ticket-detail-toolbar">
                             <button type="button" class="btn-secondary" onclick="startProcessFromTicket()" data-i18n="process_start_from_ticket">شروع فرایند</button>
                             <div class="ticket-detail-controls">
-                                <select id="ticketDetailStatus"><option value="open">باز</option><option value="in_progress">در حال انجام</option><option value="resolved">حل‌شده</option><option value="closed">بسته</option></select>
-                                <select id="ticketDetailAssignee"><option value="">بدون تخصیص</option></select>
-                                <select id="ticketDetailPriority"><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                                <select id="ticketDetailStatus"><option value="open" data-i18n="status_open">باز</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option><option value="closed" data-i18n="status_closed">بسته</option></select>
+                                <select id="ticketDetailAssignee"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
+                                <select id="ticketDetailPriority"><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
                                 <button type="button" class="btn-primary btn-sm" onclick="updateTicketFromDetail()" data-i18n="btn_apply">اعمال</button>
                             </div>
                         </div>

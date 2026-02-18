@@ -1,13 +1,13 @@
 const express = require('express');
 const { Ticket, User, Department, TicketReply } = require('../models');
-const { Op } = require('sequelize');
+const { Op, literal } = require('sequelize');
 
 function createTicketsRouter(io) {
 const router = express.Router();
 
 router.get('/', async (req, res) => {
     try {
-        const { status, priority, assignedTo, createdBy, departmentId, search, page = 1, limit = 50 } = req.query;
+        const { status, priority, assignedTo, createdBy, departmentId, search, sort = 'newest', page = 1, limit = 50 } = req.query;
         const where = {};
         if (status) where.status = status;
         if (priority) where.priority = priority;
@@ -22,6 +22,9 @@ router.get('/', async (req, res) => {
                 { ticketNumber: { [Op.like]: term } }
             ];
         }
+        let order = [['createdAt', 'DESC']];
+        if (sort === 'oldest') order = [['createdAt', 'ASC']];
+        else if (sort === 'priority') order = [[literal("CASE \"Tickets\".\"priority\" WHEN 'urgent' THEN 4 WHEN 'high' THEN 3 WHEN 'normal' THEN 2 WHEN 'low' THEN 1 ELSE 0 END"), 'DESC'], ['createdAt', 'DESC']];
         const { rows, count } = await Ticket.findAndCountAll({
             where,
             include: [
@@ -29,7 +32,7 @@ router.get('/', async (req, res) => {
                 { model: User, as: 'assignee', attributes: ['id', 'name', 'email'] },
                 { model: Department, as: 'department', attributes: ['id', 'name'] }
             ],
-            order: [['createdAt', 'DESC']],
+            order,
             limit: Math.min(parseInt(limit) || 50, 100),
             offset: (Math.max(1, parseInt(page)) - 1) * (parseInt(limit) || 50)
         });
