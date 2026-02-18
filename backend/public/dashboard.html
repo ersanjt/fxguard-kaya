@@ -89,10 +89,12 @@
                     <span class="logo-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
                     <span class="logo-text"><span class="logo-dot"></span> <span data-i18n="logo_kaya">صرافی کایا</span></span>
                 </a>
-                <div class="search-wrap">
+                <div class="search-wrap header-search-wrap">
                     <button type="button" class="header-search-trigger" id="headerSearchTrigger" onclick="openHeaderSearchPopup()" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
-                    <span class="search-icon"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
-                    <input type="text" id="headerSearch" data-i18n-ph="header_search" data-i18n-aria-label="header_search_aria" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو در مکالمات و مشتریان" onkeyup="if(event.key==='Enter') doHeaderSearch();">
+                    <label class="header-search-field" for="headerSearch">
+                        <span class="header-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
+                        <input type="text" id="headerSearch" data-i18n-ph="header_search" data-i18n-aria-label="header_search_aria" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو در مکالمات و مشتریان" onkeyup="if(event.key==='Enter') doHeaderSearch();" autocomplete="off">
+                    </label>
                 </div>
             </div>
             <div class="header-right">
@@ -118,10 +120,10 @@
                     <button type="button" class="modal-close" onclick="closeHeaderSearchPopup()" aria-label="بستن">&times;</button>
                 </div>
                 <div class="modal-body">
-                    <div class="search-wrap search-wrap-in-modal">
-                        <span class="search-icon"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
-                        <input type="text" id="headerSearchModalInput" data-i18n-ph="header_search" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو" onkeyup="if(event.key==='Enter') doHeaderSearchFromModal();">
-                    </div>
+                    <label class="search-wrap search-wrap-in-modal" for="headerSearchModalInput">
+                        <span class="header-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
+                        <input type="text" id="headerSearchModalInput" data-i18n-ph="header_search" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو" onkeyup="if(event.key==='Enter') doHeaderSearchFromModal();" autocomplete="off">
+                    </label>
                     <button type="button" class="btn-primary" onclick="doHeaderSearchFromModal()" data-i18n="header_search">جستجو</button>
                 </div>
             </div>
