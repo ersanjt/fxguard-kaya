@@ -615,6 +615,8 @@
         .btn-primary:hover { background: var(--accent-hover); }
         .btn-secondary { padding: 10px 20px; background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font); cursor: pointer; margin-bottom: 16px; }
         .btn-secondary:hover { background: var(--border); }
+        .btn-danger { padding: 10px 20px; background: var(--danger); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-weight: 600; cursor: pointer; }
+        .btn-danger:hover { background: #dc2626; }
         .badge { display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 500; }
         .badge.open { background: var(--accent-soft); color: var(--accent); }
         .badge.closed { background: var(--text-muted); color: var(--text-secondary); }
@@ -1190,44 +1192,79 @@
             .internal-chat-pane { flex: 1; }
         }
         /* ========== خدمات صرافی — تب‌ها و خلاصه موجودی ========== */
-        .services-page { display: flex; flex-direction: column; gap: 20px; }
-        .services-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
-        .services-tab { padding: 10px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); font-family: var(--font); font-size: 0.9rem; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; }
+        .services-page { display: flex; flex-direction: column; gap: 24px; max-width: 100%; min-width: 0; }
+        .services-page-header h2 { margin: 0 0 8px; font-size: 1.35rem; }
+        .services-intro { color: var(--text-secondary) !important; font-size: 0.95rem !important; margin: 0 !important; line-height: 1.6; }
+        .services-tabs-wrap { width: 100%; min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .services-tabs-wrap::-webkit-scrollbar { height: 6px; }
+        .services-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 0; padding-bottom: 4px; }
+        .services-tab { padding: 10px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); font-family: var(--font); font-size: 0.9rem; cursor: pointer; transition: background 0.2s, color 0.2s, border-color 0.2s; white-space: nowrap; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
         .services-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
         .services-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-        .services-panel { display: none; flex-direction: column; }
+        .services-panel { display: none; flex-direction: column; gap: 16px; min-width: 0; }
         .services-panel.show { display: flex; }
-        .exchange-summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
-        .exchange-summary-card { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); }
+        .services-panel-toolbar { flex-shrink: 0; }
+        .services-list { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+        .services-list .list-item { margin-bottom: 0; }
+        .services-list .empty { padding: 32px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
+        .services-list .list-item > div:last-child { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .exchange-summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .exchange-summary-card { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); min-width: 0; }
         .exchange-summary-card .label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
-        .exchange-summary-card .value { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+        .exchange-summary-card .value { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; word-break: break-all; }
+        .exchange-summary-card.accent { border-color: rgba(16,185,129,0.3); background: linear-gradient(135deg, var(--bg-card) 0%, rgba(16,185,129,0.08) 100%); }
         .exchange-summary-card.accent .value { color: var(--accent); }
-        .exchange-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 24px; }
+        .exchange-summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; min-width: 0; }
         .exchange-summary-section h4 { font-size: 1rem; margin: 0 0 12px; color: var(--text-primary); }
-        .exchange-summary-list { display: flex; flex-direction: column; gap: 10px; }
-        .exchange-summary-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border); }
-        .exchange-summary-item .name { font-weight: 500; color: var(--text-primary); }
-        .exchange-summary-item .balance { font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; }
+        .exchange-summary-list { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+        .exchange-summary-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border); gap: 12px; min-width: 0; }
+        .exchange-summary-item .name { font-weight: 500; color: var(--text-primary); min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+        .exchange-summary-item .balance { font-weight: 600; color: var(--accent); font-variant-numeric: tabular-nums; flex-shrink: 0; }
         .transaction-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
         .transaction-toolbar .transaction-filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-        .transaction-toolbar input[type="date"], .transaction-toolbar select { padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); }
+        .transaction-toolbar input[type="date"], .transaction-toolbar select { padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); min-height: 40px; }
+        .transaction-list { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+        .transaction-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border); gap: 12px; min-width: 0; }
+        .transaction-row .tx-type { font-size: 0.8rem; padding: 2px 8px; border-radius: 999px; background: var(--bg-hover); color: var(--text-secondary); }
+        .transaction-row .tx-amount { font-weight: 600; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+        .transaction-row .tx-amount.positive { color: var(--accent); }
+        .transaction-row .tx-amount.negative { color: var(--danger); }
         .tx-field-wrap { margin-top: 12px; }
         .tx-field-wrap label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; }
         .tx-field-wrap select { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); }
-        .transaction-row { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; padding: 12px 16px; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 8px; gap: 12px; }
-        .transaction-row .tx-type { font-size: 0.8rem; padding: 2px 8px; border-radius: 999px; background: var(--bg-hover); color: var(--text-secondary); }
-        .transaction-row .tx-amount { font-weight: 600; font-variant-numeric: tabular-nums; }
-        .transaction-row .tx-amount.positive { color: var(--accent); }
-        .transaction-row .tx-amount.negative { color: var(--danger); }
-        @media (max-width: 768px) {
-            .services-tabs { gap: 6px; }
-            .services-tab { padding: 8px 12px; font-size: 0.85rem; }
-            .exchange-summary-cards { grid-template-columns: 1fr; }
+        /* خدمات صرافی — تبلت */
+        @media (max-width: 1024px) {
+            .exchange-summary-cards { grid-template-columns: repeat(2, 1fr); gap: 12px; }
             .exchange-summary-grid { grid-template-columns: 1fr; }
-            .transaction-toolbar { flex-direction: column; align-items: stretch; }
+            .exchange-summary-card .value { font-size: 1.2rem; }
+        }
+        /* خدمات صرافی — موبایل */
+        @media (max-width: 768px) {
+            .services-page { gap: 16px; }
+            .services-page-header h2 { font-size: 1.15rem; }
+            .services-tabs-wrap { margin: 0 -4px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .services-tabs { flex-wrap: nowrap; min-width: min-content; gap: 6px; padding-bottom: 8px; }
+            .services-tab { padding: 10px 14px; font-size: 0.85rem; min-height: 44px; flex-shrink: 0; }
+            .exchange-summary-cards { grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
+            .exchange-summary-card { padding: 16px; }
+            .exchange-summary-card .value { font-size: 1.25rem; }
+            .exchange-summary-grid { gap: 16px; }
+            .exchange-summary-item { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px; }
+            .transaction-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
+            .transaction-toolbar .btn-primary { width: 100%; }
             .transaction-toolbar .transaction-filters { flex-direction: column; }
-            .transaction-toolbar .transaction-filters input, .transaction-toolbar .transaction-filters select { width: 100%; }
-            .transaction-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .transaction-toolbar .transaction-filters input, .transaction-toolbar .transaction-filters select { width: 100%; min-width: 0; }
+            .transaction-row { flex-direction: column; align-items: flex-start; gap: 8px; padding: 12px 14px; }
+            .services-list .list-item { flex-direction: column; align-items: stretch; gap: 12px; }
+            .services-list .list-item > div:last-child { justify-content: flex-start; }
+            .services-list .btn-sm { min-height: 44px; padding: 10px 16px; font-size: 0.9rem; }
+            .services-panel-toolbar .btn-primary { width: 100%; min-height: 44px; }
             .customer-detail-tabs { flex-wrap: wrap; gap: 6px; }
             .customer-detail-tab { padding: 8px 12px; font-size: 0.85rem; }
         }
+        /* خدمات صرافی — موبایل کوچک */
+        @media (max-width: 480px) {
+            .services-tab { padding: 8px 12px; font-size: 0.8rem; }
+            .exchange-summary-card .value { font-size: 1.1rem; }
+        }
+        #transactionModal .modal-box { max-width: min(480px, calc(100vw - 32px)) !important; }

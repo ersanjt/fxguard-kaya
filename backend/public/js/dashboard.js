@@ -342,6 +342,11 @@
                     modal_totp_password_ph: 'Password',
                     modal_user_edit: 'Edit user access & status',
                     modal_user_active: 'Account active (uncheck = blocked)',
+                    user_delete_transfer: 'Delete & transfer data',
+                    user_delete_confirm_title: 'Delete user & transfer data',
+                    user_transfer_to: 'Transfer conversations, tasks, tickets and processes to:',
+                    user_delete_confirm_btn: 'Delete & transfer',
+                    user_deleted_transferred: 'User deactivated and data transferred',
                     modal_user_perms: 'Section access:',
                     modal_ann_title: 'Important notice',
                     modal_ann_gotit: 'Got it',
@@ -851,9 +856,10 @@
             tabs.forEach(function(tab) {
                 tab.onclick = function() {
                     var t = tab.getAttribute('data-tab');
-                    tabs.forEach(function(x) { x.classList.remove('active'); });
+                    tabs.forEach(function(x) { x.classList.remove('active'); x.setAttribute('aria-selected', 'false'); });
                     panels.forEach(function(p) { p.classList.remove('show'); });
                     tab.classList.add('active');
+                    tab.setAttribute('aria-selected', 'true');
                     var panel = document.getElementById('services' + (t === 'summary' ? 'Summary' : t === 'services' ? 'Services' : t === 'cashboxes' ? 'Cashboxes' : t === 'bankaccounts' ? 'Bankaccounts' : 'Transactions') + 'Panel');
                     if (panel) { panel.classList.add('show'); }
                     if (t === 'summary') loadServicesSummary();
@@ -3428,7 +3434,31 @@
                 return '<label style="display:block; margin:6px 0;"><input type="checkbox" data-perm="' + k + '"' + checked + '> ' + sectionLabel(k) + '</label>';
             }).join('');
             document.getElementById('userEditPerms').innerHTML = html;
+            var btnDel = document.getElementById('btnUserDelete');
+            if (btnDel) btnDel.style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) && u.id !== (currentUser && currentUser.id) ? '' : 'none';
             document.getElementById('userEditModal').style.display = 'flex';
+        }
+        function openDeleteUserModal() {
+            if (!currentEditUserId) return;
+            var u = userListData.find(function(x) { return x.id === currentEditUserId; });
+            if (!u) return;
+            document.getElementById('deleteUserModalText').textContent = (LANG === 'fa' ? 'مکالمات، تسک‌ها، تیکت‌ها و فرایندهای ' : 'Conversations, tasks, tickets and processes of ') + (u.name || u.email) + (LANG === 'fa' ? ' به کاربر انتخابی منتقل و حساب غیرفعال می‌شود.' : ' will be transferred and the account will be deactivated.');
+            var sel = document.getElementById('deleteUserTransferTo');
+            var others = userListData.filter(function(x) { return x.id !== currentEditUserId && x.isActive !== false; });
+            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'انتخاب کاربر' : 'Select user') + '</option>' + others.map(function(x) { return '<option value="' + x.id + '">' + escapeHtml(x.name || x.username || x.email) + '</option>'; }).join('');
+            document.getElementById('deleteUserModal').style.display = 'flex';
+        }
+        function closeDeleteUserModal() { document.getElementById('deleteUserModal').style.display = 'none'; }
+        async function confirmDeleteUser() {
+            if (!currentEditUserId) return;
+            var transferTo = document.getElementById('deleteUserTransferTo').value;
+            if (!transferTo) { toast(LANG === 'fa' ? 'انتخاب کاربر برای انتقال الزامی است' : 'Select user to transfer data to', true); return; }
+            var btn = document.getElementById('btnConfirmDeleteUser');
+            if (btn) { btn.disabled = true; btn.textContent = LANG === 'fa' ? 'در حال پردازش...' : 'Processing...'; }
+            var res = await apiFetch('/api/users/' + currentEditUserId + '/delete-with-transfer', { method: 'POST', body: JSON.stringify({ transferToUserId: transferTo }) });
+            if (btn) { btn.disabled = false; btn.textContent = t('user_delete_confirm_btn') || (LANG === 'fa' ? 'حذف و انتقال' : 'Delete & transfer'); }
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('user_deleted_transferred') || (LANG === 'fa' ? 'کاربر غیرفعال و داده‌ها منتقل شد' : 'User deactivated and data transferred')); closeDeleteUserModal(); closeUserEditModal(); loadUsers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function saveUserEdit() {
             if (!currentEditUserId) return;

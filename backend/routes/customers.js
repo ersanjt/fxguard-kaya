@@ -114,7 +114,8 @@ router.get('/:id/timeline', async (req, res) => {
         const allowed = await canAccessCustomer(req, req.params.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         const customerId = req.params.id;
-        const [conversationsRaw, notes, activities, transactions] = await Promise.all([
+        let transactions = [];
+        const [conversationsRaw, notes, activities, txList] = await Promise.all([
             Conversation.findAll({
                 where: { customerId },
                 include: [{ model: User, as: 'assignee', attributes: ['id', 'name'] }],
@@ -135,8 +136,9 @@ router.get('/:id/timeline', async (req, res) => {
                 where: { customerId },
                 order: [['transactionDate', 'DESC'], ['createdAt', 'DESC']],
                 limit: 50
-            })
+            }).catch(() => [])
         ]);
+        transactions = Array.isArray(txList) ? txList : [];
         const convWithCount = await Promise.all(conversationsRaw.map(async (c) => {
             const count = await Message.count({ where: { conversationId: c.id } });
             const plain = c.get ? c.get({ plain: true }) : c;
@@ -202,8 +204,10 @@ router.get('/:id/transactions', async (req, res) => {
         if (!req.canAccess('customers') && !req.canAccess('services')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const allowed = await canAccessCustomer(req, req.params.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
-        const transactions = await Transaction.findAll({
-            where: { customerId: req.params.id },
+        let transactions = [];
+        try {
+            transactions = await Transaction.findAll({
+                where: { customerId: req.params.id },
             include: [
                 { model: User, as: 'user', attributes: ['id', 'name'] },
                 { model: CashBox, as: 'fromCashBox', attributes: ['id', 'name'] },
@@ -214,6 +218,7 @@ router.get('/:id/transactions', async (req, res) => {
             order: [['transactionDate', 'DESC'], ['createdAt', 'DESC']],
             limit: 200
         });
+        } catch (_) { transactions = []; }
         res.json({ data: transactions });
     } catch (err) {
         res.status(500).json({ error: err.message });

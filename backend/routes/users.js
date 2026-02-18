@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { User, Department, Branch } = require('../models');
+const { User, Department, Branch, Conversation, Task, Ticket, ProcessInstance, ProcessInstanceStep } = require('../models');
 const { getPermissions, isMainAdmin } = require('../lib/permissions');
 
 router.get('/', async (req, res) => {
@@ -193,6 +193,37 @@ router.put('/:id', async (req, res) => {
         delete u.password;
         u.permissions = getPermissions(user);
         res.json(u);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// حذف کاربر با انتقال مکالمات، تسک‌ها، تیکت‌ها و فرایندها به کاربر دیگر
+router.post('/:id/delete-with-transfer', async (req, res) => {
+    try {
+        if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر را حذف کند' });
+        const userId = req.params.id;
+        const { transferToUserId } = req.body;
+        if (!transferToUserId) return res.status(400).json({ error: 'انتخاب کاربر برای انتقال داده‌ها الزامی است' });
+        const user = await User.findByPk(userId);
+        if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
+        if (isMainAdmin(user)) return res.status(403).json({ error: 'امکان حذف ادمین اصلی وجود ندارد' });
+        const transferTo = await User.findByPk(transferToUserId);
+        if (!transferTo || !transferTo.isActive) return res.status(400).json({ error: 'کاربر مقصد معتبر نیست' });
+        if (transferTo.id === userId) return res.status(400).json({ error: 'کاربر مقصد نمی‌تواند خود کاربر حذفشونده باشد' });
+        await Conversation.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
+        await Task.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
+        await Task.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
+        await Ticket.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
+        await Ticket.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
+        await ProcessInstance.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
+        await ProcessInstance.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
+        await ProcessInstanceStep.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
+        user.isActive = false;
+        await user.save();
+        const u = user.toJSON();
+        delete u.password;
+        res.json({ message: 'کاربر غیرفعال شد و داده‌ها منتقل شد', user: u });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

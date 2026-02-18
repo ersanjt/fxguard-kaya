@@ -846,16 +846,20 @@
                     </div>
                 </div>
                 <div id="pageServices" class="page services-page">
-                    <h2 data-i18n="page_services">خدمات صرافی</h2>
-                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="services_intro_full">مدیریت سرویس‌ها، صندوق‌ها، حساب‌های بانکی و تراکنش‌های مالی صرافی.</p>
-                    <div class="services-tabs">
-                        <button type="button" class="services-tab active" data-tab="summary" data-i18n="tab_summary">خلاصه موجودی</button>
-                        <button type="button" class="services-tab" data-tab="services" data-i18n="tab_services">سرویس‌ها</button>
-                        <button type="button" class="services-tab" data-tab="cashboxes" data-i18n="tab_cashboxes">صندوق‌ها</button>
-                        <button type="button" class="services-tab" data-tab="bankaccounts" data-i18n="tab_bankaccounts">حساب‌های بانکی</button>
-                        <button type="button" class="services-tab" data-tab="transactions" data-i18n="tab_transactions">تراکنش‌ها</button>
+                    <div class="services-page-header">
+                        <h2 data-i18n="page_services">خدمات صرافی</h2>
+                        <p class="services-intro text-muted" data-i18n="services_intro_full">مدیریت سرویس‌ها، صندوق‌ها، حساب‌های بانکی و تراکنش‌های مالی صرافی.</p>
                     </div>
-                    <div id="servicesSummaryPanel" class="services-panel show">
+                    <div class="services-tabs-wrap">
+                        <div class="services-tabs" role="tablist">
+                            <button type="button" class="services-tab active" data-tab="summary" role="tab" aria-selected="true" data-i18n="tab_summary">خلاصه موجودی</button>
+                            <button type="button" class="services-tab" data-tab="services" role="tab" aria-selected="false" data-i18n="tab_services">سرویس‌ها</button>
+                            <button type="button" class="services-tab" data-tab="cashboxes" role="tab" aria-selected="false" data-i18n="tab_cashboxes">صندوق‌ها</button>
+                            <button type="button" class="services-tab" data-tab="bankaccounts" role="tab" aria-selected="false" data-i18n="tab_bankaccounts">حساب‌های بانکی</button>
+                            <button type="button" class="services-tab" data-tab="transactions" role="tab" aria-selected="false" data-i18n="tab_transactions">تراکنش‌ها</button>
+                        </div>
+                    </div>
+                    <div id="servicesSummaryPanel" class="services-panel show" role="tabpanel">
                         <div class="exchange-summary-cards">
                             <div class="exchange-summary-card"><div class="label" data-i18n="total_cash">مجموع صندوق‌ها</div><div class="value" id="summaryTotalCash">۰</div></div>
                             <div class="exchange-summary-card"><div class="label" data-i18n="total_bank">مجموع حساب‌های بانکی</div><div class="value" id="summaryTotalBank">۰</div></div>
@@ -872,29 +876,35 @@
                             </div>
                         </div>
                     </div>
-                    <div id="servicesServicesPanel" class="services-panel">
-                        <button type="button" class="btn-primary" onclick="openServiceModal()" style="margin-bottom:16px;" data-i18n="service_add">افزودن سرویس</button>
-                        <div id="serviceList"></div>
+                    <div id="servicesServicesPanel" class="services-panel" role="tabpanel">
+                        <div class="services-panel-toolbar">
+                            <button type="button" class="btn-primary" onclick="openServiceModal()" data-i18n="service_add">افزودن سرویس</button>
+                        </div>
+                        <div id="serviceList" class="services-list"></div>
                     </div>
-                    <div id="servicesCashboxesPanel" class="services-panel">
-                        <button type="button" class="btn-primary" onclick="openCashBoxModal()" style="margin-bottom:16px;" data-i18n="cashbox_add">افزودن صندوق</button>
-                        <div id="cashBoxList"></div>
+                    <div id="servicesCashboxesPanel" class="services-panel" role="tabpanel">
+                        <div class="services-panel-toolbar">
+                            <button type="button" class="btn-primary" onclick="openCashBoxModal()" data-i18n="cashbox_add">افزودن صندوق</button>
+                        </div>
+                        <div id="cashBoxList" class="services-list"></div>
                     </div>
-                    <div id="servicesBankaccountsPanel" class="services-panel">
-                        <button type="button" class="btn-primary" onclick="openBankAccountModal()" style="margin-bottom:16px;" data-i18n="bankaccount_add">افزودن حساب بانکی</button>
-                        <div id="bankAccountList"></div>
+                    <div id="servicesBankaccountsPanel" class="services-panel" role="tabpanel">
+                        <div class="services-panel-toolbar">
+                            <button type="button" class="btn-primary" onclick="openBankAccountModal()" data-i18n="bankaccount_add">افزودن حساب بانکی</button>
+                        </div>
+                        <div id="bankAccountList" class="services-list"></div>
                     </div>
-                    <div id="servicesTransactionsPanel" class="services-panel">
+                    <div id="servicesTransactionsPanel" class="services-panel" role="tabpanel">
                         <div class="transaction-toolbar">
                             <button type="button" class="btn-primary" onclick="openTransactionModal()" data-i18n="transaction_add">ثبت تراکنش</button>
                             <div class="transaction-filters">
-                                <input type="date" id="txFromDate" data-i18n-ph="from_date">
-                                <input type="date" id="txToDate" data-i18n-ph="to_date">
-                                <select id="txTypeFilter"><option value="" data-i18n="filter_all">همه</option><option value="cash_in">ورود به صندوق</option><option value="cash_out">خروج از صندوق</option><option value="transfer_box">انتقال بین صندوق‌ها</option><option value="bank_deposit">واریز به بانک</option><option value="bank_withdraw">برداشت از بانک</option><option value="transfer_account">انتقال بین حساب‌ها</option><option value="income">درآمد</option><option value="expense">هزینه</option></select>
+                                <input type="date" id="txFromDate" data-i18n-ph="from_date" aria-label="از تاریخ">
+                                <input type="date" id="txToDate" data-i18n-ph="to_date" aria-label="تا تاریخ">
+                                <select id="txTypeFilter" aria-label="نوع تراکنش"><option value="" data-i18n="filter_all">همه</option><option value="cash_in">ورود به صندوق</option><option value="cash_out">خروج از صندوق</option><option value="transfer_box">انتقال بین صندوق‌ها</option><option value="bank_deposit">واریز به بانک</option><option value="bank_withdraw">برداشت از بانک</option><option value="transfer_account">انتقال بین حساب‌ها</option><option value="income">درآمد</option><option value="expense">هزینه</option></select>
                                 <button type="button" class="btn-secondary" onclick="loadTransactions()" data-i18n="apply_filter">اعمال</button>
                             </div>
                         </div>
-                        <div id="transactionList"></div>
+                        <div id="transactionList" class="transaction-list"></div>
                     </div>
                 </div>
                 <div id="serviceModal" class="modal-overlay" style="display:none;">
@@ -1201,9 +1211,28 @@
                     <div id="userEditPerms" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:8px 16px; max-height:280px; overflow-y:auto;"></div>
                 </div>
             </div>
+            <div class="modal-footer" style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+                <button type="button" class="btn-danger" id="btnUserDelete" onclick="openDeleteUserModal()" style="display:none;" data-i18n="user_delete_transfer">حذف و انتقال داده‌ها</button>
+                <div style="display:flex; gap:8px; margin-right:auto;">
+                    <button type="button" class="btn-secondary" onclick="closeUserEditModal()" data-i18n="btn_cancel">انصراف</button>
+                    <button type="button" class="btn-primary" onclick="saveUserEdit()" data-i18n="btn_save">ذخیره</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="deleteUserModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:440px;">
+            <div class="modal-header"><h3 data-i18n="user_delete_confirm_title">حذف کاربر و انتقال داده‌ها</h3><button type="button" class="modal-close" onclick="closeDeleteUserModal()">&times;</button></div>
+            <div class="modal-body">
+                <p id="deleteUserModalText" class="text-muted" style="margin:0 0 16px; font-size:0.95rem;"></p>
+                <label data-i18n="user_transfer_to">انتقال مکالمات، تسک‌ها، تیکت‌ها و فرایندها به:</label>
+                <select id="deleteUserTransferTo" style="width:100%; margin-top:8px; padding:10px; border-radius:8px; border:1px solid var(--border);">
+                    <option value="" data-i18n="select_user_task">انتخاب کاربر</option>
+                </select>
+            </div>
             <div class="modal-footer">
-                <button type="button" class="btn-secondary" onclick="closeUserEditModal()" data-i18n="btn_cancel">انصراف</button>
-                <button type="button" class="btn-primary" onclick="saveUserEdit()" data-i18n="btn_save">ذخیره</button>
+                <button type="button" class="btn-secondary" onclick="closeDeleteUserModal()" data-i18n="btn_cancel">انصراف</button>
+                <button type="button" class="btn-danger" id="btnConfirmDeleteUser" onclick="confirmDeleteUser()" data-i18n="user_delete_confirm_btn">حذف و انتقال</button>
             </div>
         </div>
     </div>

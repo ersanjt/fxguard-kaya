@@ -10,7 +10,8 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const amqp = require('amqplib');
-const redis = require('redis');
+let redis;
+try { redis = require('redis'); } catch (e) { redis = null; }
 const winston = require('winston');
 const axios = require('axios');
 
@@ -84,19 +85,30 @@ const logger = winston.createLogger({
     ]
 });
 
-// ==================== Redis (optional when USE_SQLITE) ====================
-const redisClient = redis.createClient({
-    url: process.env.REDIS_URL || 'redis://localhost:6379'
-});
-redisClient.on('error', () => {}); // suppress repeat logs
-redisClient.connect().catch(() => { logger.warn('⚠️ Redis not available - continuing without cache'); });
+// ==================== Redis (optional) ====================
+let redisClient = { quit: () => Promise.resolve(), connect: () => Promise.resolve() };
+if (redis) {
+    try {
+        redisClient = redis.createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
+        redisClient.on('error', () => {});
+        redisClient.connect().catch(() => { logger.warn('⚠️ Redis not available - continuing without cache'); });
+    } catch (e) {
+        logger.warn('⚠️ Redis init failed:', e.message);
+    }
+} else {
+    logger.warn('⚠️ Redis module not found - continuing without cache');
+}
 
 // ==================== RabbitMQ ====================
 let rabbitChannel;
 
 async function connectRabbitMQ() {
     try {
-        const connection = await amqp.connect(process.env.RABBITMQ_URL || 'amqp://localhost');
+        const timeout = (ms) => new Promise((_, rej) => setTimeout(() => rej(new Error('RabbitMQ connect timeout')), ms));
+        const connection = await Promise.race([
+            amqp.connect(process.env.RABBITMQ_URL || 'amqp://localhost'),
+            timeout(10000)
+        ]);
         rabbitChannel = await connection.createChannel();
         require('./services/autoMessages').setRabbitChannel(rabbitChannel);
         
@@ -134,29 +146,23 @@ async function connectDatabases() {
             await sequelize.query('PRAGMA journal_mode=WAL;');
             await sequelize.query('PRAGMA synchronous=NORMAL;');
         }
-        await sequelize.sync();
-        // Auto-migrate: add customerId to Transactions if missing (fixes 502 after deploy)
+        // Auto-migrate: add customerId to Transactions BEFORE sync (sync creates index on customerId)
         try {
-            const dialect = sequelize.getDialect();
-            const [results] = await sequelize.query(
-                dialect === 'sqlite'
-                    ? "PRAGMA table_info(Transactions)"
-                    : "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND LOWER(table_name) = 'transactions'"
-            );
-            const hasColumn = dialect === 'sqlite'
-                ? results.some(r => r.name === 'customerId')
-                : results.some(r => r.column_name === 'customerId');
-            if (!hasColumn) {
-                if (dialect === 'sqlite') {
-                    await sequelize.query('ALTER TABLE "Transactions" ADD COLUMN "customerId" VARCHAR(36)');
-                } else {
-                    await sequelize.query('ALTER TABLE "Transactions" ADD COLUMN "customerId" UUID REFERENCES "Customers"("id")');
-                }
+            const { DataTypes } = require('sequelize');
+            const qi = sequelize.getQueryInterface();
+            const tableDesc = await qi.describeTable('Transactions');
+            if (!tableDesc || !tableDesc.customerId) {
+                await qi.addColumn('Transactions', 'customerId', {
+                    type: DataTypes.UUID,
+                    allowNull: true,
+                    references: { model: 'Customers', key: 'id' }
+                });
                 logger.info('✅ Transactions.customerId column added (auto-migration)');
             }
         } catch (migErr) {
             logger.warn('Transactions customerId migration:', migErr.message);
         }
+        await sequelize.sync();
         logger.info(process.env.USE_SQLITE ? '✅ SQLite Connected (WAL)' : '✅ PostgreSQL Connected');
         
         if (!process.env.USE_SQLITE) {
