@@ -1026,16 +1026,23 @@
                     </div>
                 </div>
                 <div id="pagePanelSettings" class="page page-panel-settings">
-                    <h2 data-i18n="page_panel_settings">ظاهر پنل</h2>
-                    <p class="panel-settings-intro text-muted" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
+                    <header class="panel-settings-page-header">
+                        <h2 class="panel-settings-page-title" data-i18n="page_panel_settings">ظاهر پنل</h2>
+                        <p class="panel-settings-intro" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
+                    </header>
 
                     <div id="panelSettingsLoading" class="panel-settings-loading" style="display:none;">
                         <span class="loading-spinner" aria-hidden="true"></span>
                         <span data-i18n="loading">در حال بارگذاری...</span>
                     </div>
                     <div id="panelSettingsContent" class="panel-settings-content">
-                        <div class="panel-settings-preview-card card">
-                            <h3 class="panel-settings-preview-title" data-i18n="panel_live_preview">پیش‌نمایش زنده</h3>
+                        <div class="panel-settings-preview-card">
+                            <div class="panel-settings-preview-label">
+                                <span class="panel-settings-preview-dot"></span>
+                                <span class="panel-settings-preview-dot"></span>
+                                <span class="panel-settings-preview-dot"></span>
+                                <span data-i18n="panel_live_preview">پیش‌نمایش زنده</span>
+                            </div>
                             <div class="panel-settings-preview-bar">
                                 <div class="panel-preview-tab">
                                     <img id="panelPreviewFavicon" class="panel-preview-tab-favicon" src="" alt="" onerror="this.style.display='none'">
@@ -1052,7 +1059,7 @@
                         </div>
 
                         <div class="panel-settings-sections">
-                            <section class="panel-settings-section card">
+                            <section class="panel-settings-section">
                                 <h3 class="panel-settings-section-title" data-i18n="panel_section_branding">برندینگ</h3>
                                 <div class="form-group">
                                     <label for="panelSettingSiteName" data-i18n="panel_site_name">نام سایت</label>
@@ -1062,7 +1069,7 @@
                                     <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">آدرس لوگو (URL)</label>
                                     <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png" oninput="previewPanelLogo(this.value); updatePanelLivePreview();">
                                     <div class="panel-setting-preview" id="panelLogoPreview" style="display:none;">
-                                        <span class="text-muted panel-preview-label" data-i18n="panel_preview">پیش‌نمایش</span>
+                                        <span class="panel-preview-label" data-i18n="panel_preview">پیش‌نمایش</span>
                                         <img id="panelLogoPreviewImg" src="" alt="" class="panel-logo-preview-img" onerror="this.style.display='none'">
                                     </div>
                                 </div>
@@ -1070,12 +1077,12 @@
                                     <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">آدرس فاویکون (URL)</label>
                                     <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico" oninput="previewPanelFavicon(this.value); updatePanelLivePreview();">
                                     <div class="panel-setting-preview" id="panelFaviconPreview" style="display:none;">
-                                        <span class="text-muted panel-preview-label" data-i18n="panel_preview">پیش‌نمایش</span>
+                                        <span class="panel-preview-label" data-i18n="panel_preview">پیش‌نمایش</span>
                                         <img id="panelFaviconPreviewImg" src="" alt="" class="panel-favicon-preview-img" onerror="this.style.display='none'">
                                     </div>
                                 </div>
                             </section>
-                            <section class="panel-settings-section card">
+                            <section class="panel-settings-section">
                                 <h3 class="panel-settings-section-title" data-i18n="panel_section_titles">عنوان‌ها</h3>
                                 <div class="form-group">
                                     <label for="panelSettingLoginTitle" data-i18n="panel_login_title">عنوان صفحه ورود</label>
@@ -1086,7 +1093,7 @@
                                     <input type="text" id="panelSettingPageTitle" placeholder="پورتال کارکنان | صرافی کایا" oninput="updatePanelLivePreview()">
                                 </div>
                             </section>
-                            <section class="panel-settings-section card">
+                            <section class="panel-settings-section">
                                 <h3 class="panel-settings-section-title" data-i18n="panel_section_footer">فوتر</h3>
                                 <div class="form-group">
                                     <label for="panelSettingFooterText" data-i18n="panel_footer_text">متن فوتر</label>
@@ -1095,8 +1102,8 @@
                             </section>
                         </div>
 
-                        <div class="panel-settings-actions card">
-                            <button type="button" id="panelSettingsSaveBtn" class="btn-primary" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
+                        <div class="panel-settings-actions">
+                            <button type="button" id="panelSettingsSaveBtn" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
                             <span id="panelSettingsSaveStatus" class="panel-settings-save-status" style="display:none;"></span>
                         </div>
                     </div>
@@ -1335,7 +1342,13 @@
         <div id="internalCallModal" class="internal-call-modal" style="display:none;">
             <div class="internal-call-content">
                 <div id="internalCallStatus" class="internal-call-status"></div>
+                <div id="internalCallDuration" class="internal-call-duration" style="display:none;"></div>
                 <div id="internalCallConnectionStatus" class="internal-call-connection-status" style="display:none;"></div>
+                <div id="internalCallVoicePlaceholder" class="internal-call-voice-placeholder" style="display:none;">
+                    <div class="internal-call-voice-avatar" id="internalCallVoiceAvatar"></div>
+                    <span class="internal-call-voice-name" id="internalCallVoiceName"></span>
+                    <div class="internal-call-voice-pulse" aria-hidden="true"></div>
+                </div>
                 <div class="internal-call-videos" id="internalCallVideos">
                     <div id="internalCallRemoteVideos" class="internal-call-remote-videos"></div>
                     <video id="internalCallLocalVideo" autoplay muted playsinline class="internal-call-local-video"></video>

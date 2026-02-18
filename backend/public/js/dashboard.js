@@ -4132,8 +4132,40 @@
         var internalCallType = 'voice';
         var internalCallMicMuted = false;
         var internalCallCameraOff = false;
+        var internalCallStartedAt = null;
+        var internalCallDurationInterval = null;
         var INTERNAL_CALL_ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }];
         function getSocket() { return socket; }
+        function getInternalCallOtherDisplay() {
+            var id = currentInternalThreadOtherUserId || (internalCallPendingInvite && internalCallPendingInvite.fromUserId) || (internalCallPendingOffer && internalCallPendingOffer.fromUserId);
+            if (!id) return { name: '', initial: '?' };
+            var p = (currentInternalThreadParticipants || []).find(function(x) { return String(x.id) === String(id); });
+            var name = (p && (p.name || p.email)) || (internalCallPendingInvite && internalCallPendingInvite.fromUserName) || '';
+            var initial = (name && name.trim()[0]) ? name.trim()[0].toUpperCase() : '?';
+            return { name: name || (LANG === 'fa' ? 'طرف تماس' : 'Contact'), initial: initial };
+        }
+        function formatCallDuration(ms) {
+            var s = Math.floor(ms / 1000);
+            var m = Math.floor(s / 60);
+            s = s % 60;
+            return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+        }
+        function startInternalCallDurationTimer() {
+            if (internalCallDurationInterval) return;
+            internalCallStartedAt = internalCallStartedAt || Date.now();
+            var el = document.getElementById('internalCallDuration');
+            if (el) { el.style.display = 'block'; el.textContent = formatCallDuration(0); }
+            internalCallDurationInterval = setInterval(function() {
+                var el = document.getElementById('internalCallDuration');
+                if (el) el.textContent = formatCallDuration(Date.now() - internalCallStartedAt);
+            }, 1000);
+        }
+        function stopInternalCallDurationTimer() {
+            if (internalCallDurationInterval) { clearInterval(internalCallDurationInterval); internalCallDurationInterval = null; }
+            internalCallStartedAt = null;
+            var el = document.getElementById('internalCallDuration');
+            if (el) el.style.display = 'none';
+        }
         function updateInternalCallConnectionStatus(text, stateClass) {
             var el = document.getElementById('internalCallConnectionStatus');
             if (!el) return;
@@ -4289,7 +4321,22 @@
             var cameraBtn = document.getElementById('internalCallCameraBtn');
             var localV = document.getElementById('internalCallLocalVideo');
             var container = document.getElementById('internalCallRemoteVideos');
+            var videosWrap = document.getElementById('internalCallVideos');
+            var voicePlaceholder = document.getElementById('internalCallVoicePlaceholder');
+            var voiceAvatar = document.getElementById('internalCallVoiceAvatar');
+            var voiceName = document.getElementById('internalCallVoiceName');
+            var isVoice = internalCallType === 'voice';
             if (statusEl) statusEl.textContent = statusText || '';
+            if (voicePlaceholder) voicePlaceholder.style.display = isVoice ? 'flex' : 'none';
+            if (videosWrap) videosWrap.style.display = isVoice ? 'none' : 'block';
+            if (isVoice) {
+                var d = getInternalCallOtherDisplay();
+                if (voiceAvatar) voiceAvatar.textContent = d.initial;
+                if (voiceName) voiceName.textContent = d.name;
+            }
+            var isInCall = (statusText === t('in_call') || statusText === 'In call') && !showAccept;
+            if (isInCall) startInternalCallDurationTimer();
+            else stopInternalCallDurationTimer();
             if (connEl) { connEl.style.display = 'none'; connEl.textContent = ''; connEl.className = 'internal-call-connection-status'; }
             if (acceptBtn) acceptBtn.style.display = showAccept ? 'flex' : 'none';
             if (rejectBtn) rejectBtn.style.display = 'flex';
@@ -4303,6 +4350,7 @@
         }
         function hideInternalCallModal() {
             stopCallRingtone();
+            stopInternalCallDurationTimer();
             var modal = document.getElementById('internalCallModal');
             if (modal) modal.style.display = 'none';
             if (internalCallLocalStream) { internalCallLocalStream.getTracks().forEach(function(t){ t.stop(); }); internalCallLocalStream = null; }
@@ -4443,6 +4491,7 @@
             try {
                 document.getElementById('internalCallInviteModal').style.display = 'none';
                 currentInternalThreadId = threadId;
+                currentInternalThreadOtherUserId = internalCallPendingInvite.fromUserId;
                 internalCallType = type;
                 internalCallIsJoining = true;
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
