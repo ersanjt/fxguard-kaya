@@ -26,7 +26,7 @@ async function getSettings() {
     };
 }
 
-// عمومی — برای صفحه ورود (بدون احراز هویت)
+// عمومی — برای صفحه ورود و اعمال ظاهر برای همه کاربران (بدون احراز هویت)
 router.get('/public/branding', async (req, res) => {
     try {
         const s = await getSettings();
@@ -35,18 +35,19 @@ router.get('/public/branding', async (req, res) => {
             logoUrl: s.logoUrl,
             faviconUrl: s.faviconUrl,
             loginTitle: s.loginTitle,
-            pageTitle: s.pageTitle
+            pageTitle: s.pageTitle,
+            footerText: s.footerText
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// فقط با احراز هویت و دسترسی ادمین/مالک
+// فقط با احراز هویت و دسترسی «ظاهر پنل» (panel_settings)
 router.get('/', authMiddleware, async (req, res) => {
     try {
-        if (req.user.role !== 'admin' && req.user.role !== 'owner') {
-            return res.status(403).json({ error: 'فقط ادمین یا مالک می‌تواند تنظیمات پنل را ببیند.' });
+        if (!req.canAccess || !req.canAccess('panel_settings')) {
+            return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const s = await getSettings();
         res.json(s);
@@ -57,8 +58,8 @@ router.get('/', authMiddleware, async (req, res) => {
 
 router.put('/', authMiddleware, async (req, res) => {
     try {
-        if (req.user.role !== 'admin' && req.user.role !== 'owner') {
-            return res.status(403).json({ error: 'فقط ادمین یا مالک می‌تواند تنظیمات پنل را تغییر دهد.' });
+        if (!req.canAccess || !req.canAccess('panel_settings')) {
+            return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText } = req.body || {};
         const [row] = await PanelSetting.findOrCreate({

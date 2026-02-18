@@ -1014,11 +1014,13 @@
                         </div>
                         <div class="form-group">
                             <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">آدرس لوگو (URL)</label>
-                            <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png">
+                            <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png" oninput="previewPanelLogo(this.value)">
+                            <div class="panel-setting-preview" id="panelLogoPreview" style="margin-top:8px;display:none;"><span class="text-muted" style="font-size:0.85rem;" data-i18n="panel_preview">پیش‌نمایش</span>: <img id="panelLogoPreviewImg" src="" alt="" style="max-height:32px;max-width:120px;object-fit:contain;vertical-align:middle;" onerror="this.style.display='none'"></div>
                         </div>
                         <div class="form-group">
                             <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">آدرس فاویکون (URL)</label>
-                            <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico">
+                            <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico" oninput="previewPanelFavicon(this.value)">
+                            <div class="panel-setting-preview" id="panelFaviconPreview" style="margin-top:8px;display:none;"><span class="text-muted" style="font-size:0.85rem;" data-i18n="panel_preview">پیش‌نمایش</span>: <img id="panelFaviconPreviewImg" src="" alt="" style="width:16px;height:16px;vertical-align:middle;" onerror="this.style.display='none'"></div>
                         </div>
                         <div class="form-group">
                             <label for="panelSettingLoginTitle" data-i18n="panel_login_title">عنوان صفحه ورود</label>

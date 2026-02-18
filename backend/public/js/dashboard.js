@@ -84,6 +84,7 @@
                     panel_login_title: 'عنوان صفحه ورود',
                     panel_page_title: 'عنوان تب مرورگر',
                     panel_footer_text: 'متن فوتر',
+                    panel_preview: 'پیش‌نمایش',
                     page_customer_detail: 'تار�Rخ� �! �&شتر�R',
                     btn_send: 'ارسا�',
                     btn_save: 'ذخ�Rر�!',
@@ -324,6 +325,7 @@
                     panel_login_title: 'Login page title',
                     panel_page_title: 'Browser tab title',
                     panel_footer_text: 'Footer text',
+                    panel_preview: 'Preview',
                     page_customer_detail: 'Customer history',
                     btn_send: 'Send',
                     btn_save: 'Save',
@@ -2888,6 +2890,8 @@
             }
             var headerLogoText = document.getElementById('headerLogoText');
             if (headerLogoText) headerLogoText.textContent = logoText;
+            var headerLogo = document.getElementById('headerLogo');
+            if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
             var footerBrand = document.getElementById('appFooterBrand');
             if (footerBrand) footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
             var loginTitleEl = document.getElementById('loginTitle');
@@ -2902,7 +2906,8 @@
         }
         async function loadPanelSettingsAndApply() {
             var res = await apiFetch('/api/panel-settings');
-            if (res.ok && res.data) applyBranding(res.data);
+            if (res.ok && res.data) { applyBranding(res.data); return; }
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null)) applyBranding(data); }).catch(function() {});
         }
         async function loadPanelSettings() {
             var res = await apiFetch('/api/panel-settings');
@@ -2915,6 +2920,22 @@
             set('panelSettingLoginTitle', d.loginTitle);
             set('panelSettingPageTitle', d.pageTitle);
             set('panelSettingFooterText', d.footerText);
+            previewPanelLogo(d.logoUrl || '');
+            previewPanelFavicon(d.faviconUrl || '');
+        }
+        function previewPanelLogo(url) {
+            var wrap = document.getElementById('panelLogoPreview');
+            var img = document.getElementById('panelLogoPreviewImg');
+            if (!wrap || !img) return;
+            url = (url || '').trim();
+            if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = ''; img.onerror = function() { img.style.display = 'none'; }; } else { wrap.style.display = 'none'; }
+        }
+        function previewPanelFavicon(url) {
+            var wrap = document.getElementById('panelFaviconPreview');
+            var img = document.getElementById('panelFaviconPreviewImg');
+            if (!wrap || !img) return;
+            url = (url || '').trim();
+            if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = ''; img.onerror = function() { img.style.display = 'none'; }; } else { wrap.style.display = 'none'; }
         }
         async function savePanelSettings() {
             var payload = { siteName: document.getElementById('panelSettingSiteName').value.trim(), logoUrl: document.getElementById('panelSettingLogoUrl').value.trim(), faviconUrl: document.getElementById('panelSettingFaviconUrl').value.trim(), loginTitle: document.getElementById('panelSettingLoginTitle').value.trim(), pageTitle: document.getElementById('panelSettingPageTitle').value.trim(), footerText: document.getElementById('panelSettingFooterText').value.trim() };
@@ -2930,6 +2951,7 @@
         function toggleSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s && s.classList.contains('sidebar-open')) { closeSidebarMobile(); } else { if (s) s.classList.add('sidebar-open'); if (o) { o.classList.add('show'); o.style.display = 'block'; document.body.style.overflow = 'hidden'; } if (btn) btn.setAttribute('aria-expanded', 'true'); } }
         function closeSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
         function showPage(page) {
+            if (page === 'panel-settings' && (!currentUser || !currentUser.permissions || currentUser.permissions.panel_settings !== true)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
@@ -5049,6 +5071,9 @@
             window.logout = logout;
             window.showPage = showPage;
             window.savePanelSettings = savePanelSettings;
+            window.loadPanelSettings = loadPanelSettings;
+            window.previewPanelLogo = previewPanelLogo;
+            window.previewPanelFavicon = previewPanelFavicon;
             window.verifyTotpLogin = verifyTotpLogin;
             window.backToLoginStep1 = backToLoginStep1;
             window.closeSidebarMobile = closeSidebarMobile;
@@ -5126,6 +5151,8 @@
             };
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
+            window.previewPanelLogo = previewPanelLogo;
+            window.previewPanelFavicon = previewPanelFavicon;
             window.openSupInternalChatDetail = openSupInternalChatDetail;
             window.closeSupInternalChatModal = closeSupInternalChatModal;
             window.filterInternalThreads = filterInternalThreads;
