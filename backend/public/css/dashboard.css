@@ -244,7 +244,9 @@
         .announcement-marquee { position: relative; z-index: 50; overflow: hidden; background: linear-gradient(90deg, var(--accent) 0%, var(--accent-soft) 100%); border-bottom: 1px solid var(--accent); padding: 10px 0; flex-shrink: 0; direction: rtl; cursor: pointer; color: #fff; font-size: 0.9rem; }
         .announcement-marquee-inner { display: inline-block; white-space: nowrap; animation: announcementMarqueeRtl 40s linear infinite; padding: 0 2em; }
         .ticker-toggle-mobile { display: none; }
-        .app-footer { display: none; }
+        /* فوتر در دسکتاپ و موبایل نمایش داده می‌شود — قوانین داخل media فقط استایل را تنظیم می‌کنند */
+        .app-footer { display: flex; align-items: center; justify-content: center; padding: 12px 20px; padding-bottom: max(12px, env(safe-area-inset-bottom)); font-size: 0.8rem; background: linear-gradient(180deg, rgba(22,31,56,0.98) 0%, rgba(19,27,50,0.99) 100%); border-top: 1px solid rgba(255,255,255,0.06); color: rgba(255,255,255,0.88); flex-shrink: 0; text-align: center; box-sizing: border-box; }
+        .app-footer-brand { font-weight: 600; color: rgba(255,255,255,0.95); }
         /* ========== هدر و نوار پایین دسکتاپ (ویندوز) — min-width: 769px ========== */
         @media (min-width: 769px) {
             .header { padding: 10px 28px; padding-top: max(10px, env(safe-area-inset-top)); border-bottom: 1px solid rgba(45, 63, 95, 0.8); box-shadow: 0 1px 0 rgba(255,255,255,0.03); background: linear-gradient(180deg, #161f38 0%, #131b32 100%); }
@@ -1431,8 +1433,11 @@
             .price-ticker .ticker-times { gap: 4px 6px; }
             .price-ticker .ticker-time-block { padding: 3px 6px; }
             .price-ticker .ticker-items { min-width: 0; overflow: hidden; -webkit-overflow-scrolling: touch; }
-            .price-ticker .ticker-items.ticker-auto-scroll { overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; touch-action: pan-x; scrollbar-width: none; }
-            .price-ticker .ticker-items.ticker-auto-scroll::-webkit-scrollbar { display: none; }
+            /* موبایل: اسلایدر پیوسته مثل دسکتاپ (مارکی پیوسته و تکراری)، بدون قطع */
+            .price-ticker .ticker-items { direction: rtl; }
+            .price-ticker .ticker-item-track { direction: rtl; }
+            .price-ticker .ticker-items.ticker-auto-scroll { overflow: hidden; }
+            .price-ticker .ticker-items.ticker-auto-scroll .ticker-item-track { animation: tickerMarqueeRtl 75s linear infinite; }
             .price-ticker .ticker-header { min-width: 0; }
             .price-ticker .ticker-datetime { min-width: 0; overflow: hidden; }
             .price-ticker.ticker-collapsed { max-height: 52px; min-height: 52px; overflow: hidden; padding: 10px 12px; padding-inline-start: max(12px, env(safe-area-inset-inline-start)); padding-inline-end: max(56px, calc(12px + env(safe-area-inset-inline-end))); grid-template-rows: 1fr; align-items: center; }
