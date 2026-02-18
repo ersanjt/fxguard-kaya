@@ -199,6 +199,8 @@
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 24px; }
         .modal-box { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); max-width: 440px; width: 100%; padding: 24px; box-shadow: var(--shadow); box-sizing: border-box; max-width: min(440px, calc(100vw - 48px)); }
         .header-search-modal .modal-box { max-width: min(360px, calc(100vw - 48px)); }
+        .currency-modal-overlay { cursor: default; }
+        .currency-modal-overlay .currency-modal-box { cursor: auto; }
         .header-search-modal .search-wrap-in-modal { display: flex; align-items: center; gap: 12px; max-width: 100%; margin-bottom: 16px; padding: 12px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); transition: border-color 0.2s, box-shadow 0.2s; }
         .header-search-modal .search-wrap-in-modal:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(16,185,129,0.2); }
         .header-search-modal .search-wrap-in-modal .header-search-icon { flex-shrink: 0; width: 20px; height: 20px; color: var(--text-muted); opacity: 0.85; }

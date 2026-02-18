@@ -1432,8 +1432,8 @@
                 </div>
             </div>
         </div>
-        <div id="currencyModal" class="modal-overlay" style="display:none;">
-            <div class="modal-box" style="max-width:420px;">
+        <div id="currencyModal" class="modal-overlay currency-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="currencyModalTitle" onclick="if(event.target===this) closeCurrencyModal();">
+            <div class="modal-box currency-modal-box" style="max-width:420px;" onclick="event.stopPropagation();">
                 <div class="modal-header"><h3 id="currencyModalTitle" data-i18n="rates_add_currency">افزودن ارز</h3><button type="button" class="modal-close" onclick="closeCurrencyModal()" aria-label="بستن">&times;</button></div>
                 <div class="modal-body">
                     <input type="hidden" id="currencyModalKeyOriginal" value="">
@@ -1452,7 +1452,7 @@
                         <span class="form-hint" data-i18n="rates_currency_apikeys_hint">نام فیلدهای پاسخ API ناواسان؛ در صورت خالی بودن از کلید ارز حدس زده می‌شود.</span>
                     </div>
                 </div>
-                <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; padding:14px 20px; border-top:1px solid var(--border);">
+                <div class="modal-footer currency-modal-footer" style="display:flex; gap:10px; justify-content:flex-end; padding:14px 20px; border-top:1px solid var(--border);">
                     <button type="button" class="btn-secondary" onclick="closeCurrencyModal()" data-i18n="cancel">انصراف</button>
                     <button type="button" id="currencyModalSubmitBtn" class="btn-primary" onclick="saveCurrencyFromModal()" data-i18n="btn_save">ذخیره</button>
                 </div>
