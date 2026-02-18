@@ -747,11 +747,23 @@
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(formatPrice(it.value)) + '</span>' + (chText ? '<span class="ticker-change' + chClass + '">' + escapeHtml(chText) + '</span>' : '') + '</span>';
                 }).join('');
                 if (trackEl) {
+                    var copyCount = 2;
                     trackEl.innerHTML = itemsHtml + itemsHtml;
-                    itemsEl.classList.remove('ticker-auto-scroll');
                     requestAnimationFrame(function() {
-                        if (trackEl.scrollWidth > itemsEl.clientWidth) itemsEl.classList.add('ticker-auto-scroll');
-                        else itemsEl.classList.remove('ticker-auto-scroll');
+                        var containerW = itemsEl.clientWidth;
+                        var trackW = trackEl.scrollWidth;
+                        while (trackW < containerW * 2.2 && copyCount < 8) {
+                            copyCount++;
+                            trackEl.innerHTML = trackEl.innerHTML + itemsHtml;
+                            trackW = trackEl.scrollWidth;
+                        }
+                        itemsEl.classList.remove('ticker-auto-scroll');
+                        if (trackEl.scrollWidth > itemsEl.clientWidth) {
+                            itemsEl.classList.add('ticker-auto-scroll');
+                            trackEl.style.setProperty('--ticker-step', (-100 / copyCount) + '%');
+                        } else {
+                            itemsEl.classList.remove('ticker-auto-scroll');
+                        }
                     });
                 } else itemsEl.innerHTML = itemsHtml;
             }
