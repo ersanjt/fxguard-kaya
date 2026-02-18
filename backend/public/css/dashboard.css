@@ -633,8 +633,11 @@
         .toast { position: fixed; bottom: 24px; right: 24px; left: 24px; max-width: 400px; margin: 0 auto; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); z-index: 9999; font-size: 0.9rem; animation: toastIn 0.3s ease; }
         .toast.err { border-color: var(--danger); background: var(--danger-soft); }
         @keyframes toastIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .sup-page-header h2 { margin: 0 0 8px; }
-        .sup-intro { color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 20px; line-height: 1.6; }
+        .sup-page { display: flex; flex-direction: column; gap: 24px; max-width: 100%; min-width: 0; }
+        .sup-page-header h2 { margin: 0 0 8px; font-size: 1.35rem; }
+        .sup-intro { color: var(--text-secondary); font-size: 0.95rem; margin: 0 0 20px; line-height: 1.6; }
+        .supervision-tabs-wrap { width: 100%; min-width: 0; overflow-x: auto; -webkit-overflow-scrolling: touch; margin-bottom: 20px; }
+        .supervision-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
         .sup-filter-box { max-width: 100%; margin-bottom: 16px; }
         .sup-filter-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .sup-filter-row select { padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; }
@@ -653,7 +656,6 @@
         .sup-branch-count, .sup-user-count { font-size: 1.25rem; font-weight: 700; color: var(--accent); }
         .sup-conv-count { font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 12px; }
         .sup-conv-table tr.sup-conv-row:hover { background: var(--accent-soft); }
-        .supervision-tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
         .sup-tab { padding: 10px 18px; background: var(--bg-hover); color: var(--text-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font); cursor: pointer; font-size: 0.9rem; }
         .sup-tab:hover { background: var(--border); color: var(--text-primary); }
         .sup-tab.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
@@ -805,7 +807,21 @@
             .ticket-detail-controls select { width: 100%; }
             .ticket-reply-msg { max-width: 95%; }
             .supervision-tabs, .process-tabs { flex-wrap: wrap; gap: 6px; }
-            .sup-tab, .process-tab { padding: 8px 12px; font-size: 0.85rem; }
+            .sup-tab, .process-tab { padding: 8px 12px; font-size: 0.85rem; min-height: 44px; }
+            .supervision-tabs-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px 16px; }
+            .sup-filter-row { flex-direction: column; align-items: stretch; }
+            .sup-filter-row select, .sup-filter-row .sup-check-wrap { width: 100%; }
+            .sup-filter-row .btn-primary { width: 100%; }
+            .sup-page { gap: 16px; }
+            .sup-page-header h2 { font-size: 1.15rem; }
+            .sup-stat-cards { grid-template-columns: repeat(2, 1fr); }
+            .sup-branch-cards, .sup-user-cards { grid-template-columns: 1fr; }
+            #supConvList .sup-responsive-table, #supActList .sup-responsive-table { display: block; min-width: 0; }
+            #supConvList .sup-responsive-table thead, #supActList .sup-responsive-table thead { display: none; }
+            #supConvList .sup-responsive-table tbody tr, #supActList .sup-responsive-table tbody tr { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 14px; margin-bottom: 10px; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+            #supConvList .sup-responsive-table tbody tr:last-child, #supActList .sup-responsive-table tbody tr:last-child { margin-bottom: 0; }
+            #supConvList .sup-responsive-table tbody td, #supActList .sup-responsive-table tbody td { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 4px 0; border: none; text-align: right; }
+            #supConvList .sup-responsive-table tbody td::before, #supActList .sup-responsive-table tbody td::before { content: attr(data-label); font-weight: 500; color: var(--text-muted); font-size: 0.8rem; flex-shrink: 0; }
             #totpPromptBanner { margin: 12px 12px 0; padding: 10px 14px; flex-wrap: wrap; }
             #totpPromptBanner button { margin-top: 8px; }
             .app-footer { padding: 8px 12px; font-size: 0.7rem; }

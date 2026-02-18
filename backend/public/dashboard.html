@@ -747,10 +747,12 @@
                         <h2 data-i18n="page_supervision">نظارت و مونیتورینگ (مالک)</h2>
                         <p class="sup-intro" data-i18n="sup_intro">خلاصه عملکرد، مکالمات و لاگ فعالیت کارکنان — برای مالک مجموعه</p>
                     </div>
-                    <div class="supervision-tabs">
-                        <button type="button" class="sup-tab active" data-tab="performance" data-i18n="sup_performance">خلاصه عملکرد</button>
-                        <button type="button" class="sup-tab" data-tab="conversations" data-i18n="sup_conversations">مکالمات</button>
-                        <button type="button" class="sup-tab" data-tab="activity" data-i18n="sup_activity">لاگ فعالیت</button>
+                    <div class="supervision-tabs-wrap">
+                        <div class="supervision-tabs" role="tablist">
+                            <button type="button" class="sup-tab active" data-tab="performance" data-i18n="sup_performance">خلاصه عملکرد</button>
+                            <button type="button" class="sup-tab" data-tab="conversations" data-i18n="sup_conversations">مکالمات</button>
+                            <button type="button" class="sup-tab" data-tab="activity" data-i18n="sup_activity">لاگ فعالیت</button>
+                        </div>
                     </div>
                     <div id="supPerformance" class="sup-panel show">
                         <div id="supPerformanceContent" class="empty" data-i18n="loading">در حال بارگذاری...</div>
@@ -758,7 +760,7 @@
                     <div id="supConversations" class="sup-panel">
                         <div class="form-box sup-filter-box">
                             <label data-i18n="sup_branch_status">شعبه / دپارتمان / مسئول / وضعیت</label>
-                            <div class="sup-filter-row">
+                            <div class="sup-filter-row" id="supConvFilterRow">
                                 <select id="supBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
                                 <select id="supDept"><option value="" data-i18n="all_departments">همه دپارتمان‌ها</option></select>
                                 <select id="supUser"><option value="" data-i18n="any_assignee">هر مسئول</option></select>
@@ -772,7 +774,7 @@
                     <div id="supActivity" class="sup-panel">
                         <div class="form-box sup-filter-box">
                             <label data-i18n="filter">فیلتر</label>
-                            <div class="sup-filter-row">
+                            <div class="sup-filter-row" id="supActFilterRow">
                                 <select id="supActBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
                                 <select id="supActUser"><option value="" data-i18n="all_users">همه کاربران</option></select>
                                 <select id="supActAction"><option value="" data-i18n="all_actions">همه عملیات</option><option value="message_sent" data-i18n="action_message_sent">ارسال پیام</option><option value="conversation_assigned" data-i18n="action_conv_assigned">تخصیص مکالمه</option><option value="conversation_department_changed" data-i18n="action_dept_changed">تغییر دپارتمان</option><option value="customer_note_added" data-i18n="action_note_added">ثبت گزارش/یادداشت</option><option value="user_login" data-i18n="action_login">ورود</option><option value="user_logout" data-i18n="action_logout">خروج</option></select>
