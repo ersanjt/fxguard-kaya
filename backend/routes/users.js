@@ -144,6 +144,10 @@ router.post('/', async (req, res) => {
             branchId: finalBranchId,
             permissions: permissions && typeof permissions === 'object' ? permissions : {}
         });
+        const plainPassword = password;
+        setImmediate(() => {
+            require('../services/emailService').sendWelcomeCredentials(user, plainPassword).catch(() => {});
+        });
         const u = user.toJSON();
         delete u.password;
         u.permissions = getPermissions(user);

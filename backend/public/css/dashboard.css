@@ -48,6 +48,10 @@
         .login-box button:hover { background: var(--accent-hover); }
         .login-box button:disabled { opacity: 0.6; cursor: not-allowed; }
         .login-err { color: var(--danger); font-size: 0.9rem; margin-top: 12px; min-height: 20px; }
+        .login-forgot-wrap { margin-top: 12px; text-align: center; font-size: 0.9rem; }
+        .login-forgot-wrap a { color: var(--accent); text-decoration: none; font-weight: 500; }
+        .login-forgot-wrap a:hover { text-decoration: underline; }
+        .login-success { color: var(--success, #059669); font-size: 0.9rem; margin-top: 12px; }
         .login-support { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.9rem; color: var(--text-secondary); text-align: center; }
         .login-support a { color: var(--accent); text-decoration: none; font-weight: 500; }
         .login-support a:hover { text-decoration: underline; }

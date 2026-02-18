@@ -3,9 +3,11 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const speakeasy = require('speakeasy');
 const QRCode = require('qrcode');
-const { User, sequelize } = require('../models');
+const { User, sequelize, PasswordResetToken } = require('../models');
 const { Op } = require('sequelize');
+const crypto = require('crypto');
 const { logActivity } = require('../services/activityLog');
+const emailService = require('../services/emailService');
 const { getPermissions } = require('../lib/permissions');
 
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
@@ -92,6 +94,9 @@ router.post('/login', async (req, res) => {
         const token = issueToken(user);
         const permissions = getPermissions(user);
         try { (req.app && req.app.get('io'))?.emit('user_login', { userId: user.id }); } catch (_) {}
+        setImmediate(() => {
+            emailService.sendLoginNotification(user, req.ip || '', (req.get && req.get('user-agent')) || '').catch(() => {});
+        });
         sendJson(200, {
             token,
             user: {
@@ -111,6 +116,51 @@ router.post('/login', async (req, res) => {
         });
     } catch (err) {
         sendJson(500, { error: err.message || 'خطای سرور' });
+    }
+});
+
+const RESET_TOKEN_EXPIRY_MINUTES = 60;
+
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const email = (req.body.email || '').toString().trim().toLowerCase();
+        if (!email) return res.status(400).json({ error: 'ایمیل الزامی است' });
+        const user = await User.findOne({ where: { email, isActive: true } });
+        if (!user) {
+            return res.status(200).json({ message: 'در صورت وجود حساب با این ایمیل، لینک بازیابی ارسال می‌شود.' });
+        }
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000);
+        await PasswordResetToken.destroy({ where: { userId: user.id } });
+        await PasswordResetToken.create({ userId: user.id, token, expiresAt });
+        await emailService.sendPasswordReset(user, token, RESET_TOKEN_EXPIRY_MINUTES);
+        res.status(200).json({ message: 'در صورت وجود حساب با این ایمیل، لینک بازیابی ارسال می‌شود.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message || 'خطای سرور' });
+    }
+});
+
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { token: resetToken, newPassword } = req.body;
+        if (!resetToken || !newPassword) return res.status(400).json({ error: 'توکن و رمز عبور جدید الزامی است' });
+        if (String(newPassword).length < 6) return res.status(400).json({ error: 'رمز عبور حداقل ۶ کاراکتر باشد' });
+        const row = await PasswordResetToken.findOne({
+            where: { token: String(resetToken).trim() }
+        });
+        if (!row) return res.status(400).json({ error: 'لینک بازیابی نامعتبر یا منقضی شده است' });
+        if (new Date() > row.expiresAt) {
+            await row.destroy();
+            return res.status(400).json({ error: 'لینک بازیابی منقضی شده است. دوباره درخواست دهید.' });
+        }
+        const user = await User.findByPk(row.userId);
+        if (!user || !user.isActive) return res.status(400).json({ error: 'کاربر یافت نشد یا غیرفعال است' });
+        user.password = newPassword;
+        await user.save();
+        await PasswordResetToken.destroy({ where: { userId: user.id } });
+        res.json({ message: 'رمز عبور با موفقیت تغییر کرد. اکنون می‌توانید وارد شوید.' });
+    } catch (err) {
+        res.status(500).json({ error: err.message || 'خطای سرور' });
     }
 });
 
@@ -146,6 +196,9 @@ router.post('/totp/verify-login', async (req, res) => {
         const token = issueToken(user);
         const permissions = getPermissions(user);
         try { (req.app && req.app.get('io'))?.emit('user_login', { userId: user.id }); } catch (_) {}
+        setImmediate(() => {
+            emailService.sendLoginNotification(user, req.ip || '', (req.get && req.get('user-agent')) || '').catch(() => {});
+        });
         res.json({
             token,
             user: {

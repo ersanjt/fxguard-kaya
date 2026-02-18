@@ -56,6 +56,7 @@
                 </button>
             </div>
             <button type="button" id="btnLogin" onclick="login()" data-i18n="login_btn">ورود</button>
+            <p class="login-forgot-wrap"><a href="#" id="linkForgotPassword" onclick="showForgotStep(); return false;" data-i18n="login_forgot_password">فراموشی رمز عبور</a></p>
             <div id="loginErr" class="login-err"></div>
             <p class="login-support" id="loginSupportWrap">
                 <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
@@ -78,6 +79,26 @@
                 <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
                 <a href="#" id="loginSupportLinkTotp" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
             </p>
+        </div>
+        <div class="login-box" id="loginStepForgot" style="display:none;">
+            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
+            <h1 data-i18n="forgot_title">بازیابی رمز عبور</h1>
+            <p class="sub" data-i18n="forgot_sub">ایمیل حساب خود را وارد کنید؛ در صورت وجود حساب، لینک بازیابی ارسال می‌شود.</p>
+            <input type="email" id="forgotEmail" data-i18n-ph="login_email" placeholder="ایمیل" autocomplete="email">
+            <button type="button" id="btnForgotSubmit" onclick="submitForgotPassword()" data-i18n="forgot_send">ارسال لینک بازیابی</button>
+            <button type="button" class="btn-secondary" onclick="backToLoginFromForgot()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
+            <div id="forgotErr" class="login-err"></div>
+            <div id="forgotSuccess" class="login-success" style="display:none;"></div>
+        </div>
+        <div class="login-box" id="loginStepReset" style="display:none;">
+            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
+            <h1 data-i18n="reset_title">تعیین رمز عبور جدید</h1>
+            <p class="sub" data-i18n="reset_sub">رمز عبور جدید و تکرار آن را وارد کنید.</p>
+            <input type="password" id="resetNewPass" data-i18n-ph="reset_new_password" placeholder="رمز عبور جدید" autocomplete="new-password">
+            <input type="password" id="resetConfirmPass" data-i18n-ph="reset_confirm_password" placeholder="تکرار رمز عبور" autocomplete="new-password">
+            <button type="button" id="btnResetSubmit" onclick="submitResetPassword()" data-i18n="reset_btn">تغییر رمز و ورود</button>
+            <a href="#" class="btn-secondary" style="display:inline-block;margin-top:8px;text-align:center;" onclick="backToLoginFromReset(); return false;" data-i18n="login_back">بازگشت به ورود</a>
+            <div id="resetErr" class="login-err"></div>
         </div>
     </div>
     <div id="app" class="app">

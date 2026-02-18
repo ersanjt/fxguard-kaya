@@ -284,6 +284,18 @@
                     login_totp_bad: 'Invalid or expired code',
                     login_cant_signin: "Can't sign in?",
                     login_contact_support: 'Contact support',
+                    login_forgot_password: 'Forgot password',
+                    forgot_title: 'Reset password',
+                    forgot_sub: 'Enter your account email; if an account exists, a reset link will be sent.',
+                    forgot_send: 'Send reset link',
+                    forgot_success_msg: 'If an account exists with this email, a reset link has been sent.',
+                    reset_title: 'Set new password',
+                    reset_sub: 'Enter your new password and confirm it.',
+                    reset_new_password: 'New password',
+                    reset_confirm_password: 'Confirm password',
+                    reset_btn: 'Change password & sign in',
+                    reset_err_match: 'Password and confirmation do not match.',
+                    reset_err_length: 'Password must be at least 6 characters.',
                     lang_fa: 'فارس�R',
                     lang_en: 'English',
                     lang_label: 'Language',
@@ -1797,8 +1809,87 @@
         function backToLoginStep1() {
             document.getElementById('loginStepTotp').style.display = 'none';
             document.getElementById('loginStep1').style.display = 'block';
+            document.getElementById('loginStepForgot').style.display = 'none';
+            document.getElementById('loginStepReset').style.display = 'none';
             window._totpTempToken = null;
         }
+        function showForgotStep() {
+            document.getElementById('loginStep1').style.display = 'none';
+            document.getElementById('loginStepTotp').style.display = 'none';
+            document.getElementById('loginStepReset').style.display = 'none';
+            var el = document.getElementById('loginStepForgot');
+            if (el) { el.style.display = 'block'; document.getElementById('forgotEmail').value = ''; document.getElementById('forgotErr').textContent = ''; document.getElementById('forgotSuccess').style.display = 'none'; }
+        }
+        function backToLoginFromForgot() {
+            document.getElementById('loginStepForgot').style.display = 'none';
+            document.getElementById('loginStep1').style.display = 'block';
+        }
+        async function submitForgotPassword() {
+            var email = (document.getElementById('forgotEmail') && document.getElementById('forgotEmail').value || '').trim();
+            var errEl = document.getElementById('forgotErr');
+            var successEl = document.getElementById('forgotSuccess');
+            var btn = document.getElementById('btnForgotSubmit');
+            if (!email) { if (errEl) errEl.textContent = (LANG === 'fa' ? 'ایمیل را وارد کنید.' : 'Please enter your email.'); return; }
+            if (errEl) errEl.textContent = '';
+            if (successEl) successEl.style.display = 'none';
+            if (btn) btn.disabled = true;
+            try {
+                var r = await fetch(API + '/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
+                var data = await r.json().catch(function() { return {}; });
+                if (successEl) { successEl.textContent = (data.message || t('forgot_success_msg')); successEl.style.display = 'block'; }
+            } catch (e) { if (errEl) errEl.textContent = t('login_err_connect'); }
+            if (btn) btn.disabled = false;
+        }
+        function showResetStep(resetToken) {
+            window._resetToken = resetToken;
+            document.getElementById('loginStep1').style.display = 'none';
+            document.getElementById('loginStepTotp').style.display = 'none';
+            document.getElementById('loginStepForgot').style.display = 'none';
+            var el = document.getElementById('loginStepReset');
+            if (el) { el.style.display = 'block'; document.getElementById('resetNewPass').value = ''; document.getElementById('resetConfirmPass').value = ''; document.getElementById('resetErr').textContent = ''; }
+        }
+        function backToLoginFromReset() {
+            window._resetToken = null;
+            document.getElementById('loginStepReset').style.display = 'none';
+            document.getElementById('loginStep1').style.display = 'block';
+            try { var u = window.location.pathname + window.location.hash; window.history.replaceState(null, '', u.replace(/\?.*$/, '')); } catch (_) {}
+        }
+        async function submitResetPassword() {
+            var newPass = document.getElementById('resetNewPass') && document.getElementById('resetNewPass').value || '';
+            var confirmPass = document.getElementById('resetConfirmPass') && document.getElementById('resetConfirmPass').value || '';
+            var errEl = document.getElementById('resetErr');
+            var btn = document.getElementById('btnResetSubmit');
+            if (newPass !== confirmPass) { if (errEl) errEl.textContent = t('reset_err_match'); return; }
+            if (newPass.length < 6) { if (errEl) errEl.textContent = t('reset_err_length'); return; }
+            if (!window._resetToken) { if (errEl) errEl.textContent = 'لینک منقضی شده است.'; return; }
+            if (errEl) errEl.textContent = '';
+            if (btn) btn.disabled = true;
+            try {
+                var r = await fetch(API + '/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: window._resetToken, newPassword: newPass }) });
+                var data = await r.json().catch(function() { return {}; });
+                if (r.ok && data.message) {
+                    window._resetToken = null;
+                    if (errEl) errEl.textContent = '';
+                    try { window.history.replaceState(null, '', window.location.pathname + window.location.hash); } catch (_) {}
+                    document.getElementById('loginStepReset').style.display = 'none';
+                    document.getElementById('loginStep1').style.display = 'block';
+                    document.getElementById('email').value = '';
+                    document.getElementById('pass').value = '';
+                    document.getElementById('loginErr').textContent = data.message;
+                    document.getElementById('loginErr').style.color = 'var(--success, #059669)';
+                    return;
+                }
+                if (errEl) errEl.textContent = (data.error || (LANG === 'fa' ? 'خطا در تغییر رمز.' : 'Failed to reset password.'));
+            } catch (e) { if (errEl) errEl.textContent = t('login_err_connect'); }
+            if (btn) btn.disabled = false;
+        }
+        (function checkResetPasswordUrl() {
+            if (localStorage.getItem('crm_token')) return;
+            var params = new URLSearchParams(window.location.search);
+            var reset = params.get('reset');
+            var token = params.get('token');
+            if (reset === '1' && token && typeof showResetStep === 'function') showResetStep(token);
+        })();
         async function verifyTotpLogin() {
             var code = (document.getElementById('totpCode') && document.getElementById('totpCode').value || '').replace(/\s/g, '');
             if (!code || code.length !== 6) { document.getElementById('totpErr').textContent = t('login_totp_code_required'); return; }
@@ -1836,6 +1927,11 @@
             window.login = login;
             window.verifyTotpLogin = verifyTotpLogin;
             window.backToLoginStep1 = backToLoginStep1;
+            window.showForgotStep = showForgotStep;
+            window.backToLoginFromForgot = backToLoginFromForgot;
+            window.submitForgotPassword = submitForgotPassword;
+            window.submitResetPassword = submitResetPassword;
+            window.backToLoginFromReset = backToLoginFromReset;
         }
         function showTotpPromptIfNeeded() {
             if (!currentUser) return;

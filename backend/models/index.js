@@ -53,7 +53,8 @@ const models = {
     CashBox: require('./CashBox')(sequelize),
     BankAccount: require('./BankAccount')(sequelize),
     Transaction: require('./Transaction')(sequelize),
-    PanelSetting: require('./PanelSetting')(sequelize)
+    PanelSetting: require('./PanelSetting')(sequelize),
+    PasswordResetToken: require('./PasswordResetToken')(sequelize)
 };
 
 // تعریف روابط
