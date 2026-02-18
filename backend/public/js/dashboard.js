@@ -76,6 +76,14 @@
                     page_supervision: '� ظارت �� �&��� �Rت��ر�R� گ (�&ا�ک)',
                     page_whatsapp: 'اتصا� ��اتساپ',
                     page_rates: 'ت� ظ�R�& � رخ ارز�!ا',
+                    page_panel_settings: 'ظاهر پنل',
+                    panel_settings_intro: 'نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.',
+                    panel_site_name: 'نام سایت',
+                    panel_logo_url: 'آدرس لوگو (URL)',
+                    panel_favicon_url: 'آدرس فاویکون (URL)',
+                    panel_login_title: 'عنوان صفحه ورود',
+                    panel_page_title: 'عنوان تب مرورگر',
+                    panel_footer_text: 'متن فوتر',
                     page_customer_detail: 'تار�Rخ� �! �&شتر�R',
                     btn_send: 'ارسا�',
                     btn_save: 'ذخ�Rر�!',
@@ -5132,7 +5140,7 @@
                     document.documentElement.classList.add('auth-has-token');
                     document.getElementById('loginBox').style.display = 'none';
                     document.getElementById('app').classList.add('show');
-try {
+                    try {
                         applyNavByRole();
                         loadPanelSettingsAndApply();
                         applyHashRoute();
