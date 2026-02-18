@@ -815,6 +815,7 @@
                         <div class="supervision-tabs" role="tablist">
                             <button type="button" class="sup-tab active" data-tab="performance" data-i18n="sup_performance">خلاصه عملکرد</button>
                             <button type="button" class="sup-tab" data-tab="conversations" data-i18n="sup_conversations">مکالمات</button>
+                            <button type="button" class="sup-tab" data-tab="internal-chats" data-i18n="sup_internal_chats">چت‌های داخلی</button>
                             <button type="button" class="sup-tab" data-tab="activity" data-i18n="sup_activity">لاگ فعالیت</button>
                         </div>
                     </div>
@@ -834,6 +835,16 @@
                             </div>
                         </div>
                         <div id="supConvList"></div>
+                    </div>
+                    <div id="supInternalChats" class="sup-panel">
+                        <div class="form-box sup-filter-box">
+                            <label data-i18n="sup_internal_chats_filter">فیلتر چت‌های داخلی</label>
+                            <div class="sup-filter-row">
+                                <select id="supIntChatUser"><option value="" data-i18n="all_users">همه کاربران</option></select>
+                                <button type="button" class="btn-primary" onclick="loadSupervisionInternalChats()" data-i18n="apply_filter">اعمال فیلتر</button>
+                            </div>
+                        </div>
+                        <div id="supIntChatList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
                     </div>
                     <div id="supActivity" class="sup-panel">
                         <div class="form-box sup-filter-box">
@@ -1251,6 +1262,14 @@
             <div id="annModalMeta" class="announcement-modal-meta" style="display:none;"></div>
             <div class="modal-body" id="annModalBody"></div>
             <button type="button" class="btn-primary" onclick="closeAnnouncementModal()" data-i18n="modal_ann_gotit">متوجه شدم</button>
+        </div>
+    </div>
+    <div id="supInternalChatDetailModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:640px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">
+            <div class="modal-header"><h3 id="supIntChatModalTitle" data-i18n="sup_internal_chat_detail">جزئیات چت داخلی</h3><button type="button" class="modal-close" onclick="closeSupInternalChatModal()">&times;</button></div>
+            <div class="modal-body" style="overflow-y:auto;flex:1;min-height:0;">
+                <div id="supIntChatModalContent" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+            </div>
         </div>
     </div>
     <div id="staffDetailModal" class="modal-overlay" style="display:none;">

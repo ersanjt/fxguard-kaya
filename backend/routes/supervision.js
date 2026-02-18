@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Sequelize, Conversation, Message, User, Branch, Department, Customer, ActivityLog, Ticket, TicketReply, Task } = require('../models');
+const { Sequelize, Conversation, Message, User, Branch, Department, Customer, ActivityLog, Ticket, TicketReply, Task, InternalThread, InternalMessage, InternalThreadParticipant } = require('../models');
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
 
@@ -184,6 +184,63 @@ router.get('/activity', async (req, res) => {
             offset: (parseInt(page) - 1) * (parseInt(limit) || 100)
         });
         res.json({ data: rows, total: count, page: parseInt(page) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// لیست چت‌های داخلی — برای مالک/ادمین (مشاهده کی با کی صحبت کرده)
+router.get('/internal-chats', async (req, res) => {
+    try {
+        const { limit = 50, page = 1, userId } = req.query;
+        const lim = Math.min(parseInt(limit) || 50, 100);
+        const off = (parseInt(page) - 1) * lim;
+        let threadIds = null;
+        if (userId) {
+            const parts = await InternalThreadParticipant.findAll({ where: { userId }, attributes: ['threadId'] });
+            threadIds = parts.map(p => p.threadId);
+            if (threadIds.length === 0) return res.json({ data: [], total: 0, page: parseInt(page) });
+        }
+        const where = threadIds ? { id: { [Op.in]: threadIds } } : {};
+        const { rows, count } = await InternalThread.findAndCountAll({
+            where,
+            include: [{ model: User, as: 'participants', attributes: ['id', 'name', 'email', 'role'], through: { attributes: [] } }],
+            order: [['lastMessageAt', 'DESC']],
+            limit: lim,
+            offset: off
+        });
+        const list = await Promise.all(rows.map(async (t) => {
+            const lastMsg = await InternalMessage.findOne({
+                where: { threadId: t.id },
+                include: [{ model: User, as: 'fromUser', attributes: ['id', 'name'] }],
+                order: [['createdAt', 'DESC']]
+            });
+            const parts = (t.participants || []).map(p => ({ id: p.id, name: p.name, email: p.email, role: p.role }));
+            return {
+                id: t.id,
+                lastMessageAt: t.lastMessageAt,
+                lastMessage: lastMsg ? { content: lastMsg.content, fromUser: lastMsg.fromUser } : null,
+                participants: parts
+            };
+        }));
+        res.json({ data: list, total: count, page: parseInt(page) });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// پیام‌های یک چت داخلی — برای مالک/ادمین
+router.get('/internal-chats/:threadId/messages', async (req, res) => {
+    try {
+        const messages = await InternalMessage.findAll({
+            where: { threadId: req.params.threadId },
+            include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'email'] }],
+            order: [['createdAt', 'ASC']]
+        });
+        const thread = await InternalThread.findByPk(req.params.threadId, {
+            include: [{ model: User, as: 'participants', attributes: ['id', 'name', 'email'], through: { attributes: [] } }]
+        });
+        res.json({ data: messages, thread: thread ? { id: thread.id, participants: thread.participants } : null });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

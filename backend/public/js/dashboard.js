@@ -447,7 +447,7 @@
                     select_multiple_hint: 'For group chat, select multiple users',
                     branch_intro: 'Branches are used for geographic separation and assigning users and conversations.', branch_name: 'Branch name', branch_city: 'City', branch_country: 'Country', branch_ph_name: 'e.g. Tehran office', branch_ph_city: 'e.g. Tehran', branch_ph_country: 'e.g. Iran', add_branch: 'Add branch', edit: 'Edit',
                     staff_online: 'Staff online', staff_intro: 'Recent logins and online staff � for managers and above', last_logins: 'Recent logins', staff_logins_today: 'Logins today', staff_online_hint: 'Click for activity details', staff_logins_hint: 'Last 50 logins', refresh: 'Refresh',
-                    sup_performance: 'Performance summary', sup_conversations: 'Conversations', sup_activity: 'Activity log', sup_branch_status: 'Branch / status', apply_filter: 'Apply filter',
+                    sup_performance: 'Performance summary', sup_conversations: 'Conversations', sup_internal_chats: 'Internal chats', sup_internal_chats_filter: 'Filter internal chats', sup_internal_chat_detail: 'Internal chat detail', sup_activity: 'Activity log', sup_branch_status: 'Branch / status', apply_filter: 'Apply filter',
                     sup_by_branch: 'By branch', sup_by_user: 'User performance (outgoing messages)', total_conversations: 'Total conversations', outgoing_messages: 'Outgoing messages',
                     th_branch: 'Branch', th_city_country: 'City/Country', th_conv_count: 'Conversations', th_user: 'User', th_email: 'Email', th_status: 'Status', th_last_login: 'Last login',
                     th_customer: 'Customer', th_dept: 'Department', th_assignee: 'Assignee', th_time: 'Time', th_action: 'Action', th_summary: 'Summary', th_login_time: 'Login time',
@@ -4441,6 +4441,7 @@
                 var allOpt = '<option value="">' + t('all_users') + '</option>' + userRes.data.data.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email || '') + '</option>'; }).join('');
                 var u1 = document.getElementById('supUser'); if (u1) u1.innerHTML = anyOpt;
                 var u2 = document.getElementById('supActUser'); if (u2) u2.innerHTML = allOpt;
+                var u3 = document.getElementById('supIntChatUser'); if (u3) u3.innerHTML = allOpt;
             }
         }
 
@@ -4654,13 +4655,63 @@
             }).join('') + '</tbody></table>';
         }
 
+        async function loadSupervisionInternalChats() {
+            var list = document.getElementById('supIntChatList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var userId = document.getElementById('supIntChatUser') && document.getElementById('supIntChatUser').value ? document.getElementById('supIntChatUser').value : '';
+            var q = '?limit=50&page=1';
+            if (userId) q += '&userId=' + encodeURIComponent(userId);
+            var res = await apiFetch('/api/supervision/internal-chats' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('loading_err')) + '</div>'; return; }
+            var data = res.data.data || [];
+            if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'چت داخلی‌ای یافت نشد.' : 'No internal chats.') + '</div>'; return; }
+            list.innerHTML = '<table class="sup-table sup-responsive-table"><thead><tr><th>' + (LANG === 'fa' ? 'شرکت‌کنندگان' : 'Participants') + '</th><th>' + (LANG === 'fa' ? 'آخرین پیام' : 'Last message') + '</th><th>' + (LANG === 'fa' ? 'عملیات' : 'Action') + '</th></tr></thead><tbody>' + data.map(function(t) {
+                var names = (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ');
+                var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 60) + ((t.lastMessage.content || '').length > 60 ? '\u2026' : '') : '\u2014';
+                var from = t.lastMessage && t.lastMessage.fromUser ? t.lastMessage.fromUser.name || '' : '';
+                return '<tr><td data-label="' + (LANG === 'fa' ? 'شرکت\u200Cکنندگان' : 'Participants') + '">' + escapeHtml(names || '\u2014') + '</td><td data-label="' + (LANG === 'fa' ? 'آخرین پیام' : 'Last') + '">' + escapeHtml(last) + (from ? ' <span class="text-muted">(' + escapeHtml(from) + ')</span>' : '') + '</td><td data-label="' + (LANG === 'fa' ? 'عملیات' : 'Action') + '"><button type="button" class="btn-secondary btn-sm" onclick="openSupInternalChatDetail(\'' + escapeHtml(t.id) + '\')">' + (LANG === 'fa' ? 'مشاهده' : 'View') + '</button></td></tr>';
+            }).join('') + '</tbody></table>';
+        }
+        function openSupInternalChatDetail(threadId) {
+            var modal = document.getElementById('supInternalChatDetailModal');
+            var content = document.getElementById('supIntChatModalContent');
+            var titleEl = document.getElementById('supIntChatModalTitle');
+            if (!modal || !content) return;
+            modal.style.display = 'flex';
+            content.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            (async function() {
+                var res = await apiFetch('/api/supervision/internal-chats/' + encodeURIComponent(threadId) + '/messages');
+                if (res.needLogin || !res.ok) { content.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('loading_err')) + '</div>'; return; }
+                var messages = res.data.data || [];
+                var thread = res.data.thread || {};
+                var partNames = (thread.participants || []).map(function(p) { return p.name || p.email; }).join(', ');
+                if (titleEl) titleEl.textContent = (LANG === 'fa' ? 'چت: ' : 'Chat: ') + (partNames || threadId);
+                if (messages.length === 0) { content.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'پیامی در این گفتگو نیست.' : 'No messages.') + '</div>'; return; }
+                var html = '<div class="sup-int-chat-messages" style="display:flex;flex-direction:column;gap:12px;">';
+                messages.forEach(function(m) {
+                    var fromName = (m.fromUser && m.fromUser.name) || (m.fromUser && m.fromUser.email) || '';
+                    var att = (m.attachments && m.attachments.length) ? m.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent);">\uD83D\uDCCE ' + escapeHtml(a.name || '') + '</a>'; }).join(' ') : '';
+                    html += '<div style="padding:12px 16px;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border);"><div style="font-weight:600;margin-bottom:6px;color:var(--accent);">' + escapeHtml(fromName) + '</div><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;">' + (m.createdAt ? fmtTZ(m.createdAt, 'datetime') : '') + '</div></div>';
+                });
+                html += '</div>';
+                content.innerHTML = html;
+            })();
+        }
+        function closeSupInternalChatModal() {
+            var modal = document.getElementById('supInternalChatDetailModal');
+            if (modal) modal.style.display = 'none';
+        }
+
         document.querySelectorAll('.sup-tab').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 var tab = this.getAttribute('data-tab');
                 document.querySelectorAll('.sup-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-tab') === tab) b.classList.add('active'); });
-                document.querySelectorAll('.sup-panel').forEach(function(p) { p.classList.remove('show'); if ((p.id === 'supPerformance' && tab === 'performance') || (p.id === 'supConversations' && tab === 'conversations') || (p.id === 'supActivity' && tab === 'activity')) p.classList.add('show'); });
+                document.querySelectorAll('.sup-panel').forEach(function(p) { p.classList.remove('show'); if ((p.id === 'supPerformance' && tab === 'performance') || (p.id === 'supConversations' && tab === 'conversations') || (p.id === 'supInternalChats' && tab === 'internal-chats') || (p.id === 'supActivity' && tab === 'activity')) p.classList.add('show'); });
                 if (tab === 'performance') loadSupervisionPerformance();
                 if (tab === 'conversations') loadSupervisionConversations();
+                if (tab === 'internal-chats') loadSupervisionInternalChats();
                 if (tab === 'activity') loadSupervisionActivity();
             });
         });
@@ -4771,6 +4822,8 @@
                     if (btn) btn.setAttribute('aria-expanded', 'false');
                 }
             };
+            window.openSupInternalChatDetail = openSupInternalChatDetail;
+            window.closeSupInternalChatModal = closeSupInternalChatModal;
         })();
 
         if (token) {
