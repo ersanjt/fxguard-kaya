@@ -2004,7 +2004,7 @@
                 var full = parts.join('  •  ');
                 if (!full.trim()) { banner.style.display = 'none'; return; }
                 var inner = banner.querySelector('.announcement-marquee-inner');
-                if (inner) { inner.innerHTML = escapeHtml(full) + '  \u2003\u2003\u2003  ' + escapeHtml(full); }
+                if (inner) { inner.innerHTML = escapeHtml(full); }
                 banner.style.display = 'block';
             } catch (e) { banner.style.display = 'none'; }
         }
@@ -3855,14 +3855,17 @@
         function renderInternalThreadList(data) {
             var list = document.getElementById('internalThreadList');
             if (!list) return;
-            if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_conv_list') + '</div>'; return; }
+            list.classList.remove('empty');
+            if (data.length === 0) { list.innerHTML = '<div class="empty internal-chat-empty-state"><span class="empty-icon">\uD83D\uDCAC</span><p>' + (t('start_chat_hint') || (LANG === 'fa' ? 'گفتگویی را انتخاب کنید یا گفتگوی جدید شروع کنید.' : 'Select a conversation or start a new one.')) + '</p></div>'; return; }
             var me = (currentUser && currentUser.id) || '';
             list.innerHTML = data.map(function(t) {
-                var names = (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ');
+                var participants = t.participants || [];
+                var names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
+                var initial = (participants[0] && (participants[0].name || participants[0].email || '').trim()[0]) ? (participants[0].name || participants[0].email || '').trim()[0].toUpperCase() : '\u003F';
                 var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 45) + ((t.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';
                 var timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
                 var fromLabel = t.lastMessage && t.lastMessage.fromUser && String(t.lastMessage.fromUser.id) !== String(me) ? (t.lastMessage.fromUser.name || '') + ': ' : '';
-                return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="openInternalThread(\'' + t.id + '\')" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + initial + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
+                return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="openInternalThread(\'' + t.id + '\')" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + escapeHtml(initial) + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
             }).join('');
         }
         function filterInternalThreads(q) {
@@ -4181,11 +4184,15 @@
             var titleEl = document.getElementById('internalChatPopupTitle');
             if (titleEl) titleEl.textContent = (LANG === 'fa' ? 'پیام از ' : 'Message from ') + (fromName || '');
             if (popup) popup.style.display = 'flex';
+            var btn = document.getElementById('internalChatFloatingBtn');
+            if (btn) btn.classList.add('internal-chat-floating-btn-open');
             loadInternalMessagesForPopup(threadId);
         }
         function closeInternalChatPopup() {
             var popup = document.getElementById('internalChatPopup');
             if (popup) { popup.style.display = 'none'; popup.classList.remove('minimized'); }
+            var btn = document.getElementById('internalChatFloatingBtn');
+            if (btn) btn.classList.remove('internal-chat-floating-btn-open');
             currentInternalThreadId = null;
         }
         function toggleInternalChatPopupMinimize() {
