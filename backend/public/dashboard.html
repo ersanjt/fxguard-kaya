@@ -382,7 +382,7 @@
                     <div class="ticket-filters-wrap">
                         <div class="ticket-filters">
                             <input type="text" id="ticketSearch" class="ticket-search-input" data-i18n-ph="ticket_ph_search" placeholder="جستجو شماره یا عنوان..." onkeypress="if(event.key==='Enter')applyTicketFilters()">
-                            <select id="ticketFilterStatus" class="ticket-filter-select"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open" data-i18n="status_open">باز</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option><option value="closed" data-i18n="status_closed">بسته</option></select>
+                            <select id="ticketFilterStatus" class="ticket-filter-select"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open" data-i18n="status_open">باز</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option><option value="closed" data-i18n="status_closed">بسته</option><option value="archived" data-i18n="status_archived">آرشیو</option></select>
                             <select id="ticketFilterPriority" class="ticket-filter-select"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
                             <select id="ticketFilterAssignee" class="ticket-filter-select"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
                             <select id="ticketFilterDept" class="ticket-filter-select"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
@@ -433,12 +433,13 @@
                         <div class="ticket-detail-toolbar">
                             <button type="button" class="btn-secondary" onclick="startProcessFromTicket()" data-i18n="process_start_from_ticket">شروع فرایند</button>
                             <div class="ticket-detail-controls">
-                                <select id="ticketDetailStatus"><option value="open" data-i18n="status_open">باز</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option><option value="closed" data-i18n="status_closed">بسته</option></select>
+                                <select id="ticketDetailStatus"><option value="open" data-i18n="status_open">باز</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option><option value="closed" data-i18n="status_closed">بسته</option><option value="archived" data-i18n="status_archived">آرشیو</option></select>
                                 <select id="ticketDetailAssignee"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
                                 <select id="ticketDetailPriority"><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
                                 <input type="date" id="ticketDetailDueDate" class="ticket-detail-due" title="مهلت">
                                 <button type="button" class="btn-primary btn-sm" onclick="updateTicketFromDetail()" data-i18n="btn_apply">اعمال</button>
                                 <button type="button" class="btn-secondary btn-sm" id="ticketEditBtn" onclick="toggleTicketEditMode()" data-i18n="btn_edit">ویرایش</button>
+                                <button type="button" class="btn-secondary btn-sm" id="ticketArchiveBtn" onclick="archiveTicket()" data-i18n="btn_archive" style="display:none;">ارسال به آرشیو</button>
                                 <button type="button" class="btn-danger btn-sm" id="ticketDeleteBtn" onclick="deleteTicketConfirm()" data-i18n="btn_delete" style="display:none;">حذف</button>
                             </div>
                         </div>

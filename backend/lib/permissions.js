@@ -24,6 +24,7 @@ const SECTION_KEYS = [
 ];
 
 const MANAGE_USERS_KEY = 'manage_users'; // owner، admin، manager یا دارنده این دسترسی می‌توانند کاربران و دپارتمان‌ها را ویرایش/مدیریت کنند
+const MANAGE_TICKETS_KEY = 'manage_tickets'; // حذف و آرشیو تیکت
 
 /** ادمین اصلی پنل — این ایمیل همیشه دسترسی کامل به همه بخش‌ها و مدیریت کاربران/دپارتمان‌ها دارد */
 const MAIN_ADMIN_EMAIL = 'ersanjahedtabrizi@gmail.com';
@@ -39,25 +40,25 @@ const DEFAULT_BY_ROLE = {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: true,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true,
-        [MANAGE_USERS_KEY]: true,
+        [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true,
     },
     admin: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true,
-        [MANAGE_USERS_KEY]: true,
+        [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true,
     },
     manager: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true,
-        [MANAGE_USERS_KEY]: true,
+        [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true,
     },
     supervisor: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: true, branches: false, supervision: false,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true,
-        [MANAGE_USERS_KEY]: false,
+        [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: true,
     },
     agent: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
@@ -72,6 +73,7 @@ function getDefaults(role) {
     const out = {};
     SECTION_KEYS.forEach(k => { out[k] = !!d[k]; });
     out[MANAGE_USERS_KEY] = !!d[MANAGE_USERS_KEY];
+    out[MANAGE_TICKETS_KEY] = !!d[MANAGE_TICKETS_KEY];
     return out;
 }
 
@@ -91,6 +93,9 @@ function getPermissions(user) {
     });
     if (overrides[MANAGE_USERS_KEY] !== undefined) {
         resolved[MANAGE_USERS_KEY] = !!overrides[MANAGE_USERS_KEY];
+    }
+    if (overrides[MANAGE_TICKETS_KEY] !== undefined) {
+        resolved[MANAGE_TICKETS_KEY] = !!overrides[MANAGE_TICKETS_KEY];
     }
     return resolved;
 }

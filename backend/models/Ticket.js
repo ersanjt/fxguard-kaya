@@ -31,7 +31,7 @@ module.exports = (sequelize) => {
             type: DataTypes.UUID
         },
         status: {
-            type: DataTypes.ENUM('open', 'in_progress', 'resolved', 'closed'),
+            type: DataTypes.ENUM('open', 'in_progress', 'resolved', 'closed', 'archived'),
             defaultValue: 'open'
         },
         priority: {

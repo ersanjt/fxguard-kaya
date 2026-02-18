@@ -7,7 +7,8 @@ function canManageTicket(req) {
     if (!req.user) return false;
     if (isMainAdmin(req.user)) return true;
     const role = req.user.role || '';
-    return ['owner', 'admin', 'manager'].indexOf(role) !== -1;
+    if (['owner', 'admin', 'manager', 'supervisor'].indexOf(role) !== -1) return true;
+    return !!(req.permissions && req.permissions.manage_tickets);
 }
 
 function createTicketsRouter(io) {
@@ -16,7 +17,7 @@ const router = express.Router();
 router.get('/stats', async (req, res) => {
     try {
         const rows = await Ticket.findAll({ attributes: ['status'], raw: true });
-        const stats = { total: rows.length, open: 0, in_progress: 0, resolved: 0, closed: 0 };
+        const stats = { total: rows.length, open: 0, in_progress: 0, resolved: 0, closed: 0, archived: 0 };
         rows.forEach(t => { if (stats[t.status] !== undefined) stats[t.status]++; });
         res.json(stats);
     } catch (err) {
