@@ -292,8 +292,11 @@
         .msg.out .time { color: rgba(255,255,255,0.85); }
         .msg .time { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
         .msg-media { margin: 6px 0; }
-        .msg-media-image img { max-width: 100%; max-height: 240px; border-radius: 12px; display: block; }
+        .msg-media-image img { max-width: 100%; max-height: 280px; border-radius: 12px; display: block; object-fit: contain; }
         .msg-media-image a { display: inline-block; cursor: pointer; }
+        .msg-media-filename { font-size: 0.9rem; color: var(--text-secondary); }
+        .msg-media-placeholder { padding: 10px 14px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border); font-size: 0.9rem; color: var(--text-secondary); }
+        .msg-caption { margin-top: 4px; font-size: 0.9rem; color: var(--text-secondary); }
         .msg-media-link, .msg-file-link { color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
         .msg-media-link:hover, .msg-file-link:hover { text-decoration: underline; }
         .chat-send { display: flex; gap: 12px; padding: 16px; background: var(--bg-card); border-top: 1px solid var(--border); align-items: center; flex-shrink: 0; }
@@ -375,9 +378,24 @@
         .internal-call-action-btn.end:hover { background: #dc2626; }
         .internal-call-action-btn.add { background: var(--accent); color: #fff; width: 44px; height: 44px; border-radius: 50%; padding: 0; font-size: 1.5rem; line-height: 1; }
         .internal-call-action-btn.add:hover { background: var(--accent-hover); }
-        .add-to-call-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
-        .add-to-call-item { padding: 12px 16px; text-align: right; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; font-family: var(--font); font-size: 0.95rem; transition: background 0.2s, border-color 0.2s; }
+        .add-to-call-modal-box { max-width: 420px; }
+        .add-to-call-modal-box .modal-header { padding-bottom: 8px; }
+        .add-to-call-subtitle { font-size: 0.9rem; color: var(--text-secondary); margin: 4px 0 0; font-weight: 400; }
+        .add-to-call-toolbar { display: flex; align-items: center; gap: 10px; padding: 0 20px 12px; flex-wrap: wrap; }
+        .add-to-call-search { flex: 1; min-width: 120px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; }
+        .add-to-call-search:focus { outline: none; border-color: var(--accent); }
+        .add-to-call-search::placeholder { color: var(--text-muted); }
+        .add-to-call-select-all { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9rem; color: var(--text-secondary); cursor: pointer; white-space: nowrap; }
+        .add-to-call-select-all input { cursor: pointer; }
+        .add-to-call-body { padding-top: 0; max-height: 320px; overflow: hidden; display: flex; flex-direction: column; }
+        .add-to-call-list { display: flex; flex-direction: column; gap: 6px; overflow-y: auto; padding: 4px 0; }
+        .add-to-call-item { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); color: var(--text-primary); cursor: pointer; font-family: var(--font); font-size: 0.95rem; transition: background 0.2s, border-color 0.2s; }
         .add-to-call-item:hover { background: var(--accent-soft); border-color: var(--accent); }
+        .add-to-call-check { flex-shrink: 0; cursor: pointer; }
+        .add-to-call-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1rem; flex-shrink: 0; }
+        .add-to-call-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .add-to-call-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg-card); border-radius: 0 0 var(--radius) var(--radius); }
+        .add-to-call-invite-btn { min-width: 140px; }
         /* ========== ظاهر پنل (Panel settings) ========== */
         .page-panel-settings { max-width: 720px; }
         .panel-settings-page-header { margin-bottom: 28px; }

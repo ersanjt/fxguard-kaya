@@ -359,6 +359,11 @@
                         <div class="user-search-wrap" style="flex:1; min-width:200px;">
                             <input type="text" id="userSearchInput" class="conv-filter-input" placeholder="" data-i18n-ph="user_search_ph" style="margin:0;">
                         </div>
+                        <select id="userFilterStatus" style="padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); font-size:0.9rem;">
+                            <option value="active" data-i18n="filter_active_only">فقط فعال</option>
+                            <option value="" data-i18n="filter_all">همه</option>
+                            <option value="blocked" data-i18n="filter_blocked_only">فقط مسدود</option>
+                        </select>
                         <select id="userFilterRole" style="padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-card); color:var(--text-primary); font-size:0.9rem; display:none;">
                             <option value="" data-i18n="all_roles">همه نقش‌ها</option>
                             <option value="owner" data-i18n="role_owner">مالک</option>
@@ -1364,10 +1369,22 @@
             </div>
         </div>
         <div id="addToCallModal" class="modal-overlay" style="display:none;">
-            <div class="modal-box" style="max-width:400px;">
-                <div class="modal-header"><h3 data-i18n="add_to_call">افزودن به تماس</h3><button type="button" class="modal-close" onclick="closeAddToCallModal()">&times;</button></div>
-                <div class="modal-body">
+            <div class="modal-box add-to-call-modal-box">
+                <div class="modal-header">
+                    <h3 data-i18n="add_to_call">افزودن به تماس</h3>
+                    <p class="add-to-call-subtitle" data-i18n="add_to_call_subtitle">چند نفر را برای تماس صوتی یا تصویری انتخاب کنید</p>
+                    <button type="button" class="modal-close" onclick="closeAddToCallModal()" aria-label="بستن">&times;</button>
+                </div>
+                <div class="add-to-call-toolbar">
+                    <input type="text" id="addToCallSearch" class="add-to-call-search" placeholder="جستجو نام..." data-i18n-ph="add_to_call_search" oninput="filterAddToCallList()">
+                    <label class="add-to-call-select-all"><input type="checkbox" id="addToCallSelectAll" onchange="toggleAddToCallSelectAll(this.checked)"> <span data-i18n="add_to_call_select_all">همه</span></label>
+                </div>
+                <div class="modal-body add-to-call-body">
                     <div id="addToCallList" class="add-to-call-list"></div>
+                </div>
+                <div class="add-to-call-footer">
+                    <button type="button" class="btn-secondary" onclick="closeAddToCallModal()" data-i18n="cancel">انصراف</button>
+                    <button type="button" id="addToCallInviteBtn" class="btn-primary add-to-call-invite-btn" onclick="inviteSelectedToCall()" data-i18n="add_to_call_invite_selected">دعوت انتخاب‌شدگان</button>
                 </div>
             </div>
         </div>

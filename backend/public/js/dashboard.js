@@ -511,7 +511,7 @@
                     call_rejected: 'Call rejected', user_offline: 'User is offline',
                     call_mute: 'Mute mic', call_unmute: 'Unmute mic', call_camera_off: 'Turn off camera', call_camera_on: 'Turn on camera',
                     call_connecting: 'Connecting...', call_connected: 'Connected', call_failed: 'Connection failed',
-                    add_to_call: 'Add to call', invite_to_call: 'Invite to call',
+                    add_to_call: 'Add to call', add_to_call_subtitle: 'Select one or more people to add to the voice or video call', add_to_call_search: 'Search name...', add_to_call_select_all: 'All', add_to_call_invite_selected: 'Invite selected', invite_to_call: 'Invite to call',
                     select_multiple_hint: 'For group chat, select multiple users',
                     branch_intro: 'Branches are used for geographic separation and assigning users and conversations.', branch_name: 'Branch name', branch_city: 'City', branch_country: 'Country', branch_ph_name: 'e.g. Tehran office', branch_ph_city: 'e.g. Tehran', branch_ph_country: 'e.g. Iran', add_branch: 'Add branch', edit: 'Edit',
                     staff_online: 'Staff online', staff_intro: 'Recent logins and online staff � for managers and above', last_logins: 'Recent logins', staff_logins_today: 'Logins today', staff_online_hint: 'Click for activity details', staff_logins_hint: 'Last 50 logins', refresh: 'Refresh',
@@ -534,7 +534,7 @@
                     conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me', conv_supervision_title: 'Manager oversight',
                     conv_page_desc: 'Manage customer conversations, respond and assign to departments.',
                     conv_search_ph: 'Search name or phone...', conv_list_title: 'Conversations', more_filters: 'More filters',
-                    filter_all: 'All', filter_unread: 'Unread', filter_unanswered: 'Unanswered', filter_open: 'Open', conv_tab_mine: 'Assigned to me',
+                    filter_all: 'All', filter_active_only: 'Active only', filter_blocked_only: 'Blocked only', filter_unread: 'Unread', filter_unanswered: 'Unanswered', filter_open: 'Open', conv_tab_mine: 'Assigned to me',
                     whatsapp_unanswered_title: 'Unanswered alert & escalation', whatsapp_unanswered_hint: 'When a customer messages and no one replies, an alert is sent after the specified time. If still unanswered, the conversation is escalated to support.',
                     whatsapp_alert_after: 'Alert after (minutes)', whatsapp_escalate_after: 'Escalate after (minutes)', whatsapp_escalation_dept: 'Target department (empty = default support)',
                     empty_no_logins: 'No logins recorded yet.', no_staff_online: 'No staff online.', login_err_load: 'Error loading logins.',
@@ -2610,7 +2610,12 @@
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
             if (!data.data || data.data.length === 0) { el.innerHTML = '<div class="empty"><span class="empty-icon">�x�</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
-            el.innerHTML = data.data.map(function(m) {
+            var list = data.data.filter(function(m) {
+                if (m.direction === 'outgoing') return true;
+                var hasContent = (m.content && String(m.content).trim()) || (m.hasMedia && m.mediaData && (m.mediaData.url || m.mediaData.filename));
+                return !!hasContent;
+            });
+            el.innerHTML = list.map(function(m) {
                 var isOut = m.direction === 'outgoing';
                 var time = m.timestamp ? fmtTZ(m.timestamp, 'time') : '';
                 var senderLabel = '';
@@ -2618,15 +2623,27 @@
                     senderLabel = '<div class="msg-sender">' + escapeHtml(m.user.name || m.user.username) + '</div>';
                 }
                 var mediaHtml = '';
+                var baseUrl = (API && String(API).length) ? String(API).replace(/\/$/, '') : (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : '');
+                function inferMediaType(msg) {
+                    var t = (msg.type || 'document').toLowerCase();
+                    if (t === 'image' || t === 'video' || t === 'audio') return t;
+                    var md = msg.mediaData || {};
+                    var mime = (md.mimetype || '').toLowerCase();
+                    var name = (md.filename || msg.content || '').toLowerCase();
+                    if (mime.indexOf('image/') === 0 || /\.(jpe?g|png|gif|webp|bmp)$/.test(name)) return 'image';
+                    if (mime.indexOf('video/') === 0 || /\.(mp4|webm|mov|avi)$/.test(name)) return 'video';
+                    if (mime.indexOf('audio/') === 0 || /\.(mp3|ogg|wav|m4a)$/.test(name)) return 'audio';
+                    return 'document';
+                }
                 if (m.hasMedia && m.mediaData && m.mediaData.url) {
                     var rawUrl = m.mediaData.url;
-                    var base = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : (API || '');
-                    var mediaUrl = (rawUrl && rawUrl.startsWith('http')) ? rawUrl : (base + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
+                    var mediaUrl = (rawUrl && rawUrl.startsWith('http')) ? rawUrl : (baseUrl + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
                     mediaUrl = ensureHttpsUrl(mediaUrl);
-                    var mediaType = (m.type || 'document').toLowerCase();
+                    var mediaType = inferMediaType(m);
                     if (mediaType === 'image') {
                         var imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
-                        mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy"></a></div>';
+                        var fn = escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'تصویر' : 'Image'));
+                        mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\';var s=this.parentNode.querySelector(\'.msg-media-filename\');if(s)s.style.display=\'inline\';">' + '<span class="msg-media-filename" style="display:none;">📎 ' + fn + '</span></a></div>';
                     } else if (mediaType === 'video') {
                         mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">▶ ' + (LANG === 'fa' ? 'پخش ویدیو' : 'Play video') + '</a><video src="' + escapeHtml(mediaUrl) + '" controls style="max-width:100%;max-height:200px;"></video></div>';
                     } else if (mediaType === 'audio') {
@@ -2634,8 +2651,14 @@
                     } else {
                         mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-file-link msg-media-link" data-open="1">📎 ' + escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'فایل' : 'File')) + '</a></div>';
                     }
+                } else if (m.hasMedia && (m.content || (m.mediaData && m.mediaData.filename))) {
+                    var fileName = (m.mediaData && m.mediaData.filename) || m.content || (LANG === 'fa' ? 'فایل' : 'File');
+                    var isImageName = /\.(jpe?g|png|gif|webp|bmp)$/i.test(fileName);
+                    mediaHtml = '<div class="msg-media msg-media-placeholder">' + (isImageName ? '🖼 ' : '📎 ') + escapeHtml(fileName) + '</div>';
                 }
-                var contentHtml = (m.content || '') ? '<div>' + escapeHtml(m.content) + '</div>' : '';
+                var contentHtml = '';
+                if (m.hasMedia && m.mediaData && m.mediaData.url && m.content) contentHtml = '<div class="msg-caption">' + escapeHtml(m.content) + '</div>';
+                else if (m.content && !(m.hasMedia && !(m.mediaData && m.mediaData.url))) contentHtml = '<div>' + escapeHtml(m.content) + '</div>';
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="time">' + time + '</div></div>';
             }).join('');
             scrollChatToEnd(el);
@@ -3876,7 +3899,9 @@
         function initUserFilters() {
             var searchEl = document.getElementById('userSearchInput');
             var roleEl = document.getElementById('userFilterRole');
+            var statusEl = document.getElementById('userFilterStatus');
             if (searchEl) searchEl.oninput = searchEl.onkeyup = function() { filterAndRenderUsers(); };
+            if (statusEl) statusEl.onchange = function() { filterAndRenderUsers(); };
             if (roleEl) roleEl.onchange = function() {
                 document.querySelectorAll('#userRolePills .pill').forEach(function(x) { x.classList.remove('active'); });
                 var p = document.querySelector('#userRolePills .pill[data-role="' + (roleEl.value || '') + '"]');
@@ -3912,8 +3937,11 @@
         function filterAndRenderUsers() {
             var search = (document.getElementById('userSearchInput') && document.getElementById('userSearchInput').value) || '';
             var roleFilter = (document.getElementById('userFilterRole') && document.getElementById('userFilterRole').value) || '';
+            var statusFilter = (document.getElementById('userFilterStatus') && document.getElementById('userFilterStatus').value) || '';
             var q = search.trim().toLowerCase();
             var filtered = userListData.filter(function(u) {
+                if (statusFilter === 'active' && u.isActive === false) return false;
+                if (statusFilter === 'blocked' && u.isActive !== false) return false;
                 if (roleFilter && u.role !== roleFilter) return false;
                 if (!q) return true;
                 var name = (u.name || '').toLowerCase();
@@ -4518,6 +4546,35 @@
             var mod = document.getElementById('internalCallInviteModal');
             if (mod) mod.style.display = 'none';
         }
+        var addToCallParticipantsCache = [];
+        function renderAddToCallList(participants) {
+            var list = document.getElementById('addToCallList');
+            if (!list) return;
+            addToCallParticipantsCache = participants || addToCallParticipantsCache;
+            var search = (document.getElementById('addToCallSearch') && document.getElementById('addToCallSearch').value) || '';
+            var q = search.trim().toLowerCase();
+            var filtered = q ? addToCallParticipantsCache.filter(function(p) {
+                var name = (p.name || p.email || '').toLowerCase();
+                return name.indexOf(q) >= 0;
+            }) : addToCallParticipantsCache;
+            list.innerHTML = filtered.map(function(p) {
+                var name = p.name || p.email || p.id;
+                var initial = (name && name.toString().trim()[0]) ? name.toString().trim()[0].toUpperCase() : '?';
+                return '<label class="add-to-call-item" data-user-id="' + escapeHtml(p.id) + '"><input type="checkbox" class="add-to-call-check" data-user-id="' + escapeHtml(p.id) + '"><span class="add-to-call-avatar">' + escapeHtml(initial) + '</span><span class="add-to-call-name">' + escapeHtml(name) + '</span></label>';
+            }).join('');
+            var selAll = document.getElementById('addToCallSelectAll');
+            if (selAll) selAll.checked = false;
+        }
+        function filterAddToCallList() {
+            renderAddToCallList(addToCallParticipantsCache);
+        }
+        function toggleAddToCallSelectAll(checked) {
+            var list = document.getElementById('addToCallList');
+            if (!list) return;
+            list.querySelectorAll('.add-to-call-check').forEach(function(cb) {
+                if (cb.closest('.add-to-call-item').style.display !== 'none') cb.checked = !!checked;
+            });
+        }
         function showAddToCallModal() {
             var list = document.getElementById('addToCallList');
             if (!list) return;
@@ -4527,15 +4584,30 @@
                 return id !== String(currentUser && currentUser.id) && inCallIds.indexOf(id) < 0;
             });
             if (participants.length === 0) { toast(LANG === 'fa' ? 'همه در تماس هستند' : 'Everyone is already in the call', true); return; }
-            list.innerHTML = participants.map(function(p) {
-                var name = p.name || p.email || p.id;
-                return '<button type="button" class="add-to-call-item" onclick="inviteToCall(\'' + p.id + '\'); closeAddToCallModal();">' + escapeHtml(name) + '</button>';
-            }).join('');
+            var searchEl = document.getElementById('addToCallSearch');
+            if (searchEl) searchEl.value = '';
+            var selAll = document.getElementById('addToCallSelectAll');
+            if (selAll) selAll.checked = false;
+            renderAddToCallList(participants);
             document.getElementById('addToCallModal').style.display = 'flex';
         }
         function closeAddToCallModal() {
             var mod = document.getElementById('addToCallModal');
             if (mod) mod.style.display = 'none';
+        }
+        function inviteSelectedToCall() {
+            var list = document.getElementById('addToCallList');
+            if (!list) return;
+            var checked = list.querySelectorAll('.add-to-call-check:checked');
+            var ids = Array.from(checked).map(function(cb) { return cb.getAttribute('data-user-id'); }).filter(Boolean);
+            if (ids.length === 0) { toast(LANG === 'fa' ? 'حداقل یک نفر را انتخاب کنید' : 'Select at least one person', true); return; }
+            var s = getSocket();
+            if (!s || !s.connected || !currentInternalThreadId) { toast(t('user_offline') || (LANG === 'fa' ? 'اتصال برقرار نیست' : 'Not connected'), true); return; }
+            ids.forEach(function(userId) {
+                s.emit('call_invite', { toUserId: userId, threadId: currentInternalThreadId });
+            });
+            closeAddToCallModal();
+            toast(ids.length === 1 ? (LANG === 'fa' ? 'دعوت ارسال شد' : 'Invite sent') : (LANG === 'fa' ? 'دعوت به ' + ids.length + ' نفر ارسال شد' : 'Invite sent to ' + ids.length + ' people'));
         }
         function inviteToCall(userId) {
             var s = getSocket();

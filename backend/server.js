@@ -3,6 +3,7 @@ require("dotenv").config();
 const MAIN_ADMIN_EMAIL = process.env.MAIN_ADMIN_EMAIL || 'admin@kaya.local';
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
@@ -254,6 +255,52 @@ function normalizePhone(val) {
     return s;
 }
 
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
+
+/** اگر media.url یک آدرس http باشد، فایل را دانلود و در uploads ذخیره می‌کند و آدرس نسبی برمی‌گرداند؛ وگرنه media را همان‌طور که هست برمی‌گرداند. */
+async function resolveIncomingMedia(media) {
+    if (!media || !media.url) return media;
+    const url = (media.url || '').trim();
+    if (!url.startsWith('http://') && !url.startsWith('https://')) return media;
+    try {
+        const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 25000, maxContentLength: 20 * 1024 * 1024 });
+        const buf = Buffer.from(res.data);
+        const ct = (res.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+        const suggestedName = media.filename || media.caption || 'file';
+        let ext = (path.extname(suggestedName) || '').toLowerCase();
+        if (!ext && ct) {
+            if (ct.includes('image/jpeg') || ct.includes('image/jpg')) ext = '.jpg';
+            else if (ct.includes('image/png')) ext = '.png';
+            else if (ct.includes('image/gif')) ext = '.gif';
+            else if (ct.includes('image/webp')) ext = '.webp';
+            else if (ct.includes('video/')) ext = '.mp4';
+            else if (ct.includes('audio/')) ext = '.mp3';
+            else if (ct.includes('pdf')) ext = '.pdf';
+            else ext = '.bin';
+        }
+        if (!ext) ext = '.bin';
+        const safeName = (Date.now() + '-' + suggestedName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)) + (ext.startsWith('.') ? ext : '.' + ext);
+        const filePath = path.join(uploadsDir, safeName);
+        fs.writeFileSync(filePath, buf);
+        return { url: '/uploads/' + safeName, filename: media.filename || suggestedName, mimetype: media.mimetype || ct || null };
+    } catch (err) {
+        logger.warn('resolveIncomingMedia download failed', { url: url.slice(0, 60), error: err.message });
+        return media;
+    }
+}
+
+function inferMessageTypeFromMedia(media) {
+    if (!media) return 'text';
+    const mime = (media.mimetype || '').toLowerCase();
+    const name = (media.filename || media.caption || '').toLowerCase();
+    if (mime.startsWith('image/') || /\.(jpe?g|png|gif|webp|bmp)$/i.test(name)) return 'image';
+    if (mime.startsWith('video/') || /\.(mp4|webm|mov|avi)$/i.test(name)) return 'video';
+    if (mime.startsWith('audio/') || /\.(mp3|ogg|wav|m4a)$/i.test(name)) return 'audio';
+    if (mime || name) return 'document';
+    return 'text';
+}
+
 async function processIncomingMessage(messageData) {
     try {
         if (messageData.isStatus) return;
@@ -262,6 +309,18 @@ async function processIncomingMessage(messageData) {
         if (rawPhone == null || rawPhone === '') return;
         const phone = normalizePhone(rawPhone) || normalizePhone(from);
         if (!phone) return;
+        const rawType = (messageData.type || '').toLowerCase();
+        if (rawType === 'reaction' || rawType === 'read_receipt' || rawType === 'delivery' || rawType === 'update') return;
+        const hasText = body != null && String(body).trim().length > 0;
+        const hasUsableMedia = hasMedia && media && (media.url || (media.filename && String(media.filename).trim()) || (media.caption && String(media.caption).trim()));
+        if (!hasText && !hasUsableMedia) return;
+        
+        let resolvedMedia = media || null;
+        let msgType = messageData.type || 'text';
+        if (hasMedia && media && media.url) {
+            resolvedMedia = await resolveIncomingMedia(media);
+            if (resolvedMedia && (resolvedMedia.url || resolvedMedia.filename)) msgType = inferMessageTypeFromMedia(resolvedMedia);
+        }
         
         // 1. پیدا کردن یا ایجاد مشتری
         let customer = await Customer.findOne({ 
@@ -321,10 +380,10 @@ async function processIncomingMessage(messageData) {
             customerId: customer.id,
             whatsappId: messageData.id || null,
             direction: 'incoming',
-            content: body || '',
-            type: messageData.type || 'text',
-            hasMedia: !!hasMedia,
-            mediaData: media || null,
+            content: body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '',
+            type: msgType,
+            hasMedia: !!(hasMedia && resolvedMedia),
+            mediaData: resolvedMedia || null,
             timestamp: ts
         });
         
