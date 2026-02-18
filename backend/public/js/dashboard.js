@@ -2464,17 +2464,20 @@
                 }
                 var mediaHtml = '';
                 if (m.hasMedia && m.mediaData && m.mediaData.url) {
-                    var mediaUrl = m.mediaData.url.startsWith('http') ? m.mediaData.url : (API + (m.mediaData.url.startsWith('/') ? '' : '/') + m.mediaData.url);
+                    var rawUrl = m.mediaData.url;
+                    var base = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : (API || '');
+                    var mediaUrl = (rawUrl && rawUrl.startsWith('http')) ? rawUrl : (base + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
                     mediaUrl = ensureHttpsUrl(mediaUrl);
-                    if (m.type === 'image') {
+                    var mediaType = (m.type || 'document').toLowerCase();
+                    if (mediaType === 'image') {
                         var imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
-                        mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy"></a></div>';
-                    } else if (m.type === 'video') {
-                        mediaHtml = '<div class="msg-media"><video src="' + escapeHtml(mediaUrl) + '" controls style="max-width:100%;max-height:200px;"></video></div>';
-                    } else if (m.type === 'audio') {
-                        mediaHtml = '<div class="msg-media"><audio src="' + escapeHtml(mediaUrl) + '" controls></audio></div>';
+                        mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy"></a></div>';
+                    } else if (mediaType === 'video') {
+                        mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">▶ ' + (LANG === 'fa' ? 'پخش ویدیو' : 'Play video') + '</a><video src="' + escapeHtml(mediaUrl) + '" controls style="max-width:100%;max-height:200px;"></video></div>';
+                    } else if (mediaType === 'audio') {
+                        mediaHtml = '<div class="msg-media"><audio src="' + escapeHtml(mediaUrl) + '" controls></audio><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">📎 ' + escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'دانلود' : 'Download')) + '</a></div>';
                     } else {
-                        mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener" class="msg-file-link">📎 ' + escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'فایل' : 'File')) + '</a></div>';
+                        mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-file-link msg-media-link" data-open="1">📎 ' + escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'فایل' : 'File')) + '</a></div>';
                     }
                 }
                 var contentHtml = (m.content || '') ? '<div>' + escapeHtml(m.content) + '</div>' : '';
@@ -4924,6 +4927,18 @@
             if (isMobile()) ticker.classList.add('ticker-collapsed');
             window.addEventListener('resize', function() { if (!isMobile()) ticker.classList.remove('ticker-collapsed'); });
             btn.addEventListener('click', function() { ticker.classList.toggle('ticker-collapsed'); });
+        })();
+        (function initChatMediaLinks() {
+            document.addEventListener('click', function(e) {
+                var chatEl = document.getElementById('chatMessages');
+                if (!chatEl || !chatEl.contains(e.target)) return;
+                var a = e.target.closest && e.target.closest('.msg-media a[href], a.msg-media-link, a.msg-file-link');
+                if (!a || !a.href) return;
+                if (e.ctrlKey || e.metaKey || e.button !== 0) return;
+                e.preventDefault();
+                e.stopPropagation();
+                window.open(a.href, '_blank', 'noopener,noreferrer');
+            });
         })();
         (function initFooterYear() {
             var el = document.getElementById('appFooterYear');
