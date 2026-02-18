@@ -59,7 +59,7 @@ router.get('/me', (req, res) => {
 router.patch('/me', async (req, res) => {
     try {
         const user = req.user;
-        const { username, firstName, lastName, dateOfBirth, name, phone, password, avatar } = req.body;
+        const { username, firstName, lastName, dateOfBirth, name, phone, password, avatar, email } = req.body;
         if (username !== undefined) {
             const trimmed = String(username).trim();
             if (trimmed) {
@@ -83,6 +83,15 @@ router.patch('/me', async (req, res) => {
         if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth ? String(dateOfBirth).trim() || null : null;
         if (phone !== undefined) user.phone = phone ? String(phone).trim() : null;
         if (avatar !== undefined) user.avatar = avatar ? String(avatar).trim() || null : undefined;
+        if (email !== undefined && req.canManageUsers()) {
+            const trimmed = String(email).trim().toLowerCase();
+            if (!trimmed) return res.status(400).json({ error: 'ایمیل الزامی است' });
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return res.status(400).json({ error: 'فرمت ایمیل نامعتبر است' });
+            if (isMainAdmin(user)) return res.status(403).json({ error: 'امکان تغییر ایمیل ادمین اصلی وجود ندارد' });
+            const existing = await User.findOne({ where: { email: trimmed } });
+            if (existing && existing.id !== user.id) return res.status(400).json({ error: 'این ایمیل قبلاً استفاده شده است' });
+            user.email = trimmed;
+        }
         if (password !== undefined && password) {
             if (String(password).length < 6) return res.status(400).json({ error: 'رمز عبور حداقل ۶ کاراکتر باشد' });
             user.password = password;

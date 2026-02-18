@@ -312,6 +312,7 @@
                     profile_intro: 'Name, phone and password are editable. Email and department are set by admin.',
                     profile_avatar: 'Profile image (URL)',
                     profile_name: 'Name',
+                    profile_email: 'Email',
                     profile_email_readonly: 'Email (read-only)',
                     profile_dept_readonly: 'Department (read-only)',
                     profile_phone: 'Phone',
@@ -1664,6 +1665,20 @@
                 setElText('profileLastLogin', (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLogin);
                 setElText('profileEmail', u.email);
                 setElText('profileDepartment', deptName);
+                var canEditEmail = !!(currentUser && currentUser.permissions && currentUser.permissions.manage_users);
+                var emailGroup = document.getElementById('profileEmailGroup');
+                var emailReadonlyRow = document.getElementById('profileEmailReadonlyRow');
+                var emailInput = document.getElementById('profileEmailInput');
+                if (emailGroup && emailReadonlyRow && emailInput) {
+                    if (canEditEmail) {
+                        emailGroup.style.display = '';
+                        emailReadonlyRow.style.display = 'none';
+                        emailInput.value = u.email || '';
+                    } else {
+                        emailGroup.style.display = 'none';
+                        emailReadonlyRow.style.display = '';
+                    }
+                }
                 var usernameEl = document.getElementById('profileUsername');
                 var firstEl = document.getElementById('profileFirstName');
                 var lastEl = document.getElementById('profileLastName');
@@ -1716,6 +1731,14 @@
             var avatar = document.getElementById('profileAvatar') && document.getElementById('profileAvatar').value;
             var password = document.getElementById('profilePassword') && document.getElementById('profilePassword').value;
             var body = { firstName: (firstName || '').trim() || null, lastName: (lastName || '').trim() || null, dateOfBirth: (dateOfBirth || '').trim() || null, phone: (phone || '').trim() || null, avatar: (avatar || '').trim() || null };
+            var canEditEmail = !!(currentUser && currentUser.permissions && currentUser.permissions.manage_users);
+            if (canEditEmail) {
+                var emailInput = document.getElementById('profileEmailInput');
+                if (emailInput && emailInput.offsetParent !== null) {
+                    var emailVal = (emailInput.value || '').trim();
+                    if (emailVal) body.email = emailVal;
+                }
+            }
             var usernameTrim = (username || '').trim();
             if (usernameTrim) body.username = usernameTrim;
             if (password) body.password = password;

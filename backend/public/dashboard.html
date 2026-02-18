@@ -569,6 +569,10 @@
                                     <label data-i18n="profile_date_of_birth">تاریخ تولد</label>
                                     <input id="profileDateOfBirth" type="date" placeholder="">
                                 </div>
+                                <div class="profile-form-group" id="profileEmailGroup" style="display:none;">
+                                    <label data-i18n="profile_email">ایمیل</label>
+                                    <input id="profileEmailInput" type="email" placeholder="email@example.com" autocomplete="email">
+                                </div>
                                 <div class="profile-form-group">
                                     <label data-i18n="profile_phone">تلفن ثابت یا همراه</label>
                                     <input id="profilePhone" type="tel" placeholder="" autocomplete="tel">
@@ -592,8 +596,8 @@
                         <div class="profile-readonly-section">
                             <h3 class="profile-section-title" data-i18n="profile_readonly_section">اطلاعات فقط‌خواندنی</h3>
                             <div class="profile-readonly-grid">
-                                <div class="profile-readonly-item">
-                                    <span class="profile-readonly-label" data-i18n="profile_email_readonly">ایمیل</span>
+                                <div class="profile-readonly-item" id="profileEmailReadonlyRow">
+                                    <span class="profile-readonly-label" data-i18n="profile_email_readonly">ایمیل (غیرقابل تغییر)</span>
                                     <span id="profileEmail" class="profile-readonly-value">—</span>
                                 </div>
                                 <div class="profile-readonly-item">
