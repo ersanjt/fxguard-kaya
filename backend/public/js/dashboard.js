@@ -4928,6 +4928,21 @@
             window.addEventListener('resize', function() { if (!isMobile()) ticker.classList.remove('ticker-collapsed'); });
             btn.addEventListener('click', function() { ticker.classList.toggle('ticker-collapsed'); });
         })();
+        (function initTickerTouchScroll() {
+            var items = document.getElementById('tickerItems');
+            if (!items) return;
+            var touchEndTid = null;
+            function addPause() {
+                items.classList.add('ticker-touch-active');
+                if (touchEndTid) clearTimeout(touchEndTid);
+            }
+            function removePauseLater() {
+                touchEndTid = setTimeout(function() { items.classList.remove('ticker-touch-active'); touchEndTid = null; }, 400);
+            }
+            items.addEventListener('touchstart', addPause, { passive: true });
+            items.addEventListener('touchend', removePauseLater, { passive: true });
+            items.addEventListener('touchcancel', removePauseLater, { passive: true });
+        })();
         (function initChatMediaLinks() {
             document.addEventListener('click', function(e) {
                 var chatEl = document.getElementById('chatMessages');
