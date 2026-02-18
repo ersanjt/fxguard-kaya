@@ -1320,6 +1320,7 @@
             .task-form-row > div { min-width: 0; }
             .user-list { grid-template-columns: 1fr; }
             .user-toolbar { flex-direction: column; align-items: stretch; }
+            .user-toolbar #userFilterStatus { width: 100%; max-width: 100%; box-sizing: border-box; }
             .user-search-wrap { min-width: 0; }
             .user-form-grid { grid-template-columns: 1fr; }
             .user-edit-tabs { flex-wrap: wrap; }
