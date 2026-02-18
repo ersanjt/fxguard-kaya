@@ -414,13 +414,12 @@ async function sendAutoReply(conversation, responseText) {
     try {
         const customer = await Customer.findByPk(conversation.customerId);
         
-        const gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3001';
         if (rabbitChannel) {
             rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
                 to: customer.phone, message: responseText, conversationId: conversation.id
             })), { persistent: true });
         } else {
-            axios.post(gatewayUrl + '/api/send-message', { to: customer.phone, message: responseText }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
+            gatewayPost('/api/send-message', { to: customer.phone, message: responseText }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
         }
         
         // ذخیره پیام در دیتابیس
@@ -562,13 +561,12 @@ io.on('connection', (socket) => {
                 timestamp: new Date()
             });
             
-            const gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3001';
             if (rabbitChannel) {
                 rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
                     to: conversation.customer.phone, message: content, media: media, conversationId: conversation.id
                 })), { persistent: true });
             } else {
-                axios.post(gatewayUrl + '/api/send-message', { to: conversation.customer.phone, message: content, media: media || null }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
+                gatewayPost('/api/send-message', { to: conversation.customer.phone, message: content, media: media || null }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
             }
             
             // بروزرسانی مکالمه
@@ -731,17 +729,17 @@ apiRouter.get('/config', (req, res) => {
     });
 });
 
-const gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3001';
+const { gatewayGet, gatewayPost, GATEWAY_URL: gatewayUrl } = require('./lib/gatewayClient');
 let gatewayProcess = null;
 
 apiRouter.get('/gateway/status', authMiddleware, (req, res) => {
-    axios.get(gatewayUrl + '/api/status', { timeout: 5000 })
+    gatewayGet('/api/status', { timeout: 5000 })
         .then(r => res.json(r.data))
         .catch(() => res.status(503).json({ whatsapp: false, status: 'disconnected', error: 'Gateway در دسترس نیست' }));
 });
 
 apiRouter.get('/gateway/qr', authMiddleware, (req, res) => {
-    axios.get(gatewayUrl + '/api/qr', { timeout: 5000 })
+    gatewayGet('/api/qr', { timeout: 5000 })
         .then(r => res.json(r.data))
         .catch(() => res.status(503).json({ error: 'Gateway در دسترس نیست' }));
 });
@@ -749,7 +747,7 @@ apiRouter.get('/gateway/qr', authMiddleware, (req, res) => {
 // پراکسی شروع واتساپ به Gateway (وقتی Gateway در دسترس است)
 apiRouter.post('/gateway/start', authMiddleware, (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
-    axios.post(gatewayUrl + '/api/start', {}, { timeout: 10000 })
+    gatewayPost('/api/start', {}, { timeout: 10000 })
         .then(r => res.json(r.data))
         .catch(e => res.status(503).json({ error: e.response?.data?.error || 'Gateway در دسترس نیست' }));
 });

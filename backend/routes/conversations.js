@@ -381,10 +381,10 @@ router.post('/:id/send', async (req, res) => {
         const updateData = { lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };
         if (!conversation.branchId && req.user.branchId) updateData.branchId = req.user.branchId;
         await conversation.update(updateData);
-        const gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3001';
+        const { gatewayPost } = require('../lib/gatewayClient');
         const payload = { to: conversation.customer.phone, message: content };
         if (mediaUrl) payload.media = { url: mediaUrl };
-        await axios.post(gatewayUrl + '/api/send-message', payload, { timeout: 10000 }).catch(() => {});
+        await gatewayPost('/api/send-message', payload, { timeout: 10000 }).catch(() => {});
         await logActivity({
             userId: req.userId,
             branchId: req.user.branchId || conversation.branchId,

@@ -1,11 +1,10 @@
 /**
  * پیام‌های خودکار: تخصیص دپارتمان و معرفی کارمند
  */
-const axios = require('axios');
+const { gatewayPost } = require('../lib/gatewayClient');
 const { Message, Customer, User, Department } = require('../models');
 
 let rabbitChannel = null;
-let gatewayUrl = process.env.GATEWAY_URL || 'http://localhost:3001';
 
 function setRabbitChannel(ch) {
     rabbitChannel = ch;
@@ -19,7 +18,7 @@ async function sendOutgoingAutoMessage(conversation, text) {
                 to: customer.phone, message: text, conversationId: conversation.id
             })), { persistent: true });
         } else {
-            await axios.post(gatewayUrl + '/api/send-message', { to: customer.phone, message: text }, { timeout: 10000 });
+            await gatewayPost('/api/send-message', { to: customer.phone, message: text }, { timeout: 10000 });
         }
         await Message.create({
             conversationId: conversation.id,

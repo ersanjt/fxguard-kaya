@@ -4,6 +4,7 @@ const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const QRCode = require('qrcode');
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const http = require('http');
 const socketIo = require('socket.io');
 const amqp = require('amqplib');
@@ -28,7 +29,26 @@ const io = socketIo(server, {
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
-// ✅ TEST ROUTE (must always work)
+// Rate limiting (global)
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  message: { error: 'Too many requests' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', apiLimiter);
+
+// Stricter limit for send-message
+const sendLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  message: { error: 'Rate limit exceeded' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// ✅ TEST ROUTE (must always work) — health check
 app.get('/test', (req, res) => {
   res.status(200).json({ ok: true, ts: Date.now() });
 });
@@ -47,6 +67,19 @@ const logger = winston.createLogger({
     new winston.transports.Console(),
   ],
 });
+
+// ==================== Security ====================
+const GATEWAY_API_SECRET = process.env.GATEWAY_API_SECRET || '';
+
+function requireGatewaySecret(req, res, next) {
+  if (!GATEWAY_API_SECRET) return next();
+  const secret = req.headers['x-gateway-secret'] || req.headers['authorization']?.replace(/^Bearer\s+/i, '');
+  if (secret !== GATEWAY_API_SECRET) {
+    logger.warn('Gateway API: unauthorized request');
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  next();
+}
 
 // ==================== Redis ====================
 const redisClient = redis.createClient({
@@ -168,6 +201,18 @@ function attachClientEvents(c) {
 
     io.emit('disconnected', { reason });
     redisClient.set('whatsapp:status', 'disconnected').catch(() => {});
+
+    // Auto-reconnect on unexpected disconnect (not manual logout/stop)
+    const noReconnect = ['logged_out', 'stopped_by_api', 'CONFLICT'];
+    if (process.env.WHATSAPP_AUTO_RECONNECT !== 'false' && !noReconnect.includes(String(reason))) {
+      const delay = parseInt(process.env.WHATSAPP_RECONNECT_DELAY_MS) || 15000;
+      logger.info('🔄 Auto-reconnect scheduled', { delayMs: delay });
+      setTimeout(() => {
+        if (!client || isClientReady || isClientStarting) return;
+        logger.info('🔄 Attempting auto-reconnect...');
+        startWhatsApp().catch((e) => logger.error('Auto-reconnect failed', { error: e?.message }));
+      }, delay);
+    }
   });
 
   c.on('message', async (msg) => {
@@ -281,6 +326,22 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// SSRF protection: block private/local URLs
+function isSafeMediaUrl(url) {
+  if (!url || typeof url !== 'string') return false;
+  try {
+    const u = new URL(url.trim());
+    if (!['http:', 'https:'].includes(u.protocol)) return false;
+    const host = u.hostname.toLowerCase();
+    if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')) return false;
+    if (host.startsWith('10.') || host.startsWith('172.16.') || host.startsWith('172.17.') || host.startsWith('172.18.') || host.startsWith('172.19.') || host.startsWith('172.2') || host.startsWith('172.30.') || host.startsWith('172.31.') || host.startsWith('192.168.')) return false;
+    if (host === '0.0.0.0' || host === '::1') return false;
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 // ==================== WhatsApp Controls ====================
 async function startWhatsApp() {
   if (isClientReady) return { ok: true, status: 'already_ready' };
@@ -324,6 +385,9 @@ async function stopWhatsApp() {
 }
 
 // ==================== API Endpoints ====================
+// All /api/* (except /test) require secret when GATEWAY_API_SECRET is set
+app.use('/api/', requireGatewaySecret);
+
 // /api/status: بدون await Redis — همیشه سریع پاسخ بده
 app.get('/api/status', (req, res) => {
   const status = isClientReady ? 'ready' : isClientStarting ? 'starting' : 'disconnected';
@@ -391,7 +455,7 @@ app.post('/api/logout', async (req, res) => {
   }
 });
 
-app.post('/api/send-message', async (req, res) => {
+app.post('/api/send-message', sendLimiter, async (req, res) => {
   try {
     if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
 
@@ -402,6 +466,9 @@ app.post('/api/send-message', async (req, res) => {
 
     let sentMsg;
     if (media?.url) {
+      if (!isSafeMediaUrl(media.url)) {
+        return res.status(400).json({ error: 'Invalid or unsafe media URL' });
+      }
       const mediaObj = await MessageMedia.fromUrl(media.url);
       sentMsg = await client.sendMessage(chatId, mediaObj, { caption: message || '' });
     } else {
@@ -436,6 +503,7 @@ async function sendWhatsAppMessage(data) {
   const chatId = to.includes('@c.us') || to.includes('@g.us') ? to : `${to}@c.us`;
 
   if (media?.url) {
+    if (!isSafeMediaUrl(media.url)) throw new Error('Invalid or unsafe media URL');
     const mediaObj = await MessageMedia.fromUrl(media.url);
     return client.sendMessage(chatId, mediaObj, {
       caption: message || '',
