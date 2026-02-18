@@ -430,13 +430,15 @@
         .add-to-call-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg-card); border-radius: 0 0 var(--radius) var(--radius); }
         .add-to-call-invite-btn { min-width: 140px; }
         /* ========== ظاهر پنل (Panel settings) ========== */
-        .page-panel-settings { max-width: 720px; }
-        .panel-settings-page-header { margin-bottom: 28px; }
+        .page-panel-settings { max-width: 1100px; }
+        .panel-settings-page-header { margin-bottom: 24px; }
         .panel-settings-page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0 0 8px; letter-spacing: -0.02em; }
         .panel-settings-intro { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; margin: 0; max-width: 520px; }
         .panel-settings-loading { display: flex; align-items: center; gap: 12px; padding: 28px; color: var(--text-muted); background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); }
         .panel-settings-loading .loading-spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
         .panel-settings-content { display: flex; flex-direction: column; gap: 24px; }
+        .panel-settings-form-col { display: flex; flex-direction: column; gap: 0; min-width: 0; }
+        .panel-settings-preview-col { min-width: 0; }
         .panel-settings-preview-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,0.2); }
         .panel-settings-preview-label { display: flex; align-items: center; gap: 8px; padding: 10px 14px; background: rgba(0,0,0,0.25); border-bottom: 1px solid var(--border); font-size: 0.8rem; font-weight: 600; color: var(--text-muted); }
         .panel-settings-preview-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
@@ -454,24 +456,32 @@
         .panel-preview-logo-placeholder { color: var(--accent); font-size: 1.25rem; line-height: 1; }
         .panel-preview-logo-wrap:has(.panel-preview-logo-img[src]:not([src=""])) .panel-preview-logo-placeholder { display: none; }
         .panel-preview-site-name { font-weight: 600; font-size: 1.1rem; color: var(--text-primary); }
-        .panel-settings-sections { display: flex; flex-direction: column; gap: 20px; }
-        .panel-settings-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px 24px; }
-        .panel-settings-section-title { font-size: 1rem; font-weight: 600; margin: 0 0 18px; padding-inline-start: 12px; border-inline-start: 3px solid var(--accent); color: var(--text-primary); }
-        .panel-settings-section .form-group { margin-bottom: 18px; }
+        .panel-settings-sections { display: flex; flex-direction: column; gap: 16px; }
+        .panel-settings-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
+        .panel-settings-section-title { font-size: 1rem; font-weight: 600; margin: 0 0 14px; padding-inline-start: 12px; border-inline-start: 3px solid var(--accent); color: var(--text-primary); }
+        .panel-settings-section .form-group { margin-bottom: 14px; }
         .panel-settings-section .form-group:last-child { margin-bottom: 0; }
         .panel-settings-section .form-group label { display: block; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
-        .panel-settings-section .form-group input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s; }
+        .panel-settings-section .form-group input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s; }
         .panel-settings-section .form-group input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
         .panel-settings-section .form-group input::placeholder { color: var(--text-muted); }
-        .panel-setting-preview { display: flex; align-items: center; gap: 10px; margin-top: 10px; }
+        .panel-setting-preview { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
         .panel-preview-label { font-size: 0.85rem; color: var(--text-muted); }
         .panel-logo-preview-img { max-height: 36px; max-width: 140px; object-fit: contain; vertical-align: middle; border-radius: 6px; }
         .panel-favicon-preview-img { width: 20px; height: 20px; vertical-align: middle; border-radius: 4px; }
-        .panel-settings-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 20px 0 8px; border-top: 1px solid var(--border); margin-top: 8px; }
+        .panel-settings-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 16px 0 0; border-top: 1px solid var(--border); margin-top: 4px; }
         .panel-settings-save-btn { padding: 12px 28px; font-size: 1rem; border-radius: 10px; min-height: 48px; }
         .panel-settings-save-status { font-size: 0.9rem; }
         .panel-settings-save-status.saved { color: #22c55e; font-weight: 500; }
         .panel-settings-save-status.error { color: #ef4444; }
+        @media (max-width: 899px) {
+            .panel-settings-preview-col { order: -1; }
+        }
+        @media (min-width: 900px) {
+            .panel-settings-content { display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start; }
+            .panel-settings-preview-col { position: sticky; top: 24px; order: unset; }
+            html[dir="rtl"] .panel-settings-content { grid-template-columns: 340px 1fr; }
+        }
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 576px) {
             .internal-call-modal { padding: 0; align-items: stretch; }
@@ -483,6 +493,9 @@
             .panel-settings-section { padding: 18px 16px; }
             .panel-settings-actions { padding: 16px 0 4px; }
             .panel-settings-save-btn { width: 100%; min-height: 48px; }
+        }
+        @media (min-width: 577px) and (max-width: 899px) {
+            .page-panel-settings { max-width: 640px; }
         }
         .chat-send input { flex: 1; padding: 12px 18px; border-radius: 24px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; min-width: 0; transition: border-color 0.2s, box-shadow 0.2s; }
         .chat-send input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }

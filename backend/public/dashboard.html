@@ -1101,75 +1101,77 @@
                         <span data-i18n="loading">در حال بارگذاری...</span>
                     </div>
                     <div id="panelSettingsContent" class="panel-settings-content">
-                        <div class="panel-settings-preview-card">
-                            <div class="panel-settings-preview-label">
-                                <span class="panel-settings-preview-dot"></span>
-                                <span class="panel-settings-preview-dot"></span>
-                                <span class="panel-settings-preview-dot"></span>
-                                <span data-i18n="panel_live_preview">پیش‌نمایش زنده</span>
+                        <div class="panel-settings-form-col">
+                            <div class="panel-settings-sections">
+                                <section class="panel-settings-section">
+                                    <h3 class="panel-settings-section-title" data-i18n="panel_section_branding">برندینگ</h3>
+                                    <div class="form-group">
+                                        <label for="panelSettingSiteName" data-i18n="panel_site_name">نام سایت</label>
+                                        <input type="text" id="panelSettingSiteName" placeholder="مثال: صرافی کایا" oninput="updatePanelLivePreview()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">آدرس لوگو (URL)</label>
+                                        <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png" oninput="previewPanelLogo(this.value); updatePanelLivePreview();">
+                                        <div class="panel-setting-preview" id="panelLogoPreview" style="display:none;">
+                                            <span class="panel-preview-label" data-i18n="panel_preview">پیش‌نمایش</span>
+                                            <img id="panelLogoPreviewImg" src="" alt="" class="panel-logo-preview-img" onerror="this.style.display='none'">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">آدرس فاویکون (URL)</label>
+                                        <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico" oninput="previewPanelFavicon(this.value); updatePanelLivePreview();">
+                                        <div class="panel-setting-preview" id="panelFaviconPreview" style="display:none;">
+                                            <span class="panel-preview-label" data-i18n="panel_preview">پیش‌نمایش</span>
+                                            <img id="panelFaviconPreviewImg" src="" alt="" class="panel-favicon-preview-img" onerror="this.style.display='none'">
+                                        </div>
+                                    </div>
+                                </section>
+                                <section class="panel-settings-section">
+                                    <h3 class="panel-settings-section-title" data-i18n="panel_section_titles">عنوان‌ها</h3>
+                                    <div class="form-group">
+                                        <label for="panelSettingLoginTitle" data-i18n="panel_login_title">عنوان صفحه ورود</label>
+                                        <input type="text" id="panelSettingLoginTitle" placeholder="پورتال کارکنان کایا" oninput="updatePanelLivePreview()">
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="panelSettingPageTitle" data-i18n="panel_page_title">عنوان تب مرورگر</label>
+                                        <input type="text" id="panelSettingPageTitle" placeholder="پورتال کارکنان | صرافی کایا" oninput="updatePanelLivePreview()">
+                                    </div>
+                                </section>
+                                <section class="panel-settings-section">
+                                    <h3 class="panel-settings-section-title" data-i18n="panel_section_footer">فوتر</h3>
+                                    <div class="form-group">
+                                        <label for="panelSettingFooterText" data-i18n="panel_footer_text">متن فوتر</label>
+                                        <input type="text" id="panelSettingFooterText" placeholder="صرافی کایا — پورتال کارکنان">
+                                    </div>
+                                </section>
                             </div>
-                            <div class="panel-settings-preview-bar">
-                                <div class="panel-preview-tab">
-                                    <img id="panelPreviewFavicon" class="panel-preview-tab-favicon" src="" alt="" onerror="this.style.display='none'">
-                                    <span id="panelPreviewPageTitle" class="panel-preview-tab-title">پورتال کارکنان | صرافی کایا</span>
-                                </div>
-                                <div class="panel-preview-header">
-                                    <span class="panel-preview-logo-wrap">
-                                        <img id="panelPreviewLogo" class="panel-preview-logo-img" src="" alt="" onerror="this.style.display='none'">
-                                        <span id="panelPreviewLogoPlaceholder" class="panel-preview-logo-placeholder">◫</span>
-                                    </span>
-                                    <span id="panelPreviewSiteName" class="panel-preview-site-name">صرافی کایا</span>
-                                </div>
+                            <div class="panel-settings-actions">
+                                <button type="button" id="panelSettingsSaveBtn" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
+                                <span id="panelSettingsSaveStatus" class="panel-settings-save-status" style="display:none;"></span>
                             </div>
                         </div>
-
-                        <div class="panel-settings-sections">
-                            <section class="panel-settings-section">
-                                <h3 class="panel-settings-section-title" data-i18n="panel_section_branding">برندینگ</h3>
-                                <div class="form-group">
-                                    <label for="panelSettingSiteName" data-i18n="panel_site_name">نام سایت</label>
-                                    <input type="text" id="panelSettingSiteName" placeholder="مثال: صرافی کایا" oninput="updatePanelLivePreview()">
+                        <div class="panel-settings-preview-col">
+                            <div class="panel-settings-preview-card">
+                                <div class="panel-settings-preview-label">
+                                    <span class="panel-settings-preview-dot"></span>
+                                    <span class="panel-settings-preview-dot"></span>
+                                    <span class="panel-settings-preview-dot"></span>
+                                    <span data-i18n="panel_live_preview">پیش‌نمایش زنده</span>
                                 </div>
-                                <div class="form-group">
-                                    <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">آدرس لوگو (URL)</label>
-                                    <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png" oninput="previewPanelLogo(this.value); updatePanelLivePreview();">
-                                    <div class="panel-setting-preview" id="panelLogoPreview" style="display:none;">
-                                        <span class="panel-preview-label" data-i18n="panel_preview">پیش‌نمایش</span>
-                                        <img id="panelLogoPreviewImg" src="" alt="" class="panel-logo-preview-img" onerror="this.style.display='none'">
+                                <div class="panel-settings-preview-bar">
+                                    <div class="panel-preview-tab">
+                                        <img id="panelPreviewFavicon" class="panel-preview-tab-favicon" src="" alt="" onerror="this.style.display='none'">
+                                        <span id="panelPreviewPageTitle" class="panel-preview-tab-title">پورتال کارکنان | صرافی کایا</span>
+                                    </div>
+                                    <div class="panel-preview-header">
+                                        <span class="panel-preview-logo-wrap">
+                                            <img id="panelPreviewLogo" class="panel-preview-logo-img" src="" alt="" onerror="this.style.display='none'">
+                                            <span id="panelPreviewLogoPlaceholder" class="panel-preview-logo-placeholder">◫</span>
+                                        </span>
+                                        <span id="panelPreviewSiteName" class="panel-preview-site-name">صرافی کایا</span>
                                     </div>
                                 </div>
-                                <div class="form-group">
-                                    <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">آدرس فاویکون (URL)</label>
-                                    <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico" oninput="previewPanelFavicon(this.value); updatePanelLivePreview();">
-                                    <div class="panel-setting-preview" id="panelFaviconPreview" style="display:none;">
-                                        <span class="panel-preview-label" data-i18n="panel_preview">پیش‌نمایش</span>
-                                        <img id="panelFaviconPreviewImg" src="" alt="" class="panel-favicon-preview-img" onerror="this.style.display='none'">
-                                    </div>
-                                </div>
-                            </section>
-                            <section class="panel-settings-section">
-                                <h3 class="panel-settings-section-title" data-i18n="panel_section_titles">عنوان‌ها</h3>
-                                <div class="form-group">
-                                    <label for="panelSettingLoginTitle" data-i18n="panel_login_title">عنوان صفحه ورود</label>
-                                    <input type="text" id="panelSettingLoginTitle" placeholder="پورتال کارکنان کایا" oninput="updatePanelLivePreview()">
-                                </div>
-                                <div class="form-group">
-                                    <label for="panelSettingPageTitle" data-i18n="panel_page_title">عنوان تب مرورگر</label>
-                                    <input type="text" id="panelSettingPageTitle" placeholder="پورتال کارکنان | صرافی کایا" oninput="updatePanelLivePreview()">
-                                </div>
-                            </section>
-                            <section class="panel-settings-section">
-                                <h3 class="panel-settings-section-title" data-i18n="panel_section_footer">فوتر</h3>
-                                <div class="form-group">
-                                    <label for="panelSettingFooterText" data-i18n="panel_footer_text">متن فوتر</label>
-                                    <input type="text" id="panelSettingFooterText" placeholder="صرافی کایا — پورتال کارکنان">
-                                </div>
-                            </section>
-                        </div>
-
-                        <div class="panel-settings-actions">
-                            <button type="button" id="panelSettingsSaveBtn" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
-                            <span id="panelSettingsSaveStatus" class="panel-settings-save-status" style="display:none;"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
