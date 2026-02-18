@@ -760,21 +760,48 @@
                 <div id="pageStaffActivity" class="page staff-activity-page">
                     <div class="staff-activity-header">
                         <h2 data-i18n="page_staff_activity">ورودها و وضعیت آنلاین کارکنان</h2>
-                        <p class="staff-activity-intro text-muted" data-i18n="staff_intro">آخرین ورودها و لیست کارکنان آنلاین — برای مدیر و بالاتر</p>
+                        <p class="staff-activity-intro text-muted" data-i18n="staff_intro">مشاهده کارکنان آنلاین، آخرین ورودها و جزئیات فعالیت هر نفر — برای مدیر و بالاتر</p>
+                        <p class="staff-activity-updated text-muted" id="staffActivityUpdated" style="display:none; font-size:0.8rem; margin-top:8px;"></p>
+                        <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" onclick="loadStaffActivity()" style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;" title="به\u200Cروزرسانی">↻ <span data-i18n="refresh">به\u200Cروزرسانی</span></button>
                     </div>
-                    <div class="staff-activity-stat">
-                        <div class="stat-card stat-card-accent">
-                            <div class="val" id="onlineCount">0</div>
-                            <div class="label" data-i18n="staff_online">کارکنان آنلاین</div>
+                    <div class="staff-activity-stats-row">
+                        <div class="stat-card stat-card-accent staff-stat-online">
+                            <div class="stat-card-icon">🟢</div>
+                            <div class="stat-card-content">
+                                <div class="val" id="onlineCount">0</div>
+                                <div class="label" data-i18n="staff_online">کارکنان آنلاین</div>
+                            </div>
+                        </div>
+                        <div class="stat-card staff-stat-logins">
+                            <div class="stat-card-icon">📋</div>
+                            <div class="stat-card-content">
+                                <div class="val" id="loginsTodayCount">0</div>
+                                <div class="label" data-i18n="staff_logins_today">ورود امروز</div>
+                            </div>
+                        </div>
+                        <div class="stat-card staff-stat-total">
+                            <div class="stat-card-icon">📊</div>
+                            <div class="stat-card-content">
+                                <div class="val" id="loginsTotalCount">0</div>
+                                <div class="label" data-i18n="last_logins">آخرین ورودها</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="staff-activity-section">
-                        <h3 class="staff-activity-section-title" data-i18n="staff_online">کارکنان آنلاین</h3>
-                        <div id="onlineStaffList" class="staff-activity-list empty" data-i18n="loading">در حال بارگذاری...</div>
-                    </div>
-                    <div class="staff-activity-section">
-                        <h3 class="staff-activity-section-title" data-i18n="last_logins">آخرین ورودها</h3>
-                        <div id="loginsList" class="staff-activity-list empty" data-i18n="loading">در حال بارگذاری...</div>
+                    <div class="staff-activity-sections">
+                        <div class="staff-activity-section staff-section-online">
+                            <div class="staff-section-header">
+                                <h3 class="staff-activity-section-title" data-i18n="staff_online">کارکنان آنلاین</h3>
+                                <span class="staff-section-hint" data-i18n="staff_online_hint">کلیک برای جزئیات فعالیت</span>
+                            </div>
+                            <div id="onlineStaffList" class="staff-activity-list empty" data-i18n="loading">در حال بارگذاری...</div>
+                        </div>
+                        <div class="staff-activity-section staff-section-logins">
+                            <div class="staff-section-header">
+                                <h3 class="staff-activity-section-title" data-i18n="last_logins">آخرین ورودها</h3>
+                                <span class="staff-section-hint" data-i18n="staff_logins_hint">۵۰ ورود اخیر</span>
+                            </div>
+                            <div id="loginsList" class="staff-activity-list empty" data-i18n="loading">در حال بارگذاری...</div>
+                        </div>
                     </div>
                 </div>
                 <div id="pageSupervision" class="page sup-page">

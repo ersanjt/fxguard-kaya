@@ -446,7 +446,7 @@
                     add_to_call: 'Add to call', invite_to_call: 'Invite to call',
                     select_multiple_hint: 'For group chat, select multiple users',
                     branch_intro: 'Branches are used for geographic separation and assigning users and conversations.', branch_name: 'Branch name', branch_city: 'City', branch_country: 'Country', branch_ph_name: 'e.g. Tehran office', branch_ph_city: 'e.g. Tehran', branch_ph_country: 'e.g. Iran', add_branch: 'Add branch', edit: 'Edit',
-                    staff_online: 'Staff online', staff_intro: 'Recent logins and online staff � for managers and above', last_logins: 'Recent logins',
+                    staff_online: 'Staff online', staff_intro: 'Recent logins and online staff � for managers and above', last_logins: 'Recent logins', staff_logins_today: 'Logins today', staff_online_hint: 'Click for activity details', staff_logins_hint: 'Last 50 logins', refresh: 'Refresh',
                     sup_performance: 'Performance summary', sup_conversations: 'Conversations', sup_activity: 'Activity log', sup_branch_status: 'Branch / status', apply_filter: 'Apply filter',
                     sup_by_branch: 'By branch', sup_by_user: 'User performance (outgoing messages)', total_conversations: 'Total conversations', outgoing_messages: 'Outgoing messages',
                     th_branch: 'Branch', th_city_country: 'City/Country', th_conv_count: 'Conversations', th_user: 'User', th_email: 'Email', th_status: 'Status', th_last_login: 'Last login',
@@ -4507,6 +4507,9 @@
             var onlineList = document.getElementById('onlineStaffList');
             var loginsList = document.getElementById('loginsList');
             var countEl = document.getElementById('onlineCount');
+            var loginsTodayEl = document.getElementById('loginsTodayCount');
+            var loginsTotalEl = document.getElementById('loginsTotalCount');
+            var updatedEl = document.getElementById('staffActivityUpdated');
             if (onlineList) onlineList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (loginsList) loginsList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             var onlineRes = await apiFetch('/api/supervision/online');
@@ -4529,6 +4532,11 @@
             if (loginsRes.needLogin) return;
             if (loginsRes.ok && loginsRes.data && loginsRes.data.data) {
                 var rows = loginsRes.data.data;
+                var todayStr = new Date().toDateString();
+                function isToday(d) { try { return d && new Date(d).toDateString() === todayStr; } catch(e) { return false; } }
+                var loginsToday = rows.filter(function(r) { return isToday(r.createdAt); }).length;
+                if (loginsTodayEl) loginsTodayEl.textContent = loginsToday;
+                if (loginsTotalEl) loginsTotalEl.textContent = rows.length;
                 if (loginsList) {
                     if (rows.length === 0) loginsList.innerHTML = '<div class="empty">' + t('empty_no_logins') + '</div>';
                     else loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
@@ -4540,7 +4548,8 @@
                         var ll = [t('th_user'),t('th_email'),t('th_branch'),t('th_login_time'),t('th_summary')]; return '<tr' + rowAttrs + '><td data-label="'+ll[0]+'">' + escapeHtml(userDisplay(user)) + '</td><td data-label="'+ll[1]+'">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="'+ll[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+ll[3]+'">' + time + '</td><td data-label="'+ll[4]+'">' + escapeHtml(r.summary || '') + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
-            } else { if (loginsList) loginsList.innerHTML = '<div class="empty">' + t('login_err_load') + '</div>'; }
+            } else { if (loginsList) loginsList.innerHTML = '<div class="empty">' + t('login_err_load') + '</div>'; if (loginsTodayEl) loginsTodayEl.textContent = '0'; if (loginsTotalEl) loginsTotalEl.textContent = '0'; }
+            if (updatedEl) { updatedEl.style.display = 'block'; updatedEl.textContent = (LANG === 'fa' ? 'آخرین به\u200Cروزرسانی: ' : 'Last updated: ') + fmtTZ(new Date().toISOString(), 'datetime'); }
         }
 
         function openStaffDetailModal(userId) {
