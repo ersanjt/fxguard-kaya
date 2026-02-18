@@ -186,6 +186,50 @@ router.get('/transactions', requireServices, async (req, res) => {
     }
 });
 
+// تابع به‌روزرسانی موجودی (فقط هنگام تایید)
+async function applyTransactionBalance(tx) {
+    const updateBalance = async (Model, id, delta) => {
+        if (!id) return;
+        const item = await Model.findByPk(id);
+        if (item) {
+            item.balance = parseFloat(item.balance) + delta;
+            await item.save();
+        }
+    };
+    const amt = parseFloat(tx.amount);
+    const type = tx.type;
+    switch (type) {
+        case 'cash_in':
+            await updateBalance(CashBox, tx.toCashBoxId, amt);
+            break;
+        case 'cash_out':
+            await updateBalance(CashBox, tx.fromCashBoxId, -amt);
+            break;
+        case 'transfer_box':
+            await updateBalance(CashBox, tx.fromCashBoxId, -amt);
+            await updateBalance(CashBox, tx.toCashBoxId, amt);
+            break;
+        case 'bank_deposit':
+            await updateBalance(CashBox, tx.fromCashBoxId, -amt);
+            await updateBalance(BankAccount, tx.toBankAccountId, amt);
+            break;
+        case 'bank_withdraw':
+            await updateBalance(BankAccount, tx.fromBankAccountId, -amt);
+            await updateBalance(CashBox, tx.toCashBoxId, amt);
+            break;
+        case 'transfer_account':
+            await updateBalance(BankAccount, tx.fromBankAccountId, -amt);
+            await updateBalance(BankAccount, tx.toBankAccountId, amt);
+            break;
+        case 'income':
+            await updateBalance(CashBox, tx.toCashBoxId, amt);
+            break;
+        case 'expense':
+            await updateBalance(CashBox, tx.fromCashBoxId, -amt);
+            break;
+    }
+}
+
 router.post('/transactions', requireServices, async (req, res) => {
     try {
         const {
@@ -209,51 +253,85 @@ router.post('/transactions', requireServices, async (req, res) => {
             transactionDate: transactionDate || new Date().toISOString().slice(0, 10),
             branchId: branchId || null,
             userId: req.user?.id || null,
-            customerId: customerId || null
+            customerId: customerId || null,
+            status: 'pending'
         });
-
-        // به‌روزرسانی موجودی صندوق‌ها و حساب‌ها
-        const updateBalance = async (Model, id, delta) => {
-            if (!id) return;
-            const item = await Model.findByPk(id);
-            if (item) {
-                item.balance = parseFloat(item.balance) + delta;
-                await item.save();
-            }
-        };
-
-        switch (type) {
-            case 'cash_in':
-                await updateBalance(CashBox, toCashBoxId, amt);
-                break;
-            case 'cash_out':
-                await updateBalance(CashBox, fromCashBoxId, -amt);
-                break;
-            case 'transfer_box':
-                await updateBalance(CashBox, fromCashBoxId, -amt);
-                await updateBalance(CashBox, toCashBoxId, amt);
-                break;
-            case 'bank_deposit':
-                await updateBalance(CashBox, fromCashBoxId, -amt);
-                await updateBalance(BankAccount, toBankAccountId, amt);
-                break;
-            case 'bank_withdraw':
-                await updateBalance(BankAccount, fromBankAccountId, -amt);
-                await updateBalance(CashBox, toCashBoxId, amt);
-                break;
-            case 'transfer_account':
-                await updateBalance(BankAccount, fromBankAccountId, -amt);
-                await updateBalance(BankAccount, toBankAccountId, amt);
-                break;
-            case 'income':
-                await updateBalance(CashBox, toCashBoxId, amt);
-                break;
-            case 'expense':
-                await updateBalance(CashBox, fromCashBoxId, -amt);
-                break;
-        }
-
         res.status(201).json(tx);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.put('/transactions/:id', requireServices, async (req, res) => {
+    try {
+        const tx = await Transaction.findByPk(req.params.id);
+        if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
+        const { description, reference, transactionDate, customerId, type, amount, currency, fromCashBoxId, toCashBoxId, fromBankAccountId, toBankAccountId } = req.body;
+        const isApproved = (tx.status || 'approved') === 'approved';
+        if (isApproved) {
+            if (type !== undefined || amount !== undefined || fromCashBoxId !== undefined || toCashBoxId !== undefined || fromBankAccountId !== undefined || toBankAccountId !== undefined || currency !== undefined) {
+                return res.status(400).json({ error: 'تراکنش تاییدشده فقط شرح، مرجع و تاریخ قابل ویرایش است' });
+            }
+            if (description !== undefined) tx.description = description;
+            if (reference !== undefined) tx.reference = reference;
+            if (transactionDate !== undefined) tx.transactionDate = transactionDate;
+            if (customerId !== undefined) tx.customerId = customerId || null;
+        } else {
+            if (description !== undefined) tx.description = description;
+            if (reference !== undefined) tx.reference = reference;
+            if (transactionDate !== undefined) tx.transactionDate = transactionDate;
+            if (customerId !== undefined) tx.customerId = customerId || null;
+            if (type !== undefined) tx.type = type;
+            if (amount !== undefined) tx.amount = parseFloat(amount);
+            if (currency !== undefined) tx.currency = currency;
+            if (fromCashBoxId !== undefined) tx.fromCashBoxId = fromCashBoxId || null;
+            if (toCashBoxId !== undefined) tx.toCashBoxId = toCashBoxId || null;
+            if (fromBankAccountId !== undefined) tx.fromBankAccountId = fromBankAccountId || null;
+            if (toBankAccountId !== undefined) tx.toBankAccountId = toBankAccountId || null;
+        }
+        await tx.save();
+        res.json(tx);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.post('/transactions/:id/approve', requireServices, async (req, res) => {
+    try {
+        const tx = await Transaction.findByPk(req.params.id);
+        if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
+        if (tx.status === 'approved') return res.status(400).json({ error: 'این تراکنش قبلاً تایید شده است' });
+        if (tx.status === 'rejected') return res.status(400).json({ error: 'تراکنش رد شده قابل تایید نیست' });
+        const role = req.user?.role || '';
+        if (!['owner', 'admin', 'manager'].includes(role)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند تراکنش را تایید کند' });
+        await applyTransactionBalance(tx);
+        tx.status = 'approved';
+        tx.approvedBy = req.user?.id || null;
+        tx.approvedAt = new Date();
+        tx.rejectedBy = null;
+        tx.rejectedAt = null;
+        await tx.save();
+        res.json(tx);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.post('/transactions/:id/reject', requireServices, async (req, res) => {
+    try {
+        const tx = await Transaction.findByPk(req.params.id);
+        if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
+        if (tx.status === 'approved') return res.status(400).json({ error: 'تراکنش تاییدشده قابل رد نیست' });
+        if (tx.status === 'rejected') return res.status(400).json({ error: 'این تراکنش قبلاً رد شده است' });
+        const role = req.user?.role || '';
+        if (!['owner', 'admin', 'manager'].includes(role)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند تراکنش را رد کند' });
+        tx.status = 'rejected';
+        tx.rejectedBy = req.user?.id || null;
+        tx.rejectedAt = new Date();
+        tx.approvedBy = null;
+        tx.approvedAt = null;
+        await tx.save();
+        res.json(tx);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

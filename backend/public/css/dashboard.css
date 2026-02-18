@@ -809,6 +809,8 @@
             .supervision-tabs, .process-tabs { flex-wrap: wrap; gap: 6px; }
             .sup-tab, .process-tab { padding: 8px 12px; font-size: 0.85rem; min-height: 44px; }
             .supervision-tabs-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -4px 16px; }
+            .supervision-tabs-wrap .supervision-tabs { flex-wrap: nowrap; min-width: min-content; }
+            .supervision-tabs-wrap .sup-tab { flex-shrink: 0; }
             .sup-filter-row { flex-direction: column; align-items: stretch; }
             .sup-filter-row select, .sup-filter-row .sup-check-wrap { width: 100%; }
             .sup-filter-row .btn-primary { width: 100%; }

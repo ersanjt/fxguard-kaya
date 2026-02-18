@@ -81,6 +81,33 @@ module.exports = (sequelize) => {
             references: { model: 'Customers', key: 'id' },
             comment: 'مشتری مرتبط با تراکنش'
         },
+        status: {
+            type: DataTypes.STRING(20),
+            defaultValue: 'pending',
+            comment: 'وضعیت: pending=در انتظار تایید، approved=تایید شده، rejected=رد شده'
+        },
+        approvedBy: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: { model: 'Users', key: 'id' },
+            comment: 'مسئول تاییدکننده'
+        },
+        approvedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            comment: 'زمان تایید'
+        },
+        rejectedBy: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: { model: 'Users', key: 'id' },
+            comment: 'مسئول ردکننده'
+        },
+        rejectedAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            comment: 'زمان رد'
+        },
         metadata: {
             type: DataTypes.JSON,
             defaultValue: {},
@@ -102,6 +129,8 @@ module.exports = (sequelize) => {
     Transaction.associate = (models) => {
         Transaction.belongsTo(models.Branch, { foreignKey: 'branchId', as: 'branch' });
         Transaction.belongsTo(models.User, { foreignKey: 'userId', as: 'user' });
+        Transaction.belongsTo(models.User, { foreignKey: 'approvedBy', as: 'approver' });
+        Transaction.belongsTo(models.User, { foreignKey: 'rejectedBy', as: 'rejector' });
         Transaction.belongsTo(models.CashBox, { foreignKey: 'fromCashBoxId', as: 'fromCashBox' });
         Transaction.belongsTo(models.CashBox, { foreignKey: 'toCashBoxId', as: 'toCashBox' });
         Transaction.belongsTo(models.BankAccount, { foreignKey: 'fromBankAccountId', as: 'fromBankAccount' });
