@@ -32,7 +32,7 @@ const processRoutes = require('./routes/processes');
  
 // Database
 const models = require('./models');
-const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse, WhatsappConfig } = models;
+const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse, WhatsappConfig, RateCurrency } = models;
 const { Op } = require('sequelize');
 
 const mongoose = require('mongoose');
@@ -173,7 +173,14 @@ async function connectDatabases() {
         }
         await sequelize.sync();
         logger.info(process.env.USE_SQLITE ? '✅ SQLite Connected (WAL)' : '✅ PostgreSQL Connected');
-        
+
+        const defaultRateCurrencies = require('./lib/defaultRateCurrencies');
+        const rateCurrencyCount = await RateCurrency.count();
+        if (rateCurrencyCount === 0 && defaultRateCurrencies.length > 0) {
+            await RateCurrency.bulkCreate(defaultRateCurrencies);
+            logger.info('✅ ارزهای پیش‌فرض نرخ (RateCurrency) ثبت شدند');
+        }
+
         if (!process.env.USE_SQLITE) {
             try {
                 await mongoose.connect(process.env.MONGODB_URL || 'mongodb://localhost:27017/whatsapp_crm', {
@@ -258,13 +265,24 @@ function normalizePhone(val) {
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
 
-/** اگر media.url یک آدرس http باشد، فایل را دانلود و در uploads ذخیره می‌کند و آدرس نسبی برمی‌گرداند؛ وگرنه media را همان‌طور که هست برمی‌گرداند. */
+/** اگر media.url یک آدرس http باشد، فایل را دانلود و در uploads ذخیره می‌کند و آدرس نسبی برمی‌گرداند. اگر مسیر نسبی مثل /uploads/... باشد همان را برمی‌گرداند. در صورت خطا فقط filename/mimetype برمی‌گرداند تا URL موقت در فرانت شکسته نشود. */
 async function resolveIncomingMedia(media) {
     if (!media || !media.url) return media;
     const url = (media.url || '').trim();
-    if (!url.startsWith('http://') && !url.startsWith('https://')) return media;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        if (url.startsWith('/') && (url.startsWith('/uploads/') || url.includes('uploads')))
+            return { url: url, filename: media.filename || media.caption, mimetype: media.mimetype };
+        return media;
+    }
     try {
-        const res = await axios.get(url, { responseType: 'arraybuffer', timeout: 25000, maxContentLength: 20 * 1024 * 1024 });
+        const res = await axios.get(url, {
+            responseType: 'arraybuffer',
+            timeout: 30000,
+            maxContentLength: 20 * 1024 * 1024,
+            maxRedirects: 5,
+            headers: { 'User-Agent': 'KayaCRM-Backend/1.0', 'Accept': 'image/*,video/*,audio/*,*/*' }
+        });
+        if (!res.data || (res.status !== 200 && res.status !== 206)) throw new Error('Bad response ' + res.status);
         const buf = Buffer.from(res.data);
         const ct = (res.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
         const suggestedName = media.filename || media.caption || 'file';
@@ -285,8 +303,8 @@ async function resolveIncomingMedia(media) {
         fs.writeFileSync(filePath, buf);
         return { url: '/uploads/' + safeName, filename: media.filename || suggestedName, mimetype: media.mimetype || ct || null };
     } catch (err) {
-        logger.warn('resolveIncomingMedia download failed', { url: url.slice(0, 60), error: err.message });
-        return media;
+        logger.warn('resolveIncomingMedia download failed', { url: url.slice(0, 80), error: err.message });
+        return { url: null, filename: media.filename || media.caption || 'file', mimetype: media.mimetype };
     }
 }
 
@@ -848,6 +866,14 @@ apiRouter.get('/gateway/qr', authMiddleware, (req, res) => {
 apiRouter.post('/gateway/start', authMiddleware, (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
     gatewayPost('/api/start', {}, { timeout: 10000 })
+        .then(r => res.json(r.data))
+        .catch(e => res.status(503).json({ error: e.response?.data?.error || 'Gateway در دسترس نیست' }));
+});
+
+// قطع دستی اتصال واتساپ (بدون خروج از حساب)
+apiRouter.post('/gateway/stop', authMiddleware, (req, res) => {
+    if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
+    gatewayPost('/api/stop', {}, { timeout: 10000 })
         .then(r => res.json(r.data))
         .catch(e => res.status(503).json({ error: e.response?.data?.error || 'Gateway در دسترس نیست' }));
 });

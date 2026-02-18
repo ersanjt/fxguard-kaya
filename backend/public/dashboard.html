@@ -923,6 +923,7 @@
                     <div class="whatsapp-actions" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:16px;">
                         <button type="button" id="btnStartGateway" class="btn-primary" onclick="startGateway()" style="display:none;" data-i18n="whatsapp_start_btn">شروع Gateway واتساپ</button>
                         <button type="button" id="btnStartWhatsApp" class="btn-primary" onclick="startWhatsAppClient()" style="display:none;" data-i18n="whatsapp_start_client_btn">شروع واتساپ</button>
+                        <button type="button" id="btnDisconnectWhatsApp" class="btn-secondary" onclick="disconnectWhatsApp()" disabled title="" data-i18n="whatsapp_disconnect_btn">قطع اتصال واتساپ</button>
                         <a href="https://web.whatsapp.com" target="_blank" rel="noopener" class="btn-secondary" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none;" data-i18n="whatsapp_open_web">باز کردن واتساپ وب</a>
                         <a href="#conversations" class="btn-secondary" onclick="showPage('conversations')" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
                     </div>
@@ -942,6 +943,14 @@
                     <div class="rates-page-header">
                         <h2 data-i18n="page_rates">تنظیم نرخ ارزها</h2>
                         <p class="rates-intro" data-i18n="rates_intro">قیمت‌ها از API دریافت می‌شوند و در نوار زیر پنل برای همه نمایش داده می‌شوند.</p>
+                    </div>
+                    <div id="ratesCurrenciesBox" class="rates-currencies-section form-box" style="display:none;">
+                        <h3 class="rates-section-title" data-i18n="rates_manage_currencies">مدیریت ارزها</h3>
+                        <p class="rates-section-hint" data-i18n="rates_manage_currencies_hint">ارزهای نمایش‌داده‌شده در نرخ‌ها و نوار قیمت را اضافه، ویرایش یا حذف کنید. فقط برای کاربران دارای دسترسی نرخ ارز.</p>
+                        <div class="rates-currencies-toolbar">
+                            <button type="button" class="btn-primary" onclick="openCurrencyModal()" data-i18n="rates_add_currency">افزودن ارز</button>
+                        </div>
+                        <div id="ratesCurrenciesList" class="rates-currencies-list empty" data-i18n="loading">در حال بارگذاری...</div>
                     </div>
                     <div id="ratesTickerConfigBox" class="rates-ticker-section form-box" style="display:none;">
                         <h3 class="rates-section-title" data-i18n="rates_ticker_currencies">ارزهای نمایش‌داده‌شده در نوار قیمت</h3>
@@ -1386,6 +1395,32 @@
                 <div class="add-to-call-footer">
                     <button type="button" class="btn-secondary" onclick="closeAddToCallModal()" data-i18n="cancel">انصراف</button>
                     <button type="button" id="addToCallInviteBtn" class="btn-primary add-to-call-invite-btn" onclick="inviteSelectedToCall()" data-i18n="add_to_call_invite_selected">دعوت انتخاب‌شدگان</button>
+                </div>
+            </div>
+        </div>
+        <div id="currencyModal" class="modal-overlay" style="display:none;">
+            <div class="modal-box" style="max-width:420px;">
+                <div class="modal-header"><h3 id="currencyModalTitle" data-i18n="rates_add_currency">افزودن ارز</h3><button type="button" class="modal-close" onclick="closeCurrencyModal()" aria-label="بستن">&times;</button></div>
+                <div class="modal-body">
+                    <input type="hidden" id="currencyModalKeyOriginal" value="">
+                    <div class="form-group">
+                        <label for="currencyModalKey" data-i18n="rates_currency_key">کلید ارز (انگلیسی، مثلاً usd)</label>
+                        <input type="text" id="currencyModalKey" placeholder="usd" pattern="[a-z0-9_]+" maxlength="32" style="text-transform:lowercase;">
+                        <span class="form-hint" data-i18n="rates_currency_key_hint">فقط حروف کوچک و عدد؛ در حالت ویرایش غیرقابل تغییر است.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="currencyModalLabel" data-i18n="rates_currency_label">نام نمایشی</label>
+                        <input type="text" id="currencyModalLabel" placeholder="دلار">
+                    </div>
+                    <div class="form-group">
+                        <label for="currencyModalApiKeys" data-i18n="rates_currency_apikeys">کلیدهای API (با کاما)</label>
+                        <input type="text" id="currencyModalApiKeys" placeholder="usd_sell, usd_buy" data-i18n-ph="rates_currency_apikeys_ph">
+                        <span class="form-hint" data-i18n="rates_currency_apikeys_hint">نام فیلدهای پاسخ API ناواسان؛ در صورت خالی بودن از کلید ارز حدس زده می‌شود.</span>
+                    </div>
+                </div>
+                <div class="modal-footer" style="display:flex; gap:10px; justify-content:flex-end; padding:14px 20px; border-top:1px solid var(--border);">
+                    <button type="button" class="btn-secondary" onclick="closeCurrencyModal()" data-i18n="cancel">انصراف</button>
+                    <button type="button" id="currencyModalSubmitBtn" class="btn-primary" onclick="saveCurrencyFromModal()" data-i18n="btn_save">ذخیره</button>
                 </div>
             </div>
         </div>

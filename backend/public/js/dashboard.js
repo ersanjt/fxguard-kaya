@@ -526,11 +526,11 @@
                     whatsapp_server_err: 'Backend server is not responding correctly.', whatsapp_gateway_off: 'Gateway is not running. Click the button below to start it.',
                     whatsapp_status: 'WhatsApp status:', whatsapp_connected: 'Connected �S', whatsapp_disconnected: 'Disconnected', redis: 'Redis', active: 'Active', inactive: 'Inactive', done_msg: 'Done',
                     whatsapp_intro: 'WhatsApp messages are automatically saved in conversations. Auto-assignment to departments is based on keywords.',
-                    whatsapp_open_web: 'Open WhatsApp Web', whatsapp_manage_convs: 'Manage conversations',
+                    whatsapp_open_web: 'Open WhatsApp Web', whatsapp_manage_convs: 'Manage conversations', whatsapp_disconnect_btn: 'Disconnect WhatsApp',
                     whatsapp_welcome_title: 'Auto-reply to first message', whatsapp_welcome_hint: 'When someone messages you for the first time, this text is sent automatically. Empty = disabled', whatsapp_welcome_enabled: 'Enabled', whatsapp_welcome_ph: 'Hello! Welcome to Kaya Exchange. How can we help you?',
                     whatsapp_dept_routing: 'Auto-assign to department', whatsapp_dept_routing_hint: 'Based on keywords in the message, the conversation is routed to the relevant department.', whatsapp_unassigned: 'Unassigned conversations', whatsapp_unassigned_hint: 'These conversations need department or assignee assignment.',
                     rates_intro: 'Prices are fetched from API and shown in the bottom bar for everyone.', rates_adjust_type: 'Adjustment type',
-                    rates_none: 'No change', rates_fixed: 'Fixed', rates_delta: '± Amount', rates_percent: '± Percent', rates_adjustments: 'Rate adjustments', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value', rates_ph_percent: 'e.g. 2 or -1', rates_ph_delta: 'e.g. 500 or -200', rates_ph_fixed: 'Fixed price', rates_no_access: 'You do not have access to this section.',
+                    rates_none: 'No change', rates_fixed: 'Fixed', rates_delta: '± Amount', rates_percent: '± Percent', rates_adjustments: 'Rate adjustments', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value', rates_ph_percent: 'e.g. 2 or -1', rates_ph_delta: 'e.g. 500 or -200', rates_ph_fixed: 'Fixed price', rates_no_access: 'You do not have access to this section.', rates_manage_currencies: 'Manage currencies', rates_manage_currencies_hint: 'Add, edit or remove currencies shown in rates and ticker. Only for users with rates permission.', rates_add_currency: 'Add currency', rates_edit_currency: 'Edit currency', rates_currency_key: 'Currency key (e.g. usd)', rates_currency_key_hint: 'Lowercase letters and numbers only; read-only when editing.', rates_currency_label: 'Display name', rates_currency_apikeys: 'API keys (comma-separated)', rates_currency_apikeys_ph: 'e.g. usd_sell, usd_buy', rates_currency_apikeys_hint: 'Field names from Navasan API response.', rates_currency_key_required: 'Currency key is required', rates_no_currencies: 'No currencies defined. Add one with «Add currency».', rates_delete_currency_confirm: 'Delete this currency? Its adjustments and ticker visibility will be removed too.',
                     no_data: 'No data.', loading_err: 'Error loading.', select_user: 'Select user',
                     empty_conv_list: 'No conversations. Click "New conversation".', chat: 'Chat', empty_internal_msgs: 'No messages yet.', file: 'File',
                     conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me', conv_supervision_title: 'Manager oversight',
@@ -968,6 +968,83 @@
             var res = await apiFetch('/api/rates/ticker-config', { method: 'PUT', body: JSON.stringify({ visibleKeys: tickerConfigVisibleKeys }) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_rates_saved')); fetchRates(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function loadCurrencies() {
+            var box = document.getElementById('ratesCurrenciesBox');
+            var listEl = document.getElementById('ratesCurrenciesList');
+            if (!box || !listEl) return;
+            var canAccess = (currentUser && currentUser.permissions && currentUser.permissions.rates);
+            if (!canAccess) { box.style.display = 'none'; return; }
+            box.style.display = 'block';
+            listEl.innerHTML = t('loading');
+            listEl.classList.add('empty');
+            var res = await apiFetch('/api/rates/currencies');
+            if (res.needLogin) return;
+            if (!res.ok) { listEl.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            var data = (res.data && res.data.data) || [];
+            if (data.length === 0) { listEl.innerHTML = '<div class="empty">' + (t('rates_no_currencies') || 'هنوز ارزی تعریف نشده. با «افزودن ارز» یکی اضافه کنید.') + '</div>'; return; }
+            listEl.classList.remove('empty');
+            listEl.innerHTML = data.map(function(c) {
+                var apiStr = (c.apiKeys && c.apiKeys.length) ? c.apiKeys.join(', ') : '—';
+                var apiDataAttr = (c.apiKeys && c.apiKeys.length) ? escapeHtml(apiStr.replace(/"/g, '&quot;')) : '';
+                var labelAttr = escapeHtml((c.label || c.key).replace(/"/g, '&quot;'));
+                return '<div class="rates-currency-row" data-key="' + escapeHtml(c.key) + '" data-label="' + labelAttr + '" data-apikeys="' + apiDataAttr + '"><span class="currency-key">' + escapeHtml(c.key) + '</span><span class="currency-label">' + escapeHtml(c.label || c.key) + '</span><span class="currency-apikeys">' + escapeHtml(apiStr) + '</span><div class="currency-actions"><button type="button" class="edit" onclick="openCurrencyModal(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_edit') || t('edit') || 'ویرایش') + '</button><button type="button" class="delete" onclick="deleteCurrency(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_delete') || 'حذف') + '</button></div></div>';
+            }).join('');
+        }
+        function openCurrencyModal(existingKey) {
+            var modal = document.getElementById('currencyModal');
+            var titleEl = document.getElementById('currencyModalTitle');
+            var keyInp = document.getElementById('currencyModalKey');
+            var keyOriginal = document.getElementById('currencyModalKeyOriginal');
+            var labelInp = document.getElementById('currencyModalLabel');
+            var apiKeysInp = document.getElementById('currencyModalApiKeys');
+            if (!modal || !keyInp) return;
+            keyOriginal.value = existingKey || '';
+            if (existingKey) {
+                if (titleEl) titleEl.textContent = t('rates_edit_currency') || 'ویرایش ارز';
+                keyInp.value = existingKey;
+                keyInp.readOnly = true;
+                keyInp.style.opacity = '0.8';
+                var row = document.querySelector('.rates-currency-row[data-key="' + existingKey.replace(/"/g, '\\"') + '"]');
+                if (row) {
+                    labelInp.value = row.getAttribute('data-label') || existingKey;
+                    apiKeysInp.value = row.getAttribute('data-apikeys') || '';
+                } else { labelInp.value = existingKey; apiKeysInp.value = ''; }
+            } else {
+                if (titleEl) titleEl.textContent = t('rates_add_currency') || 'افزودن ارز';
+                keyInp.value = '';
+                keyInp.readOnly = false;
+                keyInp.style.opacity = '1';
+                labelInp.value = '';
+                apiKeysInp.value = '';
+            }
+            modal.style.display = 'flex';
+        }
+        function closeCurrencyModal() {
+            var modal = document.getElementById('currencyModal');
+            if (modal) modal.style.display = 'none';
+        }
+        async function saveCurrencyFromModal() {
+            var keyOriginal = (document.getElementById('currencyModalKeyOriginal') || {}).value;
+            var key = (document.getElementById('currencyModalKey') || {}).value.trim().toLowerCase();
+            var label = (document.getElementById('currencyModalLabel') || {}).value.trim() || key;
+            var apiKeysStr = (document.getElementById('currencyModalApiKeys') || {}).value.trim();
+            if (!key) { toast(t('rates_currency_key_required') || 'کلید ارز الزامی است', true); return; }
+            var apiKeys = apiKeysStr ? apiKeysStr.split(/[\s,،]+/).map(function(s) { return s.trim(); }).filter(Boolean) : [];
+            var res;
+            if (keyOriginal) {
+                res = await apiFetch('/api/rates/currencies/' + encodeURIComponent(keyOriginal), { method: 'PUT', body: JSON.stringify({ label: label, apiKeys: apiKeys }) });
+            } else {
+                res = await apiFetch('/api/rates/currencies', { method: 'POST', body: JSON.stringify({ key: key, label: label, apiKeys: apiKeys }) });
+            }
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('toast_rates_saved')); closeCurrencyModal(); loadCurrencies(); loadRatesAdjustments(); loadTickerConfig(); fetchRates(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function deleteCurrency(key) {
+            if (!confirm((t('rates_delete_currency_confirm') || 'حذف این ارز؟ تعدیلات و نمایش در نوار قیمت آن هم حذف می‌شود.'))) return;
+            var res = await apiFetch('/api/rates/currencies/' + encodeURIComponent(key), { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('toast_rates_saved') || 'ذخیره شد'); loadCurrencies(); loadRatesAdjustments(); loadTickerConfig(); fetchRates(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         function initServicesTabs() {
@@ -2125,6 +2202,7 @@
 
         function escapeHtml(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
+        function resolveAvatarUrl(avatar) { if (!avatar || typeof avatar !== 'string') return ''; var s = avatar.trim(); if (!s) return ''; if (s.indexOf('http') === 0) return ensureHttpsUrl(s); var origin = window.location.origin || ''; if (s.indexOf('/') === 0) return origin + s; return origin + '/' + s; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         async function loadDashboard() {
@@ -3156,7 +3234,7 @@
             if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
             if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); }
-            if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); }
+            if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); }
             if (page === 'services') { initServicesTabs(); loadServicesPage(); }
             if (page === 'branches') { loadBranches(); }
             if (page === 'staff-activity') { loadStaffActivity(); startStaffActivityLive(); } else { stopStaffActivityLive(); }
@@ -4261,11 +4339,14 @@
             list.innerHTML = data.map(function(t) {
                 var participants = t.participants || [];
                 var names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
-                var initial = (participants[0] && (participants[0].name || participants[0].email || '').trim()[0]) ? (participants[0].name || participants[0].email || '').trim()[0].toUpperCase() : '\u003F';
+                var first = participants[0];
+                var initial = (first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F';
+                var avatarUrl = resolveAvatarUrl(first && first.avatar);
+                var avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
                 var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 45) + ((t.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';
                 var timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
                 var fromLabel = t.lastMessage && t.lastMessage.fromUser && String(t.lastMessage.fromUser.id) !== String(me) ? (t.lastMessage.fromUser.name || '') + ': ' : '';
-                return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="openInternalThread(\'' + t.id + '\')" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + escapeHtml(initial) + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
+                return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="openInternalThread(\'' + t.id + '\')" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + avatarHtml + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
             }).join('');
         }
         function filterInternalThreads(q) {
@@ -4329,11 +4410,14 @@
                 var itemsHtml = data.map(function(t) {
                     var participants = t.participants || [];
                     var names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
-                    var initial = (participants[0] && (participants[0].name || participants[0].email || '').trim()[0]) ? (participants[0].name || participants[0].email || '').trim()[0].toUpperCase() : '\u003F';
+                    var first = participants[0];
+                    var initial = (first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F';
+                    var avatarUrl = resolveAvatarUrl(first && first.avatar);
+                    var avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
                     var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 35) + ((t.lastMessage.content || '').length > 35 ? '\u2026' : '') : '\u2014';
                     var timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
                     var safeId = String(t.id).replace(/'/g, "\\'");
-                    return '<button type="button" class="internal-chat-popup-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="selectThreadInPopup(\'' + safeId + '\')"><span class="internal-chat-popup-thread-avatar">' + escapeHtml(initial) + '</span><div class="internal-chat-popup-thread-body"><span class="internal-chat-popup-thread-name">' + escapeHtml(names || t('chat')) + '</span><div class="internal-chat-popup-thread-meta">' + escapeHtml(last) + '</div></div><span class="internal-chat-popup-thread-time">' + escapeHtml(timeStr) + '</span></button>';
+                    return '<button type="button" class="internal-chat-popup-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="selectThreadInPopup(\'' + safeId + '\')"><span class="internal-chat-popup-thread-avatar">' + avatarHtml + '</span><div class="internal-chat-popup-thread-body"><span class="internal-chat-popup-thread-name">' + escapeHtml(names || t('chat')) + '</span><div class="internal-chat-popup-thread-meta">' + escapeHtml(last) + '</div></div><span class="internal-chat-popup-thread-time">' + escapeHtml(timeStr) + '</span></button>';
                 }).join('');
                 var newBtn = '<button type="button" class="internal-chat-popup-new-btn" onclick="closeInternalChatPopup(); showPage(\'internal-chat\');">' + (LANG === 'fa' ? '\u2795 گفتگوی جدید' : '+ New conversation') + '</button>';
                 listEl.innerHTML = (data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">\uD83D\uDCAC</span><p>' + (t('start_chat_hint') || '') + '</p></div>' : '') + itemsHtml + newBtn;
@@ -4664,6 +4748,14 @@
                 var others = t && t.participants ? t.participants.filter(function(p) { return String(p.id) !== String(currentUser && currentUser.id); }) : [];
                 currentInternalThreadOtherUserId = others.length ? others[0].id : null;
                 currentInternalThreadParticipants = t && t.participants ? t.participants : [];
+                var headerAvatarEl = document.getElementById('internalChatHeaderAvatar');
+                if (headerAvatarEl) {
+                    var other = others[0];
+                    var initial = (other && (other.name || other.email || '').trim()[0]) ? (other.name || other.email || '').trim()[0].toUpperCase() : '\u003F';
+                    var pic = resolveAvatarUrl(other && other.avatar);
+                    if (pic) headerAvatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'">';
+                    else { headerAvatarEl.innerHTML = ''; headerAvatarEl.textContent = initial; }
+                }
                 var callBtns = document.getElementById('internalChatCallBtns');
                 if (callBtns) callBtns.style.display = currentInternalThreadOtherUserId ? 'flex' : 'none';
             }
@@ -4862,7 +4954,7 @@
                 st.innerHTML = t('whatsapp_checking');
                 if (btn) btn.style.display = 'none';
                 if (btnStartClient) btnStartClient.style.display = 'none';
-                if (btnDisconnect) btnDisconnect.style.display = 'none';
+                if (btnDisconnect) btnDisconnect.disabled = true;
                 qrBox.style.display = 'none';
             }
             var ping;
@@ -4922,6 +5014,16 @@
             var msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
             toast(msg);
             if (res.ok) setTimeout(loadWhatsappStatus, 3000);
+        }
+        async function disconnectWhatsApp() {
+            var btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
+            if (btnDisconnect) btnDisconnect.disabled = true;
+            var res = await apiFetch('/api/gateway/stop', { method: 'POST' });
+            if (btnDisconnect) btnDisconnect.disabled = false;
+            if (res.needLogin) return;
+            var msg = (res.ok && res.data && res.data.status) ? t('done_msg') : (res.data && res.data.error) || t('err_generic');
+            toast(msg);
+            if (res.ok) setTimeout(loadWhatsappStatus, 1500);
         }
         async function loadWhatsappWelcomeConfig() {
             var ta = document.getElementById('whatsappWelcomeMessage');
