@@ -3860,16 +3860,13 @@
         function updateInternalChatFloatingBtn() {
             var btn = document.getElementById('internalChatFloatingBtn');
             var popup = document.getElementById('internalChatPopup');
-            var active = document.querySelector('.nav-link.active');
-            var onInternalPage = active && active.getAttribute('data-page') === 'internal-chat';
-            var popupOpen = popup && popup.style.display !== 'none';
+            var perms = (currentUser && currentUser.permissions) || {};
+            var hasAccess = perms.internal_chat !== false;
             if (!btn) return;
-            if (onInternalPage && !popupOpen) { btn.style.display = 'none'; return; }
-            if (window.hasNewInternalChat || (currentInternalThreadId && popupOpen)) {
-                btn.style.display = 'flex';
-                var badge = document.getElementById('internalChatFloatingBadge');
-                if (badge) { badge.style.display = window.hasNewInternalChat ? 'flex' : 'none'; badge.textContent = window.navBadgeCounts && window.navBadgeCounts['internal-chat'] ? window.navBadgeCounts['internal-chat'] : '1'; }
-            } else { btn.style.display = 'none'; }
+            if (!hasAccess) { btn.style.display = 'none'; return; }
+            btn.style.display = 'flex';
+            var badge = document.getElementById('internalChatFloatingBadge');
+            if (badge) { badge.style.display = window.hasNewInternalChat ? 'flex' : 'none'; badge.textContent = window.navBadgeCounts && window.navBadgeCounts['internal-chat'] ? window.navBadgeCounts['internal-chat'] : '1'; }
         }
         function toggleInternalChatFloating() {
             var popup = document.getElementById('internalChatPopup');
