@@ -4318,12 +4318,12 @@
                 if (countEl) countEl.textContent = users.length;
                 if (onlineList) {
                     if (users.length === 0) onlineList.innerHTML = '<div class="empty">' + t('no_staff_online') + '</div>';
-                    else onlineList.innerHTML = '<table class="sup-table"><thead><tr><th>' + t('label_name') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_status') + '</th><th>' + t('th_last_login') + '</th></tr></thead><tbody>' + users.map(function(u) {
+                    else onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('label_name') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_status') + '</th><th>' + t('th_last_login') + '</th></tr></thead><tbody>' + users.map(function(u) {
                         var statusClass = (u.status || 'offline').toLowerCase();
                         var statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
                         var lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '�';
                         var branchName = (u.branch && u.branch.name) ? u.branch.name : '�';
-                        return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer"><td>' + escapeHtml(userDisplay(u)) + '</td><td>' + escapeHtml(u.email || '\u2014') + '</td><td>' + escapeHtml(branchName) + '</td><td><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td>' + lastLogin + '</td></tr>';
+                        var lbl = [t('label_name'),t('th_email'),t('th_branch'),t('th_status'),t('th_last_login')]; return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer"><td data-label="'+lbl[0]+'">' + escapeHtml(userDisplay(u)) + '</td><td data-label="'+lbl[1]+'">' + escapeHtml(u.email || '\u2014') + '</td><td data-label="'+lbl[2]+'">' + escapeHtml(branchName) + '</td><td data-label="'+lbl[3]+'"><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td data-label="'+lbl[4]+'">' + lastLogin + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
             } else { if (onlineList) onlineList.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; if (countEl) countEl.textContent = '0'; }
@@ -4333,13 +4333,13 @@
                 var rows = loginsRes.data.data;
                 if (loginsList) {
                     if (rows.length === 0) loginsList.innerHTML = '<div class="empty">' + t('empty_no_logins') + '</div>';
-                    else loginsList.innerHTML = '<table class="sup-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
+                    else loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
                         var user = r.user || {};
                         var branch = r.branch ? r.branch.name : '�';
                         var time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
                         var uid = r.userId || (user && user.id) || '';
                         var rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
-                        return '<tr' + rowAttrs + '><td>' + escapeHtml(userDisplay(user)) + '</td><td>' + escapeHtml(user.email || '\u2014') + '</td><td>' + escapeHtml(branch) + '</td><td>' + time + '</td><td>' + escapeHtml(r.summary || '') + '</td></tr>';
+                        var ll = [t('th_user'),t('th_email'),t('th_branch'),t('th_login_time'),t('th_summary')]; return '<tr' + rowAttrs + '><td data-label="'+ll[0]+'">' + escapeHtml(userDisplay(user)) + '</td><td data-label="'+ll[1]+'">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="'+ll[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+ll[3]+'">' + time + '</td><td data-label="'+ll[4]+'">' + escapeHtml(r.summary || '') + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
             } else { if (loginsList) loginsList.innerHTML = '<div class="empty">' + t('login_err_load') + '</div>'; }

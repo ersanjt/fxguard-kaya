@@ -671,6 +671,16 @@
         .sup-table tr.staff-row:hover { background: var(--accent-soft); }
         .stat-cards { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; max-width: 100%; }
         .stat-card { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); min-width: 160px; }
+        /* ========== ورودها و وضعیت آنلاین ========== */
+        .staff-activity-page { display: flex; flex-direction: column; gap: 24px; max-width: 100%; min-width: 0; }
+        .staff-activity-header h2 { margin: 0 0 8px; font-size: 1.35rem; }
+        .staff-activity-intro { color: var(--text-secondary) !important; font-size: 0.95rem !important; margin: 0 !important; line-height: 1.6; }
+        .staff-activity-stat { display: flex; gap: 16px; flex-wrap: wrap; }
+        .staff-activity-section { min-width: 0; }
+        .staff-activity-section-title { font-size: 1rem; font-weight: 600; margin: 0 0 12px; color: var(--text-primary); }
+        .staff-activity-list { min-width: 0; }
+        .staff-activity-list .sup-table { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
+        .staff-activity-list .empty { padding: 32px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
         .stat-card .val { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
         .stat-card .label { font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
         .customer-page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
@@ -972,6 +982,18 @@
             .conv-advanced-filters select { min-width: 0; }
             .page h2 { font-size: 1.1rem; }
             .list-item { padding: 12px 14px; min-height: 44px; }
+            /* ورودها و وضعیت آنلاین — موبایل */
+            .staff-activity-page { gap: 16px; }
+            .staff-activity-header h2 { font-size: 1.15rem; }
+            .staff-activity-stat .stat-card { min-width: 100%; }
+            .staff-activity-list .staff-table { display: block; min-width: 0; }
+            .staff-activity-list .staff-table thead { display: none; }
+            .staff-activity-list .staff-table tbody tr { display: grid; grid-template-columns: 1fr; gap: 8px; padding: 14px; margin-bottom: 10px; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+            .staff-activity-list .staff-table tbody tr:last-child { margin-bottom: 0; }
+            .staff-activity-list .staff-table tbody td { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 4px 0; border: none; text-align: right; }
+            .staff-activity-list .staff-table tbody td::before { content: attr(data-label); font-weight: 500; color: var(--text-muted); font-size: 0.8rem; flex-shrink: 0; }
+            .staff-activity-list .staff-table tbody td { flex-wrap: wrap; }
+            .staff-activity-list .staff-table .status-dot { margin-inline-start: 6px; }
         }
         body.ltr .sidebar { right: auto; left: 0; transform: translateX(-100%); }
         body.ltr .sidebar.sidebar-open { transform: translateX(0); box-shadow: 8px 0 32px rgba(0,0,0,0.4); }
