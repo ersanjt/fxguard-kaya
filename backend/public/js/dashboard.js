@@ -1680,7 +1680,9 @@
             function onLoginKeydown(e) {
                 if (e.key !== 'Enter') return;
                 e.preventDefault();
-                if (document.getElementById('loginStepTotp').style.display === 'block') {
+                var totpStep = document.getElementById('loginStepTotp');
+                var isTotpVisible = totpStep && totpStep.style.display !== 'none';
+                if (isTotpVisible) {
                     if (typeof verifyTotpLogin === 'function') verifyTotpLogin();
                 } else {
                     if (typeof login === 'function') login();
@@ -5046,6 +5048,7 @@
             window.login = login;
             window.logout = logout;
             window.showPage = showPage;
+            window.savePanelSettings = savePanelSettings;
             window.verifyTotpLogin = verifyTotpLogin;
             window.backToLoginStep1 = backToLoginStep1;
             window.closeSidebarMobile = closeSidebarMobile;
