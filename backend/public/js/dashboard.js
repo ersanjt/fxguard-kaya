@@ -1746,6 +1746,11 @@
                 document.getElementById('totpErr').textContent = data.error || t('login_totp_bad');
             }
         }
+        if (typeof window !== 'undefined') {
+            window.login = login;
+            window.verifyTotpLogin = verifyTotpLogin;
+            window.backToLoginStep1 = backToLoginStep1;
+        }
         function showTotpPromptIfNeeded() {
             if (!currentUser) return;
             if (currentUser.totpEnabled) return;
@@ -3619,7 +3624,8 @@
             list.innerHTML = users.map(function(u) {
                 var initial = userInitial(u) || '?';
                 var avatarUrl = (u.avatar && String(u.avatar).trim()) ? ((u.avatar.indexOf('/') === 0 ? (window.location.origin || '') : '') + u.avatar) : '';
-                var avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : initial;
+                var onerr = 'this.style.display=' + String.fromCharCode(39) + 'none' + String.fromCharCode(39);
+                var avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="' + onerr + '">' : initial;
                 var deptBranch = [];
                 if (u.department && u.department.name) deptBranch.push(escapeHtml(u.department.name));
                 if (u.branch && u.branch.name) deptBranch.push(escapeHtml(u.branch.name));
@@ -3822,7 +3828,7 @@
             var me = (currentUser && currentUser.id) || '';
             list.innerHTML = data.map(function(t) {
                 var names = (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ');
-                var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 45) + ((t.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';�';
+                var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 45) + ((t.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';
                 var timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
                 var fromLabel = t.lastMessage && t.lastMessage.fromUser && String(t.lastMessage.fromUser.id) !== String(me) ? (t.lastMessage.fromUser.name || '') + ': ' : '';
                 return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="openInternalThread(\'' + t.id + '\')" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + initial + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
