@@ -1247,6 +1247,16 @@
         .customer-timeline-transaction .tx-amount { font-weight: 600; }
         .customer-transactions-header { margin-bottom: 16px; }
         .customer-transaction-row { margin-bottom: 8px; }
+        .customer-transactions-list { min-height: 120px; }
+        .customer-transactions-empty { text-align: center; padding: 32px 24px; background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px dashed var(--border); margin-top: 8px; }
+        .customer-transactions-empty-icon { font-size: 2.5rem; margin-bottom: 12px; opacity: 0.7; }
+        .customer-transactions-empty-text { font-size: 1rem; color: var(--text-primary); margin: 0 0 8px; font-weight: 500; }
+        .customer-transactions-empty-hint { font-size: 0.9rem; color: var(--text-muted); margin: 0; }
+        .customer-transactions-summary { display: flex; flex-wrap: wrap; align-items: center; gap: 16px 24px; padding: 12px 16px; background: var(--bg-secondary); border-radius: var(--radius-sm); border: 1px solid var(--border); margin-bottom: 12px; font-size: 0.9rem; }
+        .customer-transactions-summary-count { color: var(--text-secondary); }
+        .customer-transactions-summary-in .tx-amount { margin-right: 4px; }
+        .customer-transactions-summary-out .tx-amount { margin-right: 4px; }
+        #btnRefreshCustomerTransactions { min-width: 40px; padding: 8px 12px; font-size: 1.1rem; }
         /* ویجت چت داخلی شناور — طراحی بهبود یافته */
         .internal-chat-floating-btn { position: fixed; bottom: calc(80px + env(safe-area-inset-bottom)); left: 20px; width: 56px; height: 56px; border-radius: 50%; background: var(--accent); color: #fff; border: none; box-shadow: 0 4px 20px rgba(5,150,105,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 998; transition: transform 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent; }
         .internal-chat-floating-btn:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(5,150,105,0.5); }
