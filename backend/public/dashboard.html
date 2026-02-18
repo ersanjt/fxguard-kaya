@@ -90,6 +90,7 @@
                     <span class="logo-text"><span class="logo-dot"></span> <span data-i18n="logo_kaya">صرافی کایا</span></span>
                 </a>
                 <div class="search-wrap">
+                    <button type="button" class="header-search-trigger" id="headerSearchTrigger" onclick="openHeaderSearchPopup()" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
                     <span class="search-icon"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
                     <input type="text" id="headerSearch" data-i18n-ph="header_search" data-i18n-aria-label="header_search_aria" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو در مکالمات و مشتریان" onkeyup="if(event.key==='Enter') doHeaderSearch();">
                 </div>
@@ -98,11 +99,33 @@
                 <div class="lang-switch" role="group" data-i18n-aria-label="lang_label" aria-label="زبان">
                     <button type="button" id="headerLangFa" onclick="setLang('fa')" aria-pressed="true" aria-label="فارسی">فارسی</button>
                     <button type="button" id="headerLangEn" onclick="setLang('en')" aria-pressed="false" aria-label="English">English</button>
+                    <div class="lang-dropdown-wrap">
+                        <button type="button" class="lang-dropdown-btn" id="langDropdownBtn" onclick="toggleLangDropdown()" aria-haspopup="listbox" aria-expanded="false" aria-label="زبان"><span id="langDropdownLabel">FA</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                        <div class="lang-dropdown-menu" id="langDropdownMenu" role="listbox" aria-hidden="true">
+                            <button type="button" role="option" data-lang="fa" onclick="setLang('fa');closeLangDropdown();">فارسی</button>
+                            <button type="button" role="option" data-lang="en" onclick="setLang('en');closeLangDropdown();">English</button>
+                        </div>
+                    </div>
                 </div>
                 <a href="#profile" class="user-badge" onclick="showPage('profile'); return false;" title="پروفایل من" aria-label="پروفایل من"><span class="user-avatar" id="userAvatar" aria-hidden="true">?</span><span id="userEmail"></span></a>
                 <button type="button" class="logout-btn" onclick="logout()" data-i18n="header_logout">خروج</button>
             </div>
         </header>
+        <div id="headerSearchModal" class="modal-overlay header-search-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="headerSearchModalTitle" onclick="if(event.target===this) closeHeaderSearchPopup();">
+            <div class="modal-box header-search-modal-box">
+                <div class="modal-header">
+                    <h3 id="headerSearchModalTitle" data-i18n="header_search">جستجو</h3>
+                    <button type="button" class="modal-close" onclick="closeHeaderSearchPopup()" aria-label="بستن">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="search-wrap search-wrap-in-modal">
+                        <span class="search-icon"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
+                        <input type="text" id="headerSearchModalInput" data-i18n-ph="header_search" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو" onkeyup="if(event.key==='Enter') doHeaderSearchFromModal();">
+                    </div>
+                    <button type="button" class="btn-primary" onclick="doHeaderSearchFromModal()" data-i18n="header_search">جستجو</button>
+                </div>
+            </div>
+        </div>
         <div id="announcementMarquee" class="announcement-marquee" style="display:none;" dir="rtl" onclick="showPage('announcements');" title="کلیک برای مشاهده همه اعلان‌ها">
             <div class="announcement-marquee-inner"></div>
         </div>
@@ -1103,7 +1126,7 @@
                         <div class="ticker-dates" id="tickerDates" style="display:none;"></div>
                     </div>
                 </div>
-                <div class="ticker-items" id="tickerItems"></div>
+                <div class="ticker-items" id="tickerItems"><div class="ticker-item-track" id="tickerItemTrack"></div></div>
             </div>
             <footer class="app-footer" id="appFooter" role="contentinfo">
                 <span class="app-footer-brand" data-i18n="footer_text">صرافی کایا — پورتال کارکنان</span>

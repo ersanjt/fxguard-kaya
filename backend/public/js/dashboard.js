@@ -510,12 +510,15 @@
                 document.body.classList.toggle('ltr', l === 'en');
                 document.querySelectorAll('.lang-switch button').forEach(function(btn) {
                     var onclick = btn.getAttribute('onclick') || '';
-                    var isFa = onclick.indexOf("'fa'") >= 0;
-                    var isEn = onclick.indexOf("'en'") >= 0;
+                    var dataLang = btn.getAttribute('data-lang');
+                    var isFa = (dataLang === 'fa') || onclick.indexOf("'fa'") >= 0;
+                    var isEn = (dataLang === 'en') || onclick.indexOf("'en'") >= 0;
                     var active = (isFa && l === 'fa') || (isEn && l === 'en');
                     btn.classList.toggle('active', active);
                     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
                 });
+                var lbl = document.getElementById('langDropdownLabel');
+                if (lbl) lbl.textContent = l === 'fa' ? 'FA' : 'EN';
                 if (typeof applyTranslations === 'function') applyTranslations();
                 try { document.title = t('page_title'); } catch (_) {}
             };
@@ -736,12 +739,21 @@
             }
             if (datesEl) { datesEl.style.display = 'none'; }
             if (itemsEl) {
-                itemsEl.innerHTML = items.map(function(it) {
+                var trackEl = document.getElementById('tickerItemTrack');
+                var itemsHtml = items.map(function(it) {
                     var ch = it.change;
                     var chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
                     var chText = formatChange(ch);
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(formatPrice(it.value)) + '</span>' + (chText ? '<span class="ticker-change' + chClass + '">' + escapeHtml(chText) + '</span>' : '') + '</span>';
                 }).join('');
+                if (trackEl) {
+                    trackEl.innerHTML = itemsHtml + itemsHtml;
+                    itemsEl.classList.remove('ticker-auto-scroll');
+                    requestAnimationFrame(function() {
+                        if (trackEl.scrollWidth > itemsEl.clientWidth) itemsEl.classList.add('ticker-auto-scroll');
+                        else itemsEl.classList.remove('ticker-auto-scroll');
+                    });
+                } else itemsEl.innerHTML = itemsHtml;
             }
         }
 
@@ -1529,8 +1541,10 @@
         }
 
         function doHeaderSearch() {
-            var q = (document.getElementById('headerSearch') && document.getElementById('headerSearch').value) || '';
-            if (!q.trim()) return;
+            var inp = document.getElementById('headerSearch');
+            var modalInp = document.getElementById('headerSearchModalInput');
+            var q = (inp && inp.value) ? inp.value.trim() : ((modalInp && modalInp.value) ? modalInp.value.trim() : '');
+            if (!q) return;
             var active = document.querySelector('.nav-link.active');
             var page = active ? active.getAttribute('data-page') : '';
             if (page === 'conversations') { showPage('conversations'); toast(LANG === 'en' ? 'Search in conversations is supported via API filter.' : 'جستج�� در ��Rست �&کا��&ات از ف�R�تر API پشت�Rبا� �R �&�R�Rش��د.'); }
@@ -4591,6 +4605,76 @@
             window.closeSidebarMobile = closeSidebarMobile;
             window.toggleSidebarMobile = toggleSidebarMobile;
             window.doHeaderSearch = doHeaderSearch;
+            var headerSearchModalEscHandler = null;
+            window.openHeaderSearchPopup = function() {
+                var m = document.getElementById('headerSearchModal');
+                var inp = document.getElementById('headerSearchModalInput');
+                if (m && inp) {
+                    var mainInp = document.getElementById('headerSearch');
+                    if (mainInp && mainInp.value) inp.value = mainInp.value;
+                    m.style.display = 'flex';
+                    m.setAttribute('aria-hidden', 'false');
+                    setTimeout(function() { inp.focus(); }, 100);
+                    if (headerSearchModalEscHandler) document.removeEventListener('keydown', headerSearchModalEscHandler);
+                    headerSearchModalEscHandler = function(e) {
+                        if (e.key === 'Escape') {
+                            closeHeaderSearchPopup();
+                        }
+                    };
+                    document.addEventListener('keydown', headerSearchModalEscHandler);
+                }
+            };
+            window.closeHeaderSearchPopup = function() {
+                var m = document.getElementById('headerSearchModal');
+                if (m) {
+                    m.style.display = 'none';
+                    m.setAttribute('aria-hidden', 'true');
+                    if (headerSearchModalEscHandler) {
+                        document.removeEventListener('keydown', headerSearchModalEscHandler);
+                        headerSearchModalEscHandler = null;
+                    }
+                }
+            };
+            window.doHeaderSearchFromModal = function() {
+                var modalInp = document.getElementById('headerSearchModalInput');
+                var mainInp = document.getElementById('headerSearch');
+                if (modalInp && mainInp) {
+                    mainInp.value = modalInp.value;
+                    doHeaderSearch();
+                    closeHeaderSearchPopup();
+                }
+            };
+            window.toggleLangDropdown = function() {
+                var btn = document.getElementById('langDropdownBtn');
+                var wrap = btn ? btn.closest('.lang-dropdown-wrap') : null;
+                if (!wrap) return;
+                wrap.classList.toggle('open');
+                var menu = document.getElementById('langDropdownMenu');
+                if (menu && btn) {
+                    var open = wrap.classList.contains('open');
+                    menu.setAttribute('aria-hidden', !open);
+                    btn.setAttribute('aria-expanded', open);
+                    if (open) {
+                        var closeOnOutside = function(e) {
+                            if (!wrap.contains(e.target)) {
+                                closeLangDropdown();
+                                document.removeEventListener('click', closeOnOutside);
+                            }
+                        };
+                        setTimeout(function() { document.addEventListener('click', closeOnOutside); }, 0);
+                    }
+                }
+            };
+            window.closeLangDropdown = function() {
+                var wrap = document.querySelector('.lang-dropdown-wrap.open');
+                if (wrap) {
+                    wrap.classList.remove('open');
+                    var menu = document.getElementById('langDropdownMenu');
+                    var btn = document.getElementById('langDropdownBtn');
+                    if (menu) menu.setAttribute('aria-hidden', 'true');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+            };
         })();
 
         if (token) {
