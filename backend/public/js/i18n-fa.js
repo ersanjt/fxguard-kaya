@@ -358,6 +358,8 @@ window.__I18N_FA = {
     new_chat: 'گفتگوی جدید',
     select_conversation: 'انتخاب گفتگو',
     msg_ph_short: 'پیام...',
+    search_or_start: 'جستجو یا گفتگوی جدید...',
+    last_seen: 'آخرین بازدید',
     attach_file: 'پیوست فایل',
     file_allow_download: 'مجاز به دانلود و ذخیره',
     file_view_only: 'فقط نمایش در چت',

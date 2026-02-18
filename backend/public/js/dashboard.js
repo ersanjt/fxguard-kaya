@@ -1430,16 +1430,21 @@
         function playInternalChatSound() {
             try {
                 var ctx = new (window.AudioContext || window.webkitAudioContext)();
-                var osc = ctx.createOscillator();
-                var gain = ctx.createGain();
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.frequency.value = 880;
-                osc.type = 'sine';
-                gain.gain.setValueAtTime(0.12, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.12);
-                osc.start(ctx.currentTime);
-                osc.stop(ctx.currentTime + 0.12);
+                var playTone = function(freq, start, dur, vol) {
+                    var osc = ctx.createOscillator();
+                    var gain = ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    gain.gain.setValueAtTime(0, start);
+                    gain.gain.linearRampToValueAtTime(vol || 0.08, start + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.001, start + (dur || 0.15));
+                    osc.start(start);
+                    osc.stop(start + (dur || 0.15));
+                };
+                playTone(523.25, 0, 0.1, 0.06);
+                playTone(659.25, 0.12, 0.12, 0.05);
             } catch (e) {}
         }
         function playCallRingtone() {
@@ -2782,6 +2787,7 @@
         function toggleSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s && s.classList.contains('sidebar-open')) { closeSidebarMobile(); } else { if (s) s.classList.add('sidebar-open'); if (o) { o.classList.add('show'); o.style.display = 'block'; document.body.style.overflow = 'hidden'; } if (btn) btn.setAttribute('aria-expanded', 'true'); } }
         function closeSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
         function showPage(page) {
+            var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             if (page && window.location.hash !== '#' + page) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#' + page); } catch (e) {} }
@@ -2808,6 +2814,17 @@
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
             if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); var popupTid = currentInternalThreadId; closeInternalChatPopup(); var wrap = document.getElementById('internalChatLayoutWrap'); if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open'); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
             if (page === 'supervision') { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
+            var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+            if (prevPage === 'internal-chat' && page !== 'internal-chat' && currentInternalThreadId) {
+                var headerEl = document.getElementById('internalChatHeader');
+                var name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');
+                showInternalChatPopup(currentInternalThreadId, name);
+                var pane = document.getElementById('internalChatPane');
+                if (pane) pane.style.display = 'none';
+                var wrap = document.getElementById('internalChatLayoutWrap');
+                if (wrap) wrap.classList.remove('internal-chat-has-chat', 'internal-chat-mobile-chat-open');
+            }
+            updateInternalChatFloatingBtn();
         }
 
         function toggleTicketForm() {
@@ -3763,6 +3780,7 @@
             var el = document.getElementById('internalCallRemoteVideo_' + userId);
             if (el) { el.srcObject = null; el.remove(); }
         }
+        var internalThreadsCache = [];
         async function loadInternalThreads() {
             var list = document.getElementById('internalThreadList');
             if (!list) return;
@@ -3771,12 +3789,55 @@
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; return; }
             var data = (res.data && res.data.data) || [];
+            internalThreadsCache = data;
+            renderInternalThreadList(data);
+            updateInternalChatFloatingBtn();
+        }
+        function renderInternalThreadList(data) {
+            var list = document.getElementById('internalThreadList');
+            if (!list) return;
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_conv_list') + '</div>'; return; }
+            var me = (currentUser && currentUser.id) || '';
             list.innerHTML = data.map(function(t) {
-                var names = (t.participants || []).map(function(p) { return p.name; }).join('�R ');
-                var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 40) + (t.lastMessage.content && t.lastMessage.content.length > 40 ? '⬦' : '') : '�';
-                return '<div class="list-item" onclick="openInternalThread(\'' + t.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(last) + '</div></div></div>';
+                var names = (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ');
+                var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 45) + ((t.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';�';
+                var timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
+                var fromLabel = t.lastMessage && t.lastMessage.fromUser && String(t.lastMessage.fromUser.id) !== String(me) ? (t.lastMessage.fromUser.name || '') + ': ' : '';
+                return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="openInternalThread(\'' + t.id + '\')" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + initial + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
             }).join('');
+        }
+        function filterInternalThreads(q) {
+            q = (q || '').trim().toLowerCase();
+            if (!q) { renderInternalThreadList(internalThreadsCache); return; }
+            var filtered = internalThreadsCache.filter(function(th) {
+                var names = (th.participants || []).map(function(p) { return (p.name || '') + ' ' + (p.email || ''); }).join(' ').toLowerCase();
+                var last = (th.lastMessage && th.lastMessage.content) ? th.lastMessage.content.toLowerCase() : '';
+                return names.indexOf(q) >= 0 || last.indexOf(q) >= 0;
+            });
+            renderInternalThreadList(filtered);
+        }
+        function updateInternalChatFloatingBtn() {
+            var btn = document.getElementById('internalChatFloatingBtn');
+            var popup = document.getElementById('internalChatPopup');
+            var active = document.querySelector('.nav-link.active');
+            var onInternalPage = active && active.getAttribute('data-page') === 'internal-chat';
+            var popupOpen = popup && popup.style.display !== 'none';
+            if (!btn) return;
+            if (onInternalPage && !popupOpen) { btn.style.display = 'none'; return; }
+            if (window.hasNewInternalChat || (currentInternalThreadId && popupOpen)) {
+                btn.style.display = 'flex';
+                var badge = document.getElementById('internalChatFloatingBadge');
+                if (badge) { badge.style.display = window.hasNewInternalChat ? 'flex' : 'none'; badge.textContent = window.navBadgeCounts && window.navBadgeCounts['internal-chat'] ? window.navBadgeCounts['internal-chat'] : '1'; }
+            } else { btn.style.display = 'none'; }
+        }
+        function toggleInternalChatFloating() {
+            var popup = document.getElementById('internalChatPopup');
+            if (popup && popup.style.display !== 'none') { popup.classList.remove('minimized'); popup.style.display = 'flex'; return; }
+            if (currentInternalThreadId) {
+                var headerEl = document.getElementById('internalChatHeader');
+                var name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');
+                showInternalChatPopup(currentInternalThreadId, name);
+            } else { showPage('internal-chat'); }
         }
         async function loadInternalUsers() {
             var res = await apiFetch('/api/internal/users');
@@ -4824,6 +4885,10 @@
             };
             window.openSupInternalChatDetail = openSupInternalChatDetail;
             window.closeSupInternalChatModal = closeSupInternalChatModal;
+            window.filterInternalThreads = filterInternalThreads;
+            window.toggleInternalChatFloating = toggleInternalChatFloating;
+            window.filterInternalThreads = filterInternalThreads;
+            window.toggleInternalChatFloating = toggleInternalChatFloating;
         })();
 
         if (token) {
