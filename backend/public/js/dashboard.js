@@ -695,18 +695,21 @@
             if (day < 7) return day + ' ' + (LANG === 'fa' ? 'روز پیش' : 'days ago');
             return fmtTZ(d, 'date');
         }
+        // زبان انگلیسی: وقت استانبول ترکیه، تقویم میلادی. زبان فارسی: وقت تهران ایران، تاریخ شمسی.
         function fmtTZ(d, opts) {
             if (!d) return '';
             var date = d instanceof Date ? d : new Date(d);
             if (isNaN(date.getTime())) return '';
-            var tz = window.APP_TIMEZONE || 'Europe/Istanbul';
+            var isEn = LANG === 'en';
+            var tz = isEn ? 'Europe/Istanbul' : 'Asia/Tehran';
+            var locale = isEn ? 'en-GB' : 'fa-IR';
             var base = { timeZone: tz };
             if (typeof opts === 'string') {
-                if (opts === 'time') return new Intl.DateTimeFormat(LANG === 'en' ? 'en-US' : 'fa-IR', Object.assign({}, base, { hour: '2-digit', minute: '2-digit' })).format(date);
-                if (opts === 'date') return new Intl.DateTimeFormat(LANG === 'en' ? 'en-US' : 'fa-IR', Object.assign({}, base, { dateStyle: 'short' })).format(date);
-                if (opts === 'datetime') return new Intl.DateTimeFormat(LANG === 'en' ? 'en-US' : 'fa-IR', Object.assign({}, base, { dateStyle: 'short', timeStyle: 'short' })).format(date);
+                if (opts === 'time') return new Intl.DateTimeFormat(locale, Object.assign({}, base, { hour: '2-digit', minute: '2-digit' })).format(date);
+                if (opts === 'date') return new Intl.DateTimeFormat(locale, Object.assign({}, base, { dateStyle: 'short' })).format(date);
+                if (opts === 'datetime') return new Intl.DateTimeFormat(locale, Object.assign({}, base, { dateStyle: 'short', timeStyle: 'short' })).format(date);
             }
-            return new Intl.DateTimeFormat(LANG === 'en' ? 'en-US' : 'fa-IR', Object.assign({}, base, opts || {})).format(date);
+            return new Intl.DateTimeFormat(locale, Object.assign({}, base, opts || {})).format(date);
         }
 
         function formatPrice(val) {
@@ -5389,8 +5392,8 @@
             if (loginsRes.needLogin) return;
             if (loginsRes.ok && loginsRes.data && loginsRes.data.data) {
                 var rows = loginsRes.data.data;
-                var todayStr = new Date().toDateString();
-                function isToday(d) { try { return d && new Date(d).toDateString() === todayStr; } catch(e) { return false; } }
+                var todayStr = fmtTZ(new Date(), 'date');
+                function isToday(d) { try { return d && fmtTZ(d, 'date') === todayStr; } catch(e) { return false; } }
                 var loginsToday = rows.filter(function(r) { return isToday(r.createdAt); }).length;
                 if (loginsTodayEl) loginsTodayEl.textContent = loginsToday;
                 if (loginsTotalEl) loginsTotalEl.textContent = rows.length;
