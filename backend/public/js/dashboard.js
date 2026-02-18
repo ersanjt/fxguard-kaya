@@ -4012,9 +4012,9 @@
             document.querySelectorAll('.user-edit-tab').forEach(function(btn) {
                 btn.onclick = function() {
                     var tab = this.getAttribute('data-tab');
-                    document.querySelectorAll('.user-edit-tab').forEach(function(b) { b.classList.remove('active'); });
+                    document.querySelectorAll('.user-edit-tab').forEach(function(b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
                     document.querySelectorAll('.user-edit-tab-panel').forEach(function(p) { p.classList.remove('active'); p.style.display = 'none'; });
-                    this.classList.add('active');
+                    this.classList.add('active'); this.setAttribute('aria-selected', 'true');
                     var panel = document.getElementById('userEditTab' + (tab === 'info' ? 'Info' : 'Perms'));
                     if (panel) { panel.classList.add('active'); panel.style.display = 'block'; }
                 };
@@ -4130,7 +4130,7 @@
             if (res.needLogin || !res.ok) return;
             var u = res.data;
             currentEditUserId = userId;
-            document.querySelectorAll('.user-edit-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-tab') === 'info') b.classList.add('active'); });
+            document.querySelectorAll('.user-edit-tab').forEach(function(b) { b.classList.remove('active'); b.setAttribute('aria-selected', b.getAttribute('data-tab') === 'info' ? 'true' : 'false'); if (b.getAttribute('data-tab') === 'info') b.classList.add('active'); });
             document.getElementById('userEditTabInfo').classList.add('active'); document.getElementById('userEditTabInfo').style.display = 'block';
             document.getElementById('userEditTabPerms').classList.remove('active'); document.getElementById('userEditTabPerms').style.display = 'none';
             document.getElementById('userEditId').value = u.id;
@@ -5044,7 +5044,8 @@
                 qrImg.src = qrData.qr;
                 qrBox.style.display = 'block';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
-                if (qrWaitingMsg) qrWaitingMsg.style.display = 'block';
+                // زیر QR فقط راهنما نشان می‌دهیم؛ «در حال بررسی اتصال» فقط بعد از اسکن در نوار وضعیت دیده می‌شود
+                if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 isWhatsappPolling = true;
                 qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, WHATSAPP_POLL_MS);
             } else {
