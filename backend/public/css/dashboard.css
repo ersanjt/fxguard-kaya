@@ -432,7 +432,7 @@
         .add-to-call-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg-card); border-radius: 0 0 var(--radius) var(--radius); }
         .add-to-call-invite-btn { min-width: 140px; }
         /* ========== ظاهر پنل (Panel settings) ========== */
-        .page-panel-settings { max-width: 1100px; }
+        .page-panel-settings { max-width: 1400px; }
         .panel-settings-page-header { margin-bottom: 24px; }
         .panel-settings-page-title { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); margin: 0 0 8px; letter-spacing: -0.02em; }
         .panel-settings-intro { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; margin: 0; max-width: 520px; }
@@ -482,7 +482,13 @@
         @media (min-width: 900px) {
             .panel-settings-content { display: grid; grid-template-columns: 1fr 340px; gap: 28px; align-items: start; }
             .panel-settings-preview-col { position: sticky; top: 24px; order: unset; }
+            .panel-settings-sections { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+            .panel-settings-section .form-group { margin-bottom: 12px; }
             html[dir="rtl"] .panel-settings-content { grid-template-columns: 340px 1fr; }
+        }
+        @media (min-width: 1200px) {
+            .panel-settings-content { grid-template-columns: 1fr 380px; }
+            html[dir="rtl"] .panel-settings-content { grid-template-columns: 380px 1fr; }
         }
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 576px) {
