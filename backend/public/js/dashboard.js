@@ -3896,7 +3896,50 @@
                 var headerEl = document.getElementById('internalChatHeader');
                 var name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');
                 showInternalChatPopup(currentInternalThreadId, name);
-            } else { showPage('internal-chat'); }
+            } else { openInternalChatPopupPicker(); }
+        }
+        function selectThreadInPopup(threadId) {
+            var t = (internalThreadsCache || []).find(function(x) { return String(x.id) === String(threadId); });
+            var names = (t && (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ')) || (LANG === 'fa' ? 'چت' : 'Chat');
+            showInternalChatPopup(threadId, names);
+        }
+        async function openInternalChatPopupPicker() {
+            var popup = document.getElementById('internalChatPopup');
+            var titleEl = document.getElementById('internalChatPopupTitle');
+            var listEl = document.getElementById('internalChatPopupThreadList');
+            var messagesEl = document.getElementById('internalChatPopupMessages');
+            var quickEl = document.getElementById('internalChatPopupQuickReplies');
+            var sendWrap = document.querySelector('.internal-chat-popup-send');
+            if (!popup || !listEl) return;
+            if (titleEl) titleEl.textContent = LANG === 'fa' ? 'چت داخلی' : 'Internal chat';
+            listEl.style.display = 'flex';
+            listEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            if (messagesEl) messagesEl.style.display = 'none';
+            if (quickEl) quickEl.style.display = 'none';
+            if (sendWrap) sendWrap.style.display = 'none';
+            popup.style.display = 'flex';
+            var btn = document.getElementById('internalChatFloatingBtn');
+            if (btn) btn.classList.add('internal-chat-floating-btn-open');
+            try {
+                var res = await apiFetch('/api/internal/threads');
+                if (res.needLogin || !res.ok) { listEl.innerHTML = '<div class="empty">' + (t('loading_err') || '') + '</div>'; return; }
+                var data = (res.data && res.data.data) || [];
+                internalThreadsCache = data;
+                var me = (currentUser && currentUser.id) || '';
+                var itemsHtml = data.map(function(t) {
+                    var participants = t.participants || [];
+                    var names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
+                    var initial = (participants[0] && (participants[0].name || participants[0].email || '').trim()[0]) ? (participants[0].name || participants[0].email || '').trim()[0].toUpperCase() : '\u003F';
+                    var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 35) + ((t.lastMessage.content || '').length > 35 ? '\u2026' : '') : '\u2014';
+                    var timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
+                    var safeId = String(t.id).replace(/'/g, "\\'");
+                    return '<button type="button" class="internal-chat-popup-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="selectThreadInPopup(\'' + safeId + '\')"><span class="internal-chat-popup-thread-avatar">' + escapeHtml(initial) + '</span><div class="internal-chat-popup-thread-body"><span class="internal-chat-popup-thread-name">' + escapeHtml(names || t('chat')) + '</span><div class="internal-chat-popup-thread-meta">' + escapeHtml(last) + '</div></div><span class="internal-chat-popup-thread-time">' + escapeHtml(timeStr) + '</span></button>';
+                }).join('');
+                var newBtn = '<button type="button" class="internal-chat-popup-new-btn" onclick="closeInternalChatPopup(); showPage(\'internal-chat\');">' + (LANG === 'fa' ? '\u2795 گفتگوی جدید' : '+ New conversation') + '</button>';
+                listEl.innerHTML = (data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">\uD83D\uDCAC</span><p>' + (t('start_chat_hint') || '') + '</p></div>' : '') + itemsHtml + newBtn;
+            } catch (e) {
+                listEl.innerHTML = '<div class="empty">' + (t('loading_err') || '') + '</div>';
+            }
         }
         async function loadInternalUsers() {
             var res = await apiFetch('/api/internal/users');
@@ -4182,7 +4225,14 @@
             currentInternalThreadId = threadId;
             var popup = document.getElementById('internalChatPopup');
             var titleEl = document.getElementById('internalChatPopupTitle');
+            var listEl = document.getElementById('internalChatPopupThreadList');
+            var messagesEl = document.getElementById('internalChatPopupMessages');
+            var quickEl = document.getElementById('internalChatPopupQuickReplies');
+            var sendWrap = document.querySelector('.internal-chat-popup-send');
             if (titleEl) titleEl.textContent = (LANG === 'fa' ? 'پیام از ' : 'Message from ') + (fromName || '');
+            if (listEl) listEl.style.display = 'none';
+            if (messagesEl) messagesEl.style.display = 'flex';
+            if (sendWrap) sendWrap.style.display = 'flex';
             if (popup) popup.style.display = 'flex';
             var btn = document.getElementById('internalChatFloatingBtn');
             if (btn) btn.classList.add('internal-chat-floating-btn-open');
@@ -4950,6 +5000,7 @@
             window.closeSupInternalChatModal = closeSupInternalChatModal;
             window.filterInternalThreads = filterInternalThreads;
             window.toggleInternalChatFloating = toggleInternalChatFloating;
+            window.selectThreadInPopup = selectThreadInPopup;
             window.filterInternalThreads = filterInternalThreads;
             window.toggleInternalChatFloating = toggleInternalChatFloating;
         })();
