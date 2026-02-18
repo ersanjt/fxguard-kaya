@@ -24,12 +24,19 @@ router.get('/for-me', async (req, res) => {
             order: [['createdAt', 'DESC']],
             limit: 100
         });
-        const withRead = list.map(a => {
+        const withRead = await Promise.all(list.map(async (a) => {
             const j = a.toJSON();
             j.read = (j.reads && j.reads.length > 0);
             delete j.reads;
+            if (a.targetType === 'department' && a.targetId) {
+                const d = await Department.findByPk(a.targetId, { attributes: ['name'] });
+                j.targetName = d ? d.name : null;
+            } else if (a.targetType === 'user' && a.targetId) {
+                const u = await User.findByPk(a.targetId, { attributes: ['name'] });
+                j.targetName = u ? u.name : null;
+            } else j.targetName = null;
             return j;
-        });
+        }));
         res.json({ data: withRead });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -89,15 +96,51 @@ router.post('/', async (req, res) => {
     }
 });
 
-// لیست کاربران و دپارتمان‌ها برای انتخاب گیرنده (فقط مالک/ادمین)
+// لیست کاربران و دپارتمان‌ها برای انتخاب گیرنده
 router.get('/targets', async (req, res) => {
     try {
-        if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin') return res.status(403).json({ error: 'فقط مالک یا ادمین' });
-        const [users, departments] = await Promise.all([
-            User.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'email'], include: [{ model: Department, as: 'department', attributes: ['id', 'name'], required: false }] }),
-            Department.findAll({ where: { isActive: true }, attributes: ['id', 'name'] })
-        ]);
+        const me = req.user;
+        let users = [];
+        let departments = [];
+        if (me.role === 'manager' && me.departmentId) {
+            departments = await Department.findAll({ where: { id: me.departmentId, isActive: true }, attributes: ['id', 'name'] });
+            users = await User.findAll({ where: { departmentId: me.departmentId, isActive: true }, attributes: ['id', 'name', 'email'], include: [{ model: Department, as: 'department', attributes: ['id', 'name'], required: false }] });
+        } else if (isMainAdmin(me) || me.role === 'owner' || me.role === 'admin') {
+            [users, departments] = await Promise.all([
+                User.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'email'], include: [{ model: Department, as: 'department', attributes: ['id', 'name'], required: false }] }),
+                Department.findAll({ where: { isActive: true }, attributes: ['id', 'name'] })
+            ]);
+        } else return res.status(403).json({ error: 'دسترسی غیرمجاز' });
         res.json({ users, departments });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// لیست اعلان‌های ارسال‌شده توسط من (برای مالک/ادمین/مدیر)
+router.get('/sent', async (req, res) => {
+    try {
+        const me = req.user;
+        if (!isMainAdmin(me) && me.role !== 'owner' && me.role !== 'admin' && me.role !== 'manager') return res.status(403).json({ error: 'دسترسی غیرمجاز' });
+        const where = { fromUserId: me.id };
+        const list = await Announcement.findAll({
+            where,
+            include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'email'] }],
+            order: [['createdAt', 'DESC']],
+            limit: 100
+        });
+        const withTarget = await Promise.all(list.map(async (a) => {
+            const j = a.toJSON();
+            if (a.targetType === 'department' && a.targetId) {
+                const d = await Department.findByPk(a.targetId, { attributes: ['id', 'name'] });
+                j.targetName = d ? d.name : null;
+            } else if (a.targetType === 'user' && a.targetId) {
+                const u = await User.findByPk(a.targetId, { attributes: ['id', 'name'] });
+                j.targetName = u ? u.name : null;
+            } else j.targetName = 'all';
+            return j;
+        }));
+        res.json({ data: withTarget });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

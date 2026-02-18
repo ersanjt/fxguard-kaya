@@ -420,9 +420,10 @@
                     ann_send_title: 'Send announcement to staff', ann_recipient: 'Recipient', ann_all: 'All staff', ann_one_dept: 'One department', ann_one_user: 'One user',
                     ann_select: 'Select', ann_title: 'Title', ann_body: 'Message', ann_ph_title: 'Announcement title', ann_ph_body: 'Message text...',
                     ann_important: 'Important (popup and sound for recipient)', send_ann: 'Send announcement',
+                    ann_intro: 'View and manage general, department and personal announcements.', ann_tab_all: 'All', ann_tab_general: 'General', ann_tab_department: 'Department', ann_tab_personal: 'Personal', ann_from: 'From', ann_to: 'To',
                     new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file',
                     file_allow_download: 'Allow download and save', file_view_only: 'View only in chat',
-                    start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', cancel: 'Cancel',
+                    start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', close: 'Close', cancel: 'Cancel',
                     voice_call: 'Voice call', video_call: 'Video call', incoming_voice_call: 'Incoming voice call...', incoming_video_call: 'Incoming video call...',
                     calling_voice: 'Calling...', calling_video: 'Video calling...', in_call: 'In call', accept_call: 'Accept', reject_call: 'Reject', end_call: 'End call',
                     call_rejected: 'Call rejected', user_offline: 'User is offline',
@@ -1610,6 +1611,119 @@
                 if (inner) { inner.innerHTML = escapeHtml(full) + '  •  •  •  ' + escapeHtml(full); }
                 banner.style.display = 'block';
             } catch (e) { banner.style.display = 'none'; }
+        }
+
+        var announcementsTab = 'all';
+        var announcementsData = [];
+        function setAnnouncementsTab(tab) {
+            announcementsTab = tab || 'all';
+            document.querySelectorAll('.announcements-tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === announcementsTab); });
+            renderAnnouncementsList();
+        }
+        function filterAnnouncementsByTab(list) {
+            if (announcementsTab === 'all') return list;
+            if (announcementsTab === 'general') return list.filter(function(a) { return a.targetType === 'all'; });
+            if (announcementsTab === 'department') return list.filter(function(a) { return a.targetType === 'department'; });
+            if (announcementsTab === 'personal') return list.filter(function(a) { return a.targetType === 'user'; });
+            return list;
+        }
+        function annTargetLabel(a) {
+            if (a.targetType === 'all') return t('ann_all');
+            if (a.targetType === 'department' && a.targetId) return a.targetName || t('ann_one_dept');
+            if (a.targetType === 'user' && a.targetId) return a.targetName || t('ann_one_user');
+            return '';
+        }
+        async function loadAnnouncements() {
+            var list = document.getElementById('announcementList');
+            if (!list) return;
+            list.innerHTML = t('loading');
+            var res = await apiFetch('/api/announcements/for-me');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            announcementsData = (res.data && res.data.data) || [];
+            renderAnnouncementsList();
+        }
+        function renderAnnouncementsList() {
+            var list = document.getElementById('announcementList');
+            if (!list) return;
+            var filtered = filterAnnouncementsByTab(announcementsData);
+            if (filtered.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📢</span><br>' + (LANG === 'fa' ? 'اعلانی وجود ندارد.' : 'No announcements.') + '</div>'; return; }
+            list.innerHTML = filtered.map(function(a) {
+                var fromName = (a.fromUser && a.fromUser.name) ? a.fromUser.name : '';
+                var targetStr = annTargetLabel(a);
+                var readCls = a.read ? ' ann-read' : '';
+                var impBadge = a.isImportant ? '<span class="ann-badge-important">' + (LANG === 'fa' ? 'مهم' : 'Important') + '</span>' : '';
+                var timeStr = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
+                var bodyHtml = (escapeHtml(a.body || '') || '').replace(/\n/g, '<br>');
+                return '<div class="announcement-card' + readCls + '" data-id="' + escapeHtml(a.id) + '"><div class="announcement-card-header"><span class="announcement-card-title">' + escapeHtml(a.title || '') + '</span>' + impBadge + '</div><div class="announcement-card-body">' + bodyHtml + '</div><div class="announcement-card-meta"><span>' + t('ann_from') + ' ' + escapeHtml(fromName) + '</span><span>' + t('ann_to') + ' ' + escapeHtml(targetStr) + '</span><span class="announcement-card-time">' + timeStr + '</span></div></div>';
+            }).join('');
+            list.querySelectorAll('.announcement-card').forEach(function(card) {
+                card.onclick = function() { markAnnouncementReadAndShow(card.getAttribute('data-id')); };
+            });
+        }
+        async function markAnnouncementReadAndShow(id) {
+            var a = announcementsData.find(function(x) { return x.id === id; });
+            if (!a) return;
+            if (!a.read) {
+                await apiFetch('/api/announcements/' + id + '/read', { method: 'POST' });
+                a.read = true;
+                renderAnnouncementsList();
+                if (typeof updateNavBadges === 'function') updateNavBadges();
+            }
+            showAnnouncementModal(a);
+        }
+        function showAnnouncementModal(a) {
+            var modal = document.getElementById('announcementModal');
+            if (!modal) return;
+            document.getElementById('annModalTitle').textContent = a.title || '';
+            document.getElementById('annModalBody').innerHTML = (escapeHtml(a.body || '') || '').replace(/\n/g, '<br>');
+            modal.style.display = 'flex';
+        }
+        async function loadAnnouncementTargets() {
+            var typeSel = document.getElementById('annTargetType');
+            var idSel = document.getElementById('annTargetId');
+            var wrap = document.getElementById('annTargetIdWrap');
+            if (!typeSel || !idSel) return;
+            var res = await apiFetch('/api/announcements/targets');
+            if (res.needLogin || !res.ok) return;
+            var users = res.users || [];
+            var departments = res.departments || [];
+            var isManager = currentUser && currentUser.role === 'manager';
+            if (isManager && departments.length === 1) {
+                typeSel.value = 'department';
+                idSel.innerHTML = '<option value="' + departments[0].id + '">' + escapeHtml(departments[0].name) + '</option>';
+                wrap.style.display = 'block';
+            } else {
+                typeSel.onchange = function() {
+                    var v = typeSel.value;
+                    wrap.style.display = (v === 'department' || v === 'user') ? 'block' : 'none';
+                    idSel.innerHTML = '<option value="">' + t('ann_select') + '</option>';
+                    if (v === 'department') departments.forEach(function(d) { idSel.innerHTML += '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; });
+                    if (v === 'user') users.forEach(function(u) { idSel.innerHTML += '<option value="' + u.id + '">' + escapeHtml(u.name) + (u.department && u.department.name ? ' (' + u.department.name + ')' : '') + '</option>'; });
+                };
+                typeSel.dispatchEvent(new Event('change'));
+            }
+        }
+        async function sendAnnouncement() {
+            var title = (document.getElementById('annTitle') && document.getElementById('annTitle').value) || '';
+            var body = (document.getElementById('annBody') && document.getElementById('annBody').value) || '';
+            if (!title.trim() || !body.trim()) { toast(t('ann_title') + ' ' + (LANG === 'fa' ? 'و متن الزامی است' : 'and message are required'), true); return; }
+            var targetType = (document.getElementById('annTargetType') && document.getElementById('annTargetType').value) || 'all';
+            var targetId = (document.getElementById('annTargetId') && document.getElementById('annTargetId').value) || '';
+            if (targetType !== 'all' && !targetId) { toast(t('ann_select'), true); return; }
+            var isImportant = (document.getElementById('annImportant') && document.getElementById('annImportant').checked) || false;
+            var payload = { title: title.trim(), body: body.trim(), isImportant: isImportant, targetType: targetType, targetId: targetType === 'all' ? null : targetId };
+            var res = await apiFetch('/api/announcements', { method: 'POST', body: JSON.stringify(payload) });
+            if (res.needLogin) return;
+            if (res.ok) {
+                document.getElementById('annTitle').value = '';
+                document.getElementById('annBody').value = '';
+                document.getElementById('annImportant').checked = false;
+                toast(LANG === 'fa' ? 'اعلان ارسال شد.' : 'Announcement sent.');
+                loadAnnouncements();
+                loadGeneralAnnouncementsMarquee();
+                if (typeof updateNavBadges === 'function') updateNavBadges();
+            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         var convQuickTab = 'all';
@@ -3441,12 +3555,22 @@
         async function sendInternalMessageFromPopup() {
             if (!currentInternalThreadId) return;
             var inp = document.getElementById('internalChatPopupInput');
+            var fileInput = document.getElementById('internalChatPopupFile');
             var content = (inp && inp.value) ? inp.value.trim() : '';
-            if (!content) { toast(t('enter_text_or_file'), true); return; }
-            var res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content, attachments: [] }) });
+            var attachments = [];
+            if (fileInput && fileInput.files && fileInput.files[0]) {
+                var formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                var up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                var upData = await up.json();
+                if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size, allowDownload: true });
+            }
+            if (!content && attachments.length === 0) { toast(t('enter_text_or_file'), true); return; }
+            var res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content || '(پیوست)', attachments: attachments }) });
             if (res.needLogin) return;
             if (res.ok) {
                 if (inp) inp.value = '';
+                if (fileInput) fileInput.value = '';
                 loadInternalMessagesForPopup(currentInternalThreadId);
                 loadInternalThreads();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
