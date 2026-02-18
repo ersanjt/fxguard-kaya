@@ -527,6 +527,7 @@
                     whatsapp_status: 'WhatsApp status:', whatsapp_connected: 'Connected �S', whatsapp_disconnected: 'Disconnected', redis: 'Redis', active: 'Active', inactive: 'Inactive', done_msg: 'Done',
                     whatsapp_intro: 'WhatsApp messages are automatically saved in conversations. Auto-assignment to departments is based on keywords.',
                     whatsapp_open_web: 'Open WhatsApp Web', whatsapp_manage_convs: 'Manage conversations', whatsapp_disconnect_btn: 'Disconnect WhatsApp',
+                    whatsapp_connection_title: 'Connection status', whatsapp_qr_expiry: 'Code is valid for about 60 seconds. After scanning, connection is established within a few seconds.', whatsapp_scan_waiting: 'Checking connection... Please wait.', whatsapp_qr_not_ready: 'QR not ready yet. Click "Start WhatsApp" and wait a few seconds.', whatsapp_refresh_status: 'Refresh status', whatsapp_last_connection: 'Last connection info', whatsapp_status_label: 'Status', whatsapp_number_label: 'Number', whatsapp_connection_result: 'Connection',
                     whatsapp_welcome_title: 'Auto-reply to first message', whatsapp_welcome_hint: 'When someone messages you for the first time, this text is sent automatically. Empty = disabled', whatsapp_welcome_enabled: 'Enabled', whatsapp_welcome_ph: 'Hello! Welcome to Kaya Exchange. How can we help you?',
                     whatsapp_dept_routing: 'Auto-assign to department', whatsapp_dept_routing_hint: 'Based on keywords in the message, the conversation is routed to the relevant department.', whatsapp_unassigned: 'Unassigned conversations', whatsapp_unassigned_hint: 'These conversations need department or assignee assignment.',
                     rates_intro: 'Prices are fetched from API and shown in the bottom bar for everyone.', rates_adjust_type: 'Adjustment type',
@@ -4949,51 +4950,88 @@
         }
 
         var qrRefreshInterval = null;
+        var qrRetryTimeout = null;
         var isWhatsappPolling = false;
+        var WHATSAPP_POLL_MS = 4000;
+        var WHATSAPP_QR_RETRY_MS = 3000;
+
+        function setWhatsappStatusBadge(status) {
+            var badge = document.getElementById('whatsappStatusBadge');
+            if (!badge) return;
+            badge.className = 'whatsapp-status-badge whatsapp-status-' + status;
+            if (status === 'connected') badge.textContent = LANG === 'fa' ? 'متصل' : 'Connected';
+            else if (status === 'starting') badge.textContent = LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...';
+            else if (status === 'checking') badge.textContent = LANG === 'fa' ? 'در حال بررسی...' : 'Checking...';
+            else badge.textContent = LANG === 'fa' ? 'قطع' : 'Disconnected';
+        }
+
         async function loadWhatsappStatus(isInitial) {
             var st = document.getElementById('gatewayStatus');
             var qrBox = document.getElementById('qrBox');
+            var qrUnavailable = document.getElementById('whatsappQrUnavailable');
+            var qrWaitingMsg = document.getElementById('qrWaitingMsg');
             var qrImg = document.getElementById('qrImg');
             var btn = document.getElementById('btnStartGateway');
             var btnStartClient = document.getElementById('btnStartWhatsApp');
             var btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
+            var lastCard = document.getElementById('whatsappLastConnectionCard');
+            if (qrRetryTimeout) { clearTimeout(qrRetryTimeout); qrRetryTimeout = null; }
             if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             if (isInitial !== false) {
-                st.className = 'empty';
-                st.innerHTML = t('whatsapp_checking');
+                st.className = 'whatsapp-status-line empty';
+                st.textContent = t('whatsapp_checking');
+                setWhatsappStatusBadge('checking');
                 if (btn) btn.style.display = 'none';
                 if (btnStartClient) btnStartClient.style.display = 'none';
                 if (btnDisconnect) btnDisconnect.disabled = true;
                 qrBox.style.display = 'none';
+                if (qrUnavailable) qrUnavailable.style.display = 'none';
+                if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
             }
             var ping;
             try { ping = await apiFetch('/api/ping', { auth: false }); } catch (e) { ping = { needLogin: true }; }
             if (ping.needLogin || (ping.data && !ping.data.ok)) {
-                st.className = 'empty';
-                st.innerHTML = t('whatsapp_server_err');
+                st.className = 'whatsapp-status-line empty';
+                st.textContent = t('whatsapp_server_err');
+                setWhatsappStatusBadge('disconnected');
                 return;
             }
             var res = await apiFetch('/api/gateway/status');
             if (res.needLogin) return;
             var data = res.data;
             if (data && data.error) {
-                st.className = 'empty';
+                st.className = 'whatsapp-status-line empty';
                 st.textContent = t('whatsapp_gateway_off');
+                setWhatsappStatusBadge('disconnected');
                 if (btn) { btn.style.display = 'inline-block'; btn.textContent = t('whatsapp_start_btn'); }
+                if (qrUnavailable) qrUnavailable.style.display = 'none';
                 return;
             }
-            st.className = 'empty';
+            st.className = 'whatsapp-status-line';
             var statusText = t('whatsapp_status') + ' ' + (data && data.whatsapp ? t('whatsapp_connected') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected'))) + ' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'));
             st.textContent = statusText;
             if (data && data.whatsapp) {
-                if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
                 isWhatsappPolling = false;
+                setWhatsappStatusBadge('connected');
                 qrBox.style.display = 'none';
+                if (qrUnavailable) qrUnavailable.style.display = 'none';
+                if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 if (btnDisconnect) { btnDisconnect.textContent = t('whatsapp_disconnect_btn'); btnDisconnect.disabled = false; }
+                if (lastCard) {
+                    lastCard.style.display = 'block';
+                    var lastStatus = document.getElementById('whatsappLastStatus');
+                    var lastNumber = document.getElementById('whatsappLastNumber');
+                    var lastResult = document.getElementById('whatsappLastResult');
+                    if (lastStatus) lastStatus.textContent = t('whatsapp_connected');
+                    if (lastNumber) lastNumber.textContent = (data.number || data.pushname) || '—';
+                    if (lastResult) lastResult.textContent = LANG === 'fa' ? 'موفق' : 'Success';
+                }
                 loadWhatsappDeptRouting();
                 loadWhatsappUnassigned();
                 return;
             }
+            setWhatsappStatusBadge(data && data.starting ? 'starting' : 'disconnected');
+            if (lastCard) lastCard.style.display = 'none';
             if (btnDisconnect) btnDisconnect.disabled = true;
             loadWhatsappDeptRouting();
             var qrRes = await apiFetch('/api/gateway/qr');
@@ -5002,11 +5040,18 @@
             if (qrData && qrData.qr) {
                 qrImg.src = qrData.qr;
                 qrBox.style.display = 'block';
+                if (qrUnavailable) qrUnavailable.style.display = 'none';
+                if (qrWaitingMsg) qrWaitingMsg.style.display = 'block';
                 isWhatsappPolling = true;
-                qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, 15000);
+                qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, WHATSAPP_POLL_MS);
             } else {
                 qrBox.style.display = 'none';
+                if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 if (btnStartClient) { btnStartClient.style.display = 'inline-block'; btnStartClient.textContent = t('whatsapp_start_client_btn'); }
+                if (data && data.starting && qrUnavailable) {
+                    qrUnavailable.style.display = 'block';
+                    qrRetryTimeout = setTimeout(function() { loadWhatsappStatus(false); }, WHATSAPP_QR_RETRY_MS);
+                } else if (qrUnavailable) qrUnavailable.style.display = 'none';
             }
         }
 

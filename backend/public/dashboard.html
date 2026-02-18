@@ -895,48 +895,76 @@
                         <div id="supActList"></div>
                     </div>
                 </div>
-                <div id="pageWhatsapp" class="page">
-                    <h2 data-i18n="page_whatsapp">اتصال واتساپ</h2>
-                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="whatsapp_intro">پیام‌های واتساپ به‌صورت خودکار در مکالمات ذخیره می‌شوند. بر اساس کلمات کلیدی دپارتمان‌ها، تخصیص خودکار انجام می‌شود.</p>
-                    <div id="whatsappWelcomeBox" class="form-box" style="margin-bottom:20px;">
-                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="whatsapp_welcome_title">پاسخ خودکار به اولین پیام</h3>
-                        <p class="text-muted" style="font-size:0.85rem; margin:0 0 12px;" data-i18n="whatsapp_welcome_hint">هر کسی که برای اولین بار به شما پیام می‌دهد، این متن به‌صورت خودکار برایش ارسال می‌شود. خالی = غیرفعال</p>
-                        <label><input type="checkbox" id="whatsappWelcomeEnabled" checked> <span data-i18n="whatsapp_welcome_enabled">فعال</span></label>
-                        <textarea id="whatsappWelcomeMessage" rows="4" data-i18n-ph="whatsapp_welcome_ph" placeholder="سلام! به صرافی کایا خوش آمدید. در خدمت شما هستیم." style="margin-top:12px; width:100%; padding:12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-primary); font-family:var(--font); font-size:0.95rem;"></textarea>
-                        <button type="button" class="btn-primary" onclick="saveWhatsappWelcomeConfig()" style="margin-top:12px;" data-i18n="btn_save">ذخیره</button>
+                <div id="pageWhatsapp" class="page whatsapp-page">
+                    <div class="whatsapp-page-header">
+                        <h2 data-i18n="page_whatsapp">اتصال واتساپ</h2>
+                        <p class="whatsapp-intro text-muted" data-i18n="whatsapp_intro">پیام‌های واتساپ به‌صورت خودکار در مکالمات ذخیره می‌شوند. بر اساس کلمات کلیدی دپارتمان‌ها، تخصیص خودکار انجام می‌شود.</p>
                     </div>
-                    <div id="whatsappUnansweredBox" class="form-box" style="margin-bottom:20px;">
-                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3>
-                        <p class="text-muted" style="font-size:0.85rem; margin:0 0 12px;" data-i18n="whatsapp_unanswered_hint">وقتی مشتری پیام می‌دهد و کسی جواب نمی‌دهد، بعد از مدت مشخص اعلان ارسال می‌شود و در صورت ادامه، مکالمه به دپارتمان پشتیبانی برگردانده می‌شود.</p>
-                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px;">
-                            <div><label data-i18n="whatsapp_alert_after">اعلان بعد از (دقیقه)</label><input type="number" id="whatsappAlertMinutes" min="1" max="120" value="5" style="width:100%; padding:8px; margin-top:4px;"></div>
-                            <div><label data-i18n="whatsapp_escalate_after">Escalation بعد از (دقیقه)</label><input type="number" id="whatsappEscalateMinutes" min="1" max="240" value="15" style="width:100%; padding:8px; margin-top:4px;"></div>
+                    <div class="whatsapp-page-layout">
+                        <div class="whatsapp-col whatsapp-col-connection">
+                            <div class="whatsapp-card whatsapp-connection-card">
+                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_connection_title">وضعیت اتصال</h3>
+                                <div id="gatewayStatus" class="whatsapp-status-line empty" data-i18n="whatsapp_checking">در حال بررسی...</div>
+                                <div id="whatsappStatusBadge" class="whatsapp-status-badge whatsapp-status-checking" aria-hidden="true"></div>
+                                <div class="qr-box" id="qrBox" style="display:none;">
+                                    <p class="qr-box-title" data-i18n="whatsapp_scan_qr">QR را با اپلیکیشن واتساپ موبایل اسکن کنید</p>
+                                    <p class="qr-box-hint" data-i18n="whatsapp_qr_expiry">کد تا حدود ۶۰ ثانیه معتبر است. پس از اسکن، اتصال ظرف چند ثانیه برقرار می‌شود.</p>
+                                    <div class="qr-box-img-wrap">
+                                        <img id="qrImg" alt="QR Code" class="qr-box-img">
+                                    </div>
+                                    <p id="qrWaitingMsg" class="qr-waiting-msg" style="display:none;" data-i18n="whatsapp_scan_waiting">در حال بررسی اتصال... لطفا صبر کنید.</p>
+                                </div>
+                                <div id="whatsappQrUnavailable" class="qr-unavailable" style="display:none;">
+                                    <p data-i18n="whatsapp_qr_not_ready">QR هنوز آماده نیست. روی «شروع واتساپ» کلیک کنید و چند ثانیه صبر کنید.</p>
+                                </div>
+                                <div class="whatsapp-actions">
+                                    <button type="button" id="btnStartGateway" class="btn-primary" onclick="startGateway()" style="display:none;" data-i18n="whatsapp_start_btn">شروع Gateway واتساپ</button>
+                                    <button type="button" id="btnStartWhatsApp" class="btn-primary" onclick="startWhatsAppClient()" style="display:none;" data-i18n="whatsapp_start_client_btn">شروع واتساپ</button>
+                                    <button type="button" id="btnRefreshStatus" class="btn-secondary" onclick="loadWhatsappStatus(true)" style="display:inline-flex; align-items:center; gap:6px;" data-i18n="whatsapp_refresh_status" title="">بروزرسانی وضعیت</button>
+                                    <button type="button" id="btnDisconnectWhatsApp" class="btn-secondary" onclick="disconnectWhatsApp()" disabled title="" data-i18n="whatsapp_disconnect_btn">قطع اتصال واتساپ</button>
+                                    <a href="https://web.whatsapp.com" target="_blank" rel="noopener" class="btn-secondary whatsapp-link-btn" data-i18n="whatsapp_open_web">باز کردن واتساپ وب</a>
+                                    <a href="#conversations" class="btn-secondary whatsapp-link-btn" onclick="showPage('conversations'); return false;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
+                                </div>
+                            </div>
+                            <div id="whatsappLastConnectionCard" class="whatsapp-card whatsapp-last-connection" style="display:none;">
+                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_last_connection">اطلاعات آخرین اتصال</h3>
+                                <dl class="whatsapp-meta-list">
+                                    <dt data-i18n="whatsapp_status_label">وضعیت</dt><dd id="whatsappLastStatus">—</dd>
+                                    <dt data-i18n="whatsapp_number_label">شماره</dt><dd id="whatsappLastNumber">—</dd>
+                                    <dt data-i18n="whatsapp_connection_result">اتصال</dt><dd id="whatsappLastResult">—</dd>
+                                </dl>
+                            </div>
                         </div>
-                        <div style="margin-top:12px;"><label data-i18n="whatsapp_escalation_dept">دپارتمان مقصد (خالی = پشتیبانی پیش‌فرض)</label><select id="whatsappEscalationDept" style="width:100%; padding:8px; margin-top:4px;"><option value="">پشتیبانی (پیش‌فرض)</option></select></div>
-                        <button type="button" class="btn-primary" onclick="saveWhatsappUnansweredConfig()" style="margin-top:12px;" data-i18n="btn_save">ذخیره</button>
+                        <div class="whatsapp-col whatsapp-col-settings">
+                            <div id="whatsappWelcomeBox" class="whatsapp-card form-box">
+                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_welcome_title">پاسخ خودکار به اولین پیام</h3>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_welcome_hint">هر کسی که برای اولین بار به شما پیام می‌دهد، این متن به‌صورت خودکار برایش ارسال می‌شود. خالی = غیرفعال</p>
+                                <label class="whatsapp-check-label"><input type="checkbox" id="whatsappWelcomeEnabled" checked> <span data-i18n="whatsapp_welcome_enabled">فعال</span></label>
+                                <textarea id="whatsappWelcomeMessage" rows="4" data-i18n-ph="whatsapp_welcome_ph" placeholder="سلام! به صرافی کایا خوش آمدید. در خدمت شما هستیم." class="whatsapp-textarea"></textarea>
+                                <button type="button" class="btn-primary" onclick="saveWhatsappWelcomeConfig()" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                            <div id="whatsappUnansweredBox" class="whatsapp-card form-box">
+                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_unanswered_hint">وقتی مشتری پیام می‌دهد و کسی جواب نمی‌دهد، بعد از مدت مشخص اعلان ارسال می‌شود و در صورت ادامه، مکالمه به دپارتمان پشتیبانی برگردانده می‌شود.</p>
+                                <div class="whatsapp-unanswered-grid">
+                                    <div><label data-i18n="whatsapp_alert_after">اعلان بعد از (دقیقه)</label><input type="number" id="whatsappAlertMinutes" min="1" max="120" value="5"></div>
+                                    <div><label data-i18n="whatsapp_escalate_after">Escalation بعد از (دقیقه)</label><input type="number" id="whatsappEscalateMinutes" min="1" max="240" value="15"></div>
+                                </div>
+                                <div class="whatsapp-dept-row"><label data-i18n="whatsapp_escalation_dept">دپارتمان مقصد (خالی = پشتیبانی پیش‌فرض)</label><select id="whatsappEscalationDept"><option value="">پشتیبانی (پیش‌فرض)</option></select></div>
+                                <button type="button" class="btn-primary" onclick="saveWhatsappUnansweredConfig()" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                        </div>
                     </div>
-                    <div id="gatewayStatus" class="empty" data-i18n="whatsapp_checking">در حال بررسی...</div>
-                    <div class="qr-box" id="qrBox" style="display:none;">
-                        <p data-i18n="whatsapp_scan_qr">QR را با اپلیکیشن واتساپ موبایل اسکن کنید</p>
-                        <img id="qrImg" alt="QR Code">
-                    </div>
-                    <div class="whatsapp-actions" style="display:flex; flex-wrap:wrap; gap:12px; margin-top:16px;">
-                        <button type="button" id="btnStartGateway" class="btn-primary" onclick="startGateway()" style="display:none;" data-i18n="whatsapp_start_btn">شروع Gateway واتساپ</button>
-                        <button type="button" id="btnStartWhatsApp" class="btn-primary" onclick="startWhatsAppClient()" style="display:none;" data-i18n="whatsapp_start_client_btn">شروع واتساپ</button>
-                        <button type="button" id="btnDisconnectWhatsApp" class="btn-secondary" onclick="disconnectWhatsApp()" disabled title="" data-i18n="whatsapp_disconnect_btn">قطع اتصال واتساپ</button>
-                        <a href="https://web.whatsapp.com" target="_blank" rel="noopener" class="btn-secondary" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none;" data-i18n="whatsapp_open_web">باز کردن واتساپ وب</a>
-                        <a href="#conversations" class="btn-secondary" onclick="showPage('conversations')" style="display:inline-flex; align-items:center; gap:8px; text-decoration:none;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
-                    </div>
-                    <div id="whatsappDeptRouting" class="form-box" style="margin-top:24px; display:none;">
-                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="whatsapp_dept_routing">تخصیص خودکار به دپارتمان</h3>
-                        <p class="text-muted" style="font-size:0.85rem; margin:0 0 12px;" data-i18n="whatsapp_dept_routing_hint">بر اساس کلمات کلیدی در متن پیام، مکالمه به دپارتمان مربوطه هدایت می‌شود.</p>
+                    <div id="whatsappDeptRouting" class="whatsapp-card form-box whatsapp-dept-routing" style="margin-top:24px; display:none;">
+                        <h3 class="whatsapp-card-title" data-i18n="whatsapp_dept_routing">تخصیص خودکار به دپارتمان</h3>
+                        <p class="text-muted whatsapp-hint" data-i18n="whatsapp_dept_routing_hint">بر اساس کلمات کلیدی در متن پیام، مکالمه به دپارتمان مربوطه هدایت می‌شود.</p>
                         <div id="whatsappDeptList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
                     </div>
-                    <div id="whatsappUnassignedBox" class="form-box" style="margin-top:24px; display:none;">
-                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="whatsapp_unassigned">مکالمات بدون تخصیص</h3>
-                        <p class="text-muted" style="font-size:0.85rem; margin:0 0 12px;" data-i18n="whatsapp_unassigned_hint">این مکالمات نیاز به تخصیص دپارتمان یا مسئول دارند.</p>
+                    <div id="whatsappUnassignedBox" class="whatsapp-card form-box" style="margin-top:24px; display:none;">
+                        <h3 class="whatsapp-card-title" data-i18n="whatsapp_unassigned">مکالمات بدون تخصیص</h3>
+                        <p class="text-muted whatsapp-hint" data-i18n="whatsapp_unassigned_hint">این مکالمات نیاز به تخصیص دپارتمان یا مسئول دارند.</p>
                         <div id="whatsappUnassignedList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
-                        <a href="#conversations" class="btn-secondary" onclick="showPage('conversations')" style="margin-top:12px; display:inline-block; text-decoration:none;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
+                        <a href="#conversations" class="btn-secondary" onclick="showPage('conversations'); return false;" style="margin-top:12px; display:inline-block; text-decoration:none;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
                     </div>
                 </div>
                 <div id="pageRates" class="page rates-page">

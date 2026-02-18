@@ -160,6 +160,7 @@ let isClientStarting = false;
 
 let qrCodeData = null;
 let lastQrImageDataUrl = null;
+let lastAccountInfo = null;
 
 function buildClient() {
   const sessionPath = process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth');
@@ -214,11 +215,12 @@ function attachClientEvents(c) {
 
     try {
       const info = c.info;
-      io.emit('account_info', {
+      lastAccountInfo = {
         name: info?.pushname || null,
         number: info?.wid?.user || null,
         platform: info?.platform || null,
-      });
+      };
+      io.emit('account_info', lastAccountInfo);
     } catch (_) {}
   });
 
@@ -435,13 +437,18 @@ app.use('/api/', requireGatewaySecret);
 // /api/status: بدون await Redis — همیشه سریع پاسخ بده
 app.get('/api/status', (req, res) => {
   const status = isClientReady ? 'ready' : isClientStarting ? 'starting' : 'disconnected';
-  res.json({
+  const body = {
     whatsapp: isClientReady,
     starting: isClientStarting,
     redis: redisClient?.isReady || false,
     rabbitmq: !!rabbitChannel,
     status,
-  });
+  };
+  if (isClientReady && lastAccountInfo) {
+    body.pushname = lastAccountInfo.name;
+    body.number = lastAccountInfo.number;
+  }
+  res.json(body);
 });
 
 // /api/qr: اول از memory، بعد Redis با timeout
