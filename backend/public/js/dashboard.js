@@ -509,7 +509,7 @@
                     file_allow_download: 'Allow download and save', file_view_only: 'View only in chat',
                     start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', close: 'Close', chat_minimize: 'Minimize', chat_expand: 'Expand', quick_reply_hi: 'Hi', quick_reply_gotit: 'Got it', quick_reply_later: 'Will reply later', quick_reply_checking: 'Checking', start_chat_hint: 'Start the conversation', cancel: 'Cancel',
                     voice_call: 'Voice call', video_call: 'Video call', incoming_voice_call: 'Incoming voice call...', incoming_video_call: 'Incoming video call...',
-                    calling_voice: 'Calling...', calling_video: 'Video calling...', in_call: 'In call', accept_call: 'Accept', reject_call: 'Reject', end_call: 'End call',
+                    calling_voice: 'Calling...', calling_video: 'Video calling...', in_call: 'In call', accept_call: 'Accept', reject_call: 'Reject', cancel_call: 'Cancel call', end_call: 'End call',
                     call_rejected: 'Call rejected', user_offline: 'User is offline',
                     call_mute: 'Mute mic', call_unmute: 'Unmute mic', call_camera_off: 'Turn off camera', call_camera_on: 'Turn on camera',
                     call_connecting: 'Connecting...', call_connected: 'Connected', call_failed: 'Connection failed',
@@ -1798,9 +1798,8 @@
                 document.getElementById('app').classList.add('show');
                 try {
                     applyNavByRole();
-                    loadPanelSettingsAndApply();
+                    await loadPanelSettingsAndApply();
                     applyHashRoute();
-                    loadDashboard();
                     startRatesInterval();
                     startPresenceInterval();
                     connectSocket();
@@ -1915,9 +1914,8 @@
                 document.getElementById('app').classList.add('show');
                 try {
                     applyNavByRole();
-                    loadPanelSettingsAndApply();
+                    await loadPanelSettingsAndApply();
                     applyHashRoute();
-                    loadDashboard();
                     startRatesInterval();
                     startPresenceInterval();
                     connectSocket();
@@ -3130,7 +3128,7 @@
         var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','services','panel-settings'];
         function applyHashRoute() {
             var hash = (location.hash || '').replace(/^#/, '');
-            var page = VALID_PAGES.indexOf(hash) >= 0 ? hash : 'dashboard';
+            var page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() { try { var last = sessionStorage.getItem('crm_last_page'); return last && VALID_PAGES.indexOf(last) >= 0 ? last : 'dashboard'; } catch (_) { return 'dashboard'; } })();
             showPage(page);
         }
         function toggleSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s && s.classList.contains('sidebar-open')) { closeSidebarMobile(); } else { if (s) s.classList.add('sidebar-open'); if (o) { o.classList.add('show'); o.style.display = 'block'; document.body.style.overflow = 'hidden'; } if (btn) btn.setAttribute('aria-expanded', 'true'); } }
@@ -3141,6 +3139,7 @@
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             if (page && window.location.hash !== '#' + page) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#' + page); } catch (e) {} }
+            try { sessionStorage.setItem('crm_last_page', page); } catch (_) {}
             document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
             var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices', 'panel-settings': 'pagePanelSettings' };
@@ -4380,8 +4379,13 @@
             else stopInternalCallDurationTimer();
             if (connEl) { connEl.style.display = 'none'; connEl.textContent = ''; connEl.className = 'internal-call-connection-status'; }
             if (acceptBtn) acceptBtn.style.display = showAccept ? 'flex' : 'none';
-            if (rejectBtn) rejectBtn.style.display = 'flex';
-            if (endBtn) endBtn.style.display = showAccept ? 'none' : 'flex';
+            /* فقط یکی از دو دکمه قرمز: هنگام برقراری/در انتظار = «لغو»، بعد از اتصال = «قطع تماس» */
+            if (rejectBtn) {
+                rejectBtn.style.display = isInCall ? 'none' : 'flex';
+                rejectBtn.textContent = showAccept ? t('reject_call') : (t('cancel_call') || t('reject_call'));
+                rejectBtn.setAttribute('data-i18n', showAccept ? 'reject_call' : 'cancel_call');
+            }
+            if (endBtn) endBtn.style.display = isInCall ? 'flex' : 'none';
             if (addBtn) addBtn.style.display = 'none';
             if (micBtn) { micBtn.style.display = showAccept ? 'none' : 'flex'; micBtn.classList.toggle('muted', internalCallMicMuted); micBtn.title = internalCallMicMuted ? (t('call_unmute') || 'وصل میکروفون') : (t('call_mute') || 'قطع میکروفون'); }
             if (cameraBtn) { cameraBtn.style.display = (showAccept || internalCallType !== 'video') ? 'none' : 'flex'; cameraBtn.classList.toggle('off', internalCallCameraOff); cameraBtn.title = internalCallCameraOff ? (t('call_camera_on') || 'روشن کردن دوربین') : (t('call_camera_off') || 'خاموش کردن دوربین'); }
@@ -5554,7 +5558,7 @@
         })();
 
         if (token) {
-            apiFetch('/api/auth/me').then(function(res) {
+            apiFetch('/api/auth/me').then(async function(res) {
                 if (res.needLogin || !res.ok) { logout(); return; }
                 var u = res.data;
                 currentUser = u;
@@ -5565,9 +5569,8 @@
                     document.getElementById('app').classList.add('show');
                     try {
                         applyNavByRole();
-                        loadPanelSettingsAndApply();
+                        await loadPanelSettingsAndApply();
                         applyHashRoute();
-                        loadDashboard();
                         loadGeneralAnnouncementsMarquee();
                         startRatesInterval();
                         startPresenceInterval();

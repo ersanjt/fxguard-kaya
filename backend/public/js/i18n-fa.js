@@ -406,6 +406,7 @@ window.__I18N_FA = {
     in_call: 'در حال تماس',
     accept_call: 'پذیرش',
     reject_call: 'رد',
+    cancel_call: 'لغو تماس',
     end_call: 'قطع تماس',
     call_rejected: 'تماس رد شد',
     user_offline: 'کاربر آفلاین است',
