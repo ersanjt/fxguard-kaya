@@ -492,7 +492,7 @@
                     users_intro: 'Only the owner or users with "User management" access can create users and edit permissions.',
                     label_name: 'Name', label_email: 'Email', label_password: 'Password', label_role: 'Role', label_dept: 'Department', label_branch: 'Branch',
                     user_ph_name: 'Full name', user_ph_pass: 'At least 6 characters', add_user: 'Add user', role_agent: 'Agent', role_manager: 'Manager', role_admin: 'Admin',
-                    ticket_title: 'Ticket title', ticket_desc: 'Description', ticket_priority: 'Priority', create_ticket: 'Create ticket', ticket_ph_subject: 'Subject', ticket_ph_search: 'Search number or title...', tickets_intro: 'Official section for submitting and tracking requests. Each ticket has a unique number.', overdue: 'Overdue', filter_all_status: 'All statuses', filter_all_priority: 'All priorities', sort_newest: 'Newest', sort_oldest: 'Oldest', sort_priority: 'By priority',
+                    ticket_title: 'Ticket title', ticket_desc: 'Description', ticket_priority: 'Priority', create_ticket: 'Create ticket', ticket_ph_subject: 'Subject', ticket_ph_search: 'Search number or title...', tickets_intro: 'Official section for submitting and tracking requests. Each ticket has a unique number.', overdue: 'Overdue', filter_all_status: 'All statuses', filter_all_priority: 'All priorities', sort_newest: 'Newest', sort_oldest: 'Oldest', sort_priority: 'By priority', sort_by_name: 'By name', sort_by_last_contact: 'Last contact', customer_quick_chat: 'Start chat', customer_quick_edit: 'Edit customer',
                     reply_to_ticket: 'Reply to ticket', reply_ph: 'Reply text...', file_attach: 'Attach file (optional)', send_reply: 'Send reply',
                     priority_normal: 'Normal', priority_high: 'High', priority_low: 'Low', priority_urgent: 'Urgent',
                     tasks_intro: 'Track tasks assigned to staff or departments.',
@@ -2808,6 +2808,28 @@
             else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
         }
 
+        function sortCustomerList(arr, sortBy) {
+            if (!arr || !arr.length) return arr;
+            var key = sortBy || 'newest';
+            return arr.slice().sort(function(a, b) {
+                if (key === 'newest' || key === 'last_contact') {
+                    var ta = a.lastContactAt ? new Date(a.lastContactAt).getTime() : 0;
+                    var tb = b.lastContactAt ? new Date(b.lastContactAt).getTime() : 0;
+                    return tb - ta;
+                }
+                if (key === 'oldest') {
+                    var ta = a.lastContactAt ? new Date(a.lastContactAt).getTime() : 0;
+                    var tb = b.lastContactAt ? new Date(b.lastContactAt).getTime() : 0;
+                    return ta - tb;
+                }
+                if (key === 'name') {
+                    var na = (a.name || a.phone || '').toLowerCase();
+                    var nb = (b.name || b.phone || '').toLowerCase();
+                    return na.localeCompare(nb, 'fa');
+                }
+                return 0;
+            });
+        }
         async function loadCustomers() {
             var list = document.getElementById('customerList');
             var statsEl = document.getElementById('customerStats');
@@ -2824,16 +2846,24 @@
             var data = res.data;
             if (statsEl && data.stats) { statsEl.style.display = 'flex'; statsEl.innerHTML = '<span class="customer-stat"><strong>' + data.stats.total + '</strong> ' + (LANG === 'fa' ? 'مشتری' : 'customers') + '</span><span class="customer-stat"><strong>' + data.stats.active + '</strong> ' + (LANG === 'fa' ? 'فعال' : 'active') + '</span><span class="customer-stat"><strong>' + data.stats.inactive + '</strong> ' + (LANG === 'fa' ? 'غیرفعال' : 'inactive') + '</span><span class="customer-stat"><strong>' + data.stats.blocked + '</strong> ' + (LANG === 'fa' ? 'مسدود' : 'blocked') + '</span>'; }
             if (countEl) countEl.textContent = (data.total || 0) + ' ' + (LANG === 'fa' ? 'مشتری' : '');
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">&#128100;</span><br>' + t('empty_customers') + '</div>'; return; }
-            list.innerHTML = data.data.map(function(c) {
-                var initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + t('empty_customers') + '</p><button type="button" class="btn-primary" onclick="openCustomerModal()">' + escapeHtml(t('customer_add')) + '</button></div>'; return; }
+            var sortEl = document.getElementById('customerSort');
+            var sortVal = sortEl ? sortEl.value : 'newest';
+            var sorted = sortCustomerList(data.data, sortVal);
+            list.innerHTML = sorted.map(function(c) {
+                var name = c.name || c.phone || t('customer');
+                var initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+                var profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
+                profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
+                var avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-card-avatar-fallback\');if(f)f.style.display=\'flex\'">' : escapeHtml(initial);
                 var statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
                 var statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
                 var lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
                 var loc = c.lastOpenConv;
                 var assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
                 var safeName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                return '<div class="customer-card" onclick="showCustomerHistory(\'' + c.id + '\', \'' + safeName + '\')"><div class="customer-card-main"><div class="customer-card-avatar">' + initial + '</div><div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" onclick="event.stopPropagation();startCustomerChat(\'' + c.id + '\', \'' + safeName + '\', \'' + (c.phone || '').replace(/'/g, "\\'") + '\')" data-i18n="btn_send">ارسال</button></div>';
+                return '<div class="customer-card" onclick="showCustomerHistory(\'' + c.id + '\', \'' + safeName + '\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();showCustomerHistory(\'' + c.id + '\', \'' + safeName + '\')}"><div class="customer-card-main"><div class="customer-card-avatar">' + avatarHtml + '</div><div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" onclick="event.stopPropagation();startCustomerChat(\'' + c.id + '\', \'' + safeName + '\', \'' + (c.phone || '').replace(/'/g, "\\'") + '\')" data-i18n="btn_send">ارسال</button></div>';
             }).join('');
         }
         async function startCustomerChat(customerId, name, phone) {
@@ -2859,6 +2889,8 @@
             var cardEl = document.getElementById('customerDetailCard');
             var list = document.getElementById('customerHistoryList');
             var timelineEl = document.getElementById('customerTimelineList');
+            var quickActionsEl = document.getElementById('customerDetailQuickActions');
+            if (quickActionsEl) quickActionsEl.innerHTML = '';
             if (cardEl) cardEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (list) list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (timelineEl) timelineEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
@@ -2877,7 +2909,16 @@
             var statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
             var firstContact = c.firstContactAt ? fmtTZ(c.firstContactAt, 'date') : '—';
             var lastContact = c.lastContactAt ? fmtTZ(c.lastContactAt, 'datetime') : '—';
-            if (cardEl) cardEl.innerHTML = '<div class="customer-avatar">' + initial + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div><button type="button" class="btn-secondary" onclick="openCustomerModal(\'' + c.id + '\')" style="align-self:flex-start;">' + (LANG === 'fa' ? 'ویرایش مشتری' : 'Edit') + '</button>';
+            if (quickActionsEl) {
+                var qName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                var qPhone = (c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" onclick="startCustomerChat(\'' + c.id + '\', \'' + qName + '\', \'' + qPhone + '\')">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" onclick="openCustomerModal(\'' + c.id + '\')">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" onclick="openTransactionModal(\'' + c.id + '\')">' + escapeHtml(t('transaction_add')) + '</button>';
+            }
+            var detailProfilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+            if (detailProfilePic && detailProfilePic.indexOf('/') === 0) detailProfilePic = (window.location.origin || '') + detailProfilePic;
+            detailProfilePic = detailProfilePic ? ensureHttpsUrl(detailProfilePic) : '';
+            var detailAvatarHtml = detailProfilePic && detailProfilePic.indexOf('http') === 0 ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
+            if (cardEl) cardEl.innerHTML = '<div class="customer-avatar">' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             var res = await apiFetch('/api/customers/' + custId + '/conversations');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
@@ -5617,8 +5658,9 @@
             });
         })();
         (function initFooterYear() {
+            /* سال و کپی‌رایت در فوتر نمایش داده نمی‌شود */
             var el = document.getElementById('appFooterYear');
-            if (el) el.textContent = '\u00A9 ' + new Date().getFullYear();
+            if (el) el.textContent = '';
         })();
 
         (function initLang() {
