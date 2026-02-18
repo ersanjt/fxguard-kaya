@@ -160,6 +160,8 @@ window.__I18N_FA = {
     empty_dept: 'دپارتمانی یافت نشد.',
     empty_users: 'کاربری یافت نشد.',
     empty_tickets: 'تیکتی یافت نشد.',
+    btn_edit: 'ویرایش',
+    btn_delete: 'حذف',
     empty_tasks: 'تسکی یافت نشد.',
     empty_branches: 'شعبه‌ای ثبت نشده.',
     totp_banner: 'برای امنیت بیشتر احراز هویت دو مرحله‌ای (Google Authenticator) را فعال کنید.',

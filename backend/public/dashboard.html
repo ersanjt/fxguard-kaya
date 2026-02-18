@@ -436,17 +436,26 @@
                                 <select id="ticketDetailStatus"><option value="open" data-i18n="status_open">باز</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option><option value="closed" data-i18n="status_closed">بسته</option></select>
                                 <select id="ticketDetailAssignee"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
                                 <select id="ticketDetailPriority"><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
+                                <input type="date" id="ticketDetailDueDate" class="ticket-detail-due" title="مهلت">
                                 <button type="button" class="btn-primary btn-sm" onclick="updateTicketFromDetail()" data-i18n="btn_apply">اعمال</button>
+                                <button type="button" class="btn-secondary btn-sm" id="ticketEditBtn" onclick="toggleTicketEditMode()" data-i18n="btn_edit">ویرایش</button>
+                                <button type="button" class="btn-danger btn-sm" id="ticketDeleteBtn" onclick="deleteTicketConfirm()" data-i18n="btn_delete" style="display:none;">حذف</button>
                             </div>
                         </div>
                         <div class="ticket-detail-card">
                             <div class="ticket-detail-header">
                                 <span id="ticketDetailNumber" class="ticket-detail-number"></span>
                                 <h3 id="ticketDetailTitle" class="ticket-detail-title"></h3>
+                                <div id="ticketDetailTitleEdit" class="ticket-detail-edit-row" style="display:none;">
+                                    <input type="text" id="ticketDetailTitleInput" class="ticket-detail-title-input" data-i18n-ph="ticket_ph_subject" placeholder="عنوان تیکت">
+                                </div>
                                 <p id="ticketDetailOverdue" class="ticket-overdue-badge" style="display:none;" data-i18n="overdue">مهلت گذشته</p>
                             </div>
                             <p id="ticketDetailMeta" class="ticket-detail-meta"></p>
                             <div id="ticketDetailDesc" class="ticket-detail-desc" style="display:none;"></div>
+                            <div id="ticketDetailDescEdit" class="ticket-detail-edit-row" style="display:none;">
+                                <textarea id="ticketDetailDescInput" class="ticket-detail-desc-input" rows="3" data-i18n-ph="dept_ph_optional" placeholder="توضیحات"></textarea>
+                            </div>
                         </div>
                         <div id="ticketReplies" class="ticket-replies"></div>
                         <div class="ticket-reply-form form-box">

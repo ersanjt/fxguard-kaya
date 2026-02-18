@@ -1,6 +1,14 @@
 const express = require('express');
 const { Ticket, User, Department, TicketReply } = require('../models');
 const { Op, literal } = require('sequelize');
+const { isMainAdmin } = require('../lib/permissions');
+
+function canManageTicket(req) {
+    if (!req.user) return false;
+    if (isMainAdmin(req.user)) return true;
+    const role = req.user.role || '';
+    return ['owner', 'admin', 'manager'].indexOf(role) !== -1;
+}
 
 function createTicketsRouter(io) {
 const router = express.Router();
@@ -131,7 +139,8 @@ router.put('/:id', async (req, res) => {
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
         const { title, description, assignedTo, departmentId, status, priority, dueDate } = req.body;
-        if (title !== undefined) ticket.title = title.trim();
+        if ((title !== undefined || description !== undefined) && !canManageTicket(req)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند عنوان و توضیحات تیکت را ویرایش کند' });
+        if (title !== undefined) ticket.title = (title || '').trim();
         if (description !== undefined) ticket.description = description;
         if (assignedTo !== undefined) ticket.assignedTo = assignedTo;
         if (departmentId !== undefined) ticket.departmentId = departmentId;
@@ -140,6 +149,19 @@ router.put('/:id', async (req, res) => {
         if (dueDate !== undefined) ticket.dueDate = dueDate ? new Date(dueDate) : null;
         await ticket.save();
         res.json(ticket);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.delete('/:id', async (req, res) => {
+    try {
+        if (!canManageTicket(req)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند تیکت را حذف کند' });
+        const ticket = await Ticket.findByPk(req.params.id);
+        if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
+        await TicketReply.destroy({ where: { ticketId: ticket.id } });
+        await ticket.destroy();
+        res.json({ ok: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

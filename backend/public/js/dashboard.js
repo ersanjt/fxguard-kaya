@@ -71,7 +71,9 @@
                     btn_send: 'ارسا�',
                     btn_save: 'ذخ�Rر�!',
                     btn_back: 'بازگشت',
-                    btn_apply: 'اع�&ا�',
+                    btn_apply: 'اعمال',
+                    btn_edit: 'ویرایش',
+                    btn_delete: 'حذف',
                     msg_placeholder: 'پ�Rا�& خ��د را ب� ���Rس�Rد...',
                     back_to_customers: '� � بازگشت ب�! �&شتر�Rا� ',
                     back_to_list: '� � بازگشت ب�! ��Rست',
@@ -301,6 +303,8 @@
                     btn_save: 'Save',
                     btn_back: 'Back',
                     btn_apply: 'Apply',
+                    btn_edit: 'Edit',
+                    btn_delete: 'Delete',
                     msg_placeholder: 'Type your message...',
                     back_to_customers: '� � Back to customers',
                     back_to_list: '� � Back to list',
@@ -2883,23 +2887,77 @@
             document.getElementById('ticketReplyAttachments').textContent = '';
             loadTickets();
         }
+        function canManageTickets() { var r = (currentUser && currentUser.role) || ''; return r === 'owner' || r === 'admin' || r === 'manager'; }
+        var ticketEditMode = false;
+        function toggleTicketEditMode() {
+            ticketEditMode = !ticketEditMode;
+            var titleEl = document.getElementById('ticketDetailTitle');
+            var titleEdit = document.getElementById('ticketDetailTitleEdit');
+            var titleInput = document.getElementById('ticketDetailTitleInput');
+            var descEl = document.getElementById('ticketDetailDesc');
+            var descEdit = document.getElementById('ticketDetailDescEdit');
+            var descInput = document.getElementById('ticketDetailDescInput');
+            var editBtn = document.getElementById('ticketEditBtn');
+            if (ticketEditMode) {
+                if (titleEl) titleEl.style.display = 'none';
+                if (titleEdit) titleEdit.style.display = 'block';
+                if (titleInput) { titleInput.value = titleEl ? titleEl.textContent : ''; titleInput.focus(); }
+                if (descEl) descEl.style.display = 'none';
+                if (descEdit) descEdit.style.display = 'block';
+                if (descInput) descInput.value = descEl ? descEl.textContent : '';
+                if (editBtn) editBtn.textContent = t('cancel') || (LANG === 'fa' ? 'انصراف' : 'Cancel');
+            } else {
+                if (titleEl) titleEl.style.display = '';
+                if (titleEdit) titleEdit.style.display = 'none';
+                if (descEl) descEl.style.display = (descEl && descEl.textContent.trim()) ? '' : 'none';
+                if (descEdit) descEdit.style.display = 'none';
+                if (editBtn) editBtn.textContent = t('btn_edit') || (LANG === 'fa' ? 'ویرایش' : 'Edit');
+            }
+        }
         async function updateTicketFromDetail() {
             if (!currentTicketId) return;
             var statusSel = document.getElementById('ticketDetailStatus');
             var assigneeSel = document.getElementById('ticketDetailAssignee');
             var prioritySel = document.getElementById('ticketDetailPriority');
+            var dueInp = document.getElementById('ticketDetailDueDate');
+            var titleInput = document.getElementById('ticketDetailTitleInput');
+            var descInput = document.getElementById('ticketDetailDescInput');
             var body = {};
             if (statusSel) body.status = statusSel.value;
             if (assigneeSel) body.assignedTo = assigneeSel.value || null;
             if (prioritySel) body.priority = prioritySel.value;
+            if (dueInp) body.dueDate = dueInp.value ? dueInp.value : null;
+            if (ticketEditMode && titleInput) { body.title = titleInput.value.trim(); if (!body.title) { toast(t('ticket_title_required') || (LANG === 'fa' ? 'عنوان الزامی است' : 'Title required'), true); return; } }
+            if (ticketEditMode && descInput !== undefined) body.description = descInput.value || '';
             var res = await apiFetch('/api/tickets/' + currentTicketId, { method: 'PUT', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { toast(t('btn_save')); loadTicketDetail(currentTicketId); loadTickets(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+            if (res.ok) { if (ticketEditMode) { ticketEditMode = false; toggleTicketEditMode(); } toast(t('btn_save')); loadTicketDetail(currentTicketId); loadTickets(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+        function deleteTicketConfirm() {
+            if (!currentTicketId) return;
+            if (!confirm(LANG === 'fa' ? 'آیا از حذف این تیکت مطمئن هستید؟ این عمل قابل بازگشت نیست.' : 'Delete this ticket? This cannot be undone.')) return;
+            deleteTicket(currentTicketId);
+        }
+        async function deleteTicket(id) {
+            var res = await apiFetch('/api/tickets/' + id, { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (res.ok) { toast(LANG === 'fa' ? 'تیکت حذف شد' : 'Ticket deleted'); showTicketList(); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function loadTicketDetail(id) {
             currentTicketId = id;
+            ticketEditMode = false;
             document.getElementById('ticketList').style.display = 'none';
             document.getElementById('ticketDetail').style.display = 'block';
+            var titleEdit = document.getElementById('ticketDetailTitleEdit');
+            var descEdit = document.getElementById('ticketDetailDescEdit');
+            if (titleEdit) titleEdit.style.display = 'none';
+            if (descEdit) descEdit.style.display = 'none';
+            var titleEl = document.getElementById('ticketDetailTitle');
+            if (titleEl) titleEl.style.display = '';
+            var editBtn = document.getElementById('ticketEditBtn');
+            if (editBtn) { editBtn.textContent = t('btn_edit') || (LANG === 'fa' ? 'ویرایش' : 'Edit'); editBtn.style.display = canManageTickets() ? '' : 'none'; }
+            var delBtn = document.getElementById('ticketDeleteBtn');
+            if (delBtn) delBtn.style.display = canManageTickets() ? '' : 'none';
             var res = await apiFetch('/api/tickets/' + id);
             if (res.needLogin) return;
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showTicketList(); return; }
@@ -2924,9 +2982,11 @@
             var statusSel = document.getElementById('ticketDetailStatus');
             var assigneeSel = document.getElementById('ticketDetailAssignee');
             var prioritySel = document.getElementById('ticketDetailPriority');
+            var dueInp = document.getElementById('ticketDetailDueDate');
             if (statusSel) statusSel.value = t.status || 'open';
             if (assigneeSel) { await loadTicketFormSelects(); assigneeSel.value = t.assignedTo || ''; }
             if (prioritySel) prioritySel.value = t.priority || 'normal';
+            if (dueInp && t.dueDate) { var d = new Date(t.dueDate); dueInp.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); } else if (dueInp) dueInp.value = '';
             var repliesHtml = (t.replies || []).map(function(r) {
                 var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
                 return '<div class="ticket-reply-msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '"><div class="ticket-reply-content">' + escapeHtml(r.content || '') + '</div>' + att + '<div class="ticket-reply-meta">' + userDisplay(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
