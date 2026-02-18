@@ -423,7 +423,7 @@
                     ann_intro: 'View and manage general, department and personal announcements.', ann_tab_all: 'All', ann_tab_general: 'General', ann_tab_department: 'Department', ann_tab_personal: 'Personal', ann_from: 'From', ann_to: 'To',
                     new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file',
                     file_allow_download: 'Allow download and save', file_view_only: 'View only in chat',
-                    start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', close: 'Close', cancel: 'Cancel',
+                    start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', close: 'Close', chat_minimize: 'Minimize', chat_expand: 'Expand', quick_reply_hi: 'Hi', quick_reply_gotit: 'Got it', quick_reply_later: 'Will reply later', quick_reply_checking: 'Checking', start_chat_hint: 'Start the conversation', cancel: 'Cancel',
                     voice_call: 'Voice call', video_call: 'Video call', incoming_voice_call: 'Incoming voice call...', incoming_video_call: 'Incoming video call...',
                     calling_voice: 'Calling...', calling_video: 'Video calling...', in_call: 'In call', accept_call: 'Accept', reject_call: 'Reject', end_call: 'End call',
                     call_rejected: 'Call rejected', user_offline: 'User is offline',
@@ -2409,7 +2409,7 @@
                 var inProg = (data.data || []).filter(function(x){ return x.status === 'in_progress'; }).length;
                 var resolved = (data.data || []).filter(function(x){ return x.status === 'resolved'; }).length;
                 var closed = (data.data || []).filter(function(x){ return x.status === 'closed'; }).length;
-                statsEl.innerHTML = '<span class="ticket-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'کل' : 'total') + '</span><span class="ticket-stat"><strong>' + open + '</strong> ' + t('status_open') + '</span><span class="ticket-stat"><strong>' + inProg + '</strong> ' + t('status_in_progress') + '</span><span class="ticket-stat"><strong>' + resolved + '</strong> ' + t('status_resolved') + '</span><span class="ticket-stat"><strong>' + closed + '</strong> ' + t('status_closed') + '</span>';
+                statsEl.innerHTML = '<div class="ticket-stat-card"><div class="ticket-stat-val">' + (data.total || 0) + '</div><div class="ticket-stat-label">' + (LANG === 'fa' ? 'کل' : 'Total') + '</div></div><div class="ticket-stat-card ticket-stat-open"><div class="ticket-stat-val">' + open + '</div><div class="ticket-stat-label">' + t('status_open') + '</div></div><div class="ticket-stat-card ticket-stat-progress"><div class="ticket-stat-val">' + inProg + '</div><div class="ticket-stat-label">' + t('status_in_progress') + '</div></div><div class="ticket-stat-card ticket-stat-resolved"><div class="ticket-stat-val">' + resolved + '</div><div class="ticket-stat-label">' + t('status_resolved') + '</div></div><div class="ticket-stat-card ticket-stat-closed"><div class="ticket-stat-val">' + closed + '</div><div class="ticket-stat-label">' + t('status_closed') + '</div></div>';
                 statsEl.style.display = 'flex';
             }
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🎫</span><br>' + t('empty_tickets') + '</div>'; return; }
@@ -2421,7 +2421,7 @@
                 var meta = [userDisplay(t.creator), assign, dept].filter(Boolean).join(' · ');
                 var num = (t.ticketNumber || '').trim();
                 var numHtml = num ? '<span class="ticket-number">' + escapeHtml(num) + '</span> ' : '';
-                return '<div class="ticket-list-item" onclick="loadTicketDetail(\'' + t.id + '\')"><div class="ticket-item-body">' + numHtml + '<span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + escapeHtml(meta) + '</div></div><div class="ticket-item-badges"><span class="badge ' + (t.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="badge ' + (t.status || '') + '">' + escapeHtml(statusLabel) + '</span></div></div>';
+                return '<div class="ticket-card" onclick="loadTicketDetail(\'' + t.id + '\')"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(t.title) + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (t.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (t.status || '') + '">' + escapeHtml(statusLabel) + '</span></div></div>';
             }).join('');
         }
         var currentTicketId = null;
@@ -2477,9 +2477,9 @@
             if (prioritySel) prioritySel.value = t.priority || 'normal';
             var repliesHtml = (t.replies || []).map(function(r) {
                 var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">�x} ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
-                return '<div class="msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + escapeHtml(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' � ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
+                return '<div class="ticket-reply-msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '"><div class="ticket-reply-content">' + escapeHtml(r.content || '') + '</div>' + att + '<div class="ticket-reply-meta">' + userDisplay(r.user) + ' � ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');
-            document.getElementById('ticketReplies').innerHTML = repliesHtml || '<p class="text-muted" style="color:var(--text-muted);">' + t('no_reply') + '</p>';
+            document.getElementById('ticketReplies').innerHTML = repliesHtml || '<p class="ticket-no-replies text-muted">' + t('no_reply') + '</p>';
             document.getElementById('ticketReplyContent').value = '';
             document.getElementById('ticketReplyFile').value = '';
             document.getElementById('ticketReplyAttachments').textContent = '';
@@ -3455,6 +3455,10 @@
             }
             loadInternalMessages(threadId);
         }
+        function insertInternalChatQuickReply(text) {
+            var inp = document.getElementById('internalChatInput');
+            if (inp) { inp.value = (inp.value ? inp.value + ' ' : '') + text; inp.focus(); }
+        }
         async function loadInternalMessages(threadId) {
             var list = document.getElementById('internalChatMessages');
             if (!list) return;
@@ -3464,7 +3468,16 @@
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; return; }
             var data = (res.data && res.data.data) || [];
             var me = (currentUser && currentUser.id) || '';
-            list.innerHTML = data.length === 0 ? '<div class="empty">' + t('empty_internal_msgs') + '</div>' : data.map(function(m) {
+            var quickEl = document.getElementById('internalChatQuickReplies');
+            if (quickEl) {
+                if (data.length === 0) {
+                    quickEl.style.display = 'flex';
+                    var chips = [{ key: 'quick_reply_hi', text: LANG === 'fa' ? 'سلام' : 'Hi' }, { key: 'quick_reply_gotit', text: LANG === 'fa' ? 'متوجه شدم' : 'Got it' }, { key: 'quick_reply_later', text: LANG === 'fa' ? 'بعداً پاسخ می‌دهم' : 'Will reply later' }, { key: 'quick_reply_checking', text: LANG === 'fa' ? 'در حال بررسی' : 'Checking' }];
+                    quickEl.innerHTML = chips.map(function(c) { return '<button type="button" class="internal-quick-reply-chip" data-reply="' + String(c.text).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '">' + t(c.key) + '</button>'; }).join('');
+                    quickEl.querySelectorAll('.internal-quick-reply-chip').forEach(function(btn) { btn.onclick = function() { insertInternalChatQuickReply(this.getAttribute('data-reply') || ''); }; });
+                } else { quickEl.style.display = 'none'; quickEl.innerHTML = ''; }
+            }
+            list.innerHTML = data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">💬</span><p>' + t('start_chat_hint') + '</p></div>' : data.map(function(m) {
                 var isOut = m.fromUserId === me;
                 var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' � ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '') + '</div></div>';
@@ -3515,8 +3528,26 @@
         }
         function closeInternalChatPopup() {
             var popup = document.getElementById('internalChatPopup');
-            if (popup) popup.style.display = 'none';
+            if (popup) { popup.style.display = 'none'; popup.classList.remove('minimized'); }
             currentInternalThreadId = null;
+        }
+        function toggleInternalChatPopupMinimize() {
+            var popup = document.getElementById('internalChatPopup');
+            if (!popup) return;
+            popup.classList.toggle('minimized');
+            var btn = popup.querySelector('.internal-chat-popup-minimize');
+            if (btn) {
+                btn.title = popup.classList.contains('minimized') ? (LANG === 'fa' ? 'باز کردن' : 'Expand') : (LANG === 'fa' ? 'کوچک‌سازی' : 'Minimize');
+                var svg = btn.querySelector('svg');
+                if (svg) svg.innerHTML = popup.classList.contains('minimized') ? '<path d="M19 12H5M12 19l-7-7 7-7"/>' : '<path d="M5 12h14"/>';
+            }
+        }
+        function handlePopupChatKeydown(e) {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendInternalMessageFromPopup(); }
+        }
+        function insertPopupQuickReply(text) {
+            var inp = document.getElementById('internalChatPopupInput');
+            if (inp) { inp.value = (inp.value ? inp.value + ' ' : '') + text; inp.focus(); }
         }
         function openInternalChatFromPopup() {
             var tid = currentInternalThreadId;
@@ -3529,6 +3560,8 @@
             if (!list || !currentInternalThreadId) return;
             var emptyEl = list.querySelector('.empty');
             if (emptyEl) emptyEl.remove();
+            var quickEl = document.getElementById('internalChatPopupQuickReplies');
+            if (quickEl) { quickEl.style.display = 'none'; quickEl.innerHTML = ''; }
             var me = (currentUser && currentUser.id) || '';
             var isOut = m.fromUserId === me;
             var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
@@ -3545,7 +3578,16 @@
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; return; }
             var data = (res.data && res.data.data) || [];
             var me = (currentUser && currentUser.id) || '';
-            list.innerHTML = data.length === 0 ? '<div class="empty">' + t('empty_internal_msgs') + '</div>' : data.map(function(m) {
+            var quickEl = document.getElementById('internalChatPopupQuickReplies');
+            if (quickEl) {
+                if (data.length === 0) {
+                    quickEl.style.display = 'flex';
+                    var chips = [{ key: 'quick_reply_hi', text: LANG === 'fa' ? 'سلام' : 'Hi' }, { key: 'quick_reply_gotit', text: LANG === 'fa' ? 'متوجه شدم' : 'Got it' }, { key: 'quick_reply_later', text: LANG === 'fa' ? 'بعداً پاسخ می‌دهم' : 'Will reply later' }, { key: 'quick_reply_checking', text: LANG === 'fa' ? 'در حال بررسی' : 'Checking' }];
+                    quickEl.innerHTML = chips.map(function(c) { var s = String(c.text).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); return '<button type="button" class="internal-quick-reply-chip" data-reply="' + s + '">' + t(c.key) + '</button>'; }).join('');
+                    quickEl.querySelectorAll('.internal-quick-reply-chip').forEach(function(btn) { btn.onclick = function() { insertPopupQuickReply(this.getAttribute('data-reply') || ''); }; });
+                } else { quickEl.style.display = 'none'; quickEl.innerHTML = ''; }
+            }
+            list.innerHTML = data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">💬</span><p>' + t('start_chat_hint') + '</p></div>' : data.map(function(m) {
                 var isOut = m.fromUserId === me;
                 var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '') + '</div></div>';
@@ -3571,6 +3613,8 @@
             if (res.ok) {
                 if (inp) inp.value = '';
                 if (fileInput) fileInput.value = '';
+                var fileLabel = document.getElementById('internalChatPopupFileLabel');
+                if (fileLabel) { fileLabel.textContent = ''; fileLabel.style.display = 'none'; }
                 loadInternalMessagesForPopup(currentInternalThreadId);
                 loadInternalThreads();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }

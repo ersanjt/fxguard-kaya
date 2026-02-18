@@ -344,67 +344,91 @@
                     </div>
                     <div id="userList" class="user-list"></div>
                 </div>
-                <div id="pageTickets" class="page">
+                <div id="pageTickets" class="page ticket-page">
                     <div class="ticket-page-header">
-                        <div>
+                        <div class="ticket-page-header-text">
                             <h2 data-i18n="page_tickets">تیکت‌های داخلی</h2>
                             <p class="ticket-page-desc" data-i18n="tickets_intro">بخش رسمی ثبت و پیگیری درخواست‌ها و مشکلات. هر تیکت دارای شماره رسمی است.</p>
                         </div>
-                        <button type="button" class="btn-primary" onclick="toggleTicketForm()" id="btnTicketCreate" data-i18n="create_ticket">ثبت تیکت</button>
+                        <button type="button" class="btn-primary ticket-create-btn" onclick="toggleTicketForm()" id="btnTicketCreate" data-i18n="create_ticket">ثبت تیکت</button>
                     </div>
-                    <div id="ticketStats" class="ticket-stats" style="display:none;"></div>
-                    <div class="ticket-filters">
-                        <input type="text" id="ticketSearch" class="conv-filter-input" data-i18n-ph="ticket_ph_search" placeholder="جستجو شماره یا عنوان..." onkeypress="if(event.key==='Enter')applyTicketFilters()">
-                        <select id="ticketFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="in_progress">در حال انجام</option><option value="resolved">حل‌شده</option><option value="closed">بسته</option></select>
-                        <select id="ticketFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
-                        <select id="ticketFilterAssignee"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
-                        <select id="ticketFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
-                        <button type="button" class="btn-secondary" onclick="applyTicketFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
+                    <div id="ticketStats" class="ticket-stats-cards" style="display:none;"></div>
+                    <div class="ticket-filters-wrap">
+                        <div class="ticket-filters">
+                            <input type="text" id="ticketSearch" class="ticket-search-input" data-i18n-ph="ticket_ph_search" placeholder="جستجو شماره یا عنوان..." onkeypress="if(event.key==='Enter')applyTicketFilters()">
+                            <select id="ticketFilterStatus" class="ticket-filter-select"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="in_progress">در حال انجام</option><option value="resolved">حل‌شده</option><option value="closed">بسته</option></select>
+                            <select id="ticketFilterPriority" class="ticket-filter-select"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                            <select id="ticketFilterAssignee" class="ticket-filter-select"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
+                            <select id="ticketFilterDept" class="ticket-filter-select"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
+                            <button type="button" class="btn-primary ticket-filter-btn" onclick="applyTicketFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
+                        </div>
                     </div>
-                    <div id="ticketFormBox" class="form-box ticket-create-form" style="display:none;">
-                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="create_ticket">ثبت تیکت</h3>
-                        <label data-i18n="ticket_title">عنوان تیکت</label>
-                        <input id="ticketTitle" data-i18n-ph="ticket_ph_subject" placeholder="موضوع">
-                        <label data-i18n="ticket_desc">توضیحات</label>
-                        <textarea id="ticketDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری" rows="3"></textarea>
-                        <div class="ticket-form-row">
-                            <div><label data-i18n="ticket_priority">اولویت</label>
-                            <select id="ticketPriority"><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option><option value="low" data-i18n="priority_low">کم</option></select></div>
-                            <div><label data-i18n="due_date">مهلت (اختیاری)</label>
-                            <input type="date" id="ticketDueDate" style="padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-secondary); color:var(--text-primary);"></div>
+                    <div id="ticketFormBox" class="ticket-create-form form-box" style="display:none;">
+                        <h3 class="ticket-form-title" data-i18n="create_ticket">ثبت تیکت</h3>
+                        <div class="ticket-form-grid">
+                            <div class="ticket-form-field ticket-form-field-wide">
+                                <label data-i18n="ticket_title">عنوان تیکت</label>
+                                <input id="ticketTitle" data-i18n-ph="ticket_ph_subject" placeholder="موضوع">
+                            </div>
+                            <div class="ticket-form-field ticket-form-field-wide">
+                                <label data-i18n="ticket_desc">توضیحات</label>
+                                <textarea id="ticketDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری" rows="3"></textarea>
+                            </div>
+                            <div class="ticket-form-field">
+                                <label data-i18n="ticket_priority">اولویت</label>
+                                <select id="ticketPriority"><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option><option value="low" data-i18n="priority_low">کم</option></select>
+                            </div>
+                            <div class="ticket-form-field">
+                                <label data-i18n="due_date">مهلت (اختیاری)</label>
+                                <input type="date" id="ticketDueDate">
+                            </div>
+                            <div class="ticket-form-field">
+                                <label data-i18n="assignee_label">مسئول</label>
+                                <select id="ticketAssignee"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
+                            </div>
+                            <div class="ticket-form-field">
+                                <label data-i18n="label_dept">دپارتمان</label>
+                                <select id="ticketDept"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
+                            </div>
                         </div>
-                        <label data-i18n="assignee_label">مسئول</label>
-                        <select id="ticketAssignee"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
-                        <label data-i18n="label_dept">دپارتمان</label>
-                        <select id="ticketDept"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
-                        <button type="button" onclick="addTicket()" data-i18n="create_ticket">ثبت تیکت</button>
-                        <button type="button" class="btn-secondary" onclick="toggleTicketForm()" data-i18n="cancel">انصراف</button>
+                        <div class="ticket-form-actions">
+                            <button type="button" class="btn-primary" onclick="addTicket()" data-i18n="create_ticket">ثبت تیکت</button>
+                            <button type="button" class="btn-secondary" onclick="toggleTicketForm()" data-i18n="cancel">انصراف</button>
+                        </div>
                     </div>
-                    <div id="ticketList"></div>
-                    <div id="ticketDetail" style="display:none; margin-top:20px;">
-                        <button type="button" class="btn-secondary" onclick="showTicketList()" data-i18n="back_to_list">← بازگشت به لیست</button>
-                        <div class="ticket-detail-actions" style="margin:12px 0; display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
-                            <button type="button" class="btn-secondary" onclick="startProcessFromTicket()" data-i18n="process_start_from_ticket">شروع فرایند برای این تیکت</button>
-                            <select id="ticketDetailStatus"><option value="open">باز</option><option value="in_progress">در حال انجام</option><option value="resolved">حل‌شده</option><option value="closed">بسته</option></select>
-                            <select id="ticketDetailAssignee"><option value="">بدون تخصیص</option></select>
-                            <select id="ticketDetailPriority"><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
-                            <button type="button" class="btn-secondary btn-sm" onclick="updateTicketFromDetail()" data-i18n="btn_apply">اعمال</button>
+                    <div id="ticketList" class="ticket-list"></div>
+                    <div id="ticketDetail" class="ticket-detail-view" style="display:none;">
+                        <button type="button" class="ticket-back-btn btn-secondary" onclick="showTicketList()" data-i18n="back_to_list">← بازگشت به لیست</button>
+                        <div class="ticket-detail-toolbar">
+                            <button type="button" class="btn-secondary" onclick="startProcessFromTicket()" data-i18n="process_start_from_ticket">شروع فرایند</button>
+                            <div class="ticket-detail-controls">
+                                <select id="ticketDetailStatus"><option value="open">باز</option><option value="in_progress">در حال انجام</option><option value="resolved">حل‌شده</option><option value="closed">بسته</option></select>
+                                <select id="ticketDetailAssignee"><option value="">بدون تخصیص</option></select>
+                                <select id="ticketDetailPriority"><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                                <button type="button" class="btn-primary btn-sm" onclick="updateTicketFromDetail()" data-i18n="btn_apply">اعمال</button>
+                            </div>
                         </div>
-                        <div class="ticket-detail-header">
-                            <span id="ticketDetailNumber" class="ticket-detail-number"></span>
-                            <h3 id="ticketDetailTitle" style="margin:12px 0;"></h3>
-                            <p id="ticketDetailOverdue" class="ticket-overdue-badge" style="display:none;" data-i18n="overdue">مهلت گذشته</p>
+                        <div class="ticket-detail-card">
+                            <div class="ticket-detail-header">
+                                <span id="ticketDetailNumber" class="ticket-detail-number"></span>
+                                <h3 id="ticketDetailTitle" class="ticket-detail-title"></h3>
+                                <p id="ticketDetailOverdue" class="ticket-overdue-badge" style="display:none;" data-i18n="overdue">مهلت گذشته</p>
+                            </div>
+                            <p id="ticketDetailMeta" class="ticket-detail-meta"></p>
+                            <div id="ticketDetailDesc" class="ticket-detail-desc" style="display:none;"></div>
                         </div>
-                        <p id="ticketDetailMeta" class="text-muted" style="color:var(--text-secondary); font-size:0.9rem;"></p>
-                        <div id="ticketDetailDesc" class="ticket-detail-desc" style="display:none; margin:12px 0; padding:12px; background:var(--bg-secondary); border-radius:var(--radius-sm); border:1px solid var(--border); white-space:pre-wrap; font-size:0.9rem;"></div>
-                        <div id="ticketReplies" style="margin:16px 0;"></div>
-                        <div class="form-box" style="max-width:100%;">
+                        <div id="ticketReplies" class="ticket-replies"></div>
+                        <div class="ticket-reply-form form-box">
                             <label data-i18n="reply_to_ticket">پاسخ به تیکت</label>
-                            <textarea id="ticketReplyContent" rows="2" data-i18n-ph="reply_ph" placeholder="متن پاسخ..."></textarea>
-                            <label data-i18n="file_attach">پیوست فایل (اختیاری)</label>
-                            <input type="file" id="ticketReplyFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" style="margin-bottom:8px;">
-                            <div id="ticketReplyAttachments" style="font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;"></div>
-                            <button type="button" onclick="submitTicketReply()" data-i18n="send_reply">ارسال پاسخ</button>
+                            <textarea id="ticketReplyContent" rows="3" data-i18n-ph="reply_ph" placeholder="متن پاسخ..."></textarea>
+                            <div class="ticket-reply-attach-row">
+                                <label class="ticket-reply-file-label">
+                                    <input type="file" id="ticketReplyFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" class="ticket-reply-file-input" onchange="var f=this.files&&this.files[0]; document.getElementById('ticketReplyAttachments').textContent=f?f.name:'';">
+                                    <span class="ticket-reply-file-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-file-plus"/></svg> <span data-i18n="file_attach">پیوست فایل (اختیاری)</span></span>
+                                </label>
+                                <span id="ticketReplyAttachments" class="ticket-reply-attachments"></span>
+                            </div>
+                            <button type="button" class="btn-primary" onclick="submitTicketReply()" data-i18n="send_reply">ارسال پاسخ</button>
                         </div>
                     </div>
                 </div>
@@ -637,9 +661,10 @@
                                     <button type="button" class="internal-call-btn" onclick="startInternalCall('video')" title="تماس تصویری" data-i18n-title="video_call" aria-label="تماس تصویری"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
                                 </div>
                             </div>
+                            <div id="internalChatQuickReplies" class="internal-chat-full-quick-replies" style="display:none;"></div>
                             <div class="chat-messages" id="internalChatMessages" style="min-height:200px;"></div>
                             <div class="chat-send">
-                                <input type="text" id="internalChatInput" data-i18n-ph="msg_ph_short" placeholder="پیام..." onkeypress="if(event.key==='Enter')sendInternalMessage()">
+                                <input type="text" id="internalChatInput" data-i18n-ph="msg_ph_short" placeholder="پیام..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendInternalMessage();}">
                                 <div class="internal-chat-file-wrap">
                                     <input type="file" id="internalChatFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" data-i18n-title="attach_file" title="پیوست فایل" onchange="toggleInternalFileOption()">
                                     <button type="button" class="internal-chat-attach-btn" onclick="document.getElementById('internalChatFile').click()" data-i18n-title="attach_file" title="پیوست فایل" aria-label="پیوست فایل"><span class="internal-chat-attach-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-file-plus"/></svg></span><span class="internal-chat-attach-label" data-i18n="attach_file">پیوست فایل</span></button>
@@ -943,23 +968,28 @@
             </div>
         </div>
         <div id="internalChatPopup" class="internal-chat-popup" style="display:none;">
-            <div class="internal-chat-popup-header">
+            <div class="internal-chat-popup-header" onclick="toggleInternalChatPopupMinimize()">
                 <span id="internalChatPopupTitle" class="internal-chat-popup-title"></span>
-                <div class="internal-chat-popup-actions">
+                <div class="internal-chat-popup-actions" onclick="event.stopPropagation()">
+                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-minimize" onclick="toggleInternalChatPopupMinimize()" data-i18n-title="chat_minimize" title="کوچک‌سازی" aria-label="کوچک‌سازی"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
                     <button type="button" class="internal-chat-popup-btn internal-chat-popup-expand" onclick="openInternalChatFromPopup()" data-i18n-title="internal_chat_open_full" title="باز کردن چت کامل" aria-label="باز کردن چت کامل"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-expand"/></svg></button>
                     <button type="button" class="internal-chat-popup-btn internal-chat-popup-close" onclick="closeInternalChatPopup()" data-i18n-title="close" title="بستن" aria-label="بستن"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
                 </div>
             </div>
-            <div id="internalChatPopupMessages" class="internal-chat-popup-messages"></div>
-            <div class="internal-chat-popup-send">
-                <div class="internal-chat-popup-send-inner">
-                    <input type="text" id="internalChatPopupInput" data-i18n-ph="msg_ph_short" placeholder="پیام..." onkeypress="if(event.key==='Enter')sendInternalMessageFromPopup()">
-                    <div class="internal-chat-popup-attach-wrap">
-                        <input type="file" id="internalChatPopupFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" class="internal-chat-popup-file-input">
-                        <button type="button" class="internal-chat-popup-attach-btn" onclick="document.getElementById('internalChatPopupFile').click()" data-i18n-title="attach_file" title="پیوست فایل" aria-label="پیوست فایل"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-file-plus"/></svg></button>
+            <div id="internalChatPopupBody" class="internal-chat-popup-body">
+                <div id="internalChatPopupQuickReplies" class="internal-chat-quick-replies" style="display:none;"></div>
+                <div id="internalChatPopupMessages" class="internal-chat-popup-messages"></div>
+                <div class="internal-chat-popup-send">
+                    <div class="internal-chat-popup-send-inner">
+                        <input type="text" id="internalChatPopupInput" data-i18n-ph="msg_ph_short" placeholder="پیام..." onkeydown="handlePopupChatKeydown(event)">
+                        <div class="internal-chat-popup-attach-wrap">
+                            <input type="file" id="internalChatPopupFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" class="internal-chat-popup-file-input" onchange="var f=this.files&&this.files[0]; document.getElementById('internalChatPopupFileLabel').textContent=f?f.name:''; document.getElementById('internalChatPopupFileLabel').style.display=f?'inline':'none';">
+                            <span id="internalChatPopupFileLabel" class="internal-chat-popup-file-label" style="display:none;"></span>
+                            <button type="button" class="internal-chat-popup-attach-btn" onclick="document.getElementById('internalChatPopupFile').click()" data-i18n-title="attach_file" title="پیوست فایل" aria-label="پیوست فایل"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-file-plus"/></svg></button>
+                        </div>
                     </div>
+                    <button type="button" class="internal-chat-popup-send-btn" onclick="sendInternalMessageFromPopup()" data-i18n="btn_send">ارسال</button>
                 </div>
-                <button type="button" class="internal-chat-popup-send-btn" onclick="sendInternalMessageFromPopup()" data-i18n="btn_send">ارسال</button>
             </div>
         </div>
     </div>
