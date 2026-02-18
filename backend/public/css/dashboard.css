@@ -830,58 +830,67 @@
         .user-card-actions { padding: 14px 24px; background: rgba(0,0,0,0.12); border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; align-items: center; }
         .user-card-actions .btn-secondary, .user-card-actions .btn-sm { margin: 0; padding: 9px 18px; font-size: 0.85rem; }
         .staff-conv-item:hover { background: var(--bg-hover) !important; border-color: var(--accent) !important; }
-        /* ---------- مودال ویرایش کاربر ---------- */
-        .user-edit-overlay { inset: 0; padding: 20px; align-items: center; justify-content: center; background: rgba(0,0,0,0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-        .user-edit-modal { max-width: 640px; width: 100%; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: min(90vh, 720px); }
-        .user-edit-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.08); flex-shrink: 0; }
-        .user-edit-modal-title { margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--accent); }
-        .user-edit-modal-close { background: none; border: none; color: var(--text-muted); font-size: 1.6rem; line-height: 1; cursor: pointer; padding: 4px 8px; border-radius: var(--radius-sm); transition: color 0.2s, background 0.2s; }
-        .user-edit-modal-close:hover { color: var(--text-primary); background: var(--bg-hover); }
-        .user-edit-tabs { display: flex; gap: 4px; padding: 0 24px; border-bottom: 1px solid var(--border); background: transparent; flex-shrink: 0; }
-        .user-edit-tab { padding: 12px 20px; background: none; border: none; border-bottom: 3px solid transparent; color: var(--text-secondary); font-family: var(--font); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: color 0.2s, border-color 0.2s; margin-bottom: -1px; }
-        .user-edit-tab:hover { color: var(--text-primary); }
-        .user-edit-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
-        .user-edit-body { flex: 1; min-height: 0; overflow-y: auto; padding: 24px; }
+        /* ---------- مودال ویرایش کاربر (بازطراحی کاربرپسند) ---------- */
+        .user-edit-overlay { inset: 0; padding: 20px; align-items: center; justify-content: center; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); cursor: default; transition: background 0.2s ease; }
+        .user-edit-overlay:active { cursor: default; }
+        .user-edit-modal { max-width: 660px; width: 100%; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: min(90vh, 740px); border-radius: 16px; box-shadow: 0 24px 48px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.06); border: 1px solid var(--border); }
+        .user-edit-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 22px 28px; border-bottom: 1px solid var(--border); background: linear-gradient(180deg, rgba(16,185,129,0.08) 0%, transparent 100%); flex-shrink: 0; }
+        .user-edit-modal-title { margin: 0; font-size: 1.35rem; font-weight: 700; color: var(--accent); letter-spacing: -0.02em; }
+        .user-edit-modal-close { background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-muted); font-size: 1.4rem; line-height: 1; cursor: pointer; width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; transition: color 0.2s, background 0.2s, border-color 0.2s; }
+        .user-edit-modal-close:hover { color: var(--text-primary); background: var(--bg-hover); border-color: var(--text-muted); }
+        .user-edit-tabs { display: flex; gap: 6px; padding: 0 28px 0; background: transparent; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+        .user-edit-tab { padding: 14px 22px; background: transparent; border: none; border-radius: 10px 10px 0 0; color: var(--text-secondary); font-family: var(--font); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: color 0.2s, background 0.2s; margin-bottom: -1px; position: relative; }
+        .user-edit-tab:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+        .user-edit-tab.active { color: var(--accent); background: var(--bg-card); }
+        .user-edit-tab.active::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); border-radius: 2px 2px 0 0; }
+        .user-edit-body { flex: 1; min-height: 0; overflow-y: auto; padding: 28px; }
         .user-edit-tab-panel { display: none; }
-        .user-edit-tab-panel.active { display: block; }
+        .user-edit-tab-panel.active { display: block; animation: userEditFadeIn 0.2s ease; }
+        @keyframes userEditFadeIn { from { opacity: 0; } to { opacity: 1; } }
         .user-edit-form-section { max-width: 100%; }
-        .user-edit-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px 20px; margin-bottom: 4px; }
-        .user-edit-field label { display: block; font-size: 0.85rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }
-        .user-edit-field input, .user-edit-field select { width: 100%; padding: 11px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; box-sizing: border-box; transition: border-color 0.2s; }
-        .user-edit-field input:focus, .user-edit-field select:focus { outline: none; border-color: var(--accent); }
-        .user-edit-check { margin: 18px 0 16px; display: flex; align-items: center; gap: 10px; cursor: pointer; }
-        .user-edit-check input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
-        .user-edit-check-text { font-size: 0.9rem; color: var(--text-primary); }
-        .user-edit-password { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
-        .user-edit-password label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 8px; }
-        .user-edit-password input { width: 100%; padding: 11px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); box-sizing: border-box; }
+        .user-edit-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 18px 22px; margin-bottom: 6px; }
+        .user-edit-field label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
+        .user-edit-field input, .user-edit-field select { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s; }
+        .user-edit-field input:focus, .user-edit-field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.2); }
+        .user-edit-check { margin: 20px 0 18px; display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px 14px; border-radius: 10px; background: var(--bg-secondary); border: 1px solid var(--border); transition: border-color 0.2s; }
+        .user-edit-check:hover { border-color: var(--accent); }
+        .user-edit-check input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }
+        .user-edit-check-text { font-size: 0.95rem; color: var(--text-primary); }
+        .user-edit-password { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+        .user-edit-password label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
+        .user-edit-password input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); box-sizing: border-box; }
         .user-edit-perms-zone { max-width: 100%; }
-        .user-edit-perms-hint { font-size: 0.9rem; color: var(--text-secondary); margin: 0 0 16px; line-height: 1.5; }
-        .user-edit-perms-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
-        .btn-user-perms-toggle { padding: 10px 18px; font-size: 0.9rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); font-family: var(--font); font-weight: 500; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s; }
-        .btn-user-perms-toggle:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border); }
+        .user-edit-perms-hint { font-size: 0.9rem; color: var(--text-secondary); margin: 0 0 18px; line-height: 1.6; padding: 14px 18px; background: rgba(16,185,129,0.06); border-radius: 10px; border: 1px solid rgba(16,185,129,0.15); }
+        .user-edit-perms-actions { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+        .btn-user-perms-toggle { padding: 12px 22px; font-size: 0.9rem; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); font-family: var(--font); font-weight: 600; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s; }
+        .btn-user-perms-toggle:hover { background: var(--bg-hover); color: var(--text-primary); transform: translateY(-1px); }
         .btn-user-perms-toggle.btn-perms-all { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
-        .btn-user-perms-toggle.btn-perms-all:hover { background: rgba(16,185,129,0.25); }
-        .btn-user-perms-toggle.btn-perms-none:hover { border-color: var(--text-muted); color: var(--text-muted); }
-        .user-edit-perms-grid { display: flex; flex-direction: column; gap: 14px; max-height: 340px; overflow-y: auto; padding-inline-end: 6px; }
+        .btn-user-perms-toggle.btn-perms-all:hover { background: rgba(16,185,129,0.25); border-color: var(--accent); }
+        .btn-user-perms-toggle.btn-perms-none { border-color: var(--text-muted); color: var(--text-muted); }
+        .btn-user-perms-toggle.btn-perms-none:hover { background: rgba(239,68,68,0.08); border-color: var(--danger); color: var(--danger); }
+        .user-edit-perms-grid { display: flex; flex-direction: column; gap: 16px; max-height: 360px; overflow-y: auto; padding-inline-end: 8px; }
         .user-edit-perms-grid::-webkit-scrollbar { width: 8px; }
-        .user-edit-perms-grid::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 4px; }
-        .user-edit-perms-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
-        .user-edit-perm-group { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--bg-secondary); }
-        .user-edit-perm-group-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 14px 18px; background: rgba(0,0,0,0.08); border-bottom: 1px solid var(--border); }
-        .user-edit-perm-group-title { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); min-width: 0; }
-        .user-edit-perm-group-toggles { display: flex; gap: 8px; }
-        .btn-user-perms-group { padding: 6px 14px; font-size: 0.82rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-family: var(--font); font-weight: 500; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+        .user-edit-perms-grid::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 8px; }
+        .user-edit-perms-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
+        .user-edit-perm-group { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-secondary); transition: border-color 0.2s, box-shadow 0.2s; }
+        .user-edit-perm-group:hover { border-color: rgba(16,185,129,0.3); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        .user-edit-perm-group-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px 20px; background: rgba(0,0,0,0.06); border-bottom: 1px solid var(--border); }
+        .user-edit-perm-group-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); min-width: 0; }
+        .user-edit-perm-group-toggles { display: flex; gap: 10px; }
+        .btn-user-perms-group { padding: 8px 16px; font-size: 0.83rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-family: var(--font); font-weight: 500; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s; }
         .btn-user-perms-group:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-        .user-edit-perm-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px 16px; padding: 16px 18px; }
-        .user-edit-perm-item { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary); margin: 0; min-width: 0; padding: 6px 0; }
-        .user-edit-perm-item input { margin: 0; flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--accent); }
+        .user-edit-perm-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px 18px; padding: 18px 20px; }
+        .user-edit-perm-item { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary); margin: 0; min-width: 0; padding: 8px 10px; border-radius: 8px; transition: background 0.2s; }
+        .user-edit-perm-item:hover { background: rgba(255,255,255,0.04); }
+        .user-edit-perm-item input { margin: 0; flex-shrink: 0; width: 20px; height: 20px; accent-color: var(--accent); }
         .user-edit-perm-item .user-edit-perm-label { flex: 1; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
-        .user-edit-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 18px 24px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.06); flex-shrink: 0; margin-top: 0; }
+        .user-edit-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 28px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.04); flex-shrink: 0; margin-top: 0; }
         .user-edit-footer-danger { flex-shrink: 0; }
-        .user-edit-footer-actions { display: flex; gap: 10px; }
+        .user-edit-footer-actions { display: flex; gap: 12px; }
         html[dir="ltr"] .user-edit-footer-actions { margin-left: auto; }
-        .btn-danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
+        .user-edit-footer-actions .btn-primary { padding: 12px 24px; border-radius: 10px; font-weight: 600; }
+        .user-edit-footer-actions .btn-secondary { padding: 12px 24px; border-radius: 10px; }
+        .btn-danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); border-radius: 10px; }
         .btn-danger-outline:hover { background: var(--danger-soft); }
         /* ---------- مودال حذف کاربر ---------- */
         .delete-user-overlay { inset: 0; padding: 24px; align-items: center; justify-content: center; background: rgba(0,0,0,0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
