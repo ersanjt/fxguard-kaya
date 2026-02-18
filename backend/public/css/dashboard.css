@@ -972,6 +972,32 @@
         .modal-body label:first-of-type { margin-top: 0; }
         .modal-body input, .modal-body select, .modal-body textarea { width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); margin-bottom: 4px; }
         .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); }
+        /* مودال مشتری — طراحی بهبود یافته */
+        #customerModal .modal-box.customer-modal-box { max-width: min(520px, calc(100vw - 32px)); padding: 0; overflow: hidden; }
+        .customer-modal-header { display: flex; align-items: flex-start; gap: 14px; padding: 20px 24px; background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(16,185,129,0.06) 100%); border-bottom: 1px solid var(--border); }
+        .customer-modal-header-icon { width: 48px; height: 48px; min-width: 48px; border-radius: 12px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .customer-modal-header-text { flex: 1; min-width: 0; }
+        .customer-modal-header-text h3 { margin: 0 0 4px; font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
+        .customer-modal-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
+        .customer-modal-close { margin: -8px -8px 0 0; padding: 8px; border-radius: var(--radius-sm); color: var(--text-muted); transition: background 0.2s, color 0.2s; }
+        .customer-modal-close:hover { background: rgba(0,0,0,0.06); color: var(--text-primary); }
+        .customer-modal-body { padding: 20px 24px; max-height: 60vh; overflow-y: auto; }
+        .customer-modal-section { margin-bottom: 20px; }
+        .customer-modal-section:last-child { margin-bottom: 0; }
+        .customer-modal-section-title { margin: 0 0 12px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); }
+        .customer-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+        .customer-modal-field-full { grid-column: 1 / -1; }
+        .customer-modal-field label { display: block; margin-bottom: 6px; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
+        .customer-modal-field input, .customer-modal-field select { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s; }
+        .customer-modal-field input:focus, .customer-modal-field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+        .customer-modal-status-wrap { display: flex; flex-direction: column; gap: 8px; }
+        .customer-modal-status-select { width: 100%; max-width: 200px; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; cursor: pointer; }
+        .customer-modal-status-hint { font-size: 0.8rem; color: var(--text-muted); }
+        .customer-modal-notes { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; resize: vertical; min-height: 80px; transition: border-color 0.2s, box-shadow 0.2s; }
+        .customer-modal-notes:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+        .customer-modal-footer { display: flex; gap: 12px; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-secondary); }
+        .customer-modal-save { min-width: 120px; }
+        @media (max-width: 480px) { .customer-modal-grid { grid-template-columns: 1fr; } .customer-modal-header { padding: 16px 18px; } .customer-modal-body { padding: 16px 18px; } .customer-modal-footer { padding: 14px 18px; } }
         .badge.active { background: var(--accent-soft); color: var(--accent); }
         .badge.inactive { background: var(--text-muted); color: var(--text-secondary); }
         .badge.blocked { background: var(--danger-soft); color: var(--danger); }

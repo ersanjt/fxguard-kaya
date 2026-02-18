@@ -1147,28 +1147,53 @@
                     </div>
                 </div>
                 <div id="customerModal" class="modal-overlay" style="display:none;">
-                    <div class="modal-box">
-                        <div class="modal-header"><h3 id="customerModalTitle" data-i18n="customer_add">افزودن مشتری</h3><button type="button" class="modal-close" onclick="closeCustomerModal()">&times;</button></div>
-                        <div class="modal-body">
-                            <input type="hidden" id="customerModalId" value="">
-                            <label data-i18n="customer_name">نام</label>
-                            <input type="text" id="customerModalName" data-i18n-ph="customer_name_ph" placeholder="نام مشتری" required>
-                            <label data-i18n="customer_phone">تلفن</label>
-                            <input type="text" id="customerModalPhone" data-i18n-ph="customer_phone_ph" placeholder="مثال: 09121234567">
-                            <label data-i18n="customer_email">ایمیل</label>
-                            <input type="email" id="customerModalEmail" data-i18n-ph="customer_email_ph" placeholder="email@example.com">
-                            <label data-i18n="customer_status">وضعیت</label>
-                            <select id="customerModalStatus">
-                                <option value="active" data-i18n="status_active">فعال</option>
-                                <option value="inactive" data-i18n="status_inactive">غیرفعال</option>
-                                <option value="blocked" data-i18n="status_blocked">مسدود</option>
-                            </select>
-                            <label data-i18n="customer_notes">یادداشت</label>
-                            <textarea id="customerModalNotes" rows="3" data-i18n-ph="customer_notes_ph" placeholder="یادداشت درباره مشتری..."></textarea>
+                    <div class="modal-box customer-modal-box">
+                        <div class="customer-modal-header">
+                            <div class="customer-modal-header-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="customer-modal-header-text">
+                                <h3 id="customerModalTitle" data-i18n="customer_add">افزودن مشتری</h3>
+                                <p class="customer-modal-subtitle" id="customerModalSubtitle" data-i18n="customer_modal_subtitle">اطلاعات تماس و وضعیت مشتری را وارد کنید</p>
+                            </div>
+                            <button type="button" class="modal-close customer-modal-close" onclick="closeCustomerModal()" aria-label="بستن">&times;</button>
                         </div>
-                        <div class="modal-footer">
+                        <div class="customer-modal-body">
+                            <input type="hidden" id="customerModalId" value="">
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title" data-i18n="customer_contact_info">اطلاعات تماس</h4>
+                                <div class="customer-modal-grid">
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalName" data-i18n="customer_name">نام</label>
+                                        <input type="text" id="customerModalName" data-i18n-ph="customer_name_ph" placeholder="نام مشتری" required>
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalPhone" data-i18n="customer_phone">تلفن</label>
+                                        <input type="text" id="customerModalPhone" data-i18n-ph="customer_phone_ph" placeholder="مثال: 09121234567">
+                                    </div>
+                                    <div class="customer-modal-field customer-modal-field-full">
+                                        <label for="customerModalEmail" data-i18n="customer_email">ایمیل</label>
+                                        <input type="email" id="customerModalEmail" data-i18n-ph="customer_email_ph" placeholder="email@example.com">
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title" data-i18n="customer_status">وضعیت</h4>
+                                <div class="customer-modal-status-wrap">
+                                    <select id="customerModalStatus" class="customer-modal-status-select">
+                                        <option value="active" data-i18n="status_active">فعال</option>
+                                        <option value="inactive" data-i18n="status_inactive">غیرفعال</option>
+                                        <option value="blocked" data-i18n="status_blocked">مسدود</option>
+                                    </select>
+                                    <span class="customer-modal-status-hint" data-i18n="customer_status_hint">وضعیت تعیین می‌کند آیا مشتری می‌تواند با شما ارتباط برقرار کند</span>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title" data-i18n="customer_notes">یادداشت</h4>
+                                <textarea id="customerModalNotes" class="customer-modal-notes" rows="3" data-i18n-ph="customer_notes_ph" placeholder="یادداشت درباره مشتری..."></textarea>
+                            </section>
+                        </div>
+                        <div class="customer-modal-footer">
                             <button type="button" class="btn-secondary" onclick="closeCustomerModal()" data-i18n="btn_cancel">انصراف</button>
-                            <button type="button" class="btn-primary" onclick="saveCustomerFromModal()" data-i18n="btn_save">ذخیره</button>
+                            <button type="button" class="btn-primary customer-modal-save" onclick="saveCustomerFromModal()" data-i18n="btn_save">ذخیره</button>
                         </div>
                     </div>
                 </div>

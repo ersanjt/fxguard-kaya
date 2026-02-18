@@ -1615,7 +1615,9 @@
             }
             if (r.status === 401) {
                 token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
-                return { ok: false, needLogin: true, error: data.error || '�طفا�9 د��بار�! ��ارد ش���Rد' };
+                var errEl = document.getElementById('loginErr');
+                if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
+                return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
             }
             return { ok: r.ok, status: r.status, data: data };
         }
@@ -1688,18 +1690,21 @@
             if (data.token) {
                 token = data.token;
                 localStorage.setItem('crm_token', token);
+                document.documentElement.classList.add('auth-has-token');
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
                 document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('app').classList.add('show');
-                applyNavByRole();
-                applyHashRoute();
-                loadDashboard();
-                startRatesInterval();
-                startPresenceInterval();
-                connectSocket();
-                startNavBadgeRefresh();
-                showTotpPromptIfNeeded();
+                try {
+                    applyNavByRole();
+                    applyHashRoute();
+                    loadDashboard();
+                    startRatesInterval();
+                    startPresenceInterval();
+                    connectSocket();
+                    startNavBadgeRefresh();
+                    showTotpPromptIfNeeded();
+                } catch (e) { console.error('Post-login init:', e); }
             } else {
                 document.getElementById('loginErr').textContent = data.error || t('login_err_fail');
             }
@@ -1722,18 +1727,21 @@
                 window._totpTempToken = null;
                 token = data.token;
                 localStorage.setItem('crm_token', token);
+                document.documentElement.classList.add('auth-has-token');
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
                 document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('app').classList.add('show');
-                applyNavByRole();
-                applyHashRoute();
-                loadDashboard();
-                startRatesInterval();
-                startPresenceInterval();
-                connectSocket();
-                startNavBadgeRefresh();
-                showTotpPromptIfNeeded();
+                try {
+                    applyNavByRole();
+                    applyHashRoute();
+                    loadDashboard();
+                    startRatesInterval();
+                    startPresenceInterval();
+                    connectSocket();
+                    startNavBadgeRefresh();
+                    showTotpPromptIfNeeded();
+                } catch (e) { console.error('Post-TOTP init:', e); }
             } else {
                 document.getElementById('totpErr').textContent = data.error || t('login_totp_bad');
             }
@@ -4912,17 +4920,20 @@
                 currentUser = u;
                 if (u && u.email) {
                     setUserDisplay(u);
+                    document.documentElement.classList.add('auth-has-token');
                     document.getElementById('loginBox').style.display = 'none';
                     document.getElementById('app').classList.add('show');
-                    applyNavByRole();
-                    applyHashRoute();
-                    loadDashboard();
-                    loadGeneralAnnouncementsMarquee();
-                    startRatesInterval();
-                    startPresenceInterval();
-                    connectSocket();
-                    startNavBadgeRefresh();
-                    showTotpPromptIfNeeded();
+                    try {
+                        applyNavByRole();
+                        applyHashRoute();
+                        loadDashboard();
+                        loadGeneralAnnouncementsMarquee();
+                        startRatesInterval();
+                        startPresenceInterval();
+                        connectSocket();
+                        startNavBadgeRefresh();
+                        showTotpPromptIfNeeded();
+                    } catch (e) { console.error('Post-me init:', e); }
                 } else { logout(); }
             }).catch(function() { logout(); });
         }
