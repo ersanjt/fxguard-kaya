@@ -163,14 +163,33 @@ let lastQrImageDataUrl = null;
 let lastAccountInfo = null;
 
 function buildClient() {
-  const sessionPath = process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth');
-  const c = new Client({
+  const sessionPath = path.resolve(process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth'));
+  logger.info('WhatsApp session path', { sessionPath });
+
+  const puppeteerArgs = [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    '--disable-dev-shm-usage',
+    '--disable-gpu',
+    '--disable-software-rasterizer',
+    '--disable-extensions',
+    '--no-first-run',
+    '--disable-background-networking',
+    '--disable-default-apps',
+  ];
+  const extraArgs = (process.env.PUPPETEER_ARGS || '').split(',').map((s) => s.trim()).filter(Boolean);
+  if (extraArgs.length) puppeteerArgs.push(...extraArgs);
+
+  const clientOptions = {
     authStrategy: new LocalAuth({ dataPath: sessionPath }),
+    authTimeout: Math.max(60000, parseInt(process.env.WHATSAPP_AUTH_TIMEOUT_MS) || 90000),
     puppeteer: {
       headless: true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: puppeteerArgs,
     },
-  });
+  };
+
+  const c = new Client(clientOptions);
 
   attachClientEvents(c);
   return c;
@@ -201,6 +220,13 @@ function attachClientEvents(c) {
     logger.info('✅ WhatsApp Authenticated');
     io.emit('authenticated', { status: 'success' });
     redisClient.set('whatsapp:status', 'authenticated').catch(() => {});
+  });
+
+  c.on('auth_failure', (msg) => {
+    logger.error('❌ WhatsApp Auth Failure', { message: msg || 'unknown' });
+    isClientStarting = false;
+    io.emit('auth_failure', { message: msg || 'Auth failed' });
+    redisClient.set('whatsapp:status', 'auth_failure').catch(() => {});
   });
 
   c.on('ready', () => {
@@ -396,7 +422,11 @@ async function startWhatsApp() {
   isClientStarting = true;
   isClientReady = false;
 
-  if (!client) client = buildClient();
+  if (!client) {
+    const sessionPath = path.resolve(process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth'));
+    await ensureDir(sessionPath);
+    client = buildClient();
+  }
 
   try {
     redisClient.set('whatsapp:status', 'starting').catch(() => {});
