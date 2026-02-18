@@ -944,35 +944,41 @@
                         <h2 data-i18n="page_rates">تنظیم نرخ ارزها</h2>
                         <p class="rates-intro" data-i18n="rates_intro">قیمت‌ها از API دریافت می‌شوند و در نوار زیر پنل برای همه نمایش داده می‌شوند.</p>
                     </div>
-                    <div id="ratesCurrenciesBox" class="rates-currencies-section form-box" style="display:none;">
-                        <h3 class="rates-section-title" data-i18n="rates_manage_currencies">مدیریت ارزها</h3>
-                        <p class="rates-section-hint" data-i18n="rates_manage_currencies_hint">ارزهای نمایش‌داده‌شده در نرخ‌ها و نوار قیمت را اضافه، ویرایش یا حذف کنید. فقط برای کاربران دارای دسترسی نرخ ارز.</p>
-                        <div class="rates-currencies-toolbar">
-                            <button type="button" class="btn-primary" onclick="openCurrencyModal()" data-i18n="rates_add_currency">افزودن ارز</button>
+                    <div class="rates-page-layout">
+                        <div class="rates-page-col rates-page-col-left">
+                            <div id="ratesCurrenciesBox" class="rates-currencies-section form-box" style="display:none;">
+                                <h3 class="rates-section-title" data-i18n="rates_manage_currencies">مدیریت ارزها</h3>
+                                <p class="rates-section-hint" data-i18n="rates_manage_currencies_hint">ارزهای نمایش‌داده‌شده در نرخ‌ها و نوار قیمت را اضافه، ویرایش یا حذف کنید. فقط برای کاربران دارای دسترسی نرخ ارز.</p>
+                                <div class="rates-currencies-toolbar">
+                                    <button type="button" class="btn-primary" onclick="openCurrencyModal()" data-i18n="rates_add_currency">افزودن ارز</button>
+                                </div>
+                                <div id="ratesCurrenciesList" class="rates-currencies-list empty" data-i18n="loading">در حال بارگذاری...</div>
+                            </div>
+                            <div id="ratesTickerConfigBox" class="rates-ticker-section form-box" style="display:none;">
+                                <h3 class="rates-section-title" data-i18n="rates_ticker_currencies">ارزهای نوار قیمت</h3>
+                                <p class="rates-section-hint" data-i18n="rates_ticker_currencies_hint">ارزهایی که می‌خواهید در نوار پایین پنل نمایش داده شوند را انتخاب کنید. ترتیب را با کشیدن تغییر دهید.</p>
+                                <div id="ratesTickerConfigList" class="ticker-config-list"></div>
+                                <div id="ratesTickerConfigAvailable" class="ticker-config-available"></div>
+                                <button type="button" class="btn-primary" onclick="saveTickerConfig()" data-i18n="btn_save">ذخیره</button>
+                            </div>
                         </div>
-                        <div id="ratesCurrenciesList" class="rates-currencies-list empty" data-i18n="loading">در حال بارگذاری...</div>
-                    </div>
-                    <div id="ratesTickerConfigBox" class="rates-ticker-section form-box" style="display:none;">
-                        <h3 class="rates-section-title" data-i18n="rates_ticker_currencies">ارزهای نمایش‌داده‌شده در نوار قیمت</h3>
-                        <p class="rates-section-hint" data-i18n="rates_ticker_currencies_hint">ارزهایی که می‌خواهید در نوار پایین پنل نمایش داده شوند را انتخاب کنید. ترتیب را با کشیدن تغییر دهید.</p>
-                        <div id="ratesTickerConfigList" class="ticker-config-list"></div>
-                        <div id="ratesTickerConfigAvailable" class="ticker-config-available"></div>
-                        <button type="button" class="btn-primary" onclick="saveTickerConfig()" data-i18n="btn_save">ذخیره</button>
-                    </div>
-                    <div class="rates-adjust-types-info">
-                        <h3 class="rates-section-title" data-i18n="rates_adjust_type">نوع تعدیل</h3>
-                        <div class="rates-adjust-types-grid">
-                            <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_none">بدون تغییر</span><span class="rates-adjust-type-desc">—</span></div>
-                            <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_fixed">ثابت</span><span class="rates-adjust-type-desc">—</span></div>
-                            <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_delta">± تومان</span><span class="rates-adjust-type-desc">—</span></div>
-                            <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_percent">± درصد</span><span class="rates-adjust-type-desc">—</span></div>
-                        </div>
-                    </div>
-                    <div class="rates-adjustments-section">
-                        <h3 class="rates-section-title" data-i18n="rates_adjustments">تعدیل نرخ‌ها</h3>
-                        <div id="ratesAdjustmentsTable" class="rates-adjustments-content empty" data-i18n="loading">در حال بارگذاری...</div>
-                        <div class="rates-adjustments-actions">
-                            <button type="button" class="btn-primary" onclick="saveRatesAdjustments()" data-i18n="btn_save">ذخیره تعدیلات</button>
+                        <div class="rates-page-col rates-page-col-right">
+                            <div class="rates-adjust-types-info">
+                                <h3 class="rates-section-title" data-i18n="rates_adjust_type">نوع تعدیل</h3>
+                                <div class="rates-adjust-types-grid">
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_none">بدون تغییر</span><span class="rates-adjust-type-desc">—</span></div>
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_fixed">ثابت</span><span class="rates-adjust-type-desc">—</span></div>
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_delta">± تومان</span><span class="rates-adjust-type-desc">—</span></div>
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_percent">± درصد</span><span class="rates-adjust-type-desc">—</span></div>
+                                </div>
+                            </div>
+                            <div class="rates-adjustments-section">
+                                <h3 class="rates-section-title" data-i18n="rates_adjustments">تعدیل نرخ‌ها</h3>
+                                <div id="ratesAdjustmentsTable" class="rates-adjustments-content empty" data-i18n="loading">در حال بارگذاری...</div>
+                                <div class="rates-adjustments-actions">
+                                    <button type="button" class="btn-primary" onclick="saveRatesAdjustments()" data-i18n="btn_save">ذخیره تعدیلات</button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

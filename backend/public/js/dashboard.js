@@ -1701,7 +1701,9 @@
             var me = (currentUser && currentUser.id) || '';
             var isOut = m.fromUserId === me;
             var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '') + '</div></div>';
+            var avatarHtml = internalMsgAvatarHtml(m.fromUser);
+            var timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
@@ -2203,6 +2205,7 @@
         function escapeHtml(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
         function resolveAvatarUrl(avatar) { if (!avatar || typeof avatar !== 'string') return ''; var s = avatar.trim(); if (!s) return ''; if (s.indexOf('http') === 0) return ensureHttpsUrl(s); var origin = window.location.origin || ''; if (s.indexOf('/') === 0) return origin + s; return origin + '/' + s; }
+        function internalMsgAvatarHtml(fromUser) { var u = fromUser || {}; var name = (u.name || u.email || '').trim(); var initial = name[0] ? name[0].toUpperCase() : '?'; var pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'"></span>'; return '<span class="msg-avatar">' + escapeHtml(initial) + '</span>'; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         async function loadDashboard() {
@@ -2716,7 +2719,7 @@
                     if (mime.indexOf('audio/') === 0 || /\.(mp3|ogg|wav|m4a)$/.test(name)) return 'audio';
                     return 'document';
                 }
-                if (m.hasMedia && m.mediaData && m.mediaData.url) {
+                if (m.hasMedia && m.mediaData && (m.mediaData.url && String(m.mediaData.url).trim())) {
                     var rawUrl = (m.mediaData.url || '').trim();
                     var mediaBase = (rawUrl && rawUrl.startsWith('http')) ? '' : (window.location.origin || baseUrl);
                     var mediaUrl = (rawUrl && rawUrl.startsWith('http')) ? rawUrl : (mediaBase + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
@@ -4786,7 +4789,9 @@
             list.innerHTML = data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">💬</span><p>' + t('start_chat_hint') + '</p></div>' : data.map(function(m) {
                 var isOut = m.fromUserId === me;
                 var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' � ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '') + '</div></div>';
+                var avatarHtml = internalMsgAvatarHtml(m.fromUser);
+                var timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
             }).join('');
             list.scrollTop = list.scrollHeight;
         }
@@ -4883,7 +4888,9 @@
             var me = (currentUser && currentUser.id) || '';
             var isOut = m.fromUserId === me;
             var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '') + '</div></div>';
+            var avatarHtml = internalMsgAvatarHtml(m.fromUser);
+            var timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
@@ -4908,7 +4915,9 @@
             list.innerHTML = data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">💬</span><p>' + t('start_chat_hint') + '</p></div>' : data.map(function(m) {
                 var isOut = m.fromUserId === me;
                 var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + '"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '') + '</div></div>';
+                var avatarHtml = internalMsgAvatarHtml(m.fromUser);
+                var timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
             }).join('');
             list.scrollTop = list.scrollHeight;
         }
@@ -4980,12 +4989,12 @@
                 if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
                 isWhatsappPolling = false;
                 qrBox.style.display = 'none';
-                if (btnDisconnect) { btnDisconnect.style.display = 'inline-block'; btnDisconnect.textContent = t('whatsapp_disconnect_btn'); }
+                if (btnDisconnect) { btnDisconnect.textContent = t('whatsapp_disconnect_btn'); btnDisconnect.disabled = false; }
                 loadWhatsappDeptRouting();
                 loadWhatsappUnassigned();
                 return;
             }
-            if (btnDisconnect) btnDisconnect.style.display = 'none';
+            if (btnDisconnect) btnDisconnect.disabled = true;
             loadWhatsappDeptRouting();
             var qrRes = await apiFetch('/api/gateway/qr');
             if (qrRes.needLogin) return;
@@ -5017,13 +5026,19 @@
         }
         async function disconnectWhatsApp() {
             var btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
+            if (btnDisconnect && btnDisconnect.disabled) return;
             if (btnDisconnect) btnDisconnect.disabled = true;
-            var res = await apiFetch('/api/gateway/stop', { method: 'POST' });
+            toast(LANG === 'fa' ? 'در حال قطع اتصال...' : 'Disconnecting...');
+            try {
+                var res = await apiFetch('/api/gateway/stop', { method: 'POST', body: JSON.stringify({}) });
+                if (res.needLogin) { if (btnDisconnect) btnDisconnect.disabled = false; return; }
+                var msg = res.ok ? t('done_msg') : ((res.data && res.data.error) || res.error || t('err_generic'));
+                toast(msg, !res.ok);
+                if (res.ok) setTimeout(loadWhatsappStatus, 1500);
+            } catch (e) {
+                toast((e && e.message) || t('err_generic'), true);
+            }
             if (btnDisconnect) btnDisconnect.disabled = false;
-            if (res.needLogin) return;
-            var msg = (res.ok && res.data && res.data.status) ? t('done_msg') : (res.data && res.data.error) || t('err_generic');
-            toast(msg);
-            if (res.ok) setTimeout(loadWhatsappStatus, 1500);
         }
         async function loadWhatsappWelcomeConfig() {
             var ta = document.getElementById('whatsappWelcomeMessage');

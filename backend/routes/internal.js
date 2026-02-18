@@ -12,8 +12,8 @@ router.get('/threads', async (req, res) => {
             where: { userId: req.userId },
             include: [
                 { model: InternalThread, as: 'thread', include: [
-                    { model: InternalMessage, as: 'messages', limit: 1, order: [['createdAt', 'DESC']], include: [{ model: User, as: 'fromUser', attributes: ['id', 'name'] }] },
-                    { model: User, as: 'participants', attributes: ['id', 'name', 'email'], through: { attributes: [] } }
+                    { model: InternalMessage, as: 'messages', limit: 1, order: [['createdAt', 'DESC']], include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'avatar'] }] },
+                    { model: User, as: 'participants', attributes: ['id', 'name', 'email', 'avatar'], through: { attributes: [] } }
                 ]}
             ]
         });
@@ -53,13 +53,13 @@ router.post('/threads', async (req, res) => {
             const otherIds = otherParts.map(o => String(o.userId)).filter(id => id !== String(me)).sort();
             const targetIds = [...new Set(userIds.map(String))].sort();
             if (otherIds.length === targetIds.length && otherIds.every((id, i) => id === targetIds[i])) {
-                const withParticipants = await InternalThread.findByPk(thread.id, { include: [{ model: User, as: 'participants', attributes: ['id', 'name', 'email'], through: { attributes: [] } }] });
+                const withParticipants = await InternalThread.findByPk(thread.id, { include: [{ model: User, as: 'participants', attributes: ['id', 'name', 'email', 'avatar'], through: { attributes: [] } }] });
                 return res.status(201).json(withParticipants);
             }
         }
         const thread = await InternalThread.create({});
         await InternalThreadParticipant.bulkCreate([me, ...userIds].map(uid => ({ threadId: thread.id, userId: uid })));
-        const withParticipants = await InternalThread.findByPk(thread.id, { include: [{ model: User, as: 'participants', attributes: ['id', 'name', 'email'], through: { attributes: [] } }] });
+        const withParticipants = await InternalThread.findByPk(thread.id, { include: [{ model: User, as: 'participants', attributes: ['id', 'name', 'email', 'avatar'], through: { attributes: [] } }] });
         res.status(201).json(withParticipants);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -73,7 +73,7 @@ router.get('/threads/:id/messages', async (req, res) => {
         if (!part) return res.status(403).json({ error: 'دسترسی به این گفتگو ندارید' });
         const messages = await InternalMessage.findAll({
             where: { threadId: req.params.id },
-            include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'email'] }],
+            include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'email', 'avatar'] }],
             order: [['createdAt', 'ASC']]
         });
         res.json({ data: messages });
@@ -97,7 +97,7 @@ router.post('/threads/:id/messages', async (req, res) => {
             attachments: attachments.map(a => typeof a === 'object' && a.url ? { name: a.name || a.url, url: a.url, size: a.size, allowDownload: a.allowDownload !== false } : null).filter(Boolean)
         });
         await InternalThread.update({ lastMessageAt: new Date() }, { where: { id: req.params.id } });
-        const withUser = await InternalMessage.findByPk(msg.id, { include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'email'] }] });
+        const withUser = await InternalMessage.findByPk(msg.id, { include: [{ model: User, as: 'fromUser', attributes: ['id', 'name', 'email', 'avatar'] }] });
         if (io) {
             const participants = await InternalThreadParticipant.findAll({ where: { threadId: req.params.id }, attributes: ['userId'] });
             const recipientIds = participants.map(p => p.userId).filter(id => String(id) !== String(req.userId));
@@ -120,7 +120,7 @@ router.get('/users', async (req, res) => {
         if (!require('../lib/permissions').isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.branchId) where.branchId = req.user.branchId;
         const users = await User.findAll({
             where,
-            attributes: ['id', 'name', 'email'],
+            attributes: ['id', 'name', 'email', 'avatar'],
             order: [['name', 'ASC']]
         });
         res.json({ data: users });
