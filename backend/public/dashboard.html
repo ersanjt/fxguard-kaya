@@ -81,24 +81,25 @@
         </div>
     </div>
     <div id="app" class="app">
-        <header class="header">
-            <button type="button" class="header-menu-btn" id="headerMenuBtn" onclick="toggleSidebarMobile()" aria-label="منو" title="منو"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <a href="#mainContent" class="skip-link" id="skipLink" data-i18n="skip_to_content" onclick="var m=document.getElementById('mainContent');if(m){m.focus();}">پرش به محتوا</a>
+        <header class="header" role="banner">
+            <button type="button" class="header-menu-btn" id="headerMenuBtn" onclick="toggleSidebarMobile()" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
             <div class="header-left">
-                <a href="#dashboard" class="logo" onclick="showPage('dashboard'); closeSidebarMobile(); return false;">
-                    <span class="logo-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
+                <a href="#dashboard" class="logo" onclick="showPage('dashboard'); closeSidebarMobile(); return false;" aria-label="صرافی کایا — بازگشت به داشبورد">
+                    <span class="logo-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
                     <span class="logo-text"><span class="logo-dot"></span> <span data-i18n="logo_kaya">صرافی کایا</span></span>
                 </a>
                 <div class="search-wrap">
                     <span class="search-icon"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
-                    <input type="text" id="headerSearch" data-i18n-ph="header_search" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو در مکالمات و مشتریان" onkeyup="if(event.key==='Enter') doHeaderSearch();">
+                    <input type="text" id="headerSearch" data-i18n-ph="header_search" data-i18n-aria-label="header_search_aria" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو در مکالمات و مشتریان" onkeyup="if(event.key==='Enter') doHeaderSearch();">
                 </div>
             </div>
             <div class="header-right">
-                <div class="lang-switch">
-                    <button type="button" id="headerLangFa" onclick="setLang('fa')">فارسی</button>
-                    <button type="button" id="headerLangEn" onclick="setLang('en')">English</button>
+                <div class="lang-switch" role="group" data-i18n-aria-label="lang_label" aria-label="زبان">
+                    <button type="button" id="headerLangFa" onclick="setLang('fa')" aria-pressed="true" aria-label="فارسی">فارسی</button>
+                    <button type="button" id="headerLangEn" onclick="setLang('en')" aria-pressed="false" aria-label="English">English</button>
                 </div>
-                <a href="#profile" class="user-badge" onclick="showPage('profile'); return false;" title="پروفایل من"><span class="user-avatar" id="userAvatar">?</span><span id="userEmail"></span></a>
+                <a href="#profile" class="user-badge" onclick="showPage('profile'); return false;" title="پروفایل من" aria-label="پروفایل من"><span class="user-avatar" id="userAvatar" aria-hidden="true">?</span><span id="userEmail"></span></a>
                 <button type="button" class="logout-btn" onclick="logout()" data-i18n="header_logout">خروج</button>
             </div>
         </header>
@@ -112,8 +113,8 @@
             <button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="document.getElementById('totpPromptBanner').style.display='none'; localStorage.setItem('totp_prompt_dismissed', '1');" data-i18n="totp_later">بعداً</button>
         </div>
         <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebarMobile()" aria-hidden="true"></div>
-        <div class="main">
-            <nav class="sidebar" id="sidebar">
+        <div class="main" id="mainContent" tabindex="-1">
+            <nav class="sidebar" id="sidebar" role="navigation" aria-label="منوی اصلی">
                 <div class="nav-section">
                     <div class="nav-section-title" data-i18n="nav_dashboard">داشبورد</div>
                     <a href="#dashboard" class="nav-link active" data-page="dashboard" data-section="dashboard"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span data-i18n="nav_dashboard">داشبورد</span></a>
@@ -1104,8 +1105,9 @@
                 </div>
                 <div class="ticker-items" id="tickerItems"></div>
             </div>
-            <footer class="app-footer" id="appFooter">
-                <span class="app-footer-brand" data-i18n="logo_kaya">صرافی کایا</span>
+            <footer class="app-footer" id="appFooter" role="contentinfo">
+                <span class="app-footer-brand" data-i18n="footer_text">صرافی کایا — پورتال کارکنان</span>
+                <span class="app-footer-sep" aria-hidden="true">·</span>
                 <span class="app-footer-year" id="appFooterYear"></span>
             </footer>
         </div>

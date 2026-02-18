@@ -28,6 +28,7 @@
                     login_contact_support: 'با پشتیبانی تماس بگیرید',
                     lang_fa: 'فارس�R',
                     lang_en: 'English',
+                    lang_label: 'زبان',
                     nav_communications: 'ارتباطات',
                     nav_conversations: '�&کا��&ات',
                     nav_customers: '�&شتر�Rا� ',
@@ -46,7 +47,9 @@
                     nav_announcements: 'اع�ا� �R�!ا',
                     nav_whatsapp: 'اتصا� ��اتساپ',
                     nav_rates: '� رخ ارز�!ا',
+                    skip_to_content: 'پرش به محتوا',
                     header_search: 'جستج�� در �&کا��&ات�R �&شتر�Rا� ...',
+                    header_search_aria: 'جستج�� در �&کا��&ات �� �&شتر�Rا� ',
                     header_logout: 'خر��ج',
                     logo_kaya: 'صراف�R کا�Rا',
                     page_conversations: '�&کا��&ات',
@@ -250,6 +253,7 @@
                     login_contact_support: 'Contact support',
                     lang_fa: 'فارس�R',
                     lang_en: 'English',
+                    lang_label: 'Language',
                     nav_dashboard: 'Dashboard',
                     nav_communications: 'Communications',
                     nav_conversations: 'Conversations',
@@ -270,7 +274,9 @@
                     nav_whatsapp: 'WhatsApp connection',
                     nav_rates: 'Exchange rates',
                     nav_services: 'Exchange services',
+                    skip_to_content: 'Skip to content',
                     header_search: 'Search conversations, customers...',
+                    header_search_aria: 'Search conversations and customers',
                     header_logout: 'Log out',
                     logo_kaya: 'Kaya Exchange',
                     page_dashboard: 'Dashboard',
@@ -504,8 +510,11 @@
                 document.body.classList.toggle('ltr', l === 'en');
                 document.querySelectorAll('.lang-switch button').forEach(function(btn) {
                     var onclick = btn.getAttribute('onclick') || '';
-                    if (onclick.indexOf("'fa'") >= 0) { if (l === 'fa') btn.classList.add('active'); else btn.classList.remove('active'); }
-                    else if (onclick.indexOf("'en'") >= 0) { if (l === 'en') btn.classList.add('active'); else btn.classList.remove('active'); }
+                    var isFa = onclick.indexOf("'fa'") >= 0;
+                    var isEn = onclick.indexOf("'en'") >= 0;
+                    var active = (isFa && l === 'fa') || (isEn && l === 'en');
+                    btn.classList.toggle('active', active);
+                    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
                 });
                 if (typeof applyTranslations === 'function') applyTranslations();
                 try { document.title = t('page_title'); } catch (_) {}
@@ -522,6 +531,10 @@
                 document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
                     var k = el.getAttribute('data-i18n-title');
                     if (k && t(k)) el.title = t(k);
+                });
+                document.querySelectorAll('[data-i18n-aria-label]').forEach(function(el) {
+                    var k = el.getAttribute('data-i18n-aria-label');
+                    if (k && t(k)) el.setAttribute('aria-label', t(k));
                 });
             };
         })();
@@ -2730,8 +2743,8 @@
             var page = VALID_PAGES.indexOf(hash) >= 0 ? hash : 'dashboard';
             showPage(page);
         }
-        function toggleSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); if (s && s.classList.contains('sidebar-open')) { closeSidebarMobile(); } else { if (s) s.classList.add('sidebar-open'); if (o) { o.classList.add('show'); o.style.display = 'block'; document.body.style.overflow = 'hidden'; } } }
-        function closeSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } }
+        function toggleSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s && s.classList.contains('sidebar-open')) { closeSidebarMobile(); } else { if (s) s.classList.add('sidebar-open'); if (o) { o.classList.add('show'); o.style.display = 'block'; document.body.style.overflow = 'hidden'; } if (btn) btn.setAttribute('aria-expanded', 'true'); } }
+        function closeSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
         function showPage(page) {
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
