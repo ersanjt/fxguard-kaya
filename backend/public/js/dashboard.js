@@ -766,7 +766,7 @@
                     requestAnimationFrame(function() {
                         if (trackEl.scrollWidth > (itemsEl.clientWidth || 1)) {
                             itemsEl.classList.add('ticker-auto-scroll');
-                            trackEl.style.setProperty('--ticker-step', '-50%');
+                            trackEl.style.setProperty('--ticker-step', '-' + (100 / copyCount) + '%');
                         } else {
                             itemsEl.classList.remove('ticker-auto-scroll');
                         }
