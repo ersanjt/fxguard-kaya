@@ -746,7 +746,7 @@
                     var chText = formatChange(ch);
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(formatPrice(it.value)) + '</span>' + (chText ? '<span class="ticker-change' + chClass + '">' + escapeHtml(chText) + '</span>' : '') + '</span>';
                 }).join('');
-                if (trackEl) {
+                if (trackEl && items.length > 0) {
                     var copyCount = 2;
                     trackEl.innerHTML = itemsHtml + itemsHtml;
                     requestAnimationFrame(function() {
@@ -765,7 +765,11 @@
                             itemsEl.classList.remove('ticker-auto-scroll');
                         }
                     });
-                } else itemsEl.innerHTML = itemsHtml;
+                } else if (trackEl) {
+                    trackEl.innerHTML = itemsHtml;
+                } else {
+                    itemsEl.innerHTML = itemsHtml;
+                }
             }
         }
 
