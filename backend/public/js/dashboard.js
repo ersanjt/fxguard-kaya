@@ -5121,6 +5121,8 @@
                     if (btn) btn.setAttribute('aria-expanded', 'false');
                 }
             };
+            window.savePanelSettings = savePanelSettings;
+            window.loadPanelSettings = loadPanelSettings;
             window.openSupInternalChatDetail = openSupInternalChatDetail;
             window.closeSupInternalChatModal = closeSupInternalChatModal;
             window.filterInternalThreads = filterInternalThreads;
