@@ -866,9 +866,18 @@
                     else if (t === 'services') loadServices();
                     else if (t === 'cashboxes') loadCashBoxes();
                     else if (t === 'bankaccounts') loadBankAccounts();
-                    else if (t === 'transactions') loadTransactions();
+                    else if (t === 'transactions') { loadCustomerFilterForTransactions(); loadTransactions(); }
                 };
             });
+        }
+        async function loadCustomerFilterForTransactions() {
+            var sel = document.getElementById('txCustomerFilter');
+            if (!sel) return;
+            var res = await apiFetch('/api/customers?limit=500');
+            var list = (res.data && res.data.data) || [];
+            var curVal = sel.value;
+            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه مشتریان' : 'All customers') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name || c.phone || '') + '</option>'; }).join('');
+            if (curVal) sel.value = curVal;
         }
         function loadServicesPage() {
             var active = document.querySelector('.services-tab.active');
@@ -877,7 +886,7 @@
             else if (t === 'services') loadServices();
             else if (t === 'cashboxes') loadCashBoxes();
             else if (t === 'bankaccounts') loadBankAccounts();
-            else if (t === 'transactions') loadTransactions();
+            else if (t === 'transactions') { loadCustomerFilterForTransactions(); loadTransactions(); }
         }
         function formatMoney(n, curr) { var x = parseFloat(n) || 0; return x.toLocaleString('fa-IR') + (curr === 'USD' ? ' $' : curr === 'EUR' ? ' €' : ' تومان'); }
         async function loadServicesSummary() {
@@ -926,17 +935,32 @@
             var from = document.getElementById('txFromDate'); if (from && from.value) params.push('fromDate=' + encodeURIComponent(from.value));
             var to = document.getElementById('txToDate'); if (to && to.value) params.push('toDate=' + encodeURIComponent(to.value));
             var typ = document.getElementById('txTypeFilter'); if (typ && typ.value) params.push('type=' + encodeURIComponent(typ.value));
+            var st = document.getElementById('txStatusFilter'); if (st && st.value) params.push('status=' + encodeURIComponent(st.value));
+            var cust = document.getElementById('txCustomerFilter'); if (cust && cust.value) params.push('customerId=' + encodeURIComponent(cust.value));
             var res = await apiFetch('/api/exchange/transactions?' + params.join('&'));
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             var rows = (res.data && res.data.rows) || [];
             if (rows.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'تراکنشی یافت نشد' : 'No transactions') + '</div>'; return; }
             var typeLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه' };
+            var statusLabels = { pending: 'در انتظار تأیید', approved: 'تأیید شده', rejected: 'رد شده' };
+            var statusClasses = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
+            var canApprove = currentUser && ['owner', 'admin', 'manager'].indexOf(currentUser.role) >= 0;
             list.innerHTML = rows.map(function(tx) {
                 var isIn = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(tx.type) >= 0;
                 var amt = parseFloat(tx.amount) || 0;
                 var desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '…' : '');
                 var ref = tx.reference ? ' · ' + escapeHtml(tx.reference) : '';
-                return '<div class="transaction-row"><div><span class="tx-type">' + (typeLabels[tx.type] || tx.type) + '</span><div class="meta" style="margin-top:4px;">' + escapeHtml(desc) + ref + '</div><div class="meta">' + (tx.transactionDate || '') + '</div></div><div><span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span></div></div>';
+                var custName = (tx.customer && (tx.customer.name || tx.customer.phone)) ? escapeHtml(tx.customer.name || tx.customer.phone) : '';
+                var custLink = tx.customerId ? '<a href="#" onclick="showPage(\'customers\'); showCustomerHistory(\'' + tx.customerId + '\'); return false;" class="tx-customer-link">' + custName + '</a>' : '';
+                var statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
+                var actions = '<div class="tx-row-actions">';
+                actions += '<button type="button" class="btn-secondary btn-sm" onclick="openTransactionModalForEdit(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
+                if (tx.status === 'pending' && canApprove) {
+                    actions += ' <button type="button" class="btn-primary btn-sm" onclick="approveTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
+                    actions += ' <button type="button" class="btn-secondary btn-sm" onclick="rejectTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
+                }
+                actions += '</div>';
+                return '<div class="transaction-row" data-tx-id="' + tx.id + '"><div><span class="tx-type">' + (typeLabels[tx.type] || tx.type) + '</span> ' + statusBadge + (custLink ? ' <span class="tx-cust">' + custLink + '</span>' : '') + '<div class="meta" style="margin-top:4px;">' + escapeHtml(desc) + ref + '</div><div class="meta">' + (tx.transactionDate || '') + '</div></div><div class="tx-row-right"><span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span>' + actions + '</div></div>';
             }).join('');
         }
         function openCashBoxModal(id) {
@@ -1007,6 +1031,8 @@
         async function deleteBankAccount(id) { if (!confirm(LANG === 'fa' ? 'حذف این حساب بانکی؟' : 'Delete this bank account?')) return; var res = await apiFetch('/api/exchange/bank-accounts/' + id, { method: 'DELETE' }); if (res.needLogin) return; if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadBankAccounts(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); } }
         function openTransactionModal(prefillCustomerId) {
             var m = document.getElementById('transactionModal'); if (!m) return;
+            document.getElementById('txModalId').value = '';
+            var titleEl = document.getElementById('txModalTitle'); if (titleEl) titleEl.textContent = LANG === 'fa' ? 'ثبت تراکنش' : 'Add transaction';
             m.style.display = 'flex';
             document.getElementById('txModalType').value = 'cash_in';
             document.getElementById('txModalAmount').value = '';
@@ -1023,6 +1049,41 @@
             loadCashBoxesForTxSelect();
             loadBankAccountsForTxSelect();
             loadCustomersForTxSelect(prefillCustomerId);
+        }
+        async function openTransactionModalForEdit(txId) {
+            var m = document.getElementById('transactionModal'); if (!m) return;
+            var res = await apiFetch('/api/exchange/transactions/' + txId);
+            if (!res.ok || !res.data) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            var tx = res.data;
+            document.getElementById('txModalId').value = tx.id;
+            var titleEl = document.getElementById('txModalTitle'); if (titleEl) titleEl.textContent = LANG === 'fa' ? 'ویرایش تراکنش' : 'Edit transaction';
+            m.style.display = 'flex';
+            document.getElementById('txModalType').value = tx.type || 'cash_in';
+            document.getElementById('txModalAmount').value = tx.amount || '';
+            document.getElementById('txModalCurrency').value = tx.currency || 'IRR';
+            document.getElementById('txModalFromCashBox').value = tx.fromCashBoxId || '';
+            document.getElementById('txModalToCashBox').value = tx.toCashBoxId || '';
+            document.getElementById('txModalFromBankAccount').value = tx.fromBankAccountId || '';
+            document.getElementById('txModalToBankAccount').value = tx.toBankAccountId || '';
+            document.getElementById('txModalCustomer').value = tx.customerId || '';
+            document.getElementById('txModalDescription').value = tx.description || '';
+            document.getElementById('txModalReference').value = tx.reference || '';
+            document.getElementById('txModalDate').value = (tx.transactionDate || '').slice(0, 10) || new Date().toISOString().slice(0, 10);
+            txModalUpdateFields();
+            loadCashBoxesForTxSelect();
+            loadBankAccountsForTxSelect();
+            loadCustomersForTxSelect(tx.customerId);
+        }
+        async function approveTransaction(txId) {
+            var res = await apiFetch('/api/exchange/transactions/' + txId + '/approve', { method: 'POST' });
+            if (res.needLogin) return;
+            if (res.ok) { toast(LANG === 'fa' ? 'تراکنش تأیید شد' : 'Transaction approved'); loadTransactions(); loadServicesSummary(); if (currentCustomerId) loadCustomerTransactions(currentCustomerId); loadCustomerTimeline(currentCustomerId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function rejectTransaction(txId) {
+            if (!confirm(LANG === 'fa' ? 'آیا از رد این تراکنش مطمئن هستید؟' : 'Reject this transaction?')) return;
+            var res = await apiFetch('/api/exchange/transactions/' + txId + '/reject', { method: 'POST' });
+            if (res.needLogin) return;
+            if (res.ok) { toast(LANG === 'fa' ? 'تراکنش رد شد' : 'Transaction rejected'); loadTransactions(); loadServicesSummary(); if (currentCustomerId) loadCustomerTransactions(currentCustomerId); loadCustomerTimeline(currentCustomerId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function txModalUpdateFields() {
             var t = document.getElementById('txModalType').value;
@@ -1057,6 +1118,7 @@
         (function(){ var el = document.getElementById('txModalType'); if (el) el.addEventListener('change', txModalUpdateFields); })();
         function closeTransactionModal() { var m = document.getElementById('transactionModal'); if (m) m.style.display = 'none'; }
         async function saveTransactionFromModal() {
+            var txId = (document.getElementById('txModalId') && document.getElementById('txModalId').value) || '';
             var type = document.getElementById('txModalType').value;
             var amount = parseFloat(document.getElementById('txModalAmount').value);
             var currency = document.getElementById('txModalCurrency').value;
@@ -1070,9 +1132,9 @@
             var date = document.getElementById('txModalDate').value || new Date().toISOString().slice(0, 10);
             if (!amount || amount <= 0) { toast(LANG === 'fa' ? 'مبلغ معتبر وارد کنید' : 'Enter valid amount', true); return; }
             var body = { type, amount, currency, fromCashBoxId: fromBox, toCashBoxId: toBox, fromBankAccountId: fromBank, toBankAccountId: toBank, customerId, description, reference, transactionDate: date };
-            var res = await apiFetch('/api/exchange/transactions', { method: 'POST', body: JSON.stringify(body) });
+            var res = txId ? await apiFetch('/api/exchange/transactions/' + txId, { method: 'PUT', body: JSON.stringify(body) }) : await apiFetch('/api/exchange/transactions', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { closeTransactionModal(); toast(LANG === 'fa' ? 'ثبت شد' : 'Saved'); loadTransactions(); loadServicesSummary(); if (currentCustomerId) loadCustomerTransactions(currentCustomerId); loadCustomerTimeline(currentCustomerId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { closeTransactionModal(); toast(LANG === 'fa' ? 'ذخیره شد' : 'Saved'); loadTransactions(); loadServicesSummary(); if (currentCustomerId) loadCustomerTransactions(currentCustomerId); loadCustomerTimeline(currentCustomerId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function loadServices() {
             var list = document.getElementById('serviceList');
@@ -2466,6 +2528,21 @@
             if (btnTx && !btnTx._bound) { btnTx._bound = true; btnTx.onclick = function() { openTransactionModal(currentCustomerId); }; }
             loadCustomerNotes(custId);
         }
+        function goToServicesWithCustomerFilter() {
+            if (!currentCustomerId) return;
+            showPage('services');
+            document.querySelectorAll('.services-tab').forEach(function(t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+            document.querySelectorAll('.services-panel').forEach(function(p) { p.classList.remove('show'); });
+            var txTab = document.querySelector('.services-tab[data-tab="transactions"]');
+            var txPanel = document.getElementById('servicesTransactionsPanel');
+            if (txTab) { txTab.classList.add('active'); txTab.setAttribute('aria-selected', 'true'); }
+            if (txPanel) { txPanel.classList.add('show'); }
+            loadCustomerFilterForTransactions().then(function() {
+                var custSel = document.getElementById('txCustomerFilter');
+                if (custSel) custSel.value = currentCustomerId;
+                loadTransactions();
+            });
+        }
         function initCustomerDetailTabs() {
             document.querySelectorAll('.customer-detail-tab').forEach(function(btn) {
                 btn.onclick = function() {
@@ -2531,12 +2608,23 @@
             var rows = (res.data && res.data.data) || [];
             if (rows.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'تراکنشی برای این مشتری ثبت نشده.' : 'No transactions for this customer.') + '</div>'; return; }
             var typeLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه' };
+            var statusLabels = { pending: 'در انتظار تأیید', approved: 'تأیید شده', rejected: 'رد شده' };
+            var statusClasses = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
+            var canApprove = currentUser && ['owner', 'admin', 'manager'].indexOf(currentUser.role) >= 0;
             list.innerHTML = rows.map(function(tx) {
                 var isIn = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(tx.type) >= 0;
                 var amt = parseFloat(tx.amount) || 0;
                 var desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '…' : '');
                 var ref = tx.reference ? ' · ' + escapeHtml(tx.reference) : '';
-                return '<div class="transaction-row customer-transaction-row"><div><span class="tx-type">' + (typeLabels[tx.type] || tx.type) + '</span><div class="meta" style="margin-top:4px;">' + escapeHtml(desc) + ref + '</div><div class="meta">' + (tx.transactionDate || '') + '</div></div><div><span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span></div></div>';
+                var statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
+                var actions = '<div class="tx-row-actions">';
+                actions += '<button type="button" class="btn-secondary btn-sm" onclick="openTransactionModalForEdit(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
+                if (tx.status === 'pending' && canApprove) {
+                    actions += ' <button type="button" class="btn-primary btn-sm" onclick="approveTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
+                    actions += ' <button type="button" class="btn-secondary btn-sm" onclick="rejectTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
+                }
+                actions += '</div>';
+                return '<div class="transaction-row customer-transaction-row"><div><span class="tx-type">' + (typeLabels[tx.type] || tx.type) + '</span> ' + statusBadge + '<div class="meta" style="margin-top:4px;">' + escapeHtml(desc) + ref + '</div><div class="meta">' + (tx.transactionDate || '') + '</div></div><div class="tx-row-right"><span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span>' + actions + '</div></div>';
             }).join('');
         }
         async function loadCustomerNotes(custId) {

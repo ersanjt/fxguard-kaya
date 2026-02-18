@@ -139,6 +139,7 @@ window.__I18N_FA = {
     description: 'توضیح',
     reference: 'شماره مرجع / رسید',
     transaction_add: 'ثبت تراکنش',
+    view_in_services: 'مشاهده در خدمات صرافی',
     tx_customer_label: 'مشتری (اختیاری)',
     transaction_type: 'نوع تراکنش',
     transaction_date: 'تاریخ',

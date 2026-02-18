@@ -912,6 +912,8 @@
                                 <input type="date" id="txFromDate" data-i18n-ph="from_date" aria-label="از تاریخ">
                                 <input type="date" id="txToDate" data-i18n-ph="to_date" aria-label="تا تاریخ">
                                 <select id="txTypeFilter" aria-label="نوع تراکنش"><option value="" data-i18n="filter_all">همه</option><option value="cash_in">ورود به صندوق</option><option value="cash_out">خروج از صندوق</option><option value="transfer_box">انتقال بین صندوق‌ها</option><option value="bank_deposit">واریز به بانک</option><option value="bank_withdraw">برداشت از بانک</option><option value="transfer_account">انتقال بین حساب‌ها</option><option value="income">درآمد</option><option value="expense">هزینه</option></select>
+                                <select id="txStatusFilter" aria-label="وضعیت"><option value="">همه وضعیت‌ها</option><option value="pending">در انتظار تأیید</option><option value="approved">تأیید شده</option><option value="rejected">رد شده</option></select>
+                                <select id="txCustomerFilter" aria-label="مشتری"><option value="">همه مشتریان</option></select>
                                 <button type="button" class="btn-secondary" onclick="loadTransactions()" data-i18n="apply_filter">اعمال</button>
                             </div>
                         </div>
@@ -993,8 +995,9 @@
                 </div>
                 <div id="transactionModal" class="modal-overlay" style="display:none;">
                     <div class="modal-box" style="max-width:480px;">
-                        <div class="modal-header"><h3 data-i18n="transaction_add">ثبت تراکنش</h3><button type="button" class="modal-close" onclick="closeTransactionModal()">&times;</button></div>
+                        <div class="modal-header"><h3 id="txModalTitle" data-i18n="transaction_add">ثبت تراکنش</h3><button type="button" class="modal-close" onclick="closeTransactionModal()">&times;</button></div>
                         <div class="modal-body">
+                            <input type="hidden" id="txModalId" value="">
                             <label data-i18n="tx_customer_label">مشتری (اختیاری)</label>
                             <select id="txModalCustomer"><option value="">بدون مشتری</option></select>
                             <label data-i18n="transaction_type">نوع تراکنش</label>
@@ -1047,6 +1050,7 @@
                     <div id="customerTransactionsPanel" class="customer-detail-panel">
                         <div class="customer-transactions-header">
                             <button type="button" class="btn-primary" id="btnCustomerAddTransaction" data-i18n="transaction_add">ثبت تراکنش</button>
+                            <button type="button" class="btn-secondary" id="btnViewInServices" onclick="goToServicesWithCustomerFilter()" data-i18n="view_in_services">مشاهده در خدمات صرافی</button>
                         </div>
                         <div id="customerTransactionsList"></div>
                     </div>

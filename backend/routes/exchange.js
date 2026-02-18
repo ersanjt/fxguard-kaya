@@ -163,13 +163,14 @@ router.get('/transactions', requireServices, async (req, res) => {
             ];
         }
         if (req.query.customerId) where.customerId = req.query.customerId;
+        if (req.query.status && ['pending', 'approved', 'rejected'].includes(req.query.status)) where.status = req.query.status;
         const limit = Math.min(parseInt(req.query.limit) || 100, 500);
         const offset = parseInt(req.query.offset) || 0;
         const list = await Transaction.findAndCountAll({
             where,
             include: [
                 { model: Branch, as: 'branch', attributes: ['id', 'name'] },
-                { model: User, as: 'user', attributes: ['id', 'fullName'] },
+                { model: User, as: 'user', attributes: ['id', 'name'] },
                 { model: CashBox, as: 'fromCashBox', attributes: ['id', 'name'] },
                 { model: CashBox, as: 'toCashBox', attributes: ['id', 'name'] },
                 { model: BankAccount, as: 'fromBankAccount', attributes: ['id', 'name', 'bankName'] },
@@ -181,6 +182,26 @@ router.get('/transactions', requireServices, async (req, res) => {
             offset
         });
         res.json(list);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.get('/transactions/:id', requireServices, async (req, res) => {
+    try {
+        const tx = await Transaction.findByPk(req.params.id, {
+            include: [
+                { model: Branch, as: 'branch', attributes: ['id', 'name'] },
+                { model: User, as: 'user', attributes: ['id', 'name'] },
+                { model: CashBox, as: 'fromCashBox', attributes: ['id', 'name'] },
+                { model: CashBox, as: 'toCashBox', attributes: ['id', 'name'] },
+                { model: BankAccount, as: 'fromBankAccount', attributes: ['id', 'name', 'bankName'] },
+                { model: BankAccount, as: 'toBankAccount', attributes: ['id', 'name', 'bankName'] },
+                { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'], required: false }
+            ]
+        });
+        if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
+        res.json(tx);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

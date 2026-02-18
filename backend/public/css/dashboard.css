@@ -1273,6 +1273,16 @@
         .transaction-row .tx-amount { font-weight: 600; font-variant-numeric: tabular-nums; flex-shrink: 0; }
         .transaction-row .tx-amount.positive { color: var(--accent); }
         .transaction-row .tx-amount.negative { color: var(--danger); }
+        .transaction-row .tx-row-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; flex-shrink: 0; }
+        .transaction-row .tx-row-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+        .transaction-row .tx-row-actions .btn-sm { padding: 4px 10px; font-size: 0.8rem; }
+        .transaction-row .tx-customer-link { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+        .transaction-row .tx-customer-link:hover { text-decoration: underline; }
+        .transaction-row .tx-cust { margin-right: 8px; }
+        .badge.badge-pending { background: rgba(245, 158, 11, 0.25); color: #f59e0b; }
+        .badge.badge-approved { background: rgba(34, 197, 94, 0.25); color: #22c55e; }
+        .badge.badge-rejected { background: rgba(239, 68, 68, 0.25); color: #ef4444; }
+        .customer-transactions-header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; }
         .tx-field-wrap { margin-top: 12px; }
         .tx-field-wrap label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; }
         .tx-field-wrap select { width: 100%; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); }
