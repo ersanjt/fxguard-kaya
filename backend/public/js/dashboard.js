@@ -48,6 +48,15 @@
                     nav_whatsapp: 'اتصا� ��اتساپ',
                     nav_rates: '� رخ ارز�!ا',
                     skip_to_content: 'پرش به محتوا',
+                    nav_panel_settings: 'ظاهر پنل',
+                    page_panel_settings: 'ظاهر پنل',
+                    panel_settings_intro: 'نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.',
+                    panel_site_name: 'نام سایت',
+                    panel_logo_url: 'آدرس لوگو (URL)',
+                    panel_favicon_url: 'آدرس فاویکون (URL)',
+                    panel_login_title: 'عنوان صفحه ورود',
+                    panel_page_title: 'عنوان تب مرورگر',
+                    panel_footer_text: 'متن فوتر',
                     header_search: 'جستج�� در �&کا��&ات�R �&شتر�Rا� ...',
                     header_search_aria: 'جستج�� در �&کا��&ات �� �&شتر�Rا� ',
                     header_logout: 'خر��ج',
@@ -276,6 +285,7 @@
                     nav_whatsapp: 'WhatsApp connection',
                     nav_rates: 'Exchange rates',
                     nav_services: 'Exchange services',
+                    nav_panel_settings: 'Panel appearance',
                     skip_to_content: 'Skip to content',
                     header_search: 'Search conversations, customers...',
                     header_search_aria: 'Search conversations and customers',
@@ -298,6 +308,14 @@
                     page_supervision: 'Supervision & monitoring (Owner)',
                     page_whatsapp: 'WhatsApp connection',
                     page_rates: 'Exchange rate settings',
+                    page_panel_settings: 'Panel appearance',
+                    panel_settings_intro: 'Set site name, logo, favicon and footer text. Only visible to admins.',
+                    panel_site_name: 'Site name',
+                    panel_logo_url: 'Logo URL',
+                    panel_favicon_url: 'Favicon URL',
+                    panel_login_title: 'Login page title',
+                    panel_page_title: 'Browser tab title',
+                    panel_footer_text: 'Footer text',
                     page_customer_detail: 'Customer history',
                     btn_send: 'Send',
                     btn_save: 'Save',
@@ -1724,6 +1742,7 @@
                 document.getElementById('app').classList.add('show');
                 try {
                     applyNavByRole();
+                    loadPanelSettingsAndApply();
                     applyHashRoute();
                     loadDashboard();
                     startRatesInterval();
@@ -1761,6 +1780,7 @@
                 document.getElementById('app').classList.add('show');
                 try {
                     applyNavByRole();
+                    loadPanelSettingsAndApply();
                     applyHashRoute();
                     loadDashboard();
                     startRatesInterval();
@@ -2843,7 +2863,55 @@
                 link.style.display = perms[section] !== false ? '' : 'none';
             });
         }
-        var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','services'];
+        function applyBranding(s) {
+            if (!s) return;
+            var defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
+            var defSite = (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
+            var defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
+            if (s.pageTitle) document.title = s.pageTitle; else document.title = defTitle;
+            var fav = document.getElementById('favicon');
+            if (fav) fav.href = (s.faviconUrl && s.faviconUrl.trim()) ? s.faviconUrl : ('data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 32 32\'><rect width=\'32\' height=\'32\' rx=\'8\' fill=\'%23059669\'/><path fill=\'%23fff\' d=\'M10 8h4l2 4 2-4h4v12h-3v-6l-1.5 3L16 11v9h-3V8zm8 6h2v4h-2v-4z\'/></svg>');
+            var logoText = s.siteName || defSite;
+            var headerIcon = document.getElementById('headerLogoIcon');
+            if (headerIcon) {
+                if (s.logoUrl && s.logoUrl.trim()) { headerIcon.innerHTML = '<img src="' + escapeHtml(s.logoUrl) + '" alt="" style="width:28px;height:28px;object-fit:contain">'; } else { headerIcon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg>'; }
+            }
+            var headerLogoText = document.getElementById('headerLogoText');
+            if (headerLogoText) headerLogoText.textContent = logoText;
+            var footerBrand = document.getElementById('appFooterBrand');
+            if (footerBrand) footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
+            var loginTitleEl = document.getElementById('loginTitle');
+            if (loginTitleEl) loginTitleEl.textContent = (s.loginTitle && s.loginTitle.trim()) ? s.loginTitle : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal');
+            var setLoginLogo = function(containerId, size) {
+                var c = document.getElementById(containerId);
+                if (!c) return;
+                if (s.logoUrl && s.logoUrl.trim()) { c.innerHTML = '<img src="' + escapeHtml(s.logoUrl) + '" alt="" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain">'; } else { c.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg>'; }
+            };
+            setLoginLogo('loginLogo', 48);
+            setLoginLogo('loginLogoTotp', 40);
+        }
+        async function loadPanelSettingsAndApply() {
+            var res = await apiFetch('/api/panel-settings');
+            if (res.ok && res.data) applyBranding(res.data);
+        }
+        async function loadPanelSettings() {
+            var res = await apiFetch('/api/panel-settings');
+            if (!res.ok) { toast(res.data && res.data.error ? res.data.error : t('err_generic'), true); return; }
+            var d = res.data || {};
+            var set = function(id, v) { var el = document.getElementById(id); if (el) el.value = v != null ? v : ''; };
+            set('panelSettingSiteName', d.siteName);
+            set('panelSettingLogoUrl', d.logoUrl);
+            set('panelSettingFaviconUrl', d.faviconUrl);
+            set('panelSettingLoginTitle', d.loginTitle);
+            set('panelSettingPageTitle', d.pageTitle);
+            set('panelSettingFooterText', d.footerText);
+        }
+        async function savePanelSettings() {
+            var payload = { siteName: document.getElementById('panelSettingSiteName').value.trim(), logoUrl: document.getElementById('panelSettingLogoUrl').value.trim(), faviconUrl: document.getElementById('panelSettingFaviconUrl').value.trim(), loginTitle: document.getElementById('panelSettingLoginTitle').value.trim(), pageTitle: document.getElementById('panelSettingPageTitle').value.trim(), footerText: document.getElementById('panelSettingFooterText').value.trim() };
+            var res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
+            if (res.ok && res.data) { applyBranding(res.data); toast(t('saved')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','services','panel-settings'];
         function applyHashRoute() {
             var hash = (location.hash || '').replace(/^#/, '');
             var page = VALID_PAGES.indexOf(hash) >= 0 ? hash : 'dashboard';
@@ -2858,7 +2926,7 @@
             if (page && window.location.hash !== '#' + page) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#' + page); } catch (e) {} }
             document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
-            var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices' };
+            var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices', 'panel-settings': 'pagePanelSettings' };
             if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations' || page === 'internal-chat') ? 'flex' : 'block'; el.classList.add('show'); } }
             var content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
@@ -2879,6 +2947,7 @@
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
             if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); var popupTid = currentInternalThreadId; closeInternalChatPopup(); var wrap = document.getElementById('internalChatLayoutWrap'); if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open'); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
             if (page === 'supervision') { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
+            if (page === 'panel-settings') loadPanelSettings();
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (prevPage === 'internal-chat' && page !== 'internal-chat' && currentInternalThreadId) {
                 var headerEl = document.getElementById('internalChatHeader');
@@ -5063,8 +5132,9 @@
                     document.documentElement.classList.add('auth-has-token');
                     document.getElementById('loginBox').style.display = 'none';
                     document.getElementById('app').classList.add('show');
-                    try {
+try {
                         applyNavByRole();
+                        loadPanelSettingsAndApply();
                         applyHashRoute();
                         loadDashboard();
                         loadGeneralAnnouncementsMarquee();
@@ -5076,4 +5146,6 @@
                     } catch (e) { console.error('Post-me init:', e); }
                 } else { logout(); }
             }).catch(function() { logout(); });
+        } else {
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
         }

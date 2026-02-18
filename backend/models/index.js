@@ -52,7 +52,8 @@ const models = {
     CustomerNote: require('./CustomerNote')(sequelize),
     CashBox: require('./CashBox')(sequelize),
     BankAccount: require('./BankAccount')(sequelize),
-    Transaction: require('./Transaction')(sequelize)
+    Transaction: require('./Transaction')(sequelize),
+    PanelSetting: require('./PanelSetting')(sequelize)
 };
 
 // تعریف روابط

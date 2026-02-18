@@ -21,6 +21,7 @@ const SECTION_KEYS = [
     'rates',          // تنظیم نرخ ارزها (نوار زیر پنل)
     'services',       // خدمات صرافی (سرویس‌های قابل ارائه)
     'processes',      // فرایندهای کسب‌وکار (BPM)
+    'panel_settings', // ظاهر پنل (لوگو، فاویکون، نام سایت)
 ];
 
 const MANAGE_USERS_KEY = 'manage_users'; // owner، admin، manager یا دارنده این دسترسی می‌توانند کاربران و دپارتمان‌ها را ویرایش/مدیریت کنند
@@ -39,31 +40,31 @@ const DEFAULT_BY_ROLE = {
     owner: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: true,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, panel_settings: true,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true,
     },
     admin: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, panel_settings: true,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true,
     },
     manager: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
         [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true,
     },
     supervisor: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: true, branches: false, supervision: false,
-        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true,
+        staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
         [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: true,
     },
     agent: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: false, branches: false, supervision: false,
-        staff_activity: false, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true,
+        staff_activity: false, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
         [MANAGE_USERS_KEY]: false,
     },
 };

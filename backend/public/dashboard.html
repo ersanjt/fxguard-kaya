@@ -9,7 +9,7 @@
     <meta name="theme-color" content="#0c1222">
     <meta name="description" content="پورتال کارکنان صرافی کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
     <title>پورتال کارکنان کایا | صرافی کایا</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23059669'/><path fill='%23fff' d='M10 8h4l2 4 2-4h4v12h-3v-6l-1.5 3L16 11v9h-3V8zm8 6h2v4h-2v-4z'/></svg>">
+    <link rel="icon" id="favicon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23059669'/><path fill='%23fff' d='M10 8h4l2 4 2-4h4v12h-3v-6l-1.5 3L16 11v9h-3V8zm8 6h2v4h-2v-4z'/></svg>">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -41,12 +41,12 @@
     </svg>
     <div id="loginBox" class="login-wrap">
         <div class="login-box" id="loginStep1">
-            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
+            <div class="login-logo" id="loginLogo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
             <div class="lang-switch login-lang">
                 <button type="button" id="langFa" onclick="setLang('fa')" class="active">فارسی</button>
                 <button type="button" id="langEn" onclick="setLang('en')">English</button>
             </div>
-            <h1 data-i18n="login_title">پورتال کارکنان کایا</h1>
+            <h1 id="loginTitle" data-i18n="login_title">پورتال کارکنان کایا</h1>
             <p class="sub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
             <input type="text" id="email" data-i18n-ph="login_email_or_username" placeholder="ایمیل یا نام کاربری" autocomplete="username">
             <div class="password-wrap">
@@ -63,7 +63,7 @@
             </p>
         </div>
         <div class="login-box" id="loginStepTotp" style="display:none;">
-            <div class="login-logo"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
+            <div class="login-logo" id="loginLogoTotp"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
             <div class="lang-switch login-lang">
                 <button type="button" onclick="setLang('fa')" data-i18n="lang_fa">فارسی</button>
                 <button type="button" onclick="setLang('en')" data-i18n="lang_en">English</button>
@@ -85,9 +85,9 @@
         <header class="header" role="banner">
             <button type="button" class="header-menu-btn" id="headerMenuBtn" onclick="toggleSidebarMobile()" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
             <div class="header-left">
-                <a href="#dashboard" class="logo" onclick="showPage('dashboard'); closeSidebarMobile(); return false;" aria-label="صرافی کایا — بازگشت به داشبورد">
-                    <span class="logo-icon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
-                    <span class="logo-text"><span class="logo-dot"></span> <span data-i18n="logo_kaya">صرافی کایا</span></span>
+                <a href="#dashboard" class="logo" id="headerLogo" onclick="showPage('dashboard'); closeSidebarMobile(); return false;" aria-label="صرافی کایا — بازگشت به داشبورد">
+                    <span class="logo-icon" id="headerLogoIcon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
+                    <span class="logo-text"><span class="logo-dot"></span> <span id="headerLogoText" data-i18n="logo_kaya">صرافی کایا</span></span>
                 </a>
                 <div class="search-wrap header-search-wrap">
                     <button type="button" class="header-search-trigger" id="headerSearchTrigger" onclick="openHeaderSearchPopup()" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
@@ -168,6 +168,7 @@
                     <a href="#whatsapp" class="nav-link" data-page="whatsapp" data-section="whatsapp"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-phone"/></svg></span> <span data-i18n="nav_whatsapp">اتصال واتساپ</span></a>
                     <a href="#rates" class="nav-link" data-page="rates" data-section="rates"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span data-i18n="nav_rates">نرخ ارزها</span></a>
                     <a href="#services" class="nav-link" data-page="services" data-section="services"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building"/></svg></span> <span data-i18n="nav_services">خدمات صرافی</span></a>
+                    <a href="#panel-settings" class="nav-link" data-page="panel-settings" data-section="panel_settings"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span data-i18n="nav_panel_settings">ظاهر پنل</span></a>
                 </div>
             </nav>
             <div class="content">
@@ -1003,6 +1004,39 @@
                         <div id="transactionList" class="transaction-list"></div>
                     </div>
                 </div>
+                <div id="pagePanelSettings" class="page">
+                    <h2 data-i18n="page_panel_settings">ظاهر پنل</h2>
+                    <p class="text-muted" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
+                    <div class="panel-settings-form card" style="max-width: 560px;">
+                        <div class="form-group">
+                            <label for="panelSettingSiteName" data-i18n="panel_site_name">نام سایت</label>
+                            <input type="text" id="panelSettingSiteName" placeholder="مثال: صرافی کایا">
+                        </div>
+                        <div class="form-group">
+                            <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">آدرس لوگو (URL)</label>
+                            <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png">
+                        </div>
+                        <div class="form-group">
+                            <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">آدرس فاویکون (URL)</label>
+                            <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico">
+                        </div>
+                        <div class="form-group">
+                            <label for="panelSettingLoginTitle" data-i18n="panel_login_title">عنوان صفحه ورود</label>
+                            <input type="text" id="panelSettingLoginTitle" placeholder="پورتال کارکنان کایا">
+                        </div>
+                        <div class="form-group">
+                            <label for="panelSettingPageTitle" data-i18n="panel_page_title">عنوان تب مرورگر</label>
+                            <input type="text" id="panelSettingPageTitle" placeholder="پورتال کارکنان | صرافی کایا">
+                        </div>
+                        <div class="form-group">
+                            <label for="panelSettingFooterText" data-i18n="panel_footer_text">متن فوتر</label>
+                            <input type="text" id="panelSettingFooterText" placeholder="صرافی کایا — پورتال کارکنان">
+                        </div>
+                        <div class="form-actions">
+                            <button type="button" class="btn-primary" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </div>
+                </div>
                 <div id="serviceModal" class="modal-overlay" style="display:none;">
                     <div class="modal-box">
                         <div class="modal-header"><h3 id="serviceModalTitle" data-i18n="service_add">افزودن سرویس</h3><button type="button" class="modal-close" onclick="closeServiceModal()">&times;</button></div>
@@ -1217,7 +1251,7 @@
                 <div class="ticker-items" id="tickerItems"><div class="ticker-item-track" id="tickerItemTrack"></div></div>
             </div>
             <footer class="app-footer" id="appFooter" role="contentinfo">
-                <span class="app-footer-brand" data-i18n="footer_text">صرافی کایا — پورتال کارکنان</span>
+                <span class="app-footer-brand" id="appFooterBrand" data-i18n="footer_text">صرافی کایا — پورتال کارکنان</span>
                 <span class="app-footer-sep" aria-hidden="true">·</span>
                 <span class="app-footer-year" id="appFooterYear"></span>
             </footer>

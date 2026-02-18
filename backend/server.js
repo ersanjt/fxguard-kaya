@@ -797,6 +797,7 @@ const announcementRoutes = require('./routes/announcements');
 const internalRoutes = require('./routes/internal');
 apiRouter.use('/announcements', authMiddleware, announcementRoutes);
 apiRouter.use('/internal', authMiddleware, internalRoutes(io));
+apiRouter.use('/panel-settings', require('./routes/panelSettings'));
 
 apiRouter.post('/webhook/incoming-message', (req, res) => {
     processIncomingMessage(req.body).then(() => res.json({ ok: true })).catch(err => {
