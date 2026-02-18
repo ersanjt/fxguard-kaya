@@ -16,6 +16,37 @@ const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config();
 
+// ==================== Config ====================
+const CONFIG = {
+  // امنیت
+  gatewayApiSecret: process.env.GATEWAY_API_SECRET || '',
+  secretMinLength: 32,
+
+  // Rate limiting
+  rateLimitWindowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  rateLimitMax: parseInt(process.env.RATE_LIMIT_MAX) || 200,
+  sendLimitWindowMs: parseInt(process.env.SEND_LIMIT_WINDOW_MS) || 60 * 1000,
+  sendLimitMax: parseInt(process.env.SEND_LIMIT_MAX) || 60,
+
+  // اتصال مجدد خودکار
+  autoReconnect: process.env.WHATSAPP_AUTO_RECONNECT !== 'false',
+  reconnectDelayMs: Math.max(5000, parseInt(process.env.WHATSAPP_RECONNECT_DELAY_MS) || 15000),
+  reconnectMaxRetries: Math.max(1, parseInt(process.env.WHATSAPP_RECONNECT_MAX_RETRIES) || 10),
+  reconnectBackoffMultiplier: parseFloat(process.env.WHATSAPP_RECONNECT_BACKOFF) || 1.5,
+
+  // وب‌هوک Backend
+  backendWebhookRetries: parseInt(process.env.BACKEND_WEBHOOK_RETRIES) || 5,
+  backendWebhookRetryDelayMs: parseInt(process.env.BACKEND_WEBHOOK_RETRY_DELAY_MS) || 2000,
+
+  // Media URL — whitelist اختیاری (خالی = فقط SSRF block)
+  mediaUrlWhitelist: (process.env.MEDIA_URL_WHITELIST || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean),
+};
+
+let reconnectAttemptCount = 0;
+
 // ==================== App / Server ====================
 const app = express();
 const server = http.createServer(app);
@@ -29,20 +60,19 @@ const io = socketIo(server, {
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
-// Rate limiting (global)
+// Rate limiting (configurable)
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
+  windowMs: CONFIG.rateLimitWindowMs,
+  max: CONFIG.rateLimitMax,
   message: { error: 'Too many requests' },
   standardHeaders: true,
   legacyHeaders: false,
 });
 app.use('/api/', apiLimiter);
 
-// Stricter limit for send-message
 const sendLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 60,
+  windowMs: CONFIG.sendLimitWindowMs,
+  max: CONFIG.sendLimitMax,
   message: { error: 'Rate limit exceeded' },
   standardHeaders: true,
   legacyHeaders: false,
@@ -69,13 +99,11 @@ const logger = winston.createLogger({
 });
 
 // ==================== Security ====================
-const GATEWAY_API_SECRET = process.env.GATEWAY_API_SECRET || '';
-
 function requireGatewaySecret(req, res, next) {
-  if (!GATEWAY_API_SECRET) return next();
+  if (!CONFIG.gatewayApiSecret) return next();
   const secret = req.headers['x-gateway-secret'] || req.headers['authorization']?.replace(/^Bearer\s+/i, '');
-  if (secret !== GATEWAY_API_SECRET) {
-    logger.warn('Gateway API: unauthorized request');
+  if (secret !== CONFIG.gatewayApiSecret) {
+    logger.warn('Gateway API: unauthorized request', { ip: req.ip });
     return res.status(401).json({ error: 'Unauthorized' });
   }
   next();
@@ -177,6 +205,7 @@ function attachClientEvents(c) {
   c.on('ready', () => {
     isClientReady = true;
     isClientStarting = false;
+    reconnectAttemptCount = 0;
 
     logger.info('✅ WhatsApp Client Ready');
     io.emit('ready', { status: 'connected' });
@@ -202,16 +231,29 @@ function attachClientEvents(c) {
     io.emit('disconnected', { reason });
     redisClient.set('whatsapp:status', 'disconnected').catch(() => {});
 
-    // Auto-reconnect on unexpected disconnect (not manual logout/stop)
+    // Auto-reconnect با exponential backoff
     const noReconnect = ['logged_out', 'stopped_by_api', 'CONFLICT'];
-    if (process.env.WHATSAPP_AUTO_RECONNECT !== 'false' && !noReconnect.includes(String(reason))) {
-      const delay = parseInt(process.env.WHATSAPP_RECONNECT_DELAY_MS) || 15000;
-      logger.info('🔄 Auto-reconnect scheduled', { delayMs: delay });
+    if (CONFIG.autoReconnect && !noReconnect.includes(String(reason))) {
+      if (reconnectAttemptCount >= CONFIG.reconnectMaxRetries) {
+        logger.warn('🔄 Auto-reconnect max retries reached', { attempts: reconnectAttemptCount });
+        reconnectAttemptCount = 0;
+        return;
+      }
+      const delay = Math.min(
+        CONFIG.reconnectDelayMs * Math.pow(CONFIG.reconnectBackoffMultiplier, reconnectAttemptCount),
+        300000
+      );
+      reconnectAttemptCount++;
+      logger.info('🔄 Auto-reconnect scheduled', { attempt: reconnectAttemptCount, delayMs: Math.round(delay) });
       setTimeout(() => {
         if (!client || isClientReady || isClientStarting) return;
         logger.info('🔄 Attempting auto-reconnect...');
-        startWhatsApp().catch((e) => logger.error('Auto-reconnect failed', { error: e?.message }));
+        startWhatsApp()
+          .then(() => { reconnectAttemptCount = 0; })
+          .catch((e) => logger.error('Auto-reconnect failed', { error: e?.message }));
       }, delay);
+    } else {
+      reconnectAttemptCount = 0;
     }
   });
 
@@ -305,8 +347,10 @@ async function ensureDir(dir) {
   } catch (_) {}
 }
 
-async function sendToBackendWithRetry(messageData, maxRetries = 3) {
+async function sendToBackendWithRetry(messageData) {
   const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
+  const maxRetries = CONFIG.backendWebhookRetries;
+  const baseDelay = CONFIG.backendWebhookRetryDelayMs;
   for (let i = 0; i < maxRetries; i++) {
     try {
       const res = await axios.post(`${backendUrl}/api/webhook/incoming-message`, messageData, {
@@ -317,7 +361,7 @@ async function sendToBackendWithRetry(messageData, maxRetries = 3) {
     } catch (err) {
       logger.warn('Backend webhook attempt failed', { attempt: i + 1, error: err?.message });
     }
-    if (i < maxRetries - 1) await sleep(2000 * (i + 1));
+    if (i < maxRetries - 1) await sleep(baseDelay * (i + 1));
   }
   logger.error('Backend webhook failed after retries – message may be lost', { from: messageData?.from });
 }
@@ -326,13 +370,19 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// SSRF protection: block private/local URLs
+// SSRF protection + optional whitelist
 function isSafeMediaUrl(url) {
   if (!url || typeof url !== 'string') return false;
   try {
     const u = new URL(url.trim());
     if (!['http:', 'https:'].includes(u.protocol)) return false;
     const host = u.hostname.toLowerCase();
+
+    if (CONFIG.mediaUrlWhitelist.length > 0) {
+      const allowed = CONFIG.mediaUrlWhitelist.some((d) => host === d || host.endsWith('.' + d));
+      return allowed;
+    }
+
     if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')) return false;
     if (host.startsWith('10.') || host.startsWith('172.16.') || host.startsWith('172.17.') || host.startsWith('172.18.') || host.startsWith('172.19.') || host.startsWith('172.2') || host.startsWith('172.30.') || host.startsWith('172.31.') || host.startsWith('192.168.')) return false;
     if (host === '0.0.0.0' || host === '::1') return false;
@@ -517,9 +567,22 @@ async function sendWhatsAppMessage(data) {
 // ==================== Startup ====================
 function startServer() {
   const PORT = process.env.PORT || 3001;
+  const isProd = process.env.NODE_ENV === 'production';
+
+  if (isProd && !CONFIG.gatewayApiSecret) {
+    logger.warn('⚠️ GATEWAY_API_SECRET not set — API is unprotected. Set it in production!');
+  }
+  if (CONFIG.gatewayApiSecret && CONFIG.gatewayApiSecret.length < CONFIG.secretMinLength) {
+    logger.warn('⚠️ GATEWAY_API_SECRET should be at least 32 characters for security');
+  }
 
   server.listen(PORT, () => {
-    logger.info(`🚀 WhatsApp Gateway running on port ${PORT}`);
+    logger.info(`🚀 WhatsApp Gateway running on port ${PORT}`, {
+      autoReconnect: CONFIG.autoReconnect,
+      maxRetries: CONFIG.reconnectMaxRetries,
+      rateLimit: CONFIG.rateLimitMax,
+      sendLimit: CONFIG.sendLimitMax,
+    });
 
     // ✅ after server is up, start background services
     setTimeout(async () => {
