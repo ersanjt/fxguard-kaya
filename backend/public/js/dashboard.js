@@ -2788,7 +2788,7 @@
             document.querySelectorAll('.nav-link').forEach(function(l) { l.classList.remove('active'); if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
             var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices' };
-            if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations') ? 'flex' : 'block'; el.classList.add('show'); } }
+            if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations' || page === 'internal-chat') ? 'flex' : 'block'; el.classList.add('show'); } }
             var content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
             if (page === 'dashboard') loadDashboard();
@@ -3970,7 +3970,7 @@
         function backToInternalChatList() {
             var wrap = document.getElementById('internalChatLayoutWrap');
             var pane = document.getElementById('internalChatPane');
-            if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open');
+            if (wrap) { wrap.classList.remove('internal-chat-mobile-chat-open', 'internal-chat-has-chat'); }
             if (pane) pane.style.display = 'none';
         }
         function isInternalChatMobile() { return window.matchMedia('(max-width: 768px)').matches; }
@@ -3979,8 +3979,8 @@
             currentInternalThreadOtherUserId = null;
             var pane = document.getElementById('internalChatPane');
             var wrap = document.getElementById('internalChatLayoutWrap');
-            pane.style.display = 'block';
-            if (wrap && isInternalChatMobile()) wrap.classList.add('internal-chat-mobile-chat-open');
+            pane.style.display = 'flex';
+            if (wrap) { wrap.classList.add('internal-chat-has-chat'); if (isInternalChatMobile()) wrap.classList.add('internal-chat-mobile-chat-open'); }
             var partRes = await apiFetch('/api/internal/threads');
             if (partRes.ok && partRes.data && partRes.data.data) {
                 var t = partRes.data.data.find(function(x) { return x.id === threadId; });
@@ -4053,7 +4053,8 @@
             if (res.ok) {
                 document.getElementById('internalChatInput').value = '';
                 if (fileInput) { fileInput.value = ''; toggleInternalFileOption(); }
-                loadInternalMessages(currentInternalThreadId);
+                var msg = res.data;
+                if (msg) { msg.fromUserId = msg.fromUserId || (msg.fromUser && msg.fromUser.id); appendInternalMessage(msg); }
                 loadInternalThreads();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
@@ -4154,7 +4155,8 @@
                 if (fileInput) fileInput.value = '';
                 var fileLabel = document.getElementById('internalChatPopupFileLabel');
                 if (fileLabel) { fileLabel.textContent = ''; fileLabel.style.display = 'none'; }
-                loadInternalMessagesForPopup(currentInternalThreadId);
+                var msg = res.data;
+                if (msg) { msg.fromUserId = msg.fromUserId || (msg.fromUser && msg.fromUser.id); appendInternalMessageToPopup(msg); }
                 loadInternalThreads();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
