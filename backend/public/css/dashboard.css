@@ -1133,8 +1133,9 @@
             .conv-detail-bar { padding: 8px 12px 10px; font-size: 0.8rem; }
             .conv-detail-actions select { max-width: 120px; }
             .price-ticker .ticker-datetime { font-size: 0.65rem; min-width: 0; }
-            /* فوتر موبایل — نوار پایین، لمسی، safe-area، خوانا */
+            /* فوتر موبایل — نوار پایین، لمسی، بدون متن برند */
             .app-footer { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 16px; padding-bottom: max(12px, env(safe-area-inset-bottom)); padding-inline-start: max(16px, env(safe-area-inset-inline-start)); padding-inline-end: max(16px, env(safe-area-inset-inline-end)); background: linear-gradient(180deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0.5) 100%); border-top: 1px solid rgba(255,255,255,0.08); font-size: 0.8rem; color: rgba(255,255,255,0.75); flex-shrink: 0; flex-wrap: wrap; -webkit-tap-highlight-color: transparent; min-height: 44px; box-sizing: border-box; text-align: center; word-break: break-word; overflow-wrap: break-word; }
+            .app-footer-brand, .app-footer-sep { display: none !important; }
             .app-footer-brand { font-weight: 600; color: rgba(255,255,255,0.95); }
             .app-footer-sep { opacity: 0.75; user-select: none; }
             .main-wrap { padding-bottom: max(90px, calc(80px + env(safe-area-inset-bottom))); }
