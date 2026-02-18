@@ -86,11 +86,18 @@
         .price-ticker .ticker-items.ticker-auto-scroll .ticker-item-track { animation: tickerMarquee 75s linear infinite; --ticker-step: -50%; will-change: transform; }
         .price-ticker .ticker-items.ticker-auto-scroll:hover .ticker-item-track { animation-play-state: paused; }
         .price-ticker .ticker-items.ticker-touch-active .ticker-item-track { animation-play-state: paused; }
+        /* دسکتاپ: نوار نرخ همیشه از راست به چپ، پویا و بدون قطع */
+        @media (min-width: 769px) {
+            .price-ticker .ticker-items { direction: rtl; }
+            .price-ticker .ticker-item-track { direction: rtl; }
+            .price-ticker .ticker-items.ticker-auto-scroll .ticker-item-track { animation: tickerMarqueeRtl 75s linear infinite; }
+        }
         @media (prefers-reduced-motion: reduce) {
             .price-ticker .ticker-items.ticker-auto-scroll .ticker-item-track { animation: none; }
             .price-ticker .ticker-items.ticker-auto-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         }
         @keyframes tickerMarquee { 0% { transform: translateX(0); } 100% { transform: translateX(var(--ticker-step, -50%)); } }
+        @keyframes tickerMarqueeRtl { 0% { transform: translateX(0); } 100% { transform: translateX(var(--ticker-step, -50%)); } }
         .price-ticker .ticker-item { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.04); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; white-space: nowrap; transition: background 0.2s; }
         .price-ticker .ticker-item:hover { background: rgba(255,255,255,0.07); }
         .price-ticker .ticker-item .ticker-label { font-weight: 600; color: var(--text-muted); font-size: 0.9rem; min-width: 3em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -196,7 +203,7 @@
         .status-dot.away { background: #f59e0b; }
         .status-dot.busy { background: #ef4444; }
         .status-dot.offline { background: var(--text-muted); }
-        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 10000; display: flex; align-items: center; justify-content: center; padding: 24px; box-sizing: border-box; }
         .modal-box { background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); max-width: 440px; width: 100%; padding: 24px; box-shadow: var(--shadow); box-sizing: border-box; max-width: min(440px, calc(100vw - 48px)); }
         .header-search-modal .modal-box { max-width: min(360px, calc(100vw - 48px)); }
         .currency-modal-overlay { cursor: default; }
@@ -824,7 +831,7 @@
         .user-card-actions .btn-secondary, .user-card-actions .btn-sm { margin: 0; padding: 9px 18px; font-size: 0.85rem; }
         .staff-conv-item:hover { background: var(--bg-hover) !important; border-color: var(--accent) !important; }
         /* ---------- مودال ویرایش کاربر ---------- */
-        .user-edit-overlay { inset: 0; padding: 20px; align-items: center; justify-content: center; background: rgba(0,0,0,0.65); }
+        .user-edit-overlay { inset: 0; padding: 20px; align-items: center; justify-content: center; background: rgba(0,0,0,0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
         .user-edit-modal { max-width: 640px; width: 100%; padding: 0; overflow: hidden; display: flex; flex-direction: column; max-height: min(90vh, 720px); }
         .user-edit-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.08); flex-shrink: 0; }
         .user-edit-modal-title { margin: 0; font-size: 1.2rem; font-weight: 700; color: var(--accent); }
@@ -877,7 +884,7 @@
         .btn-danger-outline { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
         .btn-danger-outline:hover { background: var(--danger-soft); }
         /* ---------- مودال حذف کاربر ---------- */
-        .delete-user-overlay { inset: 0; padding: 24px; align-items: center; justify-content: center; background: rgba(0,0,0,0.65); }
+        .delete-user-overlay { inset: 0; padding: 24px; align-items: center; justify-content: center; background: rgba(0,0,0,0.72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
         .delete-user-modal { max-width: 440px; padding: 0; overflow: hidden; }
         .delete-user-modal-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; border-bottom: 1px solid var(--border); }
         .delete-user-modal-title { margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--danger); }

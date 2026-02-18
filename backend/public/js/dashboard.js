@@ -830,8 +830,10 @@
                 if (trackEl && items.length > 0) {
                     var fullSet = itemsHtml + itemsHtml;
                     var copyCount = 2;
+                    var isDesktop = window.innerWidth > 768;
+                    var maxCopies = isDesktop ? 20 : 8;
                     trackEl.innerHTML = fullSet;
-                    while (copyCount < 8) {
+                    while (copyCount < maxCopies) {
                         var trackW = trackEl.scrollWidth;
                         var containerW = itemsEl.clientWidth || 400;
                         if (trackW >= containerW * 2) break;
@@ -841,7 +843,12 @@
                     }
                     itemsEl.classList.remove('ticker-auto-scroll');
                     requestAnimationFrame(function() {
-                        if (trackEl.scrollWidth > (itemsEl.clientWidth || 1)) {
+                        var trackWidth = trackEl.scrollWidth;
+                        var containerWidth = itemsEl.clientWidth || 1;
+                        if (isDesktop && items.length > 0) {
+                            itemsEl.classList.add('ticker-auto-scroll');
+                            trackEl.style.setProperty('--ticker-step', '-' + (100 / copyCount) + '%');
+                        } else if (trackWidth > containerWidth) {
                             itemsEl.classList.add('ticker-auto-scroll');
                             trackEl.style.setProperty('--ticker-step', '-' + (100 / copyCount) + '%');
                         } else {
