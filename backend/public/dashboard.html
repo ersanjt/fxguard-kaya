@@ -970,6 +970,8 @@
                     <div class="modal-box" style="max-width:480px;">
                         <div class="modal-header"><h3 data-i18n="transaction_add">ثبت تراکنش</h3><button type="button" class="modal-close" onclick="closeTransactionModal()">&times;</button></div>
                         <div class="modal-body">
+                            <label data-i18n="tx_customer_label">مشتری (اختیاری)</label>
+                            <select id="txModalCustomer"><option value="">بدون مشتری</option></select>
                             <label data-i18n="transaction_type">نوع تراکنش</label>
                             <select id="txModalType">
                                 <option value="cash_in">ورود به صندوق</option>
@@ -1008,6 +1010,7 @@
                     <div class="customer-detail-tabs">
                         <button type="button" class="customer-detail-tab active" data-tab="timeline" data-i18n="customer_timeline">تاریخچه کامل</button>
                         <button type="button" class="customer-detail-tab" data-tab="conversations" data-i18n="customer_history">مکالمات</button>
+                        <button type="button" class="customer-detail-tab" data-tab="transactions" data-i18n="customer_transactions">تراکنش‌ها</button>
                         <button type="button" class="customer-detail-tab" data-tab="notes" data-i18n="customer_notes">گزارش‌ها و یادداشت‌ها</button>
                     </div>
                     <div id="customerTimelinePanel" class="customer-detail-panel show">
@@ -1015,6 +1018,12 @@
                     </div>
                     <div id="customerConversationsPanel" class="customer-detail-panel">
                         <div id="customerHistoryList"></div>
+                    </div>
+                    <div id="customerTransactionsPanel" class="customer-detail-panel">
+                        <div class="customer-transactions-header">
+                            <button type="button" class="btn-primary" id="btnCustomerAddTransaction" data-i18n="transaction_add">ثبت تراکنش</button>
+                        </div>
+                        <div id="customerTransactionsList"></div>
                     </div>
                     <div id="customerNotesPanel" class="customer-detail-panel">
                         <p class="customer-detail-meta" data-i18n="customer_notes_intro">یادداشت یا گزارش مربوط به این مشتری را ذخیره کنید تا بعداً مراجعه کنید.</p>

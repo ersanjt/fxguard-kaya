@@ -1027,6 +1027,9 @@
         .customer-timeline-title { font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
         .customer-timeline-content { font-size: 0.9rem; color: var(--text-secondary); margin: 4px 0; white-space: pre-wrap; }
         .customer-timeline-meta { font-size: 0.85rem; color: var(--text-muted); }
+        .customer-timeline-transaction .tx-amount { font-weight: 600; }
+        .customer-transactions-header { margin-bottom: 16px; }
+        .customer-transaction-row { margin-bottom: 8px; }
         /* ویجت چت داخلی شناور — طراحی بهبود یافته */
         .internal-chat-popup { position: fixed; bottom: calc(48px + env(safe-area-inset-bottom)); left: 16px; width: 340px; max-width: calc(100vw - 32px); height: 400px; max-height: min(400px, calc(100vh - 140px)); background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.05); z-index: 999; display: flex; flex-direction: column; overflow: hidden; animation: internalChatPopupIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
         @keyframes internalChatPopupIn { from { opacity: 0; transform: translateY(20px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
@@ -1216,3 +1219,15 @@
         .transaction-row .tx-amount { font-weight: 600; font-variant-numeric: tabular-nums; }
         .transaction-row .tx-amount.positive { color: var(--accent); }
         .transaction-row .tx-amount.negative { color: var(--danger); }
+        @media (max-width: 768px) {
+            .services-tabs { gap: 6px; }
+            .services-tab { padding: 8px 12px; font-size: 0.85rem; }
+            .exchange-summary-cards { grid-template-columns: 1fr; }
+            .exchange-summary-grid { grid-template-columns: 1fr; }
+            .transaction-toolbar { flex-direction: column; align-items: stretch; }
+            .transaction-toolbar .transaction-filters { flex-direction: column; }
+            .transaction-toolbar .transaction-filters input, .transaction-toolbar .transaction-filters select { width: 100%; }
+            .transaction-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+            .customer-detail-tabs { flex-wrap: wrap; gap: 6px; }
+            .customer-detail-tab { padding: 8px 12px; font-size: 0.85rem; }
+        }

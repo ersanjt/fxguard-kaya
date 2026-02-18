@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { CashBox, BankAccount, Transaction, Branch, User } = require('../models');
+const { CashBox, BankAccount, Transaction, Branch, User, Customer } = require('../models');
 const { Op } = require('sequelize');
 const { literal } = require('sequelize');
 
@@ -162,6 +162,7 @@ router.get('/transactions', requireServices, async (req, res) => {
                 { toBankAccountId: req.query.bankAccountId }
             ];
         }
+        if (req.query.customerId) where.customerId = req.query.customerId;
         const limit = Math.min(parseInt(req.query.limit) || 100, 500);
         const offset = parseInt(req.query.offset) || 0;
         const list = await Transaction.findAndCountAll({
@@ -172,7 +173,8 @@ router.get('/transactions', requireServices, async (req, res) => {
                 { model: CashBox, as: 'fromCashBox', attributes: ['id', 'name'] },
                 { model: CashBox, as: 'toCashBox', attributes: ['id', 'name'] },
                 { model: BankAccount, as: 'fromBankAccount', attributes: ['id', 'name', 'bankName'] },
-                { model: BankAccount, as: 'toBankAccount', attributes: ['id', 'name', 'bankName'] }
+                { model: BankAccount, as: 'toBankAccount', attributes: ['id', 'name', 'bankName'] },
+                { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'], required: false }
             ],
             order: [['transactionDate', 'DESC'], ['createdAt', 'DESC']],
             limit,
@@ -189,7 +191,7 @@ router.post('/transactions', requireServices, async (req, res) => {
         const {
             type, amount, currency,
             fromCashBoxId, toCashBoxId, fromBankAccountId, toBankAccountId,
-            description, reference, transactionDate, branchId
+            description, reference, transactionDate, branchId, customerId
         } = req.body;
         const amt = parseFloat(amount);
         if (!type || isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'نوع و مبلغ معتبر الزامی است' });
@@ -206,7 +208,8 @@ router.post('/transactions', requireServices, async (req, res) => {
             reference: reference || null,
             transactionDate: transactionDate || new Date().toISOString().slice(0, 10),
             branchId: branchId || null,
-            userId: req.user?.id || null
+            userId: req.user?.id || null,
+            customerId: customerId || null
         });
 
         // به‌روزرسانی موجودی صندوق‌ها و حساب‌ها

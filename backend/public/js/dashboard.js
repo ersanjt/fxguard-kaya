@@ -998,7 +998,7 @@
             if (res.ok) { closeBankAccountModal(); toast(t('btn_save')); loadBankAccounts(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function deleteBankAccount(id) { if (!confirm(LANG === 'fa' ? 'حذف این حساب بانکی؟' : 'Delete this bank account?')) return; var res = await apiFetch('/api/exchange/bank-accounts/' + id, { method: 'DELETE' }); if (res.needLogin) return; if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadBankAccounts(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); } }
-        function openTransactionModal() {
+        function openTransactionModal(prefillCustomerId) {
             var m = document.getElementById('transactionModal'); if (!m) return;
             m.style.display = 'flex';
             document.getElementById('txModalType').value = 'cash_in';
@@ -1008,12 +1008,14 @@
             document.getElementById('txModalToCashBox').value = '';
             document.getElementById('txModalFromBankAccount').value = '';
             document.getElementById('txModalToBankAccount').value = '';
+            document.getElementById('txModalCustomer').value = prefillCustomerId || '';
             document.getElementById('txModalDescription').value = '';
             document.getElementById('txModalReference').value = '';
             document.getElementById('txModalDate').value = new Date().toISOString().slice(0, 10);
             txModalUpdateFields();
             loadCashBoxesForTxSelect();
             loadBankAccountsForTxSelect();
+            loadCustomersForTxSelect(prefillCustomerId);
         }
         function txModalUpdateFields() {
             var t = document.getElementById('txModalType').value;
@@ -1038,6 +1040,13 @@
             if (from) { from.innerHTML = '<option value="">انتخاب حساب</option>' + list.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + ' (' + formatMoney(b.balance, b.currency) + ')</option>'; }).join(''); }
             if (to) { to.innerHTML = '<option value="">انتخاب حساب</option>' + list.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + ' (' + formatMoney(b.balance, b.currency) + ')</option>'; }).join(''); }
         }
+        async function loadCustomersForTxSelect(selectedId) {
+            var res = await apiFetch('/api/customers?limit=500');
+            var list = (res.data && res.data.data) || [];
+            var sel = document.getElementById('txModalCustomer');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'بدون مشتری' : 'No customer') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + escapeHtml(c.name || c.phone || '') + (c.phone ? ' · ' + escapeHtml(c.phone) : '') + '</option>'; }).join('');
+        }
         (function(){ var el = document.getElementById('txModalType'); if (el) el.addEventListener('change', txModalUpdateFields); })();
         function closeTransactionModal() { var m = document.getElementById('transactionModal'); if (m) m.style.display = 'none'; }
         async function saveTransactionFromModal() {
@@ -1048,14 +1057,15 @@
             var toBox = document.getElementById('txModalToCashBox').value || null;
             var fromBank = document.getElementById('txModalFromBankAccount').value || null;
             var toBank = document.getElementById('txModalToBankAccount').value || null;
+            var customerId = document.getElementById('txModalCustomer').value || null;
             var description = document.getElementById('txModalDescription').value.trim() || null;
             var reference = document.getElementById('txModalReference').value.trim() || null;
             var date = document.getElementById('txModalDate').value || new Date().toISOString().slice(0, 10);
             if (!amount || amount <= 0) { toast(LANG === 'fa' ? 'مبلغ معتبر وارد کنید' : 'Enter valid amount', true); return; }
-            var body = { type, amount, currency, fromCashBoxId: fromBox, toCashBoxId: toBox, fromBankAccountId: fromBank, toBankAccountId: toBank, description, reference, transactionDate: date };
+            var body = { type, amount, currency, fromCashBoxId: fromBox, toCashBoxId: toBox, fromBankAccountId: fromBank, toBankAccountId: toBank, customerId, description, reference, transactionDate: date };
             var res = await apiFetch('/api/exchange/transactions', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { closeTransactionModal(); toast(LANG === 'fa' ? 'ثبت شد' : 'Saved'); loadTransactions(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { closeTransactionModal(); toast(LANG === 'fa' ? 'ثبت شد' : 'Saved'); loadTransactions(); loadServicesSummary(); if (currentCustomerId) loadCustomerTransactions(currentCustomerId); loadCustomerTimeline(currentCustomerId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function loadServices() {
             var list = document.getElementById('serviceList');
@@ -2397,6 +2407,8 @@
             var noteAddBtn = document.getElementById('customerNoteAddBtn');
             if (noteContentEl) noteContentEl.placeholder = t('customer_note_ph') || (LANG === 'fa' ? 'متن گزارش یا یادداشت...' : 'Note or report text...');
             if (noteAddBtn && !noteAddBtn._bound) { noteAddBtn._bound = true; noteAddBtn.addEventListener('click', function() { addCustomerNote(custId); }); }
+            var btnTx = document.getElementById('btnCustomerAddTransaction');
+            if (btnTx && !btnTx._bound) { btnTx._bound = true; btnTx.onclick = function() { openTransactionModal(currentCustomerId); }; }
             loadCustomerNotes(custId);
         }
         function initCustomerDetailTabs() {
@@ -2406,10 +2418,11 @@
                     document.querySelectorAll('.customer-detail-tab').forEach(function(b) { b.classList.remove('active'); });
                     document.querySelectorAll('.customer-detail-panel').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
                     this.classList.add('active');
-                    var pid = tab === 'timeline' ? 'customerTimelinePanel' : tab === 'conversations' ? 'customerConversationsPanel' : 'customerNotesPanel';
+                    var pid = tab === 'timeline' ? 'customerTimelinePanel' : tab === 'conversations' ? 'customerConversationsPanel' : tab === 'transactions' ? 'customerTransactionsPanel' : 'customerNotesPanel';
                     var panel = document.getElementById(pid);
                     if (panel) { panel.style.display = 'block'; panel.classList.add('show'); }
                     if (tab === 'notes' && currentCustomerId) loadCustomerNotes(currentCustomerId);
+                    if (tab === 'transactions' && currentCustomerId) loadCustomerTransactions(currentCustomerId);
                 };
             });
         }
@@ -2442,7 +2455,33 @@
                     var label = (LANG === 'fa' ? activityLabels[a.action] : null) || a.action || '';
                     return '<div class="customer-timeline-item customer-timeline-activity"><div class="customer-timeline-icon">⚡</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + escapeHtml(label) + ' · ' + escapeHtml(un) + '</div><div class="customer-timeline-meta">' + escapeHtml(a.summary || '') + ' · ' + date + '</div></div></div>';
                 }
+                if (item.type === 'transaction') {
+                    var tx = item.data;
+                    var txLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه' };
+                    var isIn = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(tx.type) >= 0;
+                    var amt = parseFloat(tx.amount) || 0;
+                    var desc = (tx.description || '').slice(0, 80) + (tx.description && tx.description.length > 80 ? '…' : '');
+                    return '<div class="customer-timeline-item customer-timeline-transaction"><div class="customer-timeline-icon">💰</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (txLabels[tx.type] || tx.type) + '</div><div class="customer-timeline-content">' + escapeHtml(desc) + '</div><div class="customer-timeline-meta">' + date + ' · <span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span></div></div></div>';
+                }
                 return '';
+            }).join('');
+        }
+        async function loadCustomerTransactions(custId) {
+            var list = document.getElementById('customerTransactionsList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var res = await apiFetch('/api/customers/' + custId + '/transactions');
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            var rows = (res.data && res.data.data) || [];
+            if (rows.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'تراکنشی برای این مشتری ثبت نشده.' : 'No transactions for this customer.') + '</div>'; return; }
+            var typeLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه' };
+            list.innerHTML = rows.map(function(tx) {
+                var isIn = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(tx.type) >= 0;
+                var amt = parseFloat(tx.amount) || 0;
+                var desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '…' : '');
+                var ref = tx.reference ? ' · ' + escapeHtml(tx.reference) : '';
+                return '<div class="transaction-row customer-transaction-row"><div><span class="tx-type">' + (typeLabels[tx.type] || tx.type) + '</span><div class="meta" style="margin-top:4px;">' + escapeHtml(desc) + ref + '</div><div class="meta">' + (tx.transactionDate || '') + '</div></div><div><span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span></div></div>';
             }).join('');
         }
         async function loadCustomerNotes(custId) {

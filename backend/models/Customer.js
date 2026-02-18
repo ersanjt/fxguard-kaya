@@ -80,6 +80,9 @@ module.exports = (sequelize) => {
         if (models.CustomerNote) {
             Customer.hasMany(models.CustomerNote, { foreignKey: 'customerId', as: 'customerNotes' });
         }
+        if (models.Transaction) {
+            Customer.hasMany(models.Transaction, { foreignKey: 'customerId', as: 'transactions' });
+        }
     };
 
     return Customer;

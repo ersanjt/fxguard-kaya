@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Customer, Conversation, Message, CustomerNote, User, ActivityLog, Department } = require('../models');
+const { Customer, Conversation, Message, CustomerNote, User, ActivityLog, Department, Transaction, CashBox, BankAccount } = require('../models');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
 
@@ -114,7 +114,7 @@ router.get('/:id/timeline', async (req, res) => {
         const allowed = await canAccessCustomer(req, req.params.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         const customerId = req.params.id;
-        const [conversationsRaw, notes, activities] = await Promise.all([
+        const [conversationsRaw, notes, activities, transactions] = await Promise.all([
             Conversation.findAll({
                 where: { customerId },
                 include: [{ model: User, as: 'assignee', attributes: ['id', 'name'] }],
@@ -130,6 +130,11 @@ router.get('/:id/timeline', async (req, res) => {
                 include: [{ model: User, as: 'user', attributes: ['id', 'name'] }],
                 order: [['createdAt', 'DESC']],
                 limit: 100
+            }),
+            Transaction.findAll({
+                where: { customerId },
+                order: [['transactionDate', 'DESC'], ['createdAt', 'DESC']],
+                limit: 50
             })
         ]);
         const convWithCount = await Promise.all(conversationsRaw.map(async (c) => {
@@ -146,6 +151,9 @@ router.get('/:id/timeline', async (req, res) => {
         });
         activities.forEach(a => {
             items.push({ type: 'activity', date: a.createdAt, data: a, user: a.user });
+        });
+        transactions.forEach(t => {
+            items.push({ type: 'transaction', date: t.transactionDate || t.createdAt, data: t });
         });
         items.sort((a, b) => new Date(b.date) - new Date(a.date));
         res.json({ data: items });
@@ -189,6 +197,29 @@ router.put('/:id', async (req, res) => {
 });
 
 // ——— گزارش/یادداشت کارمند درباره مشتری (تاریخچه هر کارمند)
+router.get('/:id/transactions', async (req, res) => {
+    try {
+        if (!req.canAccess('customers') && !req.canAccess('services')) return res.status(403).json({ error: 'دسترسی ندارید' });
+        const allowed = await canAccessCustomer(req, req.params.id);
+        if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+        const transactions = await Transaction.findAll({
+            where: { customerId: req.params.id },
+            include: [
+                { model: User, as: 'user', attributes: ['id', 'name'] },
+                { model: CashBox, as: 'fromCashBox', attributes: ['id', 'name'] },
+                { model: CashBox, as: 'toCashBox', attributes: ['id', 'name'] },
+                { model: BankAccount, as: 'fromBankAccount', attributes: ['id', 'name', 'bankName'] },
+                { model: BankAccount, as: 'toBankAccount', attributes: ['id', 'name', 'bankName'] }
+            ],
+            order: [['transactionDate', 'DESC'], ['createdAt', 'DESC']],
+            limit: 200
+        });
+        res.json({ data: transactions });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 router.get('/:id/notes', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });

@@ -75,6 +75,12 @@ module.exports = (sequelize) => {
             references: { model: 'Users', key: 'id' },
             comment: 'کاربر ثبت‌کننده'
         },
+        customerId: {
+            type: DataTypes.UUID,
+            allowNull: true,
+            references: { model: 'Customers', key: 'id' },
+            comment: 'مشتری مرتبط با تراکنش'
+        },
         metadata: {
             type: DataTypes.JSON,
             defaultValue: {},
@@ -88,7 +94,8 @@ module.exports = (sequelize) => {
             { fields: ['transactionDate'] },
             { fields: ['branchId'] },
             { fields: ['fromCashBoxId', 'toCashBoxId'] },
-            { fields: ['fromBankAccountId', 'toBankAccountId'] }
+            { fields: ['fromBankAccountId', 'toBankAccountId'] },
+            { fields: ['customerId'] }
         ]
     });
 
@@ -99,6 +106,7 @@ module.exports = (sequelize) => {
         Transaction.belongsTo(models.CashBox, { foreignKey: 'toCashBoxId', as: 'toCashBox' });
         Transaction.belongsTo(models.BankAccount, { foreignKey: 'fromBankAccountId', as: 'fromBankAccount' });
         Transaction.belongsTo(models.BankAccount, { foreignKey: 'toBankAccountId', as: 'toBankAccount' });
+        if (models.Customer) Transaction.belongsTo(models.Customer, { foreignKey: 'customerId', as: 'customer' });
     };
 
     return Transaction;
