@@ -529,11 +529,14 @@
         .announcement-card:hover { border-color: var(--accent); box-shadow: 0 4px 16px rgba(16,185,129,0.12); }
         .announcement-card.ann-read { opacity: 0.85; }
         .announcement-card-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+        .announcement-card-header-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
         .announcement-card-title { font-weight: 600; font-size: 1.05rem; color: var(--text-primary); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+        .ann-delete-btn { flex-shrink: 0; }
         .ann-badge-important { font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; background: var(--danger-soft); color: var(--danger); font-weight: 600; flex-shrink: 0; }
         .announcement-card-body { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 12px; white-space: pre-wrap; word-break: break-word; }
         .announcement-card-meta { display: flex; flex-wrap: wrap; gap: 12px 20px; font-size: 0.8rem; color: var(--text-muted); }
-        .announcement-card-time { margin-right: auto; }
+        .announcement-card-time { margin-inline-start: auto; }
+        .announcement-modal-meta { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
         /* ========== صفحه شعب ========== */
         .branch-page { display: flex; flex-direction: column; gap: 24px; max-width: 100%; min-width: 0; }
         .branch-page-header h2 { margin: 0 0 8px; }
@@ -813,6 +816,7 @@
             .announcements-tabs { gap: 6px; }
             .announcements-tab { padding: 8px 14px; font-size: 0.85rem; }
             .announcement-card { padding: 14px 16px; }
+            .ann-delete-btn { min-height: 44px; padding: 8px 14px; }
             .user-add-form #userAddPerms { grid-template-columns: 1fr; }
             .ticker-config-list { flex-wrap: wrap; }
             #pageWhatsapp .form-box, #pageWhatsapp .qr-box, .qr-box { width: 100%; max-width: 100%; box-sizing: border-box; }

@@ -28,6 +28,7 @@ router.get('/for-me', async (req, res) => {
             const j = a.toJSON();
             j.read = (j.reads && j.reads.length > 0);
             delete j.reads;
+            j.canDelete = (a.fromUserId === me.id) || isMainAdmin(me) || me.role === 'owner' || me.role === 'admin';
             if (a.targetType === 'department' && a.targetId) {
                 const d = await Department.findByPk(a.targetId, { attributes: ['name'] });
                 j.targetName = d ? d.name : null;
@@ -112,6 +113,22 @@ router.get('/targets', async (req, res) => {
             ]);
         } else return res.status(403).json({ error: 'دسترسی غیرمجاز' });
         res.json({ users, departments });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// حذف اعلان — فقط فرستنده یا مالک/ادمین
+router.delete('/:id', async (req, res) => {
+    try {
+        const me = req.user;
+        const ann = await Announcement.findByPk(req.params.id);
+        if (!ann) return res.status(404).json({ error: 'اعلان یافت نشد' });
+        const canDelete = (ann.fromUserId === me.id) || isMainAdmin(me) || me.role === 'owner' || me.role === 'admin';
+        if (!canDelete) return res.status(403).json({ error: 'شما اجازه حذف این اعلان را ندارید' });
+        await AnnouncementRead.destroy({ where: { announcementId: ann.id } });
+        await ann.destroy();
+        res.json({ ok: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -426,7 +426,7 @@
                     ann_send_title: 'Send announcement to staff', ann_recipient: 'Recipient', ann_all: 'All staff', ann_one_dept: 'One department', ann_one_user: 'One user',
                     ann_select: 'Select', ann_title: 'Title', ann_body: 'Message', ann_ph_title: 'Announcement title', ann_ph_body: 'Message text...',
                     ann_important: 'Important (popup and sound for recipient)', send_ann: 'Send announcement',
-                    ann_intro: 'View and manage general, department and personal announcements.', ann_tab_all: 'All', ann_tab_general: 'General', ann_tab_department: 'Department', ann_tab_personal: 'Personal', ann_from: 'From', ann_to: 'To',
+                    ann_intro: 'View and manage general, department and personal announcements.', ann_tab_all: 'All', ann_tab_general: 'General', ann_tab_department: 'Department', ann_tab_personal: 'Personal', ann_from: 'From', ann_to: 'To', ann_sent_at: 'Date & time:', ann_delete: 'Delete announcement', ann_delete_confirm: 'Delete this announcement?',
                     new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file',
                     file_allow_download: 'Allow download and save', file_view_only: 'View only in chat',
                     start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', close: 'Close', chat_minimize: 'Minimize', chat_expand: 'Expand', quick_reply_hi: 'Hi', quick_reply_gotit: 'Got it', quick_reply_later: 'Will reply later', quick_reply_checking: 'Checking', start_chat_hint: 'Start the conversation', cancel: 'Cancel',
@@ -1911,10 +1911,14 @@
                 var impBadge = a.isImportant ? '<span class="ann-badge-important">' + (LANG === 'fa' ? 'مهم' : 'Important') + '</span>' : '';
                 var timeStr = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
                 var bodyHtml = (escapeHtml(a.body || '') || '').replace(/\n/g, '<br>');
-                return '<div class="announcement-card' + readCls + '" data-id="' + escapeHtml(a.id) + '"><div class="announcement-card-header"><span class="announcement-card-title">' + escapeHtml(a.title || '') + '</span>' + impBadge + '</div><div class="announcement-card-body">' + bodyHtml + '</div><div class="announcement-card-meta"><span>' + t('ann_from') + ' ' + escapeHtml(fromName) + '</span><span>' + t('ann_to') + ' ' + escapeHtml(targetStr) + '</span><span class="announcement-card-time">' + timeStr + '</span></div></div>';
+                var delBtn = a.canDelete ? '<button type="button" class="ann-delete-btn btn-secondary btn-sm" data-id="' + escapeHtml(a.id) + '" title="' + (t('ann_delete') || '') + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button>' : '';
+                return '<div class="announcement-card' + readCls + '" data-id="' + escapeHtml(a.id) + '"><div class="announcement-card-header"><span class="announcement-card-title">' + escapeHtml(a.title || '') + '</span><div class="announcement-card-header-right">' + impBadge + delBtn + '</div></div><div class="announcement-card-body">' + bodyHtml + '</div><div class="announcement-card-meta"><span>' + t('ann_from') + ' ' + escapeHtml(fromName) + '</span><span>' + t('ann_to') + ' ' + escapeHtml(targetStr) + '</span><span class="announcement-card-time">' + (t('ann_sent_at') ? t('ann_sent_at') + ' ' : '') + timeStr + '</span></div></div>';
             }).join('');
             list.querySelectorAll('.announcement-card').forEach(function(card) {
-                card.onclick = function() { markAnnouncementReadAndShow(card.getAttribute('data-id')); };
+                card.onclick = function(e) { if (!e.target.closest('.ann-delete-btn')) markAnnouncementReadAndShow(card.getAttribute('data-id')); };
+            });
+            list.querySelectorAll('.ann-delete-btn').forEach(function(btn) {
+                btn.onclick = function(e) { e.stopPropagation(); deleteAnnouncement(btn.getAttribute('data-id')); };
             });
         }
         async function markAnnouncementReadAndShow(id) {
@@ -1933,6 +1937,14 @@
             if (!modal) return;
             document.getElementById('annModalTitle').textContent = a.title || '';
             document.getElementById('annModalBody').innerHTML = (escapeHtml(a.body || '') || '').replace(/\n/g, '<br>');
+            var metaEl = document.getElementById('annModalMeta');
+            if (metaEl) {
+                var fromName = (a.fromUser && a.fromUser.name) ? a.fromUser.name : '';
+                var targetStr = annTargetLabel(a);
+                var timeStr = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
+                metaEl.innerHTML = (t('ann_from') || '') + ' ' + escapeHtml(fromName) + ' · ' + (t('ann_to') || '') + ' ' + escapeHtml(targetStr) + (timeStr ? ' · ' + (t('ann_sent_at') || '') + ' ' + timeStr : '');
+                metaEl.style.display = 'block';
+            }
             modal.style.display = 'flex';
         }
         async function loadAnnouncementTargets() {
@@ -1977,6 +1989,20 @@
                 document.getElementById('annImportant').checked = false;
                 toast(LANG === 'fa' ? 'اعلان ارسال شد.' : 'Announcement sent.');
                 loadAnnouncements();
+                loadGeneralAnnouncementsMarquee();
+                if (typeof updateNavBadges === 'function') updateNavBadges();
+            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        function closeAnnouncementModal() { var m = document.getElementById('announcementModal'); if (m) m.style.display = 'none'; }
+        async function deleteAnnouncement(id) {
+            if (!id) return;
+            if (!confirm(t('ann_delete_confirm') || (LANG === 'fa' ? 'حذف این اعلان؟' : 'Delete this announcement?'))) return;
+            var res = await apiFetch('/api/announcements/' + id, { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (res.ok) {
+                toast(LANG === 'fa' ? 'اعلان حذف شد' : 'Announcement deleted');
+                announcementsData = announcementsData.filter(function(a) { return a.id !== id; });
+                renderAnnouncementsList();
                 loadGeneralAnnouncementsMarquee();
                 if (typeof updateNavBadges === 'function') updateNavBadges();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
