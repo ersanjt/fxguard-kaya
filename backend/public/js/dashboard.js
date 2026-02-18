@@ -1650,6 +1650,24 @@
             });
         })();
 
+        (function setupLoginEnterKey() {
+            function onLoginKeydown(e) {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                if (document.getElementById('loginStepTotp').style.display === 'block') {
+                    if (typeof verifyTotpLogin === 'function') verifyTotpLogin();
+                } else {
+                    if (typeof login === 'function') login();
+                }
+            }
+            var emailEl = document.getElementById('email');
+            var passEl = document.getElementById('pass');
+            var totpEl = document.getElementById('totpCode');
+            if (emailEl) emailEl.addEventListener('keydown', onLoginKeydown);
+            if (passEl) passEl.addEventListener('keydown', onLoginKeydown);
+            if (totpEl) totpEl.addEventListener('keydown', onLoginKeydown);
+        })();
+
         async function login() {
             var email = document.getElementById('email').value.trim();
             var pass = document.getElementById('pass').value;
