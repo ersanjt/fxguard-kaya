@@ -1543,8 +1543,8 @@
         </div>
     </div>
     <div id="toast" class="toast" style="display:none;"></div>
-    <div id="userEditModal" class="modal-overlay user-edit-overlay" style="display:none;">
-        <div class="modal-box user-edit-modal" role="dialog" aria-labelledby="userEditModalTitle" aria-modal="true">
+    <div id="userEditModal" class="modal-overlay user-edit-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="userEditModalTitle" onclick="if(event.target===this) closeUserEditModal();">
+        <div class="modal-box user-edit-modal" role="document" onclick="event.stopPropagation();">
             <div class="user-edit-modal-header">
                 <h2 id="userEditModalTitle" class="user-edit-modal-title" data-i18n="modal_user_edit">ویرایش کاربر</h2>
                 <button type="button" class="user-edit-modal-close" onclick="closeUserEditModal()" aria-label="بستن">&times;</button>
