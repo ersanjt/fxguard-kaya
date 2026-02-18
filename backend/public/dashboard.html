@@ -761,8 +761,10 @@
                     <div class="staff-activity-header">
                         <h2 data-i18n="page_staff_activity">ورودها و وضعیت آنلاین کارکنان</h2>
                         <p class="staff-activity-intro text-muted" data-i18n="staff_intro">مشاهده کارکنان آنلاین، آخرین ورودها و جزئیات فعالیت هر نفر — برای مدیر و بالاتر</p>
-                        <p class="staff-activity-updated text-muted" id="staffActivityUpdated" style="display:none; font-size:0.8rem; margin-top:8px;"></p>
-                        <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" onclick="loadStaffActivity()" style="display:inline-flex;align-items:center;gap:6px;margin-top:8px;" title="به\u200Cروزرسانی">↻ <span data-i18n="refresh">به\u200Cروزرسانی</span></button>
+                        <div class="staff-activity-meta">
+                            <p class="staff-activity-updated text-muted" id="staffActivityUpdated" style="display:none;"></p>
+                            <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" onclick="loadStaffActivity()" title="به\u200Cروزرسانی"><span class="refresh-icon">↻</span> <span data-i18n="refresh">به\u200Cروزرسانی</span></button>
+                        </div>
                     </div>
                     <div class="staff-activity-stats-row">
                         <div class="stat-card stat-card-accent staff-stat-online">
