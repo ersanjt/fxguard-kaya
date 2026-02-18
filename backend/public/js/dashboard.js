@@ -2831,6 +2831,7 @@
         async function loadTickets() {
             var list = document.getElementById('ticketList');
             var statsEl = document.getElementById('ticketStats');
+            if (!list) return;
             setLoading('ticketList', 4);
             var q = '?limit=50';
             var s = document.getElementById('ticketFilterStatus'); if (s && s.value) q += '&status=' + encodeURIComponent(s.value);
@@ -2839,28 +2840,34 @@
             var d = document.getElementById('ticketFilterDept'); if (d && d.value) q += '&departmentId=' + encodeURIComponent(d.value);
             var search = document.getElementById('ticketSearch'); if (search && search.value.trim()) q += '&search=' + encodeURIComponent(search.value.trim());
             var sortEl = document.getElementById('ticketFilterSort'); if (sortEl && sortEl.value) q += '&sort=' + encodeURIComponent(sortEl.value);
-            var res = await apiFetch('/api/tickets' + q);
-            var statsRes = await apiFetch('/api/tickets/stats');
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
-            var stats;
-            if (statsRes.ok && statsRes.data) { stats = statsRes.data; } else { stats = { total: data.total || 0, open: 0, in_progress: 0, resolved: 0, closed: 0 }; (data.data || []).forEach(function(x){ if (stats[x.status] !== undefined) stats[x.status]++; }); }
-            if (statsEl) {
-                statsEl.innerHTML = '<div class="ticket-stat-card"><div class="ticket-stat-val">' + (stats.total || 0) + '</div><div class="ticket-stat-label">' + (LANG === 'fa' ? 'کل' : 'Total') + '</div></div><div class="ticket-stat-card ticket-stat-open"><div class="ticket-stat-val">' + (stats.open || 0) + '</div><div class="ticket-stat-label">' + t('status_open') + '</div></div><div class="ticket-stat-card ticket-stat-progress"><div class="ticket-stat-val">' + (stats.in_progress || 0) + '</div><div class="ticket-stat-label">' + t('status_in_progress') + '</div></div><div class="ticket-stat-card ticket-stat-resolved"><div class="ticket-stat-val">' + (stats.resolved || 0) + '</div><div class="ticket-stat-label">' + t('status_resolved') + '</div></div><div class="ticket-stat-card ticket-stat-closed"><div class="ticket-stat-val">' + (stats.closed || 0) + '</div><div class="ticket-stat-label">' + t('status_closed') + '</div></div>';
-                statsEl.style.display = 'grid';
+            try {
+                var res = await apiFetch('/api/tickets' + q);
+                var statsRes = await apiFetch('/api/tickets/stats');
+                if (res.needLogin) return;
+                if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+                var data = res.data;
+                if (!data) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
+                var rows = Array.isArray(data.data) ? data.data : (Array.isArray(data.rows) ? data.rows : []);
+                var stats;
+                if (statsRes.ok && statsRes.data) { stats = statsRes.data; } else { stats = { total: data.total || rows.length || 0, open: 0, in_progress: 0, resolved: 0, closed: 0 }; rows.forEach(function(x){ if (stats[x.status] !== undefined) stats[x.status]++; }); }
+                if (statsEl) {
+                    statsEl.innerHTML = '<div class="ticket-stat-card"><div class="ticket-stat-val">' + (stats.total || 0) + '</div><div class="ticket-stat-label">' + (LANG === 'fa' ? 'کل' : 'Total') + '</div></div><div class="ticket-stat-card ticket-stat-open"><div class="ticket-stat-val">' + (stats.open || 0) + '</div><div class="ticket-stat-label">' + t('status_open') + '</div></div><div class="ticket-stat-card ticket-stat-progress"><div class="ticket-stat-val">' + (stats.in_progress || 0) + '</div><div class="ticket-stat-label">' + t('status_in_progress') + '</div></div><div class="ticket-stat-card ticket-stat-resolved"><div class="ticket-stat-val">' + (stats.resolved || 0) + '</div><div class="ticket-stat-label">' + t('status_resolved') + '</div></div><div class="ticket-stat-card ticket-stat-closed"><div class="ticket-stat-val">' + (stats.closed || 0) + '</div><div class="ticket-stat-label">' + t('status_closed') + '</div></div>';
+                    statsEl.style.display = 'grid';
+                }
+                if (rows.length === 0) { list.innerHTML = '<div class="empty ticket-list-empty"><span class="empty-icon">🎫</span><p>' + t('empty_tickets') + '</p><button type="button" class="btn-primary" onclick="toggleTicketForm()" style="margin-top:12px;">' + t('create_ticket') + '</button></div>'; return; }
+                list.innerHTML = rows.map(function(tk) {
+                    var statusLabel = tk.status === 'open' ? t('status_open') : tk.status === 'in_progress' ? t('status_in_progress') : tk.status === 'resolved' ? t('status_resolved') : tk.status === 'closed' ? t('status_closed') : tk.status || '';
+                    var prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[tk.priority] || tk.priority || '';
+                    var assign = userDisplay(tk.assignee);
+                    var dept = (tk.department && tk.department.name) ? tk.department.name : '';
+                    var meta = [userDisplay(tk.creator), assign, dept].filter(Boolean).join(' · ');
+                    var num = (tk.ticketNumber || '').trim();
+                    var numHtml = num ? '<span class="ticket-number">' + escapeHtml(num) + '</span> ' : '';
+                    return '<div class="ticket-card" onclick="loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\')"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(tk.title || '') + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (tk.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span></div></div>';
+                }).join('');
+            } catch (e) {
+                list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (e && e.message ? escapeHtml(e.message) : '') + '</div>';
             }
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty ticket-list-empty"><span class="empty-icon">🎫</span><p>' + t('empty_tickets') + '</p><button type="button" class="btn-primary" onclick="toggleTicketForm()" style="margin-top:12px;">' + t('create_ticket') + '</button></div>'; return; }
-            list.innerHTML = data.data.map(function(t) {
-                var statusLabel = t.status === 'open' ? t('status_open') : t.status === 'in_progress' ? t('status_in_progress') : t.status === 'resolved' ? t('status_resolved') : t.status === 'closed' ? t('status_closed') : t.status || '';
-                var prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[t.priority] || t.priority || '';
-                var assign = userDisplay(t.assignee);
-                var dept = (t.department && t.department.name) ? t.department.name : '';
-                var meta = [userDisplay(t.creator), assign, dept].filter(Boolean).join(' · ');
-                var num = (t.ticketNumber || '').trim();
-                var numHtml = num ? '<span class="ticket-number">' + escapeHtml(num) + '</span> ' : '';
-                return '<div class="ticket-card" onclick="loadTicketDetail(\'' + t.id + '\')"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(t.title) + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (t.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (t.status || '') + '">' + escapeHtml(statusLabel) + '</span></div></div>';
-            }).join('');
         }
         var currentTicketId = null;
         function showTicketList() {
