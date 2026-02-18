@@ -61,6 +61,15 @@
                     panel_section_branding: 'برندینگ',
                     panel_section_titles: 'عنوان‌ها',
                     panel_section_footer: 'فوتر',
+                    user_perms_select_all: 'همه دسترسی‌ها',
+                    user_perms_select_none: 'هیچ‌کدام',
+                    user_perms_group_communications: 'ارتباطات',
+                    user_perms_group_organization: 'سازمان',
+                    user_perms_group_settings: 'تنظیمات',
+                    user_perms_group_special: 'دسترسی‌های ویژه',
+                    user_perms_all: 'همه',
+                    user_perms_none: 'هیچ‌کدام',
+                    section_manage_tickets: 'مدیریت تیکت‌ها (حذف/آرشیو)',
                     header_search: 'جستج�� در �&کا��&ات�R �&شتر�Rا� ...',
                     header_search_aria: 'جستج�� در �&کا��&ات �� �&شتر�Rا� ',
                     header_logout: 'خر��ج',
@@ -333,6 +342,15 @@
                     panel_section_branding: 'Branding',
                     panel_section_titles: 'Titles',
                     panel_section_footer: 'Footer',
+                    user_perms_select_all: 'All access',
+                    user_perms_select_none: 'None',
+                    user_perms_group_communications: 'Communications',
+                    user_perms_group_organization: 'Organization',
+                    user_perms_group_settings: 'Settings',
+                    user_perms_group_special: 'Special access',
+                    user_perms_all: 'All',
+                    user_perms_none: 'None',
+                    section_manage_tickets: 'Manage tickets (delete/archive)',
                     panel_preview: 'Preview',
                     page_customer_detail: 'Customer history',
                     btn_send: 'Send',
@@ -3873,9 +3891,26 @@
             filterAndRenderUsers();
         }
         var currentEditUserId = null;
-        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', manage_users: 'section_manage_users' };
+        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets' };
+        var permGroups = [
+            { key: 'communications', title: 'user_perms_group_communications', keys: ['conversations', 'customers', 'tickets', 'internal_chat', 'whatsapp', 'announcements'] },
+            { key: 'organization', title: 'user_perms_group_organization', keys: ['dashboard', 'departments', 'users', 'branches', 'tasks', 'processes', 'staff_activity', 'supervision'] },
+            { key: 'settings', title: 'user_perms_group_settings', keys: ['rates', 'services', 'panel_settings'] },
+            { key: 'special', title: 'user_perms_group_special', keys: ['manage_users', 'manage_tickets'] }
+        ];
         function sectionLabel(k) { return t(sectionLabels[k] || k); }
         function closeUserEditModal() { document.getElementById('userEditModal').style.display = 'none'; currentEditUserId = null; }
+        function userPermsSelectAll(checked) {
+            document.querySelectorAll('#userEditPerms input[data-perm]').forEach(function(cb) { cb.checked = !!checked; });
+        }
+        function userPermsSelectGroup(groupKey, checked) {
+            var group = permGroups.find(function(g) { return g.key === groupKey; });
+            if (!group) return;
+            group.keys.forEach(function(k) {
+                var cb = document.querySelector('#userEditPerms input[data-perm="' + k + '"]');
+                if (cb) cb.checked = !!checked;
+            });
+        }
         async function openUserEdit(userId) {
             var res = await apiFetch('/api/users/' + userId);
             if (res.needLogin || !res.ok) return;
@@ -3894,12 +3929,20 @@
             document.getElementById('userEditActive').checked = u.isActive !== false;
             document.getElementById('userEditPassword').value = '';
             var perms = u.permissions || {};
-            var canGrantManageUsers = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
-            var html = Object.keys(sectionLabels).map(function(k) {
-                if (k === 'manage_users' && !canGrantManageUsers) return '';
-                var checked = perms[k] !== false ? ' checked' : '';
-                return '<label style="display:block; margin:6px 0;"><input type="checkbox" data-perm="' + k + '"' + checked + '> ' + sectionLabel(k) + '</label>';
-            }).join('');
+            var canGrantSpecial = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
+            var html = '';
+            permGroups.forEach(function(gr) {
+                var visibleKeys = gr.keys.filter(function(k) { return (k !== 'manage_users' && k !== 'manage_tickets') || canGrantSpecial; });
+                if (visibleKeys.length === 0) return;
+                html += '<div class="user-edit-perm-group" data-group="' + gr.key + '">';
+                html += '<div class="user-edit-perm-group-header"><span class="user-edit-perm-group-title">' + (t(gr.title) || gr.key) + '</span><span class="user-edit-perm-group-toggles"><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', true)">' + (t('user_perms_all') || 'همه') + '</button><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', false)">' + (t('user_perms_none') || 'هیچ‌کدام') + '</button></span></div>';
+                html += '<div class="user-edit-perm-group-items">';
+                visibleKeys.forEach(function(k) {
+                    var checked = perms[k] !== false ? ' checked' : '';
+                    html += '<label class="user-edit-perm-item"><input type="checkbox" data-perm="' + k + '"' + checked + '><span>' + sectionLabel(k) + '</span></label>';
+                });
+                html += '</div></div>';
+            });
             document.getElementById('userEditPerms').innerHTML = html;
             var btnDel = document.getElementById('btnUserDelete');
             if (btnDel) btnDel.style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) && u.id !== (currentUser && currentUser.id) ? '' : 'none';
@@ -5187,6 +5230,8 @@
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
             window.updatePanelLivePreview = updatePanelLivePreview;
+            window.userPermsSelectAll = userPermsSelectAll;
+            window.userPermsSelectGroup = userPermsSelectGroup;
             window.verifyTotpLogin = verifyTotpLogin;
             window.backToLoginStep1 = backToLoginStep1;
             window.closeSidebarMobile = closeSidebarMobile;
@@ -5267,6 +5312,8 @@
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
             window.updatePanelLivePreview = updatePanelLivePreview;
+            window.userPermsSelectAll = userPermsSelectAll;
+            window.userPermsSelectGroup = userPermsSelectGroup;
             window.openSupInternalChatDetail = openSupInternalChatDetail;
             window.closeSupInternalChatModal = closeSupInternalChatModal;
             window.filterInternalThreads = filterInternalThreads;
