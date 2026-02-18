@@ -27,11 +27,11 @@ const SECTION_KEYS = [
 const MANAGE_USERS_KEY = 'manage_users'; // owner، admin، manager یا دارنده این دسترسی می‌توانند کاربران و دپارتمان‌ها را ویرایش/مدیریت کنند
 const MANAGE_TICKETS_KEY = 'manage_tickets'; // حذف و آرشیو تیکت
 
-/** ادمین اصلی پنل — این ایمیل همیشه دسترسی کامل به همه بخش‌ها و مدیریت کاربران/دپارتمان‌ها دارد */
-const MAIN_ADMIN_EMAIL = 'ersanjahedtabrizi@gmail.com';
+/** ادمین اصلی پنل — این ایمیل (از env یا پیش‌فرض) دسترسی کامل دارد. خالی بودن = هیچ‌کس ادمین اصلی نیست و همه قابل حذف/ویرایش هستند. */
+const MAIN_ADMIN_EMAIL = (process.env.MAIN_ADMIN_EMAIL || 'ersanjahedtabrizi@gmail.com').trim();
 
 function isMainAdmin(user) {
-    if (!user || !user.email) return false;
+    if (!user || !user.email || !MAIN_ADMIN_EMAIL) return false;
     return String(user.email).trim().toLowerCase() === MAIN_ADMIN_EMAIL.toLowerCase();
 }
 
