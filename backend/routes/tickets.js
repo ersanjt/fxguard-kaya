@@ -5,6 +5,17 @@ const { Op, literal } = require('sequelize');
 function createTicketsRouter(io) {
 const router = express.Router();
 
+router.get('/stats', async (req, res) => {
+    try {
+        const rows = await Ticket.findAll({ attributes: ['status'], raw: true });
+        const stats = { total: rows.length, open: 0, in_progress: 0, resolved: 0, closed: 0 };
+        rows.forEach(t => { if (stats[t.status] !== undefined) stats[t.status]++; });
+        res.json(stats);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 router.get('/', async (req, res) => {
     try {
         const { status, priority, assignedTo, createdBy, departmentId, search, sort = 'newest', page = 1, limit = 50 } = req.query;

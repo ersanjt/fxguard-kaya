@@ -2658,15 +2658,14 @@
             var search = document.getElementById('ticketSearch'); if (search && search.value.trim()) q += '&search=' + encodeURIComponent(search.value.trim());
             var sortEl = document.getElementById('ticketFilterSort'); if (sortEl && sortEl.value) q += '&sort=' + encodeURIComponent(sortEl.value);
             var res = await apiFetch('/api/tickets' + q);
+            var statsRes = await apiFetch('/api/tickets/stats');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (statsEl && data.data) {
-                var open = (data.data || []).filter(function(x){ return x.status === 'open'; }).length;
-                var inProg = (data.data || []).filter(function(x){ return x.status === 'in_progress'; }).length;
-                var resolved = (data.data || []).filter(function(x){ return x.status === 'resolved'; }).length;
-                var closed = (data.data || []).filter(function(x){ return x.status === 'closed'; }).length;
-                statsEl.innerHTML = '<div class="ticket-stat-card"><div class="ticket-stat-val">' + (data.total || 0) + '</div><div class="ticket-stat-label">' + (LANG === 'fa' ? 'کل' : 'Total') + '</div></div><div class="ticket-stat-card ticket-stat-open"><div class="ticket-stat-val">' + open + '</div><div class="ticket-stat-label">' + t('status_open') + '</div></div><div class="ticket-stat-card ticket-stat-progress"><div class="ticket-stat-val">' + inProg + '</div><div class="ticket-stat-label">' + t('status_in_progress') + '</div></div><div class="ticket-stat-card ticket-stat-resolved"><div class="ticket-stat-val">' + resolved + '</div><div class="ticket-stat-label">' + t('status_resolved') + '</div></div><div class="ticket-stat-card ticket-stat-closed"><div class="ticket-stat-val">' + closed + '</div><div class="ticket-stat-label">' + t('status_closed') + '</div></div>';
+            var stats;
+            if (statsRes.ok && statsRes.data) { stats = statsRes.data; } else { stats = { total: data.total || 0, open: 0, in_progress: 0, resolved: 0, closed: 0 }; (data.data || []).forEach(function(x){ if (stats[x.status] !== undefined) stats[x.status]++; }); }
+            if (statsEl) {
+                statsEl.innerHTML = '<div class="ticket-stat-card"><div class="ticket-stat-val">' + (stats.total || 0) + '</div><div class="ticket-stat-label">' + (LANG === 'fa' ? 'کل' : 'Total') + '</div></div><div class="ticket-stat-card ticket-stat-open"><div class="ticket-stat-val">' + (stats.open || 0) + '</div><div class="ticket-stat-label">' + t('status_open') + '</div></div><div class="ticket-stat-card ticket-stat-progress"><div class="ticket-stat-val">' + (stats.in_progress || 0) + '</div><div class="ticket-stat-label">' + t('status_in_progress') + '</div></div><div class="ticket-stat-card ticket-stat-resolved"><div class="ticket-stat-val">' + (stats.resolved || 0) + '</div><div class="ticket-stat-label">' + t('status_resolved') + '</div></div><div class="ticket-stat-card ticket-stat-closed"><div class="ticket-stat-val">' + (stats.closed || 0) + '</div><div class="ticket-stat-label">' + t('status_closed') + '</div></div>';
                 statsEl.style.display = 'grid';
             }
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty ticket-list-empty"><span class="empty-icon">🎫</span><p>' + t('empty_tickets') + '</p><button type="button" class="btn-primary" onclick="toggleTicketForm()" style="margin-top:12px;">' + t('create_ticket') + '</button></div>'; return; }
@@ -2715,7 +2714,10 @@
             var numEl = document.getElementById('ticketDetailNumber');
             if (numEl) numEl.textContent = (t.ticketNumber || '').trim() || '';
             document.getElementById('ticketDetailTitle').textContent = t.title || '';
-            var metaParts = [t('creator_label') + ' ' + userDisplay(t.creator), t('assignee_label') + ' ' + userDisplay(t.assignee), t('th_status') + ': ' + (t.status || ''), t('ticket_priority') + ': ' + (t.priority || '')];
+            var statusLabel = t.status === 'open' ? t('status_open') : t.status === 'in_progress' ? t('status_in_progress') : t.status === 'resolved' ? t('status_resolved') : t.status === 'closed' ? t('status_closed') : t.status || '';
+            var prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[t.priority] || t.priority || '';
+            var metaParts = [t('creator_label') + ' ' + userDisplay(t.creator), t('assignee_label') + ' ' + userDisplay(t.assignee), t('th_status') + ': ' + statusLabel, t('ticket_priority') + ': ' + prioLabel];
+            if (t.department && t.department.name) metaParts.push((t('label_dept') || 'دپارتمان') + ': ' + t.department.name);
             if (t.dueDate) metaParts.push(t('due_label') + ' ' + (fmtTZ ? fmtTZ(t.dueDate, 'date') : t.dueDate));
             document.getElementById('ticketDetailMeta').textContent = metaParts.join(' | ');
             var descEl = document.getElementById('ticketDetailDesc');
@@ -2733,8 +2735,8 @@
             if (assigneeSel) { await loadTicketFormSelects(); assigneeSel.value = t.assignedTo || ''; }
             if (prioritySel) prioritySel.value = t.priority || 'normal';
             var repliesHtml = (t.replies || []).map(function(r) {
-                var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">�x} ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
-                return '<div class="ticket-reply-msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '"><div class="ticket-reply-content">' + escapeHtml(r.content || '') + '</div>' + att + '<div class="ticket-reply-meta">' + userDisplay(r.user) + ' � ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
+                var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
+                return '<div class="ticket-reply-msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '"><div class="ticket-reply-content">' + escapeHtml(r.content || '') + '</div>' + att + '<div class="ticket-reply-meta">' + userDisplay(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('ticketReplies').innerHTML = repliesHtml || '<p class="ticket-no-replies text-muted">' + t('no_reply') + '</p>';
             document.getElementById('ticketReplyContent').value = '';
@@ -2749,14 +2751,15 @@
             if (fileInput && fileInput.files && fileInput.files[0]) {
                 var formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-                var up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-                var upData = await up.json();
-                if (upData.url) attachments.push({ url: upData.url, name: upData.name || 'فا�R�', size: upData.size });
+                var up = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                var upData = await up.json().catch(function() { return {}; });
+                if (!up.ok || !upData.url) { toast((upData.error || (LANG === 'fa' ? 'خطا در آپلود فایل' : 'Upload failed')), true); return; }
+                attachments.push({ url: upData.url, name: upData.name || (t('file') || 'فایل'), size: upData.size });
             }
             if (!content.trim() && attachments.length === 0) { toast(t('reply_or_file_required'), true); return; }
-            var res = await apiFetch('/api/tickets/' + currentTicketId + '/replies', { method: 'POST', body: JSON.stringify({ content: content.trim() || '(پ�R��ست)', attachments: attachments }) });
+            var res = await apiFetch('/api/tickets/' + currentTicketId + '/replies', { method: 'POST', body: JSON.stringify({ content: content.trim() || (LANG === 'fa' ? '(پیوست)' : '(Attachment)'), attachments: attachments }) });
             if (res.needLogin) return;
-            if (res.ok) { toast(t('toast_reply_sent')); loadTicketDetail(currentTicketId); fileInput.value = ''; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { toast(t('toast_reply_sent')); loadTicketDetail(currentTicketId); if (fileInput) fileInput.value = ''; var attEl = document.getElementById('ticketReplyAttachments'); if (attEl) attEl.textContent = ''; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         var currentTaskId = null;
