@@ -135,6 +135,28 @@ async function connectDatabases() {
             await sequelize.query('PRAGMA synchronous=NORMAL;');
         }
         await sequelize.sync();
+        // Auto-migrate: add customerId to Transactions if missing (fixes 502 after deploy)
+        try {
+            const dialect = sequelize.getDialect();
+            const [results] = await sequelize.query(
+                dialect === 'sqlite'
+                    ? "PRAGMA table_info(Transactions)"
+                    : "SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND LOWER(table_name) = 'transactions'"
+            );
+            const hasColumn = dialect === 'sqlite'
+                ? results.some(r => r.name === 'customerId')
+                : results.some(r => r.column_name === 'customerId');
+            if (!hasColumn) {
+                if (dialect === 'sqlite') {
+                    await sequelize.query('ALTER TABLE "Transactions" ADD COLUMN "customerId" VARCHAR(36)');
+                } else {
+                    await sequelize.query('ALTER TABLE "Transactions" ADD COLUMN "customerId" UUID REFERENCES "Customers"("id")');
+                }
+                logger.info('✅ Transactions.customerId column added (auto-migration)');
+            }
+        } catch (migErr) {
+            logger.warn('Transactions customerId migration:', migErr.message);
+        }
         logger.info(process.env.USE_SQLITE ? '✅ SQLite Connected (WAL)' : '✅ PostgreSQL Connected');
         
         if (!process.env.USE_SQLITE) {
