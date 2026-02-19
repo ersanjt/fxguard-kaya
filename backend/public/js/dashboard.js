@@ -72,6 +72,28 @@
                     panel_smtp_from_name: 'نام فرستنده',
                     panel_smtp_secure: 'استفاده از SSL/TLS (پورت ۴۶۵)',
                     panel_email_login_notification: 'ارسال اعلان ورود به ایمیل کاربر',
+                    panel_section_languages: 'زبان‌های سایت',
+                    panel_section_languages_desc: 'زبان‌های در دسترس برای صفحه ورود و منوی پنل. در حالت تک‌زبانه سوئیچ زبان مخفی است؛ در حالت چندزبانگی کاربران می‌توانند زبان را عوض کنند.',
+                    panel_language_mode: 'حالت زبان',
+                    panel_language_mode_single: 'تک‌زبانه (فقط فارسی)',
+                    panel_language_mode_single_en: 'تک‌زبانه (فقط انگلیسی)',
+                    panel_language_mode_single_tr: 'تک‌زبانه (فقط ترکی)',
+                    panel_language_mode_bilingual: 'دو زبانه (فارسی + انگلیسی)',
+                    panel_language_mode_bilingual_fa_tr: 'دو زبانه (فارسی + ترکی)',
+                    panel_language_mode_bilingual_en_tr: 'دو زبانه (انگلیسی + ترکی)',
+                    panel_language_mode_trilingual: 'سه زبانه (فارسی + انگلیسی + ترکی)',
+                    panel_default_language: 'زبان پیش‌فرض',
+                    panel_default_language_desc: 'زبان اولیه برای کاربران جدید یا وقتی زبان انتخاب نشده است.',
+                    lang_fa: 'فارسی',
+                    lang_en: 'English',
+                    lang_tr: 'Türkçe',
+                    panel_language_hint_single: 'فقط فارسی در منو و صفحه ورود نمایش داده می‌شود.',
+                    panel_language_hint_single_en: 'فقط انگلیسی در منو و صفحه ورود نمایش داده می‌شود.',
+                    panel_language_hint_single_tr: 'فقط ترکی در منو و صفحه ورود نمایش داده می‌شود.',
+                    panel_language_hint_bilingual: 'فارسی و انگلیسی؛ کاربران می‌توانند زبان را عوض کنند.',
+                    panel_language_hint_bilingual_fa_tr: 'فارسی و ترکی؛ کاربران می‌توانند زبان را عوض کنند.',
+                    panel_language_hint_bilingual_en_tr: 'انگلیسی و ترکی؛ کاربران می‌توانند زبان را عوض کنند.',
+                    panel_language_hint_trilingual: 'فارسی، انگلیسی و ترکی؛ کاربران می‌توانند زبان را عوض کنند.',
                     panel_section_visibility: 'نمایش بخش‌ها در سایت',
                     panel_visibility_desc: 'بخش‌هایی که مخفی می‌کنید در منو و در کل وب‌سایت نمایش داده نمی‌شوند. تیک خورده = نمایش داده شود.',
                     user_perms_select_all: 'همه دسترسی‌ها',
@@ -341,6 +363,19 @@
                     logo_kaya: 'Kaya Exchange',
                     page_dashboard: 'Dashboard',
                     dashboard_welcome: 'Key information and quick access to panel sections',
+                    dashboard_sections: 'Panel sections',
+                    dashboard_stat_online: 'Staff online',
+                    dashboard_stat_logins_today: 'Logins today',
+                    dashboard_stat_conversations: 'Open conversations',
+                    dashboard_stat_unread: 'Unread',
+                    dashboard_stat_tickets: 'Open tickets',
+                    dashboard_stat_customers: 'Customers',
+                    dashboard_stat_tasks: 'Tasks pending',
+                    dashboard_stat_messages_today: 'Messages today',
+                    dashboard_stat_announcements: 'Unread announcements',
+                    dashboard_quick_new_conv: 'New conversation',
+                    dashboard_quick_new_customer: 'Add customer',
+                    dashboard_quick_new_ticket: 'New ticket',
                     page_conversations: 'Conversations',
                     page_customers: 'Customers',
                     page_departments: 'Departments',
@@ -600,10 +635,29 @@
                     process_min_one_stage: 'Add at least one stage.',
                     process_start_from_ticket: 'Start process for this ticket',
                     panel_section_languages: 'Site languages',
+                    panel_section_languages_desc: 'Languages available on the login page and panel menu. In single-language mode the language switcher is hidden; with multiple languages users can switch.',
                     panel_language_mode: 'Language mode',
-                    panel_language_mode_single: 'Single language (Persian only)',
-                    panel_language_mode_bilingual: 'Two languages (Persian + English)',
-                    panel_language_mode_trilingual: 'Three languages (Persian + English + Turkish)'
+                    panel_language_mode_single: 'Single (Persian only)',
+                    panel_language_mode_single_en: 'Single (English only)',
+                    panel_language_mode_single_tr: 'Single (Turkish only)',
+                    panel_language_mode_bilingual: 'Two (Persian + English)',
+                    panel_language_mode_bilingual_fa_tr: 'Two (Persian + Turkish)',
+                    panel_language_mode_bilingual_en_tr: 'Two (English + Turkish)',
+                    panel_language_mode_trilingual: 'Three (Persian + English + Turkish)',
+                    panel_default_language: 'Default language',
+                    panel_default_language_desc: 'Initial language for new users or when no language is selected.',
+                    lang_fa: 'فارسی',
+                    lang_en: 'English',
+                    lang_tr: 'Türkçe',
+                    panel_language_hint_single: 'Only Persian is shown on login and in the menu.',
+                    panel_language_hint_single_en: 'Only English is shown on login and in the menu.',
+                    panel_language_hint_single_tr: 'Only Turkish is shown on login and in the menu.',
+                    panel_language_hint_bilingual: 'Persian and English; users can switch language.',
+                    panel_language_hint_bilingual_fa_tr: 'Persian and Turkish; users can switch language.',
+                    panel_language_hint_bilingual_en_tr: 'English and Turkish; users can switch language.',
+                    panel_language_hint_trilingual: 'Persian, English and Turkish; users can switch language.',
+                    panel_section_visibility: 'Section visibility',
+                    panel_visibility_desc: 'Sections you hide are not shown in the menu or anywhere on the site. Checked = visible.'
                 },
                 tr: {}
             };
@@ -658,10 +712,13 @@
                 });
             };
             window.SUPPORTED_LANGUAGES = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
-            window.applySupportedLanguages = function(supported) {
+            window.applySupportedLanguages = function(supported, defaultLanguage) {
                 window.SUPPORTED_LANGUAGES = Array.isArray(supported) && supported.length ? supported : ['fa', 'en', 'tr'];
                 var cur = localStorage.getItem('crm_lang') || 'fa';
-                if (window.SUPPORTED_LANGUAGES.indexOf(cur) < 0) { cur = window.SUPPORTED_LANGUAGES[0] || 'fa'; localStorage.setItem('crm_lang', cur); }
+                if (window.SUPPORTED_LANGUAGES.indexOf(cur) < 0) {
+                    cur = (defaultLanguage && window.SUPPORTED_LANGUAGES.indexOf(defaultLanguage) >= 0) ? defaultLanguage : (window.SUPPORTED_LANGUAGES[0] || 'fa');
+                    localStorage.setItem('crm_lang', cur);
+                }
                 if (typeof setLang === 'function') setLang(cur);
                 document.querySelectorAll('.lang-switch').forEach(function(wrap) {
                     if (window.SUPPORTED_LANGUAGES.length <= 1) wrap.style.display = 'none';
@@ -691,7 +748,7 @@
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
         fetch((API || '') + '/api/panel-settings/public/languages').then(function(r){ return r.json(); }).then(function(data){
-            if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages);
+            if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage);
         }).catch(function(){});
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
@@ -2273,14 +2330,49 @@
 
         async function loadDashboard() {
             var container = document.getElementById('dashboardCards');
+            var summaryEl = document.getElementById('dashboardSummary');
+            var quickEl = document.getElementById('dashboardQuickActions');
             if (!container) return;
             var perms = (currentUser && currentUser.permissions) || {};
             var can = function(section) { return section === 'profile' || perms[section] !== false; };
-            container.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            if (container) container.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            if (summaryEl) summaryEl.innerHTML = '';
+            if (quickEl) quickEl.innerHTML = '';
             var res = await apiFetch('/api/analytics/dashboard');
             if (res.needLogin) return;
             var stats = res.ok && res.data ? res.data : {};
             var n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
+            if (summaryEl) {
+                var summaryItems = [];
+                if (can('staff_activity') || can('users')) {
+                    summaryItems.push({ page: 'staff-activity', num: n(stats.staffOnline), label: t('dashboard_stat_online') });
+                    summaryItems.push({ page: 'staff-activity', num: n(stats.loginsToday), label: t('dashboard_stat_logins_today') });
+                }
+                if (can('conversations')) {
+                    summaryItems.push({ page: 'conversations', num: n(stats.openConversations), label: t('dashboard_stat_conversations'), warn: n(stats.unreadConversations) > 0 });
+                    if (n(stats.unreadConversations) > 0) summaryItems.push({ page: 'conversations', num: n(stats.unreadConversations), label: t('dashboard_stat_unread'), warn: true });
+                }
+                if (can('tickets')) summaryItems.push({ page: 'tickets', num: n(stats.ticketsOpen), label: t('dashboard_stat_tickets') });
+                if (can('customers')) summaryItems.push({ page: 'customers', num: n(stats.totalCustomers), label: t('dashboard_stat_customers') });
+                if (can('tasks')) summaryItems.push({ page: 'tasks', num: n(stats.tasksPending), label: t('dashboard_stat_tasks') });
+                if (can('conversations')) summaryItems.push({ page: 'conversations', num: n(stats.todayMessages), label: t('dashboard_stat_messages_today') });
+                if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: n(stats.unreadAnnouncements), label: t('dashboard_stat_announcements'), warn: true });
+                var summaryHtml = summaryItems.map(function(item) {
+                    var cls = 'dashboard-stat-box' + (item.warn ? ' warn' : '');
+                    return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" onclick="showPage(\'' + item.page.replace(/'/g, "\\'") + '\'); return false;"><span class="stat-number">' + escapeHtml(String(item.num)) + '</span><span class="stat-label">' + escapeHtml(item.label) + '</span></a>';
+                }).join('');
+                summaryEl.innerHTML = summaryHtml || '';
+            }
+            if (quickEl) {
+                var quickBtns = [];
+                if (can('conversations')) quickBtns.push({ label: t('dashboard_quick_new_conv'), icon: 'icon-chat', onclick: "showPage('conversations'); openNewConvModal();" });
+                if (can('customers')) quickBtns.push({ label: t('dashboard_quick_new_customer'), icon: 'icon-user-plus', onclick: "showPage('customers'); openCustomerModal();" });
+                if (can('tickets')) quickBtns.push({ label: t('dashboard_quick_new_ticket'), icon: 'icon-ticket', onclick: "showPage('tickets'); setTimeout(function(){ toggleTicketForm(); }, 350);" });
+                var quickHtml = quickBtns.map(function(b) {
+                    return '<button type="button" class="btn-quick" onclick="' + escapeHtml(b.onclick) + '"><svg viewBox="0 0 24 24"><use href="#' + escapeHtml(b.icon) + '"/></svg>' + escapeHtml(b.label) + '</button>';
+                }).join('');
+                quickEl.innerHTML = quickHtml || '';
+            }
             var cards = [
                 { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread')) : (n(stats.openConversations) + ' ' + (LANG === 'fa' ? 'باز' : 'open')), badgeWarn: n(stats.unreadConversations) > 0 },
                 { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + (LANG === 'fa' ? ' مشتری' : ' customers') },
@@ -2306,6 +2398,8 @@
                 html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
             });
             container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : 'No sections available.') + '</div>');
+            var cardsTitleEl = document.getElementById('dashboardCardsTitle');
+            if (cardsTitleEl) cardsTitleEl.style.display = html ? '' : 'none';
             updateNavBadges(stats);
         }
 
@@ -3254,14 +3348,12 @@
             if (res.ok && res.data) {
                 applyBranding(res.data);
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
-                var mode = res.data.languageMode;
-                var supported = (mode === 'single' ? ['fa'] : mode === 'bilingual' ? ['fa', 'en'] : ['fa', 'en', 'tr']);
-                if (window.applySupportedLanguages) window.applySupportedLanguages(supported);
+                if (res.data.supportedLanguages && window.applySupportedLanguages) window.applySupportedLanguages(res.data.supportedLanguages, res.data.defaultLanguage);
                 return;
             }
             fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null || data.showFooter !== undefined)) applyBranding(data); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/visibility').then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
-            fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage); }).catch(function() {});
         }
         var SECTIONS_FOR_VISIBILITY = [
             { page: 'dashboard', labelKey: 'nav_dashboard' },
@@ -3303,7 +3395,11 @@
             var hideFooterEl = document.getElementById('panelSettingHideFooter');
             if (hideFooterEl) hideFooterEl.checked = d.showFooter === false;
             var langModeEl = document.getElementById('panelSettingLanguageMode');
-            if (langModeEl) langModeEl.value = (d.languageMode === 'single' || d.languageMode === 'bilingual' || d.languageMode === 'trilingual') ? d.languageMode : 'trilingual';
+            var validModes = ['single', 'single_en', 'single_tr', 'bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'];
+            if (langModeEl) langModeEl.value = validModes.indexOf(d.languageMode) >= 0 ? d.languageMode : 'trilingual';
+            set('panelSettingDefaultLanguage', (d.defaultLanguage === 'fa' || d.defaultLanguage === 'en' || d.defaultLanguage === 'tr') ? d.defaultLanguage : 'fa');
+            if (typeof updatePanelLanguageHint === 'function') updatePanelLanguageHint();
+            if (typeof toggleDefaultLanguageVisibility === 'function') toggleDefaultLanguageVisibility();
             set('panelSettingSmtpHost', d.smtpHost);
             set('panelSettingSmtpPort', d.smtpPort);
             set('panelSettingSmtpUser', d.smtpUser);
@@ -3353,6 +3449,21 @@
             if (logoEl) { if (logoUrl) { logoEl.src = logoUrl; logoEl.style.display = ''; if (logoPlaceholder) logoPlaceholder.style.display = 'none'; } else { logoEl.removeAttribute('src'); logoEl.style.display = 'none'; if (logoPlaceholder) logoPlaceholder.style.display = ''; } }
             if (faviconEl) { if (faviconUrl) { faviconEl.src = faviconUrl; faviconEl.style.display = ''; } else { faviconEl.removeAttribute('src'); faviconEl.style.display = 'none'; } }
         }
+        function updatePanelLanguageHint() {
+            var sel = document.getElementById('panelSettingLanguageMode');
+            var hint = document.getElementById('panelLanguageModeDesc');
+            if (!sel || !hint) return;
+            var mode = sel.value;
+            var hints = { single: 'panel_language_hint_single', single_en: 'panel_language_hint_single_en', single_tr: 'panel_language_hint_single_tr', bilingual: 'panel_language_hint_bilingual', bilingual_fa_tr: 'panel_language_hint_bilingual_fa_tr', bilingual_en_tr: 'panel_language_hint_bilingual_en_tr', trilingual: 'panel_language_hint_trilingual' };
+            hint.textContent = t(hints[mode] || 'panel_language_hint_trilingual') !== (hints[mode] || 'panel_language_hint_trilingual') ? t(hints[mode] || 'panel_language_hint_trilingual') : '';
+        }
+        function toggleDefaultLanguageVisibility() {
+            var wrap = document.getElementById('panelDefaultLanguageWrap');
+            var sel = document.getElementById('panelSettingLanguageMode');
+            if (!wrap || !sel) return;
+            var multi = ['bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'].indexOf(sel.value) >= 0;
+            wrap.style.display = multi ? 'block' : 'none';
+        }
         function previewPanelLogo(url) {
             var wrap = document.getElementById('panelLogoPreview');
             var img = document.getElementById('panelLogoPreviewImg');
@@ -3396,8 +3507,10 @@
                 hiddenSections: hiddenSections
             };
             var langModeEl = document.getElementById('panelSettingLanguageMode');
-            if (langModeEl && (langModeEl.value === 'single' || langModeEl.value === 'bilingual' || langModeEl.value === 'trilingual')) payload.languageMode = langModeEl.value;
-            else payload.languageMode = 'trilingual';
+            var validModes = ['single', 'single_en', 'single_tr', 'bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'];
+            payload.languageMode = (langModeEl && validModes.indexOf(langModeEl.value) >= 0) ? langModeEl.value : 'trilingual';
+            var defaultLangEl = document.getElementById('panelSettingDefaultLanguage');
+            if (defaultLangEl && (defaultLangEl.value === 'fa' || defaultLangEl.value === 'en' || defaultLangEl.value === 'tr')) payload.defaultLanguage = defaultLangEl.value;
             var res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
             if (btn) { btn.disabled = false; btn.textContent = t('btn_save'); }
             if (res.ok && res.data) {

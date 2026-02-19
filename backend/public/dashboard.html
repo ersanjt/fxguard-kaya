@@ -201,6 +201,9 @@
                 <div id="pageDashboard" class="page show">
                     <h2 data-i18n="page_dashboard">داشبورد</h2>
                     <p class="dashboard-sub" data-i18n="dashboard_welcome">خلاصه مهم‌ترین اطلاعات و دسترسی سریع به بخش‌های پنل</p>
+                    <div id="dashboardSummary" class="dashboard-summary" aria-label="خلاصه آمار"></div>
+                    <div id="dashboardQuickActions" class="dashboard-quick-actions" aria-label="دسترسی سریع"></div>
+                    <h3 class="dashboard-cards-title" id="dashboardCardsTitle" data-i18n="dashboard_sections">بخش‌های پنل</h3>
                     <div id="dashboardCards" class="dashboard-cards"></div>
                 </div>
                 <div id="pageConversations" class="page">
@@ -1158,17 +1161,30 @@
                                         </label>
                                     </div>
                                 </section>
-                                <section class="panel-settings-section">
+                                <section class="panel-settings-section panel-settings-section-languages">
                                     <h3 class="panel-settings-section-title" data-i18n="panel_section_languages">زبان‌های سایت</h3>
-                                    <p class="panel-settings-section-desc">کاربران با دسترسی «ظاهر پنل» می‌توانند سایت را تک‌زبانه، دو زبانه یا سه‌زبانه کنند. در حالت تک‌زبانه فقط فارسی نمایش داده می‌شود و سوئیچ زبان مخفی است.</p>
+                                    <p class="panel-settings-section-desc" data-i18n="panel_section_languages_desc">زبان‌های در دسترس برای صفحه ورود و منوی پنل. در حالت تک‌زبانه سوئیچ زبان مخفی است؛ در حالت چندزبانگی کاربران می‌توانند زبان را عوض کنند.</p>
                                     <div class="form-group">
                                         <label for="panelSettingLanguageMode" data-i18n="panel_language_mode">حالت زبان</label>
-                                        <select id="panelSettingLanguageMode" aria-describedby="panelLanguageModeDesc">
-                                            <option value="single" data-i18n="panel_language_mode_single">تک زبانه (فقط فارسی)</option>
+                                        <select id="panelSettingLanguageMode" aria-describedby="panelLanguageModeDesc" onchange="updatePanelLanguageHint(); toggleDefaultLanguageVisibility();">
+                                            <option value="single" data-i18n="panel_language_mode_single">تک‌زبانه (فقط فارسی)</option>
+                                            <option value="single_en" data-i18n="panel_language_mode_single_en">تک‌زبانه (فقط انگلیسی)</option>
+                                            <option value="single_tr" data-i18n="panel_language_mode_single_tr">تک‌زبانه (فقط ترکی)</option>
                                             <option value="bilingual" data-i18n="panel_language_mode_bilingual">دو زبانه (فارسی + انگلیسی)</option>
+                                            <option value="bilingual_fa_tr" data-i18n="panel_language_mode_bilingual_fa_tr">دو زبانه (فارسی + ترکی)</option>
+                                            <option value="bilingual_en_tr" data-i18n="panel_language_mode_bilingual_en_tr">دو زبانه (انگلیسی + ترکی)</option>
                                             <option value="trilingual" data-i18n="panel_language_mode_trilingual">سه زبانه (فارسی + انگلیسی + ترکی)</option>
                                         </select>
-                                        <span id="panelLanguageModeDesc" class="form-hint"></span>
+                                        <span id="panelLanguageModeDesc" class="form-hint form-hint-language" aria-live="polite"></span>
+                                    </div>
+                                    <div class="form-group panel-default-language-wrap" id="panelDefaultLanguageWrap" style="display:none;">
+                                        <label for="panelSettingDefaultLanguage" data-i18n="panel_default_language">زبان پیش‌فرض</label>
+                                        <select id="panelSettingDefaultLanguage" aria-describedby="panelDefaultLanguageDesc">
+                                            <option value="fa" data-i18n="lang_fa">فارسی</option>
+                                            <option value="en" data-i18n="lang_en">English</option>
+                                            <option value="tr" data-i18n="lang_tr">Türkçe</option>
+                                        </select>
+                                        <span id="panelDefaultLanguageDesc" class="form-hint" data-i18n="panel_default_language_desc">زبان اولیه برای کاربران جدید یا وقتی زبان انتخاب نشده است.</span>
                                     </div>
                                 </section>
                                 <section class="panel-settings-section panel-settings-section-email">

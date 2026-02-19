@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Conversation, Message, Customer, Ticket, Task, Announcement, AnnouncementRead } = require('../models');
+const { Conversation, Message, Customer, Ticket, Task, Announcement, AnnouncementRead, User } = require('../models');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
@@ -31,7 +31,9 @@ router.get('/dashboard', async (req, res) => {
             ticketsOpen,
             tasksPending,
             announcementsCount,
-            unreadAnnouncements
+            unreadAnnouncements,
+            staffOnline,
+            loginsToday
         ] = await Promise.all([
             Conversation.count({ where: convWhere }),
             Conversation.count({ where: { ...convWhere, status: 'open' } }),
@@ -50,7 +52,9 @@ router.get('/dashboard', async (req, res) => {
                 const readIds = await AnnouncementRead.findAll({ where: { userId: req.userId }, attributes: ['announcementId'], raw: true }).then(r => r.map(x => x.announcementId));
                 if (readIds.length === 0) return Announcement.count();
                 return Announcement.count({ where: { id: { [Op.notIn]: readIds } } });
-            })()
+            })(),
+            User.count({ where: { isActive: true, status: { [Op.in]: ['online', 'away', 'busy'] } } }),
+            User.count({ where: { isActive: true, lastLoginAt: { [Op.gte]: today } } })
         ]);
 
         res.json({
@@ -62,7 +66,9 @@ router.get('/dashboard', async (req, res) => {
             ticketsOpen,
             tasksPending,
             announcementsCount,
-            unreadAnnouncements: unreadAnnouncements || 0
+            unreadAnnouncements: unreadAnnouncements || 0,
+            staffOnline: staffOnline || 0,
+            loginsToday: loginsToday || 0
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
