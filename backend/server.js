@@ -208,6 +208,14 @@ async function connectDatabases() {
                     if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('panel_settings.languageMode', e.message);
                 }
             }
+            if (desc && desc.showFooter === undefined) {
+                try {
+                    await qi.addColumn('panel_settings', 'showFooter', { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true });
+                    logger.info('✅ panel_settings: showFooter column added (auto-migration)');
+                } catch (e) {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('panel_settings.showFooter', e.message);
+                }
+            }
         } catch (e) {
             logger.warn('panel_settings migration:', e.message);
         }

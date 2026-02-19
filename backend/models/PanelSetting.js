@@ -38,6 +38,12 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'متن فوتر (مثلاً صرافی کایا — پورتال کارکنان)'
         },
+        showFooter: {
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+            defaultValue: true,
+            comment: 'نمایش فوتر (true = نمایش، false = مخفی)'
+        },
         smtpHost: { type: DataTypes.STRING(255), allowNull: true, comment: 'SMTP host' },
         smtpPort: { type: DataTypes.STRING(20), allowNull: true, comment: 'SMTP port' },
         smtpUser: { type: DataTypes.STRING(255), allowNull: true, comment: 'SMTP user' },

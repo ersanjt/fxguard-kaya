@@ -61,6 +61,7 @@
                     panel_section_branding: 'برندینگ',
                     panel_section_titles: 'عنوان‌ها',
                     panel_section_footer: 'فوتر',
+                    panel_hide_footer: 'عدم نمایش فوتر (مخفی کردن متن پایین صفحه)',
                     panel_section_email: 'تنظیمات ایمیل (SMTP)',
                     panel_email_desc: 'ارسال ایمیل خوش‌آمدگویی، بازیابی رمز و اعلان ورود. در صورت خالی بودن از متغیرهای محیط سرور استفاده می‌شود.',
                     panel_smtp_host: 'آدرس سرور (Host)',
@@ -367,6 +368,7 @@
                     panel_section_branding: 'Branding',
                     panel_section_titles: 'Titles',
                     panel_section_footer: 'Footer',
+                    panel_hide_footer: 'Hide footer (hide bottom bar text)',
                     panel_section_email: 'Email (SMTP) settings',
                     panel_email_desc: 'Welcome emails, password reset and login notifications. If empty, server env vars are used.',
                     panel_smtp_host: 'Server (Host)',
@@ -3227,6 +3229,8 @@
             if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
             var footerBrand = document.getElementById('appFooterBrand');
             if (footerBrand) footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
+            var appFooter = document.getElementById('appFooter');
+            if (appFooter) appFooter.style.display = (s.showFooter === false) ? 'none' : '';
             var loginTitleEl = document.getElementById('loginTitle');
             if (loginTitleEl) loginTitleEl.textContent = (s.loginTitle && s.loginTitle.trim()) ? s.loginTitle : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal');
             var setLoginLogo = function(containerId, size) {
@@ -3255,7 +3259,7 @@
                 if (window.applySupportedLanguages) window.applySupportedLanguages(supported);
                 return;
             }
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null)) applyBranding(data); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null || data.showFooter !== undefined)) applyBranding(data); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/visibility').then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages); }).catch(function() {});
         }
@@ -3296,6 +3300,8 @@
             set('panelSettingLoginTitle', d.loginTitle);
             set('panelSettingPageTitle', d.pageTitle);
             set('panelSettingFooterText', d.footerText);
+            var hideFooterEl = document.getElementById('panelSettingHideFooter');
+            if (hideFooterEl) hideFooterEl.checked = d.showFooter === false;
             var langModeEl = document.getElementById('panelSettingLanguageMode');
             if (langModeEl) langModeEl.value = (d.languageMode === 'single' || d.languageMode === 'bilingual' || d.languageMode === 'trilingual') ? d.languageMode : 'trilingual';
             set('panelSettingSmtpHost', d.smtpHost);
@@ -3378,6 +3384,7 @@
                 loginTitle: get('panelSettingLoginTitle'),
                 pageTitle: get('panelSettingPageTitle'),
                 footerText: get('panelSettingFooterText'),
+                showFooter: !(document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked),
                 smtpHost: get('panelSettingSmtpHost'),
                 smtpPort: get('panelSettingSmtpPort'),
                 smtpUser: get('panelSettingSmtpUser'),

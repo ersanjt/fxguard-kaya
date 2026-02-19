@@ -18,7 +18,8 @@ router.get('/public/branding', async (req, res) => {
             faviconUrl: s.faviconUrl,
             loginTitle: s.loginTitle,
             pageTitle: s.pageTitle,
-            footerText: s.footerText
+            footerText: s.footerText,
+            showFooter: s.showFooter !== false
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -66,7 +67,7 @@ router.put('/', authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const body = req.body || {};
-        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, hiddenSections } = body;
+        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, hiddenSections } = body;
         const [row] = await PanelSetting.findOrCreate({
             where: { id: 'default' },
             defaults: {}
@@ -77,6 +78,7 @@ router.put('/', authMiddleware, async (req, res) => {
         if (loginTitle !== undefined) row.loginTitle = loginTitle === '' ? null : loginTitle;
         if (pageTitle !== undefined) row.pageTitle = pageTitle === '' ? null : pageTitle;
         if (footerText !== undefined) row.footerText = footerText === '' ? null : footerText;
+        if (showFooter !== undefined) row.showFooter = !!showFooter;
         if (smtpHost !== undefined) row.smtpHost = smtpHost === '' ? null : smtpHost;
         if (smtpPort !== undefined) row.smtpPort = smtpPort === '' ? null : smtpPort;
         if (smtpUser !== undefined) row.smtpUser = smtpUser === '' ? null : smtpUser;

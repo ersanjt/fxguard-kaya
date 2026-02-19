@@ -640,6 +640,7 @@ window.__I18N_TR = {
     panel_section_branding: 'Marka',
     panel_section_titles: 'Başlıklar',
     panel_section_footer: 'Alt bilgi',
+    panel_hide_footer: 'Alt bilgiyi gizle (sayfa altı metnini gösterme)',
     panel_section_languages: 'Site dilleri',
     panel_language_mode: 'Dil modu',
     panel_language_mode_single: 'Tek dil (yalnızca Farsça)',
