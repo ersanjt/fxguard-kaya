@@ -39,6 +39,7 @@ window.__I18N_FA = {
     reset_err_length: 'رمز عبور حداقل ۶ کاراکتر باشد.',
     lang_fa: 'فارسی',
     lang_en: 'English',
+    lang_tr: 'ترکی',
     lang_label: 'زبان',
     nav_dashboard: 'داشبورد',
     nav_communications: 'ارتباطات',
@@ -632,5 +633,10 @@ window.__I18N_FA = {
     empty_process_instances: 'نمونه‌ای در حال اجرا نیست.',
     all_templates: 'همه قالب‌ها',
     process_min_one_stage: 'حداقل یک مرحله وارد کنید.',
-    process_start_from_ticket: 'شروع فرایند برای این تیکت'
+    process_start_from_ticket: 'شروع فرایند برای این تیکت',
+    panel_section_languages: 'زبان‌های سایت',
+    panel_language_mode: 'حالت زبان',
+    panel_language_mode_single: 'تک زبانه (فقط فارسی)',
+    panel_language_mode_bilingual: 'دو زبانه (فارسی + انگلیسی)',
+    panel_language_mode_trilingual: 'سه زبانه (فارسی + انگلیسی + ترکی)'
 };

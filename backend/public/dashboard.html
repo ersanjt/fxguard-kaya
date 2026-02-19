@@ -44,8 +44,9 @@
         <div class="login-box" id="loginStep1">
             <div class="login-logo" id="loginLogo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
             <div class="lang-switch login-lang">
-                <button type="button" id="langFa" onclick="setLang('fa')" class="active">فارسی</button>
-                <button type="button" id="langEn" onclick="setLang('en')">English</button>
+                <button type="button" id="langFa" data-lang="fa" onclick="setLang('fa')" class="active">فارسی</button>
+                <button type="button" id="langEn" data-lang="en" onclick="setLang('en')">English</button>
+                <button type="button" id="langTr" data-lang="tr" onclick="setLang('tr')" data-i18n="lang_tr">Türkçe</button>
             </div>
             <h1 id="loginTitle" data-i18n="login_title">پورتال کارکنان کایا</h1>
             <p class="sub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
@@ -67,8 +68,9 @@
         <div class="login-box" id="loginStepTotp" style="display:none;">
             <div class="login-logo" id="loginLogoTotp"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
             <div class="lang-switch login-lang">
-                <button type="button" onclick="setLang('fa')" data-i18n="lang_fa">فارسی</button>
-                <button type="button" onclick="setLang('en')" data-i18n="lang_en">English</button>
+                <button type="button" data-lang="fa" onclick="setLang('fa')" data-i18n="lang_fa">فارسی</button>
+                <button type="button" data-lang="en" onclick="setLang('en')" data-i18n="lang_en">English</button>
+                <button type="button" data-lang="tr" onclick="setLang('tr')" data-i18n="lang_tr">Türkçe</button>
             </div>
             <h1 data-i18n="login_totp_title">احراز هویت دو مرحله‌ای</h1>
             <p class="sub" id="totpStepEmail">کد شش‌رقمی اپلیکیشن Google Authenticator را وارد کنید.</p>
@@ -121,13 +123,15 @@
             </div>
             <div class="header-right">
                 <div class="lang-switch" role="group" data-i18n-aria-label="lang_label" aria-label="زبان">
-                    <button type="button" id="headerLangFa" onclick="setLang('fa')" aria-pressed="true" aria-label="فارسی">فارسی</button>
-                    <button type="button" id="headerLangEn" onclick="setLang('en')" aria-pressed="false" aria-label="English">English</button>
+                    <button type="button" id="headerLangFa" data-lang="fa" onclick="setLang('fa')" aria-pressed="true" aria-label="فارسی">فارسی</button>
+                    <button type="button" id="headerLangEn" data-lang="en" onclick="setLang('en')" aria-pressed="false" aria-label="English">English</button>
+                    <button type="button" id="headerLangTr" data-lang="tr" onclick="setLang('tr')" aria-pressed="false" aria-label="Türkçe" data-i18n="lang_tr">Türkçe</button>
                     <div class="lang-dropdown-wrap">
                         <button type="button" class="lang-dropdown-btn" id="langDropdownBtn" onclick="toggleLangDropdown()" aria-haspopup="listbox" aria-expanded="false" aria-label="زبان"><span id="langDropdownLabel">FA</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
                         <div class="lang-dropdown-menu" id="langDropdownMenu" role="listbox" aria-hidden="true">
                             <button type="button" role="option" data-lang="fa" onclick="setLang('fa');closeLangDropdown();">فارسی</button>
                             <button type="button" role="option" data-lang="en" onclick="setLang('en');closeLangDropdown();">English</button>
+                            <button type="button" role="option" data-lang="tr" onclick="setLang('tr');closeLangDropdown();" data-i18n="lang_tr">Türkçe</button>
                         </div>
                     </div>
                 </div>
@@ -1148,6 +1152,19 @@
                                         <input type="text" id="panelSettingFooterText" placeholder="صرافی کایا — پورتال کارکنان">
                                     </div>
                                 </section>
+                                <section class="panel-settings-section">
+                                    <h3 class="panel-settings-section-title" data-i18n="panel_section_languages">زبان‌های سایت</h3>
+                                    <p class="panel-settings-section-desc">کاربران با دسترسی «ظاهر پنل» می‌توانند سایت را تک‌زبانه، دو زبانه یا سه‌زبانه کنند. در حالت تک‌زبانه فقط فارسی نمایش داده می‌شود و سوئیچ زبان مخفی است.</p>
+                                    <div class="form-group">
+                                        <label for="panelSettingLanguageMode" data-i18n="panel_language_mode">حالت زبان</label>
+                                        <select id="panelSettingLanguageMode" aria-describedby="panelLanguageModeDesc">
+                                            <option value="single" data-i18n="panel_language_mode_single">تک زبانه (فقط فارسی)</option>
+                                            <option value="bilingual" data-i18n="panel_language_mode_bilingual">دو زبانه (فارسی + انگلیسی)</option>
+                                            <option value="trilingual" data-i18n="panel_language_mode_trilingual">سه زبانه (فارسی + انگلیسی + ترکی)</option>
+                                        </select>
+                                        <span id="panelLanguageModeDesc" class="form-hint"></span>
+                                    </div>
+                                </section>
                                 <section class="panel-settings-section panel-settings-section-email">
                                     <h3 class="panel-settings-section-title" data-i18n="panel_section_email">تنظیمات ایمیل (SMTP)</h3>
                                     <p class="panel-settings-section-desc" data-i18n="panel_email_desc">ارسال ایمیل خوش‌آمدگویی، بازیابی رمز و اعلان ورود. در صورت خالی بودن از متغیرهای محیط سرور استفاده می‌شود.</p>
@@ -1732,6 +1749,7 @@
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/i18n-fa.js" charset="utf-8"></script>
+    <script src="js/i18n-tr.js" charset="utf-8"></script>
     <script src="js/dashboard.js"></script>
 
 </body>

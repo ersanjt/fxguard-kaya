@@ -310,6 +310,7 @@
                     reset_err_length: 'Password must be at least 6 characters.',
                     lang_fa: 'فارس�R',
                     lang_en: 'English',
+                    lang_tr: 'Turkish',
                     lang_label: 'Language',
                     nav_dashboard: 'Dashboard',
                     nav_communications: 'Communications',
@@ -595,32 +596,44 @@
                     empty_process_instances: 'No running instances.',
                     all_templates: 'All templates',
                     process_min_one_stage: 'Add at least one stage.',
-                    process_start_from_ticket: 'Start process for this ticket'
-                }
+                    process_start_from_ticket: 'Start process for this ticket',
+                    panel_section_languages: 'Site languages',
+                    panel_language_mode: 'Language mode',
+                    panel_language_mode_single: 'Single language (Persian only)',
+                    panel_language_mode_bilingual: 'Two languages (Persian + English)',
+                    panel_language_mode_trilingual: 'Three languages (Persian + English + Turkish)'
+                },
+                tr: {}
             };
             if (window.__I18N_FA) { for (var k in window.__I18N_FA) I18N.fa[k] = window.__I18N_FA[k]; }
+            if (window.__I18N_TR) { for (var k in window.__I18N_TR) I18N.tr[k] = window.__I18N_TR[k]; }
             window.LANG = LANG;
             window.t = function(k) {
                 if (LANG === 'fa' && window.__I18N_FA && window.__I18N_FA[k] !== undefined) return window.__I18N_FA[k];
-                return (I18N[LANG] && I18N[LANG][k]) || I18N.fa[k] || k;
+                return (I18N[LANG] && I18N[LANG][k]) || (I18N.fa && I18N.fa[k]) || (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || k;
             };
             window.setLang = function(l) {
+                var supported = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
+                if (supported.indexOf(l) < 0) l = supported[0] || 'fa';
                 LANG = l;
                 localStorage.setItem('crm_lang', l);
-                document.documentElement.lang = l === 'en' ? 'en' : 'fa';
-                document.documentElement.dir = l === 'en' ? 'ltr' : 'rtl';
-                document.body.classList.toggle('ltr', l === 'en');
-                document.querySelectorAll('.lang-switch button').forEach(function(btn) {
-                    var onclick = btn.getAttribute('onclick') || '';
+                document.documentElement.lang = (l === 'en' ? 'en' : l === 'tr' ? 'tr' : 'fa');
+                document.documentElement.dir = (l === 'fa' ? 'rtl' : 'ltr');
+                document.body.classList.toggle('ltr', l !== 'fa');
+                document.querySelectorAll('.lang-switch button[data-lang], .lang-switch button[onclick*="setLang"]').forEach(function(btn) {
                     var dataLang = btn.getAttribute('data-lang');
-                    var isFa = (dataLang === 'fa') || onclick.indexOf("'fa'") >= 0;
-                    var isEn = (dataLang === 'en') || onclick.indexOf("'en'") >= 0;
-                    var active = (isFa && l === 'fa') || (isEn && l === 'en');
+                    var onclick = btn.getAttribute('onclick') || '';
+                    if (!dataLang && onclick.indexOf("setLang(") >= 0) {
+                        var m = onclick.match(/setLang\s*\(\s*['"]([a-z]+)['"]/);
+                        dataLang = m ? m[1] : null;
+                    }
+                    var active = (dataLang && dataLang === l);
                     btn.classList.toggle('active', active);
                     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+                    btn.style.display = (dataLang && supported.indexOf(dataLang) < 0) ? 'none' : '';
                 });
                 var lbl = document.getElementById('langDropdownLabel');
-                if (lbl) lbl.textContent = l === 'fa' ? 'FA' : 'EN';
+                if (lbl) lbl.textContent = (l === 'fa' ? 'FA' : l === 'tr' ? 'TR' : 'EN');
                 if (typeof applyTranslations === 'function') applyTranslations();
                 try { document.title = t('page_title'); } catch (_) {}
             };
@@ -640,6 +653,17 @@
                 document.querySelectorAll('[data-i18n-aria-label]').forEach(function(el) {
                     var k = el.getAttribute('data-i18n-aria-label');
                     if (k && t(k)) el.setAttribute('aria-label', t(k));
+                });
+            };
+            window.SUPPORTED_LANGUAGES = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
+            window.applySupportedLanguages = function(supported) {
+                window.SUPPORTED_LANGUAGES = Array.isArray(supported) && supported.length ? supported : ['fa', 'en', 'tr'];
+                var cur = localStorage.getItem('crm_lang') || 'fa';
+                if (window.SUPPORTED_LANGUAGES.indexOf(cur) < 0) { cur = window.SUPPORTED_LANGUAGES[0] || 'fa'; localStorage.setItem('crm_lang', cur); }
+                if (typeof setLang === 'function') setLang(cur);
+                document.querySelectorAll('.lang-switch').forEach(function(wrap) {
+                    if (window.SUPPORTED_LANGUAGES.length <= 1) wrap.style.display = 'none';
+                    else wrap.style.display = '';
                 });
             };
         })();
@@ -664,6 +688,9 @@
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
+        fetch((API || '') + '/api/panel-settings/public/languages').then(function(r){ return r.json(); }).then(function(data){
+            if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages);
+        }).catch(function(){});
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
             if (c && c.supportUrl) {
@@ -710,23 +737,22 @@
             if (isNaN(date.getTime())) return '';
             var now = new Date();
             var sec = Math.floor((now - date) / 1000);
-            if (sec < 60) return (LANG === 'fa' ? 'همین الان' : 'Just now');
+            if (sec < 60) return (LANG === 'fa' ? 'همین الان' : LANG === 'tr' ? 'Az önce' : 'Just now');
             var min = Math.floor(sec / 60);
-            if (min < 60) return min + ' ' + (LANG === 'fa' ? 'دقیقه پیش' : 'min ago');
+            if (min < 60) return min + ' ' + (LANG === 'fa' ? 'دقیقه پیش' : LANG === 'tr' ? 'dk önce' : 'min ago');
             var hr = Math.floor(min / 60);
-            if (hr < 24) return hr + ' ' + (LANG === 'fa' ? 'ساعت پیش' : 'hr ago');
+            if (hr < 24) return hr + ' ' + (LANG === 'fa' ? 'ساعت پیش' : LANG === 'tr' ? 'saat önce' : 'hr ago');
             var day = Math.floor(hr / 24);
-            if (day < 7) return day + ' ' + (LANG === 'fa' ? 'روز پیش' : 'days ago');
+            if (day < 7) return day + ' ' + (LANG === 'fa' ? 'روز پیش' : LANG === 'tr' ? 'gün önce' : 'days ago');
             return fmtTZ(d, 'date');
         }
-        // زبان انگلیسی: وقت استانبول ترکیه، تقویم میلادی. زبان فارسی: وقت تهران ایران، تاریخ شمسی.
+        // فارسی: وقت تهران ایران و تاریخ شمسی. انگلیسی: وقت امارات و تقویم میلادی. ترکی: وقت استانبول ترکیه و تقویم میلادی.
         function fmtTZ(d, opts) {
             if (!d) return '';
             var date = d instanceof Date ? d : new Date(d);
             if (isNaN(date.getTime())) return '';
-            var isEn = LANG === 'en';
-            var tz = isEn ? 'Europe/Istanbul' : 'Asia/Tehran';
-            var locale = isEn ? 'en-GB' : 'fa-IR';
+            var tz = (LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai');
+            var locale = (LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB');
             var base = { timeZone: tz };
             if (typeof opts === 'string') {
                 if (opts === 'time') return new Intl.DateTimeFormat(locale, Object.assign({}, base, { hour: '2-digit', minute: '2-digit' })).format(date);
@@ -2177,7 +2203,7 @@
             if (usernameTrim) body.username = usernameTrim;
             if (password) body.password = password;
             var btn = document.getElementById('profileSaveBtn');
-            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ذخیره...' : 'Saving...'); }
+            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ذخیره...' : LANG === 'tr' ? 'Kaydediliyor...' : 'Saving...'); }
             var res = await apiFetch('/api/users/me', { method: 'PATCH', body: JSON.stringify(body) });
             if (btn) { btn.disabled = false; btn.textContent = t('profile_save') || (LANG === 'fa' ? 'ذخیره تغییرات' : 'Save changes'); }
             if (res.needLogin) return;
@@ -3224,10 +3250,14 @@
             if (res.ok && res.data) {
                 applyBranding(res.data);
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
+                var mode = res.data.languageMode;
+                var supported = (mode === 'single' ? ['fa'] : mode === 'bilingual' ? ['fa', 'en'] : ['fa', 'en', 'tr']);
+                if (window.applySupportedLanguages) window.applySupportedLanguages(supported);
                 return;
             }
             fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null)) applyBranding(data); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/visibility').then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages); }).catch(function() {});
         }
         var SECTIONS_FOR_VISIBILITY = [
             { page: 'dashboard', labelKey: 'nav_dashboard' },
@@ -3266,6 +3296,8 @@
             set('panelSettingLoginTitle', d.loginTitle);
             set('panelSettingPageTitle', d.pageTitle);
             set('panelSettingFooterText', d.footerText);
+            var langModeEl = document.getElementById('panelSettingLanguageMode');
+            if (langModeEl) langModeEl.value = (d.languageMode === 'single' || d.languageMode === 'bilingual' || d.languageMode === 'trilingual') ? d.languageMode : 'trilingual';
             set('panelSettingSmtpHost', d.smtpHost);
             set('panelSettingSmtpPort', d.smtpPort);
             set('panelSettingSmtpUser', d.smtpUser);
@@ -3332,7 +3364,7 @@
         async function savePanelSettings() {
             var btn = document.getElementById('panelSettingsSaveBtn');
             var statusEl = document.getElementById('panelSettingsSaveStatus');
-            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ذخیره...' : 'Saving...'); }
+            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ذخیره...' : LANG === 'tr' ? 'Kaydediliyor...' : 'Saving...'); }
             if (statusEl) { statusEl.style.display = 'none'; statusEl.className = 'panel-settings-save-status'; }
             var get = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
             var hiddenSections = [];
@@ -3356,13 +3388,18 @@
                 emailLoginNotification: !!(document.getElementById('panelSettingEmailLoginNotification') && document.getElementById('panelSettingEmailLoginNotification').checked),
                 hiddenSections: hiddenSections
             };
+            var langModeEl = document.getElementById('panelSettingLanguageMode');
+            if (langModeEl && (langModeEl.value === 'single' || langModeEl.value === 'bilingual' || langModeEl.value === 'trilingual')) payload.languageMode = langModeEl.value;
+            else payload.languageMode = 'trilingual';
             var res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
             if (btn) { btn.disabled = false; btn.textContent = t('btn_save'); }
             if (res.ok && res.data) {
                 applyBranding(res.data);
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
+                var mode = res.data.languageMode;
+                if (mode && window.applySupportedLanguages) window.applySupportedLanguages(mode === 'single' ? ['fa'] : mode === 'bilingual' ? ['fa', 'en'] : ['fa', 'en', 'tr']);
                 toast(t('saved'));
-                if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ذخیره شد' : 'Saved'); statusEl.className = 'panel-settings-save-status saved'; statusEl.style.display = 'inline'; setTimeout(function() { statusEl.style.display = 'none'; }, 3000); }
+                if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ذخیره شد' : LANG === 'tr' ? 'Kaydedildi' : 'Saved'); statusEl.className = 'panel-settings-save-status saved'; statusEl.style.display = 'inline'; setTimeout(function() { statusEl.style.display = 'none'; }, 3000); }
             } else {
                 toast((res.data && res.data.error) || t('err_generic'), true);
                 if (statusEl) { statusEl.textContent = (res.data && res.data.error) || t('err_generic'); statusEl.className = 'panel-settings-save-status error'; statusEl.style.display = 'inline'; }

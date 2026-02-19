@@ -200,6 +200,14 @@ async function connectDatabases() {
                 }
                 logger.info('✅ panel_settings: email & visibility columns added (auto-migration)');
             }
+            if (desc && !desc.languageMode) {
+                try {
+                    await qi.addColumn('panel_settings', 'languageMode', { type: require('sequelize').DataTypes.STRING(20), allowNull: true });
+                    logger.info('✅ panel_settings: languageMode column added (auto-migration)');
+                } catch (e) {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('panel_settings.languageMode', e.message);
+                }
+            }
         } catch (e) {
             logger.warn('panel_settings migration:', e.message);
         }
