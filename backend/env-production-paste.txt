@@ -19,6 +19,18 @@ BACKEND_PUBLIC_URL=https://kaya.fxguard.io
 GATEWAY_URL=http://127.0.0.1:3001
 GATEWAY_API_SECRET=fb9c511e6019a3d7f599f000cf40352d44cd0cdb5943c2d922c780ef03a8590b
 
+# ---------- ایمیل (SMTP) — اختیاری ----------
+# اگر پر نکنید، می‌توانید از «تنظیمات پنل» > «تنظیمات ایمیل (SMTP)» در خود پنل استفاده کنید.
+# برای استفاده روی همین VPS: نصب Postfix یا استفاده از سرویس خارجی (مثل SendGrid، Mailgun، یا SMTP دامنهٔ خودتان).
+# SMTP_HOST=smtp.example.com
+# SMTP_PORT=587
+# SMTP_USER=user@example.com
+# SMTP_PASS=your-password
+# SMTP_FROM=noreply@yourdomain.com
+# SMTP_FROM_NAME=پورتال کارکنان
+# SMTP_SECURE=false
+# EMAIL_LOGIN_NOTIFICATION=false
+
 # ---------- اختیاری: در پوشهٔ gateway اگر خطای «الان نمی‌شود دستگاه وصل شود» زیاد می‌آید ----------
 # WHATSAPP_RECONNECT_DELAY_MS=90000
 # (پیش‌فرض الان ۹۰ ثانیه است؛ بعد از قطع، قبل از درخواست QR جدید این مدت صبر می‌شود تا محدودیت واتساپ کمتر شود.)

@@ -30,6 +30,25 @@ router.get('/', authMiddleware, async (req, res) => {
     }
 });
 
+// جزئیات یک ایمیل شرکتی (برای ویرایش)
+router.get('/:id', authMiddleware, async (req, res) => {
+    try {
+        if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی به ایمیل‌های شرکتی ندارید.' });
+        const id = parseInt(req.params.id, 10);
+        if (isNaN(id)) return res.status(400).json({ error: 'شناسه نامعتبر است.' });
+        const row = await CompanyEmail.findByPk(id, {
+            include: [{ model: User, as: 'assignedUser', attributes: ['id', 'name', 'email'], required: false }]
+        });
+        if (!row) return res.status(404).json({ error: 'ایمیل شرکتی یافت نشد.' });
+        const j = row.toJSON();
+        delete j.passwordEnc;
+        j.hasPassword = !!row.passwordEnc;
+        res.json(j);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ایجاد ایمیل شرکتی
 router.post('/', authMiddleware, async (req, res) => {
     try {

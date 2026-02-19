@@ -80,6 +80,21 @@
                     panel_email_login_notification: 'ارسال اعلان ورود به ایمیل کاربر',
                     panel_test_email_label: 'ارسال ایمیل تست',
                     panel_test_email_btn: 'ارسال تست',
+                    panel_section_company_emails: 'ایمیل‌های شرکتی',
+                    panel_company_emails_desc: 'ثبت و مدیریت ایمیل‌های شرکتی (مثل support@، info@). می‌توانید به هر ایمیل یک کاربر اختصاص دهید و اطلاعات ورود را برایش ارسال کنید.',
+                    panel_company_email_add: 'افزودن ایمیل شرکتی',
+                    panel_company_email_address: 'آدرس ایمیل',
+                    panel_company_email_label: 'عنوان / کاربرد',
+                    panel_company_email_assigned: 'اختصاص به کاربر',
+                    panel_company_email_password: 'رمز عبور',
+                    panel_company_email_password_hint: 'خالی = بدون تغییر (در ویرایش)',
+                    panel_company_email_notes: 'یادداشت',
+                    panel_company_email_active: 'فعال',
+                    panel_company_email_has_pass: 'رمز',
+                    panel_company_email_actions: 'عملیات',
+                    panel_company_emails_empty: 'هنوز ایمیل شرکتی ثبت نشده است.',
+                    panel_company_email_send_creds: 'ارسال اطلاعات ورود',
+                    btn_cancel: 'انصراف',
                     panel_section_languages: 'زبان‌های سایت',
                     panel_section_languages_desc: 'زبان‌های در دسترس برای صفحه ورود و منوی پنل. در حالت تک‌زبانه سوئیچ زبان مخفی است؛ در حالت چندزبانگی کاربران می‌توانند زبان را عوض کنند.',
                     panel_language_mode: 'حالت زبان',
@@ -431,6 +446,21 @@
                     panel_email_login_notification: 'Send login notification email to user',
                     panel_test_email_label: 'Send test email',
                     panel_test_email_btn: 'Send test',
+                    panel_section_company_emails: 'Company emails',
+                    panel_company_emails_desc: 'Register and manage company emails (e.g. support@, info@). You can assign a user and send them login credentials.',
+                    panel_company_email_add: 'Add company email',
+                    panel_company_email_address: 'Email address',
+                    panel_company_email_label: 'Label / Purpose',
+                    panel_company_email_assigned: 'Assign to user',
+                    panel_company_email_password: 'Password',
+                    panel_company_email_password_hint: 'Leave empty = no change (when editing)',
+                    panel_company_email_notes: 'Notes',
+                    panel_company_email_active: 'Active',
+                    panel_company_email_has_pass: 'Pass',
+                    panel_company_email_actions: 'Actions',
+                    panel_company_emails_empty: 'No company emails yet.',
+                    panel_company_email_send_creds: 'Send credentials',
+                    btn_cancel: 'Cancel',
                     panel_section_visibility: 'Section visibility',
                     panel_visibility_desc: 'Hidden sections are not shown in the menu or anywhere on the site. Checked = visible.',
                     user_perms_select_all: 'All access',
@@ -3571,6 +3601,121 @@
             previewPanelLogo(d.logoUrl || '');
             previewPanelFavicon(d.faviconUrl || '');
             updatePanelLivePreview();
+            loadCompanyEmails();
+            loadCompanyEmailUserSelect();
+            if (typeof initCompanyEmailsHandlers === 'function') initCompanyEmailsHandlers();
+        }
+        async function loadCompanyEmailUserSelect() {
+            var sel = document.getElementById('companyEmailAssignedUser');
+            if (!sel) return;
+            var first = sel.options[0];
+            sel.innerHTML = '';
+            if (first) sel.appendChild(first);
+            var res = await apiFetch('/api/users');
+            if (!res.ok || !res.data || !res.data.data) return;
+            res.data.data.forEach(function(u) {
+                var opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = (u.name || u.username || u.email || u.id).trim() || ('User ' + u.id);
+                sel.appendChild(opt);
+            });
+        }
+        async function loadCompanyEmails() {
+            var tbody = document.getElementById('companyEmailsTableBody');
+            var emptyEl = document.getElementById('companyEmailsEmpty');
+            if (!tbody) return;
+            var res = await apiFetch('/api/company-emails');
+            if (!res.ok) { if (emptyEl) emptyEl.style.display = 'block'; tbody.innerHTML = ''; return; }
+            var list = (res.data && res.data.data) || [];
+            if (list.length === 0) {
+                tbody.innerHTML = '';
+                if (emptyEl) emptyEl.style.display = 'block';
+                return;
+            }
+            if (emptyEl) emptyEl.style.display = 'none';
+            function escapeHtml(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+            tbody.innerHTML = list.map(function(item) {
+                var assigned = (item.assignedUser && (item.assignedUser.name || item.assignedUser.email)) || '—';
+                var passBadge = item.hasPassword ? '<span class="badge badge-success">✓</span>' : '<span class="badge badge-muted">—</span>';
+                var statusBadge = item.isActive ? '<span class="badge badge-success">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge badge-muted">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
+                var sendCredsBtn = item.assignedUser && item.hasPassword ? '<button type="button" class="btn-sm btn-secondary company-email-send-creds" data-id="' + item.id + '" title="' + (t('panel_company_email_send_creds') || '') + '">' + (LANG === 'fa' ? 'ارسال ورود' : 'Send') + '</button>' : '';
+                return '<tr data-id="' + item.id + '"><td>' + escapeHtml(item.email) + '</td><td>' + escapeHtml(item.label || '') + '</td><td>' + escapeHtml(assigned) + '</td><td>' + passBadge + '</td><td>' + statusBadge + '</td><td class="company-email-actions"><button type="button" class="btn-sm btn-secondary company-email-edit" data-id="' + item.id + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> ' + sendCredsBtn + ' <button type="button" class="btn-sm btn-danger company-email-delete" data-id="' + item.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></td></tr>';
+            }).join('');
+        }
+        function openCompanyEmailForm(item) {
+            var box = document.getElementById('companyEmailFormBox');
+            var idEl = document.getElementById('companyEmailId');
+            if (!box || !idEl) return;
+            if (item) {
+                idEl.value = item.id;
+                document.getElementById('companyEmailAddress').value = item.email || '';
+                document.getElementById('companyEmailLabel').value = item.label || '';
+                document.getElementById('companyEmailAssignedUser').value = item.assignedUserId || '';
+                document.getElementById('companyEmailPassword').value = '';
+                document.getElementById('companyEmailNotes').value = item.notes || '';
+                document.getElementById('companyEmailActive').checked = item.isActive !== false;
+            } else {
+                idEl.value = '';
+                document.getElementById('companyEmailAddress').value = '';
+                document.getElementById('companyEmailLabel').value = '';
+                document.getElementById('companyEmailAssignedUser').value = '';
+                document.getElementById('companyEmailPassword').value = '';
+                document.getElementById('companyEmailNotes').value = '';
+                document.getElementById('companyEmailActive').checked = true;
+            }
+            box.style.display = 'block';
+        }
+        function closeCompanyEmailForm() {
+            var box = document.getElementById('companyEmailFormBox');
+            if (box) box.style.display = 'none';
+        }
+        async function saveCompanyEmail() {
+            var idEl = document.getElementById('companyEmailId');
+            var email = (document.getElementById('companyEmailAddress') && document.getElementById('companyEmailAddress').value || '').trim();
+            var label = (document.getElementById('companyEmailLabel') && document.getElementById('companyEmailLabel').value || '').trim();
+            var assignedUserId = (document.getElementById('companyEmailAssignedUser') && document.getElementById('companyEmailAssignedUser').value || '') || null;
+            var password = (document.getElementById('companyEmailPassword') && document.getElementById('companyEmailPassword').value || '').trim();
+            var notes = (document.getElementById('companyEmailNotes') && document.getElementById('companyEmailNotes').value || '').trim();
+            var isActive = document.getElementById('companyEmailActive') && document.getElementById('companyEmailActive').checked;
+            if (!email) { toast(LANG === 'fa' ? 'آدرس ایمیل را وارد کنید.' : 'Enter email address.', true); return; }
+            var payload = { email: email, label: label || null, assignedUserId: assignedUserId, notes: notes || null, isActive: isActive };
+            if (password) payload.password = password;
+            var url = '/api/company-emails';
+            var method = 'POST';
+            if (idEl && idEl.value) { url = '/api/company-emails/' + idEl.value; method = 'PUT'; }
+            var res = await apiFetch(url, { method: method, body: JSON.stringify(payload) });
+            if (res.ok) { toast(t('btn_save')); closeCompanyEmailForm(); loadCompanyEmails(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function deleteCompanyEmail(id) {
+            if (!confirm(LANG === 'fa' ? 'این ایمیل شرکتی حذف شود؟' : 'Delete this company email?')) return;
+            var res = await apiFetch('/api/company-emails/' + id, { method: 'DELETE' });
+            if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadCompanyEmails(); closeCompanyEmailForm(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function sendCompanyEmailCredentials(id) {
+            var res = await apiFetch('/api/company-emails/' + id + '/send-credentials', { method: 'POST', body: JSON.stringify({}) });
+            if (res.ok) toast((res.data && res.data.message) || (LANG === 'fa' ? 'ارسال شد' : 'Sent')); else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+        var companyEmailsHandlersInited = false;
+        function initCompanyEmailsHandlers() {
+            if (companyEmailsHandlersInited) return;
+            companyEmailsHandlersInited = true;
+            var addBtn = document.getElementById('btnAddCompanyEmail');
+            if (addBtn) addBtn.addEventListener('click', function() { openCompanyEmailForm(null); });
+            var cancelBtn = document.getElementById('companyEmailCancelBtn');
+            if (cancelBtn) cancelBtn.addEventListener('click', closeCompanyEmailForm);
+            var saveBtn = document.getElementById('companyEmailSaveBtn');
+            if (saveBtn) saveBtn.addEventListener('click', function() { saveCompanyEmail(); });
+            var tbody = document.getElementById('companyEmailsTableBody');
+            if (tbody) tbody.addEventListener('click', function(e) {
+                var target = e.target;
+                if (!target || !target.classList) return;
+                var id = target.getAttribute('data-id');
+                if (!id) return;
+                if (target.classList.contains('company-email-edit')) {
+                    apiFetch('/api/company-emails/' + id).then(function(res) { if (res.ok && res.data) openCompanyEmailForm(res.data); });
+                } else if (target.classList.contains('company-email-delete')) deleteCompanyEmail(id);
+                else if (target.classList.contains('company-email-send-creds')) sendCompanyEmailCredentials(id);
+            });
         }
         function updatePanelLivePreview() {
             var siteName = (document.getElementById('panelSettingSiteName') && document.getElementById('panelSettingSiteName').value.trim()) || (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
