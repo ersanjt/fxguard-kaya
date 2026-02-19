@@ -3537,7 +3537,7 @@
             set('panelSettingSmtpHost', d.smtpHost);
             set('panelSettingSmtpPort', d.smtpPort);
             set('panelSettingSmtpUser', d.smtpUser);
-            set('panelSettingSmtpPass', d.smtpPass);
+            set('panelSettingSmtpPass', d.smtpPass != null ? d.smtpPass : '');
             set('panelSettingSmtpFrom', d.smtpFrom);
             set('panelSettingSmtpFromName', d.smtpFromName);
             var smtpSecureEl = document.getElementById('panelSettingSmtpSecure');
