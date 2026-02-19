@@ -216,6 +216,14 @@ async function connectDatabases() {
                     if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('panel_settings.showFooter', e.message);
                 }
             }
+            if (desc && desc.defaultLanguage === undefined) {
+                try {
+                    await qi.addColumn('panel_settings', 'defaultLanguage', { type: DataTypes.STRING(10), allowNull: true });
+                    logger.info('✅ panel_settings: defaultLanguage column added (auto-migration)');
+                } catch (e) {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('panel_settings.defaultLanguage', e.message);
+                }
+            }
         } catch (e) {
             logger.warn('panel_settings migration:', e.message);
         }

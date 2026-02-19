@@ -20,8 +20,24 @@ const DEFAULT = {
     smtpSecure: false,
     emailLoginNotification: false,
     hiddenSections: [],
-    languageMode: 'trilingual'
+    languageMode: 'trilingual',
+    defaultLanguage: 'fa'
 };
+
+const MODE_TO_LANGUAGES = {
+    single: ['fa'],
+    single_en: ['en'],
+    single_tr: ['tr'],
+    bilingual: ['fa', 'en'],
+    bilingual_fa_tr: ['fa', 'tr'],
+    bilingual_en_tr: ['en', 'tr'],
+    trilingual: ['fa', 'en', 'tr']
+};
+
+function getSupportedLanguagesFromMode(mode) {
+    const list = MODE_TO_LANGUAGES[mode];
+    return Array.isArray(list) ? list : ['fa', 'en', 'tr'];
+}
 
 function parseHiddenSections(val) {
     if (val == null || val === '') return [];
@@ -52,8 +68,14 @@ async function getPanelSettings() {
         smtpSecure: row.smtpSecure === true,
         emailLoginNotification: row.emailLoginNotification === true,
         hiddenSections: parseHiddenSections(row.hiddenSections),
-        languageMode: row.languageMode === 'single' || row.languageMode === 'bilingual' || row.languageMode === 'trilingual' ? row.languageMode : DEFAULT.languageMode
+        languageMode: MODE_TO_LANGUAGES[row.languageMode] ? row.languageMode : DEFAULT.languageMode,
+        defaultLanguage: (row.defaultLanguage === 'fa' || row.defaultLanguage === 'en' || row.defaultLanguage === 'tr') ? row.defaultLanguage : DEFAULT.defaultLanguage
     };
+}
+
+function getSupportedLanguages(settings) {
+    const mode = settings && MODE_TO_LANGUAGES[settings.languageMode] ? settings.languageMode : DEFAULT.languageMode;
+    return getSupportedLanguagesFromMode(mode);
 }
 
 /** اگر تنظیمات SMTP از پنل پر شده باشد، آبجکت config برای sendMailWithConfig برمی‌گرداند؛ وگرنه null */
@@ -70,4 +92,4 @@ function getPanelEmailConfig(settings) {
     };
 }
 
-module.exports = { getPanelSettings, getPanelEmailConfig, DEFAULT, parseHiddenSections };
+module.exports = { getPanelSettings, getPanelEmailConfig, getSupportedLanguages, getSupportedLanguagesFromMode, DEFAULT, parseHiddenSections };
