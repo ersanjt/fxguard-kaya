@@ -62,6 +62,7 @@ window.__I18N_FA = {
     nav_rates: 'نرخ ارزها',
     nav_services: 'خدمات صرافی',
     skip_to_content: 'پرش به محتوا',
+    loading_panel: 'در حال بارگذاری پنل...',
     header_search: 'جستجو در مکالمات، مشتریان...',
     header_search_aria: 'جستجو در مکالمات و مشتریان',
     header_logout: 'خروج',

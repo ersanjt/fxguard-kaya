@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/dashboard.css?v=8">
+    <link rel="stylesheet" href="css/dashboard.css?v=9">
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
 <body>
@@ -102,6 +102,13 @@
             <button type="button" id="btnResetSubmit" onclick="submitResetPassword()" data-i18n="reset_btn">تغییر رمز و ورود</button>
             <a href="#" class="btn-secondary" style="display:inline-block;margin-top:8px;text-align:center;" onclick="backToLoginFromReset(); return false;" data-i18n="login_back">بازگشت به ورود</a>
             <div id="resetErr" class="login-err"></div>
+        </div>
+    </div>
+    <div id="appLoading" class="app-loading" aria-live="polite" aria-label="در حال بارگذاری پنل">
+        <div class="app-loading-inner">
+            <div class="app-loading-logo" aria-hidden="true"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
+            <div class="app-loading-spinner"></div>
+            <p class="app-loading-text" data-i18n="loading_panel">در حال بارگذاری پنل...</p>
         </div>
     </div>
     <div id="app" class="app">

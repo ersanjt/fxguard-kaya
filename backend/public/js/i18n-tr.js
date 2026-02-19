@@ -62,6 +62,7 @@ window.__I18N_TR = {
     nav_rates: 'Döviz kurları',
     nav_services: 'Döviz hizmetleri',
     skip_to_content: 'İçeriğe atla',
+    loading_panel: 'Panel yükleniyor...',
     header_search: 'Konuşma, müşteri ara...',
     header_search_aria: 'Konuşma ve müşterilerde ara',
     header_logout: 'Çıkış',

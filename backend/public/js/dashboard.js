@@ -48,6 +48,7 @@
                     nav_whatsapp: 'اتصا� ��اتساپ',
                     nav_rates: '� رخ ارز�!ا',
                     skip_to_content: 'پرش به محتوا',
+                    loading_panel: 'در حال بارگذاری پنل...',
                     nav_panel_settings: 'ظاهر پنل',
                     page_panel_settings: 'ظاهر پنل',
                     panel_settings_intro: 'نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.',
@@ -380,6 +381,7 @@
                     nav_services: 'Exchange services',
                     nav_panel_settings: 'Panel appearance',
                     skip_to_content: 'Skip to content',
+                    loading_panel: 'Loading panel...',
                     header_search: 'Search conversations, customers...',
                     header_search_aria: 'Search conversations and customers',
                     header_logout: 'Log out',
@@ -2369,6 +2371,8 @@
             currentUser = null;
             localStorage.removeItem('crm_token');
             document.documentElement.classList.remove('auth-has-token');
+            var appLoadingEl = document.getElementById('appLoading');
+            if (appLoadingEl) appLoadingEl.style.display = 'none';
             document.getElementById('loginBox').style.display = 'flex';
             document.getElementById('app').classList.remove('show');
         }
@@ -6378,7 +6382,6 @@
                     setUserDisplay(u);
                     document.documentElement.classList.add('auth-has-token');
                     document.getElementById('loginBox').style.display = 'none';
-                    document.getElementById('app').classList.add('show');
                     try {
                         applyNavByRole();
                         await loadPanelSettingsAndApply();
@@ -6390,6 +6393,9 @@
                         startNavBadgeRefresh();
                         showTotpPromptIfNeeded();
                     } catch (e) { console.error('Post-me init:', e); }
+                    var loadingEl = document.getElementById('appLoading');
+                    if (loadingEl) loadingEl.style.display = 'none';
+                    document.getElementById('app').classList.add('show');
                 } else { logout(); }
             }).catch(function() { logout(); });
         } else {
