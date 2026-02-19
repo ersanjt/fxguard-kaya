@@ -590,7 +590,7 @@
                     whatsapp_status: 'WhatsApp status:', whatsapp_connected: 'Connected �S', whatsapp_disconnected: 'Disconnected', redis: 'Redis', active: 'Active', inactive: 'Inactive', done_msg: 'Done',
                     whatsapp_intro: 'WhatsApp messages are automatically saved in conversations. Auto-assignment to departments is based on keywords.',
                     whatsapp_open_web: 'Open WhatsApp Web', whatsapp_manage_convs: 'Manage conversations', whatsapp_disconnect_btn: 'Disconnect WhatsApp',
-                    whatsapp_connection_title: 'Connection status', whatsapp_qr_expiry: 'Code is valid for about 60 seconds. After scanning, connection is established within a few seconds.', whatsapp_scan_waiting: 'Checking connection... Please wait.', whatsapp_qr_not_ready: 'QR not ready yet. Click "Start WhatsApp" and wait a few seconds.', whatsapp_phone_cannot_connect_title: 'If your phone shows "Can\'t connect right now, try again later":', whatsapp_phone_cannot_connect_hint: 'That message is from WhatsApp. Check internet and VPN; in WhatsApp mobile see Linked devices (max 4) and remove one if needed. Refresh the QR and scan again.', whatsapp_refresh_status: 'Refresh status', whatsapp_last_connection: 'Last connection info', whatsapp_status_label: 'Status', whatsapp_number_label: 'Number', whatsapp_connection_result: 'Connection',
+                    whatsapp_connection_title: 'Connection status', whatsapp_qr_expiry: 'Code valid ~60s. After scanning, wait 10–60 seconds; page will update automatically.', whatsapp_scan_waiting: 'Checking connection... Please wait.', whatsapp_syncing: 'Scanned. Syncing with WhatsApp… wait a few seconds.', whatsapp_after_scan_trouble: 'If nothing happens after scan: check server internet/WhatsApp access; check Gateway logs (error.log) on server.', whatsapp_qr_not_ready: 'QR not ready yet. Click "Start WhatsApp" and wait a few seconds.', whatsapp_phone_cannot_connect_title: 'If your phone shows "Can\'t connect right now, try again later":', whatsapp_phone_cannot_connect_hint: 'That message is from WhatsApp. Check internet and VPN; in WhatsApp mobile see Linked devices (max 4) and remove one if needed. Refresh the QR and scan again.', whatsapp_refresh_status: 'Refresh status', whatsapp_last_connection: 'Last connection info', whatsapp_status_label: 'Status', whatsapp_number_label: 'Number', whatsapp_connection_result: 'Connection',
                     whatsapp_welcome_title: 'Auto-reply to first message', whatsapp_welcome_hint: 'When someone messages you for the first time, this text is sent automatically. Empty = disabled', whatsapp_welcome_enabled: 'Enabled', whatsapp_welcome_ph: 'Hello! Welcome to Kaya Exchange. How can we help you?',
                     whatsapp_dept_routing: 'Auto-assign to department', whatsapp_dept_routing_hint: 'Based on keywords in the message, the conversation is routed to the relevant department.', whatsapp_unassigned: 'Unassigned conversations', whatsapp_unassigned_hint: 'These conversations need department or assignee assignment.',
                     rates_intro: 'Prices are fetched from API and shown in the bottom bar for everyone.', rates_adjust_type: 'Adjustment type',
@@ -5362,7 +5362,9 @@
                 return;
             }
             st.className = 'whatsapp-status-line';
-            var statusText = t('whatsapp_status') + ' ' + (data && data.whatsapp ? t('whatsapp_connected') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected'))) + ' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'));
+            var phase = data && data.phase;
+            var statusLabel = data && data.whatsapp ? t('whatsapp_connected') : (phase === 'authenticated' ? t('whatsapp_syncing') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected')));
+            var statusText = t('whatsapp_status') + ' ' + statusLabel + ' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'));
             st.textContent = statusText;
             var authFailureEl = document.getElementById('whatsappAuthFailure');
             if (authFailureEl) {
@@ -5406,7 +5408,7 @@
                 qrImg.src = qrData.qr;
                 qrBox.style.display = 'block';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
-                if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
+                if (phase === 'authenticated' && qrWaitingMsg) { qrWaitingMsg.style.display = 'block'; qrWaitingMsg.textContent = t('whatsapp_syncing'); } else if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 isWhatsappPolling = true;
                 var pollMs = 2000;
                 qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, pollMs);

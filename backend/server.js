@@ -907,13 +907,22 @@ let gatewayProcess = null;
 apiRouter.get('/gateway/status', authMiddleware, (req, res) => {
     gatewayGet('/api/status', { timeout: 5000 })
         .then(r => res.json(r.data))
-        .catch(() => res.status(503).json({ whatsapp: false, status: 'disconnected', error: 'Gateway در دسترس نیست' }));
+        .catch((e) => {
+            const status = e.response?.status;
+            const msg = e.response?.data?.error || e.message || 'Gateway در دسترس نیست';
+            if (status === 401) logger.warn('Gateway returned 401 – check GATEWAY_API_SECRET matches gateway/.env');
+            else if (e.code) logger.warn('Gateway request failed', { code: e.code, status, url: process.env.GATEWAY_URL || 'http://localhost:3001' });
+            return res.status(503).json({ whatsapp: false, status: 'disconnected', error: 'Gateway در دسترس نیست' });
+        });
 });
 
 apiRouter.get('/gateway/qr', authMiddleware, (req, res) => {
     gatewayGet('/api/qr', { timeout: 5000 })
         .then(r => res.json(r.data))
-        .catch(() => res.status(503).json({ error: 'Gateway در دسترس نیست' }));
+        .catch((e) => {
+            if (e.response?.status === 401) logger.warn('Gateway QR returned 401 – check GATEWAY_API_SECRET matches gateway/.env');
+            return res.status(503).json({ error: 'Gateway در دسترس نیست' });
+        });
 });
 
 // پراکسی شروع واتساپ به Gateway (وقتی Gateway در دسترس است)

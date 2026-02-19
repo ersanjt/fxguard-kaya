@@ -162,6 +162,8 @@ let qrCodeData = null;
 let lastQrImageDataUrl = null;
 let lastAccountInfo = null;
 let lastAuthFailureMessage = null;
+/** وضعیت اتصال برای نمایش در پنل: qr | authenticated (اسکن شد، در حال همگام‌سازی) | ready | auth_failure */
+let connectionPhase = null;
 
 function buildClient() {
   const sessionPath = path.resolve(process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth'));
@@ -219,6 +221,7 @@ function attachClientEvents(c) {
       // cache in redis
       redisClient.set('whatsapp:qr', qrImage, { EX: 60 }).catch(() => {});
       redisClient.set('whatsapp:status', 'qr').catch(() => {});
+      connectionPhase = 'qr';
     } catch (e) {
       logger.error('QR event error', { error: e?.message });
     }
@@ -226,13 +229,15 @@ function attachClientEvents(c) {
 
   c.on('authenticated', () => {
     lastAuthFailureMessage = null;
-    logger.info('✅ WhatsApp Authenticated');
+    connectionPhase = 'authenticated';
+    logger.info('✅ WhatsApp Authenticated – syncing…');
     io.emit('authenticated', { status: 'success' });
     redisClient.set('whatsapp:status', 'authenticated').catch(() => {});
   });
 
   c.on('auth_failure', (msg) => {
     lastAuthFailureMessage = msg || 'unknown';
+    connectionPhase = 'auth_failure';
     logger.error('❌ WhatsApp Auth Failure', { message: lastAuthFailureMessage });
     isClientStarting = false;
     io.emit('auth_failure', { message: lastAuthFailureMessage });
@@ -245,6 +250,7 @@ function attachClientEvents(c) {
     isClientStarting = false;
     reconnectAttemptCount = 0;
     lastAuthFailureMessage = null;
+    connectionPhase = 'ready';
 
     logger.info('✅ WhatsApp Client Ready');
     io.emit('ready', { status: 'connected' });
@@ -267,6 +273,7 @@ function attachClientEvents(c) {
 
     isClientReady = false;
     isClientStarting = false;
+    connectionPhase = null;
 
     io.emit('disconnected', { reason });
     redisClient.set('whatsapp:status', 'disconnected').catch(() => {});
@@ -434,6 +441,7 @@ async function startWhatsApp() {
   isClientStarting = true;
   isClientReady = false;
   lastAuthFailureMessage = null;
+  connectionPhase = null;
 
   if (!client) {
     const sessionPath = path.resolve(process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth'));
@@ -498,6 +506,7 @@ app.get('/api/status', async (req, res) => {
       if (cached) body.authFailure = cached;
     } catch (_) {}
   }
+  if (connectionPhase) body.phase = connectionPhase;
   res.json(body);
 });
 

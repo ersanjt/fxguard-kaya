@@ -3,8 +3,10 @@
  */
 const axios = require('axios');
 
-const GATEWAY_URL = process.env.GATEWAY_URL || 'http://localhost:3001';
-const GATEWAY_SECRET = process.env.GATEWAY_API_SECRET || '';
+const GATEWAY_URL = (process.env.GATEWAY_URL || 'http://localhost:3001').replace(/\/$/, '');
+const GATEWAY_SECRET = typeof process.env.GATEWAY_API_SECRET === 'string'
+  ? process.env.GATEWAY_API_SECRET.trim().replace(/^["']|["']$/g, '')
+  : '';
 
 function getGatewayHeaders() {
   const headers = { 'Content-Type': 'application/json' };
