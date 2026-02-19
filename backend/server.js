@@ -174,6 +174,36 @@ async function connectDatabases() {
         await sequelize.sync();
         logger.info(process.env.USE_SQLITE ? '✅ SQLite Connected (WAL)' : '✅ PostgreSQL Connected');
 
+        // Auto-migrate panel_settings: add email & visibility columns if missing
+        try {
+            const { DataTypes } = require('sequelize');
+            const qi = sequelize.getQueryInterface();
+            const desc = await qi.describeTable('panel_settings');
+            if (desc && !desc.smtpHost) {
+                const cols = [
+                    ['smtpHost', { type: DataTypes.STRING(255), allowNull: true }],
+                    ['smtpPort', { type: DataTypes.STRING(20), allowNull: true }],
+                    ['smtpUser', { type: DataTypes.STRING(255), allowNull: true }],
+                    ['smtpPass', { type: DataTypes.TEXT, allowNull: true }],
+                    ['smtpFrom', { type: DataTypes.STRING(255), allowNull: true }],
+                    ['smtpFromName', { type: DataTypes.STRING(255), allowNull: true }],
+                    ['smtpSecure', { type: DataTypes.BOOLEAN, allowNull: true }],
+                    ['emailLoginNotification', { type: DataTypes.BOOLEAN, allowNull: true }],
+                    ['hiddenSections', { type: DataTypes.TEXT, allowNull: true }]
+                ];
+                for (const [name, def] of cols) {
+                    try {
+                        await qi.addColumn('panel_settings', name, def);
+                    } catch (e) {
+                        if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('panel_settings.' + name, e.message);
+                    }
+                }
+                logger.info('✅ panel_settings: email & visibility columns added (auto-migration)');
+            }
+        } catch (e) {
+            logger.warn('panel_settings migration:', e.message);
+        }
+
         const defaultRateCurrencies = require('./lib/defaultRateCurrencies');
         const rateCurrencyCount = await RateCurrency.count();
         if (rateCurrencyCount === 0 && defaultRateCurrencies.length > 0) {

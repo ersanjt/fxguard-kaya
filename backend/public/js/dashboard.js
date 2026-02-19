@@ -61,6 +61,18 @@
                     panel_section_branding: 'برندینگ',
                     panel_section_titles: 'عنوان‌ها',
                     panel_section_footer: 'فوتر',
+                    panel_section_email: 'تنظیمات ایمیل (SMTP)',
+                    panel_email_desc: 'ارسال ایمیل خوش‌آمدگویی، بازیابی رمز و اعلان ورود. در صورت خالی بودن از متغیرهای محیط سرور استفاده می‌شود.',
+                    panel_smtp_host: 'آدرس سرور (Host)',
+                    panel_smtp_port: 'پورت',
+                    panel_smtp_user: 'نام کاربری',
+                    panel_smtp_pass: 'رمز عبور',
+                    panel_smtp_from: 'آدرس فرستنده (From)',
+                    panel_smtp_from_name: 'نام فرستنده',
+                    panel_smtp_secure: 'استفاده از SSL/TLS (پورت ۴۶۵)',
+                    panel_email_login_notification: 'ارسال اعلان ورود به ایمیل کاربر',
+                    panel_section_visibility: 'نمایش بخش‌ها در سایت',
+                    panel_visibility_desc: 'بخش‌هایی که مخفی می‌کنید در منو و در کل وب‌سایت نمایش داده نمی‌شوند. تیک خورده = نمایش داده شود.',
                     user_perms_select_all: 'همه دسترسی‌ها',
                     user_perms_select_none: 'هیچ‌کدام',
                     user_perms_group_communications: 'ارتباطات',
@@ -354,6 +366,18 @@
                     panel_section_branding: 'Branding',
                     panel_section_titles: 'Titles',
                     panel_section_footer: 'Footer',
+                    panel_section_email: 'Email (SMTP) settings',
+                    panel_email_desc: 'Welcome emails, password reset and login notifications. If empty, server env vars are used.',
+                    panel_smtp_host: 'Server (Host)',
+                    panel_smtp_port: 'Port',
+                    panel_smtp_user: 'Username',
+                    panel_smtp_pass: 'Password',
+                    panel_smtp_from: 'From address',
+                    panel_smtp_from_name: 'From name',
+                    panel_smtp_secure: 'Use SSL/TLS (port 465)',
+                    panel_email_login_notification: 'Send login notification email to user',
+                    panel_section_visibility: 'Section visibility',
+                    panel_visibility_desc: 'Hidden sections are not shown in the menu or anywhere on the site. Checked = visible.',
                     user_perms_select_all: 'All access',
                     user_perms_select_none: 'None',
                     user_perms_group_communications: 'Communications',
@@ -3187,11 +3211,44 @@
             setLoginLogo('loginLogo', 48);
             setLoginLogo('loginLogoTotp', 40);
         }
+        var HIDDEN_SECTIONS = [];
+        function applyHiddenSections(hidden) {
+            HIDDEN_SECTIONS = Array.isArray(hidden) ? hidden : [];
+            document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
+                var page = link.getAttribute('data-page');
+                link.style.display = HIDDEN_SECTIONS.indexOf(page) >= 0 ? 'none' : '';
+            });
+        }
         async function loadPanelSettingsAndApply() {
             var res = await apiFetch('/api/panel-settings');
-            if (res.ok && res.data) { applyBranding(res.data); return; }
+            if (res.ok && res.data) {
+                applyBranding(res.data);
+                if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
+                return;
+            }
             fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null)) applyBranding(data); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/visibility').then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
         }
+        var SECTIONS_FOR_VISIBILITY = [
+            { page: 'dashboard', labelKey: 'nav_dashboard' },
+            { page: 'conversations', labelKey: 'nav_conversations' },
+            { page: 'customers', labelKey: 'nav_customers' },
+            { page: 'tickets', labelKey: 'nav_tickets' },
+            { page: 'tasks', labelKey: 'nav_tasks' },
+            { page: 'processes', labelKey: 'nav_processes' },
+            { page: 'departments', labelKey: 'nav_departments' },
+            { page: 'users', labelKey: 'nav_users' },
+            { page: 'branches', labelKey: 'nav_branches' },
+            { page: 'supervision', labelKey: 'nav_supervision' },
+            { page: 'staff-activity', labelKey: 'nav_staff_activity' },
+            { page: 'profile', labelKey: 'nav_profile' },
+            { page: 'internal-chat', labelKey: 'nav_internal_chat' },
+            { page: 'announcements', labelKey: 'nav_announcements' },
+            { page: 'whatsapp', labelKey: 'nav_whatsapp' },
+            { page: 'rates', labelKey: 'nav_rates' },
+            { page: 'services', labelKey: 'nav_services' },
+            { page: 'panel-settings', labelKey: 'nav_panel_settings' }
+        ];
         async function loadPanelSettings() {
             var loadingEl = document.getElementById('panelSettingsLoading');
             var contentEl = document.getElementById('panelSettingsContent');
@@ -3209,6 +3266,36 @@
             set('panelSettingLoginTitle', d.loginTitle);
             set('panelSettingPageTitle', d.pageTitle);
             set('panelSettingFooterText', d.footerText);
+            set('panelSettingSmtpHost', d.smtpHost);
+            set('panelSettingSmtpPort', d.smtpPort);
+            set('panelSettingSmtpUser', d.smtpUser);
+            set('panelSettingSmtpPass', d.smtpPass);
+            set('panelSettingSmtpFrom', d.smtpFrom);
+            set('panelSettingSmtpFromName', d.smtpFromName);
+            var smtpSecureEl = document.getElementById('panelSettingSmtpSecure');
+            if (smtpSecureEl) smtpSecureEl.checked = !!d.smtpSecure;
+            var loginNotifEl = document.getElementById('panelSettingEmailLoginNotification');
+            if (loginNotifEl) loginNotifEl.checked = !!d.emailLoginNotification;
+            var hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
+            var container = document.getElementById('panelVisibilityToggles');
+            if (container) {
+                container.innerHTML = '';
+                SECTIONS_FOR_VISIBILITY.forEach(function(s) {
+                    var item = document.createElement('div');
+                    item.className = 'panel-visibility-item';
+                    var label = document.createElement('label');
+                    var cb = document.createElement('input');
+                    cb.type = 'checkbox';
+                    cb.dataset.page = s.page;
+                    cb.checked = hidden.indexOf(s.page) < 0;
+                    cb.id = 'panelVisible_' + s.page;
+                    label.setAttribute('for', cb.id);
+                    label.appendChild(cb);
+                    label.appendChild(document.createTextNode(' ' + (t(s.labelKey) || s.page)));
+                    item.appendChild(label);
+                    container.appendChild(item);
+                });
+            }
             previewPanelLogo(d.logoUrl || '');
             previewPanelFavicon(d.faviconUrl || '');
             updatePanelLivePreview();
@@ -3247,11 +3334,33 @@
             var statusEl = document.getElementById('panelSettingsSaveStatus');
             if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ذخیره...' : 'Saving...'); }
             if (statusEl) { statusEl.style.display = 'none'; statusEl.className = 'panel-settings-save-status'; }
-            var payload = { siteName: document.getElementById('panelSettingSiteName').value.trim(), logoUrl: document.getElementById('panelSettingLogoUrl').value.trim(), faviconUrl: document.getElementById('panelSettingFaviconUrl').value.trim(), loginTitle: document.getElementById('panelSettingLoginTitle').value.trim(), pageTitle: document.getElementById('panelSettingPageTitle').value.trim(), footerText: document.getElementById('panelSettingFooterText').value.trim() };
+            var get = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            var hiddenSections = [];
+            document.querySelectorAll('#panelVisibilityToggles input[type="checkbox"][data-page]').forEach(function(cb) {
+                if (!cb.checked) hiddenSections.push(cb.dataset.page);
+            });
+            var payload = {
+                siteName: get('panelSettingSiteName'),
+                logoUrl: get('panelSettingLogoUrl'),
+                faviconUrl: get('panelSettingFaviconUrl'),
+                loginTitle: get('panelSettingLoginTitle'),
+                pageTitle: get('panelSettingPageTitle'),
+                footerText: get('panelSettingFooterText'),
+                smtpHost: get('panelSettingSmtpHost'),
+                smtpPort: get('panelSettingSmtpPort'),
+                smtpUser: get('panelSettingSmtpUser'),
+                smtpPass: get('panelSettingSmtpPass'),
+                smtpFrom: get('panelSettingSmtpFrom'),
+                smtpFromName: get('panelSettingSmtpFromName'),
+                smtpSecure: !!(document.getElementById('panelSettingSmtpSecure') && document.getElementById('panelSettingSmtpSecure').checked),
+                emailLoginNotification: !!(document.getElementById('panelSettingEmailLoginNotification') && document.getElementById('panelSettingEmailLoginNotification').checked),
+                hiddenSections: hiddenSections
+            };
             var res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
             if (btn) { btn.disabled = false; btn.textContent = t('btn_save'); }
             if (res.ok && res.data) {
                 applyBranding(res.data);
+                if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
                 toast(t('saved'));
                 if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ذخیره شد' : 'Saved'); statusEl.className = 'panel-settings-save-status saved'; statusEl.style.display = 'inline'; setTimeout(function() { statusEl.style.display = 'none'; }, 3000); }
             } else {
@@ -3269,6 +3378,7 @@
         function closeSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
         function showPage(page) {
             if (page === 'panel-settings' && (!currentUser || !currentUser.permissions || currentUser.permissions.panel_settings !== true)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
+            if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf(page) >= 0) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }

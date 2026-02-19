@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { User, Department, Branch, Conversation, Message, Task, Ticket, ProcessInstance, ProcessInstanceStep, ActivityLog, TaskUpdate, TicketReply, AnnouncementRead, InternalThreadParticipant, InternalMessage, CustomerNote, Transaction, PasswordResetToken } = require('../models');
 const { getPermissions, isMainAdmin } = require('../lib/permissions');
+const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 
 router.get('/', async (req, res) => {
     try {
@@ -145,8 +146,14 @@ router.post('/', async (req, res) => {
             permissions: permissions && typeof permissions === 'object' ? permissions : {}
         });
         const plainPassword = password;
-        setImmediate(() => {
-            require('../services/emailService').sendWelcomeCredentials(user, plainPassword).catch(() => {});
+        setImmediate(async () => {
+            try {
+                const emailService = require('../services/emailService');
+                const settings = await getPanelSettings();
+                const emailConfig = getPanelEmailConfig(settings);
+                const siteName = (settings && settings.siteName) || 'پورتال کارکنان';
+                await emailService.sendWelcomeCredentials(user, plainPassword, siteName, emailConfig);
+            } catch (_) {}
         });
         const u = user.toJSON();
         delete u.password;

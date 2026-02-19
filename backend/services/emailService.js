@@ -62,6 +62,35 @@ async function sendMail({ to, subject, text, html }) {
     }
 }
 
+/**
+ * ارسال ایمیل با تنظیمات SMTP دلخواه (مثلاً از تنظیمات پنل)
+ * config: { host, port, user, pass, from?, fromName?, secure? }
+ */
+async function sendMailWithConfig(config, { to, subject, text, html }) {
+    if (!config || !config.host || !config.port) return false;
+    try {
+        const nodemailer = require('nodemailer');
+        const transport = nodemailer.createTransport({
+            host: config.host,
+            port: parseInt(config.port, 10) || 587,
+            secure: !!config.secure,
+            auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined
+        });
+        const from = config.fromName ? `"${config.fromName}" <${config.from || config.user}>` : (config.from || config.user);
+        await transport.sendMail({
+            from,
+            to: Array.isArray(to) ? to.join(', ') : to,
+            subject: subject || '(بدون موضوع)',
+            text: text || '',
+            html: html || (text ? text.replace(/\n/g, '<br>') : '')
+        });
+        return true;
+    } catch (err) {
+        console.error('Email send error (config):', err.message);
+        return false;
+    }
+}
+
 /** قالب HTML پایه با پشتیبانی RTL */
 function baseHtml(title, body) {
     return `<!DOCTYPE html>
@@ -94,12 +123,16 @@ function baseHtml(title, body) {
 
 /**
  * ارسال اطلاعات ورود به کاربر تازه‌ساخته‌شده
+ * panelConfig: اختیاری — تنظیمات SMTP از پنل؛ در صورت ارسال از آن استفاده می‌شود
  */
-async function sendWelcomeCredentials(user, plainPassword, siteName = 'پورتال کارکنان') {
+async function sendWelcomeCredentials(user, plainPassword, siteName = 'پورتال کارکنان', panelConfig = null) {
     if (!user || !user.email) return false;
     const title = `حساب کاربری شما در ${siteName} ایجاد شد`;
-    const loginUrl = PANEL_URL + (PANEL_URL.includes('?') ? '&' : '?') + '';
-    const body = `
+    const mailOpts = {
+        to: user.email,
+        subject: title,
+        text: `حساب کاربری شما در ${siteName} ایجاد شد. آدرس پنل: ${PANEL_URL} — ایمیل: ${user.email} — رمز موقت: ${plainPassword}`,
+        html: baseHtml(title, `
       <p>سلام ${user.name || 'کاربر'}،</p>
       <p>یک حساب کاربری برای شما در <strong>${siteName}</strong> ایجاد شده است.</p>
       <p><strong>اطلاعات ورود:</strong></p>
@@ -110,20 +143,21 @@ async function sendWelcomeCredentials(user, plainPassword, siteName = 'پورت�
       </ul>
       <p class="muted">برای امنیت بیشتر پس از اولین ورود از بخش «پروفایل من» رمز عبور خود را تغییر دهید.</p>
       <a href="${PANEL_URL}" class="btn">ورود به پنل</a>
-    `;
-    return sendMail({
-        to: user.email,
-        subject: title,
-        text: `حساب کاربری شما در ${siteName} ایجاد شد. آدرس پنل: ${PANEL_URL} — ایمیل: ${user.email} — رمز موقت: ${plainPassword}`,
-        html: baseHtml(title, body)
-    });
+    `)
+    };
+    if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
+    return sendMail(mailOpts);
 }
 
 /**
  * ارسال اعلان ورود به پنل به ایمیل کاربر
+ * options: اختیاری — { emailConfig, loginNotificationEnabled } از تنظیمات پنل
  */
-async function sendLoginNotification(user, ip = '', userAgent = '') {
-    if (!LOGIN_NOTIFICATION_ENABLED || !user || !user.email) return false;
+async function sendLoginNotification(user, ip = '', userAgent = '', options = null) {
+    const usePanel = options && options.emailConfig && options.emailConfig.host;
+    if (usePanel && options.loginNotificationEnabled !== true) return false;
+    if (!usePanel && (!LOGIN_NOTIFICATION_ENABLED || !user || !user.email)) return false;
+    if (!user || !user.email) return false;
     const title = 'ورود به پورتال';
     const body = `
       <p>سلام ${user.name || 'کاربر'}،</p>
@@ -132,18 +166,16 @@ async function sendLoginNotification(user, ip = '', userAgent = '') {
       <p>در صورت عدم اطلاع از این ورود، رمز عبور خود را تغییر دهید.</p>
       <a href="${PANEL_URL}#profile" class="btn">پروفایل و تغییر رمز</a>
     `;
-    return sendMail({
-        to: user.email,
-        subject: 'ورود به پورتال انجام شد',
-        text: `ورود به پورتال با موفقیت انجام شد. ${ip ? 'IP: ' + ip : ''}`,
-        html: baseHtml(title, body)
-    });
+    const mailOpts = { to: user.email, subject: 'ورود به پورتال انجام شد', text: `ورود به پورتال با موفقیت انجام شد. ${ip ? 'IP: ' + ip : ''}`, html: baseHtml(title, body) };
+    if (usePanel) return sendMailWithConfig(options.emailConfig, mailOpts);
+    return sendMail(mailOpts);
 }
 
 /**
  * ارسال لینک بازیابی رمز عبور
+ * panelConfig: اختیاری — تنظیمات SMTP از پنل
  */
-async function sendPasswordReset(user, resetToken, expiresInMinutes = 60) {
+async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelConfig = null) {
     if (!user || !user.email) return false;
     const base = PANEL_URL.replace(/#.*$/, '').replace(/\?.*$/, '');
     const sep = base.indexOf('?') >= 0 ? '&' : '?';
@@ -156,21 +188,20 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60) {
       <a href="${resetUrl}" class="btn">تعیین رمز عبور جدید</a>
       <p class="muted">اگر شما این درخواست را نزده‌اید، این ایمیل را نادیده بگیرید.</p>
     `;
-    return sendMail({
-        to: user.email,
-        subject: 'بازیابی رمز عبور پورتال',
-        text: `بازیابی رمز: ${resetUrl} (معتبر تا ${expiresInMinutes} دقیقه)`,
-        html: baseHtml(title, body)
-    });
+    const mailOpts = { to: user.email, subject: 'بازیابی رمز عبور پورتال', text: `بازیابی رمز: ${resetUrl} (معتبر تا ${expiresInMinutes} دقیقه)`, html: baseHtml(title, body) };
+    if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
+    return sendMail(mailOpts);
 }
 
 module.exports = {
     isEnabled,
     sendMail,
+    sendMailWithConfig,
     sendWelcomeCredentials,
     sendLoginNotification,
     sendPasswordReset,
     getFrom,
     LOGIN_NOTIFICATION_ENABLED,
-    PANEL_URL
+    PANEL_URL,
+    baseHtml
 };

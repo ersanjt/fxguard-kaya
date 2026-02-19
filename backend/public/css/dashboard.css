@@ -461,6 +461,15 @@
         .panel-settings-sections { display: flex; flex-direction: column; gap: 16px; }
         .panel-settings-section { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px 20px; }
         .panel-settings-section-title { font-size: 1rem; font-weight: 600; margin: 0 0 14px; padding-inline-start: 12px; border-inline-start: 3px solid var(--accent); color: var(--text-primary); }
+        .panel-settings-section-desc { font-size: 0.85rem; color: var(--text-muted); margin: -8px 0 14px; line-height: 1.5; }
+        .panel-settings-section .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .panel-settings-section .form-group-checkbox { margin-bottom: 12px; }
+        .panel-settings-section .checkbox-label { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9rem; color: var(--text-secondary); }
+        .panel-settings-section .checkbox-label input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+        .panel-visibility-toggles { display: flex; flex-direction: column; gap: 10px; }
+        .panel-visibility-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border); }
+        .panel-visibility-item label { margin: 0; cursor: pointer; flex: 1; font-size: 0.9rem; color: var(--text-primary); }
+        .panel-visibility-item input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); flex-shrink: 0; }
         .panel-settings-section .form-group { margin-bottom: 14px; }
         .panel-settings-section .form-group:last-child { margin-bottom: 0; }
         .panel-settings-section .form-group label { display: block; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 6px; }

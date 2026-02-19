@@ -1,29 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
-const models = require('../models');
-const { PanelSetting } = models;
-
-const DEFAULT = {
-    siteName: 'صرافی کایا',
-    logoUrl: null,
-    faviconUrl: null,
-    loginTitle: 'پورتال کارکنان کایا',
-    pageTitle: 'پورتال کارکنان کایا | صرافی کایا',
-    footerText: 'صرافی کایا — پورتال کارکنان'
-};
+const { PanelSetting } = require('../models');
+const { getPanelSettings } = require('../services/panelSettingsLoader');
 
 async function getSettings() {
-    const row = await PanelSetting.findByPk('default');
-    if (!row) return { ...DEFAULT };
-    return {
-        siteName: row.siteName != null ? row.siteName : DEFAULT.siteName,
-        logoUrl: row.logoUrl || null,
-        faviconUrl: row.faviconUrl || null,
-        loginTitle: row.loginTitle != null ? row.loginTitle : DEFAULT.loginTitle,
-        pageTitle: row.pageTitle != null ? row.pageTitle : DEFAULT.pageTitle,
-        footerText: row.footerText != null ? row.footerText : DEFAULT.footerText
-    };
+    return getPanelSettings();
 }
 
 // عمومی — برای صفحه ورود و اعمال ظاهر برای همه کاربران (بدون احراز هویت)
@@ -40,6 +22,28 @@ router.get('/public/branding', async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// عمومی — زبان‌های فعال سایت (برای نمایش سوئیچ زبان در صفحه ورود و داخل پنل)
+router.get('/public/languages', async (req, res) => {
+    try {
+        const s = await getSettings();
+        const mode = s.languageMode === 'single' ? 'single' : s.languageMode === 'bilingual' ? 'bilingual' : 'trilingual';
+        const supportedLanguages = mode === 'single' ? ['fa'] : mode === 'bilingual' ? ['fa', 'en'] : ['fa', 'en', 'tr'];
+        res.json({ languageMode: mode, supportedLanguages });
+    } catch (err) {
+        res.status(500).json({ error: err.message, languageMode: 'trilingual', supportedLanguages: ['fa', 'en', 'tr'] });
+    }
+});
+
+// عمومی — لیست بخش‌های مخفی برای مخفی کردن در منو و جلوگیری از دسترسی
+router.get('/public/visibility', async (req, res) => {
+    try {
+        const s = await getSettings();
+        res.json({ hiddenSections: s.hiddenSections || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message, hiddenSections: [] });
     }
 });
 
@@ -61,10 +65,11 @@ router.put('/', authMiddleware, async (req, res) => {
         if (!req.canAccess || !req.canAccess('panel_settings')) {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
-        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText } = req.body || {};
+        const body = req.body || {};
+        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, hiddenSections } = body;
         const [row] = await PanelSetting.findOrCreate({
             where: { id: 'default' },
-            defaults: { siteName: null, logoUrl: null, faviconUrl: null, loginTitle: null, pageTitle: null, footerText: null }
+            defaults: {}
         });
         if (siteName !== undefined) row.siteName = siteName === '' ? null : siteName;
         if (logoUrl !== undefined) row.logoUrl = logoUrl === '' ? null : logoUrl;
@@ -72,6 +77,15 @@ router.put('/', authMiddleware, async (req, res) => {
         if (loginTitle !== undefined) row.loginTitle = loginTitle === '' ? null : loginTitle;
         if (pageTitle !== undefined) row.pageTitle = pageTitle === '' ? null : pageTitle;
         if (footerText !== undefined) row.footerText = footerText === '' ? null : footerText;
+        if (smtpHost !== undefined) row.smtpHost = smtpHost === '' ? null : smtpHost;
+        if (smtpPort !== undefined) row.smtpPort = smtpPort === '' ? null : smtpPort;
+        if (smtpUser !== undefined) row.smtpUser = smtpUser === '' ? null : smtpUser;
+        if (smtpPass !== undefined) row.smtpPass = smtpPass === '' ? null : smtpPass;
+        if (smtpFrom !== undefined) row.smtpFrom = smtpFrom === '' ? null : smtpFrom;
+        if (smtpFromName !== undefined) row.smtpFromName = smtpFromName === '' ? null : smtpFromName;
+        if (smtpSecure !== undefined) row.smtpSecure = !!smtpSecure;
+        if (emailLoginNotification !== undefined) row.emailLoginNotification = !!emailLoginNotification;
+        if (hiddenSections !== undefined) row.hiddenSections = Array.isArray(hiddenSections) ? JSON.stringify(hiddenSections) : (hiddenSections === '' ? null : row.hiddenSections);
         await row.save();
         const s = await getSettings();
         res.json(s);

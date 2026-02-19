@@ -8,6 +8,7 @@ const { Op } = require('sequelize');
 const crypto = require('crypto');
 const { logActivity } = require('../services/activityLog');
 const emailService = require('../services/emailService');
+const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 const { getPermissions } = require('../lib/permissions');
 
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
@@ -94,8 +95,12 @@ router.post('/login', async (req, res) => {
         const token = issueToken(user);
         const permissions = getPermissions(user);
         try { (req.app && req.app.get('io'))?.emit('user_login', { userId: user.id }); } catch (_) {}
-        setImmediate(() => {
-            emailService.sendLoginNotification(user, req.ip || '', (req.get && req.get('user-agent')) || '').catch(() => {});
+        setImmediate(async () => {
+            try {
+                const settings = await getPanelSettings();
+                const emailConfig = getPanelEmailConfig(settings);
+                await emailService.sendLoginNotification(user, req.ip || '', (req.get && req.get('user-agent')) || '', { emailConfig, loginNotificationEnabled: settings.emailLoginNotification });
+            } catch (_) {}
         });
         sendJson(200, {
             token,
@@ -133,7 +138,9 @@ router.post('/forgot-password', async (req, res) => {
         const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000);
         await PasswordResetToken.destroy({ where: { userId: user.id } });
         await PasswordResetToken.create({ userId: user.id, token, expiresAt });
-        await emailService.sendPasswordReset(user, token, RESET_TOKEN_EXPIRY_MINUTES);
+        const settings = await getPanelSettings();
+        const emailConfig = getPanelEmailConfig(settings);
+        await emailService.sendPasswordReset(user, token, RESET_TOKEN_EXPIRY_MINUTES, emailConfig);
         res.status(200).json({ message: 'در صورت وجود حساب با این ایمیل، لینک بازیابی ارسال می‌شود.' });
     } catch (err) {
         res.status(500).json({ error: err.message || 'خطای سرور' });
@@ -196,8 +203,12 @@ router.post('/totp/verify-login', async (req, res) => {
         const token = issueToken(user);
         const permissions = getPermissions(user);
         try { (req.app && req.app.get('io'))?.emit('user_login', { userId: user.id }); } catch (_) {}
-        setImmediate(() => {
-            emailService.sendLoginNotification(user, req.ip || '', (req.get && req.get('user-agent')) || '').catch(() => {});
+        setImmediate(async () => {
+            try {
+                const settings = await getPanelSettings();
+                const emailConfig = getPanelEmailConfig(settings);
+                await emailService.sendLoginNotification(user, req.ip || '', (req.get && req.get('user-agent')) || '', { emailConfig, loginNotificationEnabled: settings.emailLoginNotification });
+            } catch (_) {}
         });
         res.json({
             token,
