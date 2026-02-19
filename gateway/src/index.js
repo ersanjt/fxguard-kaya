@@ -462,24 +462,31 @@ async function startWhatsApp() {
 }
 
 async function stopWhatsApp() {
+  const toDestroy = client;
+  if (!toDestroy) return { ok: true, status: 'already_stopped' };
+
+  isClientReady = false;
+  isClientStarting = false;
+  connectionPhase = null;
+  client = null;
+  lastQrImageDataUrl = null;
+  qrCodeData = null;
+
+  redisClient.set('whatsapp:status', 'stopping').catch(() => {});
+  io.emit('disconnected', { reason: 'stopped_by_api' });
+
   try {
-    if (!client) return { ok: true, status: 'already_stopped' };
-
-    isClientReady = false;
-    isClientStarting = false;
-
-    redisClient.set('whatsapp:status', 'stopping').catch(() => {});
-    await client.destroy();
-    client = null;
-
-    redisClient.set('whatsapp:status', 'stopped').catch(() => {});
-    io.emit('disconnected', { reason: 'stopped_by_api' });
-
-    return { ok: true, status: 'stopped' };
+    const destroyTimeout = 15000;
+    await Promise.race([
+      toDestroy.destroy(),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('destroy_timeout')), destroyTimeout)),
+    ]);
   } catch (e) {
-    logger.error('Stop WhatsApp error', { error: e?.message });
-    return { ok: false, error: e?.message || 'stop_failed' };
+    logger.warn('Stop WhatsApp: destroy finished with error (client cleared)', { error: e?.message });
   }
+
+  redisClient.set('whatsapp:status', 'stopped').catch(() => {});
+  return { ok: true, status: 'stopped' };
 }
 
 // ==================== API Endpoints ====================
@@ -659,6 +666,28 @@ function startServer() {
 }
 
 startServer();
+
+// جلوگیری از کرش کل پروسه با خطاهای غیرمنتظره (قطع/اتصال مجدد یا عوض کردن خط)
+function resetClientState() {
+  isClientReady = false;
+  isClientStarting = false;
+  connectionPhase = null;
+  lastAuthFailureMessage = null;
+  lastQrImageDataUrl = null;
+  qrCodeData = null;
+  client = null;
+  redisClient.set('whatsapp:status', 'disconnected').catch(() => {});
+}
+
+process.on('uncaughtException', (err) => {
+  logger.error('uncaughtException – resetting client state', { error: err?.message, stack: err?.stack });
+  resetClientState();
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('unhandledRejection – resetting client state', { reason: String(reason) });
+  resetClientState();
+});
 
 // Graceful shutdown
 process.on('SIGINT', async () => {
