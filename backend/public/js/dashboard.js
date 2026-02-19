@@ -2336,11 +2336,16 @@
                 if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
             }).catch(function() { if (btn) { btn.classList.remove('loading'); btn.disabled = false; } });
         }
+        function setDashboardError(container, cardsTitleEl, message) {
+            if (container) container.innerHTML = '<div class="dashboard-load-error empty">' + (message || (LANG === 'fa' ? 'بارگذاری ناموفق بود. دوباره تلاش کنید.' : 'Failed to load. Try again.')) + '</div>';
+            if (cardsTitleEl) cardsTitleEl.style.display = 'none';
+        }
         async function loadDashboard() {
             var container = document.getElementById('dashboardCards');
             var summaryEl = document.getElementById('dashboardSummary');
             var quickEl = document.getElementById('dashboardQuickActions');
             var attentionEl = document.getElementById('dashboardAttention');
+            var cardsTitleEl = document.getElementById('dashboardCardsTitle');
             if (!container) return;
             var perms = (currentUser && currentUser.permissions) || {};
             var can = function(section) { return section === 'profile' || perms[section] !== false; };
@@ -2348,8 +2353,17 @@
             if (summaryEl) summaryEl.innerHTML = '';
             if (quickEl) quickEl.innerHTML = '';
             if (attentionEl) { attentionEl.innerHTML = ''; attentionEl.style.display = 'none'; }
-            var res = await apiFetch('/api/analytics/dashboard');
-            if (res.needLogin) return;
+            var res;
+            try {
+                res = await apiFetch('/api/analytics/dashboard');
+            } catch (e) {
+                setDashboardError(container, cardsTitleEl, LANG === 'fa' ? 'خطا در ارتباط با سرور.' : 'Network error.');
+                return;
+            }
+            if (res.needLogin) {
+                setDashboardError(container, cardsTitleEl, LANG === 'fa' ? 'لطفاً وارد شوید.' : 'Please sign in.');
+                return;
+            }
             var stats = res.ok && res.data ? res.data : {};
             var n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
             if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
@@ -2419,7 +2433,6 @@
                 html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
             });
             container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : 'No sections available.') + '</div>');
-            var cardsTitleEl = document.getElementById('dashboardCardsTitle');
             if (cardsTitleEl) cardsTitleEl.style.display = html ? '' : 'none';
             updateNavBadges(stats);
         }
