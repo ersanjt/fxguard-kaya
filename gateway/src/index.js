@@ -60,13 +60,14 @@ const io = socketIo(server, {
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
-// Rate limiting (configurable)
+// Rate limiting (configurable) — وضعیت و QR برای پولینگ پنل محدود نمی‌شوند
 const apiLimiter = rateLimit({
   windowMs: CONFIG.rateLimitWindowMs,
   max: CONFIG.rateLimitMax,
   message: { error: 'Too many requests' },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => ['/api/status', '/api/qr'].includes(req.path),
 });
 app.use('/api/', apiLimiter);
 
