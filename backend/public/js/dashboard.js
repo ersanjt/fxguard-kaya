@@ -61,6 +61,12 @@
                     panel_section_branding: 'برندینگ',
                     panel_section_titles: 'عنوان‌ها',
                     panel_section_footer: 'فوتر',
+                    panel_footer_style: 'طراحی فوتر',
+                    panel_footer_style_accent: 'نوار اکسن (پیش‌فرض)',
+                    panel_footer_style_minimal: 'مینیمال',
+                    panel_footer_style_compact: 'فشرده',
+                    panel_footer_style_line: 'خط ساده',
+                    panel_footer_style_hint: 'ظاهر نوار پایین صفحه را انتخاب کنید.',
                     panel_hide_footer: 'عدم نمایش فوتر (مخفی کردن متن پایین صفحه)',
                     panel_section_email: 'تنظیمات ایمیل (SMTP)',
                     panel_email_desc: 'ارسال ایمیل خوش‌آمدگویی، بازیابی رمز و اعلان ورود. در صورت خالی بودن از متغیرهای محیط سرور استفاده می‌شود.',
@@ -404,6 +410,12 @@
                     panel_section_branding: 'Branding',
                     panel_section_titles: 'Titles',
                     panel_section_footer: 'Footer',
+                    panel_footer_style: 'Footer style',
+                    panel_footer_style_accent: 'Accent bar (default)',
+                    panel_footer_style_minimal: 'Minimal',
+                    panel_footer_style_compact: 'Compact',
+                    panel_footer_style_line: 'Simple line',
+                    panel_footer_style_hint: 'Choose the appearance of the bottom bar.',
                     panel_hide_footer: 'Hide footer (hide bottom bar text)',
                     panel_section_email: 'Email (SMTP) settings',
                     panel_email_desc: 'Welcome emails, password reset and login notifications. If empty, server env vars are used.',
@@ -435,6 +447,10 @@
                     btn_edit: 'Edit',
                     btn_delete: 'Delete', btn_archive: 'Archive',
                     msg_placeholder: 'Type your message...',
+                    voice_record: 'Voice message',
+                    voice_stop: 'Stop recording',
+                    voice_no_support: 'Voice recording not supported in this browser',
+                    voice_no_permission: 'Microphone access denied',
                     back_to_customers: '� � Back to customers',
                     back_to_list: '� � Back to list',
                     loading: 'Loading...',
@@ -2933,9 +2949,11 @@
                         var fn = escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'تصویر' : 'Image'));
                         mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\';var s=this.parentNode.querySelector(\'.msg-media-filename\');if(s)s.style.display=\'inline\';">' + '<span class="msg-media-filename" style="display:none;">📎 ' + fn + '</span></a></div>';
                     } else if (mediaType === 'video') {
-                        mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">▶ ' + (LANG === 'fa' ? 'پخش ویدیو' : 'Play video') + '</a><video src="' + escapeHtml(mediaUrl) + '" controls style="max-width:100%;max-height:200px;"></video></div>';
+                        mediaHtml = '<div class="msg-media"><video src="' + escapeHtml(mediaUrl) + '" controls preload="metadata"></video><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">' + (LANG === 'fa' ? 'پخش ویدیو' : 'Play video') + '</a></div>';
                     } else if (mediaType === 'audio') {
-                        mediaHtml = '<div class="msg-media"><audio src="' + escapeHtml(mediaUrl) + '" controls></audio><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">📎 ' + escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'دانلود' : 'Download')) + '</a></div>';
+                        var isPtt = (m.type || '').toLowerCase() === 'ptt' || /voice|\.ogg|\.webm|پیام صوتی|ptt/i.test(m.mediaData.filename || m.content || '');
+                        var voiceClass = isPtt ? ' msg-media-voice' : '';
+                        mediaHtml = '<div class="msg-media' + voiceClass + '"><audio src="' + escapeHtml(mediaUrl) + '" controls preload="metadata"></audio><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">' + (LANG === 'fa' ? 'دانلود' : 'Download') + '</a></div>';
                     } else {
                         mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-file-link msg-media-link" data-open="1">📎 ' + escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'فایل' : 'File')) + '</a></div>';
                     }
@@ -3002,6 +3020,69 @@
             }
             input.value = '';
             var res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: content || '', media: media }) });
+            if (res.needLogin) return;
+            if (res.ok) loadMessages(currentConvId);
+            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+        }
+
+        var voiceRecorderState = { active: false, recorder: null, chunks: [] };
+        function updateVoiceBtn() {
+            var btn = document.getElementById('msgVoiceBtn');
+            if (!btn) return;
+            btn.classList.toggle('recording', voiceRecorderState.active);
+            btn.setAttribute('title', voiceRecorderState.active ? (t('voice_stop') || (LANG === 'fa' ? 'توقف ضبط' : 'Stop recording')) : (t('voice_record') || (LANG === 'fa' ? 'ضبط پیام صوتی' : 'Voice message')));
+            btn.setAttribute('aria-label', btn.getAttribute('title'));
+        }
+        function startVoiceRecord() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                toast(t('voice_no_support') || (LANG === 'fa' ? 'ضبط صدا در این مرورگر پشتیبانی نمی‌شود' : 'Voice recording not supported'), true);
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+                var mime = (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) ? 'audio/webm;codecs=opus' : (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) ? 'audio/webm' : 'audio/ogg';
+                try {
+                    var recorder = new MediaRecorder(stream, { mimeType: mime });
+                } catch (e) {
+                    recorder = new MediaRecorder(stream);
+                }
+                voiceRecorderState.chunks = [];
+                recorder.ondataavailable = function(e) { if (e.data && e.data.size) voiceRecorderState.chunks.push(e.data); };
+                recorder.onstop = function() {
+                    stream.getTracks().forEach(function(t) { t.stop(); });
+                    var blob = new Blob(voiceRecorderState.chunks, { type: recorder.mimeType || 'audio/webm' });
+                    voiceRecorderState.chunks = [];
+                    if (blob.size > 0) sendVoiceMessage(blob);
+                };
+                recorder.start(200);
+                voiceRecorderState.recorder = recorder;
+                voiceRecorderState.active = true;
+                updateVoiceBtn();
+            }).catch(function() {
+                toast(t('voice_no_permission') || (LANG === 'fa' ? 'دسترسی به میکروفون داده نشد' : 'Microphone access denied'), true);
+            });
+        }
+        function stopVoiceRecord() {
+            if (!voiceRecorderState.recorder) return;
+            voiceRecorderState.recorder.stop();
+            voiceRecorderState.recorder = null;
+            voiceRecorderState.active = false;
+            updateVoiceBtn();
+        }
+        function toggleVoiceRecord() {
+            if (!currentConvId) { toast(LANG === 'fa' ? 'ابتدا یک مکالمه باز کنید' : 'Open a conversation first', true); return; }
+            if (voiceRecorderState.active) stopVoiceRecord();
+            else startVoiceRecord();
+        }
+        async function sendVoiceMessage(blob) {
+            if (!currentConvId || !blob || blob.size === 0) return;
+            var fd = new FormData();
+            var ext = (blob.type || '').indexOf('ogg') >= 0 ? '.ogg' : '.webm';
+            fd.append('file', blob, 'voice' + ext);
+            var uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+            var uploadData = await uploadRes.json().catch(function() { return {}; });
+            if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
+            var media = { url: uploadData.url, filename: uploadData.name || 'voice' + ext, mimetype: blob.type || (ext === '.ogg' ? 'audio/ogg' : 'audio/webm') };
+            var res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
             if (res.needLogin) return;
             if (res.ok) loadMessages(currentConvId);
             else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
@@ -3370,7 +3451,12 @@
             var footerBrand = document.getElementById('appFooterBrand');
             if (footerBrand) footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
             var appFooter = document.getElementById('appFooter');
-            if (appFooter) appFooter.style.display = (s.showFooter === false) ? 'none' : '';
+            if (appFooter) {
+                appFooter.style.display = (s.showFooter === false) ? 'none' : '';
+                var style = (s.footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(s.footerStyle) >= 0) ? s.footerStyle : 'accent';
+                appFooter.classList.remove('app-footer--accent', 'app-footer--minimal', 'app-footer--compact', 'app-footer--line');
+                appFooter.classList.add('app-footer--' + style);
+            }
             var loginTitleEl = document.getElementById('loginTitle');
             if (loginTitleEl) loginTitleEl.textContent = (s.loginTitle && s.loginTitle.trim()) ? s.loginTitle : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal');
             var setLoginLogo = function(containerId, size) {
@@ -3397,7 +3483,7 @@
                 if (res.data.supportedLanguages && window.applySupportedLanguages) window.applySupportedLanguages(res.data.supportedLanguages, res.data.defaultLanguage);
                 return;
             }
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null || data.showFooter !== undefined)) applyBranding(data); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null || data.showFooter !== undefined || data.footerStyle != null)) applyBranding(data); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/visibility').then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage); }).catch(function() {});
         }
@@ -3438,6 +3524,8 @@
             set('panelSettingLoginTitle', d.loginTitle);
             set('panelSettingPageTitle', d.pageTitle);
             set('panelSettingFooterText', d.footerText);
+            var footerStyleEl = document.getElementById('panelSettingFooterStyle');
+            if (footerStyleEl) footerStyleEl.value = (d.footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(d.footerStyle) >= 0) ? d.footerStyle : 'accent';
             var hideFooterEl = document.getElementById('panelSettingHideFooter');
             if (hideFooterEl) hideFooterEl.checked = d.showFooter === false;
             var langModeEl = document.getElementById('panelSettingLanguageMode');
@@ -3542,6 +3630,7 @@
                 pageTitle: get('panelSettingPageTitle'),
                 footerText: get('panelSettingFooterText'),
                 showFooter: !(document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked),
+                footerStyle: (function() { var el = document.getElementById('panelSettingFooterStyle'); var v = el ? el.value : 'accent'; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : 'accent'; })(),
                 smtpHost: get('panelSettingSmtpHost'),
                 smtpPort: get('panelSettingSmtpPort'),
                 smtpUser: get('panelSettingSmtpUser'),

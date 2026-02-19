@@ -281,6 +281,7 @@
                         <div class="chat-send">
                             <input type="file" id="msgFileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" style="display:none;">
                             <button type="button" class="chat-attach-btn" id="msgAttachBtn" onclick="document.getElementById('msgFileInput').click()" title="پیوست فایل" aria-label="پیوست فایل"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-paperclip"/></svg></button>
+                            <button type="button" class="chat-voice-btn" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
                             <input type="text" id="msgInput" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off" onkeypress="if(event.key==='Enter')sendMsg()">
                             <button type="button" class="chat-send-btn" onclick="sendMsg()" data-i18n="btn_send">ارسال</button>
                         </div>
@@ -1161,6 +1162,16 @@
                                 <section class="panel-settings-section">
                                     <h3 class="panel-settings-section-title" data-i18n="panel_section_footer">فوتر</h3>
                                     <div class="form-group">
+                                        <label for="panelSettingFooterStyle" data-i18n="panel_footer_style">طراحی فوتر</label>
+                                        <select id="panelSettingFooterStyle" onchange="updatePanelLivePreview()">
+                                            <option value="accent" data-i18n="panel_footer_style_accent">نوار اکسن (پیش‌فرض)</option>
+                                            <option value="minimal" data-i18n="panel_footer_style_minimal">مینیمال</option>
+                                            <option value="compact" data-i18n="panel_footer_style_compact">فشرده</option>
+                                            <option value="line" data-i18n="panel_footer_style_line">خط ساده</option>
+                                        </select>
+                                        <span class="form-hint" data-i18n="panel_footer_style_hint">ظاهر نوار پایین صفحه را انتخاب کنید.</span>
+                                    </div>
+                                    <div class="form-group">
                                         <label for="panelSettingFooterText" data-i18n="panel_footer_text">متن فوتر</label>
                                         <input type="text" id="panelSettingFooterText" placeholder="صرافی کایا — پورتال کارکنان">
                                     </div>
@@ -1493,7 +1504,7 @@
                 </div>
                 <div class="ticker-items" id="tickerItems"><div class="ticker-item-track" id="tickerItemTrack"></div></div>
             </div>
-            <footer class="app-footer" id="appFooter" role="contentinfo" aria-label="پایین صفحه">
+            <footer class="app-footer app-footer--accent" id="appFooter" role="contentinfo" aria-label="پایین صفحه">
                 <div class="app-footer-accent" aria-hidden="true"></div>
                 <div class="app-footer-inner">
                     <span class="app-footer-brand" id="appFooterBrand" data-i18n="footer_text">صرافی کایا — پورتال کارکنان</span>

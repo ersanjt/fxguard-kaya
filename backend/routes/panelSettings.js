@@ -20,7 +20,8 @@ router.get('/public/branding', async (req, res) => {
             loginTitle: s.loginTitle,
             pageTitle: s.pageTitle,
             footerText: s.footerText,
-            showFooter: s.showFooter !== false
+            showFooter: s.showFooter !== false,
+            footerStyle: s.footerStyle || 'accent'
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -68,7 +69,7 @@ router.put('/', authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const body = req.body || {};
-        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, hiddenSections, languageMode, defaultLanguage } = body;
+        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, hiddenSections, languageMode, defaultLanguage } = body;
         const [row] = await PanelSetting.findOrCreate({
             where: { id: 'default' },
             defaults: {}
@@ -80,6 +81,7 @@ router.put('/', authMiddleware, async (req, res) => {
         if (pageTitle !== undefined) row.pageTitle = pageTitle === '' ? null : pageTitle;
         if (footerText !== undefined) row.footerText = footerText === '' ? null : footerText;
         if (showFooter !== undefined) row.showFooter = !!showFooter;
+        if (footerStyle !== undefined) row.footerStyle = (footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(footerStyle) >= 0) ? footerStyle : 'accent';
         if (smtpHost !== undefined) row.smtpHost = smtpHost === '' ? null : smtpHost;
         if (smtpPort !== undefined) row.smtpPort = smtpPort === '' ? null : smtpPort;
         if (smtpUser !== undefined) row.smtpUser = smtpUser === '' ? null : smtpUser;

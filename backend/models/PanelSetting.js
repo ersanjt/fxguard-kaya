@@ -44,6 +44,12 @@ module.exports = (sequelize) => {
             defaultValue: true,
             comment: 'نمایش فوتر (true = نمایش، false = مخفی)'
         },
+        footerStyle: {
+            type: DataTypes.STRING(32),
+            allowNull: true,
+            defaultValue: 'accent',
+            comment: 'طراحی فوتر: accent | minimal | compact | line'
+        },
         smtpHost: { type: DataTypes.STRING(255), allowNull: true, comment: 'SMTP host' },
         smtpPort: { type: DataTypes.STRING(20), allowNull: true, comment: 'SMTP port' },
         smtpUser: { type: DataTypes.STRING(255), allowNull: true, comment: 'SMTP user' },

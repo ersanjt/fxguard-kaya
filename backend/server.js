@@ -224,6 +224,14 @@ async function connectDatabases() {
                     if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('panel_settings.defaultLanguage', e.message);
                 }
             }
+            if (desc && desc.footerStyle === undefined) {
+                try {
+                    await qi.addColumn('panel_settings', 'footerStyle', { type: DataTypes.STRING(32), allowNull: true });
+                    logger.info('✅ panel_settings: footerStyle column added (auto-migration)');
+                } catch (e) {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('panel_settings.footerStyle', e.message);
+                }
+            }
         } catch (e) {
             logger.warn('panel_settings migration:', e.message);
         }
