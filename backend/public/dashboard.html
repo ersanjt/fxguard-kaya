@@ -1260,6 +1260,69 @@
                                         <span id="panelTestEmailStatus" class="panel-test-email-status" style="display:none;"></span>
                                     </div>
                                 </section>
+                                <section class="panel-settings-section panel-settings-section-company-emails">
+                                    <h3 class="panel-settings-section-title" data-i18n="panel_section_company_emails">ایمیل‌های شرکتی</h3>
+                                    <p class="panel-settings-section-desc" data-i18n="panel_company_emails_desc">ثبت و مدیریت ایمیل‌های شرکتی (مثل support@، info@). می‌توانید به هر ایمیل یک کاربر اختصاص دهید و اطلاعات ورود را برایش ارسال کنید.</p>
+                                    <div class="company-emails-toolbar">
+                                        <button type="button" id="btnAddCompanyEmail" class="btn-primary btn-sm" data-i18n="panel_company_email_add">افزودن ایمیل شرکتی</button>
+                                    </div>
+                                    <div id="companyEmailFormBox" class="company-email-form-box" style="display:none;">
+                                        <input type="hidden" id="companyEmailId" value="">
+                                        <div class="form-row-2">
+                                            <div class="form-group">
+                                                <label for="companyEmailAddress" data-i18n="panel_company_email_address">آدرس ایمیل</label>
+                                                <input type="email" id="companyEmailAddress" placeholder="support@company.com">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="companyEmailLabel" data-i18n="panel_company_email_label">عنوان / کاربرد</label>
+                                                <input type="text" id="companyEmailLabel" placeholder="پشتیبانی، فروش، ...">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="companyEmailAssignedUser" data-i18n="panel_company_email_assigned">اختصاص به کاربر</label>
+                                            <select id="companyEmailAssignedUser">
+                                                <option value="">— بدون اختصاص —</option>
+                                            </select>
+                                        </div>
+                                        <div class="form-row-2">
+                                            <div class="form-group">
+                                                <label for="companyEmailPassword" data-i18n="panel_company_email_password">رمز عبور</label>
+                                                <input type="password" id="companyEmailPassword" placeholder="••••••••" autocomplete="new-password">
+                                                <span class="form-hint" data-i18n="panel_company_email_password_hint">خالی = بدون تغییر (در ویرایش)</span>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="companyEmailNotes" data-i18n="panel_company_email_notes">یادداشت</label>
+                                                <input type="text" id="companyEmailNotes" placeholder="">
+                                            </div>
+                                        </div>
+                                        <div class="form-group form-group-checkbox">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" id="companyEmailActive" checked>
+                                                <span data-i18n="panel_company_email_active">فعال</span>
+                                            </label>
+                                        </div>
+                                        <div class="company-email-form-actions">
+                                            <button type="button" id="companyEmailSaveBtn" class="btn-primary" data-i18n="btn_save">ذخیره</button>
+                                            <button type="button" id="companyEmailCancelBtn" class="btn-secondary" data-i18n="btn_cancel">انصراف</button>
+                                        </div>
+                                    </div>
+                                    <div id="companyEmailsTableWrap" class="company-emails-table-wrap">
+                                        <table class="data-table company-emails-table" id="companyEmailsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th data-i18n="panel_company_email_address">آدرس ایمیل</th>
+                                                    <th data-i18n="panel_company_email_label">عنوان</th>
+                                                    <th data-i18n="panel_company_email_assigned">اختصاص به</th>
+                                                    <th data-i18n="panel_company_email_has_pass">رمز</th>
+                                                    <th data-i18n="th_status">وضعیت</th>
+                                                    <th data-i18n="panel_company_email_actions">عملیات</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="companyEmailsTableBody"></tbody>
+                                        </table>
+                                        <p id="companyEmailsEmpty" class="company-emails-empty" style="display:none;" data-i18n="panel_company_emails_empty">هنوز ایمیل شرکتی ثبت نشده است.</p>
+                                    </div>
+                                </section>
                                 <section class="panel-settings-section panel-settings-section-visibility">
                                     <h3 class="panel-settings-section-title" data-i18n="panel_section_visibility">نمایش بخش‌ها در سایت</h3>
                                     <p class="panel-settings-section-desc" data-i18n="panel_visibility_desc">بخش‌هایی که مخفی می‌کنید در منوی sidebar و در کل وب‌سایت نمایش داده نمی‌شوند.</p>

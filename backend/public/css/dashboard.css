@@ -1597,6 +1597,8 @@
             .price-ticker.ticker-collapsed { display: flex; flex-direction: row; align-items: center; gap: 0 10px; max-height: 56px; min-height: 56px; overflow: hidden; padding: 10px 12px; padding-inline-start: max(12px, env(safe-area-inset-inline-start)); padding-inline-end: max(12px, env(safe-area-inset-inline-end)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
             .price-ticker.ticker-collapsed .ticker-header { display: none !important; }
             .price-ticker.ticker-collapsed .ticker-collapsed-label { display: none !important; }
+            .price-ticker.ticker-collapsed:has(.ticker-item-track:empty) .ticker-collapsed-label { display: flex !important; flex: 1; align-items: center; font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.85); padding-inline-start: 4px; min-width: 0; }
+            .price-ticker.ticker-collapsed:has(.ticker-item-track:empty) .ticker-items { display: none !important; }
             .price-ticker.ticker-collapsed .ticker-items { display: flex !important; flex: 1; min-width: 0; overflow: hidden; align-items: center; margin-inline-end: 0; }
             .price-ticker.ticker-collapsed .ticker-items.ticker-auto-scroll .ticker-item-track { animation: tickerMarqueeRtl 60s linear infinite; }
             .price-ticker.ticker-collapsed .ticker-toggle-mobile { position: static; transform: none; flex-shrink: 0; width: 44px; height: 44px; min-width: 44px; min-height: 44px; margin-inline-start: 0; }
@@ -1611,9 +1613,9 @@
             .conv-detail-actions select { max-width: 120px; }
             .price-ticker .ticker-datetime { font-size: 0.65rem; min-width: 0; }
             /* فوتر موبایل — هماهنگ با استایل پایه، لمسی و safe-area */
-            .app-footer { padding-inline: max(20px, env(safe-area-inset-inline)); padding-bottom: max(14px, env(safe-area-inset-bottom)); min-height: 48px; }
-            .app-footer-inner { padding-top: 12px; }
-            .app-footer-brand { display: inline-block; }
+            .app-footer { padding-inline: max(20px, env(safe-area-inset-inline)); padding-bottom: max(14px, env(safe-area-inset-bottom)); min-height: 48px; -webkit-tap-highlight-color: transparent; }
+            .app-footer-inner { padding-top: 12px; gap: 8px 14px; justify-content: center; text-align: center; }
+            .app-footer-brand { display: inline-block; font-size: 0.8125rem; }
             .main-wrap { padding-bottom: max(90px, calc(80px + env(safe-area-inset-bottom))); }
             .conv-layout { flex-direction: column; min-height: min(400px, 60vh, 60dvh); gap: 0; position: relative; }
             .conv-list-wrap { flex: 0 0 auto; max-height: 280px; min-height: 0; }
