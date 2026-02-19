@@ -2393,44 +2393,30 @@
                 }).join('');
                 quickEl.innerHTML = quickHtml || '';
             }
-            var groupLabels = { communications: t('nav_communications'), organization: t('nav_organization'), settings: t('nav_settings') };
             var cards = [
-                { page: 'conversations', section: 'conversations', group: 'communications', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread')) : (n(stats.openConversations) + ' ' + (LANG === 'fa' ? 'باز' : 'open')), badgeWarn: n(stats.unreadConversations) > 0 },
-                { page: 'customers', section: 'customers', group: 'communications', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + (LANG === 'fa' ? ' مشتری' : ' customers') },
-                { page: 'tickets', section: 'tickets', group: 'communications', title: t('nav_tickets'), icon: 'icon-ticket', stat: n(stats.ticketsOpen) + (LANG === 'fa' ? ' تیکت باز' : ' open') },
-                { page: 'announcements', section: 'announcements', group: 'communications', title: t('nav_announcements'), icon: 'icon-user-online', stat: n(stats.announcementsCount) + (LANG === 'fa' ? ' اعلان' : ' announcements') },
-                { page: 'internal-chat', section: 'internal_chat', group: 'communications', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
-                { page: 'whatsapp', section: 'whatsapp', group: 'communications', title: t('nav_whatsapp'), icon: 'icon-phone', stat: null },
-                { page: 'tasks', section: 'tasks', group: 'organization', title: t('nav_tasks'), icon: 'icon-task', stat: n(stats.tasksPending) + (LANG === 'fa' ? ' تسک در انتظار' : ' pending') },
-                { page: 'processes', section: 'processes', group: 'organization', title: t('nav_processes'), icon: 'icon-task', stat: null },
-                { page: 'departments', section: 'departments', group: 'organization', title: t('nav_departments'), icon: 'icon-building', stat: null },
-                { page: 'users', section: 'users', group: 'organization', title: t('nav_users'), icon: 'icon-user', stat: null },
-                { page: 'branches', section: 'branches', group: 'organization', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
-                { page: 'staff-activity', section: 'staff_activity', group: 'organization', title: t('nav_staff_activity'), icon: 'icon-user-online', stat: null },
-                { page: 'supervision', section: 'supervision', group: 'organization', title: t('nav_supervision'), icon: 'icon-chart', stat: null },
-                { page: 'profile', section: 'profile', group: 'settings', title: t('nav_profile'), icon: 'icon-user', stat: null },
-                { page: 'rates', section: 'rates', group: 'settings', title: t('nav_rates'), icon: 'icon-chart', stat: null },
-                { page: 'services', section: 'services', group: 'settings', title: t('nav_services'), icon: 'icon-building', stat: null },
-                { page: 'panel-settings', section: 'panel_settings', group: 'settings', title: t('nav_panel_settings'), icon: 'icon-chart', stat: null }
+                { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread')) : (n(stats.openConversations) + ' ' + (LANG === 'fa' ? 'باز' : 'open')), badgeWarn: n(stats.unreadConversations) > 0 },
+                { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + (LANG === 'fa' ? ' مشتری' : ' customers') },
+                { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', stat: n(stats.ticketsOpen) + (LANG === 'fa' ? ' تیکت باز' : ' open') },
+                { page: 'tasks', section: 'tasks', title: t('nav_tasks'), icon: 'icon-task', stat: n(stats.tasksPending) + (LANG === 'fa' ? ' تسک در انتظار' : ' pending') },
+                { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-user-online', stat: n(stats.announcementsCount) + (LANG === 'fa' ? ' اعلان' : ' announcements') },
+                { page: 'departments', section: 'departments', title: t('nav_departments'), icon: 'icon-building', stat: null },
+                { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user', stat: null },
+                { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
+                { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-task', stat: null },
+                { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone', stat: null },
+                { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart', stat: null },
+                { page: 'services', section: 'services', title: t('nav_services'), icon: 'icon-building', stat: null },
+                { page: 'profile', section: 'profile', title: t('nav_profile'), icon: 'icon-user', stat: null },
+                { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
+                { page: 'supervision', section: 'supervision', title: t('nav_supervision'), icon: 'icon-chart', stat: null },
+                { page: 'staff-activity', section: 'staff_activity', title: t('nav_staff_activity'), icon: 'icon-user-online', stat: null },
+                { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-chart', stat: null }
             ];
-            var byGroup = {};
+            var html = '';
             cards.forEach(function(c) {
                 if (!can(c.section)) return;
-                var g = c.group || 'settings';
-                if (!byGroup[g]) byGroup[g] = [];
-                byGroup[g].push(c);
-            });
-            var groupOrder = ['communications', 'organization', 'settings'];
-            var html = '';
-            groupOrder.forEach(function(g) {
-                var list = byGroup[g];
-                if (!list || list.length === 0) return;
-                html += '<div class="dashboard-card-group"><h4 class="dashboard-group-title">' + escapeHtml(groupLabels[g] || g) + '</h4><div class="dashboard-cards-in-group">';
-                list.forEach(function(c) {
-                    var badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
-                    html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
-                });
-                html += '</div></div>';
+                var badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
+                html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
             });
             container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : 'No sections available.') + '</div>');
             var cardsTitleEl = document.getElementById('dashboardCardsTitle');
@@ -5340,6 +5326,8 @@
                 qrBox.style.display = 'none';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
                 if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
+                var af = document.getElementById('whatsappAuthFailure');
+                if (af) { af.style.display = 'none'; af.textContent = ''; }
             }
             var ping;
             try { ping = await apiFetch('/api/ping', { auth: false }); } catch (e) { ping = { needLogin: true }; }
@@ -5363,12 +5351,23 @@
             st.className = 'whatsapp-status-line';
             var statusText = t('whatsapp_status') + ' ' + (data && data.whatsapp ? t('whatsapp_connected') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected'))) + ' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'));
             st.textContent = statusText;
+            var authFailureEl = document.getElementById('whatsappAuthFailure');
+            if (authFailureEl) {
+                if (data && data.authFailure) {
+                    authFailureEl.style.display = 'block';
+                    authFailureEl.textContent = (LANG === 'fa' ? 'خطای احراز هویت: ' : 'Auth error: ') + data.authFailure;
+                } else {
+                    authFailureEl.style.display = 'none';
+                    authFailureEl.textContent = '';
+                }
+            }
             if (data && data.whatsapp) {
                 isWhatsappPolling = false;
                 setWhatsappStatusBadge('connected');
                 qrBox.style.display = 'none';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
                 if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
+                if (authFailureEl) authFailureEl.style.display = 'none';
                 if (btnDisconnect) { btnDisconnect.textContent = t('whatsapp_disconnect_btn'); btnDisconnect.disabled = false; }
                 if (lastCard) {
                     lastCard.style.display = 'block';
@@ -5394,10 +5393,10 @@
                 qrImg.src = qrData.qr;
                 qrBox.style.display = 'block';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
-                // زیر QR فقط راهنما نشان می‌دهیم؛ «در حال بررسی اتصال» فقط بعد از اسکن در نوار وضعیت دیده می‌شود
                 if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 isWhatsappPolling = true;
-                qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, WHATSAPP_POLL_MS);
+                var pollMs = 2000;
+                qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, pollMs);
             } else {
                 qrBox.style.display = 'none';
                 if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';

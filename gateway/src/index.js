@@ -161,6 +161,7 @@ let isClientStarting = false;
 let qrCodeData = null;
 let lastQrImageDataUrl = null;
 let lastAccountInfo = null;
+let lastAuthFailureMessage = null;
 
 function buildClient() {
   const sessionPath = path.resolve(process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth'));
@@ -176,18 +177,25 @@ function buildClient() {
     '--no-first-run',
     '--disable-background-networking',
     '--disable-default-apps',
+    '--disable-blink-features=AutomationControlled',
   ];
   const extraArgs = (process.env.PUPPETEER_ARGS || '').split(',').map((s) => s.trim()).filter(Boolean);
   if (extraArgs.length) puppeteerArgs.push(...extraArgs);
 
+  // زمان بیشتر برای اسکن و همگام‌سازی (پیش‌فرض ۵ دقیقه؛ با env تا ۱۵ دقیقه قابل افزایش است)
+  const authTimeoutMs = Math.max(120000, parseInt(process.env.WHATSAPP_AUTH_TIMEOUT_MS) || 300000);
+
   const clientOptions = {
     authStrategy: new LocalAuth({ dataPath: sessionPath }),
-    authTimeout: Math.max(60000, parseInt(process.env.WHATSAPP_AUTH_TIMEOUT_MS) || 90000),
+    authTimeout: authTimeoutMs,
     puppeteer: {
       headless: true,
       args: puppeteerArgs,
     },
   };
+  if (process.env.WHATSAPP_WEB_VERSION_CACHE === 'none') {
+    clientOptions.webVersionCache = { type: 'none' };
+  }
 
   const c = new Client(clientOptions);
 
@@ -217,22 +225,26 @@ function attachClientEvents(c) {
   });
 
   c.on('authenticated', () => {
+    lastAuthFailureMessage = null;
     logger.info('✅ WhatsApp Authenticated');
     io.emit('authenticated', { status: 'success' });
     redisClient.set('whatsapp:status', 'authenticated').catch(() => {});
   });
 
   c.on('auth_failure', (msg) => {
-    logger.error('❌ WhatsApp Auth Failure', { message: msg || 'unknown' });
+    lastAuthFailureMessage = msg || 'unknown';
+    logger.error('❌ WhatsApp Auth Failure', { message: lastAuthFailureMessage });
     isClientStarting = false;
-    io.emit('auth_failure', { message: msg || 'Auth failed' });
+    io.emit('auth_failure', { message: lastAuthFailureMessage });
     redisClient.set('whatsapp:status', 'auth_failure').catch(() => {});
+    redisClient.set('whatsapp:auth_failure_message', lastAuthFailureMessage, { EX: 300 }).catch(() => {});
   });
 
   c.on('ready', () => {
     isClientReady = true;
     isClientStarting = false;
     reconnectAttemptCount = 0;
+    lastAuthFailureMessage = null;
 
     logger.info('✅ WhatsApp Client Ready');
     io.emit('ready', { status: 'connected' });
@@ -421,6 +433,7 @@ async function startWhatsApp() {
 
   isClientStarting = true;
   isClientReady = false;
+  lastAuthFailureMessage = null;
 
   if (!client) {
     const sessionPath = path.resolve(process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth'));
@@ -464,8 +477,8 @@ async function stopWhatsApp() {
 // All /api/* (except /test) require secret when GATEWAY_API_SECRET is set
 app.use('/api/', requireGatewaySecret);
 
-// /api/status: بدون await Redis — همیشه سریع پاسخ بده
-app.get('/api/status', (req, res) => {
+// /api/status: بدون await Redis — همیشه سریع پاسخ بده؛ در صورت auth_failure پیام خطا برگردانده می‌شود
+app.get('/api/status', async (req, res) => {
   const status = isClientReady ? 'ready' : isClientStarting ? 'starting' : 'disconnected';
   const body = {
     whatsapp: isClientReady,
@@ -477,6 +490,13 @@ app.get('/api/status', (req, res) => {
   if (isClientReady && lastAccountInfo) {
     body.pushname = lastAccountInfo.name;
     body.number = lastAccountInfo.number;
+  }
+  if (lastAuthFailureMessage) body.authFailure = lastAuthFailureMessage;
+  else if (redisClient?.isReady) {
+    try {
+      const cached = await redisClient.get('whatsapp:auth_failure_message');
+      if (cached) body.authFailure = cached;
+    } catch (_) {}
   }
   res.json(body);
 });
