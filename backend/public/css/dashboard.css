@@ -185,6 +185,21 @@
         .dashboard-quick-actions .btn-quick:hover { background: var(--accent); color: #fff; }
         .dashboard-quick-actions .btn-quick svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; flex-shrink: 0; }
         .dashboard-cards-title { font-size: 1rem; font-weight: 600; color: var(--text-muted); margin: 0 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .dashboard-header-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 8px; }
+        .dashboard-header-row h2 { margin: 0 0 4px; }
+        .dashboard-refresh-btn { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-secondary); font-family: var(--font); font-size: 0.9rem; cursor: pointer; transition: border-color 0.2s, color 0.2s, background 0.2s; flex-shrink: 0; }
+        .dashboard-refresh-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+        .dashboard-refresh-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .dashboard-refresh-btn.loading svg { animation: dashboard-spin 0.8s linear infinite; }
+        @keyframes dashboard-spin { to { transform: rotate(360deg); } }
+        .dashboard-refresh-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .dashboard-attention { padding: 12px 16px; margin-bottom: 16px; background: var(--danger-soft); border: 1px solid rgba(239,68,68,0.3); border-radius: var(--radius); font-size: 0.9rem; color: var(--text-primary); }
+        .dashboard-attention-link { color: var(--accent); font-weight: 600; text-decoration: none; margin: 0 4px; }
+        .dashboard-attention-link:hover { text-decoration: underline; }
+        .dashboard-cards-wrap { margin-top: 8px; }
+        .dashboard-card-group { margin-bottom: 24px; }
+        .dashboard-group-title { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin: 0 0 10px; padding: 0 2px; }
+        .dashboard-cards-in-group { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; }
         .header-menu-btn { display: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; background: none; border: none; color: var(--text-primary); cursor: pointer; border-radius: var(--radius-sm); align-items: center; justify-content: center; flex-shrink: 0; -webkit-tap-highlight-color: transparent; }
         .header-menu-btn:hover { background: var(--bg-hover); }
         .header-menu-btn svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
@@ -1227,11 +1242,16 @@
             .content { padding: 12px; }
             .content h2 { font-size: 1.1rem; margin-bottom: 12px; }
             .form-box { padding: 16px; margin-bottom: 16px; }
+            .dashboard-header-row { flex-direction: column; align-items: stretch; gap: 12px; }
+            .dashboard-refresh-btn { align-self: flex-start; }
+            .dashboard-attention { font-size: 0.85rem; padding: 10px 12px; margin-bottom: 12px; }
             .dashboard-summary { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 18px; }
             .dashboard-stat-box { min-height: 76px; padding: 12px 10px; }
             .dashboard-stat-box .stat-number { font-size: 1.4rem; }
             .dashboard-quick-actions { gap: 8px; margin-bottom: 16px; }
             .dashboard-quick-actions .btn-quick { padding: 8px 14px; font-size: 0.85rem; }
+            .dashboard-cards-in-group { grid-template-columns: 1fr; gap: 12px; }
+            .dashboard-card-group { margin-bottom: 18px; }
             .dashboard-cards { grid-template-columns: 1fr; gap: 12px; }
             .dashboard-card { padding: 16px; }
             .stat-cards { flex-direction: column; }

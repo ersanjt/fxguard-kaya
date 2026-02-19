@@ -199,12 +199,20 @@
             </nav>
             <div class="content">
                 <div id="pageDashboard" class="page show">
-                    <h2 data-i18n="page_dashboard">داشبورد</h2>
-                    <p class="dashboard-sub" data-i18n="dashboard_welcome">خلاصه مهم‌ترین اطلاعات و دسترسی سریع به بخش‌های پنل</p>
+                    <div class="dashboard-header-row">
+                        <div>
+                            <h2 data-i18n="page_dashboard">داشبورد</h2>
+                            <p class="dashboard-sub" data-i18n="dashboard_welcome">خلاصه مهم‌ترین اطلاعات و دسترسی سریع به بخش‌های پنل</p>
+                        </div>
+                        <button type="button" class="dashboard-refresh-btn" id="dashboardRefreshBtn" onclick="refreshDashboard()" title="به‌روزرسانی" aria-label="به‌روزرسانی داشبورد"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="dashboard_refresh">به‌روزرسانی</span></button>
+                    </div>
+                    <div id="dashboardAttention" class="dashboard-attention" aria-live="polite" style="display:none;"></div>
                     <div id="dashboardSummary" class="dashboard-summary" aria-label="خلاصه آمار"></div>
                     <div id="dashboardQuickActions" class="dashboard-quick-actions" aria-label="دسترسی سریع"></div>
-                    <h3 class="dashboard-cards-title" id="dashboardCardsTitle" data-i18n="dashboard_sections">بخش‌های پنل</h3>
-                    <div id="dashboardCards" class="dashboard-cards"></div>
+                    <div id="dashboardCardsWrap" class="dashboard-cards-wrap">
+                        <h3 class="dashboard-cards-title" id="dashboardCardsTitle" data-i18n="dashboard_sections">بخش‌های پنل</h3>
+                        <div id="dashboardCards" class="dashboard-cards"></div>
+                    </div>
                 </div>
                 <div id="pageConversations" class="page">
                     <div class="conv-page-header">

@@ -376,6 +376,7 @@
                     dashboard_quick_new_conv: 'New conversation',
                     dashboard_quick_new_customer: 'Add customer',
                     dashboard_quick_new_ticket: 'New ticket',
+                    dashboard_refresh: 'Refresh',
                     page_conversations: 'Conversations',
                     page_customers: 'Customers',
                     page_departments: 'Departments',
@@ -2328,20 +2329,39 @@
         function internalMsgAvatarHtml(fromUser) { var u = fromUser || {}; var name = (u.name || u.email || '').trim(); var initial = name[0] ? name[0].toUpperCase() : '?'; var pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'"></span>'; return '<span class="msg-avatar">' + escapeHtml(initial) + '</span>'; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
+        function refreshDashboard() {
+            var btn = document.getElementById('dashboardRefreshBtn');
+            if (btn) { btn.classList.add('loading'); btn.disabled = true; }
+            loadDashboard().then(function() {
+                if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
+            }).catch(function() { if (btn) { btn.classList.remove('loading'); btn.disabled = false; } });
+        }
         async function loadDashboard() {
             var container = document.getElementById('dashboardCards');
             var summaryEl = document.getElementById('dashboardSummary');
             var quickEl = document.getElementById('dashboardQuickActions');
+            var attentionEl = document.getElementById('dashboardAttention');
             if (!container) return;
             var perms = (currentUser && currentUser.permissions) || {};
             var can = function(section) { return section === 'profile' || perms[section] !== false; };
             if (container) container.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (summaryEl) summaryEl.innerHTML = '';
             if (quickEl) quickEl.innerHTML = '';
+            if (attentionEl) { attentionEl.innerHTML = ''; attentionEl.style.display = 'none'; }
             var res = await apiFetch('/api/analytics/dashboard');
             if (res.needLogin) return;
             var stats = res.ok && res.data ? res.data : {};
             var n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
+            if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
+                var parts = [];
+                if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" onclick="showPage(\'conversations\'); setConvQuickTab(\'unread\'); return false;" class="dashboard-attention-link">' + (LANG === 'fa' ? '&#128172; ' : '') + n(stats.unreadConversations) + (LANG === 'fa' ? ' مکالمه خوانده\u200cنشده' : ' unread conversation(s)') + '</a>');
+                if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" onclick="showPage(\'tasks\'); return false;" class="dashboard-attention-link">' + (LANG === 'fa' ? '&#128203; ' : '') + n(stats.tasksPending) + (LANG === 'fa' ? ' تسک در انتظار' : ' task(s) pending') + '</a>');
+                if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" onclick="showPage(\'announcements\'); return false;" class="dashboard-attention-link">' + (LANG === 'fa' ? '&#128276; ' : '') + n(stats.unreadAnnouncements) + (LANG === 'fa' ? ' اعلان خوانده\u200cنشده' : ' unread announcement(s)') + '</a>');
+                if (parts.length) {
+                    attentionEl.innerHTML = (LANG === 'fa' ? 'نیاز به توجه: ' : 'Needs attention: ') + parts.join(' · ');
+                    attentionEl.style.display = 'block';
+                }
+            }
             if (summaryEl) {
                 var summaryItems = [];
                 if (can('staff_activity') || can('users')) {
@@ -2373,29 +2393,44 @@
                 }).join('');
                 quickEl.innerHTML = quickHtml || '';
             }
+            var groupLabels = { communications: t('nav_communications'), organization: t('nav_organization'), settings: t('nav_settings') };
             var cards = [
-                { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread')) : (n(stats.openConversations) + ' ' + (LANG === 'fa' ? 'باز' : 'open')), badgeWarn: n(stats.unreadConversations) > 0 },
-                { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + (LANG === 'fa' ? ' مشتری' : ' customers') },
-                { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', stat: n(stats.ticketsOpen) + (LANG === 'fa' ? ' تیکت باز' : ' open') },
-                { page: 'tasks', section: 'tasks', title: t('nav_tasks'), icon: 'icon-task', stat: n(stats.tasksPending) + (LANG === 'fa' ? ' تسک در انتظار' : ' pending') },
-                { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-user-online', stat: n(stats.announcementsCount) + (LANG === 'fa' ? ' اعلان' : ' announcements') },
-                { page: 'departments', section: 'departments', title: t('nav_departments'), icon: 'icon-building', stat: null },
-                { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user', stat: null },
-                { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
-                { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-task', stat: null },
-                { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone', stat: null },
-                { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart', stat: null },
-                { page: 'services', section: 'services', title: t('nav_services'), icon: 'icon-building', stat: null },
-                { page: 'profile', section: 'profile', title: t('nav_profile'), icon: 'icon-user', stat: null },
-                { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
-                { page: 'supervision', section: 'supervision', title: t('nav_supervision'), icon: 'icon-chart', stat: null },
-                { page: 'staff-activity', section: 'staff_activity', title: t('nav_staff_activity'), icon: 'icon-user-online', stat: null }
+                { page: 'conversations', section: 'conversations', group: 'communications', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread')) : (n(stats.openConversations) + ' ' + (LANG === 'fa' ? 'باز' : 'open')), badgeWarn: n(stats.unreadConversations) > 0 },
+                { page: 'customers', section: 'customers', group: 'communications', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + (LANG === 'fa' ? ' مشتری' : ' customers') },
+                { page: 'tickets', section: 'tickets', group: 'communications', title: t('nav_tickets'), icon: 'icon-ticket', stat: n(stats.ticketsOpen) + (LANG === 'fa' ? ' تیکت باز' : ' open') },
+                { page: 'announcements', section: 'announcements', group: 'communications', title: t('nav_announcements'), icon: 'icon-user-online', stat: n(stats.announcementsCount) + (LANG === 'fa' ? ' اعلان' : ' announcements') },
+                { page: 'internal-chat', section: 'internal_chat', group: 'communications', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
+                { page: 'whatsapp', section: 'whatsapp', group: 'communications', title: t('nav_whatsapp'), icon: 'icon-phone', stat: null },
+                { page: 'tasks', section: 'tasks', group: 'organization', title: t('nav_tasks'), icon: 'icon-task', stat: n(stats.tasksPending) + (LANG === 'fa' ? ' تسک در انتظار' : ' pending') },
+                { page: 'processes', section: 'processes', group: 'organization', title: t('nav_processes'), icon: 'icon-task', stat: null },
+                { page: 'departments', section: 'departments', group: 'organization', title: t('nav_departments'), icon: 'icon-building', stat: null },
+                { page: 'users', section: 'users', group: 'organization', title: t('nav_users'), icon: 'icon-user', stat: null },
+                { page: 'branches', section: 'branches', group: 'organization', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
+                { page: 'staff-activity', section: 'staff_activity', group: 'organization', title: t('nav_staff_activity'), icon: 'icon-user-online', stat: null },
+                { page: 'supervision', section: 'supervision', group: 'organization', title: t('nav_supervision'), icon: 'icon-chart', stat: null },
+                { page: 'profile', section: 'profile', group: 'settings', title: t('nav_profile'), icon: 'icon-user', stat: null },
+                { page: 'rates', section: 'rates', group: 'settings', title: t('nav_rates'), icon: 'icon-chart', stat: null },
+                { page: 'services', section: 'services', group: 'settings', title: t('nav_services'), icon: 'icon-building', stat: null },
+                { page: 'panel-settings', section: 'panel_settings', group: 'settings', title: t('nav_panel_settings'), icon: 'icon-chart', stat: null }
             ];
-            var html = '';
+            var byGroup = {};
             cards.forEach(function(c) {
                 if (!can(c.section)) return;
-                var badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
-                html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
+                var g = c.group || 'settings';
+                if (!byGroup[g]) byGroup[g] = [];
+                byGroup[g].push(c);
+            });
+            var groupOrder = ['communications', 'organization', 'settings'];
+            var html = '';
+            groupOrder.forEach(function(g) {
+                var list = byGroup[g];
+                if (!list || list.length === 0) return;
+                html += '<div class="dashboard-card-group"><h4 class="dashboard-group-title">' + escapeHtml(groupLabels[g] || g) + '</h4><div class="dashboard-cards-in-group">';
+                list.forEach(function(c) {
+                    var badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
+                    html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
+                });
+                html += '</div></div>';
             });
             container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : 'No sections available.') + '</div>');
             var cardsTitleEl = document.getElementById('dashboardCardsTitle');

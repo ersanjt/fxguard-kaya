@@ -81,6 +81,7 @@ window.__I18N_TR = {
     dashboard_quick_new_conv: 'Yeni konuşma',
     dashboard_quick_new_customer: 'Müşteri ekle',
     dashboard_quick_new_ticket: 'Yeni bilet',
+    dashboard_refresh: 'Yenile',
     page_conversations: 'Konuşmalar',
     conv_page_desc: 'Müşteri konuşmalarını yönetin, yanıtlayın ve departmanlara atayın.',
     conv_new: 'Yeni konuşma',
