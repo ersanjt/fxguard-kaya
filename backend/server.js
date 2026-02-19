@@ -992,6 +992,7 @@ const internalRoutes = require('./routes/internal');
 apiRouter.use('/announcements', authMiddleware, announcementRoutes);
 apiRouter.use('/internal', authMiddleware, internalRoutes(io));
 apiRouter.use('/panel-settings', require('./routes/panelSettings'));
+apiRouter.use('/company-emails', authMiddleware, require('./routes/companyEmails'));
 
 // وب‌هوک پیام ورودی واتساپ. بدنه: from/contact, body, timestamp, hasMedia, type؟, media؟
 // رسانه: اگر media.url با http/https باشد → دانلود و ذخیره در uploads و mediaData.url نسبی؛ اگر media.data (base64) باشد → ذخیره در uploads و mediaData.url. نوع پیام از mimetype/filename استنتاج می‌شود.
