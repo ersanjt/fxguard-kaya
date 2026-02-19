@@ -10,6 +10,7 @@ async function getSettings() {
 
 // عمومی — برای صفحه ورود و اعمال ظاهر برای همه کاربران (بدون احراز هویت)
 router.get('/public/branding', async (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     try {
         const s = await getSettings();
         res.json({

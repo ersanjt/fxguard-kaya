@@ -993,7 +993,12 @@ app.get('/health', (req, res) => {
 });
 
 // ساختار لینک‌ها: / → پنل (https://kaya.fxguard.io/)، /dashboard و /dashboard.html → ریدایرکت به /
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'dashboard.html')));
+app.get('/', (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
+});
 app.get('/dashboard.html', (req, res) => res.redirect('/'));
 app.get('/dashboard', (req, res) => res.redirect('/'));
 app.get('/dashboard/', (req, res) => res.redirect('/'));
