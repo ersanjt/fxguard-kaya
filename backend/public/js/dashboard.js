@@ -6374,6 +6374,19 @@
         })();
 
         if (token) {
+            var showAppTimeout = setTimeout(function() {
+                var loadingEl = document.getElementById('appLoading');
+                if (loadingEl && loadingEl.style.display !== 'none') {
+                    loadingEl.style.display = 'none';
+                    document.getElementById('app').classList.add('show');
+                }
+            }, 10000);
+            function hideLoadingShowApp() {
+                clearTimeout(showAppTimeout);
+                var loadingEl = document.getElementById('appLoading');
+                if (loadingEl) loadingEl.style.display = 'none';
+                document.getElementById('app').classList.add('show');
+            }
             apiFetch('/api/auth/me').then(async function(res) {
                 if (res.needLogin || !res.ok) { logout(); return; }
                 var u = res.data;
@@ -6393,11 +6406,9 @@
                         startNavBadgeRefresh();
                         showTotpPromptIfNeeded();
                     } catch (e) { console.error('Post-me init:', e); }
-                    var loadingEl = document.getElementById('appLoading');
-                    if (loadingEl) loadingEl.style.display = 'none';
-                    document.getElementById('app').classList.add('show');
-                } else { logout(); }
-            }).catch(function() { logout(); });
+                    hideLoadingShowApp();
+                } else { clearTimeout(showAppTimeout); logout(); }
+            }).catch(function() { clearTimeout(showAppTimeout); logout(); });
         } else {
             fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
         }
