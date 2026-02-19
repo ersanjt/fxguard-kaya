@@ -181,7 +181,7 @@
                     modal_user_perms: 'دسترس�R ب�! بخش�R�!ا:',
                     modal_ann_title: 'اع�ا�  �&�!�&',
                     modal_ann_gotit: '�&ت��ج�! شد�&',
-                    footer_text: 'صراف�R کا�Rا � پ��رتا� کارک� ا� ',
+                    footer_text: 'صرافی کایا — پورتال کارکنان',
                     section_conversations: '�&کا��&ات',
                     section_customers: '�&شتر�Rا� ',
                     section_tickets: 'ت�Rکت�R�!ا',
@@ -491,7 +491,7 @@
                     modal_user_perms: 'Section access:',
                     modal_ann_title: 'Important notice',
                     modal_ann_gotit: 'Got it',
-                    footer_text: 'Kaya Exchange � Staff portal',
+                    footer_text: 'Kaya Exchange — Staff Portal',
                     section_conversations: 'Conversations',
                     section_customers: 'Customers',
                     section_tickets: 'Tickets',
@@ -5967,9 +5967,8 @@
             });
         })();
         (function initFooterYear() {
-            /* سال و کپی‌رایت در فوتر نمایش داده نمی‌شود */
             var el = document.getElementById('appFooterYear');
-            if (el) el.textContent = '';
+            if (el) el.textContent = new Date().getFullYear();
         })();
 
         (function initLang() {
