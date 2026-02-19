@@ -348,7 +348,8 @@ router.post('/:id/send', async (req, res) => {
             await maybeSendEmployeeIntro(conversation, req.userId, user, dept);
         }
         const proto = req.get('x-forwarded-proto') || req.protocol;
-        const baseUrl = process.env.BACKEND_PUBLIC_URL || (proto + '://' + req.get('host'));
+        const host = req.get('host') || '';
+        const baseUrl = process.env.BACKEND_PUBLIC_URL || (proto + '://' + host);
         let mediaUrl = null;
         let msgType = req.body.type || 'text';
         let hasMedia = false;
@@ -356,7 +357,12 @@ router.post('/:id/send', async (req, res) => {
         if (media && (media.url || media.filename)) {
             hasMedia = true;
             const relPath = media.url || ('/uploads/' + media.filename);
-            mediaUrl = relPath.startsWith('http') ? relPath : baseUrl + (relPath.startsWith('/') ? '' : '/') + relPath;
+            if (relPath.startsWith('http')) {
+                mediaUrl = relPath;
+            } else {
+                const root = (process.env.BACKEND_PUBLIC_URL && process.env.BACKEND_PUBLIC_URL.replace(/\/$/, '')) || baseUrl.replace(/\/$/, '');
+                mediaUrl = root + (relPath.startsWith('/') ? relPath : '/' + relPath);
+            }
             const mime = media.mimetype || '';
             if (mime.startsWith('image/')) msgType = 'image';
             else if (mime.startsWith('video/')) msgType = 'video';

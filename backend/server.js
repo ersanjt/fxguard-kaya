@@ -405,6 +405,8 @@ function inferMessageTypeFromMedia(media) {
 async function processIncomingMessage(messageData) {
     try {
         if (messageData.isStatus) return;
+        // پیام‌های گروهی را نادیده بگیر — فقط چت مستقیم با مشتری در CRM ثبت و پاسخ خودکار ارسال شود
+        if (messageData.chat && messageData.chat.isGroup) return;
         const { body, contact, from, timestamp, hasMedia, media } = messageData;
         const rawPhone = (contact && contact.number != null) ? contact.number : from;
         if (rawPhone == null || rawPhone === '') return;

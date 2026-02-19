@@ -2910,11 +2910,20 @@
                     if (mime.indexOf('audio/') === 0 || /\.(mp3|ogg|wav|m4a)$/.test(name)) return 'audio';
                     return 'document';
                 }
-                if (m.hasMedia && m.mediaData && (m.mediaData.url && String(m.mediaData.url).trim())) {
-                    var rawUrl = (m.mediaData.url || '').trim();
-                    var mediaBase = (rawUrl && rawUrl.startsWith('http')) ? '' : (window.location.origin || baseUrl);
-                    var mediaUrl = (rawUrl && rawUrl.startsWith('http')) ? rawUrl : (mediaBase + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
-                    mediaUrl = ensureHttpsUrl(mediaUrl);
+                var mediaUrl = '';
+                if (m.hasMedia && m.mediaData) {
+                    var md = m.mediaData;
+                    if (md.url && String(md.url).trim()) {
+                        var rawUrl = String(md.url).trim();
+                        var mediaBase = (rawUrl.startsWith('http')) ? '' : (window.location.origin || baseUrl);
+                        mediaUrl = rawUrl.startsWith('http') ? rawUrl : (mediaBase + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
+                        mediaUrl = ensureHttpsUrl(mediaUrl);
+                    } else if (md.data && (inferMediaType(m) === 'image' || (md.mimetype || '').toLowerCase().indexOf('image/') === 0)) {
+                        var mime = (md.mimetype || 'image/jpeg').split(';')[0].trim();
+                        mediaUrl = 'data:' + mime + ';base64,' + md.data;
+                    }
+                }
+                if (mediaUrl && m.hasMedia && m.mediaData) {
                     var mediaType = inferMediaType(m);
                     if (mediaType === 'image') {
                         var imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
