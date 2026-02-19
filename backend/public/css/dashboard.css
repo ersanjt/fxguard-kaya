@@ -587,6 +587,12 @@
         .panel-settings-section .form-hint { display: block; font-size: 0.85rem; color: var(--text-muted); margin-top: 6px; line-height: 1.4; }
         .panel-settings-section .form-hint-language { min-height: 1.2em; }
         .panel-settings-section-languages .panel-default-language-wrap { margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
+        .panel-test-email-row { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+        .panel-test-email-inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
+        .panel-test-email-inline .panel-test-email-input { flex: 1; min-width: 180px; }
+        .panel-test-email-status { font-size: 0.85rem; margin-top: 6px; display: inline-block; }
+        .panel-test-email-status.success { color: var(--success, #059669); }
+        .panel-test-email-status.error { color: var(--danger, #dc2626); }
         .panel-setting-preview { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
         .panel-preview-label { font-size: 0.85rem; color: var(--text-muted); }
         .panel-logo-preview-img { max-height: 36px; max-width: 140px; object-fit: contain; vertical-align: middle; border-radius: 6px; }

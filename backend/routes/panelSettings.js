@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
 const { PanelSetting } = require('../models');
-const { getPanelSettings, getSupportedLanguages } = require('../services/panelSettingsLoader');
+const { getPanelSettings, getSupportedLanguages, getPanelEmailConfig } = require('../services/panelSettingsLoader');
+const emailService = require('../services/emailService');
 
 async function getSettings() {
     return getPanelSettings();
@@ -57,7 +58,9 @@ router.get('/', authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const s = await getSettings();
-        res.json(s);
+        const out = { ...s };
+        delete out.smtpPass;
+        res.json(out);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -85,7 +88,7 @@ router.put('/', authMiddleware, async (req, res) => {
         if (smtpHost !== undefined) row.smtpHost = smtpHost === '' ? null : smtpHost;
         if (smtpPort !== undefined) row.smtpPort = smtpPort === '' ? null : smtpPort;
         if (smtpUser !== undefined) row.smtpUser = smtpUser === '' ? null : smtpUser;
-        if (smtpPass !== undefined) row.smtpPass = smtpPass === '' ? null : smtpPass;
+        if (smtpPass !== undefined && String(smtpPass).trim() !== '') row.smtpPass = String(smtpPass).trim();
         if (smtpFrom !== undefined) row.smtpFrom = smtpFrom === '' ? null : smtpFrom;
         if (smtpFromName !== undefined) row.smtpFromName = smtpFromName === '' ? null : smtpFromName;
         if (smtpSecure !== undefined) row.smtpSecure = !!smtpSecure;
@@ -95,10 +98,49 @@ router.put('/', authMiddleware, async (req, res) => {
         if (defaultLanguage !== undefined && (defaultLanguage === 'fa' || defaultLanguage === 'en' || defaultLanguage === 'tr')) row.defaultLanguage = defaultLanguage;
         await row.save();
         const s = await getSettings();
+        if (footerStyle !== undefined) s.footerStyle = (footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(footerStyle) >= 0) ? footerStyle : 'accent';
         s.supportedLanguages = getSupportedLanguages(s);
+        delete s.smtpPass;
         res.json(s);
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// ارسال ایمیل تست — برای اطمینان از صحت تنظیمات SMTP
+router.post('/test-email', authMiddleware, async (req, res) => {
+    try {
+        if (!req.canAccess || !req.canAccess('panel_settings')) {
+            return res.status(403).json({ error: 'دسترسی به تنظیمات پنل ندارید.' });
+        }
+        const to = (req.body.to || req.body.email || '').toString().trim();
+        if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
+            return res.status(400).json({ error: 'آدرس ایمیل معتبر وارد کنید.' });
+        }
+        const settings = await getPanelSettings();
+        const emailConfig = getPanelEmailConfig(settings);
+        const siteName = (settings && settings.siteName) || 'پورتال کارکنان';
+        const title = 'ایمیل تست — ' + siteName;
+        const body = '<p>این ایمیل برای تست تنظیمات SMTP پنل ارسال شده است. اگر آن را دریافت کرده‌اید، ارسال ایمیل درست کار می‌کند.</p>';
+        const mailOpts = {
+            to,
+            subject: title,
+            text: 'این ایمیل برای تست تنظیمات SMTP پنل ارسال شده است.',
+            html: emailService.baseHtml(title, body)
+        };
+        let sent = false;
+        if (emailConfig && emailConfig.host) {
+            sent = await emailService.sendMailWithConfig(emailConfig, mailOpts);
+        } else {
+            sent = await emailService.sendMail(mailOpts);
+        }
+        if (sent) {
+            res.json({ ok: true, message: 'ایمیل تست ارسال شد. صندوق ورودی (و اسپم) را بررسی کنید.' });
+        } else {
+            res.status(500).json({ error: 'ارسال ایمیل ناموفق بود. Host، پورت و احراز هویت را بررسی کنید.' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message || 'خطای سرور' });
     }
 });
 

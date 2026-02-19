@@ -78,6 +78,8 @@
                     panel_smtp_from_name: 'نام فرستنده',
                     panel_smtp_secure: 'استفاده از SSL/TLS (پورت ۴۶۵)',
                     panel_email_login_notification: 'ارسال اعلان ورود به ایمیل کاربر',
+                    panel_test_email_label: 'ارسال ایمیل تست',
+                    panel_test_email_btn: 'ارسال تست',
                     panel_section_languages: 'زبان‌های سایت',
                     panel_section_languages_desc: 'زبان‌های در دسترس برای صفحه ورود و منوی پنل. در حالت تک‌زبانه سوئیچ زبان مخفی است؛ در حالت چندزبانگی کاربران می‌توانند زبان را عوض کنند.',
                     panel_language_mode: 'حالت زبان',
@@ -427,6 +429,8 @@
                     panel_smtp_from_name: 'From name',
                     panel_smtp_secure: 'Use SSL/TLS (port 465)',
                     panel_email_login_notification: 'Send login notification email to user',
+                    panel_test_email_label: 'Send test email',
+                    panel_test_email_btn: 'Send test',
                     panel_section_visibility: 'Section visibility',
                     panel_visibility_desc: 'Hidden sections are not shown in the menu or anywhere on the site. Checked = visible.',
                     user_perms_select_all: 'All access',
@@ -3649,6 +3653,8 @@
             var res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
             if (btn) { btn.disabled = false; btn.textContent = t('btn_save'); }
             if (res.ok && res.data) {
+                var savedFooterStyle = (function() { var el = document.getElementById('panelSettingFooterStyle'); var v = el ? el.value : ''; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : null; })();
+                if (savedFooterStyle != null) res.data.footerStyle = savedFooterStyle;
                 applyBranding(res.data);
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
                 var mode = res.data.languageMode;
@@ -3659,6 +3665,29 @@
                 toast((res.data && res.data.error) || t('err_generic'), true);
                 if (statusEl) { statusEl.textContent = (res.data && res.data.error) || t('err_generic'); statusEl.className = 'panel-settings-save-status error'; statusEl.style.display = 'inline'; }
             }
+        }
+        async function sendPanelTestEmail() {
+            var toEl = document.getElementById('panelTestEmailTo');
+            var btn = document.getElementById('panelTestEmailBtn');
+            var statusEl = document.getElementById('panelTestEmailStatus');
+            var to = (toEl && toEl.value || '').trim();
+            if (!to) { toast(LANG === 'fa' ? 'آدرس ایمیل را وارد کنید.' : 'Enter email address.', true); return; }
+            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ارسال...' : 'Sending...'); }
+            if (statusEl) { statusEl.style.display = 'none'; }
+            try {
+                var res = await apiFetch('/api/panel-settings/test-email', { method: 'POST', body: JSON.stringify({ to: to }) });
+                if (res.ok && res.data && res.data.ok) {
+                    toast(res.data.message || (LANG === 'fa' ? 'ایمیل تست ارسال شد.' : 'Test email sent.'));
+                    if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ارسال شد' : 'Sent'); statusEl.className = 'panel-test-email-status success'; statusEl.style.display = 'inline'; }
+                } else {
+                    toast((res.data && res.data.error) || (LANG === 'fa' ? 'ارسال ناموفق' : 'Send failed'), true);
+                    if (statusEl) { statusEl.textContent = (res.data && res.data.error) || ''; statusEl.className = 'panel-test-email-status error'; statusEl.style.display = 'inline'; }
+                }
+            } catch (e) {
+                toast(LANG === 'fa' ? 'خطا در ارسال' : 'Send error', true);
+                if (statusEl) { statusEl.textContent = (e && e.message) || ''; statusEl.className = 'panel-test-email-status error'; statusEl.style.display = 'inline'; }
+            }
+            if (btn) { btn.disabled = false; btn.textContent = t('panel_test_email_btn'); }
         }
         var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','services','panel-settings'];
         function applyHashRoute() {
@@ -6097,6 +6126,7 @@
             window.showPage = showPage;
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
+            window.sendPanelTestEmail = sendPanelTestEmail;
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
             window.updatePanelLivePreview = updatePanelLivePreview;
@@ -6179,6 +6209,7 @@
             };
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
+            window.sendPanelTestEmail = sendPanelTestEmail;
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
             window.updatePanelLivePreview = updatePanelLivePreview;

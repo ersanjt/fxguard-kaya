@@ -1251,6 +1251,14 @@
                                             <span data-i18n="panel_email_login_notification">ارسال اعلان ورود به ایمیل کاربر</span>
                                         </label>
                                     </div>
+                                    <div class="form-group panel-test-email-row">
+                                        <label for="panelTestEmailTo" data-i18n="panel_test_email_label">ارسال ایمیل تست</label>
+                                        <div class="panel-test-email-inline">
+                                            <input type="email" id="panelTestEmailTo" placeholder="email@example.com" class="panel-test-email-input">
+                                            <button type="button" id="panelTestEmailBtn" class="btn-secondary panel-test-email-btn" onclick="typeof sendPanelTestEmail==='function'&&sendPanelTestEmail()" data-i18n="panel_test_email_btn">ارسال تست</button>
+                                        </div>
+                                        <span id="panelTestEmailStatus" class="panel-test-email-status" style="display:none;"></span>
+                                    </div>
                                 </section>
                                 <section class="panel-settings-section panel-settings-section-visibility">
                                     <h3 class="panel-settings-section-title" data-i18n="panel_section_visibility">نمایش بخش‌ها در سایت</h3>
