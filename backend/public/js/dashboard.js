@@ -6380,15 +6380,15 @@
                     loadingEl.style.display = 'none';
                     document.getElementById('app').classList.add('show');
                 }
-            }, 10000);
+            }, 8000);
             function hideLoadingShowApp() {
                 clearTimeout(showAppTimeout);
                 var loadingEl = document.getElementById('appLoading');
                 if (loadingEl) loadingEl.style.display = 'none';
                 document.getElementById('app').classList.add('show');
             }
-            apiFetch('/api/auth/me').then(async function(res) {
-                if (res.needLogin || !res.ok) { logout(); return; }
+            apiFetch('/api/auth/me').then(function(res) {
+                if (res.needLogin || !res.ok) { clearTimeout(showAppTimeout); logout(); return; }
                 var u = res.data;
                 currentUser = u;
                 if (u && u.email) {
@@ -6397,7 +6397,8 @@
                     document.getElementById('loginBox').style.display = 'none';
                     try {
                         applyNavByRole();
-                        await loadPanelSettingsAndApply();
+                        loadPanelSettingsAndApply().then(function() {}).catch(function() {});
+                        hideLoadingShowApp();
                         applyHashRoute();
                         loadGeneralAnnouncementsMarquee();
                         startRatesInterval();
@@ -6405,8 +6406,7 @@
                         connectSocket();
                         startNavBadgeRefresh();
                         showTotpPromptIfNeeded();
-                    } catch (e) { console.error('Post-me init:', e); }
-                    hideLoadingShowApp();
+                    } catch (e) { console.error('Post-me init:', e); hideLoadingShowApp(); }
                 } else { clearTimeout(showAppTimeout); logout(); }
             }).catch(function() { clearTimeout(showAppTimeout); logout(); });
         } else {
