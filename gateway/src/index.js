@@ -28,9 +28,9 @@ const CONFIG = {
   sendLimitWindowMs: parseInt(process.env.SEND_LIMIT_WINDOW_MS) || 60 * 1000,
   sendLimitMax: parseInt(process.env.SEND_LIMIT_MAX) || 60,
 
-  // اتصال مجدد خودکار
+  // اتصال مجدد خودکار — تأخیر اولیه طولانی‌تر تا واتساپ «الان نمی‌شود دستگاه وصل شود» نزند (rate limit)
   autoReconnect: process.env.WHATSAPP_AUTO_RECONNECT !== 'false',
-  reconnectDelayMs: Math.max(5000, parseInt(process.env.WHATSAPP_RECONNECT_DELAY_MS) || 15000),
+  reconnectDelayMs: Math.max(10000, parseInt(process.env.WHATSAPP_RECONNECT_DELAY_MS) || 90000),
   reconnectMaxRetries: Math.max(1, parseInt(process.env.WHATSAPP_RECONNECT_MAX_RETRIES) || 10),
   reconnectBackoffMultiplier: parseFloat(process.env.WHATSAPP_RECONNECT_BACKOFF) || 1.5,
 

@@ -1,0 +1,24 @@
+# ========== Backend .env برای سرور (kaya.fxguard.io) ==========
+# محتوا را کپی کن و در سرور داخل فایل backend/.env بچسبان (جایگزین کل فایل کن)
+
+USE_SQLITE=true
+PORT=3002
+NODE_ENV=production
+
+# کلید JWT — در production حتماً یک رشتهٔ طولانی و تصادفی بگذار
+JWT_SECRET=YourSuperSecretJWTKey123456789!
+
+# آدرس فرانت و CORS (دامنهٔ واقعی پنل)
+CORS_ORIGINS=https://kaya.fxguard.io,http://kaya.fxguard.io
+FRONTEND_URL=https://kaya.fxguard.io
+
+# آدرس عمومی بک‌اند — برای لینک رسانه/آپلود و ارسال به واتساپ الزامی است
+BACKEND_PUBLIC_URL=https://kaya.fxguard.io
+
+# Gateway واتساپ (روی همین سرور؛ localhost درسته)
+GATEWAY_URL=http://127.0.0.1:3001
+GATEWAY_API_SECRET=fb9c511e6019a3d7f599f000cf40352d44cd0cdb5943c2d922c780ef03a8590b
+
+# ---------- اختیاری: در پوشهٔ gateway اگر خطای «الان نمی‌شود دستگاه وصل شود» زیاد می‌آید ----------
+# WHATSAPP_RECONNECT_DELAY_MS=90000
+# (پیش‌فرض الان ۹۰ ثانیه است؛ بعد از قطع، قبل از درخواست QR جدید این مدت صبر می‌شود تا محدودیت واتساپ کمتر شود.)

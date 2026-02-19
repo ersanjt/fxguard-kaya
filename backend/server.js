@@ -376,7 +376,8 @@ function resolveIncomingMediaFromBase64(media) {
             else if (ct.includes('image/gif')) ext = '.gif';
             else if (ct.includes('image/webp')) ext = '.webp';
             else if (ct.includes('video/')) ext = '.mp4';
-            else if (ct.includes('audio/')) ext = '.mp3';
+            else if (ct.includes('audio/ogg') || ct.includes('audio/opus')) ext = '.ogg';
+            else if (ct.includes('audio/')) ext = '.m4a';
             else if (ct.includes('pdf')) ext = '.pdf';
             else ext = '.bin';
         }
@@ -397,7 +398,7 @@ function inferMessageTypeFromMedia(media) {
     const name = (media.filename || media.caption || '').toLowerCase();
     if (mime.startsWith('image/') || /\.(jpe?g|png|gif|webp|bmp)$/i.test(name)) return 'image';
     if (mime.startsWith('video/') || /\.(mp4|webm|mov|avi)$/i.test(name)) return 'video';
-    if (mime.startsWith('audio/') || /\.(mp3|ogg|wav|m4a)$/i.test(name)) return 'audio';
+    if (mime.startsWith('audio/') || /\.(mp3|ogg|wav|m4a|opus|oga)$/i.test(name)) return 'audio';
     if (mime || name) return 'document';
     return 'text';
 }
@@ -415,19 +416,21 @@ async function processIncomingMessage(messageData) {
         const rawType = (messageData.type || '').toLowerCase();
         if (rawType === 'reaction' || rawType === 'read_receipt' || rawType === 'delivery' || rawType === 'update') return;
         const hasText = body != null && String(body).trim().length > 0;
-        const hasUsableMedia = hasMedia && media && (media.url || (media.filename && String(media.filename).trim()) || (media.caption && String(media.caption).trim()));
+        const hasUsableMedia = hasMedia && media && (media.url || (media.filename && String(media.filename).trim()) || (media.caption && String(media.caption).trim()) || media.data);
         if (!hasText && !hasUsableMedia) return;
         
         let resolvedMedia = media || null;
-        let msgType = messageData.type || 'text';
+        let msgType = (messageData.type || 'text').toLowerCase();
+        if (msgType === 'ptt') msgType = 'audio';
         if (hasMedia && media) {
             if (media.url && (String(media.url).trim().startsWith('http://') || String(media.url).trim().startsWith('https://'))) {
                 resolvedMedia = await resolveIncomingMedia(media);
             } else if (media.data) {
                 resolvedMedia = resolveIncomingMediaFromBase64(media);
             }
-            if (resolvedMedia && (resolvedMedia.url || resolvedMedia.filename)) msgType = inferMessageTypeFromMedia(resolvedMedia);
+            if (resolvedMedia && (resolvedMedia.url || resolvedMedia.filename || resolvedMedia.data)) msgType = inferMessageTypeFromMedia(resolvedMedia);
         }
+        if (msgType === 'ptt') msgType = 'audio';
         
         // 1. پیدا کردن یا ایجاد مشتری
         let customer = await Customer.findOne({ 
