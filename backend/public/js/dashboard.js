@@ -2371,8 +2371,6 @@
             currentUser = null;
             localStorage.removeItem('crm_token');
             document.documentElement.classList.remove('auth-has-token');
-            var appLoadingEl = document.getElementById('appLoading');
-            if (appLoadingEl) appLoadingEl.style.display = 'none';
             document.getElementById('loginBox').style.display = 'flex';
             document.getElementById('app').classList.remove('show');
         }
@@ -6374,31 +6372,18 @@
         })();
 
         if (token) {
-            var showAppTimeout = setTimeout(function() {
-                var loadingEl = document.getElementById('appLoading');
-                if (loadingEl && loadingEl.style.display !== 'none') {
-                    loadingEl.style.display = 'none';
-                    document.getElementById('app').classList.add('show');
-                }
-            }, 8000);
-            function hideLoadingShowApp() {
-                clearTimeout(showAppTimeout);
-                var loadingEl = document.getElementById('appLoading');
-                if (loadingEl) loadingEl.style.display = 'none';
-                document.getElementById('app').classList.add('show');
-            }
-            apiFetch('/api/auth/me').then(function(res) {
-                if (res.needLogin || !res.ok) { clearTimeout(showAppTimeout); logout(); return; }
+            apiFetch('/api/auth/me').then(async function(res) {
+                if (res.needLogin || !res.ok) { logout(); return; }
                 var u = res.data;
                 currentUser = u;
                 if (u && u.email) {
                     setUserDisplay(u);
                     document.documentElement.classList.add('auth-has-token');
                     document.getElementById('loginBox').style.display = 'none';
+                    document.getElementById('app').classList.add('show');
                     try {
                         applyNavByRole();
-                        loadPanelSettingsAndApply().then(function() {}).catch(function() {});
-                        hideLoadingShowApp();
+                        await loadPanelSettingsAndApply();
                         applyHashRoute();
                         loadGeneralAnnouncementsMarquee();
                         startRatesInterval();
@@ -6406,9 +6391,9 @@
                         connectSocket();
                         startNavBadgeRefresh();
                         showTotpPromptIfNeeded();
-                    } catch (e) { console.error('Post-me init:', e); hideLoadingShowApp(); }
-                } else { clearTimeout(showAppTimeout); logout(); }
-            }).catch(function() { clearTimeout(showAppTimeout); logout(); });
+                    } catch (e) { console.error('Post-me init:', e); }
+                } else { logout(); }
+            }).catch(function() { logout(); });
         } else {
             fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
         }
