@@ -993,12 +993,12 @@
                     var fullSet = itemsHtml + itemsHtml;
                     var copyCount = 2;
                     var isDesktop = window.innerWidth > 768;
-                    var maxCopies = isDesktop ? 20 : 8;
+                    var maxCopies = isDesktop ? 24 : 12;
                     trackEl.innerHTML = fullSet;
                     while (copyCount < maxCopies) {
                         var trackW = trackEl.scrollWidth;
                         var containerW = itemsEl.clientWidth || 400;
-                        if (trackW >= containerW * 2) break;
+                        if (trackW >= containerW * 2.5) break;
                         fullSet = fullSet + itemsHtml;
                         trackEl.innerHTML = fullSet;
                         copyCount++;
@@ -1007,12 +1007,13 @@
                     requestAnimationFrame(function() {
                         var trackWidth = trackEl.scrollWidth;
                         var containerWidth = itemsEl.clientWidth || 1;
+                        var step = (100 / copyCount);
                         if (isDesktop && items.length > 0) {
                             itemsEl.classList.add('ticker-auto-scroll');
-                            trackEl.style.setProperty('--ticker-step', '-' + (100 / copyCount) + '%');
+                            trackEl.style.setProperty('--ticker-step', '-' + step + '%');
                         } else if (trackWidth > containerWidth) {
                             itemsEl.classList.add('ticker-auto-scroll');
-                            trackEl.style.setProperty('--ticker-step', '-' + (100 / copyCount) + '%');
+                            trackEl.style.setProperty('--ticker-step', '-' + step + '%');
                         } else {
                             itemsEl.classList.remove('ticker-auto-scroll');
                         }
@@ -4586,6 +4587,18 @@
             var cancelBtn = document.getElementById('btnDeptCancel'); if (cancelBtn) cancelBtn.style.display = '';
             toast(t('dept_edit_hint'), false);
         }
+        function normalizeKeywordsInput(raw) {
+            if (!raw || !raw.trim()) return '';
+            var parts = raw.split(/[,،;\s]+/).map(function(p) { return p.trim(); }).filter(Boolean);
+            var seen = {};
+            return parts.filter(function(p) { var k = p.toLowerCase(); if (seen[k]) return false; seen[k] = true; return true; }).join(', ');
+        }
+        function formatDeptKeywords() {
+            var el = document.getElementById('deptKeywords');
+            if (!el) return;
+            el.value = normalizeKeywordsInput(el.value);
+            toast(LANG === 'fa' ? 'کلمات کلیدی مرتب شد' : 'Keywords formatted');
+        }
         async function saveDepartment() {
             var name = document.getElementById('deptName').value.trim();
             if (!name) { toast(t('dept_name_required'), true); return; }
@@ -4593,7 +4606,8 @@
             var colorEl = document.getElementById('deptColor');
             var defEl = document.getElementById('deptIsDefault');
             var actEl = document.getElementById('deptIsActive');
-            var body = { name: name, description: document.getElementById('deptDesc').value, keywords: document.getElementById('deptKeywords').value, branchId: branchId };
+            var keywordsRaw = document.getElementById('deptKeywords').value;
+            var body = { name: name, description: document.getElementById('deptDesc').value.trim(), keywords: normalizeKeywordsInput(keywordsRaw), branchId: branchId };
             if (colorEl) body.color = colorEl.value || '#10b981';
             if (defEl) body.isDefault = defEl.checked;
             if (actEl) body.isActive = actEl.checked;
@@ -5837,6 +5851,7 @@
                 var branchName = (d.branch && d.branch.name) ? d.branch.name : '';
                 var color = (d.color || '#10b981').replace(/^#?/, '#');
                 var kw = (d.keywords || '').trim();
+                if (kw.length > 120) kw = kw.slice(0, 117) + '…';
                 var meta = [d.description, branchName].filter(Boolean).join(' · ');
                 var inactive = d.isActive === false;
                 var defBadge = d.isDefault ? '<span class="dept-card-badge">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';

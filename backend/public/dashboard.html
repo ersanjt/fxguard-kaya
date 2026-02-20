@@ -347,7 +347,10 @@
                             </div>
                             <div class="dept-form-field dept-form-field-wide">
                                 <label data-i18n="dept_keywords">کلمات کلیدی (با کاما جدا کنید)</label>
-                                <input id="deptKeywords" data-i18n-ph="dept_ph_keywords" placeholder="مثال: دلار، حواله، امارات، قیمت — یا: مشکل، پشتیبانی">
+                                <div class="dept-keywords-wrap">
+                                    <input id="deptKeywords" data-i18n-ph="dept_ph_keywords" placeholder="مثال: دلار، حواله، امارات، قیمت — یا: مشکل، پشتیبانی">
+                                    <button type="button" class="btn-keywords-format" onclick="formatDeptKeywords()" title="اصلاح و مرتب‌سازی" data-i18n="dept_format_btn">مرتب‌سازی</button>
+                                </div>
                                 <span class="field-hint" data-i18n="dept_keywords_hint">هرچه کلمات بیشتر و مرتبط‌تر، مسیریابی دقیق‌تر می‌شود.</span>
                             </div>
                             <div class="dept-form-field dept-form-options">

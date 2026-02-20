@@ -298,6 +298,7 @@ window.__I18N_TR = {
     dept_desc: 'Açıklama',
     dept_keywords: 'Anahtar kelimeler (virgülle ayırın)',
     dept_keywords_hint: 'Daha fazla ve ilgili kelime = daha doğru yönlendirme.',
+    dept_format_btn: 'Biçimlendir',
     dept_help_flow: 'Akış: Müşteri mesaj gönderir → Sistem anahtar kelimelere göre tespit eder → Görüşme doğru departmana bağlanır.',
     dept_color: 'Renk',
     dept_is_default: 'Varsayılan — hiçbir departman eşleşmezse',

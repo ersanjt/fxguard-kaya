@@ -84,7 +84,7 @@
         .price-ticker .ticker-date-miladi { font-size: 0.65rem; color: rgba(255,255,255,0.6); font-variant-numeric: tabular-nums; direction: ltr; }
         .price-ticker .ticker-date-sep { font-size: 0.55rem; color: rgba(255,255,255,0.35); }
         .price-ticker .ticker-items { flex: 1; min-width: 0; overflow: hidden; padding-bottom: 4px; flex-shrink: 1; }
-        .price-ticker .ticker-item-track { display: flex; align-items: center; gap: 12px 16px; width: max-content; min-width: max-content; flex-wrap: nowrap; direction: ltr; }
+        .price-ticker .ticker-item-track { display: flex; align-items: center; gap: 12px 16px; width: max-content; min-width: max-content; flex-wrap: nowrap; direction: ltr; backface-visibility: hidden; }
         .price-ticker .ticker-items.ticker-auto-scroll .ticker-item-track { animation: tickerMarquee 75s linear infinite; --ticker-step: -50%; will-change: transform; }
         .price-ticker .ticker-items.ticker-auto-scroll:hover .ticker-item-track { animation-play-state: paused; }
         .price-ticker .ticker-items.ticker-touch-active .ticker-item-track { animation-play-state: paused; }
@@ -98,8 +98,9 @@
             .price-ticker .ticker-items.ticker-auto-scroll .ticker-item-track { animation: none; }
             .price-ticker .ticker-items.ticker-auto-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         }
-        @keyframes tickerMarquee { 0% { transform: translateX(0); } 100% { transform: translateX(var(--ticker-step, -50%)); } }
-        @keyframes tickerMarqueeRtl { 0% { transform: translateX(0); } 100% { transform: translateX(var(--ticker-step, -50%)); } }
+        /* مارکی پیوسته: حرکت دقیقاً به اندازه یک کپی برای حلقه بدون قطع */
+        @keyframes tickerMarquee { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(var(--ticker-step, -50%), 0, 0); } }
+        @keyframes tickerMarqueeRtl { 0% { transform: translate3d(0, 0, 0); } 100% { transform: translate3d(var(--ticker-step, -50%), 0, 0); } }
         .price-ticker .ticker-item { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: rgba(255,255,255,0.04); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); flex-shrink: 0; white-space: nowrap; transition: background 0.2s; }
         .price-ticker .ticker-item:hover { background: rgba(255,255,255,0.07); }
         .price-ticker .ticker-item .ticker-label { font-weight: 600; color: var(--text-muted); font-size: 0.9rem; min-width: 3em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -846,6 +847,10 @@
         .dept-intro { color: var(--text-secondary); font-size: 0.9rem; margin: 0 0 12px; line-height: 1.6; }
         .dept-help-box { padding: 12px 16px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; }
         .field-hint { display: block; font-size: 0.8rem; color: var(--text-muted); margin-top: 6px; }
+        .dept-keywords-wrap { display: flex; gap: 10px; align-items: center; }
+        .dept-keywords-wrap input { flex: 1; min-width: 0; }
+        .btn-keywords-format { flex-shrink: 0; padding: 10px 16px; font-size: 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; white-space: nowrap; }
+        .btn-keywords-format:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
         .dept-form-box { max-width: 100%; }
         .dept-form-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
         .dept-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 20px; }

@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
+const { Op } = require('sequelize');
 const { Department, User, Branch } = require('../models');
+const { normalizeKeywords, normalizeDescription } = require('../lib/keywordUtils');
 
 router.get('/', async (req, res) => {
     try {
@@ -30,7 +32,12 @@ router.post('/', async (req, res) => {
         if (!req.canManageUsers() && req.user.branchId) {
             body.branchId = req.user.branchId;
         }
+        if (body.keywords) body.keywords = normalizeKeywords(body.keywords);
+        if (body.description) body.description = normalizeDescription(body.description);
         const dept = await Department.create(body);
+        if (dept.isDefault) {
+            await Department.update({ isDefault: false }, { where: { id: { [Op.ne]: dept.id } } });
+        }
         res.status(201).json(dept);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -57,9 +64,14 @@ router.put('/:id', async (req, res) => {
         if (!dept) return res.status(404).json({ error: 'دپارتمان یافت نشد' });
         const { name, description, keywords, isDefault, isActive, color, branchId } = req.body;
         if (name !== undefined) dept.name = name;
-        if (description !== undefined) dept.description = description;
-        if (keywords !== undefined) dept.keywords = keywords;
-        if (isDefault !== undefined) dept.isDefault = !!isDefault;
+        if (description !== undefined) dept.description = normalizeDescription(description);
+        if (keywords !== undefined) dept.keywords = normalizeKeywords(keywords);
+        if (isDefault !== undefined) {
+            dept.isDefault = !!isDefault;
+            if (dept.isDefault) {
+                await Department.update({ isDefault: false }, { where: { id: { [Op.ne]: dept.id } } });
+            }
+        }
         if (isActive !== undefined) dept.isActive = !!isActive;
         if (color !== undefined) dept.color = color;
         if (branchId !== undefined && req.canManageUsers()) dept.branchId = branchId || null;
