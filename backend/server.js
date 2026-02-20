@@ -530,9 +530,9 @@ async function processIncomingMessage(messageData) {
         // 4. بررسی Auto-Response Rules
         await checkAutoResponse(conversation, newMessage);
         
-        // 5. تخصیص خودکار به دپارتمان/کارمند
+        // 5. تخصیص خودکار به دپارتمان و کارمند مناسب
         if (!conversation.assignedTo) {
-            await autoAssignment(conversation, body || '');
+            await autoAssignment(conversation, body || '', customer.id);
         }
         
         // 6. ارسال Notification به Dashboard
@@ -644,17 +644,17 @@ async function sendAutoReply(conversation, responseText) {
 }
 
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./services/autoMessages');
-const { selectBestDepartment } = require('./services/intelligentDepartmentRouter');
+const { selectBestDepartment, selectBestUser } = require('./services/intelligentDepartmentRouter');
 
 // ==================== Auto Assignment ====================
-async function autoAssignment(conversation, messageContent) {
+async function autoAssignment(conversation, messageContent, customerId) {
     try {
         const { Op } = require('sequelize');
         const departments = await Department.findAll({
             where: { isActive: true }
         });
 
-        // مسیریابی هوشمند: فهم معنایی پیام + تطابق کلمات کلیدی با مترادف
+        // مسیریابی هوشمند: فهم معنایی پیام → دپارتمان مناسب
         const { department: smartDept, method, confidence } = await selectBestDepartment(
             departments,
             messageContent || '',
@@ -671,15 +671,30 @@ async function autoAssignment(conversation, messageContent) {
         if (assignedDepartment && method !== 'none') {
             logger.info(`🧠 Smart routing: ${assignedDepartment.name} (${method}, confidence: ${confidence}%)`);
         }
-        
+
         if (assignedDepartment) {
-            // پیدا کردن کارمند با کمترین بار کاری
+            // کارمند قبلی این مشتری (برای تداوم رابطه)
+            let previousAssigneeId = null;
+            if (customerId) {
+                const prevConv = await Conversation.findOne({
+                    where: {
+                        customerId,
+                        id: { [Op.ne]: conversation.id },
+                        assignedTo: { [Op.ne]: null }
+                    },
+                    order: [['assignedAt', 'DESC']],
+                    attributes: ['assignedTo']
+                });
+                if (prevConv) previousAssigneeId = prevConv.assignedTo;
+            }
+
             const users = await User.findAll({
-                where: { 
+                where: {
                     departmentId: assignedDepartment.id,
                     isActive: true,
                     role: { [Op.ne]: 'admin' }
                 },
+                attributes: { include: ['status', 'settings'] },
                 include: [{
                     model: Conversation,
                     as: 'conversations',
@@ -687,21 +702,20 @@ async function autoAssignment(conversation, messageContent) {
                     required: false
                 }]
             });
-            
-            // کارمند با کمترین مکالمه باز
-            const selectedUser = users.reduce((prev, current) => {
-                const prevCount = prev.conversations ? prev.conversations.length : 0;
-                const currentCount = current.conversations ? current.conversations.length : 0;
-                return currentCount < prevCount ? current : prev;
+
+            // انتخاب هوشمند کارمند: تخصص، مشتری قبلی، آنلاین، بار کاری
+            const selectedUser = selectBestUser(users, messageContent || '', {
+                customerId,
+                previousAssigneeId
             });
-            
+
             if (selectedUser) {
                 await conversation.update({
                     departmentId: assignedDepartment.id,
                     assignedTo: selectedUser.id,
                     assignedAt: new Date()
                 });
-                logger.info(`👤 Conversation assigned to ${selectedUser.name} (${assignedDepartment.name})`);
+                logger.info(`👤 Assigned to ${selectedUser.name} (${assignedDepartment.name})`);
                 await sendDeptAssignedMessage(conversation, assignedDepartment);
             }
         }

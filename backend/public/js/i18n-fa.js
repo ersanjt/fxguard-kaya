@@ -314,6 +314,8 @@ window.__I18N_FA = {
     label_role: 'نقش',
     label_dept: 'دپارتمان',
     label_branch: 'شعبه',
+    user_skills_keywords: 'تخصص (کلمات کلیدی)',
+    user_skills_ph: 'مثال: امارات، حواله، دلار — برای تخصیص هوشمند مکالمات',
     user_ph_name: 'نام کامل',
     user_ph_pass: 'حداقل ۶ کاراکتر',
     add_user: 'افزودن کاربر',

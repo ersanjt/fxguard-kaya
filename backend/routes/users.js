@@ -126,7 +126,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر جدید بسازد' });
-        const { name, username, email, password, role, departmentId, branchId, permissions } = req.body;
+        const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords } = req.body;
         if (!name || !email || !password) return res.status(400).json({ error: 'نام، ایمیل و رمز الزامی است' });
         if (username !== undefined && username) {
             const trimmed = String(username).trim();
@@ -143,7 +143,8 @@ router.post('/', async (req, res) => {
             role: role || 'agent',
             departmentId: departmentId || null,
             branchId: finalBranchId,
-            permissions: permissions && typeof permissions === 'object' ? permissions : {}
+            permissions: permissions && typeof permissions === 'object' ? permissions : {},
+            settings: skillsKeywords ? { notifications: true, soundAlerts: true, autoAssign: true, skillsKeywords: String(skillsKeywords).trim() } : undefined
         });
         const plainPassword = password;
         setImmediate(async () => {
@@ -198,6 +199,11 @@ router.put('/:id', async (req, res) => {
                 delete merged.manage_users;
             }
             user.permissions = merged;
+        }
+        if (req.body.skillsKeywords !== undefined) {
+            const settings = { ...(user.settings || {}) };
+            settings.skillsKeywords = req.body.skillsKeywords ? String(req.body.skillsKeywords).trim() : null;
+            user.settings = settings;
         }
         await user.save();
         const u = user.toJSON();

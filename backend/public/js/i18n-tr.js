@@ -311,6 +311,8 @@ window.__I18N_TR = {
     label_role: 'Rol',
     label_dept: 'Departman',
     label_branch: 'Şube',
+    user_skills_keywords: 'Uzmanlık (anahtar kelimeler)',
+    user_skills_ph: 'Örn: BAE, havalesi, dolar',
     user_ph_name: 'Tam ad',
     user_ph_pass: 'En az 6 karakter',
     add_user: 'Kullanıcı ekle',

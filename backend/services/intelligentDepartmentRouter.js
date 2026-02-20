@@ -279,9 +279,80 @@ async function selectBestDepartment(departments, messageContent, options = {}) {
     return { department: null, method: 'none', confidence: 0 };
 }
 
+/**
+ * امتیاز تطابق یک کاربر با پیام (بر اساس تخصص/کلمات کلیدی)
+ */
+function scoreUserSkills(user, messageText) {
+    const skills = (user.settings && user.settings.skillsKeywords) || '';
+    if (!skills || !messageText) return 0;
+    const msgLower = messageText.toLowerCase().trim();
+    const keywords = skills.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+    let score = 0;
+    for (const kw of keywords) {
+        if (msgLower.includes(kw)) {
+            score += 10;
+            continue;
+        }
+        const kwSynonyms = Object.entries(SYNONYMS).find(([, syns]) =>
+            syns.some(s => s === kw || kw.includes(s) || s.includes(kw))
+        );
+        if (kwSynonyms && kwSynonyms[1].some(s => msgLower.includes(s))) score += 8;
+    }
+    return score;
+}
+
+/** امتیاز وضعیت آنلاین: online=20, away=10, busy=5, offline=0 */
+const STATUS_SCORE = { online: 20, away: 10, busy: 5, offline: 0 };
+
+/**
+ * بهترین کارمند را برای مکالمه انتخاب می‌کند
+ * @param {Object[]} users - لیست کاربران دپارتمان (با conversations برای load)
+ * @param {string} messageContent - متن پیام مشتری
+ * @param {Object} options - { customerId, previousAssigneeId }
+ */
+function selectBestUser(users, messageContent, options = {}) {
+    if (!users || users.length === 0) return null;
+    if (users.length === 1) return users[0];
+
+    const text = (messageContent || '').trim();
+    const { customerId, previousAssigneeId } = options;
+
+    const scored = users.map(user => {
+        let score = 0;
+        const openCount = (user.conversations && user.conversations.length) || 0;
+
+        // 1. تخصص (کلمات کلیدی کاربر) — امتیاز اصلی
+        const skillsScore = scoreUserSkills(user, text);
+        score += skillsScore;
+
+        // 2. مشتری قبلاً با این کارمند کار کرده — تداوم رابطه
+        if (previousAssigneeId && user.id === previousAssigneeId) {
+            score += 25;
+        }
+
+        // 3. وضعیت آنلاین — اولویت با کسی که الان آنلاین است
+        const statusScore = STATUS_SCORE[user.status] || 0;
+        score += statusScore;
+
+        // 4. بار کاری کمتر — امتیاز منفی برای load balancing
+        score -= openCount * 3;
+
+        return { user, score, openCount, skillsScore, statusScore };
+    });
+
+    scored.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.openCount - b.openCount; // در تساوی، کم‌بارتر
+    });
+
+    return scored[0] ? scored[0].user : users[0];
+}
+
 module.exports = {
     selectBestDepartment,
+    selectBestUser,
     scoreDepartment,
+    scoreUserSkills,
     normalizeAndExpand,
     SYNONYMS
 };

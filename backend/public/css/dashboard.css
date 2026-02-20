@@ -1013,6 +1013,7 @@
         .user-edit-field label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 8px; }
         .user-edit-field input, .user-edit-field select { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s; }
         .user-edit-field input:focus, .user-edit-field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(16,185,129,0.2); }
+        .user-edit-field-wide { grid-column: 1 / -1; }
         .user-edit-check { margin: 20px 0 18px; display: flex; align-items: center; gap: 12px; cursor: pointer; padding: 12px 14px; border-radius: 10px; background: var(--bg-secondary); border: 1px solid var(--border); transition: border-color 0.2s; }
         .user-edit-check:hover { border-color: var(--accent); }
         .user-edit-check input { width: 20px; height: 20px; margin: 0; accent-color: var(--accent); }

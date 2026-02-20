@@ -4768,6 +4768,8 @@
             document.getElementById('userEditBranch').value = u.branchId || '';
             document.getElementById('userEditActive').checked = u.isActive !== false;
             document.getElementById('userEditPassword').value = '';
+            var skillsEl = document.getElementById('userEditSkillsKeywords');
+            if (skillsEl) skillsEl.value = (u.settings && u.settings.skillsKeywords) || '';
             var perms = u.permissions || {};
             var canGrantSpecial = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
             var html = '';
@@ -4824,6 +4826,7 @@
             document.querySelectorAll('#userEditPerms input[data-perm]').forEach(function(cb) {
                 perms[cb.getAttribute('data-perm')] = cb.checked;
             });
+            var skillsEl = document.getElementById('userEditSkillsKeywords');
             var payload = {
                 name: document.getElementById('userEditName').value.trim(),
                 username: document.getElementById('userEditUsername').value.trim() || null,
@@ -4832,7 +4835,8 @@
                 departmentId: document.getElementById('userEditDept').value || null,
                 branchId: document.getElementById('userEditBranch').value || null,
                 isActive: document.getElementById('userEditActive').checked,
-                permissions: perms
+                permissions: perms,
+                skillsKeywords: skillsEl ? skillsEl.value.trim() || null : null
             };
             var pw = document.getElementById('userEditPassword').value;
             if (pw) payload.password = pw;
