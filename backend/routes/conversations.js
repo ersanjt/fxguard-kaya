@@ -389,7 +389,10 @@ router.post('/:id/send', async (req, res) => {
         await conversation.update(updateData);
         const { gatewayPost } = require('../lib/gatewayClient');
         const payload = { to: conversation.customer.phone, message: content };
-        if (mediaUrl) payload.media = { url: mediaUrl };
+        if (mediaUrl) {
+            payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
+            if (msgType === 'audio') payload.media.sendAsVoice = true;
+        }
         await gatewayPost('/api/send-message', payload, { timeout: 10000 }).catch(() => {});
         await logActivity({
             userId: req.userId,

@@ -588,7 +588,11 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
         return res.status(400).json({ error: 'Invalid or unsafe media URL' });
       }
       const mediaObj = await MessageMedia.fromUrl(media.url);
-      sentMsg = await client.sendMessage(chatId, mediaObj, { caption: message || '' });
+      const sendOpts = { caption: message || '' };
+      if (media.sendAsVoice || (media.mimetype && /^audio\/(ogg|webm|opus)/i.test(media.mimetype))) {
+        sendOpts.sendAudioAsVoice = true;
+      }
+      sentMsg = await client.sendMessage(chatId, mediaObj, sendOpts);
     } else {
       sentMsg = await client.sendMessage(chatId, message);
     }
@@ -623,10 +627,11 @@ async function sendWhatsAppMessage(data) {
   if (media?.url) {
     if (!isSafeMediaUrl(media.url)) throw new Error('Invalid or unsafe media URL');
     const mediaObj = await MessageMedia.fromUrl(media.url);
-    return client.sendMessage(chatId, mediaObj, {
-      caption: message || '',
-      quotedMessageId: replyTo,
-    });
+    const sendOpts = { caption: message || '', quotedMessageId: replyTo };
+    if (media.sendAsVoice || (media.mimetype && /^audio\/(ogg|webm|opus)/i.test(media.mimetype))) {
+      sendOpts.sendAudioAsVoice = true;
+    }
+    return client.sendMessage(chatId, mediaObj, sendOpts);
   }
 
   return client.sendMessage(chatId, message || '', { quotedMessageId: replyTo });

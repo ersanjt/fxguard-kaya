@@ -644,32 +644,32 @@ async function sendAutoReply(conversation, responseText) {
 }
 
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./services/autoMessages');
+const { selectBestDepartment } = require('./services/intelligentDepartmentRouter');
 
 // ==================== Auto Assignment ====================
 async function autoAssignment(conversation, messageContent) {
     try {
         const { Op } = require('sequelize');
-        // پیدا کردن دپارتمان مناسب بر اساس کلمات کلیدی
         const departments = await Department.findAll({
             where: { isActive: true }
         });
-        
-        let assignedDepartment = null;
-        for (const dept of departments) {
-            if (dept.keywords) {
-                const keywords = dept.keywords.split(',').map(k => k.trim().toLowerCase());
-                if (keywords.some(keyword => messageContent.toLowerCase().includes(keyword))) {
-                    assignedDepartment = dept;
-                    break;
-                }
-            }
-        }
-        
-        // اگر دپارتمان پیدا نشد، دپارتمان پیش‌فرض
+
+        // مسیریابی هوشمند: فهم معنایی پیام + تطابق کلمات کلیدی با مترادف
+        const { department: smartDept, method, confidence } = await selectBestDepartment(
+            departments,
+            messageContent || '',
+            { useAI: !!process.env.OPENAI_API_KEY }
+        );
+
+        let assignedDepartment = smartDept;
         if (!assignedDepartment) {
             assignedDepartment = await Department.findOne({
                 where: { isDefault: true }
             });
+        }
+
+        if (assignedDepartment && method !== 'none') {
+            logger.info(`🧠 Smart routing: ${assignedDepartment.name} (${method}, confidence: ${confidence}%)`);
         }
         
         if (assignedDepartment) {
