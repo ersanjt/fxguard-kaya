@@ -2,23 +2,14 @@ require('dotenv').config();
 const models = require('./models');
 const { User, Department, sequelize } = models;
 const { MAIN_ADMIN_EMAIL } = require('./lib/permissions');
+const { ensureDefaultDepartments } = require('./services/defaultDepartments');
 
 async function seed() {
     try {
         await models.sequelize.authenticate();
-        // جدول‌ها با اجرای سرور (server.js) ساخته می‌شوند؛ اینجا فقط ادمین را ایجاد/به‌روز می‌کنیم
-        let dept = await Department.findOne({ where: { isDefault: true } });
-        if (!dept) {
-            dept = await Department.create({
-                name: 'پشتیبانی',
-                description: 'دپارتمان پیش‌فرض',
-                keywords: 'پشتیبانی,مشکل,راهنما',
-                isDefault: true,
-                isActive: true,
-                color: '#3498db'
-            });
-            console.log('✅ دپارتمان پیش‌فرض ایجاد شد');
-        }
+        // دپارتمان‌های پیش‌فرض (حواله، خرید و فروش، پشتیبانی)
+        await ensureDefaultDepartments();
+        const dept = await Department.findOne({ where: { isDefault: true } });
         const adminEmailLower = MAIN_ADMIN_EMAIL.toLowerCase();
         let existing = await User.findOne({
             where: sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), adminEmailLower)

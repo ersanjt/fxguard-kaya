@@ -1140,6 +1140,8 @@ async function checkUnansweredConversations() {
 async function startServer() {
     try {
         await connectDatabases();
+        const { ensureDefaultDepartments } = require('./services/defaultDepartments');
+        await ensureDefaultDepartments();
         await ensureAdminUser();
         await connectRabbitMQ();
 
