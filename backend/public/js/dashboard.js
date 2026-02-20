@@ -4865,13 +4865,16 @@
             var perms = {};
             var permsEl = document.getElementById('userAddPerms');
             if (permsEl) permsEl.querySelectorAll('input[data-perm]').forEach(function(cb) { perms[cb.getAttribute('data-perm')] = cb.checked; });
-            var res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms }) });
+            var skillsEl = document.getElementById('userSkillsAdd');
+            var skillsKeywords = (skillsEl && skillsEl.value.trim()) || null;
+            var res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms, skillsKeywords: skillsKeywords }) });
             if (res.needLogin) return;
             if (res.ok) {
                 document.getElementById('userName').value = '';
                 if (document.getElementById('userUsernameAdd')) document.getElementById('userUsernameAdd').value = '';
                 document.getElementById('userEmailAdd').value = '';
                 document.getElementById('userPass').value = '';
+                if (document.getElementById('userSkillsAdd')) document.getElementById('userSkillsAdd').value = '';
                 toast(t('toast_user_added')); loadUsers(); toggleUserForm();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }

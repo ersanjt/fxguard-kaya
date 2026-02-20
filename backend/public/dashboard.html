@@ -325,7 +325,10 @@
                 <div id="pageDepartments" class="page dept-page">
                     <div class="dept-page-header">
                         <h2 data-i18n="page_departments">دپارتمان‌ها</h2>
-                        <p class="dept-intro" data-i18n="dept_intro">دپارتمان‌ها برای تخصیص خودکار مکالمات بر اساس کلمات کلیدی استفاده می‌شوند.</p>
+                        <p class="dept-intro" data-i18n="dept_intro">دپارتمان‌ها برای تخصیص خودکار مکالمات استفاده می‌شوند. سیستم به‌صورت هوشمند پیام مشتری را می‌فهمد و به دپارتمان مناسب وصل می‌کند.</p>
+                        <div class="dept-help-box" data-i18n="dept_help_flow">
+                            <strong>جریان کار:</strong> مشتری پیام می‌فرستد → سیستم بر اساس کلمات کلیدی دپارتمان تشخیص می‌دهد → مکالمه به دپارتمان و کارمند مناسب وصل می‌شود.
+                        </div>
                     </div>
                     <div class="dept-form-box form-box">
                         <h3 class="dept-form-title" data-i18n="add_dept">افزودن دپارتمان</h3>
@@ -343,8 +346,9 @@
                                 <input id="deptDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری">
                             </div>
                             <div class="dept-form-field dept-form-field-wide">
-                                <label data-i18n="dept_keywords">کلمات کلیدی (با کاما)</label>
-                                <input id="deptKeywords" data-i18n-ph="dept_ph_keywords" placeholder="مثال: مشکل، خرابی، پشتیبانی">
+                                <label data-i18n="dept_keywords">کلمات کلیدی (با کاما جدا کنید)</label>
+                                <input id="deptKeywords" data-i18n-ph="dept_ph_keywords" placeholder="مثال: دلار، حواله، امارات، قیمت — یا: مشکل، پشتیبانی">
+                                <span class="field-hint" data-i18n="dept_keywords_hint">هرچه کلمات بیشتر و مرتبط‌تر، مسیریابی دقیق‌تر می‌شود.</span>
                             </div>
                             <div class="dept-form-field dept-form-options">
                                 <label data-i18n="dept_color">رنگ</label>
@@ -353,9 +357,9 @@
                                 </div>
                             </div>
                             <div class="dept-form-field dept-form-checks">
-                                <label class="dept-check-wrap">
+                                <label class="dept-check-wrap" title="">
                                     <input type="checkbox" id="deptIsDefault">
-                                    <span data-i18n="dept_is_default">پیش‌فرض (مکالمات بدون تطابق)</span>
+                                    <span data-i18n="dept_is_default">پیش‌فرض — وقتی هیچ دپارتمانی با پیام تطابق نداشت</span>
                                 </label>
                                 <label class="dept-check-wrap">
                                     <input type="checkbox" id="deptIsActive" checked>
@@ -377,6 +381,7 @@
                     <header class="users-page-header">
                         <h2 class="users-page-title" data-i18n="page_users">کاربران</h2>
                         <p class="users-page-intro text-muted" data-i18n="users_intro">فقط مدیر مجموعه یا کسی که دسترسی «مدیریت کاربران» دارد می‌تواند کاربر جدید بسازد.</p>
+                        <p class="users-page-hint text-muted" data-i18n="users_skills_hint">برای تخصیص هوشمند: «تخصص» هر کارمند را پر کنید (مثلاً امارات، حواله، دلار). مکالمات مرتبط به او وصل می‌شوند.</p>
                     </header>
                     <div class="users-toolbar">
                         <div class="users-toolbar-primary">
@@ -420,6 +425,7 @@
                             <div><label data-i18n="label_role">نقش</label><select id="userRole"><option value="agent" data-i18n="role_agent">کارمند</option><option value="supervisor" data-i18n="role_supervisor">ناظر</option><option value="manager" data-i18n="role_manager">مدیر</option><option value="admin" data-i18n="role_admin">ادمین</option><option value="owner" data-i18n="role_owner">مالک</option></select></div>
                             <div><label data-i18n="label_dept">دپارتمان</label><select id="userDept"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select></div>
                             <div><label data-i18n="label_branch">شعبه</label><select id="userBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select></div>
+                            <div class="user-form-field-wide"><label data-i18n="user_skills_keywords">تخصص (کلمات کلیدی)</label><input type="text" id="userSkillsAdd" data-i18n-ph="user_skills_ph" placeholder="امارات، حواله، دلار — برای تخصیص هوشمند"></div>
                         </div>
                         <div id="userAddPermsBox" style="display:none;"><strong data-i18n="modal_user_perms">دسترسی به بخش‌ها:</strong><div id="userAddPerms"></div></div>
                         <button type="button" class="btn-primary" onclick="addUser()" style="margin-top:16px;" data-i18n="user_submit">ثبت کاربر</button>
