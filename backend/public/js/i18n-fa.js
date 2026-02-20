@@ -375,6 +375,7 @@ window.__I18N_FA = {
     status_done: 'انجام شده',
     status_cancelled: 'لغو',
     add_task: 'ثبت تسک',
+    load_more: 'بارگذاری بیشتر',
     add_update: 'افزودن پیگیری / گزارش',
     update_ph: 'وضعیت یا گزارش خود را بنویسید...',
     save_update: 'ثبت پیگیری',

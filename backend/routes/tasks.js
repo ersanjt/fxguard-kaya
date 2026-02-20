@@ -205,8 +205,8 @@ router.post('/:id/updates', async (req, res) => {
         if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
 
         const content = (req.body.content || '').trim();
-        if (!content) return res.status(400).json({ error: 'متن پیگیری الزامی است' });
         const statusChange = req.body.statusChange || null;
+        if (!content && !statusChange) return res.status(400).json({ error: 'متن پیگیری یا تغییر وضعیت الزامی است' });
         const validStatuses = ['pending', 'in_progress', 'done', 'cancelled'];
         if (statusChange && validStatuses.includes(statusChange)) {
             task.status = statusChange;
@@ -220,7 +220,7 @@ router.post('/:id/updates', async (req, res) => {
         const update = await TaskUpdate.create({
             taskId: task.id,
             userId: req.userId,
-            content,
+            content: content || (statusChange ? (statusChange === 'done' ? 'انجام شد' : statusChange === 'cancelled' ? 'لغو شد' : 'وضعیت تغییر کرد') : ''),
             statusChange
         });
         const withUser = await TaskUpdate.findByPk(update.id, { include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }] });

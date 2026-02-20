@@ -581,7 +581,11 @@
                             <button type="button" class="btn-primary" onclick="loadTasks()" data-i18n="apply_filter">اعمال فیلتر</button>
                         </div>
                     </div>
+                    <div id="taskListCount" class="task-list-count" style="display:none; font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;"></div>
                     <div id="taskList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    <div id="taskListLoadMore" style="display:none; text-align:center; margin-top:16px;">
+                        <button type="button" class="btn-secondary" onclick="loadMoreTasks()" data-i18n="load_more">بارگذاری بیشتر</button>
+                    </div>
                     <div id="taskDetailBox" style="display:none; margin-top:20px;">
                         <button type="button" class="btn-secondary" onclick="showTaskList()" data-i18n="back_to_list">← بازگشت به لیست</button>
                         <div id="taskDetailContent" style="margin:12px 0;"></div>

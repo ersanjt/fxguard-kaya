@@ -371,6 +371,7 @@ window.__I18N_TR = {
     status_done: 'Tamamlandı',
     status_cancelled: 'İptal',
     add_task: 'Görev ekle',
+    load_more: 'Daha fazla yükle',
     add_update: 'Güncelleme / rapor ekle',
     update_ph: 'Durum veya raporunuzu yazın...',
     save_update: 'Güncelleme kaydet',

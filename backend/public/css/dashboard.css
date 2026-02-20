@@ -808,6 +808,9 @@
         .task-search-input { flex: 1; min-width: 180px; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; }
         .task-search-input:focus { outline: none; border-color: var(--accent); }
         .tasks-summary-cards .stat-card .label { font-size: 0.8rem; margin-bottom: 8px; }
+        .task-list-empty .empty-icon { font-size: 2.5rem; opacity: 0.5; display: block; margin-bottom: 12px; }
+        .task-list-empty p { margin: 0 0 12px; color: var(--text-secondary); }
+        .task-list-count { font-size: 0.85rem; color: var(--text-muted); }
         .new-conv-customer-list { max-height: 280px; overflow-y: auto; }
         .new-conv-customer-item { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: var(--radius-sm); cursor: pointer; transition: background 0.2s; border: 1px solid transparent; }
         .new-conv-customer-item:hover { background: var(--bg-hover); border-color: var(--border); }

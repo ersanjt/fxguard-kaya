@@ -614,7 +614,7 @@
                     new_task: 'New task', label_title: 'Title', task_ph_title: 'Task title', task_ph_desc: 'Description', assign_to: 'Assign to',
                     assign_user: 'User', assign_dept: 'Department', select_dept: 'Select department', due_date: 'Due date (optional)', filter: 'Filter',
                     all_statuses: 'All statuses', status_pending: 'Pending', status_in_progress: 'In progress', status_done: 'Done', status_cancelled: 'Cancelled',
-                    add_task: 'Create task', add_update: 'Add update / report', update_ph: 'Write your status or report...', save_update: 'Save update',
+                    add_task: 'Create task', load_more: 'Load more', add_update: 'Add update / report', update_ph: 'Write your status or report...', save_update: 'Save update',
                     change_status: 'Change status', creator: 'Creator', updates: 'Updates', no_updates: 'No updates yet.',
                     ann_send_title: 'Send announcement to staff', ann_recipient: 'Recipient', ann_all: 'All staff', ann_one_dept: 'One department', ann_one_user: 'One user',
                     ann_select: 'Select', ann_title: 'Title', ann_body: 'Message', ann_ph_title: 'Announcement title', ann_ph_body: 'Message text...',
@@ -4121,6 +4121,7 @@
                 var show = box.style.display !== 'block';
                 box.style.display = show ? 'block' : 'none';
                 btn.textContent = show ? (t('cancel') || (LANG === 'fa' ? 'انصراف' : 'Cancel')) : (t('new_task') || (LANG === 'fa' ? 'تسک جدید' : 'New task'));
+                if (show) { toggleTaskAssignTarget(); }
             }
         }
         function toggleTaskAssignTarget() {
@@ -4139,14 +4140,15 @@
                 var users = (ress[0].data && ress[0].data.data) || [];
                 var depts = (ress[1].data && ress[1].data.data) || [];
                 var branches = (ress[2].data && ress[2].data.data) || [];
-                if (userSel) userSel.innerHTML = '<option value="">' + t('select_user_task') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+                var activeUsers = users.filter(function(u){ return u.isActive !== false; });
+                if (userSel) userSel.innerHTML = '<option value="">' + t('select_user_task') + '</option>' + activeUsers.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
                 if (deptSel) deptSel.innerHTML = '<option value="">' + t('select_dept') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
                 if (branchSel) branchSel.innerHTML = '<option value="">' + t('no_branch') + '</option>' + branches.map(function(b){ return '<option value="' + b.id + '">' + escapeHtml(b.name || '') + '</option>'; }).join('');
                 var filterDept = document.getElementById('taskFilterDept');
                 var filterUser = document.getElementById('taskFilterUser');
                 var myDeptOpt = (currentUser && currentUser.departmentId) ? '<option value="__my_dept__">' + (LANG === 'fa' ? 'دپارتمان من' : 'My department') + '</option>' : '';
                 if (filterDept) filterDept.innerHTML = '<option value="">' + t('all_depts') + '</option>' + myDeptOpt + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
-                if (filterUser) filterUser.innerHTML = '<option value="">' + t('filter_all_users') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+                if (filterUser) filterUser.innerHTML = '<option value="">' + t('filter_all_users') + '</option>' + activeUsers.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
                 var filterBranch = document.getElementById('taskFilterBranch');
                 if (filterBranch) filterBranch.innerHTML = '<option value="">' + t('all_branches') + '</option>' + branches.map(function(b){ return '<option value="' + b.id + '">' + escapeHtml(b.name || '') + '</option>'; }).join('');
             });
@@ -4161,10 +4163,20 @@
                 });
             }
         }
-        async function loadTasks() {
+        var taskListPage = 1;
+        var taskListTotal = 0;
+        function renderTaskItem(t) {
+            var assign = t.assignedToDepartmentId && t.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(t.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(t.assignee) || '\u2014';
+            var due = t.dueDate ? fmtTZ(t.dueDate, 'date') : '';
+            var isOverdue = t.dueDate && (t.status === 'pending' || t.status === 'in_progress') && new Date(t.dueDate) < new Date();
+            var overdueBadge = isOverdue ? '<span class="badge overdue" title="' + (t('overdue') || 'مهلت گذشته') + '">' + (t('overdue') || 'مهلت گذشته') + '</span>' : '';
+            var prioBadge = t.priority && t.priority !== 'normal' ? '<span class="badge ' + t.priority + '">' + escapeHtml(taskPriorityLabel(t.priority)) + '</span>' : '';
+            return '<div class="task-list-item' + (isOverdue ? ' task-overdue' : '') + '" onclick="loadTaskDetail(\'' + t.id + '\')"><div class="task-item-body"><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + assign + ' \u00B7 ' + taskStatusLabel(t.status) + (due ? ' \u00B7 ' + t('due_label') + ' ' + due : '') + '</div></div><div class="task-item-badges">' + overdueBadge + prioBadge + '<span class="badge ' + (t.status || '') + '">' + taskStatusLabel(t.status) + '</span></div></div>';
+        }
+        async function loadTasks(append) {
             var list = document.getElementById('taskList');
             if (!list) return;
-            setLoading('taskList', 4);
+            if (!append) { taskListPage = 1; setLoading('taskList', 4); }
             var status = (document.getElementById('taskFilterStatus') && document.getElementById('taskFilterStatus').value) || '';
             var deptEl = document.getElementById('taskFilterDept');
             var dept = deptEl ? deptEl.value : '';
@@ -4172,7 +4184,7 @@
             var user = (document.getElementById('taskFilterUser') && document.getElementById('taskFilterUser').value) || '';
             var branch = (document.getElementById('taskFilterBranch') && document.getElementById('taskFilterBranch').value) || '';
             var search = (document.getElementById('taskSearch') && document.getElementById('taskSearch').value || '').trim();
-            var q = '?limit=50';
+            var q = '?limit=50&page=' + (append ? taskListPage : 1);
             if (status) q += '&status=' + encodeURIComponent(status);
             if (dept && dept !== '__my_dept__') q += '&assignedToDepartmentId=' + encodeURIComponent(dept);
             if (user) q += '&assignedTo=' + encodeURIComponent(user);
@@ -4182,15 +4194,29 @@
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x9</span><br>' + t('empty_tasks') + '</div>'; return; }
-            list.innerHTML = data.data.map(function(t) {
-                var assign = t.assignedToDepartmentId && t.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(t.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(t.assignee) || '—';
-                var due = t.dueDate ? fmtTZ(t.dueDate, 'date') : '';
-                var isOverdue = t.dueDate && (t.status === 'pending' || t.status === 'in_progress') && new Date(t.dueDate) < new Date();
-                var overdueBadge = isOverdue ? '<span class="badge overdue" title="' + (t('overdue') || 'مهلت گذشته') + '">' + (t('overdue') || 'مهلت گذشته') + '</span>' : '';
-                var prioBadge = t.priority && t.priority !== 'normal' ? '<span class="badge ' + t.priority + '">' + escapeHtml(taskPriorityLabel(t.priority)) + '</span>' : '';
-                return '<div class="task-list-item' + (isOverdue ? ' task-overdue' : '') + '" onclick="loadTaskDetail(\'' + t.id + '\')"><div class="task-item-body"><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + assign + ' · ' + taskStatusLabel(t.status) + (due ? ' · ' + t('due_label') + ' ' + due : '') + '</div></div><div class="task-item-badges">' + overdueBadge + prioBadge + '<span class="badge ' + (t.status || '') + '">' + taskStatusLabel(t.status) + '</span></div></div>';
-            }).join('');
+            taskListTotal = data.total || 0;
+            var countEl = document.getElementById('taskListCount');
+            var loadMoreEl = document.getElementById('taskListLoadMore');
+            if (!data.data || data.data.length === 0) {
+                if (!append) list.innerHTML = '<div class="empty task-list-empty"><span class="empty-icon">\uD83D\uDCCB</span><p>' + t('empty_tasks') + '</p><button type="button" class="btn-primary" onclick="toggleTaskForm()" style="margin-top:12px;">' + t('new_task') + '</button></div>';
+                if (countEl) countEl.style.display = 'none';
+                if (loadMoreEl) loadMoreEl.style.display = 'none';
+                return;
+            }
+            var html = data.data.map(renderTaskItem).join('');
+            if (append) list.innerHTML += html; else list.innerHTML = html;
+            list.classList.remove('empty');
+            var loadedCount = append ? (taskListPage * 50) : data.data.length;
+            if (countEl) { countEl.textContent = loadedCount + (LANG === 'fa' ? ' از ' : ' of ') + taskListTotal + (LANG === 'fa' ? ' تسک' : ' tasks'); countEl.style.display = ''; }
+            if (loadMoreEl) { loadMoreEl.style.display = (taskListTotal > loadedCount) ? 'block' : 'none'; }
+            taskListPage = append ? taskListPage + 1 : 2;
+        }
+        function loadMoreTasks() {
+            var btn = document.querySelector('#taskListLoadMore button');
+            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال بارگذاری...' : 'Loading...'); }
+            loadTasks(true).finally(function() {
+                if (btn) { btn.disabled = false; btn.textContent = t('load_more'); }
+            });
         }
         async function loadTasksSummary() {
             var box = document.getElementById('tasksSummaryBox');
@@ -4239,6 +4265,9 @@
                 if (document.getElementById('taskDesc')) document.getElementById('taskDesc').value = '';
                 if (document.getElementById('taskBranch')) document.getElementById('taskBranch').value = '';
                 if (document.getElementById('taskDueDate')) document.getElementById('taskDueDate').value = '';
+                if (document.getElementById('taskAssignUser')) document.getElementById('taskAssignUser').value = '';
+                if (document.getElementById('taskAssignDept')) document.getElementById('taskAssignDept').value = '';
+                toggleTaskForm();
                 toast(t('toast_task_created'));
                 loadTasks();
                 loadTasksSummary();
@@ -4317,7 +4346,7 @@
                 (taskData.description ? '<p style="color:var(--text-secondary); margin:8px 0;">' + escapeHtml(taskData.description) + '</p>' : '') +
                 '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + escapeHtml(assign) + ' | ' + t('due_label') + ' ' + due + ' | ' + t('th_branch') + ': ' + branchName + ' | ' + t('ticket_priority') + ': ' + taskPriorityLabel(taskData.priority) + '</p>' + editHtml;
             var updates = (taskData.updates || []).map(function(u) {
-                return '<div class="msg in" style="margin:8px 0;"><div>' + escapeHtml(u.content) + '</div><div class="time">' + userDisplay(u.user) + ' � ' + (u.createdAt ? fmtTZ(u.createdAt, 'datetime') : '') + '</div></div>';
+                return '<div class="msg in" style="margin:8px 0;"><div>' + escapeHtml(u.content || '') + '</div><div class="time">' + userDisplay(u.user) + ' \u00B7 ' + (u.createdAt ? fmtTZ(u.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('taskUpdatesList').innerHTML = updates ? '<h4 style="font-size:1rem; margin:12px 0;">' + t('updates') + '</h4>' + updates : '<p class="text-muted" style="color:var(--text-muted);">' + t('no_updates') + '</p>';
             document.getElementById('taskUpdateContent').value = '';
@@ -4334,8 +4363,8 @@
         async function addTaskUpdate() {
             if (!currentTaskId) return;
             var content = (document.getElementById('taskUpdateContent') && document.getElementById('taskUpdateContent').value) || '';
-            if (!content.trim()) { toast(t('task_update_required'), true); return; }
             var statusChange = document.getElementById('taskUpdateStatusChange') && document.getElementById('taskUpdateStatusChange').value;
+            if (!content.trim() && !statusChange) { toast(t('task_update_required'), true); return; }
             var body = { content: content.trim() };
             if (statusChange) body.statusChange = statusChange;
             var res = await apiFetch('/api/tasks/' + currentTaskId + '/updates', { method: 'POST', body: JSON.stringify(body) });
