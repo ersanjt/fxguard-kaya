@@ -163,6 +163,22 @@ async function connectDatabases() {
         } catch (migErr) {
             logger.warn('Transactions customerId migration:', migErr.message);
         }
+        // Auto-migrate: add branchId to Conversations BEFORE sync (sync creates index on branchId)
+        try {
+            const qi = sequelize.getQueryInterface();
+            const tableName = sequelize.getDialect() === 'postgres' ? 'Conversations' : 'Conversations';
+            const tableDesc = await qi.describeTable(tableName).catch(() => null);
+            if (!tableDesc || !tableDesc.branchId) {
+                await qi.addColumn(tableName, 'branchId', {
+                    type: require('sequelize').DataTypes.UUID,
+                    allowNull: true,
+                    references: { model: 'Branches', key: 'id' }
+                });
+                logger.info('✅ Conversations.branchId column added (auto-migration)');
+            }
+        } catch (migErr) {
+            logger.warn('Conversations branchId migration:', migErr.message);
+        }
         if (sequelize.getDialect() === 'postgres') {
             try {
                 await sequelize.query("ALTER TYPE \"enum_Tickets_status\" ADD VALUE IF NOT EXISTS 'archived';");
