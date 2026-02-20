@@ -108,6 +108,7 @@ router.put('/', authMiddleware, async (req, res) => {
 });
 
 // ارسال ایمیل تست — برای اطمینان از صحت تنظیمات SMTP
+// اگر smtpHost و smtpPort در body ارسال شوند، از آن‌ها استفاده می‌شود (تست قبل از ذخیره)
 router.post('/test-email', authMiddleware, async (req, res) => {
     try {
         if (!req.canAccess || !req.canAccess('panel_settings')) {
@@ -118,7 +119,23 @@ router.post('/test-email', authMiddleware, async (req, res) => {
             return res.status(400).json({ error: 'آدرس ایمیل معتبر وارد کنید.' });
         }
         const settings = await getPanelSettings();
-        const emailConfig = getPanelEmailConfig(settings);
+        let emailConfig = getPanelEmailConfig(settings);
+        // اگر مقادیر فرم در body ارسال شده‌اند، برای تست قبل از ذخیره استفاده کن
+        const bodyHost = (req.body.smtpHost || '').toString().trim();
+        const bodyPort = (req.body.smtpPort || '').toString().trim();
+        if (bodyHost && bodyPort) {
+            const bodyPass = (req.body.smtpPass || '').toString().trim();
+            emailConfig = {
+                host: bodyHost,
+                port: bodyPort,
+                user: (req.body.smtpUser || '').toString().trim() || null,
+                pass: bodyPass || (settings && settings.smtpPass) || null,
+                from: (req.body.smtpFrom || '').toString().trim() || null,
+                fromName: (req.body.smtpFromName || '').toString().trim() || null,
+                secure: !!(req.body.smtpSecure === true || req.body.smtpSecure === 'true' || req.body.smtpSecure === '1')
+            };
+            if (!emailConfig.from && emailConfig.user) emailConfig.from = emailConfig.user;
+        }
         const siteName = (settings && settings.siteName) || 'پورتال کارکنان';
         const title = 'ایمیل تست — ' + siteName;
         const body = '<p>این ایمیل برای تست تنظیمات SMTP پنل ارسال شده است. اگر آن را دریافت کرده‌اید، ارسال ایمیل درست کار می‌کند.</p>';
@@ -129,9 +146,12 @@ router.post('/test-email', authMiddleware, async (req, res) => {
             html: emailService.baseHtml(title, body)
         };
         let sent = false;
-        if (emailConfig && emailConfig.host) {
+        if (emailConfig && emailConfig.host && emailConfig.port) {
             sent = await emailService.sendMailWithConfig(emailConfig, mailOpts);
         } else {
+            if (!emailService.isEnabled()) {
+                return res.status(400).json({ error: 'تنظیمات SMTP وجود ندارد. Host و پورت را در فرم وارد کنید و ذخیره کنید، یا متغیرهای SMTP_HOST و SMTP_PORT را در فایل .env تنظیم کنید.' });
+            }
             sent = await emailService.sendMail(mailOpts);
         }
         if (sent) {

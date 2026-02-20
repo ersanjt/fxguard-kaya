@@ -76,7 +76,8 @@ async function sendMailWithConfig(config, { to, subject, text, html }) {
             secure: !!config.secure,
             auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined
         });
-        const from = config.fromName ? `"${config.fromName}" <${config.from || config.user}>` : (config.from || config.user);
+        const fromAddr = config.from || config.user || 'noreply@localhost';
+        const from = config.fromName ? `"${config.fromName}" <${fromAddr}>` : fromAddr;
         await transport.sendMail({
             from,
             to: Array.isArray(to) ? to.join(', ') : to,

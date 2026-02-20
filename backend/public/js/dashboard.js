@@ -3822,8 +3822,21 @@
             if (!to) { toast(LANG === 'fa' ? 'آدرس ایمیل را وارد کنید.' : 'Enter email address.', true); return; }
             if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ارسال...' : 'Sending...'); }
             if (statusEl) { statusEl.style.display = 'none'; }
+            var get = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            var payload = { to: to };
+            var host = get('panelSettingSmtpHost');
+            var port = get('panelSettingSmtpPort');
+            if (host && port) {
+                payload.smtpHost = host;
+                payload.smtpPort = port;
+                payload.smtpUser = get('panelSettingSmtpUser');
+                payload.smtpPass = get('panelSettingSmtpPass');
+                payload.smtpFrom = get('panelSettingSmtpFrom');
+                payload.smtpFromName = get('panelSettingSmtpFromName');
+                payload.smtpSecure = !!(document.getElementById('panelSettingSmtpSecure') && document.getElementById('panelSettingSmtpSecure').checked);
+            }
             try {
-                var res = await apiFetch('/api/panel-settings/test-email', { method: 'POST', body: JSON.stringify({ to: to }) });
+                var res = await apiFetch('/api/panel-settings/test-email', { method: 'POST', body: JSON.stringify(payload) });
                 if (res.ok && res.data && res.data.ok) {
                     toast(res.data.message || (LANG === 'fa' ? 'ایمیل تست ارسال شد.' : 'Test email sent.'));
                     if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ارسال شد' : 'Sent'); statusEl.className = 'panel-test-email-status success'; statusEl.style.display = 'inline'; }
