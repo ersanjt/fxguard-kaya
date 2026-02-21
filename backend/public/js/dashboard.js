@@ -619,7 +619,7 @@
                     ann_send_title: 'Send announcement to staff', ann_recipient: 'Recipient', ann_all: 'All staff', ann_one_dept: 'One department', ann_one_user: 'One user',
                     ann_select: 'Select', ann_title: 'Title', ann_body: 'Message', ann_ph_title: 'Announcement title', ann_ph_body: 'Message text...',
                     ann_important: 'Important (popup and sound for recipient)', send_ann: 'Send announcement',
-                    ann_intro: 'View and manage general, department and personal announcements.', ann_tab_all: 'All', ann_tab_general: 'General', ann_tab_department: 'Department', ann_tab_personal: 'Personal', ann_from: 'From', ann_to: 'To', ann_sent_at: 'Date & time:', ann_delete: 'Delete announcement', ann_delete_confirm: 'Delete this announcement?',
+                    ann_intro: 'View and manage general, department and personal announcements.', ann_tab_all: 'All', ann_tab_general: 'General', ann_tab_department: 'Department', ann_tab_personal: 'Personal', ann_from: 'From', ann_to: 'To', ann_sent_at: 'Date & time:', ann_delete: 'Delete announcement', ann_delete_confirm: 'Delete this announcement?', ann_collapse: 'Collapse form', ann_expand: 'Show form', ann_reset: 'Clear', ann_search_ph: 'Search announcements...',
                     new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file',
                     file_allow_download: 'Allow download and save', file_view_only: 'View only in chat',
                     start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', close: 'Close', chat_minimize: 'Minimize', chat_expand: 'Expand', quick_reply_hi: 'Hi', quick_reply_gotit: 'Got it', quick_reply_later: 'Will reply later', quick_reply_checking: 'Checking', start_chat_hint: 'Start the conversation', cancel: 'Cancel',
@@ -646,7 +646,7 @@
                     whatsapp_welcome_title: 'Auto-reply to first message', whatsapp_welcome_hint: 'When someone messages you for the first time, this text is sent automatically. Empty = disabled', whatsapp_welcome_enabled: 'Enabled', whatsapp_welcome_ph: 'Hello! Welcome to Kaya Exchange. How can we help you?',
                     whatsapp_dept_routing: 'Auto-assign to department', whatsapp_dept_routing_hint: 'Based on keywords in the message, the conversation is routed to the relevant department.', whatsapp_unassigned: 'Unassigned conversations', whatsapp_unassigned_hint: 'These conversations need department or assignee assignment.',
                     rates_intro: 'Prices are fetched from API and shown in the bottom bar for everyone.', rates_adjust_type: 'Adjustment type',
-                    rates_none: 'No change', rates_fixed: 'Fixed', rates_delta: '± Amount', rates_percent: '± Percent', rates_adjustments: 'Rate adjustments', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value', rates_ph_percent: 'e.g. 2 or -1', rates_ph_delta: 'e.g. 500 or -200', rates_ph_fixed: 'Fixed price', rates_no_access: 'You do not have access to this section.', rates_manage_currencies: 'Manage currencies', rates_manage_currencies_hint: 'Add, edit or remove currencies shown in rates and ticker. Only for users with rates permission.', rates_add_currency: 'Add currency', rates_edit_currency: 'Edit currency', rates_currency_key: 'Currency key (e.g. usd)', rates_currency_key_hint: 'Lowercase letters and numbers only; read-only when editing.', rates_currency_label: 'Display name', rates_currency_apikeys: 'API keys (comma-separated)', rates_currency_apikeys_ph: 'e.g. usd_sell, usd_buy', rates_currency_apikeys_hint: 'Field names from Navasan API response.', rates_currency_key_required: 'Currency key is required', rates_no_currencies: 'No currencies defined. Add one with «Add currency».', rates_delete_currency_confirm: 'Delete this currency? Its adjustments and ticker visibility will be removed too.',
+                    rates_none: 'No change', rates_none_desc: 'API rate is shown without change.', rates_fixed: 'Fixed', rates_fixed_desc: 'Your fixed rate replaces the API rate.', rates_delta: '± Amount', rates_delta_desc: 'An amount is added to or subtracted from the API rate.', rates_percent: '± Percent', rates_percent_desc: 'A percentage is added to or subtracted from the API rate.', rates_adjustments: 'Rate adjustments', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value', rates_ph_percent: 'e.g. 2 or -1', rates_ph_delta: 'e.g. 500 or -200', rates_ph_fixed: 'Fixed price', rates_no_access: 'You do not have access to this section.', rates_manage_currencies: 'Manage currencies', rates_manage_currencies_hint: 'Add, edit or remove currencies shown in rates and ticker. Only for users with rates permission.', rates_add_currency: 'Add currency', rates_edit_currency: 'Edit currency', rates_currency_key: 'Currency key (e.g. usd)', rates_currency_key_hint: 'Lowercase letters and numbers only; read-only when editing.', rates_currency_label: 'Display name', rates_currency_apikeys: 'API keys (comma-separated)', rates_currency_apikeys_ph: 'e.g. usd_sell, usd_buy', rates_currency_apikeys_hint: 'Field names from Navasan API response.', rates_currency_key_required: 'Currency key is required', rates_no_currencies: 'No currencies defined. Add one with «Add currency».', rates_delete_currency_confirm: 'Delete this currency? Its adjustments and ticker visibility will be removed too.',
                     no_data: 'No data.', loading_err: 'Error loading.', select_user: 'Select user',
                     empty_conv_list: 'No conversations. Click "New conversation".', chat: 'Chat', empty_internal_msgs: 'No messages yet.', file: 'File',
                     conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me', conv_supervision_title: 'Manager oversight',
@@ -2512,6 +2512,31 @@
 
         var announcementsTab = 'all';
         var announcementsData = [];
+        var announcementsSearchQuery = '';
+        function toggleAnnouncementSendForm() {
+            var box = document.getElementById('announcementSendBox');
+            var toggle = document.getElementById('annSendFormToggle');
+            var textSpan = toggle ? toggle.querySelector('.ann-send-toggle-text') : null;
+            if (box && toggle) {
+                box.classList.toggle('collapsed');
+                var isCollapsed = box.classList.contains('collapsed');
+                toggle.setAttribute('aria-expanded', !isCollapsed);
+                if (textSpan) textSpan.textContent = t(isCollapsed ? 'ann_expand' : 'ann_collapse');
+            }
+        }
+        function resetAnnouncementForm() {
+            var titleEl = document.getElementById('annTitle');
+            var bodyEl = document.getElementById('annBody');
+            var importantEl = document.getElementById('annImportant');
+            if (titleEl) titleEl.value = '';
+            if (bodyEl) bodyEl.value = '';
+            if (importantEl) importantEl.checked = false;
+            toast(LANG === 'fa' ? 'فرم پاک شد' : 'Form cleared');
+        }
+        function filterAnnouncementsBySearch(q) {
+            announcementsSearchQuery = (q || '').trim().toLowerCase();
+            renderAnnouncementsList();
+        }
         function setAnnouncementsTab(tab) {
             announcementsTab = tab || 'all';
             document.querySelectorAll('.announcements-tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === announcementsTab); });
@@ -2542,9 +2567,21 @@
         }
         function renderAnnouncementsList() {
             var list = document.getElementById('announcementList');
+            var searchWrap = document.querySelector('.announcements-search-wrap');
             if (!list) return;
             var filtered = filterAnnouncementsByTab(announcementsData);
-            if (filtered.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📢</span><br>' + (LANG === 'fa' ? 'اعلانی وجود ندارد.' : 'No announcements.') + '</div>'; return; }
+            if (announcementsSearchQuery) {
+                var q = announcementsSearchQuery;
+                filtered = filtered.filter(function(a) {
+                    var title = (a.title || '').toLowerCase();
+                    var body = (a.body || '').toLowerCase();
+                    var fromName = (a.fromUser && a.fromUser.name || '').toLowerCase();
+                    return title.indexOf(q) >= 0 || body.indexOf(q) >= 0 || fromName.indexOf(q) >= 0;
+                });
+            }
+            if (searchWrap) searchWrap.style.display = announcementsData.length > 3 ? 'block' : 'none';
+            if (filtered.length === 0) { list.className = 'announcements-list empty'; list.innerHTML = '<span class="empty-icon">📢</span><br>' + (LANG === 'fa' ? 'اعلانی وجود ندارد.' : 'No announcements.'); return; }
+            list.classList.remove('empty');
             list.innerHTML = filtered.map(function(a) {
                 var fromName = (a.fromUser && a.fromUser.name) ? a.fromUser.name : '';
                 var targetStr = annTargetLabel(a);
@@ -2592,17 +2629,27 @@
             var typeSel = document.getElementById('annTargetType');
             var idSel = document.getElementById('annTargetId');
             var wrap = document.getElementById('annTargetIdWrap');
+            var typeWrap = typeSel ? typeSel.closest('.announcements-send-field') : null;
             if (!typeSel || !idSel) return;
             var res = await apiFetch('/api/announcements/targets');
             if (res.needLogin || !res.ok) return;
             var users = res.users || [];
             var departments = res.departments || [];
             var isManager = currentUser && currentUser.role === 'manager';
-            if (isManager && departments.length === 1) {
+            if (isManager && departments.length >= 1) {
                 typeSel.value = 'department';
-                idSel.innerHTML = '<option value="' + departments[0].id + '">' + escapeHtml(departments[0].name) + '</option>';
+                idSel.innerHTML = '';
+                departments.forEach(function(d) { idSel.innerHTML += '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; });
                 wrap.style.display = 'block';
+                var labelEl = wrap.querySelector('label');
+                if (labelEl) labelEl.textContent = (LANG === 'fa' ? 'دپارتمان' : LANG === 'tr' ? 'Departman' : 'Department');
+                if (typeWrap) typeWrap.style.display = 'none';
+            } else if (isManager && departments.length === 0) {
+                if (typeWrap) typeWrap.style.display = 'none';
+                wrap.style.display = 'none';
+                toast(LANG === 'fa' ? 'شما به هیچ دپارتمانی تخصیص ندارید.' : 'You are not assigned to any department.', true);
             } else {
+                if (typeWrap) typeWrap.style.display = 'block';
                 typeSel.onchange = function() {
                     var v = typeSel.value;
                     wrap.style.display = (v === 'department' || v === 'user') ? 'block' : 'none';

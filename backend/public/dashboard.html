@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/dashboard.css?v=9">
+    <link rel="stylesheet" href="css/dashboard.css?v=11">
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
 <body>
@@ -38,6 +38,7 @@
             <symbol id="icon-file-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></symbol>
             <symbol id="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></symbol>
             <symbol id="icon-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></symbol>
+            <symbol id="icon-megaphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
         </defs>
     </svg>
     <div id="loginBox" class="login-wrap">
@@ -190,7 +191,7 @@
                     <div class="nav-section-title" data-i18n="nav_settings">تنظیمات</div>
                     <a href="#profile" class="nav-link" data-page="profile" data-section="profile"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></span> <span data-i18n="nav_profile">پروفایل من</span></a>
                     <a href="#internal-chat" class="nav-link" data-page="internal-chat" data-section="internal_chat"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg></span> <span data-i18n="nav_internal_chat">چت داخلی</span></a>
-                    <a href="#announcements" class="nav-link" data-page="announcements" data-section="announcements"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user-online"/></svg></span> <span data-i18n="nav_announcements">اعلان‌ها</span></a>
+                    <a href="#announcements" class="nav-link" data-page="announcements" data-section="announcements"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg></span> <span data-i18n="nav_announcements">اعلان‌ها</span></a>
                     <a href="#whatsapp" class="nav-link" data-page="whatsapp" data-section="whatsapp"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-phone"/></svg></span> <span data-i18n="nav_whatsapp">اتصال واتساپ</span></a>
                     <a href="#rates" class="nav-link" data-page="rates" data-section="rates"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span data-i18n="nav_rates">نرخ ارزها</span></a>
                     <a href="#services" class="nav-link" data-page="services" data-section="services"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building"/></svg></span> <span data-i18n="nav_services">خدمات صرافی</span></a>
@@ -725,40 +726,62 @@
                 </div>
                 <div id="pageAnnouncements" class="page announcements-page">
                     <div class="announcements-page-header">
-                        <h2 data-i18n="page_announcements">اعلان‌ها</h2>
-                        <p class="announcements-intro" data-i18n="ann_intro">اعلان‌های عمومی، دپارتمانی و اختصاصی را مشاهده و مدیریت کنید.</p>
+                        <div class="announcements-header-top">
+                            <div class="announcements-header-icon"><svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg></div>
+                            <div class="announcements-header-text">
+                                <h2 data-i18n="page_announcements">اعلان‌ها</h2>
+                                <p class="announcements-intro" data-i18n="ann_intro">اعلان‌های عمومی، دپارتمانی و اختصاصی را مشاهده و مدیریت کنید.</p>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline announcements-refresh" id="announcementsRefreshBtn" onclick="loadAnnouncements()" title="به‌روزرسانی" aria-label="به‌روزرسانی"><span class="refresh-icon">↻</span> <span data-i18n="refresh">به‌روزرسانی</span></button>
+                        </div>
                     </div>
-                    <div id="announcementSendBox" class="announcements-send-section form-box" style="display:none;">
-                        <h3 class="announcements-section-title" data-i18n="ann_send_title">ارسال اعلان به کارکنان</h3>
-                        <div class="announcements-send-grid">
-                            <div class="announcements-send-field">
-                                <label for="annTargetType" data-i18n="ann_recipient">گیرنده</label>
-                                <select id="annTargetType"><option value="all" data-i18n="ann_all">همه کارکنان</option><option value="department" data-i18n="ann_one_dept">یک دپارتمان</option><option value="user" data-i18n="ann_one_user">یک نفر</option></select>
+                    <div id="announcementSendBox" class="announcements-send-section" style="display:none;">
+                        <div class="announcements-send-header">
+                            <h3 class="announcements-section-title" data-i18n="ann_send_title">ارسال اعلان به کارکنان</h3>
+                            <button type="button" class="announcements-send-toggle" id="annSendFormToggle" onclick="toggleAnnouncementSendForm()" aria-expanded="true">
+                                <span class="ann-send-toggle-text" data-i18n="ann_collapse">بستن فرم</span>
+                                <svg class="ann-send-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+                            </button>
+                        </div>
+                        <div id="announcementSendForm" class="announcements-send-form">
+                            <div class="announcements-send-grid">
+                                <div class="announcements-send-field">
+                                    <label for="annTargetType" data-i18n="ann_recipient">گیرنده</label>
+                                    <select id="annTargetType" class="ann-select"><option value="all" data-i18n="ann_all">همه کارکنان</option><option value="department" data-i18n="ann_one_dept">یک دپارتمان</option><option value="user" data-i18n="ann_one_user">یک نفر</option></select>
+                                </div>
+                                <div id="annTargetIdWrap" class="announcements-send-field ann-target-select-wrap" style="display:none;">
+                                    <label for="annTargetId" data-i18n="ann_select">انتخاب کنید</label>
+                                    <select id="annTargetId" class="ann-select"><option value="" data-i18n="ann_select">انتخاب کنید</option></select>
+                                </div>
+                                <div class="announcements-send-field announcements-send-field-wide">
+                                    <label for="annTitle" data-i18n="ann_title">عنوان</label>
+                                    <input id="annTitle" type="text" class="ann-input" data-i18n-ph="ann_ph_title" placeholder="عنوان اعلان" required>
+                                </div>
+                                <div class="announcements-send-field announcements-send-field-wide">
+                                    <label for="annBody" data-i18n="ann_body">متن</label>
+                                    <textarea id="annBody" class="ann-textarea" rows="4" data-i18n-ph="ann_ph_body" placeholder="متن پیام..." required></textarea>
+                                </div>
+                                <div class="announcements-send-field announcements-send-field-wide">
+                                    <label class="announcements-check-wrap"><input type="checkbox" id="annImportant" class="ann-checkbox"> <span data-i18n="ann_important">پیام مهم (پاپ‌آپ و صدا برای گیرنده)</span></label>
+                                </div>
                             </div>
-                            <div id="annTargetIdWrap" class="announcements-send-field" style="display:none;">
-                                <label for="annTargetId" data-i18n="ann_select">انتخاب کنید</label>
-                                <select id="annTargetId"><option value="" data-i18n="ann_select">انتخاب کنید</option></select>
-                            </div>
-                            <div class="announcements-send-field announcements-send-field-wide">
-                                <label for="annTitle" data-i18n="ann_title">عنوان</label>
-                                <input id="annTitle" data-i18n-ph="ann_ph_title" placeholder="عنوان اعلان">
-                            </div>
-                            <div class="announcements-send-field announcements-send-field-wide">
-                                <label for="annBody" data-i18n="ann_body">متن</label>
-                                <textarea id="annBody" rows="3" data-i18n-ph="ann_ph_body" placeholder="متن پیام..."></textarea>
-                            </div>
-                            <div class="announcements-send-field announcements-send-field-wide">
-                                <label class="announcements-check-wrap"><input type="checkbox" id="annImportant"> <span data-i18n="ann_important">پیام مهم (پاپ‌آپ و صدا برای گیرنده)</span></label>
+                            <div class="announcements-send-actions">
+                                <button type="button" class="btn-primary" id="annSendBtn" onclick="sendAnnouncement()" data-i18n="send_ann">ارسال اعلان</button>
+                                <button type="button" class="btn-secondary" onclick="resetAnnouncementForm()" data-i18n="ann_reset">پاک کردن</button>
                             </div>
                         </div>
-                        <button type="button" class="btn-primary" onclick="sendAnnouncement()" data-i18n="send_ann">ارسال اعلان</button>
                     </div>
-                    <div class="announcements-tabs-wrap">
-                        <div class="announcements-tabs" role="tablist">
-                            <button type="button" class="announcements-tab active" data-tab="all" onclick="setAnnouncementsTab('all')" data-i18n="ann_tab_all">همه</button>
-                            <button type="button" class="announcements-tab" data-tab="general" onclick="setAnnouncementsTab('general')" data-i18n="ann_tab_general">عمومی</button>
-                            <button type="button" class="announcements-tab" data-tab="department" onclick="setAnnouncementsTab('department')" data-i18n="ann_tab_department">دپارتمانی</button>
-                            <button type="button" class="announcements-tab" data-tab="personal" onclick="setAnnouncementsTab('personal')" data-i18n="ann_tab_personal">اختصاصی</button>
+                    <div class="announcements-content-wrap">
+                        <div class="announcements-toolbar">
+                            <div class="announcements-tabs" role="tablist">
+                                <button type="button" class="announcements-tab active" data-tab="all" onclick="setAnnouncementsTab('all')" data-i18n="ann_tab_all">همه</button>
+                                <button type="button" class="announcements-tab" data-tab="general" onclick="setAnnouncementsTab('general')" data-i18n="ann_tab_general">عمومی</button>
+                                <button type="button" class="announcements-tab" data-tab="department" onclick="setAnnouncementsTab('department')" data-i18n="ann_tab_department">دپارتمانی</button>
+                                <button type="button" class="announcements-tab" data-tab="personal" onclick="setAnnouncementsTab('personal')" data-i18n="ann_tab_personal">اختصاصی</button>
+                            </div>
+                            <div class="announcements-search-wrap" style="display:none;">
+                                <input type="text" id="announcementSearch" class="announcements-search-input" data-i18n-ph="ann_search_ph" placeholder="جستجو در اعلان‌ها..." oninput="filterAnnouncementsBySearch(this.value)">
+                            </div>
                         </div>
                         <div id="announcementList" class="announcements-list empty" data-i18n="loading">در حال بارگذاری...</div>
                     </div>
@@ -1019,10 +1042,10 @@
                     </div>
                 </div>
                 <div id="pageRates" class="page rates-page">
-                    <div class="rates-page-header">
+                    <header class="rates-page-header">
                         <h2 data-i18n="page_rates">تنظیم نرخ ارزها</h2>
-                        <p class="rates-intro" data-i18n="rates_intro">قیمت‌ها از API دریافت می‌شوند و در نوار زیر پنل برای همه نمایش داده می‌شوند.</p>
-                    </div>
+                        <p class="rates-intro text-muted" data-i18n="rates_intro">قیمت‌ها از API دریافت می‌شوند و در نوار زیر پنل برای همه نمایش داده می‌شوند.</p>
+                    </header>
                     <div class="rates-page-layout">
                         <div class="rates-page-col rates-page-col-left">
                             <div id="ratesCurrenciesBox" class="rates-currencies-section form-box" style="display:none;">
@@ -1045,10 +1068,10 @@
                             <div class="rates-adjust-types-info">
                                 <h3 class="rates-section-title" data-i18n="rates_adjust_type">نوع تعدیل</h3>
                                 <div class="rates-adjust-types-grid">
-                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_none">بدون تغییر</span><span class="rates-adjust-type-desc">—</span></div>
-                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_fixed">ثابت</span><span class="rates-adjust-type-desc">—</span></div>
-                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_delta">± تومان</span><span class="rates-adjust-type-desc">—</span></div>
-                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_percent">± درصد</span><span class="rates-adjust-type-desc">—</span></div>
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_none">بدون تغییر</span><span class="rates-adjust-type-desc" data-i18n="rates_none_desc">نرخ API بدون تغییر نمایش داده می‌شود.</span></div>
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_fixed">ثابت</span><span class="rates-adjust-type-desc" data-i18n="rates_fixed_desc">نرخ ثابت مدنظر شما به‌جای API.</span></div>
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_delta">± تومان</span><span class="rates-adjust-type-desc" data-i18n="rates_delta_desc">مبلغی به نرخ API اضافه یا کم می‌شود.</span></div>
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_percent">± درصد</span><span class="rates-adjust-type-desc" data-i18n="rates_percent_desc">درصدی به نرخ API اضافه یا کم می‌شود.</span></div>
                                 </div>
                             </div>
                             <div class="rates-adjustments-section">
@@ -1721,12 +1744,15 @@
             </div>
         </div>
     </div>
-    <div id="announcementModal" class="modal-overlay" style="display:none;">
-        <div class="modal-box">
-            <div class="modal-header"><h3 id="annModalTitle" data-i18n="modal_ann_title">اعلان مهم</h3><button type="button" class="modal-close" onclick="closeAnnouncementModal()">&times;</button></div>
+    <div id="announcementModal" class="modal-overlay announcement-modal-overlay" style="display:none;" onclick="if(event.target===this)closeAnnouncementModal()">
+        <div class="modal-box announcement-modal-box">
+            <div class="announcement-modal-icon"><svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg></div>
+            <div class="modal-header announcement-modal-header"><h3 id="annModalTitle" data-i18n="modal_ann_title">اعلان مهم</h3><button type="button" class="modal-close" onclick="closeAnnouncementModal()" aria-label="بستن">&times;</button></div>
             <div id="annModalMeta" class="announcement-modal-meta" style="display:none;"></div>
-            <div class="modal-body" id="annModalBody"></div>
-            <button type="button" class="btn-primary" onclick="closeAnnouncementModal()" data-i18n="modal_ann_gotit">متوجه شدم</button>
+            <div class="modal-body announcement-modal-body" id="annModalBody"></div>
+            <div class="announcement-modal-footer">
+                <button type="button" class="btn-primary" onclick="closeAnnouncementModal()" data-i18n="modal_ann_gotit">متوجه شدم</button>
+            </div>
         </div>
     </div>
     <div id="supInternalChatDetailModal" class="modal-overlay" style="display:none;">
@@ -1883,7 +1909,7 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/i18n-fa.js?v=3" charset="utf-8"></script>
     <script src="js/i18n-tr.js?v=3" charset="utf-8"></script>
-    <script src="js/dashboard.js?v=6"></script>
+    <script src="js/dashboard.js?v=7"></script>
 
 </body>
 </html>
