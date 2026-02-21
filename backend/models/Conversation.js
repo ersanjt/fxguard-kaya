@@ -24,7 +24,7 @@ const ConversationModel = (sequelize) => {
             type: DataTypes.UUID
         },
         status: {
-            type: DataTypes.ENUM('open', 'pending', 'closed', 'resolved'),
+            type: DataTypes.ENUM('open', 'pending', 'closed', 'resolved', 'archived'),
             defaultValue: 'open'
         },
         priority: {

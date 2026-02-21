@@ -129,6 +129,20 @@ function canDeleteUser(user) {
     return user.role === 'owner';
 }
 
+/** فقط مالک (بالاترین سطح دسترسی) می‌تواند مکالمه را آرشیو یا حذف کند */
+function canManageConversations(user) {
+    if (!user) return false;
+    if (isMainAdmin(user)) return true;
+    return user.role === 'owner';
+}
+
+/** مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند */
+function canViewArchivedConversations(user) {
+    if (!user) return false;
+    if (isMainAdmin(user)) return true;
+    return ['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1;
+}
+
 function getSectionKeys() {
     return [...SECTION_KEYS];
 }
@@ -143,6 +157,8 @@ module.exports = {
     canManageUsers,
     canDeleteCustomer,
     canDeleteUser,
+    canManageConversations,
+    canViewArchivedConversations,
     isMainAdmin,
     getSectionKeys,
     getManageUsersKey,

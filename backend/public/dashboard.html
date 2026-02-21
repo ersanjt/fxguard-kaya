@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/dashboard.css?v=11">
+    <link rel="stylesheet" href="css/dashboard.css?v=12">
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
 <body>
@@ -155,8 +155,21 @@
                 </div>
             </div>
         </div>
-        <div id="announcementMarquee" class="announcement-marquee" style="display:none;" dir="rtl" onclick="showPage('announcements');" title="کلیک برای مشاهده همه اعلان‌ها">
-            <div class="announcement-marquee-inner"></div>
+        <div id="announcementMarquee" class="announcement-marquee" style="display:none;" dir="rtl">
+            <div class="announcement-marquee-bar">
+                <div class="announcement-marquee-label">
+                    <svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg>
+                    <span data-i18n="ann_marquee_label">اعلان‌ها</span>
+                    <span id="annMarqueeCount" class="ann-marquee-count" style="display:none;"></span>
+                </div>
+                <div class="announcement-marquee-track" onmouseenter="pauseAnnouncementMarquee()" onmouseleave="resumeAnnouncementMarquee()">
+                    <div class="announcement-marquee-inner"></div>
+                </div>
+                <button type="button" class="announcement-marquee-more" onclick="showPage('announcements'); event.stopPropagation();" title="مشاهده همه اعلان‌ها" aria-label="مشاهده همه اعلان‌ها">
+                    <span data-i18n="ann_view_all">مشاهده همه</span>
+                    <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+            </div>
         </div>
         <div class="main-wrap">
         <div id="totpPromptBanner" style="display:none; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 12px 20px; margin: 12px 24px 0; color: var(--text-primary); font-size: 0.9rem;">
@@ -230,6 +243,7 @@
                         <button type="button" class="conv-tab" data-tab="unanswered" onclick="setConvQuickTab('unanswered')" data-i18n="filter_unanswered">بدون پاسخ</button>
                         <button type="button" class="conv-tab" data-tab="open" onclick="setConvQuickTab('open')" data-i18n="filter_open">باز</button>
                         <button type="button" class="conv-tab" data-tab="mine" onclick="setConvQuickTab('mine')" data-i18n="conv_tab_mine">مشخص‌شده به من</button>
+                        <button type="button" class="conv-tab" id="convTabArchived" data-tab="archived" onclick="setConvQuickTab('archived')" data-i18n="filter_archived" style="display:none;">آرشیو</button>
                     </div>
                     <div class="conv-toolbar">
                         <div class="conv-search-wrap">
@@ -275,6 +289,8 @@
                                     <select id="convDetailDept" data-i18n-title="label_dept" title="دپارتمان"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
                                     <select id="convDetailAssignee"><option value="">بدون تخصیص</option></select>
                                     <button type="button" class="btn-secondary btn-sm" onclick="updateConvFromDetail()" data-i18n="btn_apply">اعمال</button>
+                                    <button type="button" id="btnConvArchive" class="btn-secondary btn-sm" onclick="archiveConversation()" data-i18n="btn_archive" style="display:none;">ارسال به آرشیو</button>
+                                    <button type="button" id="btnConvDelete" class="btn-danger btn-sm" onclick="deleteConversation()" data-i18n="btn_delete" style="display:none;">حذف</button>
                                 </div>
                             </div>
                         </div>
@@ -779,8 +795,16 @@
                                 <button type="button" class="announcements-tab" data-tab="department" onclick="setAnnouncementsTab('department')" data-i18n="ann_tab_department">دپارتمانی</button>
                                 <button type="button" class="announcements-tab" data-tab="personal" onclick="setAnnouncementsTab('personal')" data-i18n="ann_tab_personal">اختصاصی</button>
                             </div>
-                            <div class="announcements-search-wrap" style="display:none;">
-                                <input type="text" id="announcementSearch" class="announcements-search-input" data-i18n-ph="ann_search_ph" placeholder="جستجو در اعلان‌ها..." oninput="filterAnnouncementsBySearch(this.value)">
+                            <div class="announcements-toolbar-right">
+                                <div class="announcements-search-wrap">
+                                    <span class="announcements-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
+                                    <input type="text" id="announcementSearch" class="announcements-search-input" data-i18n-ph="ann_search_ph" placeholder="جستجو در اعلان‌ها..." oninput="filterAnnouncementsBySearch(this.value)">
+                                </div>
+                                <select id="announcementSort" class="announcements-sort-select" onchange="setAnnouncementsSort(this.value)" title="مرتب‌سازی">
+                                    <option value="newest" data-i18n="ann_sort_newest">جدیدترین</option>
+                                    <option value="oldest" data-i18n="ann_sort_oldest">قدیمی‌ترین</option>
+                                    <option value="important" data-i18n="ann_sort_important">مهم‌ها اول</option>
+                                </select>
                             </div>
                         </div>
                         <div id="announcementList" class="announcements-list empty" data-i18n="loading">در حال بارگذاری...</div>
@@ -1148,13 +1172,17 @@
                         <div id="transactionList" class="transaction-list"></div>
                     </div>
                 </div>
-                <div id="pagePanelSettings" class="page page-panel-settings">
-                    <header class="panel-settings-page-header">
-                        <h2 class="panel-settings-page-title" data-i18n="page_panel_settings">ظاهر پنل</h2>
-                        <p class="panel-settings-intro" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
-                    </header>
+                <div id="pagePanelSettings" class="page page-panel-settings" role="main" aria-label="تنظیمات ظاهر پنل">
+                    <div class="panel-settings-page-wrap">
+                        <header class="panel-settings-page-header">
+                            <div class="panel-settings-header-badge" aria-hidden="true">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            </div>
+                            <h2 class="panel-settings-page-title" data-i18n="page_panel_settings">ظاهر پنل</h2>
+                            <p class="panel-settings-intro" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
+                        </header>
 
-                    <div id="panelSettingsLoading" class="panel-settings-loading" style="display:none;">
+                        <div id="panelSettingsLoading" class="panel-settings-loading" style="display:none;" role="status" aria-live="polite">
                         <span class="loading-spinner" aria-hidden="true"></span>
                         <span data-i18n="loading">در حال بارگذاری...</span>
                     </div>
@@ -1343,19 +1371,21 @@
                                         </div>
                                     </div>
                                     <div id="companyEmailsTableWrap" class="company-emails-table-wrap">
-                                        <table class="data-table company-emails-table" id="companyEmailsTable">
-                                            <thead>
-                                                <tr>
-                                                    <th data-i18n="panel_company_email_address">آدرس ایمیل</th>
-                                                    <th data-i18n="panel_company_email_label">عنوان</th>
-                                                    <th data-i18n="panel_company_email_assigned">اختصاص به</th>
-                                                    <th data-i18n="panel_company_email_has_pass">رمز</th>
-                                                    <th data-i18n="th_status">وضعیت</th>
-                                                    <th data-i18n="panel_company_email_actions">عملیات</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody id="companyEmailsTableBody"></tbody>
-                                        </table>
+                                        <div class="company-emails-table-scroll" role="region" aria-label="لیست ایمیل‌های شرکتی">
+                                            <table class="data-table company-emails-table" id="companyEmailsTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th data-i18n="panel_company_email_address">آدرس ایمیل</th>
+                                                        <th data-i18n="panel_company_email_label">عنوان</th>
+                                                        <th data-i18n="panel_company_email_assigned">اختصاص به</th>
+                                                        <th data-i18n="panel_company_email_has_pass">رمز</th>
+                                                        <th data-i18n="th_status">وضعیت</th>
+                                                        <th data-i18n="panel_company_email_actions">عملیات</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="companyEmailsTableBody"></tbody>
+                                            </table>
+                                        </div>
                                         <p id="companyEmailsEmpty" class="company-emails-empty" style="display:none;" data-i18n="panel_company_emails_empty">هنوز ایمیل شرکتی ثبت نشده است.</p>
                                     </div>
                                 </section>
@@ -1393,6 +1423,7 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
                     </div>
                 </div>
                 <div id="serviceModal" class="modal-overlay" style="display:none;">
@@ -1750,13 +1781,19 @@
         </div>
     </div>
     <div id="announcementModal" class="modal-overlay announcement-modal-overlay" style="display:none;" onclick="if(event.target===this)closeAnnouncementModal()">
-        <div class="modal-box announcement-modal-box">
-            <div class="announcement-modal-icon"><svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg></div>
-            <div class="modal-header announcement-modal-header"><h3 id="annModalTitle" data-i18n="modal_ann_title">اعلان مهم</h3><button type="button" class="modal-close" onclick="closeAnnouncementModal()" aria-label="بستن">&times;</button></div>
+        <div class="modal-box announcement-modal-box" id="announcementModalBox">
+            <div class="announcement-modal-icon-wrap" id="annModalIconWrap">
+                <div class="announcement-modal-icon"><svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg></div>
+                <span id="annModalTypeBadge" class="announcement-modal-type-badge" style="display:none;"></span>
+            </div>
+            <div class="modal-header announcement-modal-header">
+                <h3 id="annModalTitle" data-i18n="modal_ann_title">اعلان مهم</h3>
+                <button type="button" class="modal-close" onclick="closeAnnouncementModal()" aria-label="بستن">&times;</button>
+            </div>
             <div id="annModalMeta" class="announcement-modal-meta" style="display:none;"></div>
             <div class="modal-body announcement-modal-body" id="annModalBody"></div>
             <div class="announcement-modal-footer">
-                <button type="button" class="btn-primary" onclick="closeAnnouncementModal()" data-i18n="modal_ann_gotit">متوجه شدم</button>
+                <button type="button" class="btn-primary announcement-modal-btn-gotit" onclick="closeAnnouncementModal()" data-i18n="modal_ann_gotit">متوجه شدم</button>
             </div>
         </div>
     </div>

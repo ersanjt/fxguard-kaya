@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
-const { getPermissions, canAccess, canManageUsers, canDeleteCustomer, canDeleteUser } = require('../lib/permissions');
+const { getPermissions, canAccess, canManageUsers, canDeleteCustomer, canDeleteUser, canManageConversations, canViewArchivedConversations } = require('../lib/permissions');
 
 async function authMiddleware(req, res, next) {
     const authHeader = req.headers.authorization;
@@ -25,6 +25,8 @@ async function authMiddleware(req, res, next) {
         req.canManageUsers = () => canManageUsers(req.user);
         req.canDeleteCustomer = () => canDeleteCustomer(req.user);
         req.canDeleteUser = () => canDeleteUser(req.user);
+        req.canManageConversations = () => canManageConversations(req.user);
+        req.canViewArchivedConversations = () => canViewArchivedConversations(req.user);
         next();
     } catch (err) {
         return res.status(401).json({ error: 'توکن نامعتبر یا منقضی' });

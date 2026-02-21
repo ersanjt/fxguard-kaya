@@ -619,7 +619,7 @@
                     ann_send_title: 'Send announcement to staff', ann_recipient: 'Recipient', ann_all: 'All staff', ann_one_dept: 'One department', ann_one_user: 'One user',
                     ann_select: 'Select', ann_title: 'Title', ann_body: 'Message', ann_ph_title: 'Announcement title', ann_ph_body: 'Message text...',
                     ann_important: 'Important (popup and sound for recipient)', send_ann: 'Send announcement',
-                    ann_intro: 'View and manage general, department and personal announcements.', ann_tab_all: 'All', ann_tab_general: 'General', ann_tab_department: 'Department', ann_tab_personal: 'Personal', ann_from: 'From', ann_to: 'To', ann_sent_at: 'Date & time:', ann_delete: 'Delete announcement', ann_delete_confirm: 'Delete this announcement?', ann_collapse: 'Collapse form', ann_expand: 'Show form', ann_reset: 'Clear', ann_search_ph: 'Search announcements...',
+                    ann_intro: 'View and manage general, department and personal announcements.', ann_tab_all: 'All', ann_tab_general: 'General', ann_tab_department: 'Department', ann_tab_personal: 'Personal', ann_from: 'From', ann_to: 'To', ann_sent_at: 'Date & time:', ann_delete: 'Delete announcement', ann_delete_confirm: 'Delete this announcement?', ann_collapse: 'Collapse form', ann_expand: 'Show form', ann_reset: 'Clear', ann_search_ph: 'Search announcements...', ann_marquee_label: 'Announcements', ann_view_all: 'View all', ann_type_info: 'Info', ann_type_important: 'Important', ann_empty: 'No announcements.', ann_sort_newest: 'Newest', ann_sort_oldest: 'Oldest', ann_sort_important: 'Important first', ann_empty_hint: 'General announcements appear in the top bar.',
                     new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file',
                     file_allow_download: 'Allow download and save', file_view_only: 'View only in chat',
                     start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', close: 'Close', chat_minimize: 'Minimize', chat_expand: 'Expand', quick_reply_hi: 'Hi', quick_reply_gotit: 'Got it', quick_reply_later: 'Will reply later', quick_reply_checking: 'Checking', start_chat_hint: 'Start the conversation', cancel: 'Cancel',
@@ -652,7 +652,7 @@
                     conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me', conv_supervision_title: 'Manager oversight',
                     conv_page_desc: 'Manage customer conversations, respond and assign to departments.',
                     conv_search_ph: 'Search name or phone...', conv_list_title: 'Conversations', more_filters: 'More filters',
-                    filter_all: 'All', filter_active_only: 'Active only', filter_blocked_only: 'Blocked only', filter_unread: 'Unread', filter_unanswered: 'Unanswered', filter_open: 'Open', conv_tab_mine: 'Assigned to me',
+                    filter_all: 'All', filter_active_only: 'Active only', filter_blocked_only: 'Blocked only', filter_unread: 'Unread', filter_unanswered: 'Unanswered', filter_open: 'Open', filter_archived: 'Archived', conv_tab_mine: 'Assigned to me',
                     whatsapp_unanswered_title: 'Unanswered alert & escalation', whatsapp_unanswered_hint: 'When a customer messages and no one replies, an alert is sent after the specified time. If still unanswered, the conversation is escalated to support.',
                     whatsapp_alert_after: 'Alert after (minutes)', whatsapp_escalate_after: 'Escalate after (minutes)', whatsapp_escalation_dept: 'Target department (empty = default support)',
                     empty_no_logins: 'No logins recorded yet.', no_staff_online: 'No staff online.', login_err_load: 'Error loading logins.',
@@ -2490,6 +2490,18 @@
             updateNavBadges(stats);
         }
 
+        window._marqueeAnnouncements = [];
+        function pauseAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.add('paused'); }
+        function resumeAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.remove('paused'); }
+        function renderMarqueeItem(a) {
+            var badge = a.isImportant ? '<span class="ann-marquee-badge important">' + (t('ann_type_important') || 'Important') + '</span>' : '<span class="ann-marquee-badge info">' + (t('ann_type_info') || 'Info') + '</span>';
+            var text = (a.title || '') + (a.body ? (LANG === 'fa' ? ': ' : ': ') + String(a.body).substring(0, 80) + (a.body.length > 80 ? '…' : '') : '');
+            return '<div class="announcement-marquee-item' + (a.isImportant ? ' ann-important' : '') + '" data-id="' + escapeHtml(a.id) + '" onclick="marqueeAnnouncementClick(\'' + escapeHtml(a.id) + '\'); event.stopPropagation();"><span class="ann-marquee-badge-wrap">' + badge + '</span><span class="ann-marquee-sep">|</span><span class="ann-marquee-text">' + escapeHtml(text) + '</span></div>';
+        }
+        function marqueeAnnouncementClick(id) {
+            var a = (window._marqueeAnnouncements || []).find(function(x) { return String(x.id) === String(id); });
+            if (a) { apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadGeneralAnnouncementsMarquee(); if (typeof updateNavBadges === 'function') updateNavBadges(); }); showAnnouncementModal(a); }
+        }
         async function loadGeneralAnnouncementsMarquee() {
             var banner = document.getElementById('announcementMarquee');
             if (!banner) return;
@@ -2501,11 +2513,14 @@
                 var seenIds = {};
                 general = general.filter(function(a) { if (a.id && seenIds[a.id]) return false; if (a.id) seenIds[a.id] = true; return true; });
                 if (general.length === 0) { banner.style.display = 'none'; return; }
-                var parts = general.map(function(a) { return (a.title || '') + (a.body ? ': ' + a.body : ''); });
-                var full = parts.join('  •  ');
-                if (!full.trim()) { banner.style.display = 'none'; return; }
+                window._marqueeAnnouncements = general;
                 var inner = banner.querySelector('.announcement-marquee-inner');
-                if (inner) { inner.innerHTML = escapeHtml(full); }
+                var countEl = document.getElementById('annMarqueeCount');
+                if (countEl) { countEl.textContent = general.length; countEl.style.display = general.length > 1 ? 'inline' : 'none'; }
+                if (inner) {
+                    var html = general.map(renderMarqueeItem).join('');
+                    inner.innerHTML = html + html;
+                }
                 banner.style.display = 'block';
             } catch (e) { banner.style.display = 'none'; }
         }
@@ -2513,6 +2528,7 @@
         var announcementsTab = 'all';
         var announcementsData = [];
         var announcementsSearchQuery = '';
+        var announcementsSort = 'newest';
         function toggleAnnouncementSendForm() {
             var box = document.getElementById('announcementSendBox');
             var toggle = document.getElementById('annSendFormToggle');
@@ -2542,12 +2558,25 @@
             document.querySelectorAll('.announcements-tab').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-tab') === announcementsTab); });
             renderAnnouncementsList();
         }
+        function setAnnouncementsSort(sort) {
+            announcementsSort = sort || 'newest';
+            var sel = document.getElementById('announcementSort');
+            if (sel) sel.value = announcementsSort;
+            renderAnnouncementsList();
+        }
         function filterAnnouncementsByTab(list) {
             if (announcementsTab === 'all') return list;
             if (announcementsTab === 'general') return list.filter(function(a) { return a.targetType === 'all'; });
             if (announcementsTab === 'department') return list.filter(function(a) { return a.targetType === 'department'; });
             if (announcementsTab === 'personal') return list.filter(function(a) { return a.targetType === 'user'; });
             return list;
+        }
+        function sortAnnouncements(list) {
+            var arr = list.slice();
+            if (announcementsSort === 'oldest') arr.sort(function(a, b) { return new Date(a.createdAt || 0) - new Date(b.createdAt || 0); });
+            else if (announcementsSort === 'important') arr.sort(function(a, b) { var ai = a.isImportant ? 1 : 0; var bi = b.isImportant ? 1 : 0; if (bi !== ai) return bi - ai; return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); });
+            else arr.sort(function(a, b) { return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); });
+            return arr;
         }
         function annTargetLabel(a) {
             if (a.targetType === 'all') return t('ann_all');
@@ -2567,7 +2596,6 @@
         }
         function renderAnnouncementsList() {
             var list = document.getElementById('announcementList');
-            var searchWrap = document.querySelector('.announcements-search-wrap');
             if (!list) return;
             var filtered = filterAnnouncementsByTab(announcementsData);
             if (announcementsSearchQuery) {
@@ -2579,18 +2607,19 @@
                     return title.indexOf(q) >= 0 || body.indexOf(q) >= 0 || fromName.indexOf(q) >= 0;
                 });
             }
-            if (searchWrap) searchWrap.style.display = announcementsData.length > 3 ? 'block' : 'none';
-            if (filtered.length === 0) { list.className = 'announcements-list empty'; list.innerHTML = '<span class="empty-icon">📢</span><br>' + (LANG === 'fa' ? 'اعلانی وجود ندارد.' : 'No announcements.'); return; }
+            filtered = sortAnnouncements(filtered);
+            if (filtered.length === 0) { list.className = 'announcements-list empty'; list.innerHTML = '<span class="empty-icon">📢</span><p class="empty-text">' + (t('ann_empty') || (LANG === 'fa' ? 'اعلانی وجود ندارد.' : 'No announcements.')) + '</p><p class="empty-hint">' + (t('ann_empty_hint') || '') + '</p>'; return; }
             list.classList.remove('empty');
             list.innerHTML = filtered.map(function(a) {
                 var fromName = (a.fromUser && a.fromUser.name) ? a.fromUser.name : '';
                 var targetStr = annTargetLabel(a);
                 var readCls = a.read ? ' ann-read' : '';
-                var impBadge = a.isImportant ? '<span class="ann-badge-important">' + (LANG === 'fa' ? 'مهم' : 'Important') + '</span>' : '';
+                var impBadge = a.isImportant ? '<span class="ann-badge-important">' + (t('ann_type_important') || 'Important') + '</span>' : '';
+                var typeIcon = a.isImportant ? '<span class="ann-card-type-icon ann-card-type-important" title="' + (t('ann_type_important') || '') + '">⚠</span>' : '<span class="ann-card-type-icon ann-card-type-info" title="' + (t('ann_type_info') || '') + '">ℹ</span>';
                 var timeStr = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
                 var bodyHtml = (escapeHtml(a.body || '') || '').replace(/\n/g, '<br>');
                 var delBtn = a.canDelete ? '<button type="button" class="ann-delete-btn btn-secondary btn-sm" data-id="' + escapeHtml(a.id) + '" title="' + (t('ann_delete') || '') + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button>' : '';
-                return '<div class="announcement-card' + readCls + '" data-id="' + escapeHtml(a.id) + '"><div class="announcement-card-header"><span class="announcement-card-title">' + escapeHtml(a.title || '') + '</span><div class="announcement-card-header-right">' + impBadge + delBtn + '</div></div><div class="announcement-card-body">' + bodyHtml + '</div><div class="announcement-card-meta"><span>' + t('ann_from') + ' ' + escapeHtml(fromName) + '</span><span>' + t('ann_to') + ' ' + escapeHtml(targetStr) + '</span><span class="announcement-card-time">' + (t('ann_sent_at') ? t('ann_sent_at') + ' ' : '') + timeStr + '</span></div></div>';
+                return '<div class="announcement-card' + readCls + (a.isImportant ? ' ann-card-important' : '') + '" data-id="' + escapeHtml(a.id) + '"><div class="announcement-card-header">' + typeIcon + '<span class="announcement-card-title">' + escapeHtml(a.title || '') + '</span><div class="announcement-card-header-right">' + impBadge + delBtn + '</div></div><div class="announcement-card-body">' + bodyHtml + '</div><div class="announcement-card-meta"><span>' + t('ann_from') + ' ' + escapeHtml(fromName) + '</span><span>' + t('ann_to') + ' ' + escapeHtml(targetStr) + '</span><span class="announcement-card-time">' + (t('ann_sent_at') ? t('ann_sent_at') + ' ' : '') + timeStr + '</span></div></div>';
             }).join('');
             list.querySelectorAll('.announcement-card').forEach(function(card) {
                 card.onclick = function(e) { if (!e.target.closest('.ann-delete-btn')) markAnnouncementReadAndShow(card.getAttribute('data-id')); };
@@ -2612,6 +2641,7 @@
         }
         function showAnnouncementModal(a) {
             var modal = document.getElementById('announcementModal');
+            var box = document.getElementById('announcementModalBox');
             if (!modal) return;
             document.getElementById('annModalTitle').textContent = a.title || '';
             document.getElementById('annModalBody').innerHTML = (escapeHtml(a.body || '') || '').replace(/\n/g, '<br>');
@@ -2623,6 +2653,13 @@
                 metaEl.innerHTML = (t('ann_from') || '') + ' ' + escapeHtml(fromName) + ' · ' + (t('ann_to') || '') + ' ' + escapeHtml(targetStr) + (timeStr ? ' · ' + (t('ann_sent_at') || '') + ' ' + timeStr : '');
                 metaEl.style.display = 'block';
             }
+            var badgeEl = document.getElementById('annModalTypeBadge');
+            if (badgeEl) {
+                badgeEl.textContent = a.isImportant ? (t('ann_type_important') || 'Important') : (t('ann_type_info') || 'Info');
+                badgeEl.className = 'announcement-modal-type-badge' + (a.isImportant ? ' important' : ' info');
+                badgeEl.style.display = 'inline-block';
+            }
+            if (box) box.classList.toggle('announcement-modal-important', !!a.isImportant);
             modal.style.display = 'flex';
         }
         async function loadAnnouncementTargets() {
@@ -2714,6 +2751,8 @@
             var btn = document.getElementById('convFilterToggle');
             if (el && btn) { el.classList.toggle('show'); btn.setAttribute('aria-expanded', el.classList.contains('show')); }
         }
+        function canViewArchivedConversations() { var r = (currentUser && currentUser.role) || ''; return ['owner','admin','manager'].indexOf(r) >= 0; }
+        function canManageConversations() { var r = (currentUser && currentUser.role) || ''; return r === 'owner'; }
         async function loadConvFiltersInit() {
             await loadConvAssignees();
             loadBranchesForSelect(['convFilterBranch']);
@@ -2724,6 +2763,13 @@
                     var opt = '<option value="">' + (LANG === 'fa' ? 'همه دپارتمان‌ها' : 'All departments') + '</option>' + res.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
                     sel.innerHTML = opt;
                 }
+            }
+            var tabArchived = document.getElementById('convTabArchived');
+            if (tabArchived) tabArchived.style.display = canViewArchivedConversations() ? '' : 'none';
+            var statusFilter = document.getElementById('convFilterStatus');
+            if (statusFilter && canViewArchivedConversations()) {
+                var hasArchived = Array.from(statusFilter.options).some(function(o){ return o.value === 'archived'; });
+                if (!hasArchived) { var opt = document.createElement('option'); opt.value = 'archived'; opt.textContent = t('filter_archived') || t('status_archived') || 'آرشیو'; statusFilter.appendChild(opt); }
             }
         }
         async function loadConversations() {
@@ -2740,12 +2786,13 @@
             if (convQuickTab === 'unread') q += '&unread=true';
             else if (convQuickTab === 'unanswered') q += '&unanswered=true';
             else if (convQuickTab === 'open') q += '&status=open';
+            else if (convQuickTab === 'archived') q += '&status=archived';
             else if (convQuickTab === 'mine' && currentUser && currentUser.id) q += '&assignedTo=' + encodeURIComponent(currentUser.id);
-            if (convQuickTab === 'all' || convQuickTab === 'unread') { if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value); }
+            if (convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'archived') { if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value); }
             if (priorityEl && priorityEl.value) q += '&priority=' + encodeURIComponent(priorityEl.value);
             if (branchEl && branchEl.value) q += '&branchId=' + encodeURIComponent(branchEl.value);
             if (deptEl && deptEl.value) q += '&departmentId=' + encodeURIComponent(deptEl.value);
-            if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
+            if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open' || convQuickTab === 'archived') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
             var res = await apiFetch('/api/conversations' + q);
             if (res.needLogin) return;
@@ -2776,7 +2823,7 @@
                 profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
                 var avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
                 var assigneeName = userDisplay(c.assignee);
-                var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved' };
+                var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
                 var statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
                 var priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
                 var unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
@@ -2857,7 +2904,7 @@
                 var d = res.data;
                 var assigneeName = userDisplay(d.assignee) || (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned');
                 var deptName = (d.department && d.department.name) ? d.department.name : '';
-                var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved' };
+                var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
                 var prioT = LANG === 'fa' ? { low: 'کم', normal: 'عادی', high: 'مهم', urgent: 'فوری' } : { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
                 badgesEl.innerHTML = '<span class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</span>' + (statusT[d.status] || d.status) + '</span><span class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'اولویت' : 'Priority') + '</span>' + (prioT[d.priority] || d.priority) + '</span><span class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + (LANG === 'fa' ? 'مسئول' : 'Assignee') + '</span>' + escapeHtml(assigneeName) + '</span>' + (deptName ? '<span class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + (LANG === 'fa' ? 'دپارتمان' : 'Dept') + '</span>' + escapeHtml(deptName) + '</span>' : '');
                 barEl.style.display = 'block';
@@ -2881,13 +2928,23 @@
                     var prioritySel = document.getElementById('convDetailPriority');
                     var assigneeSel = document.getElementById('convDetailAssignee');
                     var deptSel = document.getElementById('convDetailDept');
-                    if (statusSel) statusSel.value = d.status || 'open';
+                    if (statusSel) {
+                        var hasArchivedOpt = Array.from(statusSel.options).some(function(o){ return o.value === 'archived'; });
+                        if (canManageConversations() && !hasArchivedOpt) { var o = document.createElement('option'); o.value = 'archived'; o.textContent = t('status_archived') || 'آرشیو'; statusSel.appendChild(o); }
+                        statusSel.value = d.status || 'open';
+                    }
                     if (prioritySel) prioritySel.value = d.priority || 'normal';
                     loadConvAssignees().then(function() {
                         if (assigneeSel) assigneeSel.value = d.assignedTo || '';
                         if (deptSel) deptSel.value = d.departmentId || '';
                     });
                 }
+                var archBtn = document.getElementById('btnConvArchive');
+                var delBtn = document.getElementById('btnConvDelete');
+                if (archBtn) archBtn.style.display = (canManageConversations() && d.status !== 'archived') ? '' : 'none';
+                if (delBtn) delBtn.style.display = canManageConversations() ? '' : 'none';
+                var chatSend = document.querySelector('.chat-send');
+                if (chatSend) chatSend.style.display = (d.status === 'archived') ? 'none' : '';
             });
         }
         async function loadConvAssignees() {
@@ -2969,6 +3026,20 @@
             var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; var h = document.getElementById('chatHeader'); var activeItem = document.querySelector('.conv-list-item.active[data-id="' + currentConvId + '"]'); var pic = (activeItem && activeItem.getAttribute('data-profile-pic')) || (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.profilePic) || ''; openChat(currentConvId, h ? h.textContent : '', '', pic); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+        async function archiveConversation() {
+            if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را آرشیو کند' : 'Only owner can archive', true); return; }
+            if (!confirm(LANG === 'fa' ? 'آیا از آرشیو کردن این مکالمه مطمئن هستید؟' : 'Archive this conversation?')) return;
+            var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify({ status: 'archived' }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(LANG === 'fa' ? 'مکالمه به آرشیو ارسال شد' : 'Conversation archived'); closeChatMobile(); loadConversations(); currentConvId = null; } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+        async function deleteConversation() {
+            if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را حذف کند' : 'Only owner can delete', true); return; }
+            if (!confirm(LANG === 'fa' ? 'آیا از حذف دائمی این مکالمه و تمام پیام‌های آن مطمئن هستید؟ این عمل قابل بازگشت نیست.' : 'Permanently delete this conversation and all messages? This cannot be undone.')) return;
+            var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (res.ok) { toast(LANG === 'fa' ? 'مکالمه حذف شد' : 'Conversation deleted'); closeChatMobile(); loadConversations(); currentConvId = null; } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
 
         function openChatFromHistory(el) {
@@ -3704,12 +3775,18 @@
             }
             if (emptyEl) emptyEl.style.display = 'none';
             function escapeHtml(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+            var lblAddr = t('panel_company_email_address') || 'آدرس ایمیل';
+            var lblTitle = t('panel_company_email_label') || 'عنوان';
+            var lblAssigned = t('panel_company_email_assigned') || 'اختصاص به';
+            var lblPass = t('panel_company_email_has_pass') || 'رمز';
+            var lblStatus = t('th_status') || 'وضعیت';
+            var lblActions = t('panel_company_email_actions') || 'عملیات';
             tbody.innerHTML = list.map(function(item) {
                 var assigned = (item.assignedUser && (item.assignedUser.name || item.assignedUser.email)) || '—';
                 var passBadge = item.hasPassword ? '<span class="badge badge-success">✓</span>' : '<span class="badge badge-muted">—</span>';
                 var statusBadge = item.isActive ? '<span class="badge badge-success">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge badge-muted">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
                 var sendCredsBtn = item.assignedUser && item.hasPassword ? '<button type="button" class="btn-sm btn-secondary company-email-send-creds" data-id="' + item.id + '" title="' + (t('panel_company_email_send_creds') || '') + '">' + (LANG === 'fa' ? 'ارسال ورود' : 'Send') + '</button>' : '';
-                return '<tr data-id="' + item.id + '"><td>' + escapeHtml(item.email) + '</td><td>' + escapeHtml(item.label || '') + '</td><td>' + escapeHtml(assigned) + '</td><td>' + passBadge + '</td><td>' + statusBadge + '</td><td class="company-email-actions"><button type="button" class="btn-sm btn-secondary company-email-edit" data-id="' + item.id + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> ' + sendCredsBtn + ' <button type="button" class="btn-sm btn-danger company-email-delete" data-id="' + item.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></td></tr>';
+                return '<tr data-id="' + item.id + '"><td data-label="' + escapeHtml(lblAddr) + '">' + escapeHtml(item.email) + '</td><td data-label="' + escapeHtml(lblTitle) + '">' + escapeHtml(item.label || '') + '</td><td data-label="' + escapeHtml(lblAssigned) + '">' + escapeHtml(assigned) + '</td><td data-label="' + escapeHtml(lblPass) + '">' + passBadge + '</td><td data-label="' + escapeHtml(lblStatus) + '">' + statusBadge + '</td><td class="company-email-actions" data-label="' + escapeHtml(lblActions) + '"><button type="button" class="btn-sm btn-secondary company-email-edit" data-id="' + item.id + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> ' + sendCredsBtn + ' <button type="button" class="btn-sm btn-danger company-email-delete" data-id="' + item.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></td></tr>';
             }).join('');
         }
         function openCompanyEmailForm(item) {

@@ -186,6 +186,12 @@ async function connectDatabases() {
             } catch (e) {
                 if (!String(e.message || '').includes('already exists')) logger.warn('Ticket archived migration:', e.message);
             }
+            try {
+                await sequelize.query("ALTER TYPE \"enum_Conversations_status\" ADD VALUE IF NOT EXISTS 'archived';");
+                logger.info('✅ Conversation status archived added (auto-migration)');
+            } catch (e) {
+                if (!String(e.message || '').includes('already exists')) logger.warn('Conversation archived migration:', e.message);
+            }
         }
         await sequelize.sync();
         logger.info(process.env.USE_SQLITE ? '✅ SQLite Connected (WAL)' : '✅ PostgreSQL Connected');
