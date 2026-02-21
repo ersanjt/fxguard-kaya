@@ -972,7 +972,11 @@
         }
         async function fetchRates() {
             if (!token) return;
-            if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf('rates') >= 0) return;
+            var tickerEl = document.getElementById('priceTicker');
+            if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf('rates') >= 0) {
+                if (tickerEl) tickerEl.style.display = 'none';
+                return;
+            }
             var loadingEl = document.querySelector('.ticker-loading');
             var timesEl = document.getElementById('tickerTimes');
             var innerEl = document.getElementById('ratesMarqueeInner');
@@ -992,14 +996,11 @@
                     '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.uaeLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.uae) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.hijri) + '</span></span>';
                 timesEl.style.display = '';
             }
-            var tickerEl = document.getElementById('priceTicker');
-            if (items.length === 0) {
-                if (tickerEl) tickerEl.style.display = 'none';
-                return;
-            }
             if (tickerEl) tickerEl.style.display = '';
             if (innerEl) {
-                var itemsHtml = items.map(function(it) {
+                var itemsHtml = items.length === 0
+                    ? '<span class="ticker-item ticker-empty">' + escapeHtml(t('ticker_loading') || 'در حال بارگذاری قیمت‌ها...') + '</span>'
+                    : items.map(function(it) {
                     var ch = it.change;
                     var chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
                     var chText = formatChange(ch);
@@ -1016,15 +1017,13 @@
                     innerEl.classList.toggle('scrolling', !fits);
                     trackEl.classList.toggle('rates-centered', fits);
                 }
-                if (trackEl && items.length > 0) {
+                if (trackEl) {
                     requestAnimationFrame(updateRatesMarqueeMode);
                     if (typeof ResizeObserver !== 'undefined') {
                         if (trackEl._ratesMarqueeRo) trackEl._ratesMarqueeRo.disconnect();
                         trackEl._ratesMarqueeRo = new ResizeObserver(updateRatesMarqueeMode);
                         trackEl._ratesMarqueeRo.observe(trackEl);
                     }
-                } else {
-                    innerEl.classList.add('scrolling');
                 }
             }
         }
@@ -3639,6 +3638,17 @@
                 link.style.display = perms[section] !== false ? '' : 'none';
             });
         }
+        function updateBottomBarVisibility() {
+            var bottomBar = document.getElementById('bottomBar');
+            var tickerEl = document.getElementById('priceTicker');
+            var appFooter = document.getElementById('appFooter');
+            if (!bottomBar) return;
+            var tickerHidden = !tickerEl || tickerEl.style.display === 'none';
+            var footerHidden = !appFooter || appFooter.style.display === 'none';
+            var bothHidden = tickerHidden && footerHidden;
+            bottomBar.style.display = bothHidden ? 'none' : '';
+            document.body.classList.toggle('bottom-bar-hidden', bothHidden);
+        }
         function applyBranding(s) {
             if (!s) return;
             var defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
@@ -3665,6 +3675,7 @@
                 appFooter.classList.remove('app-footer--accent', 'app-footer--minimal', 'app-footer--compact', 'app-footer--line');
                 appFooter.classList.add('app-footer--' + style);
             }
+            updateBottomBarVisibility();
             var loginTitleEl = document.getElementById('loginTitle');
             if (loginTitleEl) loginTitleEl.textContent = (s.loginTitle && s.loginTitle.trim()) ? s.loginTitle : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal');
             var setLoginLogo = function(containerId, size) {
@@ -3689,6 +3700,7 @@
             }
             var tickerEl = document.getElementById('priceTicker');
             if (tickerEl) tickerEl.style.display = HIDDEN_SECTIONS.indexOf('rates') >= 0 ? 'none' : '';
+            updateBottomBarVisibility();
             if (ratesInterval) clearInterval(ratesInterval);
             if (tickerTimeInterval) clearInterval(tickerTimeInterval);
             ratesInterval = null;
@@ -3797,30 +3809,14 @@
             initPanelSettingsCollapse();
             initPanelVisibilitySearch();
             clearPanelSettingsChanged();
-            if (typeof initPanelSettingsStickyFooter === 'function') initPanelSettingsStickyFooter();
         }
         function markPanelSettingsChanged() {
             var badge = document.getElementById('panelSettingsUnsavedBadge');
-            var badgeFooter = document.getElementById('panelSettingsUnsavedBadgeFooter');
             if (badge) badge.style.display = 'inline';
-            if (badgeFooter) badgeFooter.style.display = 'inline';
         }
         function clearPanelSettingsChanged() {
             var badge = document.getElementById('panelSettingsUnsavedBadge');
-            var badgeFooter = document.getElementById('panelSettingsUnsavedBadgeFooter');
             if (badge) badge.style.display = 'none';
-            if (badgeFooter) badgeFooter.style.display = 'none';
-        }
-        function initPanelSettingsStickyFooter() {
-            var header = document.querySelector('.panel-settings-page-header');
-            var footer = document.getElementById('panelSettingsStickyFooter');
-            if (!header || !footer) return;
-            var observer = new IntersectionObserver(function(entries) {
-                entries.forEach(function(e) {
-                    footer.style.display = e.intersectionRatio < 0.3 ? 'block' : 'none';
-                });
-            }, { threshold: [0.3], rootMargin: '-80px 0px 0px 0px' });
-            observer.observe(header);
         }
         function initPanelSettingsTabs() {
             var tabs = document.querySelectorAll('.panel-settings-tab');

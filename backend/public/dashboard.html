@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/dashboard.css?v=15">
+    <link rel="stylesheet" href="css/dashboard.css?v=16">
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
 <body>
@@ -1188,13 +1188,6 @@
                             <button type="button" id="panelSettingsSaveBtn" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
                         </div>
                     </header>
-                    <div class="panel-settings-sticky-footer" id="panelSettingsStickyFooter" style="display:none;">
-                        <div class="panel-settings-sticky-footer-inner">
-                            <span id="panelSettingsUnsavedBadgeFooter" class="panel-settings-unsaved-badge" style="display:none;" data-i18n="panel_unsaved">تغییرات ذخیره نشده</span>
-                            <button type="button" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره تغییرات</button>
-                        </div>
-                    </div>
-
                     <div id="panelSettingsLoading" class="panel-settings-loading" style="display:none;">
                         <span class="loading-spinner" aria-hidden="true"></span>
                         <span data-i18n="loading">در حال بارگذاری...</span>
@@ -1703,15 +1696,15 @@
         </div>
         </div>
         <div class="bottom-bar" id="bottomBar">
-            <div class="price-ticker rates-marquee" id="priceTicker" aria-live="polite" dir="rtl" style="display:none;">
+            <div class="price-ticker rates-marquee" id="priceTicker" aria-live="polite" dir="rtl">
                 <div class="rates-marquee-bar">
                     <div class="rates-marquee-label">
                         <svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg>
                         <span data-i18n="nav_rates">نرخ ارزها</span>
-                        <div class="rates-marquee-datetime" id="tickerUpdated">
-                            <span class="ticker-loading" data-i18n="ticker_loading">در حال بارگذاری قیمت‌ها...</span>
-                            <div class="ticker-times" id="tickerTimes" style="display:none;"></div>
-                        </div>
+                    </div>
+                    <div class="rates-marquee-datetime" id="tickerUpdated">
+                        <span class="ticker-loading" data-i18n="ticker_loading">در حال بارگذاری قیمت‌ها...</span>
+                        <div class="ticker-times" id="tickerTimes" style="display:none;"></div>
                     </div>
                     <div class="rates-marquee-track" id="ratesMarqueeTrack" onmouseenter="pauseTickerRatesMarquee()" onmouseleave="resumeTickerRatesMarquee()">
                         <div class="rates-marquee-inner" id="ratesMarqueeInner"></div>

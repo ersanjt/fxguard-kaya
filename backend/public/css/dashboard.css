@@ -129,7 +129,8 @@
         .rate-card-type label, .rate-card-value label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
         .rate-card-value { grid-column: 2; }
         .rate-card-type select, .rate-card-value input { width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); }
-        .main-wrap { display: flex; flex: 1; overflow: hidden; flex-direction: column; padding-bottom: max(140px, calc(130px + env(safe-area-inset-bottom))); min-height: 0; }
+        .main-wrap { display: flex; flex: 1; overflow: hidden; flex-direction: column; padding-bottom: max(120px, calc(110px + env(safe-area-inset-bottom))); min-height: 0; }
+        body.bottom-bar-hidden .main-wrap { padding-bottom: 0; }
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9998; opacity: 0; transition: opacity 0.25s; -webkit-tap-highlight-color: transparent; pointer-events: none; }
         .sidebar-overlay.show { opacity: 1; pointer-events: auto; }
         .dashboard-sub { color: var(--text-secondary); font-size: 0.95rem; margin: -4px 0 24px; }
@@ -266,8 +267,8 @@
         .rates-marquee-bar { display: flex; align-items: center; gap: 16px; padding: 12px 20px; padding-bottom: max(12px, env(safe-area-inset-bottom)); min-height: 48px; }
         .rates-marquee-label { display: flex; align-items: center; gap: 8px; flex-shrink: 0; font-weight: 600; font-size: 0.9rem; }
         .rates-marquee-label svg { width: 20px; height: 20px; opacity: 0.95; }
-        .rates-marquee-datetime { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.9); }
-        .rates-marquee-datetime .ticker-loading { font-size: 0.75rem; visibility: hidden; }
+        .rates-marquee-datetime { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.9); flex-shrink: 0; }
+        .rates-marquee-datetime .ticker-loading { font-size: 0.75rem; }
         .rates-marquee-datetime .ticker-dt-label { font-size: 0.7rem; font-weight: 600; color: rgba(255,255,255,0.6); text-transform: uppercase; }
         .rates-marquee-datetime .ticker-time-block { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 4px 8px; background: rgba(255,255,255,0.15); border-radius: 6px; }
         .rates-marquee-datetime .ticker-time-row { display: flex; align-items: baseline; gap: 4px; }
@@ -289,6 +290,7 @@
         .rates-marquee-inner .ticker-item .ticker-change.up { color: #86efac; }
         .rates-marquee-inner .ticker-item .ticker-change.down { color: #fca5a5; }
         .rates-marquee-inner .ticker-item .ticker-change.neutral { color: rgba(255,255,255,0.7); }
+        .rates-marquee-inner .ticker-item.ticker-empty { opacity: 0.9; font-style: italic; }
         .rates-marquee-more { display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3); border-radius: 10px; color: #fff; font-family: var(--font); font-size: 0.85rem; font-weight: 500; cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
         .rates-marquee-more:hover { background: rgba(255,255,255,0.35); }
         .rates-marquee-more svg { width: 18px; height: 18px; }
@@ -357,24 +359,22 @@
             .header .lang-dropdown-menu button:hover { background: var(--bg-hover); color: var(--text-primary); }
             .header .lang-dropdown-menu button[data-lang].active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
             .bottom-bar { border-top: 1px solid rgba(16,185,129,0.25); background: transparent; }
-            .price-ticker { padding: 10px 24px; padding-bottom: max(10px, env(safe-area-inset-bottom)); display: flex; flex-wrap: nowrap; align-items: center; gap: 16px 20px; }
-            .price-ticker .ticker-item-track { gap: 10px 14px; }
-            .price-ticker .ticker-item { padding: 6px 10px; font-size: 0.9rem; }
-            .price-ticker .ticker-item .ticker-value { font-size: 0.95rem; }
+            .rates-marquee-bar { padding: 10px 24px; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+            .rates-marquee-inner .ticker-item { padding: 6px 10px; font-size: 0.9rem; }
+            .rates-marquee-inner .ticker-item .ticker-value { font-size: 0.95rem; }
         }
         /* ========== هدر و تیکر تبلت — 769px تا 1024px ========== */
         @media (min-width: 769px) and (max-width: 1024px) {
             .header { padding: 10px 20px; }
             .header .logo-text { font-size: 1.05rem; }
             .header .header-search-field input { font-size: 0.85rem; }
-            .price-ticker .ticker-item-track { gap: 8px 12px; }
-            .price-ticker .ticker-item { padding: 5px 8px; font-size: 0.85rem; }
-            .price-ticker .ticker-item .ticker-value { font-size: 0.9rem; }
-            .price-ticker .ticker-datetime { min-width: 0; }
+            .rates-marquee-inner .ticker-item { padding: 5px 8px; font-size: 0.85rem; }
+            .rates-marquee-inner .ticker-item .ticker-value { font-size: 0.9rem; }
+            .rates-marquee-datetime { min-width: 0; }
         }
         /* ========== تیکر لپ‌تاپ — 1025px تا 1280px ========== */
         @media (min-width: 1025px) and (max-width: 1280px) {
-            .price-ticker .ticker-item-track { gap: 8px 12px; }
+            .rates-marquee-inner .ticker-item { padding: 5px 10px; }
         }
         /* ========== لپ‌تاپ — تطبیق با عرض نمایشگر بدون زوم (۱۳۶۶px) ========== */
         @media (max-width: 1366px) {
@@ -385,10 +385,10 @@
             .header { padding: 10px 20px; padding-top: max(10px, env(safe-area-inset-top)); }
             .header-left { max-width: 420px; }
             .header .header-search-field input { font-size: 0.85rem; }
-            .price-ticker { padding: 8px 16px; padding-bottom: max(8px, env(safe-area-inset-bottom)); gap: 12px 16px; }
-            .price-ticker .ticker-datetime { min-width: 140px; font-size: 0.7rem; }
-            .price-ticker .ticker-item { padding: 5px 10px; font-size: 0.85rem; }
-            .price-ticker .ticker-item .ticker-value { font-size: 0.9rem; }
+            .rates-marquee-bar { padding: 8px 16px; padding-bottom: max(8px, env(safe-area-inset-bottom)); gap: 12px 16px; }
+            .rates-marquee-datetime { min-width: 140px; font-size: 0.7rem; }
+            .rates-marquee-inner .ticker-item { padding: 5px 10px; font-size: 0.85rem; }
+            .rates-marquee-inner .ticker-item .ticker-value { font-size: 0.9rem; }
         }
         /* ========== لپ‌تاپ کوچک — تطبیق کامل با ۱۲۸۰px بدون زوم ========== */
         @media (max-width: 1280px) {
@@ -404,11 +404,11 @@
             .header .logo-icon svg { width: 18px; height: 18px; }
             .header .header-search-field { padding: 6px 10px; }
             .header .header-search-field input { font-size: 0.82rem; }
-            .price-ticker { padding: 8px 14px; padding-bottom: max(8px, env(safe-area-inset-bottom)); gap: 10px 14px; font-size: 0.84rem; }
-            .price-ticker .ticker-datetime { min-width: 128px; font-size: 0.68rem; }
-            .price-ticker .ticker-item { padding: 6px 10px; font-size: 0.82rem; }
-            .price-ticker .ticker-item .ticker-value { font-size: 0.85rem; }
-            .price-ticker .ticker-item .ticker-label { min-width: 2.5em; font-size: 0.8rem; }
+            .rates-marquee-bar { padding: 8px 14px; padding-bottom: max(8px, env(safe-area-inset-bottom)); gap: 10px 14px; font-size: 0.84rem; }
+            .rates-marquee-datetime { min-width: 128px; font-size: 0.68rem; }
+            .rates-marquee-inner .ticker-item { padding: 6px 10px; font-size: 0.82rem; }
+            .rates-marquee-inner .ticker-item .ticker-value { font-size: 0.85rem; }
+            .rates-marquee-inner .ticker-item .ticker-label { min-width: 2.5em; font-size: 0.8rem; }
             .content h2 { font-size: 1.1rem; margin: 0 0 14px; }
             .conv-list-header { padding: 10px 14px; }
             .conv-list-item { padding: 10px 12px; }
@@ -596,9 +596,6 @@
         .panel-settings-intro { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.55; margin: 0; max-width: 480px; }
         .panel-settings-header-actions { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
         .panel-settings-unsaved-badge { font-size: 0.85rem; color: var(--warning); padding: 8px 14px; background: rgba(245,158,11,0.12); border-radius: 10px; font-weight: 500; }
-        .panel-settings-sticky-footer { position: fixed; bottom: 0; left: 0; right: 0; z-index: 600; padding: 16px 24px; background: var(--bg-card); border-top: 1px solid var(--border); box-shadow: 0 -4px 24px rgba(0,0,0,0.15); }
-        .panel-settings-sticky-footer-inner { max-width: 100%; margin: 0; padding-inline: clamp(16px, 2vw, 24px); display: flex; align-items: center; justify-content: flex-end; gap: 16px; }
-        .panel-settings-sticky-footer .panel-settings-save-btn { padding: 14px 32px; font-size: 1rem; border-radius: 12px; min-height: 52px; font-weight: 600; }
         .panel-settings-loading { display: flex; align-items: center; gap: 12px; padding: 40px; color: var(--text-muted); background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border); }
         .panel-settings-loading .loading-spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
         .panel-settings-content { display: flex; flex-direction: column; gap: 0; width: 100%; max-width: 100%; }
@@ -737,9 +734,6 @@
             .panel-settings-section { padding: 20px 18px; }
             .panel-settings-tabs { padding: 6px; gap: 6px; }
             .panel-settings-tab { padding: 12px 16px; font-size: 0.9rem; }
-            .panel-settings-sticky-footer { padding: 14px 16px; }
-            .panel-settings-sticky-footer-inner { flex-direction: column; }
-            .panel-settings-sticky-footer .panel-settings-save-btn { width: 100%; }
         }
         @media (min-width: 577px) and (max-width: 899px) {
             .page-panel-settings { max-width: 640px; }
