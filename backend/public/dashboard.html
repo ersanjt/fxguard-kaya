@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/dashboard.css?v=12">
+    <link rel="stylesheet" href="css/dashboard.css?v=11">
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
 <body>
@@ -1172,17 +1172,13 @@
                         <div id="transactionList" class="transaction-list"></div>
                     </div>
                 </div>
-                <div id="pagePanelSettings" class="page page-panel-settings" role="main" aria-label="تنظیمات ظاهر پنل">
-                    <div class="panel-settings-page-wrap">
-                        <header class="panel-settings-page-header">
-                            <div class="panel-settings-header-badge" aria-hidden="true">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                            </div>
-                            <h2 class="panel-settings-page-title" data-i18n="page_panel_settings">ظاهر پنل</h2>
-                            <p class="panel-settings-intro" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
-                        </header>
+                <div id="pagePanelSettings" class="page page-panel-settings">
+                    <header class="panel-settings-page-header">
+                        <h2 class="panel-settings-page-title" data-i18n="page_panel_settings">ظاهر پنل</h2>
+                        <p class="panel-settings-intro" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
+                    </header>
 
-                        <div id="panelSettingsLoading" class="panel-settings-loading" style="display:none;" role="status" aria-live="polite">
+                    <div id="panelSettingsLoading" class="panel-settings-loading" style="display:none;">
                         <span class="loading-spinner" aria-hidden="true"></span>
                         <span data-i18n="loading">در حال بارگذاری...</span>
                     </div>
@@ -1371,21 +1367,19 @@
                                         </div>
                                     </div>
                                     <div id="companyEmailsTableWrap" class="company-emails-table-wrap">
-                                        <div class="company-emails-table-scroll" role="region" aria-label="لیست ایمیل‌های شرکتی">
-                                            <table class="data-table company-emails-table" id="companyEmailsTable">
-                                                <thead>
-                                                    <tr>
-                                                        <th data-i18n="panel_company_email_address">آدرس ایمیل</th>
-                                                        <th data-i18n="panel_company_email_label">عنوان</th>
-                                                        <th data-i18n="panel_company_email_assigned">اختصاص به</th>
-                                                        <th data-i18n="panel_company_email_has_pass">رمز</th>
-                                                        <th data-i18n="th_status">وضعیت</th>
-                                                        <th data-i18n="panel_company_email_actions">عملیات</th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody id="companyEmailsTableBody"></tbody>
-                                            </table>
-                                        </div>
+                                        <table class="data-table company-emails-table" id="companyEmailsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th data-i18n="panel_company_email_address">آدرس ایمیل</th>
+                                                    <th data-i18n="panel_company_email_label">عنوان</th>
+                                                    <th data-i18n="panel_company_email_assigned">اختصاص به</th>
+                                                    <th data-i18n="panel_company_email_has_pass">رمز</th>
+                                                    <th data-i18n="th_status">وضعیت</th>
+                                                    <th data-i18n="panel_company_email_actions">عملیات</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="companyEmailsTableBody"></tbody>
+                                        </table>
                                         <p id="companyEmailsEmpty" class="company-emails-empty" style="display:none;" data-i18n="panel_company_emails_empty">هنوز ایمیل شرکتی ثبت نشده است.</p>
                                     </div>
                                 </section>
@@ -1423,7 +1417,6 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
                     </div>
                 </div>
                 <div id="serviceModal" class="modal-overlay" style="display:none;">

@@ -3775,18 +3775,12 @@
             }
             if (emptyEl) emptyEl.style.display = 'none';
             function escapeHtml(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-            var lblAddr = t('panel_company_email_address') || 'آدرس ایمیل';
-            var lblTitle = t('panel_company_email_label') || 'عنوان';
-            var lblAssigned = t('panel_company_email_assigned') || 'اختصاص به';
-            var lblPass = t('panel_company_email_has_pass') || 'رمز';
-            var lblStatus = t('th_status') || 'وضعیت';
-            var lblActions = t('panel_company_email_actions') || 'عملیات';
             tbody.innerHTML = list.map(function(item) {
                 var assigned = (item.assignedUser && (item.assignedUser.name || item.assignedUser.email)) || '—';
                 var passBadge = item.hasPassword ? '<span class="badge badge-success">✓</span>' : '<span class="badge badge-muted">—</span>';
                 var statusBadge = item.isActive ? '<span class="badge badge-success">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge badge-muted">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
                 var sendCredsBtn = item.assignedUser && item.hasPassword ? '<button type="button" class="btn-sm btn-secondary company-email-send-creds" data-id="' + item.id + '" title="' + (t('panel_company_email_send_creds') || '') + '">' + (LANG === 'fa' ? 'ارسال ورود' : 'Send') + '</button>' : '';
-                return '<tr data-id="' + item.id + '"><td data-label="' + escapeHtml(lblAddr) + '">' + escapeHtml(item.email) + '</td><td data-label="' + escapeHtml(lblTitle) + '">' + escapeHtml(item.label || '') + '</td><td data-label="' + escapeHtml(lblAssigned) + '">' + escapeHtml(assigned) + '</td><td data-label="' + escapeHtml(lblPass) + '">' + passBadge + '</td><td data-label="' + escapeHtml(lblStatus) + '">' + statusBadge + '</td><td class="company-email-actions" data-label="' + escapeHtml(lblActions) + '"><button type="button" class="btn-sm btn-secondary company-email-edit" data-id="' + item.id + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> ' + sendCredsBtn + ' <button type="button" class="btn-sm btn-danger company-email-delete" data-id="' + item.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></td></tr>';
+                return '<tr data-id="' + item.id + '"><td>' + escapeHtml(item.email) + '</td><td>' + escapeHtml(item.label || '') + '</td><td>' + escapeHtml(assigned) + '</td><td>' + passBadge + '</td><td>' + statusBadge + '</td><td class="company-email-actions"><button type="button" class="btn-sm btn-secondary company-email-edit" data-id="' + item.id + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> ' + sendCredsBtn + ' <button type="button" class="btn-sm btn-danger company-email-delete" data-id="' + item.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></td></tr>';
             }).join('');
         }
         function openCompanyEmailForm(item) {
