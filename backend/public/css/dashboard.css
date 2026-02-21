@@ -1542,7 +1542,8 @@
         .customer-modal-status-hint { font-size: 0.8rem; color: var(--text-muted); }
         .customer-modal-notes { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; resize: vertical; min-height: 80px; transition: border-color 0.2s, box-shadow 0.2s; }
         .customer-modal-notes:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
-        .customer-modal-footer { display: flex; gap: 12px; justify-content: flex-end; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-secondary); }
+        .customer-modal-footer { display: flex; gap: 12px; justify-content: space-between; align-items: center; flex-wrap: wrap; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-secondary); }
+        .customer-modal-footer-right { display: flex; gap: 8px; margin-left: auto; }
         .customer-modal-save { min-width: 120px; }
         @media (max-width: 480px) { .customer-modal-grid { grid-template-columns: 1fr; } .customer-modal-header { padding: 16px 18px; } .customer-modal-body { padding: 16px 18px; } .customer-modal-footer { padding: 14px 18px; } }
         .badge.active { background: var(--accent-soft); color: var(--accent); }

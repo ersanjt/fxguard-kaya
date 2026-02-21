@@ -133,6 +133,7 @@ window.__I18N_TR = {
     sort_by_last_contact: 'Son iletişim',
     customer_quick_chat: 'Sohbet başlat',
     customer_quick_edit: 'Müşteri düzenle',
+    customer_delete: 'Müşteriyi sil',
     filter_unread: 'Okunmamış',
     status_active: 'Aktif',
     status_inactive: 'Pasif',

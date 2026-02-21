@@ -3276,7 +3276,8 @@
             if (quickActionsEl) {
                 var qName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 var qPhone = (c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" onclick="startCustomerChat(\'' + c.id + '\', \'' + qName + '\', \'' + qPhone + '\')">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" onclick="openCustomerModal(\'' + c.id + '\')">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" onclick="openTransactionModal(\'' + c.id + '\')">' + escapeHtml(t('transaction_add')) + '</button>';
+                var delBtn = (currentUser && currentUser.canDeleteCustomer) ? '<button type="button" class="btn-danger btn-danger-outline customer-detail-action-btn" onclick="deleteCustomer(\'' + c.id + '\')">' + escapeHtml(t('customer_delete') || (LANG === 'fa' ? 'حذف مشتری' : 'Delete customer')) + '</button>' : '';
+                quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" onclick="startCustomerChat(\'' + c.id + '\', \'' + qName + '\', \'' + qPhone + '\')">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" onclick="openCustomerModal(\'' + c.id + '\')">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" onclick="openTransactionModal(\'' + c.id + '\')">' + escapeHtml(t('transaction_add')) + '</button>' + delBtn;
             }
             var detailProfilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
             if (detailProfilePic && detailProfilePic.indexOf('/') === 0) detailProfilePic = (window.location.origin || '') + detailProfilePic;
@@ -3464,8 +3465,26 @@
                 document.getElementById('customerModalStatus').value = currentCustomerData.status || 'active';
                 document.getElementById('customerModalNotes').value = currentCustomerData.notes || '';
             }
+            var delWrap = document.getElementById('customerModalDeleteWrap');
+            var delBtn = document.getElementById('btnCustomerModalDelete');
+            if (delWrap && delBtn) {
+                if (customerId && currentUser && currentUser.canDeleteCustomer) {
+                    delWrap.style.display = '';
+                    delBtn.onclick = function() { deleteCustomer(customerId, document.getElementById('customerModalName').value || document.getElementById('customerModalPhone').value); };
+                } else {
+                    delWrap.style.display = 'none';
+                }
+            }
         }
         function closeCustomerModal() { var m = document.getElementById('customerModal'); if (m) m.style.display = 'none'; }
+        async function deleteCustomer(custId, name) {
+            if (!currentUser || !currentUser.canDeleteCustomer) { toast(LANG === 'fa' ? 'شما اجازه حذف مشتری را ندارید' : 'You cannot delete customers', true); return; }
+            var msg = (LANG === 'fa' ? 'آیا از حذف مشتری «' : 'Delete customer "') + (name || custId) + (LANG === 'fa' ? '» مطمئن هستید؟ مکالمات، یادداشت‌ها و تراکنش‌ها هم حذف می‌شوند.' : '"? Conversations, notes and transactions will be removed.');
+            if (!confirm(msg)) return;
+            var res = await apiFetch('/api/customers/' + custId, { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (res.ok) { toast(LANG === 'fa' ? 'مشتری حذف شد' : 'Customer deleted'); closeCustomerModal(); showPage('customers'); loadCustomers(); currentCustomerId = null; currentCustomerData = null; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
         async function saveCustomerFromModal() {
             var id = document.getElementById('customerModalId').value.trim();
             var name = document.getElementById('customerModalName').value.trim();
@@ -4891,7 +4910,7 @@
             });
             document.getElementById('userEditPerms').innerHTML = html;
             var btnDel = document.getElementById('btnUserDelete');
-            if (btnDel) btnDel.style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) && u.id !== (currentUser && currentUser.id) ? '' : 'none';
+            if (btnDel) btnDel.style.display = (currentUser && currentUser.canDeleteUser) && u.id !== (currentUser && currentUser.id) ? '' : 'none';
             document.getElementById('userEditModal').style.display = 'flex';
         }
         function openDeleteUserModal() {

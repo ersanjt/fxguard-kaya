@@ -133,6 +133,7 @@ window.__I18N_FA = {
     sort_by_last_contact: 'آخرین تماس',
     customer_quick_chat: 'شروع چت',
     customer_quick_edit: 'ویرایش مشتری',
+    customer_delete: 'حذف مشتری',
     filter_unread: 'خوانده‌نشده',
     status_active: 'فعال',
     status_inactive: 'غیرفعال',

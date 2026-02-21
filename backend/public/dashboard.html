@@ -1590,8 +1590,13 @@
                             </section>
                         </div>
                         <div class="customer-modal-footer">
-                            <button type="button" class="btn-secondary" onclick="closeCustomerModal()" data-i18n="btn_cancel">انصراف</button>
-                            <button type="button" class="btn-primary customer-modal-save" onclick="saveCustomerFromModal()" data-i18n="btn_save">ذخیره</button>
+                            <div class="customer-modal-footer-left" id="customerModalDeleteWrap" style="display:none;">
+                                <button type="button" class="btn-danger btn-danger-outline" id="btnCustomerModalDelete" data-i18n="customer_delete">حذف مشتری</button>
+                            </div>
+                            <div class="customer-modal-footer-right">
+                                <button type="button" class="btn-secondary" onclick="closeCustomerModal()" data-i18n="btn_cancel">انصراف</button>
+                                <button type="button" class="btn-primary customer-modal-save" onclick="saveCustomerFromModal()" data-i18n="btn_save">ذخیره</button>
+                            </div>
                         </div>
                     </div>
                 </div>
