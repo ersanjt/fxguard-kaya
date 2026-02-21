@@ -163,6 +163,25 @@ async function connectDatabases() {
         } catch (migErr) {
             logger.warn('Transactions customerId migration:', migErr.message);
         }
+        // Auto-migrate: add status, approvedBy, approvedAt, rejectedBy, rejectedAt to Transactions
+        try {
+            const { DataTypes } = require('sequelize');
+            const qi = sequelize.getQueryInterface();
+            const txDesc = await qi.describeTable('Transactions');
+            const colsToAdd = [];
+            if (!txDesc || !txDesc.status) colsToAdd.push(['status', { type: DataTypes.STRING(20), allowNull: true, defaultValue: 'pending' }]);
+            if (!txDesc || !txDesc.approvedBy) colsToAdd.push(['approvedBy', { type: DataTypes.UUID, allowNull: true, references: { model: 'Users', key: 'id' } }]);
+            if (!txDesc || !txDesc.approvedAt) colsToAdd.push(['approvedAt', { type: DataTypes.DATE, allowNull: true }]);
+            if (!txDesc || !txDesc.rejectedBy) colsToAdd.push(['rejectedBy', { type: DataTypes.UUID, allowNull: true, references: { model: 'Users', key: 'id' } }]);
+            if (!txDesc || !txDesc.rejectedAt) colsToAdd.push(['rejectedAt', { type: DataTypes.DATE, allowNull: true }]);
+            if (!txDesc || !txDesc.metadata) colsToAdd.push(['metadata', { type: DataTypes.JSON, allowNull: true, defaultValue: {} }]);
+            for (const [name, def] of colsToAdd) {
+                await qi.addColumn('Transactions', name, def);
+                logger.info('✅ Transactions.' + name + ' column added (auto-migration)');
+            }
+        } catch (migErr) {
+            logger.warn('Transactions status/approval migration:', migErr.message);
+        }
         // Auto-migrate: add branchId to Conversations BEFORE sync (sync creates index on branchId)
         try {
             const qi = sequelize.getQueryInterface();
