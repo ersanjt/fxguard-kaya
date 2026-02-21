@@ -3803,14 +3803,30 @@
             initPanelSettingsCollapse();
             initPanelVisibilitySearch();
             clearPanelSettingsChanged();
+            if (typeof initPanelSettingsStickyFooter === 'function') initPanelSettingsStickyFooter();
         }
         function markPanelSettingsChanged() {
             var badge = document.getElementById('panelSettingsUnsavedBadge');
+            var badgeFooter = document.getElementById('panelSettingsUnsavedBadgeFooter');
             if (badge) badge.style.display = 'inline';
+            if (badgeFooter) badgeFooter.style.display = 'inline';
         }
         function clearPanelSettingsChanged() {
             var badge = document.getElementById('panelSettingsUnsavedBadge');
+            var badgeFooter = document.getElementById('panelSettingsUnsavedBadgeFooter');
             if (badge) badge.style.display = 'none';
+            if (badgeFooter) badgeFooter.style.display = 'none';
+        }
+        function initPanelSettingsStickyFooter() {
+            var header = document.querySelector('.panel-settings-page-header');
+            var footer = document.getElementById('panelSettingsStickyFooter');
+            if (!header || !footer) return;
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(e) {
+                    footer.style.display = e.intersectionRatio < 0.3 ? 'block' : 'none';
+                });
+            }, { threshold: [0.3], rootMargin: '-80px 0px 0px 0px' });
+            observer.observe(header);
         }
         function initPanelSettingsTabs() {
             var tabs = document.querySelectorAll('.panel-settings-tab');

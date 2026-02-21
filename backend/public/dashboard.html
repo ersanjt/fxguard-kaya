@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/dashboard.css?v=12">
+    <link rel="stylesheet" href="css/dashboard.css?v=13">
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
 <body>
@@ -1188,6 +1188,12 @@
                             <button type="button" id="panelSettingsSaveBtn" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
                         </div>
                     </header>
+                    <div class="panel-settings-sticky-footer" id="panelSettingsStickyFooter" style="display:none;">
+                        <div class="panel-settings-sticky-footer-inner">
+                            <span id="panelSettingsUnsavedBadgeFooter" class="panel-settings-unsaved-badge" style="display:none;" data-i18n="panel_unsaved">تغییرات ذخیره نشده</span>
+                            <button type="button" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره تغییرات</button>
+                        </div>
+                    </div>
 
                     <div id="panelSettingsLoading" class="panel-settings-loading" style="display:none;">
                         <span class="loading-spinner" aria-hidden="true"></span>
