@@ -340,7 +340,17 @@
             .header .header-search-field input { font-size: 0.875rem; }
             .header .user-badge { padding: 6px 14px; border-radius: 6px; }
             .header button.logout-btn { padding: 6px 14px; border-radius: 6px; font-size: 0.8rem; }
-            .header-right .lang-switch button { padding: 5px 12px; font-size: 0.8rem; border-radius: 6px; }
+            .header .lang-switch > button:not([role="option"]) { display: none; }
+            .header .lang-dropdown-wrap { display: block; position: relative; }
+            .header .lang-dropdown-btn { display: flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-secondary); color: var(--text-secondary); font-family: var(--font); font-size: 0.85rem; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+            .header .lang-dropdown-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+            .header .lang-dropdown-btn svg { flex-shrink: 0; transition: transform 0.2s; }
+            .header .lang-dropdown-wrap.open .lang-dropdown-btn svg { transform: rotate(180deg); }
+            .header .lang-dropdown-menu { position: absolute; top: 100%; inset-inline-end: 0; margin-top: 4px; min-width: 120px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow); z-index: 100; display: none; overflow: hidden; }
+            .header .lang-dropdown-wrap.open .lang-dropdown-menu { display: block; }
+            .header .lang-dropdown-menu button { display: block; width: 100%; padding: 10px 14px; border: none; background: none; color: var(--text-secondary); font-family: var(--font); font-size: 0.9rem; text-align: right; cursor: pointer; transition: background 0.2s; }
+            .header .lang-dropdown-menu button:hover { background: var(--bg-hover); color: var(--text-primary); }
+            .header .lang-dropdown-menu button[data-lang].active { background: var(--accent-soft); color: var(--accent); font-weight: 500; }
             .bottom-bar { border-top: 1px solid rgba(16,185,129,0.25); background: transparent; }
             .price-ticker { padding: 10px 24px; padding-bottom: max(10px, env(safe-area-inset-bottom)); display: flex; flex-wrap: nowrap; align-items: center; gap: 16px 20px; }
             .price-ticker .ticker-item-track { gap: 10px 14px; }
