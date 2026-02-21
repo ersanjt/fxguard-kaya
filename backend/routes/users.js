@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { User, Department, Branch, Conversation, Message, Task, Ticket, ProcessInstance, ProcessInstanceStep, ActivityLog, TaskUpdate, TicketReply, AnnouncementRead, InternalThreadParticipant, InternalMessage, CustomerNote, Transaction, PasswordResetToken } = require('../models');
-const { getPermissions, isMainAdmin } = require('../lib/permissions');
+const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser } = require('../lib/permissions');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 
 router.get('/', async (req, res) => {
@@ -52,7 +52,9 @@ router.get('/me', (req, res) => {
         department: u.department,
         branch: u.branch,
         permissions: req.permissions,
-        totpEnabled: !!u.totpEnabled
+        totpEnabled: !!u.totpEnabled,
+        canDeleteCustomer: canDeleteCustomer(u),
+        canDeleteUser: canDeleteUser(u)
     };
     res.json(out);
 });
@@ -218,7 +220,7 @@ router.put('/:id', async (req, res) => {
 // حذف کاربر با انتقال مکالمات، تسک‌ها، تیکت‌ها و فرایندها به کاربر دیگر
 router.post('/:id/delete-with-transfer', async (req, res) => {
     try {
-        if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر را حذف کند' });
+        if (!req.canDeleteUser()) return res.status(403).json({ error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند کاربر را حذف کند' });
         const userId = req.params.id;
         const { transferToUserId } = req.body;
         if (!transferToUserId) return res.status(400).json({ error: 'انتخاب کاربر برای انتقال داده‌ها الزامی است' });
@@ -249,7 +251,7 @@ router.post('/:id/delete-with-transfer', async (req, res) => {
 // حذف دائمی کاربر از سیستم (انتقال داده‌ها سپس حذف رکورد)
 router.post('/:id/permanent-delete', async (req, res) => {
     try {
-        if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر را حذف کند' });
+        if (!req.canDeleteUser()) return res.status(403).json({ error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند کاربر را حذف کند' });
         const userId = req.params.id;
         const { transferToUserId } = req.body;
         if (!transferToUserId) return res.status(400).json({ error: 'انتخاب کاربر برای انتقال داده‌ها الزامی است' });

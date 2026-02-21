@@ -115,6 +115,20 @@ function canManageUsers(user) {
     return !!p[MANAGE_USERS_KEY];
 }
 
+/** فقط ادمین یا مدیر (یا بالاتر) می‌توانند مشتری را حذف کنند */
+function canDeleteCustomer(user) {
+    if (!user) return false;
+    if (isMainAdmin(user)) return true;
+    return ['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1;
+}
+
+/** فقط مالک (بالاترین سطح دسترسی) می‌تواند کاربر را حذف کند */
+function canDeleteUser(user) {
+    if (!user) return false;
+    if (isMainAdmin(user)) return true;
+    return user.role === 'owner';
+}
+
 function getSectionKeys() {
     return [...SECTION_KEYS];
 }
@@ -127,6 +141,8 @@ module.exports = {
     getPermissions,
     canAccess,
     canManageUsers,
+    canDeleteCustomer,
+    canDeleteUser,
     isMainAdmin,
     getSectionKeys,
     getManageUsersKey,

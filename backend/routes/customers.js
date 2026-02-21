@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { Customer, Conversation, Message, CustomerNote, User, ActivityLog, Department, Transaction, CashBox, BankAccount } = require('../models');
+const { logActivity } = require('../services/activityLog');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
 
@@ -193,6 +194,42 @@ router.put('/:id', async (req, res) => {
         if (status !== undefined && canEditStatus) updateData.status = status;
         await customer.update(updateData);
         res.json(customer);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// حذف مشتری — فقط ادمین یا مدیر (یا مالک)
+router.delete('/:id', async (req, res) => {
+    try {
+        if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        if (!req.canDeleteCustomer()) return res.status(403).json({ error: 'فقط ادمین یا مدیر می‌توانند مشتری را حذف کنند' });
+        const customer = await Customer.findByPk(req.params.id);
+        if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
+        const allowed = await canAccessCustomer(req, customer.id);
+        if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+
+        const customerId = customer.id;
+        const convs = await Conversation.findAll({ where: { customerId }, attributes: ['id'] });
+        const convIds = convs.map(c => c.id);
+        if (convIds.length > 0) {
+            await Message.destroy({ where: { conversationId: { [Op.in]: convIds } } });
+        }
+        await Conversation.destroy({ where: { customerId } });
+        await CustomerNote.destroy({ where: { customerId } });
+        await ActivityLog.destroy({ where: { customerId } });
+        await Transaction.update({ customerId: null }, { where: { customerId } });
+        await customer.destroy();
+
+        await logActivity({
+            userId: req.userId,
+            action: 'customer_deleted',
+            entityType: 'customer',
+            entityId: customerId,
+            summary: 'مشتری حذف شد',
+            metadata: { name: customer.name, phone: customer.phone }
+        });
+        res.json({ message: 'مشتری حذف شد' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

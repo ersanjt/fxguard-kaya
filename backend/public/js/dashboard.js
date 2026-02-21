@@ -607,7 +607,7 @@
                     users_intro: 'Only the owner or users with "User management" access can create users and edit permissions.',
                     label_name: 'Name', label_email: 'Email', label_password: 'Password', label_role: 'Role', label_dept: 'Department', label_branch: 'Branch',
                     user_ph_name: 'Full name', user_ph_pass: 'At least 6 characters', add_user: 'Add user', role_agent: 'Agent', role_manager: 'Manager', role_admin: 'Admin',
-                    ticket_title: 'Ticket title', ticket_desc: 'Description', ticket_priority: 'Priority', create_ticket: 'Create ticket', ticket_ph_subject: 'Subject', ticket_ph_search: 'Search number or title...', tickets_intro: 'Official section for submitting and tracking requests. Each ticket has a unique number.', overdue: 'Overdue', filter_all_status: 'All statuses', filter_all_priority: 'All priorities', sort_newest: 'Newest', sort_oldest: 'Oldest', sort_priority: 'By priority', sort_by_name: 'By name', sort_by_last_contact: 'Last contact', customer_quick_chat: 'Start chat', customer_quick_edit: 'Edit customer',
+                    ticket_title: 'Ticket title', ticket_desc: 'Description', ticket_priority: 'Priority', create_ticket: 'Create ticket', ticket_ph_subject: 'Subject', ticket_ph_search: 'Search number or title...', tickets_intro: 'Official section for submitting and tracking requests. Each ticket has a unique number.', overdue: 'Overdue', filter_all_status: 'All statuses', filter_all_priority: 'All priorities', sort_newest: 'Newest', sort_oldest: 'Oldest', sort_priority: 'By priority', sort_by_name: 'By name', sort_by_last_contact: 'Last contact', customer_quick_chat: 'Start chat', customer_quick_edit: 'Edit customer', customer_delete: 'Delete customer',
                     reply_to_ticket: 'Reply to ticket', reply_ph: 'Reply text...', file_attach: 'Attach file (optional)', send_reply: 'Send reply',
                     priority_normal: 'Normal', priority_high: 'High', priority_low: 'Low', priority_urgent: 'Urgent',
                     tasks_intro: 'Track tasks assigned to staff or departments.',
@@ -3470,15 +3470,16 @@
             if (delWrap && delBtn) {
                 if (customerId && currentUser && currentUser.canDeleteCustomer) {
                     delWrap.style.display = '';
-                    delBtn.onclick = function() { deleteCustomer(customerId, document.getElementById('customerModalName').value || document.getElementById('customerModalPhone').value); };
+                    delBtn.onclick = function() { deleteCustomer(customerId); };
                 } else {
                     delWrap.style.display = 'none';
                 }
             }
         }
         function closeCustomerModal() { var m = document.getElementById('customerModal'); if (m) m.style.display = 'none'; }
-        async function deleteCustomer(custId, name) {
+        async function deleteCustomer(custId) {
             if (!currentUser || !currentUser.canDeleteCustomer) { toast(LANG === 'fa' ? 'شما اجازه حذف مشتری را ندارید' : 'You cannot delete customers', true); return; }
+            var name = (currentCustomerData && currentCustomerData.id === custId) ? (currentCustomerData.name || currentCustomerData.phone) : (document.getElementById('customerModalName') && document.getElementById('customerModalName').value) || (document.getElementById('customerModalPhone') && document.getElementById('customerModalPhone').value) || custId;
             var msg = (LANG === 'fa' ? 'آیا از حذف مشتری «' : 'Delete customer "') + (name || custId) + (LANG === 'fa' ? '» مطمئن هستید؟ مکالمات، یادداشت‌ها و تراکنش‌ها هم حذف می‌شوند.' : '"? Conversations, notes and transactions will be removed.');
             if (!confirm(msg)) return;
             var res = await apiFetch('/api/customers/' + custId, { method: 'DELETE' });
