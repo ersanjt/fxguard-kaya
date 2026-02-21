@@ -727,5 +727,12 @@ window.__I18N_TR = {
     panel_smtp_host: 'Sunucu (Host)',
     panel_smtp_port: 'Port',
     panel_smtp_user: 'Kullanıcı adı',
-    panel_smtp_pass: 'Şifre'
+    panel_smtp_pass: 'Şifre',
+    panel_section_visibility: 'Bölüm görünürlüğü',
+    panel_visibility_desc: 'Gizlediğiniz bölümler menüde ve sitede gösterilmez. İşaretli = görünür.',
+    panel_tab_branding: 'Marka ve görünüm',
+    panel_tab_email: 'E-posta',
+    panel_tab_sections: 'Bölümler ve görünürlük',
+    panel_unsaved: 'Kaydedilmemiş değişiklikler',
+    panel_visibility_search: 'Bölümlerde ara...'
 };

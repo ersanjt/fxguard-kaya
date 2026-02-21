@@ -120,6 +120,11 @@
                     panel_language_hint_trilingual: 'فارسی، انگلیسی و ترکی؛ کاربران می‌توانند زبان را عوض کنند.',
                     panel_section_visibility: 'نمایش بخش‌ها در سایت',
                     panel_visibility_desc: 'بخش‌هایی که مخفی می‌کنید در منو و در کل وب‌سایت نمایش داده نمی‌شوند. تیک خورده = نمایش داده شود.',
+                    panel_tab_branding: 'برندینگ و ظاهر',
+                    panel_tab_email: 'ایمیل',
+                    panel_tab_sections: 'بخش‌ها و نمایش',
+                    panel_unsaved: 'تغییرات ذخیره نشده',
+                    panel_visibility_search: 'جستجو در بخش‌ها...',
                     user_perms_select_all: 'همه دسترسی‌ها',
                     user_perms_select_none: 'هیچ‌کدام',
                     user_perms_group_communications: 'ارتباطات',
@@ -465,6 +470,11 @@
                     btn_cancel: 'Cancel',
                     panel_section_visibility: 'Section visibility',
                     panel_visibility_desc: 'Hidden sections are not shown in the menu or anywhere on the site. Checked = visible.',
+                    panel_tab_branding: 'Branding & appearance',
+                    panel_tab_email: 'Email',
+                    panel_tab_sections: 'Sections & visibility',
+                    panel_unsaved: 'Unsaved changes',
+                    panel_visibility_search: 'Search sections...',
                     user_perms_select_all: 'All access',
                     user_perms_select_none: 'None',
                     user_perms_group_communications: 'Communications',
@@ -3797,16 +3807,16 @@
             });
         }
         function initPanelSettingsCollapse() {
+            var EXPANDED_MAX = 1200;
             document.querySelectorAll('.panel-settings-section-collapsible').forEach(function(section) {
                 var toggle = section.querySelector('.panel-settings-section-toggle');
                 var body = section.querySelector('.panel-settings-section-body');
                 if (!toggle || !body) return;
-                body.style.maxHeight = body.scrollHeight + 'px';
+                body.style.maxHeight = EXPANDED_MAX + 'px';
                 toggle.addEventListener('click', function() {
                     var collapsed = section.classList.toggle('collapsed');
                     toggle.setAttribute('aria-expanded', !collapsed);
-                    if (collapsed) body.style.maxHeight = '0';
-                    else body.style.maxHeight = body.scrollHeight + 'px';
+                    body.style.maxHeight = collapsed ? '0' : EXPANDED_MAX + 'px';
                 });
             });
         }
@@ -3937,6 +3947,8 @@
         function updatePanelLivePreview() {
             var siteName = (document.getElementById('panelSettingSiteName') && document.getElementById('panelSettingSiteName').value.trim()) || (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
             var pageTitle = (document.getElementById('panelSettingPageTitle') && document.getElementById('panelSettingPageTitle').value.trim()) || (LANG === 'fa' ? 'پورتال کارکنان | صرافی کایا' : 'Staff Portal | Kaya Exchange');
+            var footerText = (document.getElementById('panelSettingFooterText') && document.getElementById('panelSettingFooterText').value.trim()) || (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
+            var hideFooter = document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked;
             var logoUrl = (document.getElementById('panelSettingLogoUrl') && document.getElementById('panelSettingLogoUrl').value.trim()) || '';
             var faviconUrl = (document.getElementById('panelSettingFaviconUrl') && document.getElementById('panelSettingFaviconUrl').value.trim()) || '';
             var titleEl = document.getElementById('panelPreviewPageTitle');
@@ -3944,8 +3956,12 @@
             var logoEl = document.getElementById('panelPreviewLogo');
             var logoPlaceholder = document.getElementById('panelPreviewLogoPlaceholder');
             var faviconEl = document.getElementById('panelPreviewFavicon');
+            var footerEl = document.getElementById('panelPreviewFooter');
+            var footerTextEl = document.getElementById('panelPreviewFooterText');
             if (titleEl) titleEl.textContent = pageTitle;
             if (siteNameEl) siteNameEl.textContent = siteName;
+            if (footerTextEl) footerTextEl.textContent = footerText;
+            if (footerEl) footerEl.classList.toggle('hidden', !!hideFooter);
             if (logoEl) { if (logoUrl) { logoEl.src = logoUrl; logoEl.style.display = ''; if (logoPlaceholder) logoPlaceholder.style.display = 'none'; } else { logoEl.removeAttribute('src'); logoEl.style.display = 'none'; if (logoPlaceholder) logoPlaceholder.style.display = ''; } }
             if (faviconEl) { if (faviconUrl) { faviconEl.src = faviconUrl; faviconEl.style.display = ''; } else { faviconEl.removeAttribute('src'); faviconEl.style.display = 'none'; } }
         }
@@ -3980,8 +3996,11 @@
         }
         async function savePanelSettings() {
             var btn = document.getElementById('panelSettingsSaveBtn');
+            var btnFooter = document.getElementById('panelSettingsSaveBtnFooter');
             var statusEl = document.getElementById('panelSettingsSaveStatus');
-            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ذخیره...' : LANG === 'tr' ? 'Kaydediliyor...' : 'Saving...'); }
+            var savingText = (LANG === 'fa' ? 'در حال ذخیره...' : LANG === 'tr' ? 'Kaydediliyor...' : 'Saving...');
+            if (btn) { btn.disabled = true; btn.textContent = savingText; }
+            if (btnFooter) { btnFooter.disabled = true; btnFooter.textContent = savingText; }
             if (statusEl) { statusEl.style.display = 'none'; statusEl.className = 'panel-settings-save-status'; }
             var get = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
             var hiddenSections = [];
@@ -4013,7 +4032,9 @@
             var defaultLangEl = document.getElementById('panelSettingDefaultLanguage');
             if (defaultLangEl && (defaultLangEl.value === 'fa' || defaultLangEl.value === 'en' || defaultLangEl.value === 'tr')) payload.defaultLanguage = defaultLangEl.value;
             var res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
-            if (btn) { btn.disabled = false; btn.textContent = t('btn_save'); }
+            var saveText = t('btn_save');
+            if (btn) { btn.disabled = false; btn.textContent = saveText; }
+            if (btnFooter) { btnFooter.disabled = false; btnFooter.textContent = saveText; }
             if (res.ok && res.data) {
                 var savedFooterStyle = (function() { var el = document.getElementById('panelSettingFooterStyle'); var v = el ? el.value : ''; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : null; })();
                 if (savedFooterStyle != null) res.data.footerStyle = savedFooterStyle;
@@ -4022,6 +4043,7 @@
                 var mode = res.data.languageMode;
                 if (mode && window.applySupportedLanguages) window.applySupportedLanguages(mode === 'single' ? ['fa'] : mode === 'bilingual' ? ['fa', 'en'] : ['fa', 'en', 'tr']);
                 toast(t('saved'));
+                clearPanelSettingsChanged();
                 if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ذخیره شد' : LANG === 'tr' ? 'Kaydedildi' : 'Saved'); statusEl.className = 'panel-settings-save-status saved'; statusEl.style.display = 'inline'; setTimeout(function() { statusEl.style.display = 'none'; }, 3000); }
             } else {
                 toast((res.data && res.data.error) || t('err_generic'), true);
