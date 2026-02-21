@@ -885,14 +885,15 @@
         }
 
         function formatPrice(val) {
-            if (val == null || val === '' || val === '�') return '�';
-            var s = String(val).replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
-            var n = String(val).replace(/[^\d]/g, '');
+            if (val == null || val === '' || val === '\u2014' || (typeof val === 'string' && val.trim() === '')) return '\u2014';
+            var num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
+            if (isNaN(num)) return '\u2014';
+            var n = String(Math.round(num)).replace(/[^\d]/g, '');
             if (n.length > 3) {
                 var out = ''; for (var i = n.length - 1, c = 0; i >= 0; i--, c++) { if (c && c % 3 === 0) out = ',' + out; out = n[i] + out; }
                 return out.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
             }
-            return s;
+            return n.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
         }
 
         function getLocalHour() {
@@ -974,8 +975,8 @@
             if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf('rates') >= 0) return;
             var loadingEl = document.querySelector('.ticker-loading');
             var timesEl = document.getElementById('tickerTimes');
-            var datesEl = document.getElementById('tickerDates');
-            var itemsEl = document.getElementById('tickerItems');
+            var innerEl = document.getElementById('ratesMarqueeInner');
+            var trackEl = document.getElementById('ratesMarqueeTrack');
             var res = await apiFetch('/api/rates');
             if (res.needLogin || !res.ok) return;
             var data = res.data;
@@ -991,46 +992,39 @@
                     '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.uaeLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.uae) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.hijri) + '</span></span>';
                 timesEl.style.display = '';
             }
-            if (datesEl) { datesEl.style.display = 'none'; }
-            if (itemsEl) {
-                var trackEl = document.getElementById('tickerItemTrack');
+            var tickerEl = document.getElementById('priceTicker');
+            if (items.length === 0) {
+                if (tickerEl) tickerEl.style.display = 'none';
+                return;
+            }
+            if (tickerEl) tickerEl.style.display = '';
+            if (innerEl) {
                 var itemsHtml = items.map(function(it) {
                     var ch = it.change;
                     var chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
                     var chText = formatChange(ch);
-                    return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(formatPrice(it.value)) + '</span>' + (chText ? '<span class="ticker-change' + chClass + '">' + escapeHtml(chText) + '</span>' : '') + '</span>';
+                    var valStr = formatPrice(it.value);
+                    var changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="تغییر">(' + escapeHtml(chText) + ')</span>' : '';
+                    return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
                 }).join('');
+                innerEl.innerHTML = itemsHtml;
+                innerEl.classList.remove('centered', 'scrolling');
+                function updateRatesMarqueeMode() {
+                    if (!trackEl || !innerEl) return;
+                    var fits = innerEl.scrollWidth <= trackEl.clientWidth;
+                    innerEl.classList.toggle('centered', fits);
+                    innerEl.classList.toggle('scrolling', !fits);
+                    trackEl.classList.toggle('rates-centered', fits);
+                }
                 if (trackEl && items.length > 0) {
-                    var fullSet = itemsHtml + itemsHtml;
-                    var copyCount = 2;
-                    var isDesktop = window.innerWidth > 768;
-                    var maxCopies = isDesktop ? 24 : 12;
-                    trackEl.innerHTML = fullSet;
-                    while (copyCount < maxCopies) {
-                        var trackW = trackEl.scrollWidth;
-                        var containerW = itemsEl.clientWidth || 400;
-                        if (trackW >= containerW * 2.5) break;
-                        fullSet = fullSet + itemsHtml;
-                        trackEl.innerHTML = fullSet;
-                        copyCount++;
+                    requestAnimationFrame(updateRatesMarqueeMode);
+                    if (typeof ResizeObserver !== 'undefined') {
+                        if (trackEl._ratesMarqueeRo) trackEl._ratesMarqueeRo.disconnect();
+                        trackEl._ratesMarqueeRo = new ResizeObserver(updateRatesMarqueeMode);
+                        trackEl._ratesMarqueeRo.observe(trackEl);
                     }
-                    itemsEl.classList.remove('ticker-auto-scroll');
-                    requestAnimationFrame(function() {
-                        var trackWidth = trackEl.scrollWidth;
-                        var containerWidth = itemsEl.clientWidth || 1;
-                        var step = (100 / copyCount);
-                        var fits = trackWidth <= containerWidth;
-                        if (fits) {
-                            itemsEl.classList.remove('ticker-auto-scroll');
-                        } else {
-                            itemsEl.classList.add('ticker-auto-scroll');
-                            trackEl.style.setProperty('--ticker-step', '-' + step + '%');
-                        }
-                    });
-                } else if (trackEl) {
-                    trackEl.innerHTML = itemsHtml;
                 } else {
-                    itemsEl.innerHTML = itemsHtml;
+                    innerEl.classList.add('scrolling');
                 }
             }
         }
@@ -1052,8 +1046,6 @@
             ratesInterval = null;
             tickerTimeInterval = null;
             if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf('rates') >= 0) return;
-            var tickerEl = document.getElementById('priceTicker');
-            if (tickerEl) tickerEl.style.display = '';
             fetchRates();
             ratesInterval = setInterval(fetchRates, 10 * 60 * 1000);
             tickerTimeInterval = setInterval(updateTickerTimeOnly, 60 * 1000);
@@ -2510,6 +2502,8 @@
         window._marqueeAnnouncements = [];
         function pauseAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.add('paused'); }
         function resumeAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.remove('paused'); }
+        function pauseTickerRatesMarquee() { var el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.add('paused'); }
+        function resumeTickerRatesMarquee() { var el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.remove('paused'); }
         function renderMarqueeItem(a) {
             var badge = a.isImportant ? '<span class="ann-marquee-badge important">' + (t('ann_type_important') || 'Important') + '</span>' : '<span class="ann-marquee-badge info">' + (t('ann_type_info') || 'Info') + '</span>';
             var text = (a.title || '') + (a.body ? (LANG === 'fa' ? ': ' : ': ') + String(a.body).substring(0, 80) + (a.body.length > 80 ? '…' : '') : '');

@@ -24,8 +24,13 @@ async function getRatesKeys() {
 
 function pickValue(raw, apiKeys) {
     for (const k of apiKeys) {
-        const v = raw[k] && raw[k].value != null ? raw[k].value : null;
-        if (v != null) return Number(v);
+        const obj = raw[k];
+        if (!obj) continue;
+        let v = obj.value;
+        if (v == null) continue;
+        if (typeof v === 'string') v = parseFloat(v.replace(/[^\d.-]/g, ''));
+        const num = Number(v);
+        if (!isNaN(num)) return num;
     }
     return null;
 }
