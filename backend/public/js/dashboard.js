@@ -2519,7 +2519,26 @@
                 if (countEl) { countEl.textContent = general.length; countEl.style.display = general.length > 1 ? 'inline' : 'none'; }
                 if (inner) {
                     var html = general.map(renderMarqueeItem).join('');
-                    inner.innerHTML = html + html;
+                    inner.innerHTML = html;
+                    var track = banner.querySelector('.announcement-marquee-track');
+                    function updateMarqueeMode() {
+                        if (!track) return;
+                        var fits = inner.scrollWidth <= track.clientWidth;
+                        inner.classList.toggle('centered', fits);
+                        inner.classList.toggle('scrolling', !fits);
+                        track.classList.toggle('announcement-centered', fits);
+                    }
+                    inner.classList.remove('centered', 'scrolling');
+                    if (track) {
+                        requestAnimationFrame(updateMarqueeMode);
+                        if (typeof ResizeObserver !== 'undefined') {
+                            if (track._marqueeRo) track._marqueeRo.disconnect();
+                            track._marqueeRo = new ResizeObserver(updateMarqueeMode);
+                            track._marqueeRo.observe(track);
+                        }
+                    } else {
+                        inner.classList.add('scrolling');
+                    }
                 }
                 banner.style.display = 'block';
             } catch (e) { banner.style.display = 'none'; }
@@ -3724,17 +3743,20 @@
             if (container) {
                 container.innerHTML = '';
                 SECTIONS_FOR_VISIBILITY.forEach(function(s) {
+                    var labelText = (t(s.labelKey) || s.page);
                     var item = document.createElement('div');
                     item.className = 'panel-visibility-item';
+                    item.dataset.searchText = (labelText + ' ' + s.page).toLowerCase();
                     var label = document.createElement('label');
                     var cb = document.createElement('input');
                     cb.type = 'checkbox';
                     cb.dataset.page = s.page;
                     cb.checked = hidden.indexOf(s.page) < 0;
                     cb.id = 'panelVisible_' + s.page;
+                    cb.onchange = markPanelSettingsChanged;
                     label.setAttribute('for', cb.id);
                     label.appendChild(cb);
-                    label.appendChild(document.createTextNode(' ' + (t(s.labelKey) || s.page)));
+                    label.appendChild(document.createTextNode(' ' + labelText));
                     item.appendChild(label);
                     container.appendChild(item);
                 });
@@ -3745,6 +3767,60 @@
             loadCompanyEmails();
             loadCompanyEmailUserSelect();
             if (typeof initCompanyEmailsHandlers === 'function') initCompanyEmailsHandlers();
+            initPanelSettingsTabs();
+            initPanelSettingsCollapse();
+            initPanelVisibilitySearch();
+            clearPanelSettingsChanged();
+        }
+        function markPanelSettingsChanged() {
+            var badge = document.getElementById('panelSettingsUnsavedBadge');
+            if (badge) badge.style.display = 'inline';
+        }
+        function clearPanelSettingsChanged() {
+            var badge = document.getElementById('panelSettingsUnsavedBadge');
+            if (badge) badge.style.display = 'none';
+        }
+        function initPanelSettingsTabs() {
+            var tabs = document.querySelectorAll('.panel-settings-tab');
+            var panels = document.querySelectorAll('.panel-settings-tab-panel');
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    var targetTab = tab.getAttribute('data-tab');
+                    tabs.forEach(function(t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+                    panels.forEach(function(p) { p.classList.remove('active'); p.hidden = true; });
+                    tab.classList.add('active');
+                    tab.setAttribute('aria-selected', 'true');
+                    var panelId = 'panelTab' + (targetTab.charAt(0).toUpperCase() + targetTab.slice(1));
+                    var panel = document.getElementById(panelId);
+                    if (panel) { panel.classList.add('active'); panel.hidden = false; }
+                });
+            });
+        }
+        function initPanelSettingsCollapse() {
+            document.querySelectorAll('.panel-settings-section-collapsible').forEach(function(section) {
+                var toggle = section.querySelector('.panel-settings-section-toggle');
+                var body = section.querySelector('.panel-settings-section-body');
+                if (!toggle || !body) return;
+                body.style.maxHeight = body.scrollHeight + 'px';
+                toggle.addEventListener('click', function() {
+                    var collapsed = section.classList.toggle('collapsed');
+                    toggle.setAttribute('aria-expanded', !collapsed);
+                    if (collapsed) body.style.maxHeight = '0';
+                    else body.style.maxHeight = body.scrollHeight + 'px';
+                });
+            });
+        }
+        function initPanelVisibilitySearch() {
+            var searchEl = document.getElementById('panelVisibilitySearch');
+            var container = document.getElementById('panelVisibilityToggles');
+            if (!searchEl || !container) return;
+            searchEl.addEventListener('input', function() {
+                var q = (searchEl.value || '').trim().toLowerCase();
+                container.querySelectorAll('.panel-visibility-item').forEach(function(item) {
+                    var text = item.dataset.searchText || '';
+                    item.classList.toggle('hidden-by-search', q && text.indexOf(q) < 0);
+                });
+            });
         }
         async function loadCompanyEmailUserSelect() {
             var sel = document.getElementById('companyEmailAssignedUser');
