@@ -4,11 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>WhatsApp Enterprise CRM | Professional Panel — Monthly & Yearly Plans | fxguard.io</title>
-    <meta name="description" content="WhatsApp Enterprise CRM — One number, one panel. Manage customers, bulk messaging, auto-response 24/7. Monthly & yearly plans. Contact +90 501 067 6486 for demo.">
-    <meta name="keywords" content="WhatsApp CRM, CRM panel, WhatsApp business, bulk messaging, customer support, WhatsApp management, FX Guard, fxguard">
+    <meta name="description" content="WhatsApp Enterprise CRM — One number, one panel. Manage customers, bulk messaging, auto-response 24/7. Monthly $49, Yearly $490. Free demo. Contact +90 501 067 6486.">
+    <meta name="keywords" content="WhatsApp CRM, CRM panel, WhatsApp business, bulk messaging, customer support, WhatsApp management, FX Guard, fxguard, واتساپ سی آر ام, CRM واتساپ">
     <meta name="author" content="FX Guard">
     <meta name="robots" content="index, follow">
     <meta name="theme-color" content="#059669">
+    <meta name="geo.region" content="TR">
+    <meta name="format-detection" content="telephone=yes">
     <link rel="canonical" href="https://fxguard.io/">
     <link rel="alternate" hreflang="en" href="https://fxguard.io/">
     <link rel="alternate" hreflang="fa" href="https://fxguard.io/?lang=fa">
@@ -41,13 +43,28 @@
                 "name": "FX Guard",
                 "url": "https://fxguard.io",
                 "logo": "https://fxguard.io/images/Desktop-Dashboard.png",
-                "contactPoint": {
-                    "@type": "ContactPoint",
-                    "telephone": "+90-501-067-6486",
-                    "contactType": "sales",
-                    "areaServed": "Worldwide",
-                    "availableLanguage": ["English", "Persian", "Turkish"]
-                }
+                "contactPoint": [
+                    {
+                        "@type": "ContactPoint",
+                        "telephone": "+90-501-067-6486",
+                        "contactType": "sales",
+                        "areaServed": "Worldwide",
+                        "availableLanguage": ["English", "Persian", "Turkish"],
+                        "url": "https://wa.me/905010676486"
+                    },
+                    {
+                        "@type": "ContactPoint",
+                        "email": "sales@fxguard.io",
+                        "contactType": "sales",
+                        "areaServed": "Worldwide"
+                    },
+                    {
+                        "@type": "ContactPoint",
+                        "email": "support@fxguard.io",
+                        "contactType": "customer service",
+                        "areaServed": "Worldwide"
+                    }
+                ]
             },
             {
                 "@type": "WebSite",
@@ -75,11 +92,41 @@
                     "highPrice": "490",
                     "offerCount": 3
                 }
+            },
+            {
+                "@type": "FAQPage",
+                "mainEntity": [
+                    {
+                        "@type": "Question",
+                        "name": "What is WhatsApp CRM?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "WhatsApp CRM is a professional panel that lets multiple staff reply from one WhatsApp number. It includes customer management, bulk messaging, auto-response 24/7, and reports — all in one place."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "How much does WhatsApp CRM cost?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Monthly plan: $49/month. Yearly plan: $490/year (save 2 months). Custom plans available on request. Contact us for demo or custom quote."
+                        }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "How can I contact for purchase or demo?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Contact via WhatsApp +90 501 067 6486, email sales@fxguard.io, or fill the contact form on our website. We respond within 24 hours on business days."
+                        }
+                    }
+                ]
             }
         ]
     }
     </script>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23059669'/><path fill='%23fff' d='M10 8h4l2 4 2-4h4v12h-3v-6l-1.5 3L16 11v9h-3V8zm8 6h2v4h-2v-4z'/></svg>">
+    <link rel="sitemap" type="application/xml" href="https://fxguard.io/sitemap.xml">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -278,8 +325,35 @@
         .form-group input:hover, .form-group textarea:hover { border-color: rgba(255,255,255,0.12); }
         .form-group input:focus, .form-group textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
         .form-group textarea { min-height: 120px; resize: vertical; }
+        .form-group select { width: 100%; padding: 14px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-dark); color: var(--text); font-size: 1rem; font-family: inherit; cursor: pointer; transition: all 0.25s; }
+        .form-group select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        @media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }
         .form-success { display: none; padding: 20px; background: rgba(5,150,105,0.2); border-radius: 10px; color: var(--accent-light); text-align: center; margin-top: 20px; }
         .form-success.show { display: block; }
+        /* FAQ */
+        .faq-list { max-width: 700px; margin: 0 auto; }
+        .faq-item { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; margin-bottom: 12px; overflow: hidden; transition: all 0.25s; }
+        .faq-item:hover { border-color: var(--border-hover); }
+        .faq-item summary { padding: 18px 20px; font-weight: 600; cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; }
+        .faq-item summary::-webkit-details-marker { display: none; }
+        .faq-item summary::before { content: '+'; color: var(--accent); font-size: 1.2rem; }
+        .faq-item[open] summary::before { content: '−'; }
+        .faq-item p { padding: 0 20px 18px; color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; }
+        /* Contact quick actions */
+        .contact-quick-actions { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 24px; }
+        .contact-quick-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-weight: 500; transition: all 0.25s; }
+        .contact-quick-btn:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-light); transform: translateY(-2px); }
+        .cq-icon { font-size: 1.2rem; }
+        .contact-channels { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-bottom: 20px; }
+        .contact-channel { display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); transition: all 0.25s; }
+        .contact-channel:hover { border-color: var(--border-hover); background: var(--bg-card-hover); }
+        .contact-channel.wa { border-color: rgba(37,211,102,0.4); background: rgba(37,211,102,0.08); }
+        .contact-channel.wa:hover { border-color: rgba(37,211,102,0.6); background: rgba(37,211,102,0.15); }
+        .cc-icon { font-size: 1.25rem; }
+        .cc-label { font-size: 0.85rem; color: var(--text-muted); }
+        .cc-value { font-weight: 600; }
+        .contact-response-note { text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px; }
 
         /* CTA */
         .cta-section { text-align: center; padding: 60px 0; }
@@ -324,6 +398,7 @@
                 <a href="#features" data-i18n="nav_features">Features</a>
                 <a href="#panel-preview" data-i18n="nav_panel">Panel</a>
                 <a href="#pricing" data-i18n="nav_pricing">Pricing</a>
+                <a href="#faq" data-i18n="nav_faq">FAQ</a>
                 <a href="#contact-form" data-i18n="nav_contact">Contact</a>
                 <a href="https://wa.me/905010676486" class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
                 <a href="#" class="btn btn-primary" id="btnPanel" data-i18n="nav_panel_btn">Get Started</a>
@@ -337,6 +412,7 @@
         <a href="#features" data-i18n="nav_features">Features</a>
         <a href="#panel-preview" data-i18n="nav_panel">Panel</a>
         <a href="#pricing" data-i18n="nav_pricing">Pricing</a>
+        <a href="#faq" data-i18n="nav_faq">FAQ</a>
         <a href="#contact-form" data-i18n="nav_contact">Contact</a>
         <a href="https://wa.me/905010676486" class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
         <a href="#" class="btn btn-primary" id="btnPanelMob" data-i18n="nav_panel_btn">Get Started</a>
@@ -534,23 +610,96 @@
         </div>
     </section>
 
+    <section class="section" id="faq" aria-labelledby="faq-heading">
+        <div class="container">
+            <div class="section-title">
+                <h2 id="faq-heading" data-i18n="faq_title">Frequently Asked Questions</h2>
+                <p data-i18n="faq_sub">Quick answers about WhatsApp CRM and pricing</p>
+            </div>
+            <div class="faq-list">
+                <details class="faq-item">
+                    <summary data-i18n="faq1_q">What is WhatsApp CRM?</summary>
+                    <p data-i18n="faq1_a">WhatsApp CRM is a professional panel that lets multiple staff reply from one WhatsApp number. It includes customer management, bulk messaging, auto-response 24/7, and reports — all in one place.</p>
+                </details>
+                <details class="faq-item">
+                    <summary data-i18n="faq2_q">How much does it cost?</summary>
+                    <p data-i18n="faq2_a">Monthly: $49/month. Yearly: $490/year (save 2 months). Custom plans available. <a href="#contact-form">Contact us</a> for demo or quote.</p>
+                </details>
+                <details class="faq-item">
+                    <summary data-i18n="faq3_q">How can I contact for purchase or demo?</summary>
+                    <p data-i18n="faq3_a">WhatsApp +90 501 067 6486, email sales@fxguard.io, or fill the form below. We respond within 24 hours on business days.</p>
+                </details>
+            </div>
+        </div>
+    </section>
+
     <section class="section" id="contact-form" aria-labelledby="form-heading">
         <div class="container">
             <div class="section-title">
                 <h2 id="form-heading" data-i18n="form_title">Contact Us</h2>
                 <p data-i18n="form_sub">Questions, custom quote, or demo request? Fill the form or WhatsApp us.</p>
             </div>
+            <div class="contact-quick-actions">
+                <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20a%20demo%20of%20WhatsApp%20CRM" class="contact-quick-btn" target="_blank" rel="noopener" data-i18n="contact_demo">
+                    <span class="cq-icon">📋</span>
+                    <span>Request Demo</span>
+                </a>
+                <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20to%20buy%20WhatsApp%20CRM%20plan" class="contact-quick-btn" target="_blank" rel="noopener" data-i18n="contact_buy">
+                    <span class="cq-icon">🛒</span>
+                    <span>Buy Now</span>
+                </a>
+                <a href="mailto:sales@fxguard.io?subject=Custom%20Quote%20-%20WhatsApp%20CRM" class="contact-quick-btn" target="_blank" rel="noopener" data-i18n="contact_quote">
+                    <span class="cq-icon">📧</span>
+                    <span>Get Quote</span>
+                </a>
+                <a href="mailto:support@fxguard.io?subject=Support%20Request" class="contact-quick-btn" target="_blank" rel="noopener" data-i18n="contact_support">
+                    <span class="cq-icon">🆘</span>
+                    <span>Support</span>
+                </a>
+            </div>
+            <div class="contact-channels">
+                <a href="https://wa.me/905010676486" class="contact-channel wa" target="_blank" rel="noopener">
+                    <span class="cc-icon">📱</span>
+                    <span class="cc-label" data-i18n="channel_wa">WhatsApp</span>
+                    <span class="cc-value">+90 501 067 6486</span>
+                </a>
+                <a href="mailto:sales@fxguard.io" class="contact-channel">
+                    <span class="cc-icon">✉️</span>
+                    <span class="cc-label" data-i18n="channel_sales">Sales</span>
+                    <span class="cc-value">sales@fxguard.io</span>
+                </a>
+                <a href="mailto:support@fxguard.io" class="contact-channel">
+                    <span class="cc-icon">🆘</span>
+                    <span class="cc-label" data-i18n="channel_support">Support</span>
+                    <span class="cc-value">support@fxguard.io</span>
+                </a>
+            </div>
+            <p class="contact-response-note" data-i18n="form_response">We respond within 24 hours on business days. For urgent matters, use WhatsApp.</p>
             <div class="contact-form-wrap">
                 <!-- Replace YOUR_FORM_ID with your Formspree form ID from formspree.io -->
                 <form id="contactForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
                     <input type="hidden" name="_subject" value="WhatsApp CRM - New Contact">
+                    <input type="hidden" name="_next" value="">
                     <div class="form-group">
-                        <label for="name" data-i18n="form_name">Name *</label>
-                        <input type="text" id="name" name="name" required placeholder="Your name">
+                        <label for="purpose" data-i18n="form_purpose">I want to *</label>
+                        <select id="purpose" name="purpose" required>
+                            <option value="" data-i18n="form_purpose_placeholder">Select...</option>
+                            <option value="demo" data-i18n="form_purpose_demo">Request a demo</option>
+                            <option value="purchase" data-i18n="form_purpose_purchase">Purchase / Subscribe</option>
+                            <option value="quote" data-i18n="form_purpose_quote">Get custom quote</option>
+                            <option value="support" data-i18n="form_purpose_support">Technical support</option>
+                            <option value="other" data-i18n="form_purpose_other">Other</option>
+                        </select>
                     </div>
-                    <div class="form-group">
-                        <label for="email" data-i18n="form_email">Email *</label>
-                        <input type="email" id="email" name="email" required placeholder="your@email.com">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="name" data-i18n="form_name">Name *</label>
+                            <input type="text" id="name" name="name" required placeholder="Your name">
+                        </div>
+                        <div class="form-group">
+                            <label for="email" data-i18n="form_email">Email *</label>
+                            <input type="email" id="email" name="email" required placeholder="your@email.com">
+                        </div>
                     </div>
                     <div class="form-group">
                         <label for="phone" data-i18n="form_phone">Phone / WhatsApp</label>
@@ -589,6 +738,8 @@
         <div class="container">
             <p>
                 <a href="contact.html" data-i18n="footer_contact">Contact</a>
+                <a href="#faq" data-i18n="footer_faq">FAQ</a>
+                <a href="#pricing" data-i18n="footer_pricing">Pricing</a>
                 <a href="mailto:support@fxguard.io" data-i18n="footer_support">Support</a>
                 <a href="https://wa.me/905010676486" target="_blank" rel="noopener">WhatsApp +90 501 067 6486</a>
                 © 2026 WhatsApp Enterprise CRM

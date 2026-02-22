@@ -3,7 +3,7 @@
     var TRANSLATIONS = {
         en: {
             logo: 'WhatsApp CRM',
-            nav_why: 'Why CRM?', nav_features: 'Features', nav_panel: 'Panel', nav_pricing: 'Pricing', nav_contact: 'Contact', nav_panel_btn: 'Get Started',
+            nav_why: 'Why CRM?', nav_features: 'Features', nav_panel: 'Panel', nav_pricing: 'Pricing', nav_faq: 'FAQ', nav_contact: 'Contact', nav_panel_btn: 'Get Started',
             hero_badge: '🚀 Professional WhatsApp CRM Platform',
             hero_title: 'End WhatsApp Chaos. <span>One Panel.</span> All Teams.',
             hero_desc: 'One WhatsApp number. All staff reply from one panel. Customer management, bulk messaging, auto-response, reports — everything in one place. Monthly & yearly plans available.',
@@ -28,14 +28,22 @@
             plan_1: 'Full panel access', plan_2: 'Unlimited conversations', plan_3: 'Bulk messaging', plan_4: 'Reports & export', plan_5: 'Email support',
             plan_c1: 'Personalized setup', plan_c2: 'On-premise option', plan_c3: 'Multi-branch', plan_c4: 'Custom integrations', plan_c5: 'Dedicated support',
             plan_custom_price: 'On request', plan_btn: 'Contact to Buy', plan_contact: 'Contact Us',
+            faq_title: 'Frequently Asked Questions', faq_sub: 'Quick answers about WhatsApp CRM and pricing',
+            faq1_q: 'What is WhatsApp CRM?', faq1_a: 'WhatsApp CRM is a professional panel that lets multiple staff reply from one WhatsApp number. It includes customer management, bulk messaging, auto-response 24/7, and reports — all in one place.',
+            faq2_q: 'How much does it cost?', faq2_a: 'Monthly: $49/month. Yearly: $490/year (save 2 months). Custom plans available. Contact us for demo or quote.',
+            faq3_q: 'How can I contact for purchase or demo?', faq3_a: 'WhatsApp +90 501 067 6486, email sales@fxguard.io, or fill the form below. We respond within 24 hours on business days.',
+            contact_demo: 'Request Demo', contact_buy: 'Buy Now', contact_quote: 'Get Quote', contact_support: 'Support',
+            channel_wa: 'WhatsApp', channel_sales: 'Sales', channel_support: 'Support',
+            form_response: 'We respond within 24 hours on business days. For urgent matters, use WhatsApp.',
+            form_purpose: 'I want to *', form_purpose_placeholder: 'Select...', form_purpose_demo: 'Request a demo', form_purpose_purchase: 'Purchase / Subscribe', form_purpose_quote: 'Get custom quote', form_purpose_support: 'Technical support', form_purpose_other: 'Other',
             form_title: 'Contact Us', form_sub: 'Questions, custom quote, or demo request? Fill the form or WhatsApp us.',
             form_name: 'Name *', form_email: 'Email *', form_phone: 'Phone / WhatsApp', form_message: 'Message *', form_submit: 'Send Message', form_success: 'Thank you! We will contact you soon.', form_wa: 'Or contact via WhatsApp +90 501 067 6486',
             cta_title: 'Ready to Get Started?', cta_desc: 'Choose a plan, request a demo, or ask for a custom quote. We\'re here to help.', cta_plans: 'View Plans', cta_wa: 'WhatsApp', cta_form: 'Contact Form',
-            footer_contact: 'Contact', footer_support: 'Support'
+            footer_contact: 'Contact', footer_faq: 'FAQ', footer_pricing: 'Pricing', footer_support: 'Support'
         },
         fa: {
             logo: 'WhatsApp CRM',
-            nav_why: 'چرا CRM؟', nav_features: 'امکانات', nav_panel: 'پنل', nav_pricing: 'قیمت', nav_contact: 'تماس', nav_panel_btn: 'شروع کنید',
+            nav_why: 'چرا CRM؟', nav_features: 'امکانات', nav_panel: 'پنل', nav_pricing: 'قیمت', nav_faq: 'سوالات', nav_contact: 'تماس', nav_panel_btn: 'شروع کنید',
             hero_badge: '🚀 پلتفرم حرفه‌ای CRM واتساپ',
             hero_title: 'پایان آشفتگی واتساپ. <span>یک پنل.</span> همه تیم.',
             hero_desc: 'یک شماره واتساپ. همه کارمندان از یک پنل پاسخ می‌دهند. مدیریت مشتری، پیام انبوه، پاسخ خودکار، گزارشات — همه در یک جا. اشتراک ماهانه و سالانه.',
@@ -60,14 +68,22 @@
             plan_1: 'دسترسی کامل پنل', plan_2: 'مکالمات نامحدود', plan_3: 'پیام انبوه', plan_4: 'گزارشات و خروجی', plan_5: 'پشتیبانی ایمیل',
             plan_c1: 'نصب شخصی‌سازی', plan_c2: 'گزینه On-premise', plan_c3: 'چند شعبه', plan_c4: 'یکپارچه‌سازی سفارشی', plan_c5: 'پشتیبانی اختصاصی',
             plan_custom_price: 'درخواستی', plan_btn: 'تماس برای خرید', plan_contact: 'تماس با ما',
+            faq_title: 'سوالات متداول', faq_sub: 'پاسخ سریع درباره CRM واتساپ و قیمت',
+            faq1_q: 'CRM واتساپ چیست؟', faq1_a: 'CRM واتساپ پنلی حرفه‌ای است که چند کارمند از یک شماره واتساپ پاسخ می‌دهند. مدیریت مشتری، پیام انبوه، پاسخ خودکار ۲۴/۷ و گزارشات — همه در یک جا.',
+            faq2_q: 'قیمت چقدر است؟', faq2_a: 'ماهانه: ۴۹ دلار. سالانه: ۴۹۰ دلار (۲ ماه رایگان). پلن سفارشی موجود است. <a href="#contact-form">تماس با ما</a> برای دمو یا پیشنهاد.',
+            faq3_q: 'چطور برای خرید یا دمو تماس بگیرم؟', faq3_a: 'واتساپ ۰۰۹۰۵۰۱۰۶۷۶۴۸۶، ایمیل sales@fxguard.io یا فرم زیر. در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهیم.',
+            contact_demo: 'درخواست دمو', contact_buy: 'خرید', contact_quote: 'دریافت پیشنهاد', contact_support: 'پشتیبانی',
+            channel_wa: 'واتساپ', channel_sales: 'فروش', channel_support: 'پشتیبانی',
+            form_response: 'در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهیم. برای فوری، واتساپ بزنید.',
+            form_purpose: 'هدف من *', form_purpose_placeholder: 'انتخاب...', form_purpose_demo: 'درخواست دمو', form_purpose_purchase: 'خرید / اشتراک', form_purpose_quote: 'پیشنهاد سفارشی', form_purpose_support: 'پشتیبانی فنی', form_purpose_other: 'سایر',
             form_title: 'تماس با ما', form_sub: 'سؤال، پیشنهاد سفارشی یا درخواست دمو؟ فرم را پر کنید یا واتساپ بزنید.',
             form_name: 'نام *', form_email: 'ایمیل *', form_phone: 'تلفن / واتساپ', form_message: 'پیام *', form_submit: 'ارسال', form_success: 'متشکریم! به زودی با شما تماس می‌گیریم.', form_wa: 'یا واتساپ: ۰۰۹۰۵۰۱۰۶۷۶۴۸۶',
             cta_title: 'آماده شروع هستید؟', cta_desc: 'پلن انتخاب کنید، دمو بخواهید یا پیشنهاد سفارشی. ما اینجا هستیم.', cta_plans: 'پلن‌ها', cta_wa: 'واتساپ', cta_form: 'فرم تماس',
-            footer_contact: 'تماس', footer_support: 'پشتیبانی'
+            footer_contact: 'تماس', footer_faq: 'سوالات', footer_pricing: 'قیمت', footer_support: 'پشتیبانی'
         },
         tr: {
             logo: 'WhatsApp CRM',
-            nav_why: 'Neden CRM?', nav_features: 'Özellikler', nav_panel: 'Panel', nav_pricing: 'Fiyat', nav_contact: 'İletişim', nav_panel_btn: 'Başlayın',
+            nav_why: 'Neden CRM?', nav_features: 'Özellikler', nav_panel: 'Panel', nav_pricing: 'Fiyat', nav_faq: 'SSS', nav_contact: 'İletişim', nav_panel_btn: 'Başlayın',
             hero_badge: '🚀 Profesyonel WhatsApp CRM Platformu',
             hero_title: 'WhatsApp Karmaşasına Son. <span>Tek Panel.</span> Tüm Ekipler.',
             hero_desc: 'Tek WhatsApp numarası. Tüm personel tek panelden yanıt verir. Müşteri yönetimi, toplu mesaj, otomatik yanıt, raporlar — hepsi tek yerde. Aylık ve yıllık planlar.',
@@ -92,10 +108,18 @@
             plan_1: 'Tam panel erişimi', plan_2: 'Sınırsız sohbet', plan_3: 'Toplu mesaj', plan_4: 'Raporlar ve dışa aktarma', plan_5: 'E-posta desteği',
             plan_c1: 'Kişiselleştirilmiş kurulum', plan_c2: 'On-premise seçeneği', plan_c3: 'Çok şubeli', plan_c4: 'Özel entegrasyonlar', plan_c5: 'Özel destek',
             plan_custom_price: 'Talep üzerine', plan_btn: 'Satın Almak İçin İletişim', plan_contact: 'Bize Ulaşın',
+            faq_title: 'Sık Sorulan Sorular', faq_sub: 'WhatsApp CRM ve fiyatlandırma hakkında hızlı cevaplar',
+            faq1_q: 'WhatsApp CRM nedir?', faq1_a: 'WhatsApp CRM, birden fazla personelin tek WhatsApp numarasından yanıt vermesini sağlayan profesyonel bir panel. Müşteri yönetimi, toplu mesaj, 7/24 otomatik yanıt ve raporlar — hepsi tek yerde.',
+            faq2_q: 'Fiyatı ne kadar?', faq2_a: 'Aylık: 49$/ay. Yıllık: 490$/yıl (2 ay tasarruf). Özel planlar mevcut. Demo veya teklif için <a href="#contact-form">bize ulaşın</a>.',
+            faq3_q: 'Satın alma veya demo için nasıl iletişime geçebilirim?', faq3_a: 'WhatsApp +90 501 067 6486, e-posta sales@fxguard.io veya aşağıdaki formu doldurun. İş günlerinde 24 saat içinde yanıt veriyoruz.',
+            contact_demo: 'Demo İste', contact_buy: 'Satın Al', contact_quote: 'Teklif Al', contact_support: 'Destek',
+            channel_wa: 'WhatsApp', channel_sales: 'Satış', channel_support: 'Destek',
+            form_response: 'İş günlerinde 24 saat içinde yanıt veriyoruz. Acil durumlar için WhatsApp kullanın.',
+            form_purpose: 'İstediğim *', form_purpose_placeholder: 'Seçin...', form_purpose_demo: 'Demo talep et', form_purpose_purchase: 'Satın al / Abone ol', form_purpose_quote: 'Özel teklif al', form_purpose_support: 'Teknik destek', form_purpose_other: 'Diğer',
             form_title: 'Bize Ulaşın', form_sub: 'Sorular, özel teklif veya demo isteği? Formu doldurun veya WhatsApp yazın.',
             form_name: 'Ad *', form_email: 'E-posta *', form_phone: 'Telefon / WhatsApp', form_message: 'Mesaj *', form_submit: 'Gönder', form_success: 'Teşekkürler! Yakında sizinle iletişime geçeceğiz.', form_wa: 'Veya WhatsApp: +90 501 067 6486',
             cta_title: 'Başlamaya Hazır mısınız?', cta_desc: 'Plan seçin, demo isteyin veya özel teklif alın. Yardımcı olmaya hazırız.', cta_plans: 'Planlar', cta_wa: 'WhatsApp', cta_form: 'İletişim Formu',
-            footer_contact: 'İletişim', footer_support: 'Destek'
+            footer_contact: 'İletişim', footer_faq: 'SSS', footer_pricing: 'Fiyat', footer_support: 'Destek'
         }
     };
 
@@ -155,8 +179,18 @@
 
     var form = document.getElementById('contactForm');
     var formSuccess = document.getElementById('formSuccess');
+    if (form) {
+        var nextInput = form.querySelector('input[name="_next"]');
+        if (nextInput) nextInput.value = window.location.origin + window.location.pathname + '#contact-form';
+    }
     if (form && formSuccess) {
         form.addEventListener('submit', function(e) {
+            var purpose = form.querySelector('#purpose');
+            var subj = form.querySelector('input[name="_subject"]');
+            if (purpose && subj && purpose.value) {
+                var labels = { demo: 'Demo Request', purchase: 'Purchase', quote: 'Custom Quote', support: 'Support', other: 'Other' };
+                subj.value = 'WhatsApp CRM - ' + (labels[purpose.value] || purpose.value);
+            }
             if (form.getAttribute('action').indexOf('YOUR_FORM_ID') >= 0) {
                 e.preventDefault();
                 formSuccess.classList.add('show');
