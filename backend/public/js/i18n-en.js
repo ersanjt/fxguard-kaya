@@ -469,6 +469,7 @@ window.__I18N_EN = {
     invite_to_call: 'Invite to call',
     select_multiple_hint: 'For group chat, select multiple users',
     cancel: 'Cancel',
+    branch: 'Branch',
     branch_intro: 'Branches are used for geographic separation and assigning users and conversations.',
     branch_name: 'Branch name',
     branch_city: 'City',

@@ -788,6 +788,17 @@
                 });
             };
             window.SUPPORTED_LANGUAGES = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
+            (function applyInitialLang() {
+                var l = localStorage.getItem('crm_lang') || 'fa';
+                if (['fa','en','tr'].indexOf(l) >= 0) {
+                    LANG = l;
+                    document.documentElement.lang = (l === 'en' ? 'en' : l === 'tr' ? 'tr' : 'fa');
+                    document.documentElement.dir = (l === 'fa' ? 'rtl' : 'ltr');
+                    document.body.classList.toggle('ltr', l !== 'fa');
+                    if (typeof applyTranslations === 'function') applyTranslations();
+                    try { document.title = t('page_title'); } catch (_) {}
+                }
+            })();
             window.applySupportedLanguages = function(supported, defaultLanguage) {
                 window.SUPPORTED_LANGUAGES = Array.isArray(supported) && supported.length ? supported : ['fa', 'en', 'tr'];
                 var cur = localStorage.getItem('crm_lang') || 'fa';
@@ -825,7 +836,10 @@
         window.hasNewInternalChat = false;
         fetch((API || '') + '/api/panel-settings/public/languages').then(function(r){ return r.json(); }).then(function(data){
             if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage);
-        }).catch(function(){});
+            else if (typeof setLang === 'function') setLang(LANG);
+        }).catch(function(){
+            if (typeof setLang === 'function') setLang(LANG);
+        });
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
             if (c && c.supportUrl) {
@@ -3996,6 +4010,21 @@
             initPanelVisibilitySearch();
             clearPanelSettingsChanged();
         }
+        function syncSmtpPortWithSecure() {
+            var portEl = document.getElementById('panelSettingSmtpPort');
+            var secureEl = document.getElementById('panelSettingSmtpSecure');
+            if (!portEl || !secureEl) return;
+            var port = String(portEl.value || '').trim();
+            if (port === '465') secureEl.checked = true;
+            else if (port === '587') secureEl.checked = false;
+        }
+        function syncSmtpSecureWithPort() {
+            var portEl = document.getElementById('panelSettingSmtpPort');
+            var secureEl = document.getElementById('panelSettingSmtpSecure');
+            if (!portEl || !secureEl) return;
+            if (secureEl.checked && (!portEl.value || portEl.value === '587')) portEl.value = '465';
+            else if (!secureEl.checked && (!portEl.value || portEl.value === '465')) portEl.value = '587';
+        }
         function markPanelSettingsChanged() {
             var badge = document.getElementById('panelSettingsUnsavedBadge');
             if (badge) badge.style.display = 'inline';
@@ -6830,6 +6859,8 @@
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
             window.sendPanelTestEmail = sendPanelTestEmail;
+            window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
+            window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
             window.updatePanelLivePreview = updatePanelLivePreview;
@@ -6913,6 +6944,8 @@
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
             window.sendPanelTestEmail = sendPanelTestEmail;
+            window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
+            window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
             window.updatePanelLivePreview = updatePanelLivePreview;
