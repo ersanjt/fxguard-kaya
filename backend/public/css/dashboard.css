@@ -17,7 +17,11 @@
             --radius-sm: 8px;
             --shadow: 0 4px 24px rgba(0,0,0,0.25);
             --font: 'Vazirmatn', 'Segoe UI', sans-serif;
+            --font-ltr: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
         }
+        html[dir="ltr"] body,
+        html[dir="ltr"] .app,
+        body.ltr { font-family: var(--font-ltr); }
         * { box-sizing: border-box; }
         html { overflow-x: hidden; width: 100%; max-width: 100vw; height: 100%; }
         body { width: 100%; max-width: 100vw; overflow-x: hidden; min-width: 280px; }
@@ -138,10 +142,10 @@
         body.bottom-bar-hidden .main-wrap { padding-bottom: 0; }
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9998; opacity: 0; transition: opacity 0.25s; -webkit-tap-highlight-color: transparent; pointer-events: none; }
         .sidebar-overlay.show { opacity: 1; pointer-events: auto; }
-        .dashboard-sub { color: var(--text-secondary); font-size: 0.95rem; margin: -4px 0 24px; }
+        .dashboard-sub { color: var(--text-secondary); font-size: 0.95rem; margin: -4px 0 24px; line-height: 1.5; }
         .dashboard-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; max-width: 100%; }
-        .dashboard-card { display: block; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-decoration: none; color: inherit; transition: border-color 0.2s, background 0.2s, transform 0.15s; }
-        .dashboard-card:hover { border-color: var(--accent); background: var(--bg-hover); transform: translateY(-2px); }
+        .dashboard-card { display: block; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; text-decoration: none; color: inherit; transition: border-color 0.2s, background 0.2s, transform 0.15s, box-shadow 0.2s; }
+        .dashboard-card:hover { border-color: var(--accent); background: var(--bg-hover); transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
         .dashboard-card .card-icon { width: 44px; height: 44px; border-radius: var(--radius-sm); background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; margin-bottom: 12px; }
         .dashboard-card .card-icon svg { width: 24px; height: 24px; stroke: currentColor; fill: none; stroke-width: 2; }
         .dashboard-card .card-title { font-weight: 600; font-size: 1rem; margin: 0 0 4px; color: var(--text-primary); word-wrap: break-word; overflow-wrap: break-word; }
@@ -149,6 +153,7 @@
         .dashboard-card .card-badge { display: inline-block; margin-top: 8px; padding: 4px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; background: var(--accent-soft); color: var(--accent); }
         .dashboard-card .card-badge.warn { background: var(--danger-soft); color: var(--danger); }
         .dashboard-summary { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
+        .page-dashboard .content { padding: 24px; }
         .dashboard-stat-box { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 88px; padding: 16px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.2s, background 0.2s, transform 0.15s; cursor: pointer; text-decoration: none; color: inherit; }
         .dashboard-stat-box:hover { border-color: var(--accent); background: var(--bg-hover); transform: translateY(-2px); }
         .dashboard-stat-box .stat-number { font-size: 1.75rem; font-weight: 700; color: var(--accent); line-height: 1.2; margin-bottom: 4px; }

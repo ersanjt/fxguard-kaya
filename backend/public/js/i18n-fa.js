@@ -90,6 +90,7 @@ window.__I18N_FA = {
     dashboard_quick_new_customer: 'افزودن مشتری',
     dashboard_quick_new_ticket: 'ثبت تیکت',
     dashboard_refresh: 'به‌روزرسانی',
+    dashboard_needs_attention: 'نیاز به توجه:',
     page_conversations: 'مکالمات',
     conv_page_desc: 'مدیریت مکالمات با مشتریان، پاسخ‌دهی و تخصیص به دپارتمان‌ها.',
     conv_new: 'مکالمه جدید',

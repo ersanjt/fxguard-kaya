@@ -736,10 +736,12 @@
                 tr: {}
             };
             if (window.__I18N_FA) { for (var k in window.__I18N_FA) I18N.fa[k] = window.__I18N_FA[k]; }
+            if (window.__I18N_EN) { for (var k in window.__I18N_EN) I18N.en[k] = window.__I18N_EN[k]; }
             if (window.__I18N_TR) { for (var k in window.__I18N_TR) I18N.tr[k] = window.__I18N_TR[k]; }
             window.LANG = LANG;
             window.t = function(k) {
                 if (LANG === 'fa' && window.__I18N_FA && window.__I18N_FA[k] !== undefined) return window.__I18N_FA[k];
+                if (LANG === 'en' && window.__I18N_EN && window.__I18N_EN[k] !== undefined) return window.__I18N_EN[k];
                 return (I18N[LANG] && I18N[LANG][k]) || (I18N.fa && I18N.fa[k]) || (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || k;
             };
             window.setLang = function(l) {
@@ -2545,7 +2547,7 @@
             }).catch(function() { if (btn) { btn.classList.remove('loading'); btn.disabled = false; } });
         }
         function setDashboardError(container, cardsTitleEl, message) {
-            if (container) container.innerHTML = '<div class="dashboard-load-error empty">' + (message || (LANG === 'fa' ? 'بارگذاری ناموفق بود. دوباره تلاش کنید.' : 'Failed to load. Try again.')) + '</div>';
+            if (container) container.innerHTML = '<div class="dashboard-load-error empty">' + (message || t('loading_err')) + '</div>';
             if (cardsTitleEl) cardsTitleEl.style.display = 'none';
         }
         async function loadDashboard() {
@@ -2576,11 +2578,12 @@
             var n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
             if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
                 var parts = [];
-                if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" onclick="showPage(\'conversations\'); setConvQuickTab(\'unread\'); return false;" class="dashboard-attention-link">' + (LANG === 'fa' ? '&#128172; ' : '') + n(stats.unreadConversations) + (LANG === 'fa' ? ' مکالمه خوانده\u200cنشده' : ' unread conversation(s)') + '</a>');
-                if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" onclick="showPage(\'tasks\'); return false;" class="dashboard-attention-link">' + (LANG === 'fa' ? '&#128203; ' : '') + n(stats.tasksPending) + (LANG === 'fa' ? ' تسک در انتظار' : ' task(s) pending') + '</a>');
-                if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" onclick="showPage(\'announcements\'); return false;" class="dashboard-attention-link">' + (LANG === 'fa' ? '&#128276; ' : '') + n(stats.unreadAnnouncements) + (LANG === 'fa' ? ' اعلان خوانده\u200cنشده' : ' unread announcement(s)') + '</a>');
+                if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" onclick="showPage(\'conversations\'); setConvQuickTab(\'unread\'); return false;" class="dashboard-attention-link">' + n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread') + '</a>');
+                if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" onclick="showPage(\'tasks\'); return false;" class="dashboard-attention-link">' + n(stats.tasksPending) + ' ' + t('dashboard_stat_tasks') + '</a>');
+                if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" onclick="showPage(\'announcements\'); return false;" class="dashboard-attention-link">' + n(stats.unreadAnnouncements) + ' ' + t('dashboard_stat_announcements') + '</a>');
                 if (parts.length) {
-                    attentionEl.innerHTML = (LANG === 'fa' ? 'نیاز به توجه: ' : 'Needs attention: ') + parts.join(' · ');
+                    var needsLabel = (t('dashboard_needs_attention') || (LANG === 'fa' ? 'نیاز به توجه: ' : 'Needs attention: ')) + ' ';
+                    attentionEl.innerHTML = needsLabel + parts.join(' · ');
                     attentionEl.style.display = 'block';
                 }
             }
@@ -2616,11 +2619,11 @@
                 quickEl.innerHTML = quickHtml || '';
             }
             var cards = [
-                { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread')) : (n(stats.openConversations) + ' ' + (LANG === 'fa' ? 'باز' : 'open')), badgeWarn: n(stats.unreadConversations) > 0 },
-                { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + (LANG === 'fa' ? ' مشتری' : ' customers') },
-                { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', stat: n(stats.ticketsOpen) + (LANG === 'fa' ? ' تیکت باز' : ' open') },
-                { page: 'tasks', section: 'tasks', title: t('nav_tasks'), icon: 'icon-task', stat: n(stats.tasksPending) + (LANG === 'fa' ? ' تسک در انتظار' : ' pending') },
-                { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-user-online', stat: n(stats.announcementsCount) + (LANG === 'fa' ? ' اعلان' : ' announcements') },
+                { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread')) : (n(stats.openConversations) + ' ' + t('filter_open')), badgeWarn: n(stats.unreadConversations) > 0 },
+                { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + ' ' + t('nav_customers').toLowerCase() },
+                { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', stat: n(stats.ticketsOpen) + ' ' + t('status_open').toLowerCase() },
+                { page: 'tasks', section: 'tasks', title: t('nav_tasks'), icon: 'icon-task', stat: n(stats.tasksPending) + ' ' + t('status_pending').toLowerCase() },
+                { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-user-online', stat: n(stats.announcementsCount) + ' ' + t('nav_announcements').toLowerCase() },
                 { page: 'departments', section: 'departments', title: t('nav_departments'), icon: 'icon-building', stat: null },
                 { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user', stat: null },
                 { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
@@ -2640,7 +2643,7 @@
                 var badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
                 html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
             });
-            container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : 'No sections available.') + '</div>');
+            container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : t('no_data')) + '</div>');
             if (cardsTitleEl) cardsTitleEl.style.display = html ? '' : 'none';
             updateNavBadges(stats);
         }
