@@ -17,11 +17,16 @@ RewriteRule ^contact$ contact.html [L,QSA]
 # RewriteRule ^dashboard(.*)$ https://app.fxguard.io$1 [R=302,L]
 
 # ========== Force HTTPS (recommended for SEO & security) ==========
-# Uncomment if your SSL is active and you want to force HTTPS:
-# RewriteCond %{HTTPS} off
-# RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+# SSL active - redirect HTTP to HTTPS
+RewriteCond %{HTTPS} off
+RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
 
 # ========== Security & Performance ==========
+# HSTS - Force HTTPS for 1 year (only when HTTPS is on)
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
+</IfModule>
+
 # Prevent directory listing
 Options -Indexes
 
