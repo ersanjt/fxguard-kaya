@@ -76,12 +76,18 @@ async function sendMailWithConfig(config, { to, subject, text, html }) {
  * ارسال ایمیل با برگرداندن خطای دقیق (برای تست و عیب‌یابی)
  * @returns {Promise<{ok: boolean, error?: string}>}
  */
+function normalizeHost(host) {
+    if (!host || typeof host !== 'string') return host;
+    return host.replace(/\.+$/, '').trim();
+}
+
 async function sendMailWithConfigDetailed(config, { to, subject, text, html }) {
     if (!config || !config.host || !config.port) return { ok: false, error: 'Host و پورت الزامی است.' };
     try {
         const nodemailer = require('nodemailer');
+        const host = normalizeHost(config.host);
         const opts = {
-            host: config.host,
+            host,
             port: parseInt(config.port, 10) || 587,
             secure: !!config.secure,
             auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
@@ -90,15 +96,20 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html }) {
         };
         if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
         const transport = nodemailer.createTransport(opts);
-        const fromAddr = config.from || config.user || 'noreply@localhost';
+        const fromAddr = (config.from || config.user || 'noreply@localhost').trim();
         const from = config.fromName ? `"${config.fromName}" <${fromAddr}>` : fromAddr;
-        await transport.sendMail({
+        const mailOpts = {
             from,
             to: Array.isArray(to) ? to.join(', ') : to,
             subject: subject || '(بدون موضوع)',
             text: text || '',
-            html: html || (text ? text.replace(/\n/g, '<br>') : '')
-        });
+            html: html || (text ? text.replace(/\n/g, '<br>') : ''),
+            headers: {
+                'X-Mailer': 'KayaCRM',
+                'Reply-To': fromAddr
+            }
+        };
+        await transport.sendMail(mailOpts);
         return { ok: true };
     } catch (err) {
         let msg = err.message || String(err);

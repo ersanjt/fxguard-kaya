@@ -83,7 +83,7 @@ function getSupportedLanguages(settings) {
 /** اگر تنظیمات SMTP از پنل پر شده باشد، آبجکت config برای sendMailWithConfig برمی‌گرداند؛ وگرنه null */
 function getPanelEmailConfig(settings) {
     if (!settings || !settings.smtpHost || !settings.smtpPort) return null;
-    const host = settings.smtpHost || '';
+    const host = (settings.smtpHost || '').replace(/\.+$/, '').trim();
     return {
         host,
         port: settings.smtpPort,

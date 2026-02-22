@@ -85,7 +85,7 @@ router.put('/', authMiddleware, async (req, res) => {
         if (footerText !== undefined) row.footerText = footerText === '' ? null : footerText;
         if (showFooter !== undefined) row.showFooter = !!showFooter;
         if (footerStyle !== undefined) row.footerStyle = (footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(footerStyle) >= 0) ? footerStyle : 'accent';
-        if (smtpHost !== undefined) row.smtpHost = smtpHost === '' ? null : smtpHost;
+        if (smtpHost !== undefined) row.smtpHost = smtpHost === '' ? null : String(smtpHost).replace(/\.+$/, '').trim() || null;
         if (smtpPort !== undefined) row.smtpPort = smtpPort === '' ? null : smtpPort;
         if (smtpUser !== undefined) row.smtpUser = smtpUser === '' ? null : smtpUser;
         if (smtpPass !== undefined && String(smtpPass).trim() !== '') row.smtpPass = String(smtpPass).trim();
@@ -125,15 +125,16 @@ router.post('/test-email', authMiddleware, async (req, res) => {
         const bodyPort = (req.body.smtpPort || '').toString().trim();
         if (bodyHost && bodyPort) {
             const bodyPass = (req.body.smtpPass || '').toString().trim();
+            const normHost = bodyHost.replace(/\.+$/, '').trim();
             emailConfig = {
-                host: bodyHost,
+                host: normHost,
                 port: bodyPort,
                 user: (req.body.smtpUser || '').toString().trim() || null,
                 pass: bodyPass || (settings && settings.smtpPass) || null,
                 from: (req.body.smtpFrom || '').toString().trim() || null,
                 fromName: (req.body.smtpFromName || '').toString().trim() || null,
                 secure: !!(req.body.smtpSecure === true || req.body.smtpSecure === 'true' || req.body.smtpSecure === '1'),
-                allowSelfSigned: bodyHost.includes('host.secureserver.net') || bodyHost === 'mail.fxguard.io'
+                allowSelfSigned: normHost.includes('host.secureserver.net') || normHost === 'mail.fxguard.io'
             };
             if (!emailConfig.from && emailConfig.user) emailConfig.from = emailConfig.user;
         }
@@ -149,16 +150,15 @@ router.post('/test-email', authMiddleware, async (req, res) => {
         let result = { ok: false };
         if (emailConfig && emailConfig.host && emailConfig.port) {
             result = await emailService.sendMailWithConfigDetailed(emailConfig, mailOpts);
-            // اگر با host فعلی شکست خورد، smtpout.secureserver.net را امتحان کن (fxguard.io روی GoDaddy)
+            // اگر با host فعلی شکست خورد، hostهای جایگزین را امتحان کن (fxguard.io روی GoDaddy)
             if (!result.ok && emailConfig.user && emailConfig.pass && /fxguard\.io/i.test(emailConfig.user || '')) {
-                const fallback = { ...emailConfig, host: 'smtpout.secureserver.net' };
-                const fallbackResult = await emailService.sendMailWithConfigDetailed(fallback, mailOpts);
-                if (fallbackResult.ok) {
-                    result = { ok: true, usedFallback: 'smtpout.secureserver.net' };
-                } else if (emailConfig.host !== '143.182.205.92.host.secureserver.net') {
-                    const fallback2 = { ...emailConfig, host: '143.182.205.92.host.secureserver.net' };
-                    const r2 = await emailService.sendMailWithConfigDetailed(fallback2, mailOpts);
-                    if (r2.ok) result = { ok: true, usedFallback: '143.182.205.92.host.secureserver.net' };
+                const currentHost = (emailConfig.host || '').replace(/\.+$/, '').trim();
+                const fallbacks = ['mail.fxguard.io', '143.182.205.92.host.secureserver.net', 'smtpout.secureserver.net'];
+                for (const h of fallbacks) {
+                    if (currentHost === h) continue;
+                    const fb = { ...emailConfig, host: h };
+                    const r = await emailService.sendMailWithConfigDetailed(fb, mailOpts);
+                    if (r.ok) { result = { ok: true, usedFallback: h }; break; }
                 }
             }
         } else {

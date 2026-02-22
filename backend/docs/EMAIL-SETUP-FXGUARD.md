@@ -103,10 +103,19 @@ SMTP_SECURE=true
 
 ---
 
+## تحویل به Gmail و سرویس‌های خارجی
+
+- **Host ترجیحی:** برای بهبود DMARC alignment، از `mail.fxguard.io` استفاده کنید (بدون نقطهٔ اضافی در انتها).
+- **تست تحویل:** از [mail-tester.com](https://www.mail-tester.com) برای بررسی امتیاز اسپم و DMARC استفاده کنید.
+- **اگر ایمیل به Gmail نمی‌رسد:** پوشه اسپم را بررسی کنید. ارسال‌های مکرر در مدت کوتاه ممکن است باعث فیلتر موقت شود.
+- **راه‌حل جایگزین:** برای تحویل پایدار به Gmail، استفاده از SendGrid یا Mailgun توصیه می‌شود.
+
+---
+
 ## عیب‌یابی
 
 - **ارسال ایمیل ناموفق / Host، پورت و احراز هویت:**  
-  - **cPanel:** Host را `mail.fxguard.io` بگذارید. پورت ۴۶۵ → SSL فعال ✓؛ پورت ۵۸۷ → SSL خالی. اگر `mail.fxguard.io` کار نکرد، در cPanel → Email Deliverability آدرس SMTP سرور را ببینید.  
+  - **cPanel:** Host را `mail.fxguard.io` بگذارید (بدون نقطه در انتها). پورت ۴۶۵ → SSL فعال ✓؛ پورت ۵۸۷ → SSL خالی. اگر `mail.fxguard.io` کار نکرد، در cPanel → Email Deliverability آدرس SMTP سرور را ببینید.  
   - **GoDaddy Email:** Host را `smtpout.secureserver.net` بگذارید. SMTP Authentication را در Email & Office → Manage → Settings فعال کنید.
 - **خطای احراز هویت:** رمز عبور ایمیل را دقیقاً همان‌طور که در cPanel یا GoDaddy تنظیم کرده‌اید وارد کنید.
 - **ایمیل در اسپم:** DKIM/SPF/PTR شما تأیید شده‌اند. محتوای ایمیل را کم‌حجم و بدون لینک مشکوک نگه دارید.
