@@ -47,6 +47,7 @@
                     nav_announcements: 'اع�ا� �R�!ا',
                     nav_whatsapp: 'اتصا� ��اتساپ',
                     nav_rates: '� رخ ارز�!ا',
+                    nav_more: 'بیشتر',
                     skip_to_content: 'پرش به محتوا',
                     loading_panel: 'در حال بارگذاری پنل...',
                     nav_panel_settings: 'ظاهر پنل',
@@ -384,6 +385,7 @@
                     nav_whatsapp: 'WhatsApp connection',
                     nav_rates: 'Exchange rates',
                     nav_services: 'Exchange services',
+                    nav_more: 'More',
                     nav_panel_settings: 'Panel appearance',
                     skip_to_content: 'Skip to content',
                     loading_panel: 'Loading panel...',
@@ -608,6 +610,9 @@
                     all_statuses: 'All statuses',
                     all_depts: 'All departments',
                     ticker_loading: 'Loading prices...',
+                    ticker_empty: 'No exchange rates configured yet',
+                    ticker_last_updated: 'Last updated',
+                    ticker_refresh: 'Refresh rates',
                     ticker_updated: 'Last updated:',
                     ticker_outside_hours: 'Rates update 06:00�20:00 Tehran time � every 10 min',
                     ticker_last: 'Last updated:', ticker_current_time: 'Current time',
@@ -856,6 +861,31 @@
                     link.appendChild(badge);
                 }
             });
+            var convBadge = document.getElementById('mobileTabConvBadge');
+            if (convBadge) { var nc = window.navBadgeCounts.conversations || 0; convBadge.style.display = nc > 0 ? '' : 'none'; convBadge.textContent = nc > 99 ? '99+' : String(nc); }
+            var annBadge = document.getElementById('mobileTabAnnBadge');
+            if (annBadge) { var na = window.navBadgeCounts.announcements || 0; annBadge.style.display = na > 0 ? '' : 'none'; annBadge.textContent = na > 99 ? '99+' : String(na); }
+        }
+        function updateMobileTabBar(page) {
+            var tabBar = document.getElementById('mobileTabBar');
+            var bottomBar = document.getElementById('bottomBar');
+            if (!tabBar || !bottomBar) return;
+            var isMobile = window.innerWidth <= 768;
+            bottomBar.classList.toggle('has-mobile-tab', isMobile);
+            if (!isMobile) return;
+            document.querySelectorAll('.mobile-tab-bar .mobile-tab-item').forEach(function(item) {
+                var p = item.getAttribute('data-page');
+                var active = (p === page) || (p === 'more' && ['profile','tickets','tasks','processes','departments','users','branches','whatsapp','rates','services','internal-chat','panel-settings','supervision','staff-activity'].indexOf(page) >= 0);
+                item.classList.toggle('active', active);
+                item.setAttribute('aria-selected', active ? 'true' : 'false');
+            });
+            var perms = (currentUser && currentUser.permissions) || {};
+            var hidden = HIDDEN_SECTIONS || [];
+            document.querySelectorAll('.mobile-tab-bar .mobile-tab-item[data-section]').forEach(function(item) {
+                var sec = item.getAttribute('data-section');
+                var visible = (sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] !== false && hidden.indexOf(sec) < 0);
+                item.style.display = visible ? '' : 'none';
+            });
         }
 
         function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
@@ -976,36 +1006,41 @@
                 uaeLabel: t('ticker_uae') || 'امارات'
             };
         }
-        async function fetchRates() {
+        function formatRatesLastUpdated(updatedAtStr, timestampSec) {
+            var d = updatedAtStr ? new Date(updatedAtStr) : (timestampSec ? new Date(timestampSec * 1000) : new Date());
+            if (isNaN(d.getTime())) return '';
+            var locale = LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB';
+            var tz = LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai';
+            return new Intl.DateTimeFormat(locale, { timeZone: tz, dateStyle: 'short', timeStyle: 'short' }).format(d);
+        }
+        async function fetchRates(showRefreshSpinner) {
             if (!token) return;
             var tickerEl = document.getElementById('priceTicker');
             if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf('rates') >= 0) {
                 if (tickerEl) tickerEl.style.display = 'none';
                 return;
             }
-            var loadingEl = document.querySelector('.ticker-loading');
-            var timesEl = document.getElementById('tickerTimes');
             var innerEl = document.getElementById('ratesMarqueeInner');
             var trackEl = document.getElementById('ratesMarqueeTrack');
+            var trackWrap = document.getElementById('ratesMarqueeTrackWrap');
+            var refreshBtn = document.getElementById('ratesMarqueeRefresh');
+            if (showRefreshSpinner && refreshBtn) refreshBtn.classList.add('loading');
             var res = await apiFetch('/api/rates');
+            if (showRefreshSpinner && refreshBtn) refreshBtn.classList.remove('loading');
             if (res.needLogin || !res.ok) return;
             var data = res.data;
             var items = (data && data.items) || [];
-            var fmt = formatTickerDateTime(data.updatedAt, data.updatedAtTimestamp);
-            if (loadingEl) loadingEl.style.display = 'none';
-            if (timesEl) {
-                timesEl.innerHTML = '<span class="ticker-dt-label">' + escapeHtml(fmt.label) + '</span>' +
-                    '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.iranLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.iran) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.shamsi) + '</span></span>' +
-                    '<span class="ticker-sep">·</span>' +
-                    '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.turkeyLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.turkey) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.miladi) + '</span></span>' +
-                    '<span class="ticker-sep">·</span>' +
-                    '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.uaeLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.uae) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.hijri) + '</span></span>';
-                timesEl.style.display = '';
+            var lastUpdated = formatRatesLastUpdated(data.updatedAt, data.updatedAtTimestamp);
+            if (trackWrap) {
+                trackWrap.title = lastUpdated ? ((t('ticker_last_updated') || 'آخرین بروزرسانی') + ': ' + lastUpdated) : '';
             }
             if (tickerEl) tickerEl.style.display = '';
             if (innerEl) {
-                var itemsHtml = items.length === 0
-                    ? '<span class="ticker-item ticker-empty">' + escapeHtml(t('ticker_loading') || 'در حال بارگذاری قیمت‌ها...') + '</span>'
+                var wasEmpty = innerEl.querySelector('.ticker-empty') || innerEl.querySelector('.ticker-item') === null;
+                var isEmpty = items.length === 0;
+                var emptyMsg = isEmpty && res.ok ? (t('ticker_empty') || 'هنوز نرخ ارزی تنظیم نشده') : (t('ticker_loading') || 'در حال بارگذاری قیمت‌ها...');
+                var itemsHtml = isEmpty
+                    ? '<span class="ticker-item ticker-empty">' + escapeHtml(emptyMsg) + '</span>'
                     : items.map(function(it) {
                     var ch = it.change;
                     var chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
@@ -1015,6 +1050,11 @@
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
                 }).join('');
                 innerEl.innerHTML = itemsHtml;
+                if (!isEmpty && (wasEmpty || innerEl._lastItemsCount !== items.length)) {
+                    innerEl.classList.add('ticker-updated');
+                    setTimeout(function() { if (innerEl) innerEl.classList.remove('ticker-updated'); }, 600);
+                }
+                innerEl._lastItemsCount = items.length;
                 innerEl.classList.remove('centered', 'scrolling');
                 function updateRatesMarqueeMode() {
                     if (!trackEl || !innerEl) return;
@@ -1032,6 +1072,9 @@
                     }
                 }
             }
+        }
+        function refreshRatesTicker() {
+            fetchRates(true);
         }
 
         function updateTickerTimeOnly() {
@@ -1053,7 +1096,6 @@
             if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf('rates') >= 0) return;
             fetchRates();
             ratesInterval = setInterval(fetchRates, 10 * 60 * 1000);
-            tickerTimeInterval = setInterval(updateTickerTimeOnly, 60 * 1000);
         }
         function rateLabel(key) { return t(key) || key; }
         async function loadRatesAdjustments() {
@@ -3645,6 +3687,7 @@
         }
         function applyNavByRole() {
             var perms = (currentUser && currentUser.permissions) || {};
+            var can = function(section) { return section === 'profile' || perms[section] !== false; };
             document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
                 var section = link.getAttribute('data-section');
                 link.style.display = perms[section] !== false ? '' : 'none';
@@ -3657,17 +3700,28 @@
                 var perm = el.getAttribute('data-perm');
                 el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
             });
+            var activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+            if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
         }
         function updateBottomBarVisibility() {
             var bottomBar = document.getElementById('bottomBar');
             var tickerEl = document.getElementById('priceTicker');
             var appFooter = document.getElementById('appFooter');
+            var mobileTabBar = document.getElementById('mobileTabBar');
             if (!bottomBar) return;
             var tickerHidden = !tickerEl || tickerEl.style.display === 'none';
             var footerHidden = !appFooter || appFooter.style.display === 'none';
             var bothHidden = tickerHidden && footerHidden;
-            bottomBar.style.display = bothHidden ? 'none' : '';
-            document.body.classList.toggle('bottom-bar-hidden', bothHidden);
+            var isMobile = window.innerWidth <= 768;
+            if (isMobile && mobileTabBar) {
+                bottomBar.style.display = '';
+                document.body.classList.remove('bottom-bar-hidden');
+                bottomBar.classList.add('has-mobile-tab');
+            } else {
+                bottomBar.style.display = bothHidden ? 'none' : '';
+                document.body.classList.toggle('bottom-bar-hidden', bothHidden);
+                bottomBar.classList.remove('has-mobile-tab');
+            }
         }
         function applyBranding(s) {
             if (!s) return;
@@ -3721,6 +3775,8 @@
             var tickerEl = document.getElementById('priceTicker');
             if (tickerEl) tickerEl.style.display = HIDDEN_SECTIONS.indexOf('rates') >= 0 ? 'none' : '';
             updateBottomBarVisibility();
+            var activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+            if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
             if (ratesInterval) clearInterval(ratesInterval);
             if (tickerTimeInterval) clearInterval(tickerTimeInterval);
             ratesInterval = null;
@@ -4153,6 +4209,7 @@
             var navLinks = document.querySelectorAll('.sidebar .nav-link[data-page]');
             navLinks.forEach(function(l) { l.classList.remove('active'); });
             navLinks.forEach(function(l) { if (l.getAttribute('data-page') === page) l.classList.add('active'); });
+            updateMobileTabBar(page);
             var pageTitles = { dashboard: 'nav_dashboard', conversations: 'nav_conversations', customers: 'nav_customers', tickets: 'nav_tickets', tasks: 'nav_tasks', processes: 'nav_processes', departments: 'nav_departments', users: 'nav_users', branches: 'nav_branches', supervision: 'nav_supervision', 'staff-activity': 'nav_staff_activity', profile: 'nav_profile', announcements: 'nav_announcements', 'internal-chat': 'nav_internal_chat', whatsapp: 'nav_whatsapp', rates: 'nav_rates', services: 'nav_services', 'panel-settings': 'nav_panel_settings' };
             var titleKey = pageTitles[page] || 'nav_dashboard';
             var titleText = t(titleKey);
@@ -4694,7 +4751,6 @@
         }
         async function loadProcessTemplateSelect() {
             var sel = document.getElementById('processInstanceTemplate');
-            var startSel = document.getElementById('processStartTemplateId');
             var res = await apiFetch('/api/processes/templates');
             if (!res.ok || !res.data || !res.data.data) return;
             var opts = '<option value="">' + t('all_templates') + '</option>' + res.data.data.filter(function(t){ return t.isActive; }).map(function(t){ return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join('');
@@ -4708,15 +4764,15 @@
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
             var data = (res.data && res.data.data) || [];
-            if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x9</span><br>' + t('empty_process_templates') + '</div>'; return; }
+            if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📋</span><br>' + t('empty_process_templates') + '</div>'; return; }
             list.innerHTML = data.map(function(t) {
-                var stages = (t.stages || []).map(function(s){ return s.name; }).join(' �  ');
+                var stages = (t.stages || []).map(function(s){ return s.name; }).join(' \u2192 ');
                 var cnt = (t.instanceCount || 0);
                 return '<div class="list-item" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">' +
-                    '<div><span class="name">' + escapeHtml(t.name) + '</span><div class="meta">' + (stages || '�') + ' | ' + (t('all_templates') === 'All templates' ? 'Instances: ' : '� �&��� �!: ') + cnt + '</div></div>' +
+                    '<div><span class="name">' + escapeHtml(t.name) + '</span><div class="meta">' + (stages || '—') + ' | ' + (t('process_instances_count') || 'Instances: ') + cnt + '</div></div>' +
                     '<div style="display:flex; gap:6px;"><button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessStartInstanceModal(\'' + t.id + '\')">' + t('process_start_instance') + '</button>' +
                     '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessTemplateModal(\'' + t.id + '\')">' + t('edit') + '</button>' +
-                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="deleteProcessTemplate(\'' + t.id + '\')">�</button></div></div>';
+                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="deleteProcessTemplate(\'' + t.id + '\')">' + (t('btn_delete') || '\u00D7') + '</button></div></div>';
             }).join('');
         }
         async function loadProcessInstances() {
@@ -4735,7 +4791,7 @@
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
             var data = (res.data && res.data.data) || [];
-            if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x</span><br>' + t('empty_process_instances') + '</div>'; return; }
+            if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🔄</span><br>' + t('empty_process_instances') + '</div>'; return; }
             list.innerHTML = data.map(function(i) {
                 var statusLabel = i.status === 'active' ? t('status_active') : i.status === 'completed' ? t('status_done') : t('status_cancelled');
                 var templateName = (i.template && i.template.name) ? i.template.name : '�';
@@ -4757,7 +4813,7 @@
             var res = await apiFetch('/api/processes/instances/' + id);
             if (res.needLogin) return;
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showProcessInstancesList(); return; }
-            var i = res.data;
+            var i = (res.data && res.data.data) || res.data;
             var template = i.template || {};
             var stages = template.stages || [];
             var currentIdx = i.currentStageIndex != null ? i.currentStageIndex : 0;
@@ -4794,7 +4850,7 @@
             if (id) {
                 apiFetch('/api/processes/templates/' + id).then(function(res) {
                     if (res.ok && res.data) {
-                        var t = res.data;
+                        var t = (res.data.data) ? res.data.data : res.data;
                         document.getElementById('processTemplateName').value = t.name || '';
                         document.getElementById('processTemplateDesc').value = t.description || '';
                         var stages = t.stages || [];
@@ -4809,7 +4865,7 @@
             var container = document.getElementById('processTemplateStagesContainer');
             var div = document.createElement('div');
             div.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center;';
-            div.innerHTML = '<input type="text" class="process-stage-name" data-i18n-ph="process_stage_name" placeholder="' + (t('process_stage_name') || '� ا�& �&رح��!') + '" value="' + escapeHtml(name) + '" style="flex:1;"> <button type="button" class="btn-secondary" style="padding:4px 10px;" onclick="this.parentElement.remove()">�</button>';
+            div.innerHTML = '<input type="text" class="process-stage-name" data-i18n-ph="process_stage_name" placeholder="' + (t('process_stage_name') || 'نام مرحله') + '" value="' + escapeHtml(name) + '" style="flex:1;"> <button type="button" class="btn-secondary" style="padding:4px 10px;" onclick="this.parentElement.remove()">×</button>';
             container.appendChild(div);
         }
         function closeProcessTemplateModal() { document.getElementById('modalProcessTemplate').style.display = 'none'; }
@@ -4830,7 +4886,7 @@
             if (res.ok) { closeProcessTemplateModal(); loadProcessTemplates(); loadProcessTemplateSelect(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function deleteProcessTemplate(id) {
-            if (!confirm(LANG === 'en' ? 'Delete this template?' : 'ا�R�  �ا�ب حذف ش��د�x')) return;
+            if (!confirm(t('process_delete_template_confirm') || (LANG === 'en' ? 'Delete this template?' : 'این قالب حذف شود؟'))) return;
             var res = await apiFetch('/api/processes/templates/' + id, { method: 'DELETE' });
             if (res.ok) { loadProcessTemplates(); loadProcessTemplateSelect(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
@@ -4844,7 +4900,7 @@
                 if (!sel) return;
                 var list = (res.data && res.data.data) || [];
                 var active = list.filter(function(t){ return t.isActive !== false; });
-                sel.innerHTML = '<option value="">' + t('all_templates') + '</option>' + active.map(function(t){ return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join('');
+                sel.innerHTML = '<option value="">' + (t('process_select_template') || t('all_templates')) + '</option>' + active.map(function(t){ return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join('');
                 if (templateId) sel.value = templateId;
             });
             apiFetch('/api/users').then(function(res) {
@@ -6590,6 +6646,13 @@
             });
         });
         window.addEventListener('hashchange', function() { if (document.getElementById('app').classList.contains('show')) applyHashRoute(); });
+        window.addEventListener('resize', function() {
+            if (document.getElementById('app').classList.contains('show')) {
+                updateBottomBarVisibility();
+                var activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+                if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
+            }
+        });
 
         (function initMobileTicker() {
             var btn = document.getElementById('tickerToggleMobile');

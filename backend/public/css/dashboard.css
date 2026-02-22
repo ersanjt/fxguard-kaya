@@ -283,7 +283,18 @@
         .announcement-marquee-more svg { width: 18px; height: 18px; }
         /* نوار نرخ ارز — همان منطق و ظاهر نوار اعلان‌ها */
         .price-ticker.rates-marquee { position: relative; flex-shrink: 0; direction: rtl; color: #fff; font-size: 0.9rem; background: linear-gradient(135deg, rgba(16,185,129,0.95) 0%, rgba(5,150,105,0.92) 50%, rgba(4,120,87,0.9) 100%); border-top: 1px solid rgba(16,185,129,0.4); box-shadow: 0 -2px 12px rgba(16,185,129,0.2); padding: 0; }
-        .rates-marquee-bar { display: flex; align-items: center; gap: 12px; padding: 6px 14px; padding-bottom: max(6px, env(safe-area-inset-bottom)); min-height: 36px; }
+        .rates-marquee-bar { display: flex; align-items: center; gap: 10px; padding: 6px 14px; padding-bottom: max(6px, env(safe-area-inset-bottom)); min-height: 36px; }
+        .rates-marquee-icon { display: flex; align-items: center; justify-content: center; flex-shrink: 0; width: 20px; height: 20px; opacity: 0.9; }
+        .rates-marquee-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .rates-marquee-track-wrap { flex: 1; min-width: 0; overflow: hidden; cursor: default; }
+        .rates-marquee-refresh { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; min-width: 32px; padding: 0; border: none; background: rgba(255,255,255,0.15); border-radius: 8px; color: #fff; cursor: pointer; transition: background 0.2s, transform 0.15s; -webkit-tap-highlight-color: transparent; flex-shrink: 0; }
+        .rates-marquee-refresh:hover { background: rgba(255,255,255,0.28); }
+        .rates-marquee-refresh:active { transform: scale(0.95); }
+        .rates-marquee-refresh.loading svg { animation: ticker-refresh-spin 0.8s linear infinite; }
+        @keyframes ticker-refresh-spin { to { transform: rotate(360deg); } }
+        .rates-marquee-refresh svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .rates-marquee-inner.ticker-updated { animation: ticker-update-flash 0.6s ease-out; }
+        @keyframes ticker-update-flash { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 1; } }
         .rates-marquee-label { display: flex; align-items: center; gap: 8px; flex-shrink: 0; font-weight: 600; font-size: 0.9rem; }
         .rates-marquee-label svg { width: 18px; height: 18px; opacity: 0.95; }
         .rates-marquee-datetime { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 0.75rem; font-weight: 500; color: rgba(255,255,255,0.9); flex-shrink: 0; }
@@ -319,6 +330,10 @@
         }
         @media (max-width: 768px) {
             .rates-marquee-bar { flex-wrap: wrap; padding: 6px 12px; gap: 8px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
+            .rates-marquee-icon { width: 18px; height: 18px; }
+            .rates-marquee-icon svg { width: 16px; height: 16px; }
+            .rates-marquee-refresh { width: 28px; height: 28px; min-width: 28px; }
+            .rates-marquee-refresh svg { width: 14px; height: 14px; }
             .rates-marquee-label { font-size: 0.85rem; }
             .rates-marquee-more { padding: 5px 10px; font-size: 0.78rem; }
         }
@@ -356,6 +371,20 @@
         .app-footer--line .app-footer-sep { display: none; }
         .app-footer--line .app-footer-meta:not(:has(#appFooterYear:empty))::before { content: ''; }
         .app-footer--line .app-footer-meta:not(:has(#appFooterYear:empty)) { padding-inline-start: 6px; border-inline-start: 1px solid rgba(255,255,255,0.35); }
+        /* ========== فوتر موبایل — نوار تب سبک اپلیکیشن (فقط موبایل) ========== */
+        .mobile-tab-bar { display: none; }
+        @media (max-width: 768px) {
+            .mobile-tab-bar { display: flex !important; align-items: stretch; justify-content: space-around; gap: 0; width: 100%; padding: 8px 0; padding-bottom: max(12px, env(safe-area-inset-bottom)); padding-inline: max(8px, env(safe-area-inset-inline)); background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); border-top: 1px solid rgba(255,255,255,0.08); box-shadow: 0 -4px 24px rgba(0,0,0,0.3); -webkit-tap-highlight-color: transparent; flex-shrink: 0; }
+            .mobile-tab-bar .mobile-tab-item { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; flex: 1; min-width: 0; padding: 6px 4px; text-decoration: none; color: var(--text-muted); font-size: 0.7rem; font-weight: 500; font-family: var(--font); border: none; background: none; cursor: pointer; transition: color 0.2s, transform 0.15s; -webkit-tap-highlight-color: transparent; position: relative; }
+            .mobile-tab-bar .mobile-tab-item:active { transform: scale(0.96); }
+            .mobile-tab-bar .mobile-tab-item .mobile-tab-icon { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+            .mobile-tab-bar .mobile-tab-item .mobile-tab-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+            .mobile-tab-bar .mobile-tab-item .mobile-tab-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+            .mobile-tab-bar .mobile-tab-item.active { color: var(--accent); }
+            .mobile-tab-bar .mobile-tab-item.active .mobile-tab-icon { color: var(--accent); }
+            .mobile-tab-bar .mobile-tab-item .mobile-tab-badge { position: absolute; top: 0; left: 50%; margin-inline-start: 10px; transform: translateY(-50%); min-width: 16px; height: 16px; padding: 0 4px; font-size: 0.6rem; font-weight: 700; line-height: 16px; text-align: center; background: var(--danger, #ef4444); color: #fff; border-radius: 8px; }
+            .bottom-bar.has-mobile-tab .app-footer { display: none !important; }
+        }
         /* ========== هدر و نوار پایین دسکتاپ (ویندوز) — min-width: 769px ========== */
         @media (min-width: 769px) {
             .header-desktop { padding: 10px 28px; padding-top: max(10px, env(safe-area-inset-top)); border-bottom: 1px solid rgba(45, 63, 95, 0.8); box-shadow: 0 1px 0 rgba(255,255,255,0.03); background: linear-gradient(180deg, #161f38 0%, #131b32 100%); }
@@ -1692,6 +1721,7 @@
         .customer-modal-save { min-width: 120px; }
         @media (max-width: 480px) { .customer-modal-grid { grid-template-columns: 1fr; } .customer-modal-header { padding: 16px 18px; } .customer-modal-body { padding: 16px 18px; } .customer-modal-footer { padding: 14px 18px; } }
         .badge.active { background: var(--accent-soft); color: var(--accent); }
+        .badge.completed { background: var(--success-soft, rgba(16, 185, 129, 0.15)); color: var(--success, #10b981); }
         .badge.inactive { background: var(--text-muted); color: var(--text-secondary); }
         .badge.blocked { background: var(--danger-soft); color: var(--danger); }
         /* ========== مونیتورهای بزرگ (۲۷ اینچ و بالاتر) ========== */
