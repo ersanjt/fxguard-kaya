@@ -87,6 +87,19 @@ header.scrolled { background: rgba(10,14,23,0.98); }
     border: 2px solid var(--accent);
 }
 .btn-outline:hover { background: var(--accent-soft); border-color: var(--accent-light); transform: translateY(-1px); }
+/* CTA outline (glass style on green bg) */
+.btn-outline-light {
+    background: rgba(255,255,255,0.1) !important;
+    color: white !important;
+    border: 2px solid rgba(255,255,255,0.5) !important;
+}
+.btn-outline-light:hover {
+    background: rgba(255,255,255,0.25) !important;
+    color: white !important;
+    border-color: rgba(255,255,255,0.8) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}
 /* Header buttons - ensure correct colors */
 header .btn-primary { background: linear-gradient(135deg, var(--accent) 0%, #047857 100%) !important; color: white !important; }
 header .btn-wa { background: linear-gradient(135deg, #25D366 0%, #20bd5a 100%) !important; color: white !important; }

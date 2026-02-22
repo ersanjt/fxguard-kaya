@@ -1077,7 +1077,13 @@ app.get('/health', (req, res) => {
 });
 
 // ساختار لینک‌ها: / → لندینگ مارکتینگ، /dashboard → پنل CRM
+// دامنه‌های مشتری (مثل kaya.fxguard.io): / → ریدایرکت به /dashboard
+const REDIRECT_ROOT_TO_DASHBOARD_HOSTS = (process.env.REDIRECT_ROOT_TO_DASHBOARD_HOSTS || 'kaya.fxguard.io').split(',').map(h => h.trim().toLowerCase());
 app.get('/', (req, res) => {
+    const host = (req.hostname || req.get('host') || '').toLowerCase();
+    if (REDIRECT_ROOT_TO_DASHBOARD_HOSTS.some(h => host === h || host.endsWith('.' + h))) {
+        return res.redirect(302, '/dashboard');
+    }
     res.set('Cache-Control', 'public, max-age=300');
     res.sendFile(path.join(__dirname, 'public', 'landing.html'));
 });
