@@ -380,6 +380,10 @@
                     nav_supervision: 'Supervision (Owner)',
                     nav_staff_activity: 'Logins & online status',
                     nav_settings: 'Settings',
+                    nav_settings_account: 'Account',
+                    nav_settings_connections: 'Connections',
+                    nav_settings_finance: 'Finance & rates',
+                    nav_settings_appearance: 'Appearance',
                     nav_profile: 'My profile',
                     nav_internal_chat: 'Internal chat',
                     nav_announcements: 'Announcements',
@@ -6734,6 +6738,17 @@
                 showPage(this.getAttribute('data-page'));
             });
         });
+        (function initNavSectionToggles() {
+            document.querySelectorAll('.sidebar .nav-section-collapsible .nav-section-title').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    if (window.innerWidth > 768) return;
+                    var section = this.closest('.nav-section-collapsible');
+                    if (!section) return;
+                    var collapsed = section.classList.toggle('collapsed');
+                    this.setAttribute('aria-expanded', !collapsed);
+                });
+            });
+        })();
         window.addEventListener('hashchange', function() { if (document.getElementById('app').classList.contains('show')) applyHashRoute(); });
         window.addEventListener('resize', function() {
             if (document.getElementById('app').classList.contains('show')) {
