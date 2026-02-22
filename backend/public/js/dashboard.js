@@ -2949,6 +2949,8 @@
             if (layout) layout.classList.remove('chat-open');
             var btn = document.querySelector('.chat-back-btn');
             if (btn) btn.style.display = 'none';
+            var pm = document.getElementById('headerMobileTitle');
+            if (pm && window.matchMedia('(max-width: 768px)').matches) pm.textContent = t('nav_conversations');
         }
         function updateChatBackBtn() {
             var btn = document.querySelector('.chat-back-btn');
@@ -2986,6 +2988,8 @@
             if (layout) layout.classList.add('chat-open');
             var backBtn = document.querySelector('.chat-back-btn');
             if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 768px)').matches ? 'flex' : 'none';
+            var pm = document.getElementById('headerMobileTitle');
+            if (pm && window.matchMedia('(max-width: 768px)').matches) pm.textContent = name || phone || t('customer');
             if (barEl) barEl.style.display = 'none';
             apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); });
             loadMessages(id);

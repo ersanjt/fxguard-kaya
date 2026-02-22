@@ -1669,6 +1669,12 @@
             .chat-send { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
             .conv-quick-tabs { flex-wrap: wrap; gap: 6px; }
             .conv-stats { flex-wrap: wrap; gap: 8px; }
+            .conv-page-desc { display: none; }
+            .conv-page-header { margin-bottom: 10px; }
+            .conv-page-header h2 { font-size: 1.05rem; }
+            .conv-quick-tabs { margin-bottom: 10px; }
+            .conv-toolbar { margin-bottom: 10px; }
+            .conv-list-wrap { max-height: min(380px, 60vh, 60dvh); min-height: 200px; }
             .dept-list .list-item, #deptList .list-item { flex-wrap: wrap; min-width: 0; }
             .dept-form-grid, .branch-form-grid { grid-template-columns: 1fr; }
             .dept-form-checks { flex-direction: column; align-items: flex-start; gap: 12px; }
@@ -1890,7 +1896,7 @@
             .conv-search-wrap .conv-filter-input { min-height: 44px; padding: 12px 40px 12px 14px; }
             .btn-filter-toggle { min-height: 44px; padding: 10px 14px; }
             .conv-layout { flex-direction: column; min-height: min(450px, 65vh, 65dvh); gap: 0; position: relative; }
-            .conv-list-wrap { flex: 0 0 auto; max-height: min(320px, 45vh, 45dvh); min-height: 200px; }
+            .conv-list-wrap { flex: 0 0 auto; max-height: min(400px, 55vh, 55dvh); min-height: 220px; }
             .conv-list-pane { flex: 1; min-height: 0; max-height: none; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 10px; }
             .conv-layout .chat-area { display: none; }
             .conv-layout .chat-area.show { display: flex; flex: 1; min-height: 280px; }
@@ -1900,6 +1906,14 @@
             .conv-list-header .conv-list-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
             .conv-list-header .conv-list-count { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .conv-list-wrap { overflow-x: hidden; }
+            /* موبایل: وقتی چت باز است، هدر/تب‌ها/فیلترها مخفی شوند تا چت تمام‌صفحه شود */
+            #pageConversations:has(.conv-layout.chat-open) .conv-page-header,
+            #pageConversations:has(.conv-layout.chat-open) .conv-quick-tabs,
+            #pageConversations:has(.conv-layout.chat-open) .conv-toolbar,
+            #pageConversations:has(.conv-layout.chat-open) #convStats { display: none !important; }
+            #pageConversations:has(.conv-layout.chat-open) { position: relative; }
+            #pageConversations:has(.conv-layout.chat-open) .conv-layout { flex: 1; min-height: 0; position: absolute; inset: 0; }
+            #pageConversations:has(.conv-layout.chat-open) .conv-layout .chat-area.show { min-height: 0; flex: 1; border-radius: 0; border: none; }
             .conv-list-item { padding: 12px 14px; min-height: 64px; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
             .conv-item-avatar { width: 48px; height: 48px; min-width: 48px; font-size: 1.2rem; }
             .conv-item-body { min-width: 0; flex: 1 1 auto; }
@@ -1910,10 +1924,13 @@
             .conv-item-badges .badge { font-size: 0.7rem; padding: 3px 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
             .chat-back-btn { display: none; }
             .conv-layout.chat-open .chat-back-btn { display: flex !important; }
+            .chat-back-btn { margin-inline-end: 8px; border-radius: 12px; touch-action: manipulation; }
+            [dir="rtl"] .chat-back-btn svg { transform: scaleX(-1); }
+            .chat-header-main { padding: 10px 14px; padding-inline-start: max(10px, env(safe-area-inset-inline-start)); }
             .chat-messages { padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; }
             .chat-messages .msg { max-width: 90%; }
             .chat-messages .msg-media video { max-height: min(200px, 35vh); }
-            .chat-send { padding: 10px 12px; gap: 8px; flex-wrap: wrap; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+            .chat-send { padding: 10px 12px; gap: 8px; flex-wrap: wrap; padding-inline: max(12px, env(safe-area-inset-inline)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
             .chat-send input, .chat-send #msgInput { min-width: 0; font-size: 16px; min-height: 44px; }
             .chat-send button, .chat-send .chat-attach-btn, .chat-send .chat-voice-btn, .chat-send .chat-send-btn { flex-shrink: 0; min-height: 44px; min-width: 44px; }
             .conv-detail-actions { gap: 6px; flex-wrap: wrap; }
