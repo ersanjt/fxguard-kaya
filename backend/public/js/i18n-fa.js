@@ -61,6 +61,7 @@ window.__I18N_FA = {
     nav_announcements: 'اعلان‌ها',
     nav_whatsapp: 'اتصال واتساپ',
     nav_rates: 'نرخ ارزها',
+    nav_rates_charts: 'چارت ارزها',
     nav_services: 'خدمات صرافی',
     nav_more: 'بیشتر',
     skip_to_content: 'پرش به محتوا',

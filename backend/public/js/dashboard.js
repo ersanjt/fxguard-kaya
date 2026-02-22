@@ -385,6 +385,7 @@
                     nav_announcements: 'Announcements',
                     nav_whatsapp: 'WhatsApp connection',
                     nav_rates: 'Exchange rates',
+                    nav_rates_charts: 'Currency charts',
                     nav_services: 'Exchange services',
                     nav_more: 'More',
                     nav_panel_settings: 'Panel appearance',
@@ -1088,6 +1089,67 @@
         }
         function refreshRatesTicker() {
             fetchRates(true);
+        }
+        var ratesChartInstance = null;
+        var ratesChartCurrentCurrency = 'usd';
+        function setRatesChartCurrency(key) {
+            ratesChartCurrentCurrency = key;
+            document.querySelectorAll('.rates-chart-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-currency') === key) b.classList.add('active'); });
+            loadRatesCharts();
+        }
+        async function loadRatesCharts() {
+            var canvas = document.getElementById('ratesChartCanvas');
+            var summaryEl = document.getElementById('ratesChartsSummary');
+            if (!canvas) return;
+            var periodSel = document.getElementById('ratesChartPeriod');
+            var days = periodSel ? parseInt(periodSel.value, 10) || 30 : 30;
+            if (summaryEl) summaryEl.innerHTML = '<span class="rates-charts-loading">' + (LANG === 'fa' ? 'در حال بارگذاری...' : 'Loading...') + '</span>';
+            var res = await apiFetch('/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days);
+            if (res.needLogin) return;
+            var labels = [];
+            var values = [];
+            if (res.ok && res.data && res.data.points && res.data.points.length > 0) {
+                res.data.points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
+            }
+            var currencyLabels = { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
+            var label = currencyLabels[ratesChartCurrentCurrency] || rateLabel(ratesChartCurrentCurrency);
+            if (ratesChartInstance) { ratesChartInstance.destroy(); ratesChartInstance = null; }
+            if (values.length > 0) {
+                var ctx = canvas.getContext('2d');
+                ratesChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: label + ' (تومان)',
+                            data: values,
+                            borderColor: 'rgb(16, 185, 129)',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 2,
+                            pointHoverRadius: 5
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: true,
+                        aspectRatio: 2,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { display: true, ticks: { maxRotation: 45, maxTicksLimit: 12 }, grid: { display: false } },
+                            y: { display: true, ticks: { callback: function(v) { return typeof v === 'number' ? v.toLocaleString('fa-IR') : v; } }, grid: { color: 'rgba(0,0,0,0.06)' } }
+                        }
+                    }
+                });
+                var lastVal = values[values.length - 1];
+                var firstVal = values[0];
+                var change = firstVal && lastVal ? ((lastVal - firstVal) / firstVal * 100).toFixed(1) : null;
+                var changeClass = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
+                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-summary-card"><span class="rates-charts-current">' + formatPrice(lastVal) + ' <span class="rates-charts-unit">تومان</span></span>' + (change != null ? '<span class="rates-charts-change ' + changeClass + '">' + (change > 0 ? '+' : '') + change + '% ' + (LANG === 'fa' ? 'در بازه انتخابی' : 'in period') + '</span>' : '') + '</div>';
+            } else {
+                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'داده‌ای برای نمایش وجود ندارد. لطفاً بعداً تلاش کنید.' : 'No data to display. Please try again later.') + '</div>';
+            }
         }
 
         function updateTickerTimeOnly() {
@@ -4215,7 +4277,7 @@
             }
             if (btn) { btn.disabled = false; btn.textContent = t('panel_test_email_btn'); }
         }
-        var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','services','panel-settings'];
+        var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
         function applyHashRoute() {
             var hash = (location.hash || '').replace(/^#/, '');
             var page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() { try { var last = sessionStorage.getItem('crm_last_page'); return last && VALID_PAGES.indexOf(last) >= 0 ? last : 'dashboard'; } catch (_) { return 'dashboard'; } })();
@@ -4225,7 +4287,7 @@
         function closeSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
         function showPage(page) {
             if (page === 'panel-settings' && (!currentUser || !currentUser.permissions || currentUser.permissions.panel_settings !== true)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
-            if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf(page) >= 0) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
+            if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             closeSidebarMobile();
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
@@ -4235,7 +4297,7 @@
             navLinks.forEach(function(l) { l.classList.remove('active'); });
             navLinks.forEach(function(l) { if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             updateMobileTabBar(page);
-            var pageTitles = { dashboard: 'nav_dashboard', conversations: 'nav_conversations', customers: 'nav_customers', tickets: 'nav_tickets', tasks: 'nav_tasks', processes: 'nav_processes', departments: 'nav_departments', users: 'nav_users', branches: 'nav_branches', supervision: 'nav_supervision', 'staff-activity': 'nav_staff_activity', profile: 'nav_profile', announcements: 'nav_announcements', 'internal-chat': 'nav_internal_chat', whatsapp: 'nav_whatsapp', rates: 'nav_rates', services: 'nav_services', 'panel-settings': 'nav_panel_settings' };
+            var pageTitles = { dashboard: 'nav_dashboard', conversations: 'nav_conversations', customers: 'nav_customers', tickets: 'nav_tickets', tasks: 'nav_tasks', processes: 'nav_processes', departments: 'nav_departments', users: 'nav_users', branches: 'nav_branches', supervision: 'nav_supervision', 'staff-activity': 'nav_staff_activity', profile: 'nav_profile', announcements: 'nav_announcements', 'internal-chat': 'nav_internal_chat', whatsapp: 'nav_whatsapp', rates: 'nav_rates', 'rates-charts': 'nav_rates_charts', services: 'nav_services', 'panel-settings': 'nav_panel_settings' };
             var titleKey = pageTitles[page] || 'nav_dashboard';
             var titleText = t(titleKey);
             var pt = document.getElementById('headerPageTitle');
@@ -4245,7 +4307,7 @@
             if (pb) pb.textContent = titleText;
             if (pm) pm.textContent = titleText;
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
-            var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices', 'panel-settings': 'pagePanelSettings' };
+            var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', 'rates-charts': 'pageRatesCharts', services: 'pageServices', 'panel-settings': 'pagePanelSettings' };
             if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations' || page === 'internal-chat') ? 'flex' : 'block'; el.classList.add('show'); } }
             var content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
@@ -4259,6 +4321,7 @@
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
             if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); }
+            if (page === 'rates-charts') loadRatesCharts();
             if (page === 'services') { initServicesTabs(); loadServicesPage(); }
             if (page === 'branches') { loadBranches(); }
             if (page === 'staff-activity') { loadStaffActivity(); startStaffActivityLive(); } else { stopStaffActivityLive(); }

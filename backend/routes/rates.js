@@ -110,6 +110,69 @@ router.get('/', async (req, res) => {
     }
 });
 
+// نگاشت کلید ارز به item نوسان برای dailyCurrency
+const CURRENCY_TO_NAVASAN_ITEM = {
+    usd: 'usd_sell', eur: 'mex_eur_sell', gbp: 'gbp', chf: 'chf_sell', cad: 'cad_sell',
+    aud: 'aud_sell', jpy: 'jpy_sell', try: 'try_hav', aed: 'aed_sell', sar: 'sar_sell',
+    kwd: 'kwd_sell', gold: '18ayar', rub: 'rub', cny: 'cny_hav', inr: 'inr_sell'
+};
+
+// تبدیل میلادی به شمسی ساده (برای date param)
+function toJalaliDate(d) {
+    const g2d = (g) => {
+        const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        const gy = g.getFullYear() - 1600;
+        const gm = g.getMonth();
+        const gd = g.getDate() - 1;
+        let g_day_no = 365 * gy + Math.floor((gy + 3) / 4) - Math.floor((gy + 99) / 100) + Math.floor((gy + 399) / 400);
+        for (let i = 0; i < gm; i++) g_day_no += g_d_m[i];
+        if (gm > 1 && ((gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0)) g_day_no++;
+        g_day_no += gd;
+        let j_day_no = g_day_no - 79;
+        const j_np = Math.floor(j_day_no / 12053);
+        j_day_no %= 12053;
+        let jy = 979 + 33 * j_np + 4 * Math.floor(j_day_no / 1461);
+        j_day_no %= 1461;
+        if (j_day_no >= 366) { jy += Math.floor((j_day_no - 1) / 365); j_day_no = (j_day_no - 1) % 365; }
+        const jm = j_day_no < 186 ? 1 + Math.floor(j_day_no / 31) : 7 + Math.floor((j_day_no - 186) / 30);
+        const jd = 1 + (j_day_no < 186 ? j_day_no % 31 : (j_day_no - 186) % 30);
+        return [jy, String(jm).padStart(2, '0'), String(jd).padStart(2, '0')].join('-');
+    };
+    return g2d(d);
+}
+
+// GET /api/rates/history — داده تاریخی برای چارت (item یا key ارز، days تعداد روز)
+router.get('/history', async (req, res) => {
+    try {
+        const key = (req.query.key || req.query.currency || 'usd').toLowerCase();
+        const days = Math.min(90, Math.max(1, parseInt(req.query.days, 10) || 30));
+        const item = CURRENCY_TO_NAVASAN_ITEM[key] || (key === 'usd' ? 'usd_sell' : key + '_sell');
+        const baseUrl = `https://api.navasan.tech/dailyCurrency/?api_key=${NAVASAN_API_KEY}&item=${encodeURIComponent(item)}`;
+        const points = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        for (let i = days - 1; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const dateStr = toJalaliDate(d);
+            try {
+                const r = await axios.get(baseUrl + '&date=' + encodeURIComponent(dateStr), { timeout: 8000 });
+                const data = Array.isArray(r.data) ? r.data : (r.data && r.data.data ? r.data.data : []);
+                if (data.length > 0) {
+                    const last = data[data.length - 1];
+                    let v = last.value;
+                    if (typeof v === 'string') v = parseFloat(v.replace(/[^\d.-]/g, ''));
+                    const num = Number(v);
+                    if (!isNaN(num)) points.push({ date: dateStr, timestamp: last.timestamp || Math.floor(d.getTime() / 1000), value: num });
+                }
+            } catch (e) { /* skip failed day */ }
+        }
+        res.json({ key, item, points });
+    } catch (err) {
+        res.status(500).json({ error: err.message || 'خطا در دریافت داده تاریخی' });
+    }
+});
+
 // GET /api/rates/health — تست دسترسی به API خارجی (نیاز به auth دارد)
 router.get('/health', async (req, res) => {
     try {

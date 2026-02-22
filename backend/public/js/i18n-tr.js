@@ -61,6 +61,7 @@ window.__I18N_TR = {
     nav_announcements: 'Duyurular',
     nav_whatsapp: 'WhatsApp bağlantısı',
     nav_rates: 'Döviz kurları',
+    nav_rates_charts: 'Döviz grafikleri',
     nav_services: 'Döviz hizmetleri',
     nav_more: 'Daha fazla',
     skip_to_content: 'İçeriğe atla',
