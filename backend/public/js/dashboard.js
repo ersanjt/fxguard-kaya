@@ -2437,7 +2437,8 @@
             localStorage.removeItem('crm_token');
             document.documentElement.classList.remove('auth-has-token');
             document.getElementById('loginBox').style.display = 'flex';
-            document.getElementById('app').classList.remove('show');
+            var appEl = document.getElementById('app');
+            if (appEl) { appEl.classList.remove('show', 'app-loading', 'app-ready'); }
         }
 
         function escapeHtml(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -6838,6 +6839,8 @@
                         startNavBadgeRefresh();
                         showTotpPromptIfNeeded();
                     } catch (e) { console.error('Post-me init:', e); }
+                    var appEl = document.getElementById('app');
+                    if (appEl) { appEl.classList.remove('app-loading'); appEl.classList.add('app-ready'); }
                 } else { logout(); }
             }).catch(function() { logout(); });
         } else {

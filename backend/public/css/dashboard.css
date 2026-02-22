@@ -62,8 +62,10 @@
         .login-support { margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.9rem; color: var(--text-secondary); text-align: center; }
         .login-support a { color: var(--accent); text-decoration: none; font-weight: 500; }
         .login-support a:hover { text-decoration: underline; }
-        .app { display: none; flex: 1; min-height: 0; height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; flex-direction: column; width: 100%; max-width: 100vw; overflow: hidden; position: relative; min-width: 0; }
+        .app { display: none; flex: 1; min-height: 0; height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; flex-direction: column; width: 100%; max-width: 100vw; overflow: hidden; position: relative; min-width: 0; transition: opacity 0.2s ease; }
         .app.show { display: flex; }
+        .app.app-loading { opacity: 0; pointer-events: none; }
+        .app.app-ready { opacity: 1; pointer-events: auto; }
         .skip-link { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); z-index: 10001; padding: 12px 24px; background: var(--accent); color: #fff; font-weight: 600; border-radius: var(--radius-sm); text-decoration: none; font-family: var(--font); font-size: 0.95rem; transition: top 0.2s ease; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
         .skip-link:focus { top: max(12px, env(safe-area-inset-top)); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
         /* با توکن، پنل از همان اول نمایش داده شود */
