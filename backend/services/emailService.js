@@ -84,7 +84,9 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html }) {
             host: config.host,
             port: parseInt(config.port, 10) || 587,
             secure: !!config.secure,
-            auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined
+            auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
+            connectionTimeout: 15000,
+            greetingTimeout: 10000
         };
         if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
         const transport = nodemailer.createTransport(opts);

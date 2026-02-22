@@ -4315,7 +4315,10 @@
                 payload.smtpSecure = !!(document.getElementById('panelSettingSmtpSecure') && document.getElementById('panelSettingSmtpSecure').checked);
             }
             try {
-                var res = await apiFetch('/api/panel-settings/test-email', { method: 'POST', body: JSON.stringify(payload) });
+                var ctrl = new AbortController();
+                var timeoutId = setTimeout(function() { ctrl.abort(); }, 35000);
+                var res = await apiFetch('/api/panel-settings/test-email', { method: 'POST', body: JSON.stringify(payload), signal: ctrl.signal });
+                clearTimeout(timeoutId);
                 if (res.ok && res.data && res.data.ok) {
                     toast(res.data.message || (LANG === 'fa' ? 'ایمیل تست ارسال شد.' : 'Test email sent.'));
                     if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ارسال شد' : 'Sent'); statusEl.className = 'panel-test-email-status success'; statusEl.style.display = 'inline'; }
@@ -4328,8 +4331,9 @@
                     if (statusEl) { statusEl.textContent = (res.data && res.data.error) || ''; statusEl.className = 'panel-test-email-status error'; statusEl.style.display = 'inline'; }
                 }
             } catch (e) {
-                toast(LANG === 'fa' ? 'خطا در ارسال' : 'Send error', true);
-                if (statusEl) { statusEl.textContent = (e && e.message) || ''; statusEl.className = 'panel-test-email-status error'; statusEl.style.display = 'inline'; }
+                var errMsg = (e && e.name === 'AbortError') ? (LANG === 'fa' ? 'زمان اتصال به پایان رسید. Host یا پورت را بررسی کنید.' : 'Connection timed out. Check Host and Port.') : (e && e.message) || (LANG === 'fa' ? 'خطا در ارسال' : 'Send error');
+                toast(errMsg, true);
+                if (statusEl) { statusEl.textContent = errMsg; statusEl.className = 'panel-test-email-status error'; statusEl.style.display = 'inline'; }
             }
             if (btn) { btn.disabled = false; btn.textContent = t('panel_test_email_btn'); }
         }

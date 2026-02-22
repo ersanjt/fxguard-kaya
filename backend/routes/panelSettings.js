@@ -133,7 +133,7 @@ router.post('/test-email', authMiddleware, async (req, res) => {
                 from: (req.body.smtpFrom || '').toString().trim() || null,
                 fromName: (req.body.smtpFromName || '').toString().trim() || null,
                 secure: !!(req.body.smtpSecure === true || req.body.smtpSecure === 'true' || req.body.smtpSecure === '1'),
-                allowSelfSigned: bodyHost.includes('host.secureserver.net')
+                allowSelfSigned: bodyHost.includes('host.secureserver.net') || bodyHost === 'mail.fxguard.io'
             };
             if (!emailConfig.from && emailConfig.user) emailConfig.from = emailConfig.user;
         }

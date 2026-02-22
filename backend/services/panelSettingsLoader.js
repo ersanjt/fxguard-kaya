@@ -92,7 +92,7 @@ function getPanelEmailConfig(settings) {
         from: settings.smtpFrom || settings.smtpUser || null,
         fromName: settings.smtpFromName || null,
         secure: !!settings.smtpSecure,
-        allowSelfSigned: host.includes('host.secureserver.net')
+        allowSelfSigned: host.includes('host.secureserver.net') || host === 'mail.fxguard.io'
     };
 }
 
