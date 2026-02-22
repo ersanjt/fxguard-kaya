@@ -2,7 +2,7 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, user-scalable=yes, minimum-scale=0.5">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/dashboard.css?v=23">
+    <link rel="stylesheet" href="css/dashboard.css?v=25">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -743,17 +743,17 @@
                                 </div>
                                 <div class="profile-form-group" id="profileEmailGroup" style="display:none;">
                                     <label data-i18n="profile_email">ایمیل</label>
-                                    <input id="profileEmailInput" type="email" placeholder="email@example.com" autocomplete="email">
+                                    <input id="profileEmailInput" type="email" placeholder="email@example.com" autocomplete="email" dir="ltr">
                                 </div>
                                 <div class="profile-form-group">
                                     <label data-i18n="profile_phone">تلفن ثابت یا همراه</label>
-                                    <input id="profilePhone" type="tel" placeholder="" autocomplete="tel">
+                                    <input id="profilePhone" type="tel" placeholder="" autocomplete="tel" dir="ltr">
                                 </div>
                                 <div class="profile-form-group profile-form-group-full">
                                     <label data-i18n="profile_avatar">تصویر پروفایل (بارگذاری یا آدرس URL)</label>
                                     <div class="profile-avatar-edit">
                                         <input type="file" id="profileAvatarFile" accept="image/*" style="max-width:240px;">
-                                        <input id="profileAvatar" type="url" placeholder="https://..." autocomplete="off" class="profile-avatar-url">
+                                        <input id="profileAvatar" type="url" placeholder="https://..." autocomplete="off" class="profile-avatar-url" dir="ltr">
                                     </div>
                                 </div>
                                 <div class="profile-form-group profile-form-group-full">
@@ -938,7 +938,7 @@
                         <p class="staff-activity-intro text-muted" data-i18n="staff_intro">مشاهده کارکنان آنلاین، آخرین ورودها و جزئیات فعالیت هر نفر — برای مدیر و بالاتر</p>
                         <div class="staff-activity-meta">
                             <p class="staff-activity-updated text-muted" id="staffActivityUpdated" style="display:none;"></p>
-                            <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" onclick="loadStaffActivity()" title="به\u200Cروزرسانی"><span class="refresh-icon">↻</span> <span data-i18n="refresh">به\u200Cروزرسانی</span></button>
+                            <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" onclick="loadStaffActivity()" title="به‌روزرسانی" aria-label="به‌روزرسانی"><span class="refresh-icon">↻</span> <span data-i18n="refresh">به‌روزرسانی</span></button>
                         </div>
                     </div>
                     <div class="staff-activity-stats-row">
