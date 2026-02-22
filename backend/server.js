@@ -52,8 +52,14 @@ const io = socketIo(server, {
 app.use(helmet({ contentSecurityPolicy: false })); // اجازه اسکریپت داخل داشبورد
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3002').split(',').map(s => s.trim());
 app.use(cors({
-    origin: (origin, cb) => { if (!origin || allowedOrigins.includes(origin)) cb(null, true); else cb(null, allowedOrigins[0]); },
-    credentials: true
+    origin: (origin, cb) => {
+        if (!origin) return cb(null, true);
+        if (allowedOrigins.includes(origin)) return cb(null, true);
+        cb(null, allowedOrigins[0] || true);
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
 }));
 app.use(compression());
 app.use(express.json({ limit: "25mb" }));
@@ -1070,16 +1076,23 @@ app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date(), uptime: process.uptime() });
 });
 
-// ساختار لینک‌ها: / → پنل (https://kaya.fxguard.io/)، /dashboard و /dashboard.html → ریدایرکت به /
+// ساختار لینک‌ها: / → لندینگ مارکتینگ، /dashboard → پنل CRM
 app.get('/', (req, res) => {
+    res.set('Cache-Control', 'public, max-age=300');
+    res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
+app.get('/dashboard', (req, res) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.set('Pragma', 'no-cache');
     res.set('Expires', '0');
     res.sendFile(path.join(__dirname, 'public', 'dashboard.html'));
 });
-app.get('/dashboard.html', (req, res) => res.redirect('/'));
-app.get('/dashboard', (req, res) => res.redirect('/'));
-app.get('/dashboard/', (req, res) => res.redirect('/'));
+app.get('/dashboard/', (req, res) => res.redirect('/dashboard'));
+app.get('/dashboard.html', (req, res) => res.redirect('/dashboard'));
+app.get('/contact', (req, res) => {
+    res.set('Cache-Control', 'public, max-age=300');
+    res.sendFile(path.join(__dirname, 'public', 'contact.html'));
+});
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
