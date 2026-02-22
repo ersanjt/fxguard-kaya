@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/dashboard.css?v=16">
+    <link rel="stylesheet" href="css/dashboard.css?v=17">
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
 <body>
@@ -108,36 +108,60 @@
     <div id="app" class="app">
         <a href="#mainContent" class="skip-link" id="skipLink" data-i18n="skip_to_content" onclick="var m=document.getElementById('mainContent');if(m){m.focus();}">پرش به محتوا</a>
         <header class="header" role="banner">
-            <button type="button" class="header-menu-btn" id="headerMenuBtn" onclick="toggleSidebarMobile()" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-            <div class="header-left">
-                <a href="#dashboard" class="logo" id="headerLogo" onclick="showPage('dashboard'); closeSidebarMobile(); return false;" aria-label="صرافی کایا — بازگشت به داشبورد">
-                    <span class="logo-icon" id="headerLogoIcon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
-                    <span class="logo-text"><span class="logo-dot"></span> <span id="headerLogoText" data-i18n="logo_kaya">صرافی کایا</span></span>
-                </a>
-                <div class="search-wrap header-search-wrap">
-                    <button type="button" class="header-search-trigger" id="headerSearchTrigger" onclick="openHeaderSearchPopup()" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
-                    <label class="header-search-field" for="headerSearch">
-                        <span class="header-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
-                        <input type="text" id="headerSearch" data-i18n-ph="header_search" data-i18n-aria-label="header_search_aria" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو در مکالمات و مشتریان" onkeyup="if(event.key==='Enter') doHeaderSearch();" autocomplete="off">
-                    </label>
+            <!-- موبایل: هدر سبک اپلیکیشن -->
+            <div class="header-mobile-bar">
+                <button type="button" class="header-menu-btn" id="headerMenuBtn" onclick="toggleSidebarMobile()" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+                <h1 class="header-mobile-title" id="headerMobileTitle">داشبورد</h1>
+                <div class="header-mobile-actions">
+                    <button type="button" class="header-search-trigger header-mobile-search" id="headerSearchTrigger" onclick="openHeaderSearchPopup()" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
+                    <a href="#profile" class="header-mobile-profile" onclick="showPage('profile'); return false;" aria-label="پروفایل"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></a>
                 </div>
             </div>
-            <div class="header-right">
-                <div class="lang-switch" role="group" data-i18n-aria-label="lang_label" aria-label="زبان">
-                    <button type="button" id="headerLangFa" data-lang="fa" onclick="setLang('fa')" aria-pressed="true" aria-label="فارسی">فارسی</button>
-                    <button type="button" id="headerLangEn" data-lang="en" onclick="setLang('en')" aria-pressed="false" aria-label="English">English</button>
-                    <button type="button" id="headerLangTr" data-lang="tr" onclick="setLang('tr')" aria-pressed="false" aria-label="Türkçe" data-i18n="lang_tr">Türkçe</button>
-                    <div class="lang-dropdown-wrap">
-                        <button type="button" class="lang-dropdown-btn" id="langDropdownBtn" onclick="toggleLangDropdown()" aria-haspopup="listbox" aria-expanded="false" aria-label="زبان"><span id="langDropdownLabel">FA</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
-                        <div class="lang-dropdown-menu" id="langDropdownMenu" role="listbox" aria-hidden="true">
-                            <button type="button" role="option" data-lang="fa" onclick="setLang('fa');closeLangDropdown();">فارسی</button>
-                            <button type="button" role="option" data-lang="en" onclick="setLang('en');closeLangDropdown();">English</button>
-                            <button type="button" role="option" data-lang="tr" onclick="setLang('tr');closeLangDropdown();" data-i18n="lang_tr">Türkçe</button>
-                        </div>
+            <!-- دسکتاپ: هدر حرفه‌ای -->
+            <div class="header-desktop">
+                <div class="header-left">
+                    <a href="#dashboard" class="logo" id="headerLogo" onclick="showPage('dashboard'); closeSidebarMobile(); return false;" aria-label="صرافی کایا — بازگشت به داشبورد">
+                        <span class="logo-icon" id="headerLogoIcon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
+                        <span class="logo-text"><span class="logo-dot"></span> <span id="headerLogoText" data-i18n="logo_kaya">صرافی کایا</span></span>
+                    </a>
+                    <div class="header-page-info">
+                        <span class="header-breadcrumb" id="headerBreadcrumb">داشبورد</span>
+                        <span class="header-page-title" id="headerPageTitle" data-i18n="nav_dashboard">داشبورد</span>
+                    </div>
+                    <div class="search-wrap header-search-wrap">
+                        <button type="button" class="header-search-trigger" onclick="openHeaderSearchPopup()" aria-label="جستجو" title="جستجو" style="display:none;"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
+                        <label class="header-search-field" for="headerSearch">
+                            <span class="header-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
+                            <input type="text" id="headerSearch" data-i18n-ph="header_search" data-i18n-aria-label="header_search_aria" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو در مکالمات و مشتریان" onkeyup="if(event.key==='Enter') doHeaderSearch();" autocomplete="off">
+                        </label>
                     </div>
                 </div>
-                <a href="#profile" class="user-badge" onclick="showPage('profile'); return false;" title="پروفایل من" aria-label="پروفایل من"><span class="user-avatar" id="userAvatar" aria-hidden="true">?</span><span id="userEmail"></span></a>
-                <button type="button" class="logout-btn" onclick="logout()" data-i18n="header_logout">خروج</button>
+                <div class="header-quick-actions">
+                    <button type="button" class="header-quick-btn" data-perm="conversations" onclick="showPage('conversations'); openNewConvModal();" title="مکالمه جدید" aria-label="مکالمه جدید"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg><span data-i18n="dashboard_quick_new_conv">مکالمه جدید</span></button>
+                    <button type="button" class="header-quick-btn" data-perm="customers" onclick="showPage('customers'); openCustomerModal();" title="مشتری جدید" aria-label="مشتری جدید"><svg viewBox="0 0 24 24"><use href="#icon-user-plus"/></svg><span data-i18n="dashboard_quick_new_customer">مشتری جدید</span></button>
+                    <button type="button" class="header-quick-btn" data-perm="tickets" onclick="showPage('tickets'); setTimeout(function(){ toggleTicketForm(); }, 350);" title="تیکت جدید" aria-label="تیکت جدید"><svg viewBox="0 0 24 24"><use href="#icon-ticket"/></svg><span data-i18n="dashboard_quick_new_ticket">تیکت جدید</span></button>
+                </div>
+                <div class="header-right">
+                    <div class="header-status-wrap">
+                        <span class="header-whatsapp-status" id="headerWhatsappStatus" title="وضعیت واتساپ"><span class="status-dot"></span><span class="status-label" data-i18n="nav_whatsapp">واتساپ</span></span>
+                        <button type="button" class="header-notify-btn" id="headerNotifyBtn" onclick="showPage('announcements');" aria-label="اعلان‌ها" title="اعلان‌ها"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span></button>
+                    </div>
+                    <div class="lang-switch" role="group" data-i18n-aria-label="lang_label" aria-label="زبان">
+                        <button type="button" id="headerLangFa" data-lang="fa" onclick="setLang('fa')" aria-pressed="true" aria-label="فارسی">فارسی</button>
+                        <button type="button" id="headerLangEn" data-lang="en" onclick="setLang('en')" aria-pressed="false" aria-label="English">English</button>
+                        <button type="button" id="headerLangTr" data-lang="tr" onclick="setLang('tr')" aria-pressed="false" aria-label="Türkçe" data-i18n="lang_tr">Türkçe</button>
+                        <div class="lang-dropdown-wrap">
+                            <button type="button" class="lang-dropdown-btn" id="langDropdownBtn" onclick="toggleLangDropdown()" aria-haspopup="listbox" aria-expanded="false" aria-label="زبان"><span id="langDropdownLabel">FA</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                            <div class="lang-dropdown-menu" id="langDropdownMenu" role="listbox" aria-hidden="true">
+                                <button type="button" role="option" data-lang="fa" onclick="setLang('fa');closeLangDropdown();">فارسی</button>
+                                <button type="button" role="option" data-lang="en" onclick="setLang('en');closeLangDropdown();">English</button>
+                                <button type="button" role="option" data-lang="tr" onclick="setLang('tr');closeLangDropdown();" data-i18n="lang_tr">Türkçe</button>
+                            </div>
+                        </div>
+                    </div>
+                    <a href="#profile" class="user-badge" onclick="showPage('profile'); return false;" title="پروفایل من" aria-label="پروفایل من"><span class="user-avatar" id="userAvatar" aria-hidden="true">?</span><span id="userEmail"></span></a>
+                    <button type="button" class="logout-btn" onclick="logout()" data-i18n="header_logout">خروج</button>
+                </div>
             </div>
         </header>
         <div id="headerSearchModal" class="modal-overlay header-search-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="headerSearchModalTitle" onclick="if(event.target===this) closeHeaderSearchPopup();">
