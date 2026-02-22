@@ -365,6 +365,7 @@
                     lang_en: 'English',
                     lang_tr: 'Turkish',
                     lang_label: 'Language',
+                    nav_main_menu: 'Main menu',
                     nav_dashboard: 'Dashboard',
                     nav_communications: 'Communications',
                     nav_conversations: 'Conversations',

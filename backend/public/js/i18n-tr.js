@@ -41,6 +41,7 @@ window.__I18N_TR = {
     lang_en: 'English',
     lang_tr: 'Türkçe',
     lang_label: 'Dil',
+    nav_main_menu: 'Ana menü',
     nav_dashboard: 'Kontrol Paneli',
     nav_communications: 'İletişim',
     nav_conversations: 'Konuşmalar',

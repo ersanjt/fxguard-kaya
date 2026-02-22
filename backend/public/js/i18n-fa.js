@@ -41,6 +41,7 @@ window.__I18N_FA = {
     lang_en: 'English',
     lang_tr: 'ترکی',
     lang_label: 'زبان',
+    nav_main_menu: 'منوی ناوبری',
     nav_dashboard: 'داشبورد',
     nav_communications: 'ارتباطات',
     nav_conversations: 'مکالمات',
