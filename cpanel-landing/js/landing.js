@@ -123,23 +123,35 @@
         }
     };
 
+    var CONTACT_TRANSLATIONS = {
+        en: { contact_title: 'Contact Us', contact_sub: 'For purchase, support, demo, or consultation — reach us via email or WhatsApp. We respond within 24 hours on business days.', contact_buy_btn: 'Buy Now via WhatsApp', contact_demo_btn: 'Request Demo', contact_wa_title: 'WhatsApp — Consultation & Purchase', contact_wa_desc: 'Fast response for pricing, demo, and purchase', contact_sales_title: 'Sales', contact_sales_desc: 'Purchase, pricing, plans', contact_support_title: 'Support', contact_support_desc: 'Technical issues, installation', contact_hours_title: 'Response Hours', contact_hours_desc: 'Support and sales respond on business days within 24 hours. For urgent matters, use WhatsApp — we reply as soon as possible.', contact_wa_us: 'WhatsApp Us', contact_pricing_cta: 'Not sure which plan?', contact_view_pricing: 'View pricing', contact_or: ' or ', contact_ask_wa: 'ask us on WhatsApp', contact_back: '← Back to Home', contact_footer_contact: 'Contact', contact_footer_support: 'Support', contact_footer_wa: 'WhatsApp', nav_pricing: 'Pricing', nav_panel_btn: 'Get Started', logo: 'WhatsApp CRM' },
+        fa: { contact_title: 'تماس با ما', contact_sub: 'برای خرید، پشتیبانی، دمو یا مشاوره — از ایمیل یا واتساپ با ما در تماس باشید. در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهیم.', contact_buy_btn: 'خرید از طریق واتساپ', contact_demo_btn: 'درخواست دمو', contact_wa_title: 'واتساپ — مشاوره و خرید', contact_wa_desc: 'پاسخ سریع برای قیمت، دمو و خرید', contact_sales_title: 'فروش', contact_sales_desc: 'خرید، قیمت، پلن‌ها', contact_support_title: 'پشتیبانی', contact_support_desc: 'مشکلات فنی، نصب', contact_hours_title: 'ساعات پاسخگویی', contact_hours_desc: 'پشتیبانی و فروش در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهند. برای فوری، واتساپ بزنید.', contact_wa_us: 'واتساپ بزنید', contact_pricing_cta: 'پلن مناسب را نمی‌دانید؟', contact_view_pricing: 'قیمت‌ها را ببینید', contact_or: ' یا ', contact_ask_wa: 'از واتساپ بپرسید', contact_back: '→ بازگشت به صفحه اصلی', contact_footer_contact: 'تماس', contact_footer_support: 'پشتیبانی', contact_footer_wa: 'واتساپ', nav_pricing: 'قیمت', nav_panel_btn: 'شروع کنید', logo: 'WhatsApp CRM' },
+        tr: { contact_title: 'Bize Ulaşın', contact_sub: 'Satın alma, destek, demo veya danışmanlık için e-posta veya WhatsApp ile bize ulaşın. İş günlerinde 24 saat içinde yanıt veriyoruz.', contact_buy_btn: 'WhatsApp ile Satın Al', contact_demo_btn: 'Demo İste', contact_wa_title: 'WhatsApp — Danışmanlık ve Satın Alma', contact_wa_desc: 'Fiyat, demo ve satın alma için hızlı yanıt', contact_sales_title: 'Satış', contact_sales_desc: 'Satın alma, fiyatlandırma, planlar', contact_support_title: 'Destek', contact_support_desc: 'Teknik sorunlar, kurulum', contact_hours_title: 'Yanıt Saatleri', contact_hours_desc: 'Destek ve satış iş günlerinde 24 saat içinde yanıt verir. Acil durumlar için WhatsApp kullanın.', contact_wa_us: 'WhatsApp Yaz', contact_pricing_cta: 'Hangi planı seçeceğinizden emin değil misiniz?', contact_view_pricing: 'Fiyatları görün', contact_or: ' veya ', contact_ask_wa: 'WhatsApp\'ta sorun', contact_back: '← Ana Sayfaya Dön', contact_footer_contact: 'İletişim', contact_footer_support: 'Destek', contact_footer_wa: 'WhatsApp', nav_pricing: 'Fiyat', nav_panel_btn: 'Başlayın', logo: 'WhatsApp CRM' }
+    };
+
     function applyLang(lang) {
         LANG = lang;
         document.documentElement.lang = lang === 'fa' ? 'fa' : (lang === 'tr' ? 'tr' : 'en');
         document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
         var t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+        var ct = CONTACT_TRANSLATIONS[lang] || CONTACT_TRANSLATIONS.en;
         document.querySelectorAll('[data-i18n]').forEach(function(el) {
             var key = el.getAttribute('data-i18n');
-            if (t[key]) el.innerHTML = t[key];
+            var val = t[key] || ct[key];
+            if (val) el.innerHTML = val;
         });
         document.querySelectorAll('.lang-switch button').forEach(function(btn) {
             btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
         });
+        localStorage.setItem('landing_lang', lang);
     }
 
     function detectAndSetLang() {
+        var params = new URLSearchParams(window.location.search);
+        var urlLang = params.get('lang');
+        if (urlLang && (TRANSLATIONS[urlLang] || CONTACT_TRANSLATIONS[urlLang])) { applyLang(urlLang); return; }
         var saved = localStorage.getItem('landing_lang');
-        if (saved && TRANSLATIONS[saved]) { applyLang(saved); return; }
+        if (saved && (TRANSLATIONS[saved] || CONTACT_TRANSLATIONS[saved])) { applyLang(saved); return; }
         fetch('https://ipapi.co/json/').then(function(r){ return r.json(); }).then(function(d) {
             var c = (d.country_code || '').toUpperCase();
             if (c === 'IR') applyLang('fa'); else if (c === 'TR') applyLang('tr'); else applyLang('en');
@@ -153,8 +165,11 @@
 
     document.querySelectorAll('.lang-switch button').forEach(function(btn) {
         btn.addEventListener('click', function() {
-            localStorage.setItem('landing_lang', this.getAttribute('data-lang'));
-            applyLang(this.getAttribute('data-lang'));
+            var lang = this.getAttribute('data-lang');
+            applyLang(lang);
+            var url = new URL(window.location.href);
+            url.searchParams.set('lang', lang);
+            if (window.history.replaceState) window.history.replaceState({}, '', url.toString());
         });
     });
 

@@ -13,15 +13,20 @@
     --border-hover: rgba(16,185,129,0.35);
 }
 * { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
 body {
-    font-family: 'Vazirmatn', sans-serif;
+    font-family: 'Inter', 'Vazirmatn', sans-serif;
     background: var(--bg-dark);
     background-image: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(5,150,105,0.05) 0%, transparent 50%);
     color: var(--text);
     line-height: 1.7;
     overflow-x: hidden;
 }
-.container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+html[dir="rtl"] body { font-family: 'Vazirmatn', sans-serif; }
+.container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+@media (min-width: 600px) { .container { padding: 0 20px; } }
+@media (min-width: 768px) { .container { padding: 0 24px; } }
+img { max-width: 100%; height: auto; }
 a { color: var(--accent-light); text-decoration: none; transition: color 0.25s; }
 a:hover { color: var(--accent); }
 

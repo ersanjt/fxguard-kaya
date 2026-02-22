@@ -5,11 +5,15 @@
 </IfModule>
 # php -- END cPanel-generated handler, do not edit
 
+# ========== Domain Structure ==========
+# fxguard.io (root) = Landing pages (index, contact)
+# app.fxguard.io = CRM Panel (subdomain)
+
 # ========== URL Rewrites & Redirects ==========
 RewriteEngine On
 RewriteBase /
 
-# /contact -> contact.html (SEO-friendly URL)
+# /contact -> contact.html (SEO-friendly URL, preserves ?lang= etc)
 RewriteRule ^contact$ contact.html [L,QSA]
 
 # Optional: redirect /dashboard to app subdomain (uncomment if CRM runs on app.fxguard.io)
