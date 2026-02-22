@@ -2,7 +2,7 @@
 
 سیستم ایمیل پنل برای **خوش‌آمدگویی کاربران جدید**، **بازیابی رمز عبور** و **اعلان ورود** استفاده می‌شود.
 
-> **دامنه fxguard.io (GoDaddy SecureServer):** راهنمای اختصاصی در [EMAIL-SETUP-FXGUARD.md](./EMAIL-SETUP-FXGUARD.md)
+> **دامنه fxguard.io (GoDaddy SecureServer):** راهنمای اختصاصی در [EMAIL-SETUP-FXGUARD.md](./EMAIL-SETUP-FXGUARD.md) و راهنمای DNS در [DNS-SETUP-FXGUARD.md](./DNS-SETUP-FXGUARD.md)
 
 ## دو روش تنظیم
 

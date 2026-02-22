@@ -2,6 +2,8 @@
 
 این راهنما برای دامنه **fxguard.io** است. DKIM، SPF، DMARC و PTR شما قبلاً تأیید شده‌اند.
 
+> **راهنمای DNS:** برای تنظیمات کامل DNS و Cloudflare، [DNS-SETUP-FXGUARD.md](./DNS-SETUP-FXGUARD.md) را ببینید.
+
 ---
 
 ## دو نوع سرویس ایمیل

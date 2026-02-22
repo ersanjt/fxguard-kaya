@@ -22,8 +22,9 @@ function getTransporter() {
     if (transporter) return transporter;
     if (!isEnabled()) return null;
     const secure = process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1' || String(process.env.SMTP_PORT) === '465';
+    const host = (process.env.SMTP_HOST || '').replace(/\.+$/, '').trim();
     transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST,
+        host,
         port: parseInt(process.env.SMTP_PORT, 10) || 587,
         secure,
         auth: process.env.SMTP_USER && process.env.SMTP_PASS
@@ -48,12 +49,14 @@ async function sendMail({ to, subject, text, html }) {
     try {
         const transport = getTransporter();
         if (!transport) return false;
+        const fromAddr = FROM_EMAIL.trim();
         await transport.sendMail({
             from: getFrom(),
             to: Array.isArray(to) ? to.join(', ') : to,
             subject: subject || '(بدون موضوع)',
             text: text || '',
-            html: html || (text ? text.replace(/\n/g, '<br>') : '')
+            html: html || (text ? text.replace(/\n/g, '<br>') : ''),
+            headers: { 'X-Mailer': 'KayaCRM', 'Reply-To': fromAddr }
         });
         return true;
     } catch (err) {

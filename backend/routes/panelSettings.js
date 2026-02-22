@@ -107,12 +107,24 @@ router.put('/', authMiddleware, async (req, res) => {
     }
 });
 
+// Cooldown برای ارسال تست ایمیل (۶۰ ثانیه) — جلوگیری از اسپم و فیلتر Gmail
+const testEmailCooldown = new Map();
+const TEST_EMAIL_COOLDOWN_MS = 60000;
+
 // ارسال ایمیل تست — برای اطمینان از صحت تنظیمات SMTP
 // اگر smtpHost و smtpPort در body ارسال شوند، از آن‌ها استفاده می‌شود (تست قبل از ذخیره)
 router.post('/test-email', authMiddleware, async (req, res) => {
     try {
         if (!req.canAccess || !req.canAccess('panel_settings')) {
             return res.status(403).json({ error: 'دسترسی به تنظیمات پنل ندارید.' });
+        }
+        const userId = req.user && req.user.id;
+        if (userId) {
+            const last = testEmailCooldown.get(userId) || 0;
+            if (Date.now() - last < TEST_EMAIL_COOLDOWN_MS) {
+                const waitSec = Math.ceil((TEST_EMAIL_COOLDOWN_MS - (Date.now() - last)) / 1000);
+                return res.status(429).json({ error: `برای جلوگیری از اسپم، ${waitSec} ثانیه صبر کنید و دوباره امتحان کنید.` });
+            }
         }
         const to = (req.body.to || req.body.email || '').toString().trim();
         if (!to || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(to)) {
@@ -169,6 +181,7 @@ router.post('/test-email', authMiddleware, async (req, res) => {
             result = sent ? { ok: true } : { ok: false, error: 'ارسال ناموفق بود.' };
         }
         if (result.ok) {
+            if (userId) testEmailCooldown.set(userId, Date.now());
             const msg = result.usedFallback
                 ? `ایمیل ارسال شد با Host جایگزین (${result.usedFallback}). توصیه: این Host را در تنظیمات ذخیره کنید.`
                 : 'ایمیل تست ارسال شد. صندوق ورودی (و اسپم) را بررسی کنید.';
