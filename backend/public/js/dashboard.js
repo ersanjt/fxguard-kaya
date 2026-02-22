@@ -2073,14 +2073,19 @@
         async function apiFetch(url, opts) {
             var opt = opts || {};
             var h = opt.auth === false ? { 'Content-Type': 'application/json' } : headers();
-            var r = await fetch(API + url, { ...opt, headers: { ...h, ...opt.headers }, body: opt.body });
-            var text = await r.text();
+            var r, text;
+            try {
+                r = await fetch(API + url, { ...opt, headers: { ...h, ...opt.headers }, body: opt.body });
+                text = await r.text();
+            } catch (e) {
+                return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.' : 'Could not connect to server. Check network or server address.') };
+            }
             if ((text || '').trim().startsWith('<')) {
-                return { ok: false, needLogin: false, error: 'سر��ر ب�! جا�R JSON پاسخ داد. از پ��ش�! backend دست��ر node server.js را اجرا ک� �Rد.' };
+                return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'سرور به جای JSON پاسخ داد. مطمئن شوید backend در حال اجراست.' : 'Server returned non-JSON. Ensure backend is running.') };
             }
             var data;
             try { data = JSON.parse(text); } catch (_) {
-                return { ok: false, needLogin: false, error: 'پاسخ سر��ر � ا�&عتبر است' };
+                return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
                 token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
@@ -2091,7 +2096,15 @@
             if (r.status === 429) {
                 return { ok: false, needLogin: false, error: (data && data.error) || (LANG === 'fa' ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.' : 'Too many requests. Please wait a moment.') };
             }
+            if (!r.ok && data && (data.error || data.message)) {
+                return { ok: false, needLogin: r.status === 401, status: r.status, data: data, error: data.error || data.message };
+            }
             return { ok: r.ok, status: r.status, data: data };
+        }
+        function getApiError(res) {
+            if (res.error) return res.error;
+            if (res.data && (res.data.error || res.data.message)) return res.data.error || res.data.message;
+            return LANG === 'fa' ? 'خطا در ارتباط با سرور' : 'Server error';
         }
 
         (function initLoginTogglePass() {
@@ -2371,7 +2384,11 @@
                 setElText('profileDisplayName', displayName);
                 setElText('profileDisplayEmail', u.email || '\u2014');
                 setElText('profileRoleBadge', roleLabel);
-                setElText('profileBranchBadge', branchName);
+                var branchBadge = document.getElementById('profileBranchBadge');
+                if (branchBadge) {
+                    branchBadge.textContent = branchName;
+                    branchBadge.style.display = (u.branch && u.branch.name) ? '' : 'none';
+                }
                 setElText('profileDepartmentText', (LANG === 'fa' ? 'دپارتمان: ' : 'Dept: ') + deptName);
                 setElText('profileLastLogin', (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLogin);
                 setElText('profileEmail', u.email);
@@ -2398,7 +2415,6 @@
                 if (firstEl) firstEl.value = u.firstName || '';
                 if (lastEl) lastEl.value = u.lastName || '';
                 if (dobEl) dobEl.value = u.dateOfBirth || '';
-                if (document.getElementById('profileDepartment')) document.getElementById('profileDepartment').value = (u.department && u.department.name) ? u.department.name : '�';
                 if (document.getElementById('profilePhone')) document.getElementById('profilePhone').value = u.phone || '';
                 var avatarEl = document.getElementById('profileAvatar');
                 if (avatarEl) { avatarEl.value = u.avatar || ''; if (!avatarEl._bound) { avatarEl._bound = true; avatarEl.addEventListener('input', function() { updateProfileAvatarPreview(avatarEl.value); }); avatarEl.addEventListener('blur', function() { updateProfileAvatarPreview(avatarEl.value || displayName); }); } }
@@ -2426,7 +2442,7 @@
             var data = await r.json().catch(function() { return {}; });
             if (data.url) {
                 var avatarInput = document.getElementById('profileAvatar');
-                var avatarValue = (data.url.indexOf('http') === 0) ? data.url : data.url;
+                var avatarValue = data.url;
                 if (avatarInput) { avatarInput.value = avatarValue; updateProfileAvatarPreview(avatarValue); }
                 var patchRes = await apiFetch('/api/users/me', { method: 'PATCH', body: JSON.stringify({ avatar: avatarValue }) });
                 if (patchRes.ok) { if (patchRes.data) currentUser = patchRes.data; setUserDisplay(currentUser); toast(t('saved') || (LANG === 'fa' ? 'تصویر بارگذاری و ذخیره شد' : 'Image uploaded and saved')); }
@@ -2441,7 +2457,7 @@
             var phone = document.getElementById('profilePhone') && document.getElementById('profilePhone').value;
             var avatar = document.getElementById('profileAvatar') && document.getElementById('profileAvatar').value;
             var password = document.getElementById('profilePassword') && document.getElementById('profilePassword').value;
-            var body = { firstName: (firstName || '').trim() || null, lastName: (lastName || '').trim() || null, dateOfBirth: (dateOfBirth || '').trim() || null, phone: (phone || '').trim() || null, avatar: (avatar || '').trim() || null };
+            var body = { username: (username || '').trim() || null, firstName: (firstName || '').trim() || null, lastName: (lastName || '').trim() || null, dateOfBirth: (dateOfBirth || '').trim() || null, phone: (phone || '').trim() || null, avatar: (avatar || '').trim() || null };
             var canEditEmail = !!(currentUser && currentUser.permissions && currentUser.permissions.manage_users);
             if (canEditEmail) {
                 var emailInput = document.getElementById('profileEmailInput');
