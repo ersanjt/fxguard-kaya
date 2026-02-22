@@ -1050,6 +1050,7 @@
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
                 }).join('');
                 innerEl.innerHTML = itemsHtml;
+                delete innerEl.dataset.marqueeDuplicated;
                 if (!isEmpty && (wasEmpty || innerEl._lastItemsCount !== items.length)) {
                     innerEl.classList.add('ticker-updated');
                     setTimeout(function() { if (innerEl) innerEl.classList.remove('ticker-updated'); }, 600);
@@ -1059,6 +1060,10 @@
                 function updateRatesMarqueeMode() {
                     if (!trackEl || !innerEl) return;
                     var fits = innerEl.scrollWidth <= trackEl.clientWidth;
+                    if (!fits && !innerEl.dataset.marqueeDuplicated && !innerEl.querySelector('.ticker-empty')) {
+                        innerEl.innerHTML = innerEl.innerHTML + innerEl.innerHTML;
+                        innerEl.dataset.marqueeDuplicated = '1';
+                    }
                     innerEl.classList.toggle('centered', fits);
                     innerEl.classList.toggle('scrolling', !fits);
                     trackEl.classList.toggle('rates-centered', fits);
@@ -1771,7 +1776,8 @@
                         playInternalChatSound();
                         var cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                         var mins = data.minutesWaiting || 0;
-                        var msg = (LANG === 'fa' ? 'مکالمه بدون پاسخ: ' : 'Unanswered: ') + cust + (LANG === 'fa' ? ' — ' + mins + ' دقیقه' : ' — ' + mins + ' min');
+                        var waitStr = mins < 60 ? (mins + (LANG === 'fa' ? ' دقیقه' : ' min')) : (mins < 1440 ? (Math.floor(mins / 60) + (LANG === 'fa' ? ' ساعت' : ' hr')) : (Math.floor(mins / 1440) + (LANG === 'fa' ? ' روز' : ' days')));
+                        var msg = (LANG === 'fa' ? 'مکالمه بدون پاسخ: ' : 'Unanswered: ') + cust + ' — ' + waitStr;
                         toast(msg, 8000);
                         var active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'conversations') debouncedLoadConversations(400);
@@ -2581,10 +2587,15 @@
                 if (inner) {
                     var html = general.map(renderMarqueeItem).join('');
                     inner.innerHTML = html;
+                    delete inner.dataset.marqueeDuplicated;
                     var track = banner.querySelector('.announcement-marquee-track');
                     function updateMarqueeMode() {
                         if (!track) return;
                         var fits = inner.scrollWidth <= track.clientWidth;
+                        if (!fits && !inner.dataset.marqueeDuplicated) {
+                            inner.innerHTML = inner.innerHTML + inner.innerHTML;
+                            inner.dataset.marqueeDuplicated = '1';
+                        }
                         inner.classList.toggle('centered', fits);
                         inner.classList.toggle('scrolling', !fits);
                         track.classList.toggle('announcement-centered', fits);
@@ -2912,7 +2923,8 @@
                 var unansweredBadge = '';
                 if (c.lastIncomingMessageAt && (!c.lastOutgoingMessageAt || new Date(c.lastIncomingMessageAt) > new Date(c.lastOutgoingMessageAt))) {
                     var mins = Math.floor((Date.now() - new Date(c.lastIncomingMessageAt).getTime()) / 60000);
-                    unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + (LANG === 'fa' ? mins + ' دقیقه' : mins + ' min') + '</span>';
+                    var waitStr = mins < 60 ? (mins + (LANG === 'fa' ? ' دقیقه' : ' min')) : (mins < 1440 ? (Math.floor(mins / 60) + (LANG === 'fa' ? ' ساعت' : ' hr')) : (Math.floor(mins / 1440) + (LANG === 'fa' ? ' روز' : ' days')));
+                    unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + waitStr + '</span>';
                 }
                 var activeClass = (c.id === currentConvId) ? ' active' : '';
                 return '<div class="conv-list-item' + activeClass + '" data-id="' + c.id + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\', this.getAttribute(\'data-profile-pic\')||\'\')"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(phone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
@@ -6011,7 +6023,8 @@
             if (headerStatus) headerStatus.classList.toggle('connected', status === 'connected');
         }
         async function fetchWhatsappHeaderStatus() {
-            if (!token || !can('whatsapp')) return;
+            var perms = (currentUser && currentUser.permissions) || {};
+            if (!token || perms.whatsapp === false) return;
             try {
                 var res = await apiFetch('/api/gateway/status');
                 if (res.ok && res.data && res.data.whatsapp) setWhatsappStatusBadge('connected');
