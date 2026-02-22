@@ -129,7 +129,7 @@
         .rate-card-type label, .rate-card-value label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; }
         .rate-card-value { grid-column: 2; }
         .rate-card-type select, .rate-card-value input { width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); }
-        .main-wrap { display: flex; flex: 1; overflow: hidden; flex-direction: column; padding-bottom: max(120px, calc(110px + env(safe-area-inset-bottom))); min-height: 0; }
+        .main-wrap { display: flex; flex: 1; overflow: hidden; flex-direction: column; padding-bottom: max(72px, calc(62px + env(safe-area-inset-bottom))); min-height: 0; }
         body.bottom-bar-hidden .main-wrap { padding-bottom: 0; }
         .sidebar-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9998; opacity: 0; transition: opacity 0.25s; -webkit-tap-highlight-color: transparent; pointer-events: none; }
         .sidebar-overlay.show { opacity: 1; pointer-events: auto; }
@@ -358,7 +358,7 @@
         .app-footer--line .app-footer-meta:not(:has(#appFooterYear:empty)) { padding-inline-start: 6px; border-inline-start: 1px solid rgba(255,255,255,0.35); }
         /* ========== هدر و نوار پایین دسکتاپ (ویندوز) — min-width: 769px ========== */
         @media (min-width: 769px) {
-            .header { padding: 10px 28px; padding-top: max(10px, env(safe-area-inset-top)); border-bottom: 1px solid rgba(45, 63, 95, 0.8); box-shadow: 0 1px 0 rgba(255,255,255,0.03); background: linear-gradient(180deg, #161f38 0%, #131b32 100%); }
+            .header-desktop { padding: 10px 28px; padding-top: max(10px, env(safe-area-inset-top)); border-bottom: 1px solid rgba(45, 63, 95, 0.8); box-shadow: 0 1px 0 rgba(255,255,255,0.03); background: linear-gradient(180deg, #161f38 0%, #131b32 100%); }
             .header .logo-icon { width: 36px; height: 36px; border-radius: 8px; }
             .header .logo-icon svg { width: 20px; height: 20px; }
             .header .logo-text { font-size: 1.15rem; font-weight: 600; }
@@ -384,9 +384,12 @@
         }
         /* ========== هدر و تیکر تبلت — 769px تا 1024px ========== */
         @media (min-width: 769px) and (max-width: 1024px) {
-            .header { padding: 10px 20px; }
+            .header-desktop { padding: 10px 20px; }
             .header .logo-text { font-size: 1.05rem; }
             .header .header-search-field input { font-size: 0.85rem; }
+            .header-quick-btn span { display: none; }
+            .header-quick-btn { padding: 8px 10px; }
+            .header-page-info { display: none; }
             .rates-marquee-inner .ticker-item { padding: 5px 8px; font-size: 0.85rem; }
             .rates-marquee-inner .ticker-item .ticker-value { font-size: 0.9rem; }
             .rates-marquee-datetime { min-width: 0; }
@@ -401,7 +404,7 @@
             .conv-list-wrap { flex: 0 0 240px; min-width: 200px; max-width: 240px; }
             .content { padding: clamp(12px, 1.5vw, 20px); }
             .conv-layout { gap: 10px; }
-            .header { padding: 10px 20px; padding-top: max(10px, env(safe-area-inset-top)); }
+            .header-desktop { padding: 10px 20px; padding-top: max(10px, env(safe-area-inset-top)); }
             .header-left { max-width: 420px; }
             .header .header-search-field input { font-size: 0.85rem; }
             .rates-marquee-bar { padding: 6px 14px; padding-bottom: max(6px, env(safe-area-inset-bottom)); gap: 10px 14px; }
@@ -417,7 +420,7 @@
             .conv-list-wrap { flex: 0 0 220px; min-width: 180px; max-width: 220px; }
             .content { padding: 14px; }
             .conv-layout { gap: 8px; min-height: 360px; }
-            .header { padding: 8px 16px; padding-top: max(8px, env(safe-area-inset-top)); }
+            .header-desktop { padding: 8px 16px; padding-top: max(8px, env(safe-area-inset-top)); }
             .header .logo-text { font-size: 1rem; }
             .header .logo-icon { width: 32px; height: 32px; }
             .header .logo-icon svg { width: 18px; height: 18px; }
@@ -1719,7 +1722,7 @@
             .header .search-wrap { max-width: 360px; }
             .sidebar { width: 300px; min-width: 300px; padding: 24px 0; }
             .content { padding: 36px 48px; }
-            .main-wrap { padding-bottom: max(140px, calc(130px + env(safe-area-inset-bottom))); }
+            .main-wrap { padding-bottom: max(88px, calc(78px + env(safe-area-inset-bottom))); }
             .price-ticker { padding: 14px 36px; gap: 24px 32px; font-size: 0.95rem; }
             .price-ticker .ticker-datetime { min-width: 260px; }
             .price-ticker .ticker-item-track { gap: 20px 32px; }
@@ -1825,7 +1828,7 @@
             .app-footer { padding-inline: max(20px, env(safe-area-inset-inline)); padding-bottom: max(14px, env(safe-area-inset-bottom)); min-height: 48px; -webkit-tap-highlight-color: transparent; }
             .app-footer-inner { padding-top: 12px; gap: 8px 14px; justify-content: center; text-align: center; }
             .app-footer-brand { display: inline-block; font-size: 0.8125rem; }
-            .main-wrap { padding-bottom: max(130px, calc(120px + env(safe-area-inset-bottom))); }
+            .main-wrap { padding-bottom: max(82px, calc(72px + env(safe-area-inset-bottom))); }
             .conv-page-header { margin-bottom: 12px; gap: 10px; }
             .conv-page-header h2 { font-size: 1.15rem; }
             .conv-page-desc { font-size: 0.82rem; margin: 2px 0 0; line-height: 1.4; }

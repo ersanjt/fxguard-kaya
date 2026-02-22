@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/dashboard.css?v=17">
+    <link rel="stylesheet" href="css/dashboard.css?v=19">
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
 <body>
@@ -143,8 +143,8 @@
                 </div>
                 <div class="header-right">
                     <div class="header-status-wrap">
-                        <span class="header-whatsapp-status" id="headerWhatsappStatus" title="وضعیت واتساپ"><span class="status-dot"></span><span class="status-label" data-i18n="nav_whatsapp">واتساپ</span></span>
-                        <button type="button" class="header-notify-btn" id="headerNotifyBtn" onclick="showPage('announcements');" aria-label="اعلان‌ها" title="اعلان‌ها"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span></button>
+                        <span class="header-whatsapp-status" id="headerWhatsappStatus" data-perm="whatsapp" title="وضعیت واتساپ"><span class="status-dot"></span><span class="status-label" data-i18n="nav_whatsapp">واتساپ</span></span>
+                        <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-perm="announcements" onclick="showPage('announcements');" aria-label="اعلان‌ها" title="اعلان‌ها"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span></button>
                     </div>
                     <div class="lang-switch" role="group" data-i18n-aria-label="lang_label" aria-label="زبان">
                         <button type="button" id="headerLangFa" data-lang="fa" onclick="setLang('fa')" aria-pressed="true" aria-label="فارسی">فارسی</button>

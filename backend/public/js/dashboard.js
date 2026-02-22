@@ -838,6 +838,12 @@
                 window.navBadgeCounts.announcements = (stats.unreadAnnouncements || 0);
             }
             if (window.hasNewInternalChat) window.navBadgeCounts['internal-chat'] = 1;
+            var notifyBadge = document.getElementById('headerNotifyBadge');
+            if (notifyBadge) {
+                var n = window.navBadgeCounts.announcements || 0;
+                notifyBadge.style.display = n > 0 ? '' : 'none';
+                notifyBadge.textContent = n > 99 ? '99+' : String(n);
+            }
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
                 var page = link.getAttribute('data-page');
                 var oldBadge = link.querySelector('.nav-badge, .nav-badge-dot');
@@ -1756,11 +1762,13 @@
         var navBadgeRefreshInterval = null;
         function startNavBadgeRefresh() {
             if (navBadgeRefreshInterval) return;
+            if (typeof fetchWhatsappHeaderStatus === 'function') fetchWhatsappHeaderStatus();
             navBadgeRefreshInterval = setInterval(function() {
                 if (!token) return;
                 apiFetch('/api/analytics/dashboard').then(function(res) {
                     if (res.ok && res.data) updateNavBadges(res.data);
                 }).catch(function(){});
+                if (typeof fetchWhatsappHeaderStatus === 'function') fetchWhatsappHeaderStatus();
             }, 120000);
         }
         function stopNavBadgeRefresh() { if (navBadgeRefreshInterval) { clearInterval(navBadgeRefreshInterval); navBadgeRefreshInterval = null; } }
@@ -3613,8 +3621,10 @@
             if (!u) return;
             var emailEl = document.getElementById('userEmail');
             var avatarEl = document.getElementById('userAvatar');
+            var avatarMobile = document.getElementById('userAvatarMobile');
             if (emailEl) emailEl.textContent = u.username || u.email || u.name || '';
-            if (avatarEl) {
+            var setAvatar = function(el) {
+                if (!el) return;
                 var avatarUrl = (u.avatar || '').trim();
                 if (avatarUrl.indexOf('/') === 0) avatarUrl = (window.location.origin || '') + avatarUrl;
                 if (avatarUrl && avatarUrl.indexOf('http') === 0) {
@@ -3622,20 +3632,30 @@
                     img.src = avatarUrl;
                     img.alt = '';
                     img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.borderRadius = 'inherit';
-                    img.onerror = function() { avatarEl.innerHTML = ''; avatarEl.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?'); };
-                    avatarEl.innerHTML = '';
-                    avatarEl.appendChild(img);
+                    img.onerror = function() { el.innerHTML = ''; el.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?'); };
+                    el.innerHTML = '';
+                    el.appendChild(img);
                 } else {
-                    avatarEl.innerHTML = '';
-                    avatarEl.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?');
+                    el.innerHTML = '';
+                    el.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?');
                 }
-            }
+            };
+            setAvatar(avatarEl);
+            setAvatar(avatarMobile);
         }
         function applyNavByRole() {
             var perms = (currentUser && currentUser.permissions) || {};
             document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
                 var section = link.getAttribute('data-section');
                 link.style.display = perms[section] !== false ? '' : 'none';
+            });
+            document.querySelectorAll('.header-quick-btn[data-perm]').forEach(function(btn) {
+                var perm = btn.getAttribute('data-perm');
+                btn.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
+            });
+            document.querySelectorAll('.header-status-wrap [data-perm]').forEach(function(el) {
+                var perm = el.getAttribute('data-perm');
+                el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
             });
         }
         function updateBottomBarVisibility() {
@@ -4133,6 +4153,15 @@
             var navLinks = document.querySelectorAll('.sidebar .nav-link[data-page]');
             navLinks.forEach(function(l) { l.classList.remove('active'); });
             navLinks.forEach(function(l) { if (l.getAttribute('data-page') === page) l.classList.add('active'); });
+            var pageTitles = { dashboard: 'nav_dashboard', conversations: 'nav_conversations', customers: 'nav_customers', tickets: 'nav_tickets', tasks: 'nav_tasks', processes: 'nav_processes', departments: 'nav_departments', users: 'nav_users', branches: 'nav_branches', supervision: 'nav_supervision', 'staff-activity': 'nav_staff_activity', profile: 'nav_profile', announcements: 'nav_announcements', 'internal-chat': 'nav_internal_chat', whatsapp: 'nav_whatsapp', rates: 'nav_rates', services: 'nav_services', 'panel-settings': 'nav_panel_settings' };
+            var titleKey = pageTitles[page] || 'nav_dashboard';
+            var titleText = t(titleKey);
+            var pt = document.getElementById('headerPageTitle');
+            var pb = document.getElementById('headerBreadcrumb');
+            var pm = document.getElementById('headerMobileTitle');
+            if (pt) { pt.textContent = titleText; pt.setAttribute('data-i18n', titleKey); }
+            if (pb) pb.textContent = titleText;
+            if (pm) pm.textContent = titleText;
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
             var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', services: 'pageServices', 'panel-settings': 'pagePanelSettings' };
             if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations' || page === 'internal-chat') ? 'flex' : 'block'; el.classList.add('show'); } }
@@ -5915,12 +5944,23 @@
 
         function setWhatsappStatusBadge(status) {
             var badge = document.getElementById('whatsappStatusBadge');
-            if (!badge) return;
-            badge.className = 'whatsapp-status-badge whatsapp-status-' + status;
-            if (status === 'connected') badge.textContent = LANG === 'fa' ? 'متصل' : 'Connected';
-            else if (status === 'starting') badge.textContent = LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...';
-            else if (status === 'checking') badge.textContent = LANG === 'fa' ? 'در حال بررسی...' : 'Checking...';
-            else badge.textContent = LANG === 'fa' ? 'قطع' : 'Disconnected';
+            if (badge) {
+                badge.className = 'whatsapp-status-badge whatsapp-status-' + status;
+                if (status === 'connected') badge.textContent = LANG === 'fa' ? 'متصل' : 'Connected';
+                else if (status === 'starting') badge.textContent = LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...';
+                else if (status === 'checking') badge.textContent = LANG === 'fa' ? 'در حال بررسی...' : 'Checking...';
+                else badge.textContent = LANG === 'fa' ? 'قطع' : 'Disconnected';
+            }
+            var headerStatus = document.getElementById('headerWhatsappStatus');
+            if (headerStatus) headerStatus.classList.toggle('connected', status === 'connected');
+        }
+        async function fetchWhatsappHeaderStatus() {
+            if (!token || !can('whatsapp')) return;
+            try {
+                var res = await apiFetch('/api/gateway/status');
+                if (res.ok && res.data && res.data.whatsapp) setWhatsappStatusBadge('connected');
+                else setWhatsappStatusBadge('disconnected');
+            } catch (_) { setWhatsappStatusBadge('disconnected'); }
         }
 
         async function loadWhatsappStatus(isInitial) {
