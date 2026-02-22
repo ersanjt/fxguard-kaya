@@ -1068,12 +1068,19 @@
                     innerEl.classList.toggle('centered', fits);
                     innerEl.classList.toggle('scrolling', !fits);
                     trackEl.classList.toggle('rates-centered', fits);
+                    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches && !fits) {
+                        trackEl.scrollLeft = 0;
+                    }
                 }
                 if (trackEl) {
-                    requestAnimationFrame(updateRatesMarqueeMode);
+                    requestAnimationFrame(function() {
+                        requestAnimationFrame(updateRatesMarqueeMode);
+                    });
                     if (typeof ResizeObserver !== 'undefined') {
                         if (trackEl._ratesMarqueeRo) trackEl._ratesMarqueeRo.disconnect();
-                        trackEl._ratesMarqueeRo = new ResizeObserver(updateRatesMarqueeMode);
+                        trackEl._ratesMarqueeRo = new ResizeObserver(function() {
+                            requestAnimationFrame(updateRatesMarqueeMode);
+                        });
                         trackEl._ratesMarqueeRo.observe(trackEl);
                     }
                 }
