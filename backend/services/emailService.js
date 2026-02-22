@@ -65,17 +65,29 @@ async function sendMail({ to, subject, text, html }) {
 /**
  * ارسال ایمیل با تنظیمات SMTP دلخواه (مثلاً از تنظیمات پنل)
  * config: { host, port, user, pass, from?, fromName?, secure? }
+ * @returns {Promise<boolean>} true اگر موفق، false اگر ناموفق
  */
 async function sendMailWithConfig(config, { to, subject, text, html }) {
-    if (!config || !config.host || !config.port) return false;
+    const r = await sendMailWithConfigDetailed(config, { to, subject, text, html });
+    return r.ok;
+}
+
+/**
+ * ارسال ایمیل با برگرداندن خطای دقیق (برای تست و عیب‌یابی)
+ * @returns {Promise<{ok: boolean, error?: string}>}
+ */
+async function sendMailWithConfigDetailed(config, { to, subject, text, html }) {
+    if (!config || !config.host || !config.port) return { ok: false, error: 'Host و پورت الزامی است.' };
     try {
         const nodemailer = require('nodemailer');
-        const transport = nodemailer.createTransport({
+        const opts = {
             host: config.host,
             port: parseInt(config.port, 10) || 587,
             secure: !!config.secure,
             auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined
-        });
+        };
+        if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
+        const transport = nodemailer.createTransport(opts);
         const fromAddr = config.from || config.user || 'noreply@localhost';
         const from = config.fromName ? `"${config.fromName}" <${fromAddr}>` : fromAddr;
         await transport.sendMail({
@@ -85,10 +97,12 @@ async function sendMailWithConfig(config, { to, subject, text, html }) {
             text: text || '',
             html: html || (text ? text.replace(/\n/g, '<br>') : '')
         });
-        return true;
+        return { ok: true };
     } catch (err) {
-        console.error('Email send error (config):', err.message);
-        return false;
+        let msg = err.message || String(err);
+        if (err.response) msg += ' — ' + (typeof err.response === 'string' ? err.response : JSON.stringify(err.response));
+        console.error('Email send error (config):', msg);
+        return { ok: false, error: msg };
     }
 }
 
@@ -198,6 +212,7 @@ module.exports = {
     isEnabled,
     sendMail,
     sendMailWithConfig,
+    sendMailWithConfigDetailed,
     sendWelcomeCredentials,
     sendLoginNotification,
     sendPasswordReset,

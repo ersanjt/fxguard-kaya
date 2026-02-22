@@ -83,14 +83,16 @@ function getSupportedLanguages(settings) {
 /** اگر تنظیمات SMTP از پنل پر شده باشد، آبجکت config برای sendMailWithConfig برمی‌گرداند؛ وگرنه null */
 function getPanelEmailConfig(settings) {
     if (!settings || !settings.smtpHost || !settings.smtpPort) return null;
+    const host = settings.smtpHost || '';
     return {
-        host: settings.smtpHost,
+        host,
         port: settings.smtpPort,
         user: settings.smtpUser || null,
         pass: settings.smtpPass || null,
         from: settings.smtpFrom || settings.smtpUser || null,
         fromName: settings.smtpFromName || null,
-        secure: !!settings.smtpSecure
+        secure: !!settings.smtpSecure,
+        allowSelfSigned: host.includes('host.secureserver.net')
     };
 }
 

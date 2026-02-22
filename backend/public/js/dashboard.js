@@ -4319,6 +4319,10 @@
                 if (res.ok && res.data && res.data.ok) {
                     toast(res.data.message || (LANG === 'fa' ? 'ایمیل تست ارسال شد.' : 'Test email sent.'));
                     if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ارسال شد' : 'Sent'); statusEl.className = 'panel-test-email-status success'; statusEl.style.display = 'inline'; }
+                    if (res.data.usedFallback) {
+                        var hostEl = document.getElementById('panelSettingSmtpHost');
+                        if (hostEl) { hostEl.value = res.data.usedFallback; markPanelSettingsChanged(); }
+                    }
                 } else {
                     toast((res.data && res.data.error) || (LANG === 'fa' ? 'ارسال ناموفق' : 'Send failed'), true);
                     if (statusEl) { statusEl.textContent = (res.data && res.data.error) || ''; statusEl.className = 'panel-test-email-status error'; statusEl.style.display = 'inline'; }

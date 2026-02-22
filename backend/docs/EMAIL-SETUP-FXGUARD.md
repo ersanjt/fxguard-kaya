@@ -12,7 +12,7 @@
 
 | پارامتر | مقدار |
 |---------|-------|
-| **Host** | `mail.fxguard.io` |
+| **Host** | `mail.fxguard.io` یا `smtpout.secureserver.net` یا `143.182.205.92.host.secureserver.net` (Mail HELO) |
 | **Port** | `587` (بدون SSL) یا `465` (با SSL ✓) |
 | **Username** | `noreply@fxguard.io` |
 | **Password** | رمز عبور ایمیل در cPanel |

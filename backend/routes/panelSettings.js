@@ -132,7 +132,8 @@ router.post('/test-email', authMiddleware, async (req, res) => {
                 pass: bodyPass || (settings && settings.smtpPass) || null,
                 from: (req.body.smtpFrom || '').toString().trim() || null,
                 fromName: (req.body.smtpFromName || '').toString().trim() || null,
-                secure: !!(req.body.smtpSecure === true || req.body.smtpSecure === 'true' || req.body.smtpSecure === '1')
+                secure: !!(req.body.smtpSecure === true || req.body.smtpSecure === 'true' || req.body.smtpSecure === '1'),
+                allowSelfSigned: bodyHost.includes('host.secureserver.net')
             };
             if (!emailConfig.from && emailConfig.user) emailConfig.from = emailConfig.user;
         }
@@ -145,19 +146,35 @@ router.post('/test-email', authMiddleware, async (req, res) => {
             text: 'این ایمیل برای تست تنظیمات SMTP پنل ارسال شده است.',
             html: emailService.baseHtml(title, body)
         };
-        let sent = false;
+        let result = { ok: false };
         if (emailConfig && emailConfig.host && emailConfig.port) {
-            sent = await emailService.sendMailWithConfig(emailConfig, mailOpts);
+            result = await emailService.sendMailWithConfigDetailed(emailConfig, mailOpts);
+            // اگر با host فعلی شکست خورد، smtpout.secureserver.net را امتحان کن (fxguard.io روی GoDaddy)
+            if (!result.ok && emailConfig.user && emailConfig.pass && /fxguard\.io/i.test(emailConfig.user || '')) {
+                const fallback = { ...emailConfig, host: 'smtpout.secureserver.net' };
+                const fallbackResult = await emailService.sendMailWithConfigDetailed(fallback, mailOpts);
+                if (fallbackResult.ok) {
+                    result = { ok: true, usedFallback: 'smtpout.secureserver.net' };
+                } else if (emailConfig.host !== '143.182.205.92.host.secureserver.net') {
+                    const fallback2 = { ...emailConfig, host: '143.182.205.92.host.secureserver.net' };
+                    const r2 = await emailService.sendMailWithConfigDetailed(fallback2, mailOpts);
+                    if (r2.ok) result = { ok: true, usedFallback: '143.182.205.92.host.secureserver.net' };
+                }
+            }
         } else {
             if (!emailService.isEnabled()) {
                 return res.status(400).json({ error: 'تنظیمات SMTP وجود ندارد. Host و پورت را در فرم وارد کنید و ذخیره کنید، یا متغیرهای SMTP_HOST و SMTP_PORT را در فایل .env تنظیم کنید.' });
             }
-            sent = await emailService.sendMail(mailOpts);
+            const sent = await emailService.sendMail(mailOpts);
+            result = sent ? { ok: true } : { ok: false, error: 'ارسال ناموفق بود.' };
         }
-        if (sent) {
-            res.json({ ok: true, message: 'ایمیل تست ارسال شد. صندوق ورودی (و اسپم) را بررسی کنید.' });
+        if (result.ok) {
+            const msg = result.usedFallback
+                ? `ایمیل ارسال شد با Host جایگزین (${result.usedFallback}). توصیه: این Host را در تنظیمات ذخیره کنید.`
+                : 'ایمیل تست ارسال شد. صندوق ورودی (و اسپم) را بررسی کنید.';
+            res.json({ ok: true, message: msg, usedFallback: result.usedFallback });
         } else {
-            res.status(500).json({ error: 'ارسال ایمیل ناموفق بود. Host، پورت و احراز هویت را بررسی کنید.' });
+            res.status(500).json({ error: result.error || 'ارسال ایمیل ناموفق بود. Host، پورت و احراز هویت را بررسی کنید.' });
         }
     } catch (err) {
         res.status(500).json({ error: err.message || 'خطای سرور' });
