@@ -42,6 +42,8 @@ window.__I18N_FA = {
     lang_tr: 'ترکی',
     lang_label: 'زبان',
     nav_main_menu: 'منوی ناوبری',
+    sidebar_toggle_collapse: 'جمع کردن منو',
+    sidebar_toggle_expand: 'باز کردن منو',
     nav_dashboard: 'داشبورد',
     nav_communications: 'ارتباطات',
     nav_conversations: 'مکالمات',

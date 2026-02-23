@@ -42,6 +42,8 @@ window.__I18N_EN = {
     lang_tr: 'Türkçe',
     lang_label: 'Language',
     nav_main_menu: 'Main menu',
+    sidebar_toggle_collapse: 'Collapse menu',
+    sidebar_toggle_expand: 'Expand menu',
     nav_dashboard: 'Dashboard',
     nav_communications: 'Communications',
     nav_conversations: 'Conversations',

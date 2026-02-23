@@ -299,6 +299,38 @@
         .sidebar::-webkit-scrollbar-track { background: transparent; }
         .sidebar::-webkit-scrollbar-thumb { background: rgba(45,63,95,0.6); border-radius: 3px; }
         .sidebar::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        /* سایدبار — دکمه جمع/باز (فقط دسکتاپ) */
+        .sidebar-desktop-only { display: none; }
+        @media (min-width: 769px) {
+            .sidebar-desktop-only { display: flex; }
+            .sidebar { flex-direction: column; overflow: hidden; }
+            .sidebar .sidebar-inner { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+            .sidebar-footer { flex-shrink: 0; padding: 12px 16px; border-top: 1px solid rgba(45,63,95,0.5); margin-top: auto; }
+            .sidebar-toggle-btn { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; padding: 10px 14px; background: rgba(255,255,255,0.05); border: 1px solid rgba(45,63,95,0.5); border-radius: 10px; color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; cursor: pointer; font-family: inherit; transition: all 0.2s; -webkit-tap-highlight-color: transparent; }
+            .sidebar-toggle-btn:hover { background: rgba(255,255,255,0.08); color: var(--accent-light); border-color: var(--border-hover); }
+            .sidebar-toggle-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+            .sidebar-toggle-icon { display: flex; align-items: center; justify-content: center; }
+            .sidebar-toggle-icon svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+            html[dir="rtl"] .sidebar-toggle-icon svg { transform: scaleX(-1); }
+            /* حالت جمع‌شده سایدبار — دسکتاپ */
+            .sidebar.sidebar-collapsed { width: 72px; min-width: 72px; max-width: 72px; padding: 16px 0 12px; }
+            .sidebar.sidebar-collapsed .nav-section-title { display: none; }
+            .sidebar.sidebar-collapsed .nav-section-body { max-height: none !important; }
+            .sidebar.sidebar-collapsed .nav-subsection-title { display: none; }
+            .sidebar.sidebar-collapsed .nav-section { padding: 0 8px; margin-bottom: 8px; }
+            .sidebar.sidebar-collapsed .nav-section:last-child { margin-bottom: 4px; }
+            .sidebar.sidebar-collapsed .nav-subsection { margin-bottom: 4px; }
+            .sidebar.sidebar-collapsed a.nav-link { justify-content: center; padding: 12px; margin: 0 4px 2px; }
+            .sidebar.sidebar-collapsed a.nav-link > span:last-of-type { display: none; }
+            .sidebar.sidebar-collapsed a.active { border-right: none; margin-right: 4px; padding-right: 12px; }
+            html[dir="ltr"] .sidebar.sidebar-collapsed a.active { border-left: none; margin-left: 4px; padding-left: 12px; }
+            .sidebar.sidebar-collapsed a.active { border-radius: 10px; box-shadow: inset 0 0 0 2px var(--accent); }
+            .sidebar.sidebar-collapsed .sidebar-toggle-btn { padding: 12px; justify-content: center; }
+            .sidebar.sidebar-collapsed .sidebar-toggle-text { display: none; }
+            .sidebar.sidebar-collapsed .sidebar-toggle-icon svg { transform: rotate(180deg); }
+            html[dir="rtl"] .sidebar.sidebar-collapsed .sidebar-toggle-icon svg { transform: scaleX(-1) rotate(180deg); }
+            .sidebar.sidebar-collapsed .sidebar-footer { padding: 12px; }
+        }
         .announcement-marquee { position: relative; z-index: 50; flex-shrink: 0; direction: rtl; color: #fff; font-size: 0.9rem; background: linear-gradient(135deg, rgba(16,185,129,0.95) 0%, rgba(5,150,105,0.92) 50%, rgba(4,120,87,0.9) 100%); border-bottom: 1px solid rgba(16,185,129,0.4); box-shadow: 0 2px 12px rgba(16,185,129,0.2); }
         .announcement-marquee-bar { display: flex; align-items: center; gap: 16px; padding: 12px 20px; min-height: 48px; }
         .announcement-marquee-label { display: flex; align-items: center; gap: 8px; flex-shrink: 0; font-weight: 600; font-size: 0.9rem; }

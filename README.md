@@ -591,31 +591,6 @@ PUT /api/customers/{id}
 }
 ```
 
-### Bulk Messaging:
-
-```javascript
-// Send Bulk Messages
-POST /api/bulk/send
-{
-  "recipients": [
-    "989123456789",
-    "989987654321"
-  ],
-  "message": "سلام {name}، پیام انبوه تست",
-  "delay": 5000
-}
-
-Response:
-{
-  "bulkId": "bulk_1234567890",
-  "total": 2,
-  "status": "processing"
-}
-
-// Get Bulk Status
-GET /api/bulk/{bulkId}/status
-```
-
 ---
 
 ## 🔧 عیب‌یابی (Troubleshooting)
