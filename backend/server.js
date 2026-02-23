@@ -1,7 +1,7 @@
 require("dotenv").config();
 
-const MAIN_ADMIN_EMAIL = process.env.MAIN_ADMIN_EMAIL || 'admin@kaya.local';
-const MAIN_ADMIN_PASSWORD = process.env.MAIN_ADMIN_PASSWORD || '20231030';
+const MAIN_ADMIN_EMAIL = process.env.MAIN_ADMIN_EMAIL || 'Admin@kaya.fxguard.io';
+const MAIN_ADMIN_PASSWORD = process.env.MAIN_ADMIN_PASSWORD || '2468097531KayaFx';
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -303,6 +303,18 @@ async function connectDatabases() {
             logger.warn('panel_settings migration:', e.message);
         }
 
+        // Auto-migrate Users: add position column if missing
+        try {
+            const qi = sequelize.getQueryInterface();
+            const userDesc = await qi.describeTable('Users');
+            if (userDesc && !userDesc.position) {
+                await qi.addColumn('Users', 'position', { type: require('sequelize').DataTypes.STRING, allowNull: true });
+                logger.info('✅ Users: position column added (auto-migration)');
+            }
+        } catch (e) {
+            if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('Users position migration:', e.message);
+        }
+
         const defaultRateCurrencies = require('./lib/defaultRateCurrencies');
         const rateCurrencyCount = await RateCurrency.count();
         if (rateCurrencyCount === 0 && defaultRateCurrencies.length > 0) {
@@ -359,23 +371,27 @@ async function ensureAdminUser() {
         });
         if (!existing) {
             await User.create({
-                name: 'مالک شرکت',
+                name: 'Admin',
+                username: 'Admin',
                 email: MAIN_ADMIN_EMAIL_LOWER,
                 password: MAIN_ADMIN_PASSWORD,
                 role: 'owner',
                 branchId: null,
-                departmentId: dept.id,
+                departmentId: null,
                 isActive: true
             });
-            logger.info('✅ کاربر مالک (ادمین اصلی) ایجاد شد: ' + MAIN_ADMIN_EMAIL_LOWER);
+            logger.info('✅ کاربر ادمین اصلی ایجاد شد: ' + MAIN_ADMIN_EMAIL_LOWER);
         } else {
-            // این کاربر همیشه بالاترین دسترسی دارد — نقش و وضعیت را ثابت نگه می‌داریم
             let changed = false;
             if (existing.role !== 'owner') { existing.role = 'owner'; changed = true; }
             if (!existing.isActive) { existing.isActive = true; changed = true; }
+            if (existing.name !== 'Admin') { existing.name = 'Admin'; changed = true; }
+            if (existing.username !== 'Admin') { existing.username = 'Admin'; changed = true; }
+            if (existing.branchId !== null) { existing.branchId = null; changed = true; }
+            if (existing.departmentId !== null) { existing.departmentId = null; changed = true; }
             if (changed) {
                 await existing.save();
-                logger.info('✅ ادمین اصلی به نقش owner و وضعیت فعال به‌روز شد: ' + existing.email);
+                logger.info('✅ ادمین اصلی به‌روز شد: ' + existing.email);
             }
         }
     } catch (err) {
@@ -1032,7 +1048,7 @@ apiRouter.get('/ping', (req, res) => {
 apiRouter.get('/config', (req, res) => {
     const supportUrl = process.env.SUPPORT_URL || null;
     const supportEmail = process.env.SUPPORT_EMAIL || null;
-    const defaultEmail = process.env.MAIN_ADMIN_EMAIL || 'admin@kaya.local';
+    const defaultEmail = process.env.MAIN_ADMIN_EMAIL || 'Admin@kaya.fxguard.io';
     const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : 'mailto:' + defaultEmail);
     res.json({
         timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',

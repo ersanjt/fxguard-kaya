@@ -22,6 +22,7 @@ router.get('/', async (req, res) => {
         const canManage = req.canManageUsers();
         const list = users.map(u => {
             const j = u.toJSON();
+            j.isProtectedAdmin = isMainAdmin(u);
             if (canManage) j.permissions = getPermissions(u);
             if (!canManage && u.id !== req.userId) j.email = undefined;
             return j;
@@ -45,6 +46,7 @@ router.get('/me', (req, res) => {
         phone: u.phone,
         avatar: u.avatar,
         role: u.role,
+        position: u.position,
         departmentId: u.departmentId,
         branchId: u.branchId,
         status: u.status,
@@ -54,7 +56,8 @@ router.get('/me', (req, res) => {
         permissions: req.permissions,
         totpEnabled: !!u.totpEnabled,
         canDeleteCustomer: canDeleteCustomer(u),
-        canDeleteUser: canDeleteUser(u)
+        canDeleteUser: canDeleteUser(u),
+        isProtectedAdmin: isMainAdmin(u)
     };
     res.json(out);
 });
@@ -62,6 +65,9 @@ router.get('/me', (req, res) => {
 router.patch('/me', async (req, res) => {
     try {
         const user = req.user;
+        if (isMainAdmin(user)) {
+            return res.status(403).json({ error: 'اطلاعات ادمین اصلی سیستم غیر قابل ویرایش است' });
+        }
         const { username, firstName, lastName, dateOfBirth, name, phone, password, avatar, email } = req.body;
         if (username !== undefined) {
             const trimmed = String(username).trim();
@@ -90,7 +96,6 @@ router.patch('/me', async (req, res) => {
             const trimmed = String(email).trim().toLowerCase();
             if (!trimmed) return res.status(400).json({ error: 'ایمیل الزامی است' });
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return res.status(400).json({ error: 'فرمت ایمیل نامعتبر است' });
-            if (isMainAdmin(user)) return res.status(403).json({ error: 'امکان تغییر ایمیل ادمین اصلی وجود ندارد' });
             const existing = await User.findOne({ where: { email: trimmed } });
             if (existing && existing.id !== user.id) return res.status(400).json({ error: 'این ایمیل قبلاً استفاده شده است' });
             user.email = trimmed;
@@ -117,6 +122,7 @@ router.get('/:id', async (req, res) => {
         });
         if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
         const j = user.toJSON();
+        j.isProtectedAdmin = isMainAdmin(user);
         if (req.canManageUsers()) j.permissions = getPermissions(user);
         if (!req.canManageUsers() && user.id !== req.userId) j.email = undefined;
         res.json(j);
@@ -128,7 +134,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر جدید بسازد' });
-        const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords } = req.body;
+        const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords, position } = req.body;
         if (!name || !email || !password) return res.status(400).json({ error: 'نام، ایمیل و رمز الزامی است' });
         if (username !== undefined && username) {
             const trimmed = String(username).trim();
@@ -143,6 +149,7 @@ router.post('/', async (req, res) => {
             email,
             password,
             role: role || 'agent',
+            position: position ? String(position).trim() : null,
             departmentId: departmentId || null,
             branchId: finalBranchId,
             permissions: permissions && typeof permissions === 'object' ? permissions : {},
@@ -167,16 +174,16 @@ router.post('/', async (req, res) => {
     }
 });
 
-// ویرایش کاربر: فقط ادمین اصلی یا کسی که دسترسی manage_users دارد. ادمین اصلی (MAIN_ADMIN_EMAIL) تنها کسی است که نقش و دسترسی بقیه را تعیین/محدود/افزایش می‌دهد و خودش توسط هیچ‌کس دیگر قابل ویرایش یا محدود شدن نیست.
 router.put('/:id', async (req, res) => {
     try {
         if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر را ویرایش کند' });
         const user = await User.findByPk(req.params.id);
         if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
-        if (isMainAdmin(user) && !isMainAdmin(req.user)) return res.status(403).json({ error: 'امکان ویرایش یا محدود کردن ادمین اصلی پنل وجود ندارد' });
-        const { name, username, email, role, departmentId, branchId, isActive, permissions } = req.body;
+        if (isMainAdmin(user)) return res.status(403).json({ error: 'اطلاعات ادمین اصلی سیستم غیر قابل ویرایش است. هیچ کاربری حتی با بالاترین سطح دسترسی امکان ویرایش ادمین اصلی را ندارد.' });
+        const { name, username, email, role, departmentId, branchId, isActive, permissions, position } = req.body;
         if (name !== undefined) user.name = name;
-        if (username !== undefined && !isMainAdmin(user)) {
+        if (position !== undefined) user.position = position ? String(position).trim() : null;
+        if (username !== undefined) {
             const trimmed = String(username || '').trim();
             if (trimmed) {
                 if (!/^[a-zA-Z0-9_\u0600-\u06FF.-]+$/.test(trimmed)) return res.status(400).json({ error: 'نام کاربری فقط حروف، عدد، خط تیره و نقطه مجاز است' });
@@ -185,16 +192,16 @@ router.put('/:id', async (req, res) => {
                 user.username = trimmed;
             } else user.username = null;
         }
-        if (email !== undefined && !isMainAdmin(user)) user.email = email;
-        if (role !== undefined && !isMainAdmin(user)) user.role = role;
+        if (email !== undefined) user.email = email;
+        if (role !== undefined) user.role = role;
         if (departmentId !== undefined) user.departmentId = departmentId;
         if (branchId !== undefined && req.canManageUsers()) user.branchId = branchId || null;
-        if (isActive !== undefined) { if (isMainAdmin(user)) user.isActive = true; else user.isActive = !!isActive; }
+        if (isActive !== undefined) user.isActive = !!isActive;
         if (req.body.password) {
             if (String(req.body.password).length < 6) return res.status(400).json({ error: 'رمز عبور حداقل ۶ کاراکتر باشد' });
             user.password = req.body.password;
         }
-        if (permissions !== undefined && typeof permissions === 'object' && !isMainAdmin(user)) {
+        if (permissions !== undefined && typeof permissions === 'object') {
             const merged = { ...(user.permissions || {}) };
             Object.keys(permissions).forEach(k => { merged[k] = !!permissions[k]; });
             if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin') {

@@ -28,7 +28,7 @@ const MANAGE_USERS_KEY = 'manage_users'; // owner، admin، manager یا دار�
 const MANAGE_TICKETS_KEY = 'manage_tickets'; // حذف و آرشیو تیکت
 
 /** ادمین اصلی پنل — این ایمیل (از env یا پیش‌فرض) دسترسی کامل دارد. خالی بودن = هیچ‌کس ادمین اصلی نیست و همه قابل حذف/ویرایش هستند. */
-const MAIN_ADMIN_EMAIL = (process.env.MAIN_ADMIN_EMAIL || 'ersanjahedtabrizi@gmail.com').trim();
+const MAIN_ADMIN_EMAIL = (process.env.MAIN_ADMIN_EMAIL || 'Admin@kaya.fxguard.io').trim();
 
 function isMainAdmin(user) {
     if (!user || !user.email || !MAIN_ADMIN_EMAIL) return false;

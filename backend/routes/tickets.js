@@ -6,9 +6,7 @@ const { isMainAdmin } = require('../lib/permissions');
 function canManageTicket(req) {
     if (!req.user) return false;
     if (isMainAdmin(req.user)) return true;
-    const role = req.user.role || '';
-    if (['owner', 'admin', 'manager', 'supervisor'].indexOf(role) !== -1) return true;
-    return !!(req.permissions && req.permissions.manage_tickets);
+    return req.user.role === 'owner';
 }
 
 function createTicketsRouter(io) {

@@ -265,7 +265,7 @@
                     dept_color: 'رنگ', dept_is_default: 'پیش‌فرض (مکالمات بدون تطابق)', dept_edit_hint: 'فیلدها را ویرایش کنید و روی «ذخیره» بزنید.', toast_dept_updated: 'دپارتمان به‌روز شد', dept_list_title: 'دپارتمان‌ها',
                     dept_ph_name: '�&ثا�: پشت�Rبا� �R ف� �R', dept_ph_optional: 'اخت�Rار�R', dept_ph_keywords: '�&ثا�: �&شک��R خراب�R�R پشت�Rبا� �R',
                     users_intro: 'ف�ط �&د�Rر �&ج�&��ع�! �Rا کس�R ک�! دسترس�R «�&د�Rر�Rت کاربرا� » دارد �&�R�Rت��ا� د کاربر جد�Rد بسازد.',
-                    label_name: '� ا�&', label_email: 'ا�R�&�R�', label_password: 'ر�&ز عب��ر', label_role: '� �ش', label_dept: 'دپارت�&ا� ', label_branch: 'شعب�!',
+                    label_name: '� ا�&', label_email: 'ا�R�&�R�', label_password: 'ر�&ز عب��ر', label_role: '� �ش', label_position: 'سمت', position_ph: 'مثلاً مدیر فروش، حسابدار', label_dept: 'دپارت�&ا� ', label_branch: 'شعب�!',
                     user_ph_name: '� ا�& کا�&�', user_ph_pass: 'حدا�� ۶ کاراکتر', add_user: 'افز��د�  کاربر', role_agent: 'کار�&� د', role_manager: '�&د�Rر', role_admin: 'اد�&�R� ',
                     ticket_title: 'ع� ��ا�  ت�Rکت', ticket_desc: 'ت��ض�Rحات', ticket_priority: 'ا������Rت', create_ticket: 'ثبت ت�Rکت', ticket_ph_subject: '�&��ض��ع',
                     reply_to_ticket: 'پاسخ ب�! ت�Rکت', reply_ph: '�&ت�  پاسخ...', file_attach: 'پ�R��ست فا�R� (اخت�Rار�R)', send_reply: 'ارسا� پاسخ',
@@ -636,7 +636,7 @@
                     dept_color: 'Color', dept_is_default: 'Default (unmatched conversations)', dept_edit_hint: 'Edit the fields and click Save to update.', toast_dept_updated: 'Department updated', dept_list_title: 'Departments',
                     dept_ph_name: 'e.g. Technical support', dept_ph_optional: 'Optional', dept_ph_keywords: 'e.g. issue, support',
                     users_intro: 'Only the owner or users with "User management" access can create users and edit permissions.',
-                    label_name: 'Name', label_email: 'Email', label_password: 'Password', label_role: 'Role', label_dept: 'Department', label_branch: 'Branch',
+                    label_name: 'Name', label_email: 'Email', label_password: 'Password', label_role: 'Role', label_position: 'Position', position_ph: 'e.g. Sales Manager, Accountant', label_dept: 'Department', label_branch: 'Branch',
                     user_ph_name: 'Full name', user_ph_pass: 'At least 6 characters', add_user: 'Add user', role_agent: 'Agent', role_manager: 'Manager', role_admin: 'Admin',
                     ticket_title: 'Ticket title', ticket_desc: 'Description', ticket_priority: 'Priority', create_ticket: 'Create ticket', ticket_ph_subject: 'Subject', ticket_ph_search: 'Search number or title...', tickets_intro: 'Official section for submitting and tracking requests. Each ticket has a unique number.', overdue: 'Overdue', filter_all_status: 'All statuses', filter_all_priority: 'All priorities', sort_newest: 'Newest', sort_oldest: 'Oldest', sort_priority: 'By priority', sort_by_name: 'By name', sort_by_last_contact: 'Last contact', customer_quick_chat: 'Start chat', customer_quick_edit: 'Edit customer', customer_delete: 'Delete customer',
                     reply_to_ticket: 'Reply to ticket', reply_ph: 'Reply text...', file_attach: 'Attach file (optional)', send_reply: 'Send reply',
@@ -3051,6 +3051,23 @@
                 if (avatarFileEl && !avatarFileEl._bound) { avatarFileEl._bound = true; avatarFileEl.addEventListener('change', function() { if (avatarFileEl.files && avatarFileEl.files[0]) uploadProfileAvatar(avatarFileEl.files[0]); }); }
                 if (document.getElementById('profilePassword')) document.getElementById('profilePassword').value = '';
                 updateProfileAvatarPreview(u.avatar || displayName);
+                var isProtectedAdmin = !!(u && u.isProtectedAdmin);
+                var profileFields = ['profileUsername','profileFirstName','profileLastName','profileDateOfBirth','profilePhone','profileAvatar','profilePassword','profileEmailInput','profileAvatarFile'];
+                profileFields.forEach(function(fid) { var el = document.getElementById(fid); if (el) el.disabled = isProtectedAdmin; });
+                var profileSaveBtn = document.getElementById('profileSaveBtn');
+                if (profileSaveBtn) profileSaveBtn.style.display = isProtectedAdmin ? 'none' : '';
+                var profileProtectedBanner = document.getElementById('profileProtectedBanner');
+                if (!profileProtectedBanner) {
+                    profileProtectedBanner = document.createElement('div');
+                    profileProtectedBanner.id = 'profileProtectedBanner';
+                    profileProtectedBanner.style.cssText = 'background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:14px;text-align:center;font-weight:600;';
+                    var profileSection = document.getElementById('section-profile');
+                    if (profileSection) { var firstChild = profileSection.querySelector('.profile-panel,.profile-card,.profile-form,.form-grid'); if (firstChild) firstChild.parentNode.insertBefore(profileProtectedBanner, firstChild); else profileSection.insertBefore(profileProtectedBanner, profileSection.firstChild); }
+                }
+                if (profileProtectedBanner) {
+                    profileProtectedBanner.style.display = isProtectedAdmin ? 'block' : 'none';
+                    profileProtectedBanner.textContent = LANG === 'fa' ? 'شما ادمین اصلی سیستم هستید — اطلاعات حساب شما غیر قابل ویرایش است' : 'You are the main system admin — your account info is read-only';
+                }
             }
             var statusEl = document.getElementById('profileTotpStatus');
             var actionsEl = document.getElementById('profileTotpActions');
@@ -5111,7 +5128,7 @@
             document.getElementById('ticketReplyAttachments').textContent = '';
             loadTickets();
         }
-        function canManageTickets() { var r = (currentUser && currentUser.role) || ''; if (['owner','admin','manager','supervisor'].indexOf(r) >= 0) return true; return !!(currentUser && currentUser.permissions && currentUser.permissions.manage_tickets); }
+        function canManageTickets() { var r = (currentUser && currentUser.role) || ''; return r === 'owner'; }
         var ticketEditMode = false;
         function toggleTicketEditMode() {
             ticketEditMode = !ticketEditMode;
@@ -5870,14 +5887,16 @@
                 var lastLoginStr = u.lastLoginAt ? timeAgo(u.lastLoginAt) : (LANG === 'fa' ? 'هرگز' : 'Never');
                 var inactiveClass = u.isActive === false ? ' inactive' : '';
                 var blockedBadge = u.isActive === false ? '<span class="badge cancelled">' + t('blocked') + '</span>' : '';
+                var protectedBadge = u.isProtectedAdmin ? '<span class="badge" style="background:#fff3cd;color:#856404;font-size:11px;">' + (LANG === 'fa' ? 'غیر قابل ویرایش' : 'Protected') + '</span>' : '';
                 var roleBadge = '<span class="badge" style="background:var(--accent-soft);color:var(--accent);">' + escapeHtml(roleLabels[u.role] || u.role) + '</span>';
                 var statusBadge = '<span class="status-dot ' + statusClass + '" title="' + escapeHtml(statusLabel) + '"></span>';
                 var btns = [];
                 if (canViewActivity) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openStaffDetailModal(\'' + u.id + '\')">' + t('view_activity') + '</button>');
-                if (canManage) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openUserEdit(\'' + u.id + '\')">' + t('edit_access') + '</button>');
+                if (canManage) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openUserEdit(\'' + u.id + '\')">' + (u.isProtectedAdmin ? (LANG === 'fa' ? 'مشاهده' : 'View') : t('edit_access')) + '</button>');
                 var btn = btns.join(' ');
                 var cardClick = canViewActivity ? 'onclick="openStaffDetailModal(\'' + u.id + '\')" style="cursor:pointer;"' : '';
-                return '<div class="user-card' + inactiveClass + '" ' + cardClick + '><div class="user-card-header"><div class="user-card-avatar">' + avatarHtml + '</div><div class="user-card-name">' + statusBadge + ' ' + escapeHtml(u.name) + ' ' + blockedBadge + '</div></div><div class="user-card-body"><div class="user-card-email">' + escapeHtml(u.email || '') + '</div><div class="user-card-meta">' + (deptBranch.length ? deptBranch.join(' · ') : '') + '</div><div class="user-card-meta">' + (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLoginStr + '</div><div class="user-card-badges">' + roleBadge + '</div></div><div class="user-card-actions" onclick="event.stopPropagation();">' + btn + '</div></div>';
+                var positionLine = u.position ? '<div class="user-card-meta" style="color:var(--accent);font-weight:500;">' + escapeHtml(u.position) + '</div>' : '';
+                return '<div class="user-card' + inactiveClass + '" ' + cardClick + '><div class="user-card-header"><div class="user-card-avatar">' + avatarHtml + '</div><div class="user-card-name">' + statusBadge + ' ' + escapeHtml(u.name) + ' ' + blockedBadge + ' ' + protectedBadge + '</div></div><div class="user-card-body">' + positionLine + '<div class="user-card-email">' + escapeHtml(u.email || '') + '</div><div class="user-card-meta">' + (deptBranch.length ? deptBranch.join(' · ') : '') + '</div><div class="user-card-meta">' + (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLoginStr + '</div><div class="user-card-badges">' + roleBadge + '</div></div><div class="user-card-actions" onclick="event.stopPropagation();">' + btn + '</div></div>';
             }).join('');
         }
         function toggleUserForm() {
@@ -5937,6 +5956,7 @@
             var res = await apiFetch('/api/users/' + userId);
             if (res.needLogin || !res.ok) return;
             var u = res.data;
+            var isProtected = !!u.isProtectedAdmin;
             currentEditUserId = userId;
             document.querySelectorAll('.user-edit-tab').forEach(function(b) { b.classList.remove('active'); b.setAttribute('aria-selected', b.getAttribute('data-tab') === 'info' ? 'true' : 'false'); if (b.getAttribute('data-tab') === 'info') b.classList.add('active'); });
             document.getElementById('userEditTabInfo').classList.add('active'); document.getElementById('userEditTabInfo').style.display = 'block';
@@ -5952,6 +5972,22 @@
             document.getElementById('userEditPassword').value = '';
             var skillsEl = document.getElementById('userEditSkillsKeywords');
             if (skillsEl) skillsEl.value = (u.settings && u.settings.skillsKeywords) || '';
+            var posEl = document.getElementById('userEditPosition');
+            if (posEl) posEl.value = u.position || '';
+            var editFields = ['userEditName','userEditUsername','userEditEmail','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition'];
+            editFields.forEach(function(fid) { var el = document.getElementById(fid); if (el) el.disabled = isProtected; });
+            var protectedBanner = document.getElementById('userEditProtectedBanner');
+            if (!protectedBanner) {
+                protectedBanner = document.createElement('div');
+                protectedBanner.id = 'userEditProtectedBanner';
+                protectedBanner.style.cssText = 'background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:14px;text-align:center;font-weight:600;';
+                var editBody = document.querySelector('.user-edit-body');
+                if (editBody) editBody.insertBefore(protectedBanner, editBody.firstChild);
+            }
+            protectedBanner.style.display = isProtected ? 'block' : 'none';
+            protectedBanner.textContent = LANG === 'fa' ? 'این کاربر ادمین اصلی سیستم است و اطلاعات آن غیر قابل ویرایش می‌باشد' : 'This is the main system admin — account info is read-only';
+            var modalTitle = document.getElementById('userEditModalTitle');
+            if (modalTitle) modalTitle.textContent = isProtected ? (LANG === 'fa' ? 'مشاهده ادمین اصلی (غیر قابل ویرایش)' : 'View Main Admin (Read-only)') : (t('modal_user_edit') || 'ویرایش کاربر');
             var perms = u.permissions || {};
             var canGrantSpecial = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
             var html = '';
@@ -5959,18 +5995,24 @@
                 var visibleKeys = gr.keys.filter(function(k) { return (k !== 'manage_users' && k !== 'manage_tickets') || canGrantSpecial; });
                 if (visibleKeys.length === 0) return;
                 html += '<div class="user-edit-perm-group" data-group="' + gr.key + '">';
-                html += '<div class="user-edit-perm-group-header"><span class="user-edit-perm-group-title">' + (t(gr.title) || gr.key) + '</span><span class="user-edit-perm-group-toggles"><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', true)">' + (t('user_perms_all') || 'همه') + '</button><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', false)">' + (t('user_perms_none') || 'هیچ‌کدام') + '</button></span></div>';
+                html += '<div class="user-edit-perm-group-header"><span class="user-edit-perm-group-title">' + (t(gr.title) || gr.key) + '</span><span class="user-edit-perm-group-toggles"><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', true)"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_all') || 'همه') + '</button><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', false)"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_none') || 'هیچ‌کدام') + '</button></span></div>';
                 html += '<div class="user-edit-perm-group-items">';
                 visibleKeys.forEach(function(k) {
                     var checked = perms[k] !== false ? ' checked' : '';
                     var lbl = sectionLabel(k);
-                    html += '<label class="user-edit-perm-item"><input type="checkbox" data-perm="' + k + '"' + checked + '><span class="user-edit-perm-label">' + escapeHtml(lbl) + '</span></label>';
+                    html += '<label class="user-edit-perm-item"><input type="checkbox" data-perm="' + k + '"' + checked + (isProtected ? ' disabled' : '') + '><span class="user-edit-perm-label">' + escapeHtml(lbl) + '</span></label>';
                 });
                 html += '</div></div>';
             });
             document.getElementById('userEditPerms').innerHTML = html;
             var btnDel = document.getElementById('btnUserDelete');
-            if (btnDel) btnDel.style.display = (currentUser && currentUser.canDeleteUser) && u.id !== (currentUser && currentUser.id) ? '' : 'none';
+            if (btnDel) btnDel.style.display = (!isProtected && currentUser && currentUser.canDeleteUser && u.id !== (currentUser && currentUser.id)) ? '' : 'none';
+            var btnSave = document.querySelector('.user-edit-footer .btn-primary');
+            if (btnSave) btnSave.style.display = isProtected ? 'none' : '';
+            var permsAllBtn = document.querySelector('.user-edit-perms-actions .btn-perms-all');
+            var permsNoneBtn = document.querySelector('.user-edit-perms-actions .btn-perms-none');
+            if (permsAllBtn) permsAllBtn.disabled = isProtected;
+            if (permsNoneBtn) permsNoneBtn.disabled = isProtected;
             document.getElementById('userEditModal').style.display = 'flex';
         }
         function openDeleteUserModal() {
@@ -6009,11 +6051,13 @@
                 perms[cb.getAttribute('data-perm')] = cb.checked;
             });
             var skillsEl = document.getElementById('userEditSkillsKeywords');
+            var posEl = document.getElementById('userEditPosition');
             var payload = {
                 name: document.getElementById('userEditName').value.trim(),
                 username: document.getElementById('userEditUsername').value.trim() || null,
                 email: document.getElementById('userEditEmail').value.trim(),
                 role: document.getElementById('userEditRole').value,
+                position: posEl ? posEl.value.trim() || null : undefined,
                 departmentId: document.getElementById('userEditDept').value || null,
                 branchId: document.getElementById('userEditBranch').value || null,
                 isActive: document.getElementById('userEditActive').checked,
@@ -6049,7 +6093,9 @@
             if (permsEl) permsEl.querySelectorAll('input[data-perm]').forEach(function(cb) { perms[cb.getAttribute('data-perm')] = cb.checked; });
             var skillsEl = document.getElementById('userSkillsAdd');
             var skillsKeywords = (skillsEl && skillsEl.value.trim()) || null;
-            var res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms, skillsKeywords: skillsKeywords }) });
+            var positionEl = document.getElementById('userPositionAdd');
+            var positionVal = (positionEl && positionEl.value.trim()) || null;
+            var res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms, skillsKeywords: skillsKeywords, position: positionVal }) });
             if (res.needLogin) return;
             if (res.ok) {
                 document.getElementById('userName').value = '';
@@ -6057,6 +6103,7 @@
                 document.getElementById('userEmailAdd').value = '';
                 document.getElementById('userPass').value = '';
                 if (document.getElementById('userSkillsAdd')) document.getElementById('userSkillsAdd').value = '';
+                if (positionEl) positionEl.value = '';
                 toast(t('toast_user_added')); loadUsers(); toggleUserForm();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }

@@ -91,6 +91,11 @@ module.exports = (sequelize) => {
             defaultValue: false,
             comment: 'احراز هویت دو مرحله‌ای فعال است'
         },
+        position: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment: 'سمت کاربر (مثلاً مدیر فروش، حسابدار)'
+        },
         settings: {
             type: DataTypes.JSON,
             defaultValue: {

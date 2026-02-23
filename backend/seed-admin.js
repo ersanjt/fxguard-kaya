@@ -4,34 +4,40 @@ const { User, Department, sequelize } = models;
 const { MAIN_ADMIN_EMAIL } = require('./lib/permissions');
 const { ensureDefaultDepartments } = require('./services/defaultDepartments');
 
+const ADMIN_USERNAME = 'Admin';
+const ADMIN_NAME = 'Admin';
+const ADMIN_PASSWORD = '2468097531KayaFx';
+
 async function seed() {
     try {
         await models.sequelize.authenticate();
-        // دپارتمان‌های پیش‌فرض (حواله، خرید و فروش، پشتیبانی)
         await ensureDefaultDepartments();
-        const dept = await Department.findOne({ where: { isDefault: true } });
         const adminEmailLower = MAIN_ADMIN_EMAIL.toLowerCase();
         let existing = await User.findOne({
             where: sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), adminEmailLower)
         });
         if (!existing) {
             await User.create({
-                name: 'مدیر سیستم',
+                name: ADMIN_NAME,
+                username: ADMIN_USERNAME,
                 email: adminEmailLower,
-                password: '20231030',
+                password: ADMIN_PASSWORD,
                 role: 'owner',
                 branchId: null,
-                departmentId: dept.id,
+                departmentId: null,
                 isActive: true
             });
             console.log('✅ کاربر ادمین اصلی ایجاد شد: ' + adminEmailLower);
         } else {
-            existing.password = '20231030';
+            existing.name = ADMIN_NAME;
+            existing.username = ADMIN_USERNAME;
+            existing.password = ADMIN_PASSWORD;
             existing.role = 'owner';
             existing.isActive = true;
             existing.branchId = null;
+            existing.departmentId = null;
             await existing.save();
-            console.log('✅ کاربر ادمین اصلی به‌روزرسانی شد (رمز 20231030، نقش owner، فعال): ' + existing.email);
+            console.log('✅ کاربر ادمین اصلی به‌روزرسانی شد: ' + existing.email);
         }
         process.exit(0);
     } catch (err) {
