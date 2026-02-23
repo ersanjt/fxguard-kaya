@@ -1653,6 +1653,7 @@
             var m = document.getElementById('transactionModal'); if (!m) return;
             document.getElementById('txModalId').value = '';
             var titleEl = document.getElementById('txModalTitle'); if (titleEl) titleEl.textContent = LANG === 'fa' ? 'ثبت تراکنش' : 'Add transaction';
+            var subEl = document.querySelector('.tx-modal-subtitle'); if (subEl) subEl.textContent = LANG === 'fa' ? 'اطلاعات تراکنش مالی را وارد کنید' : 'Enter financial transaction details';
             m.style.display = 'flex';
             document.getElementById('txModalType').value = 'cash_in';
             document.getElementById('txModalAmount').value = '';
@@ -1677,6 +1678,7 @@
             var tx = res.data;
             document.getElementById('txModalId').value = tx.id;
             var titleEl = document.getElementById('txModalTitle'); if (titleEl) titleEl.textContent = LANG === 'fa' ? 'ویرایش تراکنش' : 'Edit transaction';
+            var subEl = document.querySelector('.tx-modal-subtitle'); if (subEl) subEl.textContent = LANG === 'fa' ? 'اطلاعات تراکنش را ویرایش کنید' : 'Edit transaction details';
             m.style.display = 'flex';
             document.getElementById('txModalType').value = tx.type || 'cash_in';
             document.getElementById('txModalAmount').value = tx.amount || '';
@@ -1709,10 +1711,18 @@
             var t = document.getElementById('txModalType').value;
             var fromBox = document.getElementById('txModalFromBoxWrap'); var toBox = document.getElementById('txModalToBoxWrap');
             var fromBank = document.getElementById('txModalFromBankWrap'); var toBank = document.getElementById('txModalToBankWrap');
-            if (fromBox) fromBox.style.display = ['cash_out','transfer_box','bank_deposit','expense','buy'].indexOf(t) >= 0 ? 'block' : 'none';
-            if (toBox) toBox.style.display = ['cash_in','transfer_box','bank_withdraw','income','sell'].indexOf(t) >= 0 ? 'block' : 'none';
-            if (fromBank) fromBank.style.display = ['bank_withdraw','transfer_account'].indexOf(t) >= 0 ? 'block' : 'none';
-            if (toBank) toBank.style.display = ['bank_deposit','transfer_account'].indexOf(t) >= 0 ? 'block' : 'none';
+            var showFrom = ['cash_out','transfer_box','bank_deposit','expense','buy'].indexOf(t) >= 0;
+            var showTo = ['cash_in','transfer_box','bank_withdraw','income','sell'].indexOf(t) >= 0;
+            var showFromBank = ['bank_withdraw','transfer_account'].indexOf(t) >= 0;
+            var showToBank = ['bank_deposit','transfer_account'].indexOf(t) >= 0;
+            if (fromBox) fromBox.style.display = showFrom ? 'block' : 'none';
+            if (toBox) toBox.style.display = showTo ? 'block' : 'none';
+            if (fromBank) fromBank.style.display = showFromBank ? 'block' : 'none';
+            if (toBank) toBank.style.display = showToBank ? 'block' : 'none';
+            var dynSection = document.querySelector('.tx-modal-section-dynamic');
+            if (dynSection) {
+                if (showFrom || showTo || showFromBank || showToBank) { dynSection.classList.remove('tx-dynamic-hidden'); } else { dynSection.classList.add('tx-dynamic-hidden'); }
+            }
         }
         async function loadCashBoxesForTxSelect() {
             var res = await apiFetch('/api/exchange/cash-boxes');
@@ -1736,6 +1746,7 @@
             sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'بدون مشتری' : 'No customer') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + escapeHtml(c.name || c.phone || '') + (c.phone ? ' · ' + escapeHtml(c.phone) : '') + '</option>'; }).join('');
         }
         (function(){ var el = document.getElementById('txModalType'); if (el) el.addEventListener('change', txModalUpdateFields); })();
+        (function(){ var m = document.getElementById('transactionModal'); if (m) m.addEventListener('click', function(e) { if (e.target === m) closeTransactionModal(); }); })();
         function closeTransactionModal() { var m = document.getElementById('transactionModal'); if (m) m.style.display = 'none'; }
         async function saveTransactionFromModal() {
             var txId = (document.getElementById('txModalId') && document.getElementById('txModalId').value) || '';
@@ -6883,11 +6894,13 @@
             var btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
             if (btnDisconnect && btnDisconnect.disabled) return;
             if (btnDisconnect) btnDisconnect.disabled = true;
-            toast(LANG === 'fa' ? 'در حال قطع اتصال...' : 'Disconnecting...');
+            toast(LANG === 'fa' ? 'در حال خروج و حذف سشن واتساپ...' : 'Logging out and clearing session...');
             try {
-                var res = await apiFetch('/api/gateway/stop', { method: 'POST', body: JSON.stringify({}) });
+                var res = await apiFetch('/api/gateway/logout', { method: 'POST', body: JSON.stringify({}) });
                 if (res.needLogin) { if (btnDisconnect) btnDisconnect.disabled = false; return; }
-                var msg = res.ok ? t('done_msg') : ((res.data && res.data.error) || res.error || t('err_generic'));
+                var msg = res.ok
+                    ? (LANG === 'fa' ? 'سشن واتساپ حذف شد. حالا «شروع واتساپ» بزنید تا QR جدید بیاد.' : 'WhatsApp session cleared. Click "Start WhatsApp" to get a new QR code.')
+                    : ((res.data && res.data.error) || res.error || t('err_generic'));
                 toast(msg, !res.ok);
                 if (res.ok) setTimeout(loadWhatsappStatus, 1500);
             } catch (e) {

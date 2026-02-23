@@ -550,20 +550,29 @@ app.post('/api/stop', async (req, res) => {
 
 app.post('/api/logout', async (req, res) => {
   try {
-    if (!client) return res.json({ ok: true, status: 'no_client' });
+    if (client) {
+      isClientReady = false;
+      isClientStarting = false;
 
-    isClientReady = false;
-    isClientStarting = false;
+      await client.logout().catch(() => {});
+      await client.destroy().catch(() => {});
+      client = null;
+    }
 
-    await client.logout().catch(() => {});
-    await client.destroy().catch(() => {});
-    client = null;
+    const sessionPath = path.resolve(process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth'));
+    const fs = require('fs');
+    if (fs.existsSync(sessionPath)) {
+      fs.rmSync(sessionPath, { recursive: true, force: true });
+      logger.info('Session folder deleted for fresh QR', { sessionPath });
+    }
 
     redisClient.set('whatsapp:status', 'logged_out').catch(() => {});
     redisClient.del('whatsapp:qr').catch(() => {});
 
     qrCodeData = null;
     lastQrImageDataUrl = null;
+    connectionPhase = null;
+    lastAuthFailureMessage = null;
 
     io.emit('disconnected', { reason: 'logged_out' });
     res.json({ ok: true, status: 'logged_out' });

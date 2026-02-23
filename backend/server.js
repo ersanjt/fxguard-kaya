@@ -1107,6 +1107,14 @@ apiRouter.post('/gateway/stop', authMiddleware, (req, res) => {
         .catch(e => res.status(503).json({ error: e.response?.data?.error || 'Gateway در دسترس نیست' }));
 });
 
+// خروج کامل از واتساپ و حذف سشن (برای اتصال شماره جدید)
+apiRouter.post('/gateway/logout', authMiddleware, (req, res) => {
+    if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
+    gatewayPost('/api/logout', {}, { timeout: 20000 })
+        .then(r => res.json(r.data))
+        .catch(e => res.status(503).json({ error: e.response?.data?.error || 'Gateway در دسترس نیست' }));
+});
+
 apiRouter.post('/admin/start-gateway', authMiddleware, (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
     if (gatewayProcess) return res.json({ message: 'Gateway از قبل در حال اجراست' });

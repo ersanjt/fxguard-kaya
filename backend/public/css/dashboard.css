@@ -1949,21 +1949,23 @@
         .customer-modal-save { min-width: 120px; }
         @media (max-width: 480px) { .customer-modal-grid { grid-template-columns: 1fr; } .customer-modal-header { padding: 16px 18px; } .customer-modal-body { padding: 16px 18px; } .customer-modal-footer { padding: 14px 18px; } }
         /* ========== مودال تراکنش — طراحی بهبود یافته ========== */
-        #transactionModal .tx-modal-box { max-width: min(540px, calc(100vw - 32px)); padding: 0; overflow: hidden; }
+        #transactionModal .tx-modal-box { max-width: min(540px, calc(100vw - 32px)); padding: 0; overflow: hidden; animation: txModalIn 0.25s ease-out; }
+        @keyframes txModalIn { from { opacity: 0; transform: translateY(16px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        #transactionModal.modal-overlay { cursor: pointer; }
+        #transactionModal .tx-modal-box { cursor: auto; }
         .tx-modal-header { display: flex; align-items: flex-start; gap: 14px; padding: 20px 24px; background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(16,185,129,0.06) 100%); border-bottom: 1px solid var(--border); }
         .tx-modal-header-icon { width: 48px; height: 48px; min-width: 48px; border-radius: 12px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .tx-modal-header-text { flex: 1; min-width: 0; }
         .tx-modal-header-text h3 { margin: 0 0 4px; font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
         .tx-modal-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
         .tx-modal-close { background: none; border: none; font-size: 1.6rem; line-height: 1; padding: 8px; margin: -8px -8px 0 0; border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; transition: background 0.2s, color 0.2s; }
-        .tx-modal-close:hover { background: rgba(0,0,0,0.06); color: var(--text-primary); }
+        .tx-modal-close:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
         .tx-modal-body { padding: 20px 24px; max-height: 60vh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
         .tx-modal-section { margin-bottom: 20px; }
         .tx-modal-section:last-child { margin-bottom: 0; }
         .tx-modal-section-title { margin: 0 0 14px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-        .tx-modal-section-dynamic { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; margin-bottom: 20px; }
-        .tx-modal-section-dynamic:empty { display: none; margin: 0; }
-        .tx-modal-section-dynamic .tx-field-wrap[style*="display: none"], .tx-modal-section-dynamic .tx-field-wrap[style*="display:none"] { display: none !important; }
+        .tx-modal-section-dynamic { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; padding: 16px 0; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+        .tx-modal-section-dynamic.tx-dynamic-hidden { display: none; }
         .tx-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
         .tx-modal-field-full { grid-column: 1 / -1; }
         .tx-modal-field label { display: block; margin-bottom: 6px; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
@@ -1975,14 +1977,21 @@
         .tx-modal-footer { display: flex; gap: 12px; justify-content: flex-end; align-items: center; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-secondary); }
         .tx-modal-footer .btn-secondary { margin-bottom: 0; }
         .tx-modal-save { min-width: 120px; }
+        @media (max-width: 768px) {
+            .tx-modal-grid { gap: 12px 14px; }
+            .tx-modal-section-dynamic { gap: 12px 14px; }
+        }
         @media (max-width: 480px) {
             #transactionModal .tx-modal-box { max-width: calc(100vw - 24px) !important; }
-            .tx-modal-header { padding: 16px 18px; }
+            .tx-modal-header { padding: 16px 18px; gap: 12px; }
+            .tx-modal-header-icon { width: 40px; height: 40px; min-width: 40px; border-radius: 10px; }
+            .tx-modal-header-icon svg { width: 20px; height: 20px; }
+            .tx-modal-header-text h3 { font-size: 1.05rem; }
             .tx-modal-body { padding: 16px 18px; max-height: 55vh; }
             .tx-modal-footer { padding: 14px 18px; flex-direction: column; }
             .tx-modal-footer .btn-primary, .tx-modal-footer .btn-secondary { width: 100%; min-height: 44px; }
-            .tx-modal-grid { grid-template-columns: 1fr; }
-            .tx-modal-section-dynamic { grid-template-columns: 1fr; }
+            .tx-modal-grid { grid-template-columns: 1fr; gap: 12px; }
+            .tx-modal-section-dynamic { grid-template-columns: 1fr; gap: 12px; }
         }
         .badge.active { background: var(--accent-soft); color: var(--accent); }
         .badge.completed { background: var(--success-soft, rgba(16, 185, 129, 0.15)); color: var(--success, #10b981); }
