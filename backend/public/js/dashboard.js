@@ -137,7 +137,10 @@
                     section_manage_tickets: 'مدیریت تیکت‌ها (حذف/آرشیو)',
                     header_search: 'جستج�� در �&کا��&ات�R �&شتر�Rا� ...',
                     header_search_aria: 'جستج�� در �&کا��&ات �� �&شتر�Rا� ',
-                    header_logout: 'خر��ج',
+                    header_logout: 'خروج',
+                    header_dropdown_avatar: 'تغییر عکس پروفایل',
+                    header_dropdown_password: 'تغییر رمز عبور',
+                    header_dropdown_2fa: 'احراز دو مرحله‌ای',
                     logo_kaya: 'صراف�R کا�Rا',
                     page_conversations: '�&کا��&ات',
                     page_customers: '�&شتر�Rا� ',
@@ -398,6 +401,9 @@
                     header_search: 'Search conversations, customers...',
                     header_search_aria: 'Search conversations and customers',
                     header_logout: 'Log out',
+                    header_dropdown_avatar: 'Change Avatar',
+                    header_dropdown_password: 'Change Password',
+                    header_dropdown_2fa: '2-Step Verification',
                     logo_kaya: 'Kaya Exchange',
                     page_dashboard: 'Dashboard',
                     dashboard_welcome: 'Key information and quick access to panel sections',
@@ -3871,6 +3877,10 @@
                 var perm = el.getAttribute('data-perm');
                 el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
             });
+            document.querySelectorAll('.user-dropdown-menu .user-dropdown-item[data-perm]').forEach(function(el) {
+                var perm = el.getAttribute('data-perm');
+                el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
+            });
             var activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
         }
@@ -7011,6 +7021,38 @@
                     if (menu) menu.setAttribute('aria-hidden', 'true');
                     if (btn) btn.setAttribute('aria-expanded', 'false');
                 }
+            };
+            window.toggleUserDropdown = function(e) {
+                if (e) e.stopPropagation();
+                var header = document.querySelector('header.header');
+                var menu = document.getElementById('userDropdownMenu');
+                var trigger = document.getElementById('userDropdownTrigger');
+                var triggerMobile = document.getElementById('userDropdownTriggerMobile');
+                if (!header || !menu) return;
+                var open = header.classList.toggle('user-dropdown-open');
+                menu.setAttribute('aria-hidden', !open);
+                if (trigger) trigger.setAttribute('aria-expanded', open);
+                if (triggerMobile) triggerMobile.setAttribute('aria-expanded', open);
+                if (open) {
+                    closeLangDropdown();
+                    var closeOnOutside = function(ev) {
+                        if (!header.contains(ev.target)) {
+                            closeUserDropdown();
+                            document.removeEventListener('click', closeOnOutside);
+                        }
+                    };
+                    setTimeout(function() { document.addEventListener('click', closeOnOutside); }, 0);
+                }
+            };
+            window.closeUserDropdown = function() {
+                var header = document.querySelector('header.header');
+                var menu = document.getElementById('userDropdownMenu');
+                var trigger = document.getElementById('userDropdownTrigger');
+                var triggerMobile = document.getElementById('userDropdownTriggerMobile');
+                if (header) header.classList.remove('user-dropdown-open');
+                if (menu) menu.setAttribute('aria-hidden', 'true');
+                if (trigger) trigger.setAttribute('aria-expanded', 'false');
+                if (triggerMobile) triggerMobile.setAttribute('aria-expanded', 'false');
             };
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
