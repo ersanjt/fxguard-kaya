@@ -63,7 +63,8 @@ header.scrolled { background: rgba(10,14,23,0.98); }
 .nav { display: flex; gap: 32px; align-items: center; }
 .nav a { color: var(--text-muted); font-weight: 500; padding: 8px 12px; border-radius: 8px; transition: all 0.25s; }
 .nav a:hover { color: var(--accent-light); background: var(--accent-soft); }
-.btn {
+.btn,
+a.btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -75,6 +76,7 @@ header.scrolled { background: rgba(10,14,23,0.98); }
     transition: all 0.2s;
     border: none;
     font-family: inherit;
+    text-decoration: none;
 }
 .btn-primary {
     background: linear-gradient(135deg, var(--accent) 0%, #047857 100%);
@@ -89,24 +91,37 @@ header.scrolled { background: rgba(10,14,23,0.98); }
 }
 .btn-wa { background: linear-gradient(135deg, #25D366 0%, #20bd5a 100%); color: white !important; box-shadow: 0 4px 16px rgba(37,211,102,0.35); }
 .btn-wa:hover { background: linear-gradient(135deg, #34d399 0%, #25D366 100%); transform: translateY(-2px); box-shadow: 0 6px 24px rgba(37,211,102,0.45); color: white !important; }
-.btn-outline {
+.btn-outline,
+a.btn-outline {
     background: transparent;
-    color: var(--accent-light);
+    color: var(--accent-light) !important;
     border: 2px solid var(--accent);
+    text-decoration: none;
+    cursor: pointer;
 }
-.btn-outline:hover { background: var(--accent-soft); border-color: var(--accent-light); transform: translateY(-1px); }
-/* CTA outline (glass style on green bg) */
-.btn-outline-light {
-    background: rgba(255,255,255,0.1) !important;
-    color: white !important;
-    border: 2px solid rgba(255,255,255,0.5) !important;
+.btn-outline:hover,
+a.btn-outline:hover {
+    background: var(--accent-soft);
+    border-color: var(--accent-light);
+    color: var(--accent-light) !important;
+    transform: translateY(-1px);
 }
-.btn-outline-light:hover {
-    background: rgba(255,255,255,0.25) !important;
+/* CTA outline (glass style on green bg) - high contrast */
+.btn-outline-light,
+a.btn-outline-light {
+    background: rgba(255,255,255,0.2) !important;
     color: white !important;
-    border-color: rgba(255,255,255,0.8) !important;
+    border: 2px solid rgba(255,255,255,0.75) !important;
+    text-decoration: none !important;
+    cursor: pointer;
+}
+.btn-outline-light:hover,
+a.btn-outline-light:hover {
+    background: rgba(255,255,255,0.4) !important;
+    color: white !important;
+    border-color: white !important;
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
 }
 /* Header buttons - ensure correct colors */
 header .btn-primary { background: linear-gradient(135deg, var(--accent) 0%, #047857 100%) !important; color: white !important; }
