@@ -141,6 +141,8 @@
                     header_dropdown_avatar: 'تغییر عکس پروفایل',
                     header_dropdown_password: 'تغییر رمز عبور',
                     header_dropdown_2fa: 'احراز دو مرحله‌ای',
+                    notify_pending: 'در انتظار',
+                    notify_see_all_tickets: 'مشاهده همه تیکت‌ها',
                     logo_kaya: 'صراف�R کا�Rا',
                     page_conversations: '�&کا��&ات',
                     page_customers: '�&شتر�Rا� ',
@@ -404,6 +406,8 @@
                     header_dropdown_avatar: 'Change Avatar',
                     header_dropdown_password: 'Change Password',
                     header_dropdown_2fa: '2-Step Verification',
+                    notify_pending: 'Pending',
+                    notify_see_all_tickets: 'See All Tickets',
                     logo_kaya: 'Kaya Exchange',
                     page_dashboard: 'Dashboard',
                     dashboard_welcome: 'Key information and quick access to panel sections',
@@ -876,11 +880,10 @@
             }
             if (window.hasNewInternalChat) window.navBadgeCounts['internal-chat'] = 1;
             var notifyBadge = document.getElementById('headerNotifyBadge');
-            if (notifyBadge) {
-                var n = window.navBadgeCounts.announcements || 0;
-                notifyBadge.style.display = n > 0 ? '' : 'none';
-                notifyBadge.textContent = n > 99 ? '99+' : String(n);
-            }
+            var notifyBadgeMobile = document.getElementById('headerNotifyBadgeMobile');
+            var n = (window.navBadgeCounts.announcements || 0) + (window.navBadgeCounts.tickets || 0);
+            if (notifyBadge) { notifyBadge.style.display = n > 0 ? '' : 'none'; notifyBadge.textContent = n > 99 ? '99+' : String(n); }
+            if (notifyBadgeMobile) { notifyBadgeMobile.style.display = n > 0 ? '' : 'none'; notifyBadgeMobile.textContent = n > 99 ? '99+' : String(n); }
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
                 var page = link.getAttribute('data-page');
                 var oldBadge = link.querySelector('.nav-badge, .nav-badge-dot');
@@ -3877,7 +3880,14 @@
                 var perm = el.getAttribute('data-perm');
                 el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
             });
+            document.querySelectorAll('#headerNotifyBtn, #headerNotifyBtnMobile').forEach(function(el) {
+                el.style.display = (can('announcements') || can('tickets')) ? '' : 'none';
+            });
             document.querySelectorAll('.user-dropdown-menu .user-dropdown-item[data-perm]').forEach(function(el) {
+                var perm = el.getAttribute('data-perm');
+                el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
+            });
+            document.querySelectorAll('.notify-section[data-perm]').forEach(function(el) {
                 var perm = el.getAttribute('data-perm');
                 el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
             });
@@ -7053,6 +7063,94 @@
                 if (menu) menu.setAttribute('aria-hidden', 'true');
                 if (trigger) trigger.setAttribute('aria-expanded', 'false');
                 if (triggerMobile) triggerMobile.setAttribute('aria-expanded', 'false');
+            };
+            window.toggleNotifyDropdown = function(e) {
+                if (e) e.stopPropagation();
+                var header = document.querySelector('header.header');
+                var dropdown = document.getElementById('headerNotifyDropdown');
+                var btn = document.getElementById('headerNotifyBtn');
+                var btnMobile = document.getElementById('headerNotifyBtnMobile');
+                if (!header || !dropdown) return;
+                var open = header.classList.toggle('notify-dropdown-open');
+                dropdown.setAttribute('aria-hidden', !open);
+                if (btn) btn.setAttribute('aria-expanded', open);
+                if (btnMobile) btnMobile.setAttribute('aria-expanded', open);
+                if (open) {
+                    closeUserDropdown();
+                    closeLangDropdown();
+                    loadNotifyDropdownData();
+                    var closeOnOutside = function(ev) {
+                        if (!header.contains(ev.target)) {
+                            closeNotifyDropdown();
+                            document.removeEventListener('click', closeOnOutside);
+                        }
+                    };
+                    setTimeout(function() { document.addEventListener('click', closeOnOutside); }, 0);
+                }
+            };
+            window.closeNotifyDropdown = function() {
+                var header = document.querySelector('header.header');
+                var dropdown = document.getElementById('headerNotifyDropdown');
+                var btn = document.getElementById('headerNotifyBtn');
+                var btnMobile = document.getElementById('headerNotifyBtnMobile');
+                if (header) header.classList.remove('notify-dropdown-open');
+                if (dropdown) dropdown.setAttribute('aria-hidden', 'true');
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+                if (btnMobile) btnMobile.setAttribute('aria-expanded', 'false');
+            };
+            window.loadNotifyDropdownData = async function() {
+                var perms = (currentUser && currentUser.permissions) || {};
+                var canAnn = perms.announcements !== false;
+                var canTickets = perms.tickets !== false;
+                var pendingLabel = (typeof t === 'function' ? t('notify_pending') : '') || (LANG === 'fa' ? 'در انتظار' : 'Pending');
+                if (canAnn) {
+                    var annCountEl = document.getElementById('notifyAnnCount');
+                    var annList = document.getElementById('notifyAnnList');
+                    try {
+                        var annRes = await apiFetch('/api/announcements/for-me');
+                        if (annRes.ok && annRes.data && annRes.data.data) {
+                            var anns = (annRes.data.data || []).slice(0, 5);
+                            var unreadCount = anns.filter(function(a) { return !a.read; }).length;
+                            if (annCountEl) annCountEl.textContent = String(unreadCount);
+                            var pendingBadge = document.getElementById('notifyAnnPending');
+                            if (pendingBadge) pendingBadge.innerHTML = '<span id="notifyAnnCount">' + unreadCount + '</span> <span data-i18n="notify_pending">' + pendingLabel + '</span>';
+                            if (annList) {
+                                if (anns.length === 0) annList.innerHTML = '<div class="notify-empty">' + (typeof t === 'function' ? t('ann_empty') : (LANG === 'fa' ? 'اعلانی وجود ندارد.' : 'No announcements.')) + '</div>';
+                                else annList.innerHTML = anns.map(function(a) {
+                                    var title = (a.title || '').substring(0, 50) + ((a.title || '').length > 50 ? '…' : '');
+                                    var meta = a.read ? (typeof t === 'function' ? t('ann_read') || 'خوانده شده' : 'Read') : (typeof t === 'function' ? t('ann_unread') || 'جدید' : 'New');
+                                    var timeStr = a.createdAt && typeof fmtTZ === 'function' ? fmtTZ(a.createdAt, 'datetime') : '';
+                                    return '<a href="#" class="notify-item" onclick="closeNotifyDropdown(); markAnnouncementReadAndShow(\'' + (a.id || '').replace(/'/g, "\\'") + '\'); showPage(\'announcements\'); return false;"><div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div><div class="notify-item-meta">' + escapeHtml(meta) + (timeStr ? ' · ' + escapeHtml(timeStr) : '') + '</div></div><span class="notify-item-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span></a>';
+                                }).join('');
+                            }
+                        }
+                    } catch (err) { if (annList) annList.innerHTML = '<div class="notify-empty">' + (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load error') + '</div>'; }
+                }
+                if (canTickets) {
+                    var ticketsCountEl = document.getElementById('notifyTicketsCount');
+                    var ticketsList = document.getElementById('notifyTicketsList');
+                    try {
+                        var tkRes = await apiFetch('/api/tickets?limit=5');
+                        var tkStatsRes = await apiFetch('/api/tickets/stats');
+                        var pendingCount = 0;
+                        if (tkStatsRes.ok && tkStatsRes.data) {
+                            var s = tkStatsRes.data;
+                            pendingCount = (s.open || 0) + (s.in_progress || 0);
+                        }
+                        if (ticketsCountEl) ticketsCountEl.textContent = String(pendingCount);
+                        var pendingBadge = document.getElementById('notifyTicketsPending');
+                        if (pendingBadge) pendingBadge.innerHTML = '<span id="notifyTicketsCount">' + pendingCount + '</span> <span data-i18n="notify_pending">' + pendingLabel + '</span>';
+                        if (ticketsList && tkRes.ok && tkRes.data) {
+                            var rows = Array.isArray(tkRes.data.data) ? tkRes.data.data : (Array.isArray(tkRes.data.rows) ? tkRes.data.rows : []);
+                            if (rows.length === 0) ticketsList.innerHTML = '<div class="notify-empty">' + (typeof t === 'function' ? t('empty_tickets') : (LANG === 'fa' ? 'تیکتی وجود ندارد.' : 'No tickets.')) + '</div>';
+                            else ticketsList.innerHTML = rows.map(function(tk) {
+                                var statusLabel = tk.status === 'open' ? (typeof t === 'function' ? t('status_open') : 'Open') : tk.status === 'in_progress' ? (typeof t === 'function' ? t('status_in_progress') : 'In progress') : tk.status === 'closed' ? (typeof t === 'function' ? t('status_closed') : 'Closed') : tk.status === 'resolved' ? (typeof t === 'function' ? t('status_resolved') : 'Resolved') : tk.status || '';
+                                var title = (tk.title || '').substring(0, 45) + ((tk.title || '').length > 45 ? '…' : '');
+                                return '<a href="#" class="notify-item" onclick="closeNotifyDropdown(); showPage(\'tickets\'); setTimeout(function(){ loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\'); }, 200); return false;"><div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div><div class="notify-item-meta">' + escapeHtml(statusLabel) + '</div></div><span class="notify-item-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span></a>';
+                            }).join('');
+                        }
+                    } catch (err) { if (ticketsList) ticketsList.innerHTML = '<div class="notify-empty">' + (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load error') + '</div>'; }
+                }
             };
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;

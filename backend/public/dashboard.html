@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/dashboard.css?v=28">
+    <link rel="stylesheet" href="/css/dashboard.css?v=29">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -121,6 +121,7 @@
                 <button type="button" class="header-menu-btn" id="headerMenuBtn" onclick="toggleSidebarMobile()" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
                 <h1 class="header-mobile-title" id="headerMobileTitle">داشبورد</h1>
                 <div class="header-mobile-actions">
+                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-perm="announcements" onclick="toggleNotifyDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadgeMobile" style="display:none;">0</span></button>
                     <button type="button" class="header-search-trigger header-mobile-search" id="headerSearchTrigger" onclick="openHeaderSearchPopup()" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
                     <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" onclick="toggleUserDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
                 </div>
@@ -152,7 +153,9 @@
                 <div class="header-right">
                     <div class="header-status-wrap">
                         <span class="header-whatsapp-status" id="headerWhatsappStatus" data-perm="whatsapp" title="وضعیت واتساپ"><span class="status-dot"></span><span class="status-label" data-i18n="nav_whatsapp">واتساپ</span></span>
-                        <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-perm="announcements" onclick="showPage('announcements');" aria-label="اعلان‌ها" title="اعلان‌ها"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span></button>
+                        <div class="header-notify-wrap" id="headerNotifyWrap">
+                            <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-perm="announcements" onclick="toggleNotifyDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span></button>
+                        </div>
                     </div>
                     <div class="lang-switch" role="group" data-i18n-aria-label="lang_label" aria-label="زبان">
                         <button type="button" id="headerLangFa" data-lang="fa" onclick="setLang('fa')" aria-pressed="true" aria-label="فارسی">فارسی</button>
@@ -184,6 +187,26 @@
                 <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); var s=document.getElementById('profileTotpSection'); if(s)s.scrollIntoView({behavior:'smooth'}); return false;"><svg viewBox="0 0 24 24"><use href="#icon-shield"/></svg><span data-i18n="header_dropdown_2fa">احراز دو مرحله‌ای</span></a>
                 <div class="user-dropdown-divider"></div>
                 <button type="button" class="user-dropdown-item user-dropdown-logout" role="menuitem" onclick="closeUserDropdown(); logout();"><svg viewBox="0 0 24 24"><use href="#icon-login"/></svg><span data-i18n="header_logout">خروج</span></button>
+            </div>
+            <div class="header-notify-dropdown" id="headerNotifyDropdown" role="dialog" aria-hidden="true">
+                <div class="notify-dropdown-inner">
+                    <div class="notify-section notify-section-announcements" data-perm="announcements">
+                        <div class="notify-section-header">
+                            <h4 class="notify-section-title" data-i18n="nav_announcements">اعلان‌ها</h4>
+                            <span class="notify-pending-badge" id="notifyAnnPending"><span id="notifyAnnCount">0</span> <span data-i18n="notify_pending">در انتظار</span></span>
+                        </div>
+                        <div class="notify-section-list" id="notifyAnnList"></div>
+                        <a href="#announcements" class="notify-see-all" onclick="closeNotifyDropdown(); showPage('announcements'); return false;" data-i18n="ann_view_all">مشاهده همه اعلان‌ها</a>
+                    </div>
+                    <div class="notify-section notify-section-tickets" data-perm="tickets">
+                        <div class="notify-section-header">
+                            <h4 class="notify-section-title" data-i18n="nav_tickets">تیکت‌ها</h4>
+                            <span class="notify-pending-badge" id="notifyTicketsPending"><span id="notifyTicketsCount">0</span> <span data-i18n="notify_pending">در انتظار</span></span>
+                        </div>
+                        <div class="notify-section-list" id="notifyTicketsList"></div>
+                        <a href="#tickets" class="notify-see-all" onclick="closeNotifyDropdown(); showPage('tickets'); return false;" data-i18n="notify_see_all_tickets">مشاهده همه تیکت‌ها</a>
+                    </div>
+                </div>
             </div>
         </header>
         <div id="headerSearchModal" class="modal-overlay header-search-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="headerSearchModalTitle" onclick="if(event.target===this) closeHeaderSearchPopup();">
