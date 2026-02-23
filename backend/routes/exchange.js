@@ -670,4 +670,191 @@ router.get('/account-balance', requireServices, async (req, res) => {
     }
 });
 
+// ========== Account Turnover — گردش حساب ==========
+router.get('/account-turnover', requireServices, async (req, res) => {
+    try {
+        const where = { status: 'approved' };
+        if (req.query.fromDate || req.query.toDate) {
+            where.transactionDate = {};
+            if (req.query.fromDate) where.transactionDate[Op.gte] = req.query.fromDate;
+            if (req.query.toDate) where.transactionDate[Op.lte] = req.query.toDate;
+        }
+        if (req.query.currency) where.currency = req.query.currency;
+
+        const txs = await Transaction.findAll({
+            where,
+            attributes: ['type', 'amount', 'currency', 'fromCashBoxId', 'toCashBoxId', 'fromBankAccountId', 'toBankAccountId'],
+        });
+
+        const [cashBoxes, bankAccounts] = await Promise.all([
+            CashBox.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'currency', 'balance'] }),
+            BankAccount.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'bankName', 'currency', 'balance'] })
+        ]);
+
+        const accountMap = {};
+        cashBoxes.forEach(cb => { accountMap['cb_' + cb.id] = { name: cb.name, type: 'cashbox', currency: cb.currency, balance: parseFloat(cb.balance || 0), debit: 0, credit: 0 }; });
+        bankAccounts.forEach(ba => { accountMap['ba_' + ba.id] = { name: ba.name + (ba.bankName ? ' (' + ba.bankName + ')' : ''), type: 'bank', currency: ba.currency, balance: parseFloat(ba.balance || 0), debit: 0, credit: 0 }; });
+
+        const debitFrom = ['cash_out', 'transfer_box', 'bank_deposit', 'expense', 'buy'];
+        const creditTo = ['cash_in', 'transfer_box', 'bank_withdraw', 'income', 'sell'];
+
+        txs.forEach(tx => {
+            const amt = parseFloat(tx.amount) || 0;
+            if (tx.fromCashBoxId && debitFrom.includes(tx.type)) {
+                const key = 'cb_' + tx.fromCashBoxId;
+                if (accountMap[key]) accountMap[key].debit += amt;
+            }
+            if (tx.toCashBoxId && creditTo.includes(tx.type)) {
+                const key = 'cb_' + tx.toCashBoxId;
+                if (accountMap[key]) accountMap[key].credit += amt;
+            }
+            if (tx.fromBankAccountId && ['bank_withdraw', 'transfer_account'].includes(tx.type)) {
+                const key = 'ba_' + tx.fromBankAccountId;
+                if (accountMap[key]) accountMap[key].debit += amt;
+            }
+            if (tx.toBankAccountId && ['bank_deposit', 'transfer_account'].includes(tx.type)) {
+                const key = 'ba_' + tx.toBankAccountId;
+                if (accountMap[key]) accountMap[key].credit += amt;
+            }
+        });
+
+        const result = Object.values(accountMap).map(a => ({
+            ...a,
+            turnover: a.debit + a.credit,
+            net: a.credit - a.debit
+        }));
+
+        res.json(result);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ========== Exchange Profit & Loss — سود و زیان ==========
+router.get('/profit-loss', requireServices, async (req, res) => {
+    try {
+        const where = { status: 'approved' };
+        if (req.query.fromDate || req.query.toDate) {
+            where.transactionDate = {};
+            if (req.query.fromDate) where.transactionDate[Op.gte] = req.query.fromDate;
+            if (req.query.toDate) where.transactionDate[Op.lte] = req.query.toDate;
+        }
+
+        const txs = await Transaction.findAll({
+            where,
+            attributes: ['type', 'amount', 'currency', 'transactionDate'],
+            order: [['transactionDate', 'ASC']]
+        });
+
+        let totalIncome = 0, totalExpense = 0, totalBuy = 0, totalSell = 0;
+        const byCurrency = {};
+
+        txs.forEach(tx => {
+            const amt = parseFloat(tx.amount) || 0;
+            const curr = tx.currency || 'IRR';
+            if (!byCurrency[curr]) byCurrency[curr] = { income: 0, expense: 0, buy: 0, sell: 0, profit: 0 };
+            if (tx.type === 'income') { totalIncome += amt; byCurrency[curr].income += amt; }
+            if (tx.type === 'expense') { totalExpense += amt; byCurrency[curr].expense += amt; }
+            if (tx.type === 'buy') { totalBuy += amt; byCurrency[curr].buy += amt; }
+            if (tx.type === 'sell') { totalSell += amt; byCurrency[curr].sell += amt; }
+        });
+
+        Object.values(byCurrency).forEach(c => { c.profit = (c.income + c.sell) - (c.expense + c.buy); });
+
+        res.json({
+            totalIncome,
+            totalExpense,
+            totalBuy,
+            totalSell,
+            grossProfit: (totalIncome + totalSell) - (totalExpense + totalBuy),
+            byCurrency
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ========== Expense Journal — دفتر هزینه ==========
+router.get('/expense-journal', requireServices, async (req, res) => {
+    try {
+        const where = { status: 'approved', type: { [Op.in]: ['expense', 'buy'] } };
+        if (req.query.fromDate || req.query.toDate) {
+            where.transactionDate = {};
+            if (req.query.fromDate) where.transactionDate[Op.gte] = req.query.fromDate;
+            if (req.query.toDate) where.transactionDate[Op.lte] = req.query.toDate;
+        }
+        if (req.query.currency) where.currency = req.query.currency;
+
+        const rows = await Transaction.findAll({
+            where,
+            include: [
+                { model: User, as: 'user', attributes: ['id', 'name'] },
+                { model: CashBox, as: 'fromCashBox', attributes: ['id', 'name'] },
+                { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'], required: false }
+            ],
+            order: [['transactionDate', 'DESC'], ['createdAt', 'DESC']],
+            limit: 500
+        });
+
+        const totalAmount = rows.reduce((s, r) => s + parseFloat(r.amount || 0), 0);
+
+        res.json({
+            rows: rows.map(r => ({
+                id: r.id,
+                date: r.transactionDate,
+                type: r.type,
+                amount: parseFloat(r.amount || 0),
+                currency: r.currency,
+                description: r.description,
+                reference: r.reference,
+                user: r.user,
+                fromCashBox: r.fromCashBox,
+                customer: r.customer
+            })),
+            totalAmount,
+            count: rows.length
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ========== Cash Bank Status — وضعیت صندوق و بانک ==========
+router.get('/cash-bank-status', requireServices, async (req, res) => {
+    try {
+        const [cashBoxes, bankAccounts] = await Promise.all([
+            CashBox.findAll({
+                include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }],
+                order: [['currency', 'ASC'], ['name', 'ASC']]
+            }),
+            BankAccount.findAll({
+                include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }],
+                order: [['currency', 'ASC'], ['name', 'ASC']]
+            })
+        ]);
+
+        const byCurrency = {};
+        cashBoxes.forEach(cb => {
+            const c = cb.currency || 'IRR';
+            if (!byCurrency[c]) byCurrency[c] = { cashBoxes: [], bankAccounts: [], totalCash: 0, totalBank: 0, total: 0 };
+            const bal = parseFloat(cb.balance || 0);
+            byCurrency[c].cashBoxes.push({ id: cb.id, name: cb.name, balance: bal, isActive: cb.isActive, branch: cb.branch ? cb.branch.name : null });
+            byCurrency[c].totalCash += bal;
+            byCurrency[c].total += bal;
+        });
+        bankAccounts.forEach(ba => {
+            const c = ba.currency || 'IRR';
+            if (!byCurrency[c]) byCurrency[c] = { cashBoxes: [], bankAccounts: [], totalCash: 0, totalBank: 0, total: 0 };
+            const bal = parseFloat(ba.balance || 0);
+            byCurrency[c].bankAccounts.push({ id: ba.id, name: ba.name, bankName: ba.bankName, accountNumber: ba.accountNumber, balance: bal, isActive: ba.isActive, branch: ba.branch ? ba.branch.name : null });
+            byCurrency[c].totalBank += bal;
+            byCurrency[c].total += bal;
+        });
+
+        res.json(byCurrency);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 module.exports = router;
