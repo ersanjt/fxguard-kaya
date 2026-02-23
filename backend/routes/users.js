@@ -136,17 +136,24 @@ router.post('/', async (req, res) => {
         if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر جدید بسازد' });
         const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords, position } = req.body;
         if (!name || !email || !password) return res.status(400).json({ error: 'نام، ایمیل و رمز الزامی است' });
+        if (String(password).length < 6) return res.status(400).json({ error: 'رمز عبور حداقل ۶ کاراکتر باشد' });
+        const trimmedEmail = String(email).trim().toLowerCase();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return res.status(400).json({ error: 'فرمت ایمیل نامعتبر است' });
+        const existingEmail = await User.findOne({ where: { email: trimmedEmail } });
+        if (existingEmail) return res.status(400).json({ error: 'این ایمیل قبلاً استفاده شده است' });
         if (username !== undefined && username) {
             const trimmed = String(username).trim();
             if (!/^[a-zA-Z0-9_\u0600-\u06FF.-]+$/.test(trimmed)) return res.status(400).json({ error: 'نام کاربری فقط حروف، عدد، خط تیره و نقطه مجاز است' });
             const existing = await User.findOne({ where: { username: trimmed } });
             if (existing) return res.status(400).json({ error: 'این نام کاربری قبلاً استفاده شده است' });
         }
+        const validRoles = ['owner', 'admin', 'manager', 'supervisor', 'agent'];
+        if (role && !validRoles.includes(role)) return res.status(400).json({ error: 'نقش نامعتبر است' });
         const finalBranchId = req.canManageUsers() ? (branchId || null) : (req.user.branchId || null);
         const user = await User.create({
             name,
             username: (username && String(username).trim()) || null,
-            email,
+            email: trimmedEmail,
             password,
             role: role || 'agent',
             position: position ? String(position).trim() : null,
@@ -181,7 +188,11 @@ router.put('/:id', async (req, res) => {
         if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
         if (isMainAdmin(user)) return res.status(403).json({ error: 'اطلاعات ادمین اصلی سیستم غیر قابل ویرایش است. هیچ کاربری حتی با بالاترین سطح دسترسی امکان ویرایش ادمین اصلی را ندارد.' });
         const { name, username, email, role, departmentId, branchId, isActive, permissions, position } = req.body;
-        if (name !== undefined) user.name = name;
+        if (name !== undefined) {
+            const trimmedName = String(name).trim();
+            if (!trimmedName) return res.status(400).json({ error: 'نام نمی‌تواند خالی باشد' });
+            user.name = trimmedName;
+        }
         if (position !== undefined) user.position = position ? String(position).trim() : null;
         if (username !== undefined) {
             const trimmed = String(username || '').trim();
@@ -192,8 +203,22 @@ router.put('/:id', async (req, res) => {
                 user.username = trimmed;
             } else user.username = null;
         }
-        if (email !== undefined) user.email = email;
-        if (role !== undefined) user.role = role;
+        if (email !== undefined) {
+            const trimmed = String(email).trim().toLowerCase();
+            if (!trimmed) return res.status(400).json({ error: 'ایمیل الزامی است' });
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) return res.status(400).json({ error: 'فرمت ایمیل نامعتبر است' });
+            const existingEmail = await User.findOne({ where: { email: trimmed } });
+            if (existingEmail && existingEmail.id !== user.id) return res.status(400).json({ error: 'این ایمیل قبلاً استفاده شده است' });
+            user.email = trimmed;
+        }
+        if (role !== undefined) {
+            const validRoles = ['owner', 'admin', 'manager', 'supervisor', 'agent'];
+            if (!validRoles.includes(role)) return res.status(400).json({ error: 'نقش نامعتبر است' });
+            if (user.id === req.userId && req.user.role === 'owner' && role !== 'owner') {
+                return res.status(400).json({ error: 'مالک نمی‌تواند نقش خود را تغییر دهد' });
+            }
+            user.role = role;
+        }
         if (departmentId !== undefined) user.departmentId = departmentId;
         if (branchId !== undefined && req.canManageUsers()) user.branchId = branchId || null;
         if (isActive !== undefined) user.isActive = !!isActive;

@@ -6052,10 +6052,12 @@
             });
             var skillsEl = document.getElementById('userEditSkillsKeywords');
             var posEl = document.getElementById('userEditPosition');
+            var editEmail = document.getElementById('userEditEmail').value.trim();
+            if (!editEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail)) { toast(LANG === 'fa' ? 'فرمت ایمیل نامعتبر است' : 'Invalid email format', true); return; }
             var payload = {
                 name: document.getElementById('userEditName').value.trim(),
                 username: document.getElementById('userEditUsername').value.trim() || null,
-                email: document.getElementById('userEditEmail').value.trim(),
+                email: editEmail,
                 role: document.getElementById('userEditRole').value,
                 position: posEl ? posEl.value.trim() || null : undefined,
                 departmentId: document.getElementById('userEditDept').value || null,
@@ -6085,6 +6087,8 @@
             var email = document.getElementById('userEmailAdd').value.trim();
             var password = document.getElementById('userPass').value;
             if (!name || !email || !password) { toast(t('required_name_email_pass'), true); return; }
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast(LANG === 'fa' ? 'فرمت ایمیل نامعتبر است' : 'Invalid email format', true); return; }
+            if (password.length < 6) { toast(LANG === 'fa' ? 'رمز عبور حداقل ۶ کاراکتر باشد' : 'Password must be at least 6 characters', true); return; }
             var username = (document.getElementById('userUsernameAdd') && document.getElementById('userUsernameAdd').value) ? document.getElementById('userUsernameAdd').value.trim() : null;
             var branchId = document.getElementById('userBranch').value || null;
             var deptId = document.getElementById('userDept').value || null;
