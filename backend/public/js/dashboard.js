@@ -6940,11 +6940,17 @@
             } else {
                 qrBox.style.display = 'none';
                 if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
-                if (btnStartClient) { btnStartClient.style.display = 'inline-block'; btnStartClient.textContent = t('whatsapp_start_client_btn'); }
-                if (data && data.starting && qrUnavailable) {
-                    qrUnavailable.style.display = 'block';
+                if (data && data.starting) {
+                    if (btnStartClient) btnStartClient.style.display = 'none';
+                    if (qrUnavailable) {
+                        qrUnavailable.style.display = 'block';
+                        qrUnavailable.textContent = LANG === 'fa' ? 'در حال آماده‌سازی QR... لطفاً صبر کنید.' : 'Preparing QR code... Please wait.';
+                    }
                     qrRetryTimeout = setTimeout(function() { loadWhatsappStatus(false); }, WHATSAPP_QR_RETRY_MS);
-                } else if (qrUnavailable) qrUnavailable.style.display = 'none';
+                } else {
+                    if (btnStartClient) { btnStartClient.style.display = 'inline-block'; btnStartClient.textContent = t('whatsapp_start_client_btn'); }
+                    if (qrUnavailable) qrUnavailable.style.display = 'none';
+                }
             }
         }
 
