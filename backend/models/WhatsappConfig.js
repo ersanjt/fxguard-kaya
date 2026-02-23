@@ -32,6 +32,12 @@ module.exports = (sequelize) => {
             type: DataTypes.UUID,
             allowNull: true,
             comment: 'دپارتمان مقصد برای escalation؛ خالی = دپارتمان پیش‌فرض'
+        },
+        aiAnswerEnabled: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+            allowNull: true,
+            comment: 'فعال بودن پاسخ خودکار هوش مصنوعی (نیاز به OPENAI_API_KEY در .env)'
         }
     }, {
         timestamps: true,

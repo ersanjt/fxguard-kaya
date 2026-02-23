@@ -1088,6 +1088,12 @@
                                 <textarea id="whatsappWelcomeMessage" rows="4" data-i18n-ph="whatsapp_welcome_ph" placeholder="سلام! به صرافی کایا خوش آمدید. در خدمت شما هستیم." class="whatsapp-textarea"></textarea>
                                 <button type="button" class="btn-primary" onclick="saveWhatsappWelcomeConfig()" data-i18n="btn_save">ذخیره</button>
                             </div>
+                            <div id="whatsappAIBox" class="whatsapp-card form-box">
+                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی (OpenAI)</h3>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون پاسخ خودکار (کلمات کلیدی) جواب ندهد، هوش مصنوعی به پیام مشتری پاسخ می‌دهد. همچنین مسیریابی به دپارتمان مناسب با AI انجام می‌شود. نیاز به OPENAI_API_KEY در .env</p>
+                                <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAIEnabled" checked> <span data-i18n="whatsapp_ai_enabled">فعال</span></label>
+                                <button type="button" class="btn-primary" onclick="saveWhatsappAIConfig()" data-i18n="btn_save">ذخیره</button>
+                            </div>
                             <div id="whatsappUnansweredBox" class="whatsapp-card form-box">
                                 <h3 class="whatsapp-card-title" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_unanswered_hint">وقتی مشتری پیام می‌دهد و کسی جواب نمی‌دهد، بعد از مدت مشخص اعلان ارسال می‌شود و در صورت ادامه، مکالمه به دپارتمان پشتیبانی برگردانده می‌شود.</p>
