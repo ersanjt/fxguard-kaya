@@ -6923,11 +6923,20 @@
             try {
                 var res = await apiFetch('/api/gateway/logout', { method: 'POST', body: JSON.stringify({}) });
                 if (res.needLogin) { if (btnDisconnect) btnDisconnect.disabled = false; return; }
-                var msg = res.ok
-                    ? (LANG === 'fa' ? 'سشن واتساپ حذف شد. حالا «شروع واتساپ» بزنید تا QR جدید بیاد.' : 'WhatsApp session cleared. Click "Start WhatsApp" to get a new QR code.')
-                    : ((res.data && res.data.error) || res.error || t('err_generic'));
-                toast(msg, !res.ok);
-                if (res.ok) setTimeout(loadWhatsappStatus, 1500);
+                if (!res.ok) {
+                    toast((res.data && res.data.error) || res.error || t('err_generic'), true);
+                    if (btnDisconnect) btnDisconnect.disabled = false;
+                    return;
+                }
+                toast(LANG === 'fa' ? 'در حال ایجاد QR جدید...' : 'Generating new QR code...');
+                setWhatsappStatusBadge('starting');
+                var startRes = await apiFetch('/api/gateway/start', { method: 'POST' });
+                if (startRes.ok) {
+                    toast(LANG === 'fa' ? 'QR جدید در حال آماده‌سازی... لطفاً چند ثانیه صبر کنید.' : 'New QR code loading... Please wait a few seconds.');
+                } else {
+                    toast(LANG === 'fa' ? 'خطا در شروع مجدد واتساپ' : 'Error restarting WhatsApp', true);
+                }
+                setTimeout(loadWhatsappStatus, 3000);
             } catch (e) {
                 toast((e && e.message) || t('err_generic'), true);
             }
