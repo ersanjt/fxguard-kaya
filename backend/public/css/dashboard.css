@@ -276,6 +276,7 @@
         .sidebar .nav-section-collapsible.collapsed .nav-section-chevron { transform: rotate(-90deg); }
         .sidebar .nav-subsection { margin-bottom: 12px; }
         .sidebar .nav-subsection:last-child { margin-bottom: 0; }
+        .sidebar .nav-subsection .nav-subsection { margin-bottom: 8px; padding-inline-start: 8px; border-inline-start: 2px solid rgba(45,63,95,0.4); }
         .sidebar .nav-subsection-title { display: block; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); padding: 8px 16px 6px; margin: 0 8px 4px; opacity: 0.85; border-bottom: 1px solid rgba(45,63,95,0.35); }
         .sidebar a.nav-link,
         .sidebar .nav-link { display: flex; align-items: center; gap: 14px; padding: 11px 16px; color: var(--text-secondary); text-decoration: none; border-radius: 10px; transition: all 0.2s ease; font-size: 0.9375rem; margin: 0 8px 2px; min-width: 0; position: relative; }

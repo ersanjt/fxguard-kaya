@@ -55,6 +55,8 @@ window.__I18N_TR = {
     nav_departments: 'Departmanlar',
     nav_users: 'Kullanıcılar',
     nav_branches: 'Şubeler',
+    nav_branches_group: 'Şubeler grubu',
+    nav_rates_settings: 'Kur ayarları',
     nav_supervision: 'Denetim (Sahip)',
     nav_staff_activity: 'Girişler ve çevrimiçi durum',
     nav_settings: 'Ayarlar',

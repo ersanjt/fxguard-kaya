@@ -55,6 +55,8 @@ window.__I18N_EN = {
     nav_departments: 'Departments',
     nav_users: 'Users',
     nav_branches: 'Branches',
+    nav_branches_group: 'Branches & subsidiaries',
+    nav_rates_settings: 'Rates settings',
     nav_supervision: 'Supervision (Owner)',
     nav_staff_activity: 'Logins & online status',
     nav_settings: 'Settings',

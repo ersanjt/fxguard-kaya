@@ -55,6 +55,8 @@ window.__I18N_FA = {
     nav_departments: 'دپارتمان‌ها',
     nav_users: 'کاربران',
     nav_branches: 'شعب',
+    nav_branches_group: 'مجموعه شعب',
+    nav_rates_settings: 'تنظیم نرخ',
     nav_supervision: 'نظارت (مالک)',
     nav_staff_activity: 'ورودها و وضعیت آنلاین',
     nav_settings: 'تنظیمات',
