@@ -1270,6 +1270,7 @@
                     <div class="services-tabs-wrap">
                         <div class="services-tabs" role="tablist">
                             <button type="button" class="services-tab active" data-tab="summary" role="tab" aria-selected="true" data-i18n="tab_summary">خلاصه موجودی</button>
+                            <button type="button" class="services-tab" data-tab="statement" role="tab" aria-selected="false" data-i18n="tab_statement">صورت حساب</button>
                             <button type="button" class="services-tab" data-tab="services" role="tab" aria-selected="false" data-i18n="tab_services">سرویس‌ها</button>
                             <button type="button" class="services-tab" data-tab="cashboxes" role="tab" aria-selected="false" data-i18n="tab_cashboxes">صندوق‌ها</button>
                             <button type="button" class="services-tab" data-tab="bankaccounts" role="tab" aria-selected="false" data-i18n="tab_bankaccounts">حساب‌های بانکی</button>
@@ -1292,6 +1293,61 @@
                                 <div id="summaryBankAccounts" class="exchange-summary-list"></div>
                             </div>
                         </div>
+                        <div class="exchange-summary-grid" style="margin-top:24px;">
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="currency_position">وضعیت ارزی</h4>
+                                <div id="summaryCurrencyPosition" class="exchange-summary-list"></div>
+                            </div>
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="outstanding_balance">مانده حساب‌ها</h4>
+                                <div id="summaryOutstandingBalance" class="exchange-summary-list"></div>
+                            </div>
+                        </div>
+                        <div class="exchange-summary-grid" style="margin-top:24px;">
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="pending_inward">دریافت‌های در انتظار</h4>
+                                <div id="summaryPendingInward" class="exchange-summary-list"></div>
+                            </div>
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="pending_outward">پرداخت‌های در انتظار</h4>
+                                <div id="summaryPendingOutward" class="exchange-summary-list"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="servicesStatementPanel" class="services-panel" role="tabpanel">
+                        <div class="statement-toolbar">
+                            <button type="button" class="btn-primary btn-sm" onclick="openStatementFilters()" data-i18n="btn_search">جستجو</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="exportStatementPDF()" data-i18n="export_pdf">خروجی PDF</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="exportStatementExcel()" data-i18n="export_excel">خروجی Excel</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="showAccountBalance()" data-i18n="account_balance_btn">موجودی حساب</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="loadStatement()" data-i18n="btn_refresh">بروزرسانی</button>
+                            <div class="statement-toolbar-right">
+                                <input type="color" id="stmtChooseColor" value="#ffeb3b" title="انتخاب رنگ">
+                                <button type="button" class="btn-secondary btn-sm" onclick="stmtUnmarkAll()" data-i18n="unmark_all">حذف علامت‌ها</button>
+                            </div>
+                        </div>
+                        <div id="statementCustomerTitle" class="statement-customer-title" style="display:none;"></div>
+                        <div id="statementTableWrap" class="statement-table-wrap">
+                            <table class="statement-table" id="statementTable">
+                                <thead>
+                                    <tr>
+                                        <th class="stmt-col-sel"></th>
+                                        <th class="stmt-col-act"></th>
+                                        <th data-i18n="col_date">تاریخ</th>
+                                        <th data-i18n="col_type">نوع</th>
+                                        <th data-i18n="col_number">شماره</th>
+                                        <th data-i18n="col_narration">شرح</th>
+                                        <th data-i18n="currency">ارز</th>
+                                        <th class="stmt-num" data-i18n="col_debit">بدهکار</th>
+                                        <th class="stmt-num" data-i18n="col_credit">بستانکار</th>
+                                        <th class="stmt-num" data-i18n="col_balance">مانده</th>
+                                        <th data-i18n="col_sign">نوع</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="statementBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="statementEmpty" class="empty" style="display:none;"></div>
                     </div>
                     <div id="servicesServicesPanel" class="services-panel" role="tabpanel">
                         <div class="services-panel-toolbar">
@@ -1317,7 +1373,7 @@
                             <div class="transaction-filters">
                                 <input type="date" id="txFromDate" data-i18n-ph="from_date" aria-label="از تاریخ">
                                 <input type="date" id="txToDate" data-i18n-ph="to_date" aria-label="تا تاریخ">
-                                <select id="txTypeFilter" aria-label="نوع تراکنش"><option value="" data-i18n="filter_all">همه</option><option value="cash_in">ورود به صندوق</option><option value="cash_out">خروج از صندوق</option><option value="transfer_box">انتقال بین صندوق‌ها</option><option value="bank_deposit">واریز به بانک</option><option value="bank_withdraw">برداشت از بانک</option><option value="transfer_account">انتقال بین حساب‌ها</option><option value="income">درآمد</option><option value="expense">هزینه</option></select>
+                                <select id="txTypeFilter" aria-label="نوع تراکنش"><option value="" data-i18n="filter_all">همه</option><option value="cash_in">ورود به صندوق</option><option value="cash_out">خروج از صندوق</option><option value="transfer_box">انتقال بین صندوق‌ها</option><option value="bank_deposit">واریز به بانک</option><option value="bank_withdraw">برداشت از بانک</option><option value="transfer_account">انتقال بین حساب‌ها</option><option value="income">درآمد</option><option value="expense">هزینه</option><option value="buy">خرید</option><option value="sell">فروش</option></select>
                                 <select id="txStatusFilter" aria-label="وضعیت"><option value="">همه وضعیت‌ها</option><option value="pending">در انتظار تأیید</option><option value="approved">تأیید شده</option><option value="rejected">رد شده</option></select>
                                 <select id="txCustomerFilter" aria-label="مشتری"><option value="">همه مشتریان</option></select>
                                 <button type="button" class="btn-secondary" onclick="loadTransactions()" data-i18n="apply_filter">اعمال</button>
@@ -1673,7 +1729,7 @@
                             <label data-i18n="branch">شعبه</label>
                             <select id="cashBoxModalBranch"><option value="">بدون شعبه</option></select>
                             <label data-i18n="currency">واحد پول</label>
-                            <select id="cashBoxModalCurrency"><option value="IRR">تومان</option><option value="USD">دلار</option><option value="EUR">یورو</option></select>
+                            <select id="cashBoxModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
                             <label data-i18n="balance">موجودی اولیه</label>
                             <input type="number" id="cashBoxModalBalance" placeholder="0" step="0.01" value="0">
                             <label data-i18n="description">توضیح</label>
@@ -1702,7 +1758,7 @@
                             <label data-i18n="branch">شعبه</label>
                             <select id="bankAccountModalBranch"><option value="">بدون شعبه</option></select>
                             <label data-i18n="currency">واحد پول</label>
-                            <select id="bankAccountModalCurrency"><option value="IRR">تومان</option><option value="USD">دلار</option><option value="EUR">یورو</option></select>
+                            <select id="bankAccountModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
                             <label data-i18n="balance">موجودی اولیه</label>
                             <input type="number" id="bankAccountModalBalance" placeholder="0" step="0.01" value="0">
                             <label data-i18n="description">توضیح</label>
@@ -1738,7 +1794,7 @@
                             <label data-i18n="amount">مبلغ</label>
                             <input type="number" id="txModalAmount" placeholder="0" step="0.01" required>
                             <label data-i18n="currency">واحد پول</label>
-                            <select id="txModalCurrency"><option value="IRR">تومان</option><option value="USD">دلار</option><option value="EUR">یورو</option></select>
+                            <select id="txModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
                             <div id="txModalFromBoxWrap" class="tx-field-wrap"><label>از صندوق</label><select id="txModalFromCashBox"><option value="">انتخاب صندوق</option></select></div>
                             <div id="txModalToBoxWrap" class="tx-field-wrap"><label>به صندوق</label><select id="txModalToCashBox"><option value="">انتخاب صندوق</option></select></div>
                             <div id="txModalFromBankWrap" class="tx-field-wrap" style="display:none;"><label>از حساب بانکی</label><select id="txModalFromBankAccount"><option value="">انتخاب حساب</option></select></div>
@@ -1753,6 +1809,82 @@
                         <div class="modal-footer">
                             <button type="button" class="btn-secondary" onclick="closeTransactionModal()" data-i18n="btn_cancel">انصراف</button>
                             <button type="button" class="btn-primary" onclick="saveTransactionFromModal()" data-i18n="btn_save">ثبت</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="statementFiltersModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box" style="max-width:520px;">
+                        <div class="modal-header"><h3 data-i18n="statement_filters">فیلترهای صورت حساب</h3><button type="button" class="modal-close" onclick="closeStatementFilters()">&times;</button></div>
+                        <div class="modal-body">
+                            <label data-i18n="stmt_account">حساب / مشتری</label>
+                            <select id="stmtFilterCustomer"><option value="">همه</option></select>
+                            <div class="stmt-filter-row">
+                                <div class="stmt-filter-col">
+                                    <label data-i18n="from_date">از تاریخ</label>
+                                    <input type="date" id="stmtFilterFromDate">
+                                </div>
+                                <div class="stmt-filter-col">
+                                    <label data-i18n="to_date">تا تاریخ</label>
+                                    <input type="date" id="stmtFilterToDate">
+                                </div>
+                            </div>
+                            <label data-i18n="currency">ارز</label>
+                            <select id="stmtFilterCurrency">
+                                <option value="">همه ارزها</option>
+                                <option value="IRR">تومان (IRR)</option>
+                                <option value="TMN">تومان (TMN)</option>
+                                <option value="USD">دلار (USD)</option>
+                                <option value="EUR">یورو (EUR)</option>
+                                <option value="GBP">پوند (GBP)</option>
+                                <option value="DHS">درهم (DHS)</option>
+                                <option value="TRY">لیر (TRY)</option>
+                                <option value="RUB">روبل (RUB)</option>
+                                <option value="USDT">تتر (USDT)</option>
+                            </select>
+                            <label data-i18n="col_narration">شرح</label>
+                            <input type="text" id="stmtFilterNarration" placeholder="جستجو در شرح...">
+                            <label data-i18n="amount">مبلغ</label>
+                            <input type="number" id="stmtFilterAmount" placeholder="مبلغ دقیق" step="0.01">
+                            <label data-i18n="debit_credit">بدهکار / بستانکار</label>
+                            <select id="stmtFilterDebitCredit">
+                                <option value="">همه</option>
+                                <option value="debit">بدهکار (Debit)</option>
+                                <option value="credit">بستانکار (Credit)</option>
+                            </select>
+                            <label data-i18n="transaction_type">نوع تراکنش</label>
+                            <select id="stmtFilterType">
+                                <option value="">همه</option>
+                                <option value="cash_in">ورود به صندوق</option>
+                                <option value="cash_out">خروج از صندوق</option>
+                                <option value="transfer_box">انتقال صندوق</option>
+                                <option value="bank_deposit">واریز بانک</option>
+                                <option value="bank_withdraw">برداشت بانک</option>
+                                <option value="transfer_account">انتقال حساب</option>
+                                <option value="income">درآمد</option>
+                                <option value="expense">هزینه</option>
+                                <option value="buy">خرید</option>
+                                <option value="sell">فروش</option>
+                            </select>
+                            <label data-i18n="stmt_user">کاربر</label>
+                            <select id="stmtFilterUser"><option value="">همه</option></select>
+                            <div class="stmt-filter-checks">
+                                <label><input type="checkbox" id="stmtFilterGroupCurrency"> <span data-i18n="stmt_group_currency">گروه‌بندی بر اساس ارز</span></label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-primary" onclick="applyStatementFilters()" data-i18n="btn_generate">تولید گزارش</button>
+                            <button type="button" class="btn-secondary" onclick="closeStatementFilters()" data-i18n="btn_cancel">انصراف</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="accountBalanceModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box" style="max-width:500px;">
+                        <div class="modal-header"><h3 data-i18n="account_balance_title">موجودی حساب</h3><button type="button" class="modal-close" onclick="closeAccountBalance()">&times;</button></div>
+                        <div class="modal-body">
+                            <div id="accountBalanceContent"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeAccountBalance()" data-i18n="btn_close">بستن</button>
                         </div>
                     </div>
                 </div>

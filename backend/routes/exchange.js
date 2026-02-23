@@ -248,6 +248,12 @@ async function applyTransactionBalance(tx) {
         case 'expense':
             await updateBalance(CashBox, tx.fromCashBoxId, -amt);
             break;
+        case 'buy':
+            await updateBalance(CashBox, tx.fromCashBoxId, -amt);
+            break;
+        case 'sell':
+            await updateBalance(CashBox, tx.toCashBoxId, amt);
+            break;
     }
 }
 
@@ -374,6 +380,291 @@ router.get('/summary', requireServices, async (req, res) => {
             totalBank,
             total: totalCash + totalBank
         });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ========== صورت حساب — Statement of Account ==========
+router.get('/statement', requireServices, async (req, res) => {
+    try {
+        const where = { status: 'approved' };
+        if (req.query.customerId) where.customerId = req.query.customerId;
+        if (req.query.type) where.type = req.query.type;
+        if (req.query.currency) where.currency = req.query.currency;
+        if (req.query.fromDate || req.query.toDate) {
+            where.transactionDate = {};
+            if (req.query.fromDate) where.transactionDate[Op.gte] = req.query.fromDate;
+            if (req.query.toDate) where.transactionDate[Op.lte] = req.query.toDate;
+        }
+        if (req.query.narration) {
+            where.description = { [Op.like]: '%' + req.query.narration + '%' };
+        }
+        if (req.query.amount) {
+            where.amount = parseFloat(req.query.amount);
+        }
+        if (req.query.debitCredit === 'debit') {
+            where.type = { [Op.in]: ['cash_out', 'bank_withdraw', 'expense', 'buy', 'transfer_box', 'bank_deposit', 'transfer_account'] };
+        } else if (req.query.debitCredit === 'credit') {
+            where.type = { [Op.in]: ['cash_in', 'bank_deposit', 'income', 'sell', 'transfer_box', 'bank_withdraw', 'transfer_account'] };
+        }
+        if (req.query.userId) where.userId = req.query.userId;
+        if (req.query.branchId) where.branchId = req.query.branchId;
+        if (req.query.cashBoxId) {
+            where[Op.or] = where[Op.or] || [];
+            where[Op.or].push({ fromCashBoxId: req.query.cashBoxId }, { toCashBoxId: req.query.cashBoxId });
+        }
+        if (req.query.bankAccountId) {
+            where[Op.or] = where[Op.or] || [];
+            where[Op.or].push({ fromBankAccountId: req.query.bankAccountId }, { toBankAccountId: req.query.bankAccountId });
+        }
+
+        const rows = await Transaction.findAll({
+            where,
+            include: [
+                { model: Branch, as: 'branch', attributes: ['id', 'name'] },
+                { model: User, as: 'user', attributes: ['id', 'name'] },
+                { model: CashBox, as: 'fromCashBox', attributes: ['id', 'name'] },
+                { model: CashBox, as: 'toCashBox', attributes: ['id', 'name'] },
+                { model: BankAccount, as: 'fromBankAccount', attributes: ['id', 'name', 'bankName'] },
+                { model: BankAccount, as: 'toBankAccount', attributes: ['id', 'name', 'bankName'] },
+                { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'], required: false }
+            ],
+            order: [['transactionDate', 'ASC'], ['createdAt', 'ASC']],
+            limit: 1000
+        });
+
+        const groupByCurrency = req.query.groupByCurrency === 'true';
+        const debitTypes = ['cash_out', 'bank_withdraw', 'expense', 'buy'];
+        const creditTypes = ['cash_in', 'bank_deposit', 'income', 'sell'];
+
+        const classifyTx = (tx) => {
+            const type = tx.type;
+            if (debitTypes.includes(type)) return 'debit';
+            if (creditTypes.includes(type)) return 'credit';
+            if (type === 'transfer_box' || type === 'transfer_account') return 'debit';
+            return 'debit';
+        };
+
+        const typeLabels = {
+            cash_in: 'CI', cash_out: 'CO', transfer_box: 'TRF',
+            bank_deposit: 'BD', bank_withdraw: 'BW', transfer_account: 'TRA',
+            income: 'INC', expense: 'EXP', buy: 'BUY', sell: 'SELL'
+        };
+
+        let statement;
+        if (groupByCurrency) {
+            const byCurrency = {};
+            rows.forEach(tx => {
+                const curr = tx.currency || 'IRR';
+                if (!byCurrency[curr]) byCurrency[curr] = [];
+                byCurrency[curr].push(tx);
+            });
+            statement = {};
+            for (const [curr, txs] of Object.entries(byCurrency)) {
+                let runningBalance = 0;
+                const items = txs.map(tx => {
+                    const side = classifyTx(tx);
+                    const amt = parseFloat(tx.amount) || 0;
+                    const debit = side === 'debit' ? amt : 0;
+                    const credit = side === 'credit' ? amt : 0;
+                    runningBalance += credit - debit;
+                    return {
+                        id: tx.id,
+                        date: tx.transactionDate,
+                        type: typeLabels[tx.type] || tx.type,
+                        typeRaw: tx.type,
+                        number: tx.reference || '',
+                        narration: tx.description || '',
+                        currency: curr,
+                        debit,
+                        credit,
+                        balance: runningBalance,
+                        sign: runningBalance >= 0 ? 'Cr' : 'Dr',
+                        customer: tx.customer,
+                        user: tx.user,
+                        fromCashBox: tx.fromCashBox,
+                        toCashBox: tx.toCashBox,
+                        fromBankAccount: tx.fromBankAccount,
+                        toBankAccount: tx.toBankAccount,
+                        metadata: tx.metadata
+                    };
+                });
+                const totalDebit = items.reduce((s, i) => s + i.debit, 0);
+                const totalCredit = items.reduce((s, i) => s + i.credit, 0);
+                statement[curr] = {
+                    items,
+                    totalDebit,
+                    totalCredit,
+                    balanceCF: runningBalance,
+                    balanceCFSign: runningBalance >= 0 ? 'Cr' : 'Dr'
+                };
+            }
+        } else {
+            let runningBalance = 0;
+            const items = rows.map(tx => {
+                const side = classifyTx(tx);
+                const amt = parseFloat(tx.amount) || 0;
+                const debit = side === 'debit' ? amt : 0;
+                const credit = side === 'credit' ? amt : 0;
+                runningBalance += credit - debit;
+                return {
+                    id: tx.id,
+                    date: tx.transactionDate,
+                    type: typeLabels[tx.type] || tx.type,
+                    typeRaw: tx.type,
+                    number: tx.reference || '',
+                    narration: tx.description || '',
+                    currency: tx.currency || 'IRR',
+                    debit,
+                    credit,
+                    balance: runningBalance,
+                    sign: runningBalance >= 0 ? 'Cr' : 'Dr',
+                    customer: tx.customer,
+                    user: tx.user,
+                    fromCashBox: tx.fromCashBox,
+                    toCashBox: tx.toCashBox,
+                    fromBankAccount: tx.fromBankAccount,
+                    toBankAccount: tx.toBankAccount,
+                    metadata: tx.metadata
+                };
+            });
+            const totalDebit = items.reduce((s, i) => s + i.debit, 0);
+            const totalCredit = items.reduce((s, i) => s + i.credit, 0);
+            statement = {
+                items,
+                totalDebit,
+                totalCredit,
+                balanceCF: runningBalance,
+                balanceCFSign: runningBalance >= 0 ? 'Cr' : 'Dr'
+            };
+        }
+
+        res.json({
+            grouped: groupByCurrency,
+            customerName: rows.length > 0 && rows[0].customer ? rows[0].customer.name : null,
+            statement
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ========== Currency Position — وضعیت ارزی ==========
+router.get('/currency-position', requireServices, async (req, res) => {
+    try {
+        const [cashBoxes, bankAccounts] = await Promise.all([
+            CashBox.findAll({ where: { isActive: true }, include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }] }),
+            BankAccount.findAll({ where: { isActive: true }, include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'] }] })
+        ]);
+
+        const currencyTotals = {};
+        cashBoxes.forEach(cb => {
+            const c = cb.currency || 'IRR';
+            if (!currencyTotals[c]) currencyTotals[c] = { cashBoxes: 0, bankAccounts: 0, total: 0 };
+            currencyTotals[c].cashBoxes += parseFloat(cb.balance || 0);
+            currencyTotals[c].total += parseFloat(cb.balance || 0);
+        });
+        bankAccounts.forEach(ba => {
+            const c = ba.currency || 'IRR';
+            if (!currencyTotals[c]) currencyTotals[c] = { cashBoxes: 0, bankAccounts: 0, total: 0 };
+            currencyTotals[c].bankAccounts += parseFloat(ba.balance || 0);
+            currencyTotals[c].total += parseFloat(ba.balance || 0);
+        });
+
+        const pendingWhere = { status: 'pending' };
+        const pendingTx = await Transaction.findAll({ where: pendingWhere, attributes: ['type', 'amount', 'currency'] });
+
+        const pendingInward = {};
+        const pendingOutward = {};
+        pendingTx.forEach(tx => {
+            const curr = tx.currency || 'IRR';
+            const amt = parseFloat(tx.amount) || 0;
+            const inTypes = ['cash_in', 'income', 'sell', 'bank_deposit'];
+            const outTypes = ['cash_out', 'expense', 'buy', 'bank_withdraw'];
+            if (inTypes.includes(tx.type)) {
+                pendingInward[curr] = (pendingInward[curr] || 0) + amt;
+            } else if (outTypes.includes(tx.type)) {
+                pendingOutward[curr] = (pendingOutward[curr] || 0) + amt;
+            }
+        });
+
+        const outstandingBalance = [];
+        cashBoxes.forEach(cb => {
+            if (parseFloat(cb.balance || 0) !== 0) {
+                outstandingBalance.push({
+                    account: cb.name,
+                    type: 'cashbox',
+                    currency: cb.currency || 'IRR',
+                    balance: parseFloat(cb.balance || 0),
+                    branch: cb.branch ? cb.branch.name : null
+                });
+            }
+        });
+        bankAccounts.forEach(ba => {
+            if (parseFloat(ba.balance || 0) !== 0) {
+                outstandingBalance.push({
+                    account: ba.name,
+                    type: 'bank',
+                    currency: ba.currency || 'IRR',
+                    balance: parseFloat(ba.balance || 0),
+                    branch: ba.branch ? ba.branch.name : null
+                });
+            }
+        });
+
+        res.json({
+            currencyPosition: currencyTotals,
+            pendingInward,
+            pendingOutward,
+            outstandingBalance,
+            cashBoxes: cashBoxes.map(cb => ({
+                id: cb.id, name: cb.name, currency: cb.currency, balance: parseFloat(cb.balance || 0),
+                branch: cb.branch ? cb.branch.name : null
+            })),
+            bankAccounts: bankAccounts.map(ba => ({
+                id: ba.id, name: ba.name, bankName: ba.bankName, currency: ba.currency, balance: parseFloat(ba.balance || 0),
+                branch: ba.branch ? ba.branch.name : null
+            }))
+        });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// ========== Account Balance — موجودی حساب ==========
+router.get('/account-balance', requireServices, async (req, res) => {
+    try {
+        const customerId = req.query.customerId;
+        if (!customerId) return res.status(400).json({ error: 'customerId الزامی است' });
+
+        const where = { customerId, status: 'approved' };
+        if (req.query.currency) where.currency = req.query.currency;
+
+        const transactions = await Transaction.findAll({
+            where,
+            attributes: ['type', 'amount', 'currency'],
+            order: [['transactionDate', 'ASC']]
+        });
+
+        const debitTypes = ['cash_out', 'bank_withdraw', 'expense', 'buy'];
+        const creditTypes = ['cash_in', 'bank_deposit', 'income', 'sell'];
+
+        const balanceByCurrency = {};
+        transactions.forEach(tx => {
+            const curr = tx.currency || 'IRR';
+            if (!balanceByCurrency[curr]) balanceByCurrency[curr] = { totalDebit: 0, totalCredit: 0, balance: 0 };
+            const amt = parseFloat(tx.amount) || 0;
+            if (debitTypes.includes(tx.type)) {
+                balanceByCurrency[curr].totalDebit += amt;
+                balanceByCurrency[curr].balance -= amt;
+            } else if (creditTypes.includes(tx.type)) {
+                balanceByCurrency[curr].totalCredit += amt;
+                balanceByCurrency[curr].balance += amt;
+            }
+        });
+
+        res.json(balanceByCurrency);
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

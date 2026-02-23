@@ -1428,6 +1428,7 @@
         function initServicesTabs() {
             var tabs = document.querySelectorAll('.services-tab');
             var panels = document.querySelectorAll('.services-panel');
+            var tabMap = { summary: 'Summary', statement: 'Statement', services: 'Services', cashboxes: 'Cashboxes', bankaccounts: 'Bankaccounts', transactions: 'Transactions' };
             tabs.forEach(function(tab) {
                 tab.onclick = function() {
                     var t = tab.getAttribute('data-tab');
@@ -1435,9 +1436,10 @@
                     panels.forEach(function(p) { p.classList.remove('show'); });
                     tab.classList.add('active');
                     tab.setAttribute('aria-selected', 'true');
-                    var panel = document.getElementById('services' + (t === 'summary' ? 'Summary' : t === 'services' ? 'Services' : t === 'cashboxes' ? 'Cashboxes' : t === 'bankaccounts' ? 'Bankaccounts' : 'Transactions') + 'Panel');
+                    var panel = document.getElementById('services' + (tabMap[t] || 'Summary') + 'Panel');
                     if (panel) { panel.classList.add('show'); }
                     if (t === 'summary') loadServicesSummary();
+                    else if (t === 'statement') loadStatement();
                     else if (t === 'services') loadServices();
                     else if (t === 'cashboxes') loadCashBoxes();
                     else if (t === 'bankaccounts') loadBankAccounts();
@@ -1458,16 +1460,22 @@
             var active = document.querySelector('.services-tab.active');
             var t = active ? active.getAttribute('data-tab') : 'summary';
             if (t === 'summary') loadServicesSummary();
+            else if (t === 'statement') loadStatement();
             else if (t === 'services') loadServices();
             else if (t === 'cashboxes') loadCashBoxes();
             else if (t === 'bankaccounts') loadBankAccounts();
             else if (t === 'transactions') { loadCustomerFilterForTransactions(); loadTransactions(); }
         }
-        function formatMoney(n, curr) { var x = parseFloat(n) || 0; return x.toLocaleString('fa-IR') + (curr === 'USD' ? ' $' : curr === 'EUR' ? ' €' : ' تومان'); }
+        var currencySymbols = { USD: '$', EUR: '€', GBP: '£', DHS: 'د.إ', TRY: '₺', RUB: '₽', USDT: '₮', IRR: 'تومان', TMN: 'تومان' };
+        function formatMoney(n, curr) { var x = parseFloat(n) || 0; var sym = currencySymbols[curr] || curr || 'تومان'; return x.toLocaleString('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym; }
+        function formatMoneyEn(n) { var x = parseFloat(n) || 0; return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         async function loadServicesSummary() {
-            var res = await apiFetch('/api/exchange/summary');
-            if (res.needLogin || !res.ok) return;
-            var d = res.data || {};
+            var [sumRes, cpRes] = await Promise.all([
+                apiFetch('/api/exchange/summary'),
+                apiFetch('/api/exchange/currency-position')
+            ]);
+            if (sumRes.needLogin || !sumRes.ok) return;
+            var d = sumRes.data || {};
             document.getElementById('summaryTotalCash').textContent = formatMoney(d.totalCash, 'IRR');
             document.getElementById('summaryTotalBank').textContent = formatMoney(d.totalBank, 'IRR');
             document.getElementById('summaryTotal').textContent = formatMoney(d.total, 'IRR');
@@ -1475,6 +1483,39 @@
             var ba = document.getElementById('summaryBankAccounts');
             if (cb) cb.innerHTML = (d.cashBoxes || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده' : 'No cash boxes') + '</div>';
             if (ba) ba.innerHTML = (d.bankAccounts || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'حساب بانکی تعریف نشده' : 'No bank accounts') + '</div>';
+
+            if (cpRes.ok && cpRes.data) {
+                var cp = cpRes.data;
+                var cpEl = document.getElementById('summaryCurrencyPosition');
+                if (cpEl) {
+                    var posEntries = Object.entries(cp.currencyPosition || {});
+                    cpEl.innerHTML = posEntries.length ? posEntries.map(function(e) {
+                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance">' + formatMoneyEn(e[1].total) + '</span></div>';
+                    }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</div>';
+                }
+                var obEl = document.getElementById('summaryOutstandingBalance');
+                if (obEl) {
+                    var obs = cp.outstandingBalance || [];
+                    var totalOB = obs.reduce(function(s, o) { return s + o.balance; }, 0);
+                    obEl.innerHTML = obs.length ? obs.map(function(o) {
+                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(o.account) + ' <small style="color:var(--text-muted)">' + escapeHtml(o.currency) + '</small></span><span class="balance">' + formatMoneyEn(o.balance) + '</span></div>';
+                    }).join('') + '<div class="exchange-summary-item" style="border-color:var(--accent);"><span class="name" style="font-weight:700;">' + (LANG === 'fa' ? 'مجموع' : 'Total') + '</span><span class="balance" style="font-weight:700;">' + formatMoneyEn(totalOB) + '</span></div>' : '<div class="empty">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</div>';
+                }
+                var piEl = document.getElementById('summaryPendingInward');
+                if (piEl) {
+                    var piEntries = Object.entries(cp.pendingInward || {});
+                    piEl.innerHTML = piEntries.length ? piEntries.map(function(e) {
+                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--accent);">' + formatMoneyEn(e[1]) + '</span></div>';
+                    }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'دریافتی در انتظار نیست' : 'No pending inward') + '</div>';
+                }
+                var poEl = document.getElementById('summaryPendingOutward');
+                if (poEl) {
+                    var poEntries = Object.entries(cp.pendingOutward || {});
+                    poEl.innerHTML = poEntries.length ? poEntries.map(function(e) {
+                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--danger);">' + formatMoneyEn(e[1]) + '</span></div>';
+                    }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'پرداختی در انتظار نیست' : 'No pending outward') + '</div>';
+                }
+            }
         }
         async function loadCashBoxes() {
             var list = document.getElementById('cashBoxList');
@@ -1516,7 +1557,7 @@
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             var rows = (res.data && res.data.rows) || [];
             if (rows.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'تراکنشی یافت نشد' : 'No transactions') + '</div>'; return; }
-            var typeLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه' };
+            var typeLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه', buy: 'خرید', sell: 'فروش' };
             var statusLabels = { pending: 'در انتظار تأیید', approved: 'تأیید شده', rejected: 'رد شده' };
             var statusClasses = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
             var canApprove = currentUser && ['owner', 'admin', 'manager'].indexOf(currentUser.role) >= 0;
@@ -1664,8 +1705,8 @@
             var t = document.getElementById('txModalType').value;
             var fromBox = document.getElementById('txModalFromBoxWrap'); var toBox = document.getElementById('txModalToBoxWrap');
             var fromBank = document.getElementById('txModalFromBankWrap'); var toBank = document.getElementById('txModalToBankWrap');
-            if (fromBox) fromBox.style.display = ['cash_out','transfer_box','bank_deposit','expense'].indexOf(t) >= 0 ? 'block' : 'none';
-            if (toBox) toBox.style.display = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(t) >= 0 ? 'block' : 'none';
+            if (fromBox) fromBox.style.display = ['cash_out','transfer_box','bank_deposit','expense','buy'].indexOf(t) >= 0 ? 'block' : 'none';
+            if (toBox) toBox.style.display = ['cash_in','transfer_box','bank_withdraw','income','sell'].indexOf(t) >= 0 ? 'block' : 'none';
             if (fromBank) fromBank.style.display = ['bank_withdraw','transfer_account'].indexOf(t) >= 0 ? 'block' : 'none';
             if (toBank) toBank.style.display = ['bank_deposit','transfer_account'].indexOf(t) >= 0 ? 'block' : 'none';
         }
@@ -1774,6 +1815,229 @@
             if (res.needLogin) return;
             if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadServices(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
+        // ========== Statement of Account (صورت حساب) ==========
+        var stmtFilters = { customerId: '', fromDate: '', toDate: '', currency: '', narration: '', amount: '', debitCredit: '', type: '', userId: '', groupByCurrency: false };
+        var stmtData = null;
+        var stmtMarkedRows = {};
+
+        async function loadStatement() {
+            var body = document.getElementById('statementBody');
+            var empty = document.getElementById('statementEmpty');
+            var title = document.getElementById('statementCustomerTitle');
+            if (!body) return;
+            body.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:24px;">' + t('loading') + '</td></tr>';
+            if (empty) empty.style.display = 'none';
+            var params = [];
+            if (stmtFilters.customerId) params.push('customerId=' + encodeURIComponent(stmtFilters.customerId));
+            if (stmtFilters.fromDate) params.push('fromDate=' + encodeURIComponent(stmtFilters.fromDate));
+            if (stmtFilters.toDate) params.push('toDate=' + encodeURIComponent(stmtFilters.toDate));
+            if (stmtFilters.currency) params.push('currency=' + encodeURIComponent(stmtFilters.currency));
+            if (stmtFilters.narration) params.push('narration=' + encodeURIComponent(stmtFilters.narration));
+            if (stmtFilters.amount) params.push('amount=' + encodeURIComponent(stmtFilters.amount));
+            if (stmtFilters.debitCredit) params.push('debitCredit=' + encodeURIComponent(stmtFilters.debitCredit));
+            if (stmtFilters.type) params.push('type=' + encodeURIComponent(stmtFilters.type));
+            if (stmtFilters.userId) params.push('userId=' + encodeURIComponent(stmtFilters.userId));
+            if (stmtFilters.groupByCurrency) params.push('groupByCurrency=true');
+            var res = await apiFetch('/api/exchange/statement?' + params.join('&'));
+            if (res.needLogin || !res.ok) { body.innerHTML = ''; if (empty) { empty.style.display = 'block'; empty.textContent = (res.data && res.data.error) || t('err_generic'); } return; }
+            stmtData = res.data;
+            if (title) {
+                if (stmtData.customerName) { title.style.display = 'block'; title.innerHTML = '<strong>' + (LANG === 'fa' ? 'صورت حساب — ' : 'Statement Of Account — ') + escapeHtml(stmtData.customerName) + '</strong>'; }
+                else { title.style.display = 'none'; }
+            }
+            renderStatement();
+        }
+
+        function renderStatement() {
+            var body = document.getElementById('statementBody');
+            var empty = document.getElementById('statementEmpty');
+            if (!body || !stmtData) return;
+            var html = '';
+            if (stmtData.grouped) {
+                var currencies = Object.keys(stmtData.statement);
+                if (currencies.length === 0) { body.innerHTML = ''; if (empty) { empty.style.display = 'block'; empty.textContent = LANG === 'fa' ? 'تراکنشی یافت نشد' : 'No transactions found'; } return; }
+                currencies.forEach(function(curr) {
+                    var grp = stmtData.statement[curr];
+                    html += '<tr class="stmt-row-bf"><td></td><td></td><td></td><td></td><td></td><td><strong>BALANCE B/F</strong></td><td>' + escapeHtml(curr) + '</td><td></td><td></td><td class="stmt-num">0.00</td><td></td></tr>';
+                    grp.items.forEach(function(item) {
+                        html += buildStmtRow(item);
+                    });
+                    html += '<tr class="stmt-row-total"><td></td><td></td><td></td><td></td><td></td><td><strong>TOTAL</strong></td><td>' + escapeHtml(curr) + '</td><td class="stmt-num">' + formatMoneyEn(grp.totalDebit) + '</td><td class="stmt-num">' + formatMoneyEn(grp.totalCredit) + '</td><td></td><td></td></tr>';
+                    html += '<tr class="stmt-row-cf"><td></td><td></td><td></td><td></td><td></td><td><strong>BALANCE C/F</strong></td><td>' + escapeHtml(curr) + '</td><td></td><td></td><td class="stmt-num stmt-cf-val">' + formatMoneyEn(Math.abs(grp.balanceCF)) + '</td><td class="stmt-cf-sign">' + grp.balanceCFSign + '</td></tr>';
+                });
+            } else {
+                var st = stmtData.statement;
+                if (!st || !st.items || st.items.length === 0) { body.innerHTML = ''; if (empty) { empty.style.display = 'block'; empty.textContent = LANG === 'fa' ? 'تراکنشی یافت نشد' : 'No transactions found'; } return; }
+                html += '<tr class="stmt-row-bf"><td></td><td></td><td></td><td></td><td></td><td><strong>BALANCE B/F</strong></td><td></td><td></td><td></td><td class="stmt-num">0.00</td><td></td></tr>';
+                st.items.forEach(function(item) { html += buildStmtRow(item); });
+                html += '<tr class="stmt-row-total"><td></td><td></td><td></td><td></td><td></td><td><strong>TOTAL</strong></td><td></td><td class="stmt-num">' + formatMoneyEn(st.totalDebit) + '</td><td class="stmt-num">' + formatMoneyEn(st.totalCredit) + '</td><td></td><td></td></tr>';
+                html += '<tr class="stmt-row-cf"><td></td><td></td><td></td><td></td><td></td><td><strong>BALANCE C/F</strong></td><td></td><td></td><td></td><td class="stmt-num stmt-cf-val">' + formatMoneyEn(Math.abs(st.balanceCF)) + '</td><td class="stmt-cf-sign">' + st.balanceCFSign + '</td></tr>';
+            }
+            if (empty) empty.style.display = 'none';
+            body.innerHTML = html;
+            Object.keys(stmtMarkedRows).forEach(function(id) {
+                var row = body.querySelector('tr[data-id="' + id + '"]');
+                if (row) row.style.backgroundColor = stmtMarkedRows[id];
+            });
+        }
+
+        function buildStmtRow(item) {
+            var bg = stmtMarkedRows[item.id] ? ' style="background:' + stmtMarkedRows[item.id] + ';"' : '';
+            return '<tr class="stmt-row-data" data-id="' + item.id + '"' + bg + '>' +
+                '<td class="stmt-col-sel"><input type="checkbox" class="stmt-check" onchange="toggleStmtMark(this,\'' + item.id + '\')"></td>' +
+                '<td class="stmt-col-act"><button type="button" class="btn-icon-sm" onclick="openTransactionModalForEdit(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">&#9998;</button></td>' +
+                '<td>' + escapeHtml(item.date || '') + '</td>' +
+                '<td><span class="stmt-type-badge">' + escapeHtml(item.type) + '</span></td>' +
+                '<td>' + escapeHtml(item.number) + '</td>' +
+                '<td class="stmt-narration">' + escapeHtml(item.narration) + '</td>' +
+                '<td>' + escapeHtml(item.currency) + '</td>' +
+                '<td class="stmt-num">' + (item.debit > 0 ? formatMoneyEn(item.debit) : '') + '</td>' +
+                '<td class="stmt-num">' + (item.credit > 0 ? formatMoneyEn(item.credit) : '') + '</td>' +
+                '<td class="stmt-num">' + formatMoneyEn(Math.abs(item.balance)) + '</td>' +
+                '<td class="stmt-sign ' + (item.sign === 'Cr' ? 'stmt-sign-cr' : 'stmt-sign-dr') + '">' + item.sign + '</td>' +
+                '</tr>';
+        }
+
+        function toggleStmtMark(checkbox, id) {
+            var row = checkbox.closest('tr');
+            if (checkbox.checked) {
+                var color = document.getElementById('stmtChooseColor').value || '#ffeb3b';
+                stmtMarkedRows[id] = color;
+                if (row) row.style.backgroundColor = color;
+            } else {
+                delete stmtMarkedRows[id];
+                if (row) row.style.backgroundColor = '';
+            }
+        }
+
+        function stmtUnmarkAll() {
+            stmtMarkedRows = {};
+            var checks = document.querySelectorAll('.stmt-check');
+            checks.forEach(function(c) { c.checked = false; });
+            var rows = document.querySelectorAll('.stmt-row-data');
+            rows.forEach(function(r) { r.style.backgroundColor = ''; });
+        }
+
+        function openStatementFilters() {
+            var m = document.getElementById('statementFiltersModal');
+            if (!m) return;
+            m.style.display = 'flex';
+            document.getElementById('stmtFilterCustomer').value = stmtFilters.customerId;
+            document.getElementById('stmtFilterFromDate').value = stmtFilters.fromDate;
+            document.getElementById('stmtFilterToDate').value = stmtFilters.toDate;
+            document.getElementById('stmtFilterCurrency').value = stmtFilters.currency;
+            document.getElementById('stmtFilterNarration').value = stmtFilters.narration;
+            document.getElementById('stmtFilterAmount').value = stmtFilters.amount;
+            document.getElementById('stmtFilterDebitCredit').value = stmtFilters.debitCredit;
+            document.getElementById('stmtFilterType').value = stmtFilters.type;
+            document.getElementById('stmtFilterUser').value = stmtFilters.userId;
+            document.getElementById('stmtFilterGroupCurrency').checked = stmtFilters.groupByCurrency;
+            loadCustomersForStmtFilter();
+            loadUsersForStmtFilter();
+        }
+
+        function closeStatementFilters() {
+            var m = document.getElementById('statementFiltersModal'); if (m) m.style.display = 'none';
+        }
+
+        function applyStatementFilters() {
+            stmtFilters.customerId = document.getElementById('stmtFilterCustomer').value;
+            stmtFilters.fromDate = document.getElementById('stmtFilterFromDate').value;
+            stmtFilters.toDate = document.getElementById('stmtFilterToDate').value;
+            stmtFilters.currency = document.getElementById('stmtFilterCurrency').value;
+            stmtFilters.narration = document.getElementById('stmtFilterNarration').value;
+            stmtFilters.amount = document.getElementById('stmtFilterAmount').value;
+            stmtFilters.debitCredit = document.getElementById('stmtFilterDebitCredit').value;
+            stmtFilters.type = document.getElementById('stmtFilterType').value;
+            stmtFilters.userId = document.getElementById('stmtFilterUser').value;
+            stmtFilters.groupByCurrency = document.getElementById('stmtFilterGroupCurrency').checked;
+            closeStatementFilters();
+            loadStatement();
+        }
+
+        async function loadCustomersForStmtFilter() {
+            var sel = document.getElementById('stmtFilterCustomer');
+            if (!sel) return;
+            var res = await apiFetch('/api/customers?limit=500');
+            var list = (res.data && res.data.data) || [];
+            var curVal = sel.value;
+            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه' : 'All') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name || c.phone || '') + '</option>'; }).join('');
+            if (curVal) sel.value = curVal;
+        }
+
+        async function loadUsersForStmtFilter() {
+            var sel = document.getElementById('stmtFilterUser');
+            if (!sel) return;
+            var res = await apiFetch('/api/users');
+            var list = (res.data && Array.isArray(res.data)) ? res.data : (res.data && res.data.data) || [];
+            var curVal = sel.value;
+            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه' : 'All') + '</option>' + list.map(function(u) { return '<option value="' + u.id + '">' + escapeHtml(u.name || u.email || '') + '</option>'; }).join('');
+            if (curVal) sel.value = curVal;
+        }
+
+        async function showAccountBalance() {
+            var custId = stmtFilters.customerId;
+            if (!custId) { toast(LANG === 'fa' ? 'ابتدا یک مشتری/حساب از فیلترها انتخاب کنید' : 'Select a customer first', true); return; }
+            var m = document.getElementById('accountBalanceModal');
+            var content = document.getElementById('accountBalanceContent');
+            if (!m || !content) return;
+            m.style.display = 'flex';
+            content.innerHTML = '<div style="text-align:center;padding:20px;">' + t('loading') + '</div>';
+            var res = await apiFetch('/api/exchange/account-balance?customerId=' + encodeURIComponent(custId));
+            if (!res.ok || !res.data) { content.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'خطا در بارگذاری' : 'Error loading') + '</div>'; return; }
+            var entries = Object.entries(res.data);
+            if (entries.length === 0) { content.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'تراکنشی ثبت نشده' : 'No transactions') + '</div>'; return; }
+            content.innerHTML = '<table class="account-balance-table"><thead><tr><th>' + (LANG === 'fa' ? 'ارز' : 'Currency') + '</th><th>' + (LANG === 'fa' ? 'بدهکار' : 'Debit') + '</th><th>' + (LANG === 'fa' ? 'بستانکار' : 'Credit') + '</th><th>' + (LANG === 'fa' ? 'مانده' : 'Balance') + '</th></tr></thead><tbody>' +
+                entries.map(function(e) {
+                    var b = e[1];
+                    return '<tr><td>' + escapeHtml(e[0]) + '</td><td class="stmt-num">' + formatMoneyEn(b.totalDebit) + '</td><td class="stmt-num">' + formatMoneyEn(b.totalCredit) + '</td><td class="stmt-num" style="font-weight:700;">' + formatMoneyEn(Math.abs(b.balance)) + ' <span class="' + (b.balance >= 0 ? 'stmt-sign-cr' : 'stmt-sign-dr') + '">' + (b.balance >= 0 ? 'Cr' : 'Dr') + '</span></td></tr>';
+                }).join('') + '</tbody></table>';
+        }
+
+        function closeAccountBalance() {
+            var m = document.getElementById('accountBalanceModal'); if (m) m.style.display = 'none';
+        }
+
+        function exportStatementPDF() {
+            if (!stmtData) { toast(LANG === 'fa' ? 'ابتدا گزارش تولید کنید' : 'Generate report first', true); return; }
+            var table = document.getElementById('statementTable');
+            if (!table) return;
+            var title = stmtData.customerName ? (LANG === 'fa' ? 'صورت حساب — ' : 'Statement Of Account — ') + stmtData.customerName : (LANG === 'fa' ? 'صورت حساب' : 'Statement Of Account');
+            var printWin = window.open('', '_blank');
+            printWin.document.write('<!DOCTYPE html><html dir="' + (LANG === 'fa' ? 'rtl' : 'ltr') + '"><head><meta charset="utf-8"><title>' + escapeHtml(title) + '</title><style>body{font-family:Tahoma,Arial,sans-serif;margin:20px;direction:' + (LANG === 'fa' ? 'rtl' : 'ltr') + ';}h2{color:#6b21a8;margin-bottom:16px;}table{width:100%;border-collapse:collapse;font-size:12px;}th,td{border:1px solid #ddd;padding:6px 8px;text-align:right;}th{background:#6b21a8;color:#fff;}.stmt-num{text-align:left;font-variant-numeric:tabular-nums;}.stmt-row-bf td,.stmt-row-cf td{background:#f3f0ff;font-weight:bold;}.stmt-row-total td{background:#ede9fe;font-weight:bold;}.stmt-sign-cr{color:#16a34a;}.stmt-sign-dr{color:#dc2626;}</style></head><body><h2>' + escapeHtml(title) + '</h2>' + table.outerHTML + '</body></html>');
+            printWin.document.close();
+            setTimeout(function() { printWin.print(); }, 500);
+        }
+
+        function exportStatementExcel() {
+            if (!stmtData) { toast(LANG === 'fa' ? 'ابتدا گزارش تولید کنید' : 'Generate report first', true); return; }
+            var items = [];
+            if (stmtData.grouped) {
+                Object.keys(stmtData.statement).forEach(function(curr) {
+                    var grp = stmtData.statement[curr];
+                    items.push({ date: '', type: '', number: '', narration: 'BALANCE B/F', currency: curr, debit: '', credit: '', balance: '0.00', sign: '' });
+                    grp.items.forEach(function(i) { items.push(i); });
+                    items.push({ date: '', type: '', number: '', narration: 'TOTAL', currency: curr, debit: grp.totalDebit, credit: grp.totalCredit, balance: '', sign: '' });
+                    items.push({ date: '', type: '', number: '', narration: 'BALANCE C/F', currency: curr, debit: '', credit: '', balance: Math.abs(grp.balanceCF), sign: grp.balanceCFSign });
+                });
+            } else {
+                var st = stmtData.statement;
+                items.push({ date: '', type: '', number: '', narration: 'BALANCE B/F', currency: '', debit: '', credit: '', balance: '0.00', sign: '' });
+                (st.items || []).forEach(function(i) { items.push(i); });
+                items.push({ date: '', type: '', number: '', narration: 'TOTAL', currency: '', debit: st.totalDebit, credit: st.totalCredit, balance: '', sign: '' });
+                items.push({ date: '', type: '', number: '', narration: 'BALANCE C/F', currency: '', debit: '', credit: '', balance: Math.abs(st.balanceCF), sign: st.balanceCFSign });
+            }
+            var headers = ['Date', 'Type', 'Number', 'Narration', 'Currency', 'Debit', 'Credit', 'Balance Amt.', 'Sign'];
+            var csv = '\ufeff' + headers.join(',') + '\n' + items.map(function(r) {
+                return [r.date || '', r.type || '', r.number || '', '"' + (r.narration || '').replace(/"/g, '""') + '"', r.currency || '', r.debit || '', r.credit || '', r.balance !== undefined && r.balance !== '' ? r.balance : '', r.sign || ''].join(',');
+            }).join('\n');
+            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'statement-of-account-' + new Date().toISOString().slice(0, 10) + '.csv';
+            link.click();
+        }
+
         function startPresenceInterval() {
             if (presenceInterval) clearInterval(presenceInterval);
             apiFetch('/api/auth/me/presence', { method: 'PATCH', body: JSON.stringify({ status: 'online' }) }).catch(function(){});

@@ -2641,3 +2641,57 @@
             .exchange-summary-card .value { font-size: 1.1rem; }
         }
         #transactionModal .modal-box { max-width: min(480px, calc(100vw - 32px)) !important; }
+        /* ========== صورت حساب — Statement of Account ========== */
+        .statement-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+        .statement-toolbar-right { display: flex; gap: 8px; align-items: center; margin-inline-start: auto; }
+        .statement-toolbar-right input[type="color"] { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); cursor: pointer; padding: 2px; background: var(--bg-card); }
+        .statement-customer-title { font-size: 1.15rem; color: var(--accent); margin-bottom: 12px; padding: 12px 16px; background: var(--bg-card); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+        .statement-table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); }
+        .statement-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; white-space: nowrap; min-width: 800px; }
+        .statement-table thead th { background: #6b21a8; color: #fff; padding: 10px 12px; font-weight: 600; text-align: right; position: sticky; top: 0; z-index: 2; border-bottom: 2px solid #5b13a0; }
+        [dir="ltr"] .statement-table thead th { text-align: left; }
+        .statement-table tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .statement-table tbody tr:hover { background: rgba(107, 33, 168, 0.04); }
+        .stmt-col-sel { width: 32px; text-align: center !important; }
+        .stmt-col-act { width: 36px; text-align: center !important; }
+        .stmt-col-sel input[type="checkbox"] { width: 16px; height: 16px; accent-color: #6b21a8; cursor: pointer; }
+        .btn-icon-sm { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 4px; border-radius: var(--radius-sm); color: var(--text-secondary); transition: color 0.2s, background 0.2s; }
+        .btn-icon-sm:hover { color: var(--accent); background: var(--bg-hover); }
+        .stmt-num { text-align: left !important; font-variant-numeric: tabular-nums; font-family: 'Courier New', monospace; direction: ltr; }
+        [dir="rtl"] .stmt-num { text-align: left !important; }
+        .stmt-narration { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .stmt-type-badge { display: inline-block; padding: 2px 8px; border-radius: 999px; background: rgba(107, 33, 168, 0.12); color: #6b21a8; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.5px; }
+        .stmt-sign { font-weight: 700; font-size: 0.8rem; }
+        .stmt-sign-cr { color: #16a34a; }
+        .stmt-sign-dr { color: #dc2626; }
+        .stmt-row-bf td { background: rgba(107, 33, 168, 0.06) !important; font-weight: 600; color: var(--text-secondary); }
+        .stmt-row-total td { background: rgba(107, 33, 168, 0.1) !important; font-weight: 700; border-top: 2px solid #6b21a8; }
+        .stmt-row-cf td { background: rgba(107, 33, 168, 0.06) !important; font-weight: 700; }
+        .stmt-cf-val { font-size: 0.95rem; color: var(--text-primary); }
+        .stmt-cf-sign { font-weight: 700; font-size: 0.9rem; }
+        .stmt-row-data td { transition: background-color 0.2s; }
+        .stmt-filter-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+        .stmt-filter-col label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; }
+        .stmt-filter-col input { width: 100%; }
+        .stmt-filter-checks { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 12px; }
+        .stmt-filter-checks label { display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; }
+        .account-balance-table { width: 100%; border-collapse: collapse; }
+        .account-balance-table th { background: #6b21a8; color: #fff; padding: 10px 12px; text-align: right; font-weight: 600; }
+        [dir="ltr"] .account-balance-table th { text-align: left; }
+        .account-balance-table td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+        .account-balance-table .stmt-num { text-align: left; font-family: 'Courier New', monospace; direction: ltr; }
+        /* Statement — Tablet */
+        @media (max-width: 1024px) {
+            .statement-table { font-size: 0.8rem; min-width: 700px; }
+            .statement-table thead th, .statement-table tbody td { padding: 7px 8px; }
+        }
+        /* Statement — Mobile */
+        @media (max-width: 768px) {
+            .statement-toolbar { flex-direction: column; align-items: stretch; }
+            .statement-toolbar .btn-primary, .statement-toolbar .btn-secondary { width: 100%; min-height: 44px; }
+            .statement-toolbar-right { margin-inline-start: 0; justify-content: space-between; }
+            .stmt-filter-row { grid-template-columns: 1fr; }
+            .statement-table { font-size: 0.75rem; min-width: 600px; }
+            .statement-table thead th, .statement-table tbody td { padding: 6px; }
+            .stmt-narration { max-width: 160px; }
+        }
