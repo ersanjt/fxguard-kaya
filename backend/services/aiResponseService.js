@@ -21,7 +21,11 @@ const REQUEST_TIMEOUT_MS = 15000;
  */
 async function generateAIResponse({ conversation, customer, incomingMessage, messageHistory = [], department = null }) {
     const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey || !incomingMessage || !String(incomingMessage).trim()) return null;
+    if (!apiKey) {
+        if (process.env.NODE_ENV !== 'test') console.warn('AI: OPENAI_API_KEY not set in .env');
+        return null;
+    }
+    if (!incomingMessage || !String(incomingMessage).trim()) return null;
 
     const customerName = (customer && customer.name) || 'مشتری';
     const deptInfo = department ? `دپارتمان فعلی: ${department.name}. ${(department.description || '').slice(0, 150)}` : '';
@@ -74,7 +78,11 @@ ${deptInfo ? `\n${deptInfo}` : ''}`;
         return cleaned.slice(0, 1500) || null;
     } catch (err) {
         if (process.env.NODE_ENV !== 'test') {
-            console.warn('AI response generation failed:', err?.response?.data?.error?.message || err?.message);
+            const errMsg = err?.response?.data?.error?.message || err?.message;
+            const errCode = err?.response?.data?.error?.code || err?.code;
+            const status = err?.response?.status;
+            const hint = errCode === 'insufficient_quota' ? ' → سقف اعتبار OpenAI تمام شده. به https://platform.openai.com/account/billing مراجعه کنید.' : '';
+            console.warn('AI response generation failed:', errMsg + hint, { code: errCode, status });
         }
         return null;
     }

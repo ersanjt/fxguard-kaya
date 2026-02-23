@@ -20,10 +20,8 @@ const axios = require('axios');
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/users');
 const conversationRoutes = require('./routes/conversations');
-const messageRoutes = require('./routes/messages');
 const departmentRoutes = require('./routes/departments');
 const analyticsRoutes = require('./routes/analytics');
-const bulkRoutes = require('./routes/bulk');
 const customerRoutes = require('./routes/customers');
 const branchRoutes = require('./routes/branches');
 const supervisionRoutes = require('./routes/supervision');
@@ -566,10 +564,18 @@ async function processIncomingMessage(messageData) {
         if (!autoResponseSent && hasText) {
             const { generateAIResponse, isAIAnswerEnabled } = require('./services/aiResponseService');
             let aiEnabled = isAIAnswerEnabled();
+            if (!aiEnabled) {
+                logger.info('AI skipped: OPENAI_API_KEY not set or AI_ANSWER_ENABLED=false');
+            }
             try {
                 const [wc] = await WhatsappConfig.findOrCreate({ where: { id: 'default' }, defaults: { aiAnswerEnabled: true } });
-                if (wc.aiAnswerEnabled === false) aiEnabled = false;
-            } catch (_) { /* ستون ممکن است وجود نداشته باشد */ }
+                if (wc && wc.aiAnswerEnabled === false) {
+                    aiEnabled = false;
+                    logger.info('AI skipped: disabled in WhatsappConfig panel');
+                }
+            } catch (e) {
+                logger.warn('WhatsappConfig aiAnswerEnabled check failed:', e?.message);
+            }
             if (aiEnabled) {
                 const convWithDept = await Conversation.findByPk(conversation.id, {
                     include: [{ model: Department, as: 'department', required: false }]
@@ -590,8 +596,14 @@ async function processIncomingMessage(messageData) {
                 if (aiReply) {
                     await sendAutoReply(conversation, aiReply);
                     logger.info(`🤖 AI reply sent to ${customer.phone}`);
+                } else {
+                    logger.warn('AI returned no reply', { phone: customer.phone, incomingPreview: (body || '').slice(0, 50) });
                 }
             }
+        } else if (hasText && autoResponseSent) {
+            logger.debug('AI skipped: auto-response rule matched');
+        } else if (!hasText) {
+            logger.debug('AI skipped: no text in message (media only)');
         }
         
         // 7. ارسال Notification به Dashboard
@@ -1006,7 +1018,7 @@ apiRouter.get('/config', (req, res) => {
     });
 });
 
-const { gatewayGet, gatewayPost, GATEWAY_URL: gatewayUrl } = require('./lib/gatewayClient');
+const { gatewayGet, gatewayPost } = require('./lib/gatewayClient');
 let gatewayProcess = null;
 
 apiRouter.get('/gateway/status', authMiddleware, (req, res) => {
@@ -1064,10 +1076,8 @@ apiRouter.post('/admin/start-gateway', authMiddleware, (req, res) => {
 apiRouter.use('/auth', authRoutes);
 apiRouter.use('/users', authMiddleware, userRoutes);
 apiRouter.use('/conversations', authMiddleware, conversationRoutes);
-apiRouter.use('/messages', messageRoutes);
 apiRouter.use('/departments', authMiddleware, departmentRoutes);
 apiRouter.use('/analytics', authMiddleware, analyticsRoutes);
-apiRouter.use('/bulk', authMiddleware, bulkRoutes);
 apiRouter.use('/customers', authMiddleware, customerRoutes);
 apiRouter.use('/tickets', authMiddleware, require('./routes/tickets')(io));
 apiRouter.use('/branches', authMiddleware, branchRoutes);
