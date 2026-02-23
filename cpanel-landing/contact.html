@@ -111,9 +111,12 @@
     </style>
 </head>
 <body>
-    <script>var PANEL_URL = 'https://app.fxguard.io';</script>
+    <script>
+        var PANEL_URL = 'https://app.fxguard.io';
+        var WA_NUMBER = '905010676486';
+    </script>
 
-    <header>
+    <header id="header">
         <div class="container header-inner">
             <a href="/" class="logo">
                 <svg viewBox="0 0 32 32" fill="none"><rect width="32" height="32" rx="8" fill="#059669"/><path fill="#fff" d="M10 8h4l2 4 2-4h4v12h-3v-6l-1.5 3L16 11v9h-3V8zm8 6h2v4h-2v-4z"/></svg>
@@ -127,9 +130,9 @@
             <button class="nav-toggle" id="navToggle" aria-label="Menu"><span></span><span></span><span></span></button>
             <nav class="nav">
                 <a href="/#pricing" data-i18n="nav_pricing">Pricing</a>
-                <a href="/#contact-form">Contact</a>
+                <a href="/#contact-form" data-i18n="footer_contact">Contact</a>
                 <a href="https://wa.me/905010676486" class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
-                <a href="https://app.fxguard.io" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="nav_panel_btn">Get Started</a>
+                <a href="#" class="btn btn-primary" id="btnPanel" target="_blank" rel="noopener" data-i18n="nav_panel_btn">Get Started</a>
             </nav>
         </div>
     </header>
@@ -137,9 +140,9 @@
     <div class="nav-mobile" id="navMobile">
         <button class="nav-close" id="navClose" aria-label="Close">×</button>
         <a href="/#pricing" data-i18n="nav_pricing">Pricing</a>
-        <a href="/#contact-form">Contact</a>
+        <a href="/#contact-form" data-i18n="footer_contact">Contact</a>
         <a href="https://wa.me/905010676486" class="btn btn-wa" target="_blank" rel="noopener">WhatsApp</a>
-        <a href="https://app.fxguard.io" class="btn btn-primary" target="_blank" rel="noopener" data-i18n="nav_panel_btn">Get Started</a>
+        <a href="#" class="btn btn-primary" id="btnPanelMob" target="_blank" rel="noopener" data-i18n="nav_panel_btn">Get Started</a>
     </div>
 
     <section class="contact-hero">
@@ -201,12 +204,18 @@
     <script src="/js/landing.js"></script>
     <script>
         (function(){
+            var url = (typeof PANEL_URL !== 'undefined') ? PANEL_URL : 'https://app.fxguard.io';
+            document.querySelectorAll('#btnPanel, #btnPanelMob').forEach(function(btn){ if(btn) btn.href = url; });
             var navToggle = document.getElementById('navToggle');
             var navMobile = document.getElementById('navMobile');
             var navClose = document.getElementById('navClose');
             if (navToggle && navMobile) navToggle.addEventListener('click', function() { navMobile.classList.add('open'); });
             if (navClose && navMobile) navClose.addEventListener('click', function() { navMobile.classList.remove('open'); });
             if (navMobile) navMobile.querySelectorAll('a').forEach(function(a) { a.addEventListener('click', function() { navMobile.classList.remove('open'); }); });
+            window.addEventListener('scroll', function() {
+                var h = document.getElementById('header');
+                if (h) h.classList.toggle('scrolled', window.scrollY > 50);
+            });
         })();
     </script>
 </body>

@@ -114,17 +114,15 @@
     }
 
     function detectAndSetLang() {
+        var params = new URLSearchParams(window.location.search);
+        var urlLang = params.get('lang');
+        if (urlLang && TRANSLATIONS[urlLang]) { applyLang(urlLang); return; }
         var saved = localStorage.getItem('landing_lang');
         if (saved && TRANSLATIONS[saved]) { applyLang(saved); return; }
-        fetch('https://ipapi.co/json/').then(function(r){ return r.json(); }).then(function(d) {
-            var c = (d.country_code || '').toUpperCase();
-            if (c === 'IR') applyLang('fa'); else if (c === 'TR') applyLang('tr'); else applyLang('en');
-        }).catch(function() {
-            fetch('https://ip-api.com/json/?fields=countryCode').then(function(r){ return r.json(); }).then(function(d) {
-                var c = (d.countryCode || '').toUpperCase();
-                if (c === 'IR') applyLang('fa'); else if (c === 'TR') applyLang('tr'); else applyLang('en');
-            }).catch(function() { applyLang('en'); });
-        });
+        var browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase().split('-')[0];
+        if (browserLang === 'fa') applyLang('fa');
+        else if (browserLang === 'tr') applyLang('tr');
+        else applyLang('en');
     }
 
     document.querySelectorAll('.lang-switch button').forEach(function(btn) {

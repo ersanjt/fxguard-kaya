@@ -1,7 +1,7 @@
 Add your panel screenshot images here with these EXACT names:
 
-- Desktop-Dashboard.png   (Desktop dashboard screenshot)
-- Mobile-View.png         (Mobile view screenshot)
+- Desktop-Dashboard.svg   (Placeholder - replace with Desktop-Dashboard.png for real screenshot)
+- Mobile-View.svg         (Placeholder - replace with Mobile-View.png for real screenshot)
 
 Upload this "images" folder to cPanel public_html/images/
 

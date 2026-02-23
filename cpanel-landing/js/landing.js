@@ -1,5 +1,7 @@
 (function() {
+    'use strict';
     var LANG = 'en';
+    var SUPPORTED_LANGS = ['en', 'fa', 'tr'];
     var TRANSLATIONS = {
         en: {
             logo: 'WhatsApp CRM',
@@ -130,6 +132,7 @@
     };
 
     function applyLang(lang) {
+        if (!SUPPORTED_LANGS.includes(lang)) lang = 'en';
         LANG = lang;
         document.documentElement.lang = lang === 'fa' ? 'fa' : (lang === 'tr' ? 'tr' : 'en');
         document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
@@ -138,12 +141,12 @@
         document.querySelectorAll('[data-i18n]').forEach(function(el) {
             var key = el.getAttribute('data-i18n');
             var val = t[key] || ct[key];
-            if (val) el.innerHTML = val;
+            if (val != null) el.innerHTML = val;
         });
         document.querySelectorAll('.lang-switch button').forEach(function(btn) {
             btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
         });
-        localStorage.setItem('landing_lang', lang);
+        try { localStorage.setItem('landing_lang', lang); } catch (e) {}
     }
 
     function detectAndSetLang() {
@@ -152,15 +155,10 @@
         if (urlLang && (TRANSLATIONS[urlLang] || CONTACT_TRANSLATIONS[urlLang])) { applyLang(urlLang); return; }
         var saved = localStorage.getItem('landing_lang');
         if (saved && (TRANSLATIONS[saved] || CONTACT_TRANSLATIONS[saved])) { applyLang(saved); return; }
-        fetch('https://ipapi.co/json/').then(function(r){ return r.json(); }).then(function(d) {
-            var c = (d.country_code || '').toUpperCase();
-            if (c === 'IR') applyLang('fa'); else if (c === 'TR') applyLang('tr'); else applyLang('en');
-        }).catch(function() {
-            return fetch('https://ip-api.com/json/?fields=countryCode').then(function(r){ return r.json(); }).then(function(d) {
-                var c = (d.countryCode || '').toUpperCase();
-                if (c === 'IR') applyLang('fa'); else if (c === 'TR') applyLang('tr'); else applyLang('en');
-            }).catch(function() { applyLang('en'); });
-        }).catch(function() { applyLang('en'); });
+        var browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase().split('-')[0];
+        if (browserLang === 'fa') applyLang('fa');
+        else if (browserLang === 'tr') applyLang('tr');
+        else applyLang('en');
     }
 
     document.querySelectorAll('.lang-switch button').forEach(function(btn) {
@@ -206,10 +204,12 @@
                 var labels = { demo: 'Demo Request', purchase: 'Purchase', quote: 'Custom Quote', support: 'Support', other: 'Other' };
                 subj.value = 'WhatsApp CRM - ' + (labels[purpose.value] || purpose.value);
             }
-            if (form.getAttribute('action').indexOf('YOUR_FORM_ID') >= 0) {
+            var action = form.getAttribute('action') || '';
+            if (action.indexOf('YOUR_FORM_ID') >= 0) {
                 e.preventDefault();
                 formSuccess.classList.add('show');
                 form.style.display = 'none';
+                formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return false;
             }
         });
