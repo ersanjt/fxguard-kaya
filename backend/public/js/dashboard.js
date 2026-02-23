@@ -780,7 +780,10 @@
                 });
                 document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
                     var k = el.getAttribute('data-i18n-title');
-                    if (k && t(k)) el.title = t(k);
+                    if (k && t(k)) {
+                        el.title = t(k);
+                        if (el.classList.contains('nav-link') && el.closest('.sidebar')) el.setAttribute('data-tooltip', t(k));
+                    }
                 });
                 document.querySelectorAll('[data-i18n-aria-label]').forEach(function(el) {
                     var k = el.getAttribute('data-i18n-aria-label');
