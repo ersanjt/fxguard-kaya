@@ -9,7 +9,7 @@ const crypto = require('crypto');
 const { logActivity } = require('../services/activityLog');
 const emailService = require('../services/emailService');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
-const { getPermissions } = require('../lib/permissions');
+const { getPermissions, canDeleteCustomer, canDeleteUser } = require('../lib/permissions');
 
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
 const TOTP_TEMP_EXPIRY = '5m';
@@ -116,7 +116,9 @@ router.post('/login', async (req, res) => {
                 branchId: user.branchId,
                 status: 'online',
                 permissions,
-                totpEnabled: false
+                totpEnabled: false,
+                canDeleteCustomer: canDeleteCustomer(user),
+                canDeleteUser: canDeleteUser(user)
             }
         });
     } catch (err) {
@@ -221,7 +223,9 @@ router.post('/totp/verify-login', async (req, res) => {
                 branchId: user.branchId,
                 status: 'online',
                 permissions,
-                totpEnabled: true
+                totpEnabled: true,
+                canDeleteCustomer: canDeleteCustomer(user),
+                canDeleteUser: canDeleteUser(user)
             }
         });
     } catch (err) {
@@ -250,6 +254,8 @@ router.get('/me', async (req, res) => {
         const u = user.toJSON();
         delete u.totpSecret;
         u.permissions = getPermissions(user);
+        u.canDeleteCustomer = canDeleteCustomer(user);
+        u.canDeleteUser = canDeleteUser(user);
         res.json(u);
     } catch (err) {
         res.status(401).json({ error: 'توکن نامعتبر است' });
