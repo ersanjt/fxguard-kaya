@@ -2103,9 +2103,10 @@
             .staff-activity-list .staff-table tbody td::before { content: attr(data-label); font-weight: 500; color: var(--text-muted); font-size: 0.8rem; flex-shrink: 0; }
             .staff-activity-list .staff-table tbody td { flex-wrap: wrap; }
             .staff-activity-list .staff-table .status-dot { margin-inline-start: 6px; }
+            /* LTR: سایدبار از چپ باز شود (فقط موبایل) */
+            body.ltr .sidebar { right: auto; left: 0; transform: translateX(-100%); }
+            body.ltr .sidebar.sidebar-open { transform: translateX(0); box-shadow: 8px 0 32px rgba(0,0,0,0.4); }
         }
-        body.ltr .sidebar { right: auto; left: 0; transform: translateX(-100%); }
-        body.ltr .sidebar.sidebar-open { transform: translateX(0); box-shadow: 8px 0 32px rgba(0,0,0,0.4); }
         /* ========== Responsive: 576px و کمتر ========== */
         @media (max-width: 576px) {
             .task-page-header { flex-direction: column; align-items: stretch; }
@@ -2183,15 +2184,15 @@
         .customer-transactions-summary-in .tx-amount { margin-right: 4px; }
         .customer-transactions-summary-out .tx-amount { margin-right: 4px; }
         #btnRefreshCustomerTransactions { min-width: 40px; padding: 8px 12px; font-size: 1.1rem; }
-        /* ویجت چت داخلی شناور — چپ پایین، کوچک؛ با هاور/فکوس بزرگ می‌شود */
-        .internal-chat-floating-btn { position: fixed; bottom: max(calc(80px + env(safe-area-inset-bottom)), 90px); left: max(20px, env(safe-area-inset-left)); width: 48px; height: 48px; min-width: 48px; min-height: 48px; border-radius: 50%; background: var(--accent); color: #fff; border: none; box-shadow: 0 3px 14px rgba(5,150,105,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 998; transition: width 0.2s, height 0.2s, transform 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+        /* ویجت چت داخلی شناور — فارسی: چپ، انگلیسی/ترکی: راست */
+        .internal-chat-floating-btn { position: fixed; bottom: max(calc(80px + env(safe-area-inset-bottom)), 90px); right: max(20px, env(safe-area-inset-right)); left: auto; width: 48px; height: 48px; min-width: 48px; min-height: 48px; border-radius: 50%; background: var(--accent); color: #fff; border: none; box-shadow: 0 3px 14px rgba(5,150,105,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 998; transition: width 0.2s, height 0.2s, transform 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         @media (max-width: 768px) {
             .internal-chat-floating-btn { bottom: max(calc(130px + env(safe-area-inset-bottom)), 140px); }
         }
         .internal-chat-floating-btn svg { width: 22px; height: 22px; transition: width 0.2s, height 0.2s; }
         .internal-chat-floating-btn:hover, .internal-chat-floating-btn:focus, .internal-chat-floating-btn.internal-chat-floating-btn-open { width: 56px; height: 56px; box-shadow: 0 6px 24px rgba(5,150,105,0.5); outline: none; }
         .internal-chat-floating-btn:hover svg, .internal-chat-floating-btn:focus svg, .internal-chat-floating-btn.internal-chat-floating-btn-open svg { width: 24px; height: 24px; }
-        [dir="rtl"] .internal-chat-floating-btn { left: auto; right: max(20px, env(safe-area-inset-right)); }
+        [dir="rtl"] .internal-chat-floating-btn { right: auto; left: max(20px, env(safe-area-inset-left)); }
         .internal-chat-floating-badge { position: absolute; top: -2px; right: -2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: #ef4444; color: #fff; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; }
         [dir="rtl"] .internal-chat-floating-badge { right: auto; left: -2px; }
         .internal-chat-popup { position: fixed; bottom: calc(48px + env(safe-area-inset-bottom)); left: 16px; width: 360px; max-width: calc(100vw - 32px); height: 420px; max-height: min(420px, calc(100vh - 120px)); background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.05); z-index: 999; display: flex; flex-direction: column; overflow: hidden; animation: internalChatPopupIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
