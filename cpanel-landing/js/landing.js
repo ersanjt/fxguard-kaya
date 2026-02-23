@@ -34,6 +34,7 @@
             faq1_q: 'What is WhatsApp CRM?', faq1_a: 'WhatsApp CRM is a professional panel that lets multiple staff reply from one WhatsApp number. It includes customer management, bulk messaging, auto-response 24/7, and reports — all in one place.',
             faq2_q: 'How much does it cost?', faq2_a: 'Monthly: $49/month. Yearly: $490/year (save 2 months). Custom plans available. Contact us for demo or quote.',
             faq3_q: 'How can I contact for purchase or demo?', faq3_a: 'WhatsApp +90 501 067 6486, email sales@fxguard.io, or fill the form below. We respond within 24 hours on business days.',
+            faq4_q: 'Is there a free trial or demo?', faq4_a: 'Yes. Contact us via WhatsApp or the form to request a free demo. We\'ll set up a short demo so you can see the panel in action before deciding.',
             contact_demo: 'Request Demo', contact_buy: 'Buy Now', contact_quote: 'Get Quote', contact_support: 'Support',
             channel_wa: 'WhatsApp', channel_sales: 'Sales', channel_support: 'Support',
             form_response: 'We respond within 24 hours on business days. For urgent matters, use WhatsApp.',
@@ -41,6 +42,7 @@
             form_title: 'Contact Us', form_sub: 'Questions, custom quote, or demo request? Fill the form or WhatsApp us.',
             form_name: 'Name *', form_email: 'Email *', form_phone: 'Phone / WhatsApp', form_message: 'Message *', form_submit: 'Send Message', form_success: 'Thank you! We will contact you soon.', form_wa: 'Or contact via WhatsApp +90 501 067 6486',
             cta_title: 'Ready to Get Started?', cta_desc: 'Choose a plan, request a demo, or ask for a custom quote. We\'re here to help.', cta_plans: 'View Plans', cta_wa: 'WhatsApp', cta_form: 'Contact Form',
+            trust_demo: 'Free demo', trust_24h: '24h response', trust_secure: 'Secure & reliable',
             footer_contact: 'Contact', footer_faq: 'FAQ', footer_pricing: 'Pricing', footer_support: 'Support'
         },
         fa: {
@@ -74,6 +76,7 @@
             faq1_q: 'CRM واتساپ چیست؟', faq1_a: 'CRM واتساپ پنلی حرفه‌ای است که چند کارمند از یک شماره واتساپ پاسخ می‌دهند. مدیریت مشتری، پیام انبوه، پاسخ خودکار ۲۴/۷ و گزارشات — همه در یک جا.',
             faq2_q: 'قیمت چقدر است؟', faq2_a: 'ماهانه: ۴۹ دلار. سالانه: ۴۹۰ دلار (۲ ماه رایگان). پلن سفارشی موجود است. <a href="#contact-form">تماس با ما</a> برای دمو یا پیشنهاد.',
             faq3_q: 'چطور برای خرید یا دمو تماس بگیرم؟', faq3_a: 'واتساپ ۰۰۹۰۵۰۱۰۶۷۶۴۸۶، ایمیل sales@fxguard.io یا فرم زیر. در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهیم.',
+            faq4_q: 'دمو یا آزمایش رایگان دارید؟', faq4_a: 'بله. از واتساپ یا فرم تماس بگیرید تا دمو رایگان تنظیم کنیم و پنل را قبل از تصمیم ببینید.',
             contact_demo: 'درخواست دمو', contact_buy: 'خرید', contact_quote: 'دریافت پیشنهاد', contact_support: 'پشتیبانی',
             channel_wa: 'واتساپ', channel_sales: 'فروش', channel_support: 'پشتیبانی',
             form_response: 'در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهیم. برای فوری، واتساپ بزنید.',
@@ -81,6 +84,7 @@
             form_title: 'تماس با ما', form_sub: 'سؤال، پیشنهاد سفارشی یا درخواست دمو؟ فرم را پر کنید یا واتساپ بزنید.',
             form_name: 'نام *', form_email: 'ایمیل *', form_phone: 'تلفن / واتساپ', form_message: 'پیام *', form_submit: 'ارسال', form_success: 'متشکریم! به زودی با شما تماس می‌گیریم.', form_wa: 'یا واتساپ: ۰۰۹۰۵۰۱۰۶۷۶۴۸۶',
             cta_title: 'آماده شروع هستید؟', cta_desc: 'پلن انتخاب کنید، دمو بخواهید یا پیشنهاد سفارشی. ما اینجا هستیم.', cta_plans: 'پلن‌ها', cta_wa: 'واتساپ', cta_form: 'فرم تماس',
+            trust_demo: 'دمو رایگان', trust_24h: 'پاسخ ۲۴ ساعته', trust_secure: 'امن و قابل اعتماد',
             footer_contact: 'تماس', footer_faq: 'سوالات', footer_pricing: 'قیمت', footer_support: 'پشتیبانی'
         },
         tr: {
@@ -114,6 +118,7 @@
             faq1_q: 'WhatsApp CRM nedir?', faq1_a: 'WhatsApp CRM, birden fazla personelin tek WhatsApp numarasından yanıt vermesini sağlayan profesyonel bir panel. Müşteri yönetimi, toplu mesaj, 7/24 otomatik yanıt ve raporlar — hepsi tek yerde.',
             faq2_q: 'Fiyatı ne kadar?', faq2_a: 'Aylık: 49$/ay. Yıllık: 490$/yıl (2 ay tasarruf). Özel planlar mevcut. Demo veya teklif için <a href="#contact-form">bize ulaşın</a>.',
             faq3_q: 'Satın alma veya demo için nasıl iletişime geçebilirim?', faq3_a: 'WhatsApp +90 501 067 6486, e-posta sales@fxguard.io veya aşağıdaki formu doldurun. İş günlerinde 24 saat içinde yanıt veriyoruz.',
+            faq4_q: 'Ücretsiz deneme veya demo var mı?', faq4_a: 'Evet. Ücretsiz demo için WhatsApp veya form üzerinden bize ulaşın. Karar vermeden önce paneli görebilirsiniz.',
             contact_demo: 'Demo İste', contact_buy: 'Satın Al', contact_quote: 'Teklif Al', contact_support: 'Destek',
             channel_wa: 'WhatsApp', channel_sales: 'Satış', channel_support: 'Destek',
             form_response: 'İş günlerinde 24 saat içinde yanıt veriyoruz. Acil durumlar için WhatsApp kullanın.',
@@ -121,6 +126,7 @@
             form_title: 'Bize Ulaşın', form_sub: 'Sorular, özel teklif veya demo isteği? Formu doldurun veya WhatsApp yazın.',
             form_name: 'Ad *', form_email: 'E-posta *', form_phone: 'Telefon / WhatsApp', form_message: 'Mesaj *', form_submit: 'Gönder', form_success: 'Teşekkürler! Yakında sizinle iletişime geçeceğiz.', form_wa: 'Veya WhatsApp: +90 501 067 6486',
             cta_title: 'Başlamaya Hazır mısınız?', cta_desc: 'Plan seçin, demo isteyin veya özel teklif alın. Yardımcı olmaya hazırız.', cta_plans: 'Planlar', cta_wa: 'WhatsApp', cta_form: 'İletişim Formu',
+            trust_demo: 'Ücretsiz demo', trust_24h: '24 saat yanıt', trust_secure: 'Güvenli ve güvenilir',
             footer_contact: 'İletişim', footer_faq: 'SSS', footer_pricing: 'Fiyat', footer_support: 'Destek'
         }
     };
@@ -172,6 +178,19 @@
     });
 
     detectAndSetLang();
+
+    /* Scroll reveal */
+    var revealEls = document.querySelectorAll('.reveal');
+    if (revealEls.length && 'IntersectionObserver' in window) {
+        var revealObs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        }, { rootMargin: '0px 0px -60px 0px', threshold: 0.1 });
+        revealEls.forEach(function(el) { revealObs.observe(el); });
+    } else {
+        revealEls.forEach(function(el) { el.classList.add('visible'); });
+    }
 
     var url = (typeof PANEL_URL !== 'undefined') ? PANEL_URL : 'https://app.fxguard.io';
     document.querySelectorAll('#btnPanel, #btnPanelMob').forEach(function(btn){ if(btn) btn.href = url; });

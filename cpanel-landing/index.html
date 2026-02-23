@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <title>WhatsApp Enterprise CRM | Professional Panel — Monthly & Yearly Plans | fxguard.io</title>
-    <meta name="description" content="WhatsApp Enterprise CRM — One number, one panel. Manage customers, bulk messaging, auto-response 24/7. Monthly $49, Yearly $490. Free demo. Contact +90 501 067 6486.">
+    <meta name="description" content="WhatsApp CRM for business — One number, one panel. Bulk messaging, auto-response 24/7, customer management. From $49/mo. Free demo. 24h support. Start today.">
     <meta name="keywords" content="WhatsApp CRM, CRM panel, WhatsApp business, bulk messaging, customer support, WhatsApp management, FX Guard, fxguard, واتساپ سی آر ام, CRM واتساپ">
     <meta name="author" content="FX Guard">
     <meta name="robots" content="index, follow">
@@ -20,7 +20,7 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://fxguard.io/">
     <meta property="og:title" content="WhatsApp Enterprise CRM | Professional Panel for Business">
-    <meta property="og:description" content="One WhatsApp number, all staff reply from one panel. Customer management, bulk messaging, auto-response. Monthly & yearly plans.">
+    <meta property="og:description" content="WhatsApp CRM — One number, one panel. Bulk messaging, auto-response 24/7, customer management. From $49/mo. Free demo.">
     <meta property="og:image" content="https://fxguard.io/images/Desktop-Dashboard.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
@@ -30,7 +30,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="https://fxguard.io/">
     <meta name="twitter:title" content="WhatsApp Enterprise CRM | Professional Panel">
-    <meta name="twitter:description" content="One number, one panel. Bulk messaging, auto-response, customer management. Monthly & yearly plans.">
+    <meta name="twitter:description" content="WhatsApp CRM — One number, one panel. Bulk messaging, auto-response 24/7. From $49/mo. Free demo.">
     <meta name="twitter:image" content="https://fxguard.io/images/Desktop-Dashboard.png">
     <!-- JSON-LD Structured Data -->
     <script type="application/ld+json">
@@ -119,6 +119,14 @@
                             "@type": "Answer",
                             "text": "Contact via WhatsApp +90 501 067 6486, email sales@fxguard.io, or fill the contact form on our website. We respond within 24 hours on business days."
                         }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Is there a free trial or demo?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Yes. Contact us via WhatsApp or the form to request a free demo. We'll set up a short demo so you can see the panel in action before deciding."
+                        }
                     }
                 ]
             }
@@ -156,8 +164,11 @@
         img { max-width: 100%; height: auto; }
 
         /* WhatsApp Float Button */
-        .wa-float { position: fixed; bottom: 24px; right: 24px; z-index: 999; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #25D366 0%, #20bd5a 100%); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(37,211,102,0.5); transition: all 0.3s; }
-        .wa-float:hover { transform: scale(1.1); box-shadow: 0 8px 32px rgba(37,211,102,0.6); color: #fff; }
+        .skip-link { position: absolute; top: -50px; left: 16px; padding: 12px 20px; background: var(--accent); color: white; font-weight: 600; border-radius: 8px; z-index: 1000; transition: top 0.2s; }
+        .skip-link:focus { top: 16px; outline: 2px solid white; outline-offset: 2px; }
+        .wa-float { position: fixed; bottom: 24px; right: 24px; z-index: 999; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #25D366 0%, #20bd5a 100%); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(37,211,102,0.5); transition: all 0.3s; animation: wa-pulse 2.5s ease-in-out infinite; }
+        .wa-float:hover { transform: scale(1.1); box-shadow: 0 8px 32px rgba(37,211,102,0.6); color: #fff; animation: none; }
+        @keyframes wa-pulse { 0%, 100% { box-shadow: 0 4px 20px rgba(37,211,102,0.5); } 50% { box-shadow: 0 4px 28px rgba(37,211,102,0.7); } }
         html[dir="rtl"] .wa-float { right: auto; left: 24px; }
         .wa-float svg { width: 32px; height: 32px; }
 
@@ -218,6 +229,15 @@
         @media (min-width: 768px) { .hero p { font-size: 1.2rem; margin-bottom: 36px; } }
         .hero-btns { display: flex; flex-wrap: wrap; gap: 12px; }
         .hero-btns .btn { padding: 14px 24px; font-size: 0.95rem; }
+        /* Trust bar */
+        .trust-bar { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; align-items: center; padding: 20px 0; margin-top: 32px; border-top: 1px solid var(--border); }
+        @media (min-width: 600px) { .trust-bar { gap: 20px; } }
+        .trust-item { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 0.9rem; }
+        .trust-item strong { color: var(--accent-light); }
+        .trust-icon { font-size: 1.2rem; }
+        /* Scroll reveal */
+        .reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.5s ease, transform 0.5s ease; }
+        .reveal.visible { opacity: 1; transform: translateY(0); }
 
         /* Problems Section */
         .section { padding: 60px 0; }
@@ -394,9 +414,14 @@
         footer a { margin: 0 8px; padding: 4px 8px; border-radius: 6px; transition: all 0.25s; }
         footer a:hover { color: var(--accent-light); background: var(--accent-soft); }
         html[dir="rtl"] body { font-family: 'Vazirmatn', sans-serif; }
+        @media (prefers-reduced-motion: reduce) {
+            .reveal { opacity: 1; transform: none; }
+            .wa-float { animation: none; }
+        }
     </style>
 </head>
 <body>
+    <a href="#main" class="skip-link">Skip to content</a>
     <script>
         var PANEL_URL = 'https://app.fxguard.io';
         var WA_NUMBER = '905010676486';
@@ -439,7 +464,7 @@
         <a href="#" class="btn btn-primary" id="btnPanelMob" data-i18n="nav_panel_btn">Get Started</a>
     </div>
 
-    <main>
+    <main id="main">
     <section class="hero" aria-label="Main introduction">
         <div class="container hero-content">
             <div class="lang-switch">
@@ -455,10 +480,15 @@
                 <a href="https://wa.me/905010676486?text=Hi%2C%20I%20want%20consultation%20about%20WhatsApp%20CRM" class="btn btn-wa" target="_blank" rel="noopener" data-i18n="hero_cta_wa">Consult via WhatsApp</a>
                 <a href="#contact-form" class="btn btn-outline" data-i18n="hero_cta2">Contact Form</a>
             </div>
+            <div class="trust-bar">
+                <span class="trust-item"><span class="trust-icon">✓</span> <strong data-i18n="trust_demo">Free demo</strong></span>
+                <span class="trust-item"><span class="trust-icon">⏱</span> <strong data-i18n="trust_24h">24h response</strong></span>
+                <span class="trust-item"><span class="trust-icon">🔒</span> <span data-i18n="trust_secure">Secure & reliable</span></span>
+            </div>
         </div>
     </section>
 
-    <section class="section" id="problems" aria-labelledby="problems-heading">
+    <section class="section reveal" id="problems" aria-labelledby="problems-heading">
         <div class="container">
             <div class="section-title">
                 <h2 id="problems-heading" data-i18n="problems_title">Do You Face These Problems?</h2>
@@ -490,7 +520,7 @@
         </div>
     </section>
 
-    <section class="section" id="features" aria-labelledby="features-heading">
+    <section class="section reveal" id="features" aria-labelledby="features-heading">
         <div class="container">
             <div class="section-title">
                 <h2 id="features-heading" data-i18n="features_title">Powerful Features</h2>
@@ -531,7 +561,7 @@
         </div>
     </section>
 
-    <section class="section" id="panel-preview" aria-labelledby="panel-heading">
+    <section class="section reveal" id="panel-preview" aria-labelledby="panel-heading">
         <div class="container">
             <div class="panel-preview">
                 <div class="section-title">
@@ -546,7 +576,7 @@
                                 <div class="browser-url">app.fxguard.io/dashboard</div>
                             </div>
                             <div class="browser-content">
-                                <img src="/images/Desktop-Dashboard.svg" alt="WhatsApp CRM Desktop Dashboard - Customer management, conversations, and analytics view" loading="lazy" width="800" height="450" onerror="this.parentElement.style.background='var(--bg-card)';this.style.display='none'">
+                                <img src="/images/Desktop-Dashboard.svg" alt="WhatsApp CRM Desktop Dashboard - Customer management, conversations, and analytics view" loading="lazy" width="800" height="450" decoding="async" onerror="this.parentElement.style.background='var(--bg-card)';this.style.display='none'">
                             </div>
                         </div>
                         <span class="device-badge">
@@ -571,7 +601,7 @@
         </div>
     </section>
 
-    <section class="section">
+    <section class="section reveal">
         <div class="container">
             <div class="stats">
                 <div class="stat"><h3>12+</h3><p data-i18n="stat1">Modules</p></div>
@@ -582,7 +612,7 @@
         </div>
     </section>
 
-    <section class="section" id="pricing" aria-labelledby="pricing-heading">
+    <section class="section reveal" id="pricing" aria-labelledby="pricing-heading">
         <div class="container">
             <div class="section-title">
                 <h2 id="pricing-heading" data-i18n="pricing_title">Simple, Transparent Pricing</h2>
@@ -631,7 +661,7 @@
         </div>
     </section>
 
-    <section class="section" id="faq" aria-labelledby="faq-heading">
+    <section class="section reveal" id="faq" aria-labelledby="faq-heading">
         <div class="container">
             <div class="section-title">
                 <h2 id="faq-heading" data-i18n="faq_title">Frequently Asked Questions</h2>
@@ -650,11 +680,15 @@
                     <summary data-i18n="faq3_q">How can I contact for purchase or demo?</summary>
                     <p data-i18n="faq3_a">WhatsApp +90 501 067 6486, email sales@fxguard.io, or fill the form below. We respond within 24 hours on business days.</p>
                 </details>
+                <details class="faq-item">
+                    <summary data-i18n="faq4_q">Is there a free trial or demo?</summary>
+                    <p data-i18n="faq4_a">Yes. Contact us via WhatsApp or the form to request a free demo. We'll set up a short demo so you can see the panel in action before deciding.</p>
+                </details>
             </div>
         </div>
     </section>
 
-    <section class="section" id="contact-form" aria-labelledby="form-heading">
+    <section class="section reveal" id="contact-form" aria-labelledby="form-heading">
         <div class="container">
             <div class="section-title">
                 <h2 id="form-heading" data-i18n="form_title">Contact Us</h2>
@@ -740,7 +774,7 @@
         </div>
     </section>
 
-    <section class="cta-section" aria-label="Call to action">
+    <section class="cta-section reveal" aria-label="Call to action">
         <div class="container">
             <div class="cta-box">
                 <h2 data-i18n="cta_title">Ready to Get Started?</h2>
@@ -768,6 +802,6 @@
         </div>
     </footer>
 
-    <script src="/js/landing.js"></script>
+    <script src="/js/landing.js" defer></script>
 </body>
 </html>
