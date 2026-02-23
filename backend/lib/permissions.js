@@ -65,7 +65,7 @@ const DEFAULT_BY_ROLE = {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: false, branches: false, supervision: false,
         staff_activity: false, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
-        [MANAGE_USERS_KEY]: false,
+        [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: false,
     },
 };
 

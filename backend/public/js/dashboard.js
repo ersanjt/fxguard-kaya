@@ -6067,7 +6067,10 @@
                 skillsKeywords: skillsEl ? skillsEl.value.trim() || null : null
             };
             var pw = document.getElementById('userEditPassword').value;
-            if (pw) payload.password = pw;
+            if (pw) {
+                if (pw.length < 6) { toast(LANG === 'fa' ? 'رمز عبور حداقل ۶ کاراکتر باشد' : 'Password must be at least 6 characters', true); return; }
+                payload.password = pw;
+            }
             var res = await apiFetch('/api/users/' + currentEditUserId, { method: 'PUT', body: JSON.stringify(payload) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('saved')); closeUserEditModal(); loadUsers(); if (currentEditUserId === (currentUser && currentUser.id)) { apiFetch('/api/users/me').then(function(r) { if (r.ok && r.data) { currentUser = r.data; applyNavByRole(); } }); } } else { toast((res.data && res.data.error) || t('err_generic'), true); }
