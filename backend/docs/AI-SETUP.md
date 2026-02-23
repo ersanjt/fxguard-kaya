@@ -18,14 +18,24 @@ OPENAI_API_KEY=sk-your-api-key-here
 AI_ANSWER_ENABLED=true
 ```
 
-### ۲. Migration (برای تنظیمات از پنل)
+### ۲. Gateway (برای ارسال پاسخ به واتساپ)
+
+پاسخ AI از طریق Gateway به مشتری ارسال می‌شود. در `backend/.env`:
+
+```
+GATEWAY_URL=http://localhost:3001
+```
+
+اگر Backend و Gateway روی سرورهای مختلف هستند، آدرس واقعی Gateway را قرار دهید.
+
+### ۳. Migration (برای تنظیمات از پنل)
 
 ```bash
 cd backend
 node scripts/add-ai-columns.js
 ```
 
-### ۳. مدل (اختیاری)
+### ۴. مدل (اختیاری)
 
 پیش‌فرض: `gpt-4o-mini`. برای تغییر:
 
@@ -48,3 +58,12 @@ OPENAI_MODEL=gpt-4o
 ## هزینه
 
 استفاده از OpenAI بر اساس توکن محاسبه می‌شود. مدل `gpt-4o-mini` ارزان‌تر است.
+
+## عیب‌یابی
+
+**AI پاسخ نمی‌دهد؟**
+
+1. **تست API:** `node scripts/test-ai-response.js "سلام"`
+2. **چک‌لیست:** `OPENAI_API_KEY`، `AI_ANSWER_ENABLED=true`، `GATEWAY_URL`، چک‌باکس AI در پنل
+3. **Gateway:** واتساپ باید متصل باشد (وضعیت سبز)
+4. **اعتبار OpenAI:** [platform.openai.com/account/billing](https://platform.openai.com/account/billing)
