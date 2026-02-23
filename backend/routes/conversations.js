@@ -429,12 +429,20 @@ router.post('/:id/send', async (req, res) => {
         if (!conversation.branchId && req.user.branchId) updateData.branchId = req.user.branchId;
         await conversation.update(updateData);
         const { gatewayPost } = require('../lib/gatewayClient');
-        const payload = { to: conversation.customer.phone, message: content };
+        const { normalizePhone } = require('../lib/phoneUtils');
+        const toPhone = normalizePhone(conversation.customer.phone) || conversation.customer.phone;
+        if (!toPhone) return res.status(400).json({ error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح (مثلاً 09121234567 یا 989121234567) وارد کنید.' });
+        const payload = { to: toPhone, message: content };
         if (mediaUrl) {
             payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
             if (msgType === 'audio') payload.media.sendAsVoice = true;
         }
-        await gatewayPost('/api/send-message', payload, { timeout: 10000 }).catch(() => {});
+        try {
+            await gatewayPost('/api/send-message', payload, { timeout: 10000 });
+        } catch (gwErr) {
+            const errMsg = gwErr?.response?.data?.error || gwErr?.message || 'خطا در ارسال به واتساپ';
+            return res.status(502).json({ error: 'پیام در پنل ذخیره شد اما به واتساپ ارسال نشد: ' + errMsg });
+        }
         await logActivity({
             userId: req.userId,
             branchId: req.user.branchId || conversation.branchId,

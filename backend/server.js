@@ -364,12 +364,7 @@ async function ensureAdminUser() {
 }
 
 // ==================== Process Incoming Messages ====================
-function normalizePhone(val) {
-    if (val == null) return '';
-    let s = String(val).replace(/@c\.us$/i, '').replace(/\D/g, '').trim();
-    if (s && !s.startsWith('98') && s.length <= 10) s = '98' + s;
-    return s;
-}
+const { normalizePhone } = require('./lib/phoneUtils');
 
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
@@ -558,15 +553,48 @@ async function processIncomingMessage(messageData) {
             await sendFirstMessageWelcome(conversation, customer);
         }
         
-        // 4. بررسی Auto-Response Rules
-        await checkAutoResponse(conversation, newMessage);
-        
-        // 5. تخصیص خودکار به دپارتمان و کارمند مناسب
+        // 4. تخصیص خودکار به دپارتمان و کارمند مناسب (قبل از پاسخ AI برای داشتن context)
         if (!conversation.assignedTo) {
             await autoAssignment(conversation, body || '', customer.id);
+            await conversation.reload({ include: [{ model: Department, as: 'department', required: false }] });
         }
         
-        // 6. ارسال Notification به Dashboard
+        // 5. بررسی Auto-Response Rules (کلمات کلیدی)
+        const autoResponseSent = await checkAutoResponse(conversation, newMessage);
+        
+        // 6. پاسخ هوش مصنوعی — اگر هیچ پاسخ خودکاری ارسال نشد و AI فعال است
+        if (!autoResponseSent && hasText) {
+            const { generateAIResponse, isAIAnswerEnabled } = require('./services/aiResponseService');
+            let aiEnabled = isAIAnswerEnabled();
+            try {
+                const [wc] = await WhatsappConfig.findOrCreate({ where: { id: 'default' }, defaults: { aiAnswerEnabled: true } });
+                if (wc.aiAnswerEnabled === false) aiEnabled = false;
+            } catch (_) { /* ستون ممکن است وجود نداشته باشد */ }
+            if (aiEnabled) {
+                const convWithDept = await Conversation.findByPk(conversation.id, {
+                    include: [{ model: Department, as: 'department', required: false }]
+                });
+                const history = await Message.findAll({
+                    where: { conversationId: conversation.id },
+                    order: [['timestamp', 'ASC']],
+                    limit: 12,
+                    attributes: ['direction', 'content']
+                });
+                const aiReply = await generateAIResponse({
+                    conversation: convWithDept,
+                    customer,
+                    incomingMessage: body || '',
+                    messageHistory: history,
+                    department: convWithDept?.department || null
+                });
+                if (aiReply) {
+                    await sendAutoReply(conversation, aiReply);
+                    logger.info(`🤖 AI reply sent to ${customer.phone}`);
+                }
+            }
+        }
+        
+        // 7. ارسال Notification به Dashboard
         io.emit('new_message', {
             conversationId: conversation.id,
             customerId: customer.id,
@@ -579,7 +607,7 @@ async function processIncomingMessage(messageData) {
             }
         });
         
-        // 7. اطلاع‌رسانی به کارمند مسئول
+        // 8. اطلاع‌رسانی به کارمند مسئول
         if (conversation.assignedTo) {
             io.to(`user_${conversation.assignedTo}`).emit('assigned_message', {
                 conversationId: conversation.id,
@@ -627,18 +655,18 @@ async function checkAutoResponse(conversation, message) {
             where: { isActive: true }
         });
         
+        const messageText = (message.content || '').toLowerCase();
         for (const rule of responses) {
-            const keywords = rule.keywords.split(',').map(k => k.trim().toLowerCase());
-            const messageText = message.content.toLowerCase();
-            
-            if (keywords.some(keyword => messageText.includes(keyword))) {
-                // ارسال پاسخ خودکار
+            const keywords = rule.keywords.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+            if (keywords.length && keywords.some(keyword => messageText.includes(keyword))) {
                 await sendAutoReply(conversation, rule.response);
-                break;
+                return true;
             }
         }
+        return false;
     } catch (error) {
         logger.error('Auto-response error:', error);
+        return false;
     }
 }
 
@@ -646,12 +674,13 @@ async function sendAutoReply(conversation, responseText) {
     try {
         const customer = await Customer.findByPk(conversation.customerId);
         
+        const toPhone = normalizePhone(customer.phone) || customer.phone;
         if (rabbitChannel) {
             rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
-                to: customer.phone, message: responseText, conversationId: conversation.id
+                to: toPhone, message: responseText, conversationId: conversation.id
             })), { persistent: true });
         } else {
-            gatewayPost('/api/send-message', { to: customer.phone, message: responseText }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
+            gatewayPost('/api/send-message', { to: toPhone, message: responseText }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
         }
         
         // ذخیره پیام در دیتابیس
@@ -807,12 +836,14 @@ io.on('connection', (socket) => {
                 timestamp: new Date()
             });
             
+            const { normalizePhone } = require('./lib/phoneUtils');
+            const toPhone = normalizePhone(conversation.customer.phone) || conversation.customer.phone;
             if (rabbitChannel) {
                 rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
-                    to: conversation.customer.phone, message: content, media: media, conversationId: conversation.id
+                    to: toPhone, message: content, media: media, conversationId: conversation.id
                 })), { persistent: true });
             } else {
-                gatewayPost('/api/send-message', { to: conversation.customer.phone, message: content, media: media || null }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
+                gatewayPost('/api/send-message', { to: toPhone, message: content, media: media || null }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
             }
             
             // بروزرسانی مکالمه

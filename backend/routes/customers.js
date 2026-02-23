@@ -4,6 +4,7 @@ const { Customer, Conversation, Message, CustomerNote, User, ActivityLog, Depart
 const { logActivity } = require('../services/activityLog');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
+const { normalizePhone } = require('../lib/phoneUtils');
 
 router.get('/', async (req, res) => {
     try {
@@ -168,7 +169,10 @@ router.get('/:id/timeline', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
-        const customer = await Customer.create(req.body);
+        const body = { ...req.body };
+        if (body.phone) body.phone = normalizePhone(body.phone) || body.phone;
+        body.source = body.source || 'manual';
+        const customer = await Customer.create(body);
         res.status(201).json(customer);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -185,7 +189,7 @@ router.put('/:id', async (req, res) => {
         const { name, phone, email, status, notes, customFields } = req.body;
         const updateData = {};
         if (name !== undefined) updateData.name = name;
-        if (phone !== undefined) updateData.phone = phone;
+        if (phone !== undefined) updateData.phone = normalizePhone(phone) || phone;
         if (email !== undefined) updateData.email = email;
         if (notes !== undefined) updateData.notes = notes;
         if (customFields !== undefined) updateData.customFields = customFields;
