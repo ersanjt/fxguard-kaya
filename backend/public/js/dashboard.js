@@ -1121,11 +1121,19 @@
         async function loadRatesCharts() {
             var canvas = document.getElementById('ratesChartCanvas');
             var summaryEl = document.getElementById('ratesChartsSummary');
+            var statsRow = document.getElementById('ratesChartsStatsRow');
+            var loadingOverlay = document.getElementById('ratesChartsLoadingOverlay');
+            var refreshBtn = document.querySelector('.rates-charts-refresh-btn');
             if (!canvas) return;
             var periodSel = document.getElementById('ratesChartPeriod');
             var days = periodSel ? parseInt(periodSel.value, 10) || 30 : 30;
-            if (summaryEl) summaryEl.innerHTML = '<span class="rates-charts-loading">' + (LANG === 'fa' ? 'در حال بارگذاری...' : 'Loading...') + '</span>';
+            if (loadingOverlay) { loadingOverlay.style.display = 'flex'; }
+            if (refreshBtn) refreshBtn.classList.add('loading');
+            if (statsRow) statsRow.innerHTML = '';
+            if (summaryEl) summaryEl.innerHTML = '';
             var res = await apiFetch('/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days);
+            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            if (refreshBtn) refreshBtn.classList.remove('loading');
             if (res.needLogin) return;
             var labels = [];
             var values = [];
@@ -1137,6 +1145,10 @@
             if (ratesChartInstance) { ratesChartInstance.destroy(); ratesChartInstance = null; }
             if (values.length > 0) {
                 var ctx = canvas.getContext('2d');
+                var gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+                gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.12)');
+                gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
                 ratesChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -1144,31 +1156,62 @@
                         datasets: [{
                             label: label + ' (تومان)',
                             data: values,
-                            borderColor: 'rgb(16, 185, 129)',
-                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            borderColor: '#10b981',
+                            borderWidth: 2.5,
+                            backgroundColor: gradient,
                             fill: true,
-                            tension: 0.3,
-                            pointRadius: 2,
-                            pointHoverRadius: 5
+                            tension: 0.4,
+                            pointRadius: 0,
+                            pointHoverRadius: 6,
+                            pointHoverBackgroundColor: '#10b981',
+                            pointHoverBorderColor: '#fff',
+                            pointHoverBorderWidth: 2
                         }]
                     },
                     options: {
                         responsive: true,
                         maintainAspectRatio: true,
-                        aspectRatio: 2,
+                        aspectRatio: 2.2,
+                        animation: { duration: 600 },
                         plugins: { legend: { display: false } },
+                        interaction: { intersect: false, mode: 'index' },
                         scales: {
-                            x: { display: true, ticks: { maxRotation: 45, maxTicksLimit: 12 }, grid: { display: false } },
-                            y: { display: true, ticks: { callback: function(v) { return typeof v === 'number' ? v.toLocaleString('fa-IR') : v; } }, grid: { color: 'rgba(0,0,0,0.06)' } }
+                            x: {
+                                display: true,
+                                ticks: { maxRotation: 40, maxTicksLimit: 10, font: { size: 11 }, color: 'rgba(139, 157, 195, 0.8)' },
+                                grid: { display: false },
+                                border: { display: false }
+                            },
+                            y: {
+                                display: true,
+                                ticks: {
+                                    callback: function(v) { return typeof v === 'number' ? v.toLocaleString('fa-IR') : v; },
+                                    font: { size: 11 },
+                                    color: 'rgba(139, 157, 195, 0.8)',
+                                    maxTicksLimit: 8
+                                },
+                                grid: { color: 'rgba(45, 63, 95, 0.5)', drawTicks: false },
+                                border: { display: false }
+                            }
                         }
                     }
                 });
                 var lastVal = values[values.length - 1];
                 var firstVal = values[0];
+                var minVal = Math.min.apply(null, values);
+                var maxVal = Math.max.apply(null, values);
                 var change = firstVal && lastVal ? ((lastVal - firstVal) / firstVal * 100).toFixed(1) : null;
                 var changeClass = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
-                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-summary-card"><span class="rates-charts-current">' + formatPrice(lastVal) + ' <span class="rates-charts-unit">تومان</span></span>' + (change != null ? '<span class="rates-charts-change ' + changeClass + '">' + (change > 0 ? '+' : '') + change + '% ' + (LANG === 'fa' ? 'در بازه انتخابی' : 'in period') + '</span>' : '') + '</div>';
+                if (statsRow) {
+                    statsRow.innerHTML =
+                        '<div class="rates-charts-stat-card stat-current"><span class="stat-label">' + t('rates_charts_stat_current') + '</span><span class="stat-value">' + formatPrice(lastVal) + ' <span class="rates-charts-unit">تومان</span></span></div>' +
+                        '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_min') + '</span><span class="stat-value">' + formatPrice(minVal) + '</span></div>' +
+                        '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_max') + '</span><span class="stat-value">' + formatPrice(maxVal) + '</span></div>' +
+                        (change != null ? '<div class="rates-charts-stat-card stat-change ' + changeClass + '"><span class="stat-label">' + t('rates_charts_stat_change') + '</span><span class="stat-value">' + (change > 0 ? '+' : '') + change + '% ' + t('rates_charts_in_period') + '</span></div>' : '');
+                }
+                if (summaryEl) summaryEl.innerHTML = '';
             } else {
+                if (statsRow) statsRow.innerHTML = '';
                 if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'داده‌ای برای نمایش وجود ندارد. لطفاً بعداً تلاش کنید.' : 'No data to display. Please try again later.') + '</div>';
             }
         }
@@ -2642,10 +2685,10 @@
                 { page: 'departments', section: 'departments', title: t('nav_departments'), icon: 'icon-building', stat: null },
                 { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user', stat: null },
                 { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
-                { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-task', stat: null },
+                { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-expand', stat: null },
                 { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone', stat: null },
                 { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart', stat: null },
-                { page: 'services', section: 'services', title: t('nav_services'), icon: 'icon-building', stat: null },
+                { page: 'services', section: 'services', title: t('nav_services'), icon: 'icon-file-plus', stat: null },
                 { page: 'profile', section: 'profile', title: t('nav_profile'), icon: 'icon-user', stat: null },
                 { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
                 { page: 'supervision', section: 'supervision', title: t('nav_supervision'), icon: 'icon-chart', stat: null },

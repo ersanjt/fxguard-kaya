@@ -13,7 +13,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/dashboard.css?v=25">
+    <link rel="stylesheet" href="/css/dashboard.css?v=26">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -40,6 +40,7 @@
             <symbol id="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></symbol>
             <symbol id="icon-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></symbol>
             <symbol id="icon-megaphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+            <symbol id="icon-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
         </defs>
     </svg>
     <div id="loginBox" class="login-wrap">
@@ -224,7 +225,7 @@
                     <button type="button" class="nav-section-title" aria-expanded="true" aria-controls="nav-section-organization" id="navToggleOrganization"><span class="nav-section-title-text" data-i18n="nav_organization">سازمان</span><span class="nav-section-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></button>
                     <div class="nav-section-body" id="nav-section-organization">
                         <a href="#tasks" class="nav-link" data-page="tasks" data-section="tasks" data-i18n-title="nav_tasks"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-task"/></svg></span> <span data-i18n="nav_tasks">وظایف و تسک‌ها</span></a>
-                        <a href="#processes" class="nav-link" data-page="processes" data-section="processes" data-i18n-title="nav_processes"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-task"/></svg></span> <span data-i18n="nav_processes">فرایندهای کسب‌وکار</span></a>
+                        <a href="#processes" class="nav-link" data-page="processes" data-section="processes" data-i18n-title="nav_processes"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-expand"/></svg></span> <span data-i18n="nav_processes">فرایندهای کسب‌وکار</span></a>
                         <a href="#users" class="nav-link" data-page="users" data-section="users" data-i18n-title="nav_users"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></span> <span data-i18n="nav_users">کاربران</span></a>
                         <div class="nav-subsection">
                             <span class="nav-subsection-title" data-i18n="nav_branches_group">مجموعه شعب</span>
@@ -253,9 +254,9 @@
                             <div class="nav-subsection">
                                 <span class="nav-subsection-title" data-i18n="nav_rates">نرخ ارزها</span>
                                 <a href="#rates" class="nav-link" data-page="rates" data-section="rates" data-i18n-title="nav_rates"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span data-i18n="nav_rates_settings">تنظیم نرخ</span></a>
-                                <a href="#rates-charts" class="nav-link" data-page="rates-charts" data-section="rates_charts" data-i18n-title="nav_rates_charts"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span data-i18n="nav_rates_charts">چارت ارزها</span></a>
+                                <a href="#rates-charts" class="nav-link" data-page="rates-charts" data-section="rates_charts" data-i18n-title="nav_rates_charts"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-trending-up"/></svg></span> <span data-i18n="nav_rates_charts">چارت ارزها</span></a>
                             </div>
-                            <a href="#services" class="nav-link" data-page="services" data-section="services" data-i18n-title="nav_services"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building"/></svg></span> <span data-i18n="nav_services">خدمات صرافی</span></a>
+                            <a href="#services" class="nav-link" data-page="services" data-section="services" data-i18n-title="nav_services"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-file-plus"/></svg></span> <span data-i18n="nav_services">خدمات صرافی</span></a>
                         </div>
                         <div class="nav-subsection">
                             <span class="nav-subsection-title" data-i18n="nav_settings_appearance">ظاهر</span>
@@ -1174,28 +1175,47 @@
                 </div>
                 <div id="pageRatesCharts" class="page rates-charts-page">
                     <header class="rates-charts-page-header">
-                        <h2 data-i18n="rates_charts_title">چارت ارزها</h2>
-                        <p class="rates-charts-intro text-muted" data-i18n="rates_charts_intro">نمودار نرخ دلار، یورو و سایر ارزها نسبت به تومان.</p>
-                    </header>
-                    <div class="rates-charts-controls">
-                        <div class="rates-charts-currency-tabs" role="tablist">
-                            <button type="button" class="rates-chart-tab active" data-currency="usd" onclick="setRatesChartCurrency('usd')" data-i18n="currency_usd">دلار</button>
-                            <button type="button" class="rates-chart-tab" data-currency="eur" onclick="setRatesChartCurrency('eur')" data-i18n="currency_eur">یورو</button>
-                            <button type="button" class="rates-chart-tab" data-currency="gbp" onclick="setRatesChartCurrency('gbp')" data-i18n="currency_gbp">پوند</button>
-                            <button type="button" class="rates-chart-tab" data-currency="aed" onclick="setRatesChartCurrency('aed')" data-i18n="currency_aed">درهم</button>
-                            <button type="button" class="rates-chart-tab" data-currency="try" onclick="setRatesChartCurrency('try')" data-i18n="currency_try">لیر</button>
-                            <button type="button" class="rates-chart-tab" data-currency="gold" onclick="setRatesChartCurrency('gold')" data-i18n="currency_gold">طلا</button>
+                        <div class="rates-charts-header-content">
+                            <div class="rates-charts-header-badge"><svg viewBox="0 0 24 24"><use href="#icon-trending-up"/></svg></div>
+                            <div>
+                                <h2 data-i18n="rates_charts_title">چارت ارزها</h2>
+                                <p class="rates-charts-intro text-muted" data-i18n="rates_charts_intro">نمودار نرخ دلار، یورو و سایر ارزها نسبت به تومان.</p>
+                            </div>
                         </div>
-                        <div class="rates-charts-period">
-                            <select id="ratesChartPeriod" onchange="loadRatesCharts()">
-                                <option value="7" data-i18n="chart_7days">۷ روز</option>
-                                <option value="14" data-i18n="chart_14days">۱۴ روز</option>
-                                <option value="30" selected data-i18n="chart_30days">۳۰ روز</option>
-                            </select>
+                    </header>
+                    <div class="rates-charts-stats-row" id="ratesChartsStatsRow">
+                        <!-- Populated by JS: current, min, max, change -->
+                    </div>
+                    <div class="rates-charts-controls">
+                        <div class="rates-charts-currency-tabs" role="tablist" aria-label="انتخاب ارز">
+                            <button type="button" class="rates-chart-tab active" data-currency="usd" onclick="setRatesChartCurrency('usd')" data-i18n="currency_usd"><span class="tab-icon">$</span> دلار</button>
+                            <button type="button" class="rates-chart-tab" data-currency="eur" onclick="setRatesChartCurrency('eur')" data-i18n="currency_eur"><span class="tab-icon">€</span> یورو</button>
+                            <button type="button" class="rates-chart-tab" data-currency="gbp" onclick="setRatesChartCurrency('gbp')" data-i18n="currency_gbp"><span class="tab-icon">£</span> پوند</button>
+                            <button type="button" class="rates-chart-tab" data-currency="aed" onclick="setRatesChartCurrency('aed')" data-i18n="currency_aed"><span class="tab-icon">د.إ</span> درهم</button>
+                            <button type="button" class="rates-chart-tab" data-currency="try" onclick="setRatesChartCurrency('try')" data-i18n="currency_try"><span class="tab-icon">₺</span> لیر</button>
+                            <button type="button" class="rates-chart-tab" data-currency="gold" onclick="setRatesChartCurrency('gold')" data-i18n="currency_gold"><span class="tab-icon">Au</span> طلا</button>
+                        </div>
+                        <div class="rates-charts-controls-right">
+                            <div class="rates-charts-period">
+                                <select id="ratesChartPeriod" onchange="loadRatesCharts()" aria-label="بازه زمانی">
+                                    <option value="7" data-i18n="chart_7days">۷ روز</option>
+                                    <option value="14" data-i18n="chart_14days">۱۴ روز</option>
+                                    <option value="30" selected data-i18n="chart_30days">۳۰ روز</option>
+                                </select>
+                            </div>
+                            <button type="button" class="rates-charts-refresh-btn" onclick="loadRatesCharts()" title="بروزرسانی" aria-label="بروزرسانی نمودار">
+                                <svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M23 4v6h-6M1 20v-6h6"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            </button>
                         </div>
                     </div>
                     <div class="rates-charts-canvas-wrap">
-                        <canvas id="ratesChartCanvas" role="img" aria-label="نمودار نرخ ارز"></canvas>
+                        <div class="rates-charts-canvas-inner">
+                            <canvas id="ratesChartCanvas" role="img" aria-label="نمودار نرخ ارز"></canvas>
+                            <div class="rates-charts-loading-overlay" id="ratesChartsLoadingOverlay" style="display:none;">
+                                <span class="rates-charts-loading-spinner"></span>
+                                <span data-i18n="loading">در حال بارگذاری...</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="rates-charts-summary" id="ratesChartsSummary"></div>
                 </div>

@@ -408,18 +408,48 @@
             .sidebar .nav-section-body { transition: none; }
             .sidebar .nav-section-collapsible.collapsed .nav-section-chevron { transition: none; }
         }
-        /* صفحه چارت ارزها */
-        .rates-charts-page { padding: 20px 24px; padding-bottom: 100px; }
-        .rates-charts-page-header { margin-bottom: 20px; }
-        .rates-charts-page-header h2 { margin: 0 0 6px; font-size: 1.35rem; font-weight: 700; color: var(--text-primary); }
-        .rates-charts-intro { margin: 0; font-size: 0.9rem; color: var(--text-secondary); }
-        .rates-charts-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-bottom: 20px; }
-        .rates-charts-currency-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
-        .rates-chart-tab { padding: 8px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.2s; }
-        .rates-chart-tab:hover { background: var(--bg-tertiary); color: var(--text-primary); }
-        .rates-chart-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-        .rates-charts-period select { padding: 8px 14px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-card); color: var(--text-primary); font-size: 0.9rem; cursor: pointer; }
-        .rates-charts-canvas-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; padding: 20px; margin-bottom: 20px; min-height: 280px; }
+        /* صفحه چارت ارزها — طراحی بهبود یافته */
+        .rates-charts-page { padding: 24px 28px; padding-bottom: 100px; animation: ratesChartsFadeIn 0.35s ease; }
+        @keyframes ratesChartsFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .rates-charts-page-header { margin-bottom: 24px; }
+        .rates-charts-header-content { display: flex; align-items: flex-start; gap: 16px; }
+        .rates-charts-header-badge { width: 48px; height: 48px; border-radius: 14px; background: linear-gradient(135deg, var(--accent) 0%, #059669 100%); display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35); }
+        .rates-charts-header-badge svg { width: 24px; height: 24px; color: #fff; stroke: currentColor; fill: none; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+        .rates-charts-page-header h2 { margin: 0 0 4px; font-size: 1.45rem; font-weight: 700; color: var(--text-primary); letter-spacing: -0.02em; }
+        .rates-charts-intro { margin: 0; font-size: 0.9rem; color: var(--text-secondary); line-height: 1.5; }
+        /* کارت‌های خلاصه آماری */
+        .rates-charts-stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 24px; }
+        .rates-charts-stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; transition: border-color 0.2s, box-shadow 0.2s; }
+        .rates-charts-stat-card:hover { border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .rates-charts-stat-card .stat-label { font-size: 0.8rem; font-weight: 500; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+        .rates-charts-stat-card .stat-value { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; }
+        .rates-charts-stat-card.stat-current .stat-value { font-size: 1.4rem; color: var(--accent); }
+        .rates-charts-stat-card.stat-change .stat-value { font-size: 1.1rem; }
+        .rates-charts-stat-card.stat-change.up .stat-value { color: #10b981; }
+        .rates-charts-stat-card.stat-change.down .stat-value { color: #ef4444; }
+        .rates-charts-stat-card.stat-change.neutral .stat-value { color: var(--text-muted); }
+        /* کنترل‌ها */
+        .rates-charts-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; padding: 16px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; }
+        .rates-charts-currency-tabs { display: flex; flex-wrap: wrap; gap: 10px; }
+        .rates-chart-tab { padding: 10px 18px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-secondary); color: var(--text-secondary); font-size: 0.9rem; font-weight: 500; cursor: pointer; transition: all 0.25s ease; display: inline-flex; align-items: center; gap: 8px; }
+        .rates-chart-tab:hover { background: var(--bg-hover, var(--bg-card)); color: var(--text-primary); border-color: rgba(16, 185, 129, 0.3); transform: translateY(-1px); }
+        .rates-chart-tab.active { background: linear-gradient(135deg, var(--accent) 0%, #059669 100%); border-color: var(--accent); color: #fff; box-shadow: 0 2px 12px rgba(16, 185, 129, 0.35); transform: translateY(-1px); }
+        .rates-chart-tab .tab-icon { font-size: 1rem; opacity: 0.9; }
+        .rates-charts-controls-right { display: flex; align-items: center; gap: 12px; }
+        .rates-charts-period select { padding: 10px 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--bg-secondary); color: var(--text-primary); font-size: 0.9rem; cursor: pointer; font-family: var(--font); transition: border-color 0.2s; }
+        .rates-charts-period select:hover, .rates-charts-period select:focus { border-color: var(--accent); outline: none; }
+        .rates-charts-refresh-btn { width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .rates-charts-refresh-btn:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+        .rates-charts-refresh-btn:active { transform: scale(0.95); }
+        .rates-charts-refresh-btn svg { width: 20px; height: 20px; }
+        .rates-charts-refresh-btn.loading svg { animation: ratesChartsSpin 0.8s linear infinite; }
+        @keyframes ratesChartsSpin { to { transform: rotate(360deg); } }
+        /* بسته نمودار */
+        .rates-charts-canvas-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; min-height: 320px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
+        .rates-charts-canvas-inner { position: relative; min-height: 280px; }
+        .rates-charts-canvas-inner canvas { width: 100% !important; height: auto !important; max-height: 340px; }
+        .rates-charts-loading-overlay { position: absolute; inset: 0; display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(12, 18, 34, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: var(--text-secondary); font-size: 0.9rem; z-index: 2; }
+        .rates-charts-loading-spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: ratesChartsSpin 0.8s linear infinite; }
         .rates-charts-summary { min-height: 48px; }
         .rates-charts-loading { color: var(--text-muted); font-size: 0.9rem; }
         .rates-charts-summary-card { display: flex; flex-wrap: wrap; align-items: baseline; gap: 12px; }
@@ -432,9 +462,19 @@
         .rates-charts-empty { color: var(--text-muted); font-size: 0.9rem; }
         @media (max-width: 768px) {
             .rates-charts-page { padding: 16px; }
-            .rates-charts-controls { flex-direction: column; align-items: stretch; }
+            .rates-charts-header-content { flex-direction: column; gap: 12px; }
+            .rates-charts-header-badge { width: 40px; height: 40px; }
+            .rates-charts-header-badge svg { width: 20px; height: 20px; }
+            .rates-charts-stats-row { grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+            .rates-charts-stat-card { padding: 12px 14px; }
+            .rates-charts-stat-card .stat-value { font-size: 1.1rem; }
+            .rates-charts-stat-card.stat-current .stat-value { font-size: 1.2rem; }
+            .rates-charts-controls { flex-direction: column; align-items: stretch; padding: 14px; }
+            .rates-charts-controls-right { justify-content: space-between; }
             .rates-charts-currency-tabs { justify-content: flex-start; }
-            .rates-charts-canvas-wrap { padding: 12px; min-height: 220px; }
+            .rates-chart-tab { padding: 8px 14px; font-size: 0.85rem; }
+            .rates-charts-canvas-wrap { padding: 16px; min-height: 260px; }
+            .rates-charts-canvas-inner { min-height: 220px; }
         }
         @media (max-width: 768px) {
             .rates-marquee-bar { flex-wrap: wrap; padding: 6px 12px; gap: 8px; padding-bottom: max(6px, env(safe-area-inset-bottom)); }
