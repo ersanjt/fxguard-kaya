@@ -77,6 +77,7 @@ window.__I18N_TR = {
     rates_charts_stat_max: 'Maks',
     rates_charts_stat_change: 'Değişim',
     rates_charts_in_period: 'seçilen dönemde',
+    currency_unit_toman: 'Toman',
     chart_7days: '7 gün',
     chart_14days: '14 gün',
     chart_30days: '30 gün',

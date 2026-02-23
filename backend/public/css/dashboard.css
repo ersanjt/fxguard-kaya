@@ -501,7 +501,8 @@
         .rates-charts-canvas-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 24px; margin-bottom: 24px; min-height: 320px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.12); }
         .rates-charts-canvas-inner { position: relative; min-height: 280px; }
         .rates-charts-canvas-inner canvas { width: 100% !important; height: auto !important; max-height: 340px; }
-        .rates-charts-loading-overlay { position: absolute; inset: 0; display: flex !important; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(12, 18, 34, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: var(--text-secondary); font-size: 0.9rem; z-index: 2; }
+        .rates-charts-loading-overlay { position: absolute; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; gap: 14px; background: rgba(12, 18, 34, 0.85); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: var(--text-secondary); font-size: 0.9rem; z-index: 2; }
+        .rates-charts-loading-overlay.visible { display: flex; }
         .rates-charts-loading-spinner { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: ratesChartsSpin 0.8s linear infinite; }
         .rates-charts-summary { min-height: 48px; }
         .rates-charts-loading { color: var(--text-muted); font-size: 0.9rem; }
@@ -1442,29 +1443,26 @@
         .user-edit-password label { display: block; font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 10px; }
         .user-edit-password input { width: 100%; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); box-sizing: border-box; }
         .user-edit-perms-zone { max-width: 100%; }
-        .user-edit-perms-hint { font-size: 0.9rem; color: var(--text-secondary); margin: 0 0 18px; line-height: 1.6; padding: 14px 18px; background: rgba(16,185,129,0.06); border-radius: 10px; border: 1px solid rgba(16,185,129,0.15); }
-        .user-edit-perms-actions { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; }
+        .user-edit-perms-hint { font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 16px; line-height: 1.5; }
+        .user-edit-perms-actions { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; padding-bottom: 16px; border-bottom: 1px solid var(--border); }
         .btn-user-perms-toggle { padding: 12px 22px; font-size: 0.9rem; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); font-family: var(--font); font-weight: 600; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.15s; }
         .btn-user-perms-toggle:hover { background: var(--bg-hover); color: var(--text-primary); transform: translateY(-1px); }
         .btn-user-perms-toggle.btn-perms-all { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
         .btn-user-perms-toggle.btn-perms-all:hover { background: rgba(16,185,129,0.25); border-color: var(--accent); }
         .btn-user-perms-toggle.btn-perms-none { border-color: var(--text-muted); color: var(--text-muted); }
         .btn-user-perms-toggle.btn-perms-none:hover { background: rgba(239,68,68,0.08); border-color: var(--danger); color: var(--danger); }
-        .user-edit-perms-grid { display: flex; flex-direction: column; gap: 16px; max-height: 360px; overflow-y: auto; padding-inline-end: 8px; }
-        .user-edit-perms-grid::-webkit-scrollbar { width: 8px; }
-        .user-edit-perms-grid::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 8px; }
-        .user-edit-perms-grid::-webkit-scrollbar-thumb { background: var(--border); border-radius: 8px; }
-        .user-edit-perm-group { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-secondary); transition: border-color 0.2s, box-shadow 0.2s; }
-        .user-edit-perm-group:hover { border-color: rgba(16,185,129,0.3); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        .user-edit-perm-group-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 16px 20px; background: rgba(0,0,0,0.06); border-bottom: 1px solid var(--border); }
-        .user-edit-perm-group-title { font-size: 1rem; font-weight: 600; color: var(--text-primary); min-width: 0; }
-        .user-edit-perm-group-toggles { display: flex; gap: 10px; }
-        .btn-user-perms-group { padding: 8px 16px; font-size: 0.83rem; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-family: var(--font); font-weight: 500; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s; }
+        .user-edit-perms-grid { display: flex; flex-direction: column; gap: 16px; }
+        .user-edit-perm-group { border-radius: 10px; background: transparent; }
+        .user-edit-perm-group + .user-edit-perm-group { border-top: 1px solid var(--border); padding-top: 16px; border-radius: 0; }
+        .user-edit-perm-group-header { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 0 0 10px; }
+        .user-edit-perm-group-title { font-size: 0.95rem; font-weight: 700; color: var(--accent); min-width: 0; letter-spacing: -0.01em; }
+        .user-edit-perm-group-toggles { display: flex; gap: 8px; }
+        .btn-user-perms-group { padding: 6px 14px; font-size: 0.8rem; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--text-muted); font-family: var(--font); font-weight: 500; cursor: pointer; transition: background 0.2s, border-color 0.2s, color 0.2s; }
         .btn-user-perms-group:hover { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-        .user-edit-perm-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px 18px; padding: 18px 20px; }
-        .user-edit-perm-item { display: flex; align-items: center; gap: 12px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary); margin: 0; min-width: 0; padding: 8px 10px; border-radius: 8px; transition: background 0.2s; }
-        .user-edit-perm-item:hover { background: rgba(255,255,255,0.04); }
-        .user-edit-perm-item input { margin: 0; flex-shrink: 0; width: 20px; height: 20px; accent-color: var(--accent); }
+        .user-edit-perm-group-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px 14px; padding: 4px 0 0; }
+        .user-edit-perm-item { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.9rem; color: var(--text-primary); margin: 0; min-width: 0; padding: 8px 12px; border-radius: 8px; border: 1px solid transparent; transition: background 0.15s, border-color 0.15s; }
+        .user-edit-perm-item:hover { background: var(--accent-soft); border-color: rgba(16,185,129,0.2); }
+        .user-edit-perm-item input { margin: 0; flex-shrink: 0; width: 18px; height: 18px; accent-color: var(--accent); }
         .user-edit-perm-item .user-edit-perm-label { flex: 1; min-width: 0; overflow-wrap: break-word; word-break: break-word; }
         .user-edit-footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 28px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.04); flex-shrink: 0; margin-top: 0; }
         .user-edit-footer-danger { flex-shrink: 0; }
@@ -1797,6 +1795,7 @@
             .login-box h1 { font-size: 1.25rem; }
             .modal-overlay { padding: 12px; align-items: flex-start; overflow-y: auto; }
             .modal-box { max-width: 100% !important; padding: 16px; margin: auto 0; }
+            .user-edit-modal { padding: 0 !important; }
             .toast { left: 12px; right: 12px; bottom: 100px; max-width: none; }
             .content { padding: 12px; }
             .content h2 { font-size: 1.1rem; margin-bottom: 12px; }

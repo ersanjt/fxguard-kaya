@@ -1139,12 +1139,13 @@
             if (!canvas) return;
             var periodSel = document.getElementById('ratesChartPeriod');
             var days = periodSel ? parseInt(periodSel.value, 10) || 30 : 30;
-            if (loadingOverlay) { loadingOverlay.style.display = 'flex'; }
+            if (loadingOverlay) loadingOverlay.classList.add('visible');
             if (refreshBtn) refreshBtn.classList.add('loading');
             if (statsRow) statsRow.innerHTML = '';
             if (summaryEl) summaryEl.innerHTML = '';
+            try {
             var res = await apiFetch('/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days);
-            if (loadingOverlay) loadingOverlay.style.display = 'none';
+            if (loadingOverlay) loadingOverlay.classList.remove('visible');
             if (refreshBtn) refreshBtn.classList.remove('loading');
             if (res.needLogin) return;
             var labels = [];
@@ -1154,6 +1155,7 @@
             }
             var currencyLabels = { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
             var label = currencyLabels[ratesChartCurrentCurrency] || rateLabel(ratesChartCurrentCurrency);
+            var unitLabel = t('currency_unit_toman') || 'تومان';
             if (ratesChartInstance) { ratesChartInstance.destroy(); ratesChartInstance = null; }
             if (values.length > 0) {
                 var ctx = canvas.getContext('2d');
@@ -1166,7 +1168,7 @@
                     data: {
                         labels: labels,
                         datasets: [{
-                            label: label + ' (تومان)',
+                            label: label + ' (' + unitLabel + ')',
                             data: values,
                             borderColor: '#10b981',
                             borderWidth: 2.5,
@@ -1185,7 +1187,23 @@
                         maintainAspectRatio: true,
                         aspectRatio: 2.2,
                         animation: { duration: 600 },
-                        plugins: { legend: { display: false } },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                titleFont: { size: 12, weight: '600' },
+                                bodyFont: { size: 13, weight: '700' },
+                                padding: { top: 10, bottom: 10, left: 14, right: 14 },
+                                cornerRadius: 10,
+                                displayColors: false,
+                                borderColor: 'rgba(16, 185, 129, 0.3)',
+                                borderWidth: 1,
+                                callbacks: {
+                                    title: function(items) { return items[0] ? items[0].label : ''; },
+                                    label: function(item) { return formatPrice(item.raw) + ' ' + unitLabel; }
+                                }
+                            }
+                        },
                         interaction: { intersect: false, mode: 'index' },
                         scales: {
                             x: {
@@ -1212,19 +1230,26 @@
                 var firstVal = values[0];
                 var minVal = Math.min.apply(null, values);
                 var maxVal = Math.max.apply(null, values);
-                var change = firstVal && lastVal ? ((lastVal - firstVal) / firstVal * 100).toFixed(1) : null;
-                var changeClass = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
+                var changeNum = firstVal && lastVal ? (lastVal - firstVal) / firstVal * 100 : null;
+                var changeStr = changeNum != null ? changeNum.toFixed(1) : null;
+                var changeClass = changeNum > 0 ? 'up' : changeNum < 0 ? 'down' : 'neutral';
                 if (statsRow) {
                     statsRow.innerHTML =
-                        '<div class="rates-charts-stat-card stat-current"><span class="stat-label">' + t('rates_charts_stat_current') + '</span><span class="stat-value">' + formatPrice(lastVal) + ' <span class="rates-charts-unit">تومان</span></span></div>' +
+                        '<div class="rates-charts-stat-card stat-current"><span class="stat-label">' + t('rates_charts_stat_current') + '</span><span class="stat-value">' + formatPrice(lastVal) + ' <span class="rates-charts-unit">' + unitLabel + '</span></span></div>' +
                         '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_min') + '</span><span class="stat-value">' + formatPrice(minVal) + '</span></div>' +
                         '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_max') + '</span><span class="stat-value">' + formatPrice(maxVal) + '</span></div>' +
-                        (change != null ? '<div class="rates-charts-stat-card stat-change ' + changeClass + '"><span class="stat-label">' + t('rates_charts_stat_change') + '</span><span class="stat-value">' + (change > 0 ? '+' : '') + change + '% ' + t('rates_charts_in_period') + '</span></div>' : '');
+                        (changeStr != null ? '<div class="rates-charts-stat-card stat-change ' + changeClass + '"><span class="stat-label">' + t('rates_charts_stat_change') + '</span><span class="stat-value">' + (changeNum > 0 ? '+' : '') + changeStr + '% ' + t('rates_charts_in_period') + '</span></div>' : '');
                 }
                 if (summaryEl) summaryEl.innerHTML = '';
             } else {
                 if (statsRow) statsRow.innerHTML = '';
-                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'داده‌ای برای نمایش وجود ندارد. لطفاً بعداً تلاش کنید.' : 'No data to display. Please try again later.') + '</div>';
+                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'داده‌ای برای نمایش وجود ندارد. لطفاً بعداً تلاش کنید.' : LANG === 'tr' ? 'Gösterilecek veri yok. Lütfen daha sonra tekrar deneyin.' : 'No data to display. Please try again later.') + '</div>';
+            }
+            } catch (err) {
+                if (loadingOverlay) loadingOverlay.classList.remove('visible');
+                if (refreshBtn) refreshBtn.classList.remove('loading');
+                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'خطا در بارگذاری نمودار. لطفاً دوباره تلاش کنید.' : 'Error loading chart. Please try again.') + '</div>';
+                console.error('loadRatesCharts error:', err);
             }
         }
 

@@ -77,6 +77,7 @@ window.__I18N_EN = {
     rates_charts_stat_max: 'Max',
     rates_charts_stat_change: 'Change',
     rates_charts_in_period: 'in period',
+    currency_unit_toman: 'Toman',
     chart_7days: '7 days',
     chart_14days: '14 days',
     chart_30days: '30 days',

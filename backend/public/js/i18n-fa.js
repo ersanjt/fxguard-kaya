@@ -77,6 +77,7 @@ window.__I18N_FA = {
     rates_charts_stat_max: 'بیشترین',
     rates_charts_stat_change: 'تغییر',
     rates_charts_in_period: 'در بازه انتخابی',
+    currency_unit_toman: 'تومان',
     chart_7days: '۷ روز',
     chart_14days: '۱۴ روز',
     chart_30days: '۳۰ روز',
