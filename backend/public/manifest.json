@@ -1,0 +1,26 @@
+{
+  "name": "پورتال کارکنان کایا",
+  "short_name": "کایا CRM",
+  "description": "پورتال کارکنان صرافی کایا — مدیریت مکالمات واتساپ و نظارت",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0c1222",
+  "theme_color": "#0c1222",
+  "lang": "fa",
+  "dir": "rtl",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='8' fill='%23059669'/><path fill='%23fff' d='M10 8h4l2 4 2-4h4v12h-3v-6l-1.5 3L16 11v9h-3V8zm8 6h2v4h-2v-4z'/></svg>",
+      "sizes": "32x32",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='48' fill='%23059669'/><path fill='%23fff' d='M60 48h24l12 24 12-24h24v72h-18v-36l-9 18L96 66v54H78V48zm48 36h12v24h-12v-24z'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
