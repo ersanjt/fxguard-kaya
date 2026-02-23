@@ -642,11 +642,17 @@ function startServer() {
   const PORT = process.env.PORT || 3001;
   const isProd = process.env.NODE_ENV === 'production';
 
-  if (isProd && !CONFIG.gatewayApiSecret) {
-    logger.warn('⚠️ GATEWAY_API_SECRET not set — API is unprotected. Set it in production!');
-  }
-  if (CONFIG.gatewayApiSecret && CONFIG.gatewayApiSecret.length < CONFIG.secretMinLength) {
-    logger.warn('⚠️ GATEWAY_API_SECRET should be at least 32 characters for security');
+  if (isProd) {
+    if (!CONFIG.gatewayApiSecret || CONFIG.gatewayApiSecret.length < CONFIG.secretMinLength) {
+      logger.error('❌ GATEWAY_API_SECRET must be set and at least 32 characters in production. Aborting.');
+      process.exit(1);
+    }
+  } else {
+    if (!CONFIG.gatewayApiSecret) {
+      logger.warn('⚠️ GATEWAY_API_SECRET not set — API is unprotected. Set it in production!');
+    } else if (CONFIG.gatewayApiSecret.length < CONFIG.secretMinLength) {
+      logger.warn('⚠️ GATEWAY_API_SECRET should be at least 32 characters for security');
+    }
   }
 
   server.listen(PORT, () => {

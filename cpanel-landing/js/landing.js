@@ -156,11 +156,11 @@
             var c = (d.country_code || '').toUpperCase();
             if (c === 'IR') applyLang('fa'); else if (c === 'TR') applyLang('tr'); else applyLang('en');
         }).catch(function() {
-            fetch('https://ip-api.com/json/?fields=countryCode').then(function(r){ return r.json(); }).then(function(d) {
+            return fetch('https://ip-api.com/json/?fields=countryCode').then(function(r){ return r.json(); }).then(function(d) {
                 var c = (d.countryCode || '').toUpperCase();
                 if (c === 'IR') applyLang('fa'); else if (c === 'TR') applyLang('tr'); else applyLang('en');
             }).catch(function() { applyLang('en'); });
-        });
+        }).catch(function() { applyLang('en'); });
     }
 
     document.querySelectorAll('.lang-switch button').forEach(function(btn) {

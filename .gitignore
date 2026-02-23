@@ -13,6 +13,8 @@ gateway/node_modules/
 
 # sqlite
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
 backend/database.sqlite
 
 # backups
@@ -25,6 +27,7 @@ gateway/uploads/
 # whatsapp-web.js cache/auth
 gateway/.wwebjs_auth/
 gateway/.wwebjs_cache/
+gateway/sessions/
 
 backend/.env
 backend/env-production-paste.txt

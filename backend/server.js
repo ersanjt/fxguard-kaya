@@ -1,6 +1,7 @@
 require("dotenv").config();
 
 const MAIN_ADMIN_EMAIL = process.env.MAIN_ADMIN_EMAIL || 'admin@kaya.local';
+const MAIN_ADMIN_PASSWORD = process.env.MAIN_ADMIN_PASSWORD || '20231030';
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -72,7 +73,8 @@ const limiter = rateLimit({
     legacyHeaders: false
 });
 app.use('/api/', (req, res, next) => {
-  if (req.path === '/auth/login' || req.path === '/ping') return next();
+  const p = req.path || '';
+  if (p.endsWith('/auth/login') || p.endsWith('/ping')) return next();
   return limiter(req, res, next);
 });
 
@@ -95,8 +97,8 @@ let redisClient = { quit: () => Promise.resolve(), connect: () => Promise.resolv
 if (redis) {
     try {
         redisClient = redis.createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });
-        redisClient.on('error', () => {});
-        redisClient.connect().catch(() => { logger.warn('⚠️ Redis not available - continuing without cache'); });
+        redisClient.on('error', (err) => { logger.warn('Redis error:', err?.message || err); });
+        redisClient.connect().catch((err) => { logger.warn('⚠️ Redis not available - continuing without cache:', err?.message || err); });
     } catch (e) {
         logger.warn('⚠️ Redis init failed:', e.message);
     }
@@ -339,7 +341,7 @@ async function ensureAdminUser() {
             await User.create({
                 name: 'مالک شرکت',
                 email: MAIN_ADMIN_EMAIL_LOWER,
-                password: '20231030',
+                password: MAIN_ADMIN_PASSWORD,
                 role: 'owner',
                 branchId: null,
                 departmentId: dept.id,

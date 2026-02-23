@@ -320,7 +320,8 @@
             .sidebar.sidebar-collapsed .nav-subsection-title { display: none; }
             .sidebar.sidebar-collapsed .nav-section { padding: 0 8px; margin-bottom: 8px; }
             .sidebar.sidebar-collapsed .nav-section:last-child { margin-bottom: 4px; }
-            .sidebar.sidebar-collapsed .nav-subsection { margin-bottom: 4px; }
+            .sidebar.sidebar-collapsed .nav-subsection { margin-bottom: 4px; padding-inline-start: 0; border-inline-start: none; }
+            .sidebar.sidebar-collapsed .nav-subsection .nav-subsection { margin-bottom: 4px; padding-inline-start: 0; border-inline-start: none; }
             .sidebar.sidebar-collapsed a.nav-link { justify-content: center; padding: 12px; margin: 0 4px 2px; }
             .sidebar.sidebar-collapsed a.nav-link > span:last-of-type { display: none; }
             .sidebar.sidebar-collapsed a.active { border-right: none; margin-right: 4px; padding-right: 12px; }
