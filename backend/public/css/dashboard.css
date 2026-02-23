@@ -1948,6 +1948,42 @@
         .customer-modal-footer-right { display: flex; gap: 8px; margin-left: auto; }
         .customer-modal-save { min-width: 120px; }
         @media (max-width: 480px) { .customer-modal-grid { grid-template-columns: 1fr; } .customer-modal-header { padding: 16px 18px; } .customer-modal-body { padding: 16px 18px; } .customer-modal-footer { padding: 14px 18px; } }
+        /* ========== مودال تراکنش — طراحی بهبود یافته ========== */
+        #transactionModal .tx-modal-box { max-width: min(540px, calc(100vw - 32px)); padding: 0; overflow: hidden; }
+        .tx-modal-header { display: flex; align-items: flex-start; gap: 14px; padding: 20px 24px; background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(16,185,129,0.06) 100%); border-bottom: 1px solid var(--border); }
+        .tx-modal-header-icon { width: 48px; height: 48px; min-width: 48px; border-radius: 12px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .tx-modal-header-text { flex: 1; min-width: 0; }
+        .tx-modal-header-text h3 { margin: 0 0 4px; font-size: 1.2rem; font-weight: 700; color: var(--text-primary); }
+        .tx-modal-subtitle { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
+        .tx-modal-close { background: none; border: none; font-size: 1.6rem; line-height: 1; padding: 8px; margin: -8px -8px 0 0; border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; transition: background 0.2s, color 0.2s; }
+        .tx-modal-close:hover { background: rgba(0,0,0,0.06); color: var(--text-primary); }
+        .tx-modal-body { padding: 20px 24px; max-height: 60vh; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+        .tx-modal-section { margin-bottom: 20px; }
+        .tx-modal-section:last-child { margin-bottom: 0; }
+        .tx-modal-section-title { margin: 0 0 14px; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+        .tx-modal-section-dynamic { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; margin-bottom: 20px; }
+        .tx-modal-section-dynamic:empty { display: none; margin: 0; }
+        .tx-modal-section-dynamic .tx-field-wrap[style*="display: none"], .tx-modal-section-dynamic .tx-field-wrap[style*="display:none"] { display: none !important; }
+        .tx-modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 18px; }
+        .tx-modal-field-full { grid-column: 1 / -1; }
+        .tx-modal-field label { display: block; margin-bottom: 6px; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); }
+        .tx-modal-field input, .tx-modal-field select { width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.95rem; transition: border-color 0.2s, box-shadow 0.2s; box-sizing: border-box; }
+        .tx-modal-field input:focus, .tx-modal-field select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+        .tx-modal-field input::placeholder { color: var(--text-muted); }
+        .tx-modal-field input[type="number"] { -moz-appearance: textfield; }
+        .tx-modal-field input[type="number"]::-webkit-inner-spin-button, .tx-modal-field input[type="number"]::-webkit-outer-spin-button { opacity: 1; }
+        .tx-modal-footer { display: flex; gap: 12px; justify-content: flex-end; align-items: center; padding: 16px 24px; border-top: 1px solid var(--border); background: var(--bg-secondary); }
+        .tx-modal-footer .btn-secondary { margin-bottom: 0; }
+        .tx-modal-save { min-width: 120px; }
+        @media (max-width: 480px) {
+            #transactionModal .tx-modal-box { max-width: calc(100vw - 24px) !important; }
+            .tx-modal-header { padding: 16px 18px; }
+            .tx-modal-body { padding: 16px 18px; max-height: 55vh; }
+            .tx-modal-footer { padding: 14px 18px; flex-direction: column; }
+            .tx-modal-footer .btn-primary, .tx-modal-footer .btn-secondary { width: 100%; min-height: 44px; }
+            .tx-modal-grid { grid-template-columns: 1fr; }
+            .tx-modal-section-dynamic { grid-template-columns: 1fr; }
+        }
         .badge.active { background: var(--accent-soft); color: var(--accent); }
         .badge.completed { background: var(--success-soft, rgba(16, 185, 129, 0.15)); color: var(--success, #10b981); }
         .badge.inactive { background: var(--text-muted); color: var(--text-secondary); }
@@ -2694,4 +2730,81 @@
             .statement-table { font-size: 0.75rem; min-width: 600px; }
             .statement-table thead th, .statement-table tbody td { padding: 6px; }
             .stmt-narration { max-width: 160px; }
+        }
+        /* ========== Commitment Summary & Bank Position Tables ========== */
+        .commitment-summary-wrap h4, .exchange-summary-section h4 { display: flex; align-items: center; gap: 8px; }
+        .commitment-table-wrap, .bank-position-table-wrap { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); }
+        .commitment-table, .bank-position-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        .commitment-table thead th, .bank-position-table thead th { background: #6b21a8; color: #fff; padding: 10px 12px; font-weight: 600; text-align: right; }
+        [dir="ltr"] .commitment-table thead th, [dir="ltr"] .bank-position-table thead th { text-align: left; }
+        .commitment-table tbody td, .bank-position-table tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+        .commitment-table tbody tr:hover, .bank-position-table tbody tr:hover { background: rgba(107, 33, 168, 0.04); }
+        /* ========== Reports Page ========== */
+        .reports-page-header { margin-bottom: 16px; }
+        .reports-page-header h3 { font-size: 1.15rem; margin: 0 0 4px; }
+        .reports-nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+        .report-nav-btn { padding: 10px 18px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); font-family: var(--font); font-size: 0.88rem; cursor: pointer; transition: all 0.2s; }
+        .report-nav-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .report-nav-btn.active { background: #6b21a8; color: #fff; border-color: #6b21a8; }
+        .reports-filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 20px; padding: 14px 16px; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); }
+        .reports-filter-bar label { font-size: 0.85rem; color: var(--text-secondary); white-space: nowrap; }
+        .reports-filter-bar input[type="date"], .reports-filter-bar select { padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); min-height: 38px; }
+        .report-content { display: none; }
+        .report-content.show { display: block; }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; background: var(--bg-card); border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+        .report-table thead th { background: #6b21a8; color: #fff; padding: 10px 12px; font-weight: 600; text-align: right; white-space: nowrap; }
+        [dir="ltr"] .report-table thead th { text-align: left; }
+        .report-table tbody td { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+        .report-table tbody tr:hover { background: rgba(107, 33, 168, 0.04); }
+        .report-summary-badge { display: inline-block; padding: 8px 16px; background: rgba(107, 33, 168, 0.08); color: #6b21a8; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 600; margin-bottom: 16px; }
+        /* P&L Cards */
+        .pl-summary-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+        .pl-card { padding: 16px; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg-card); }
+        .pl-label { font-size: 0.82rem; color: var(--text-muted); margin-bottom: 6px; }
+        .pl-value { font-size: 1.2rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+        .pl-income .pl-value { color: #16a34a; }
+        .pl-expense .pl-value { color: #dc2626; }
+        .pl-buy .pl-value { color: #ea580c; }
+        .pl-sell .pl-value { color: #2563eb; }
+        .pl-profit .pl-value { color: #16a34a; }
+        .pl-loss .pl-value { color: #dc2626; }
+        .pl-profit { border-color: rgba(22, 163, 106, 0.3); background: linear-gradient(135deg, var(--bg-card) 0%, rgba(22, 163, 106, 0.06) 100%); }
+        .pl-loss { border-color: rgba(220, 38, 38, 0.3); background: linear-gradient(135deg, var(--bg-card) 0%, rgba(220, 38, 38, 0.06) 100%); }
+        /* Cash Bank Status */
+        .cash-bank-currency-group { margin-bottom: 24px; padding: 16px; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); }
+        .cash-bank-currency-title { font-size: 1.1rem; color: #6b21a8; margin: 0 0 12px; padding-bottom: 8px; border-bottom: 2px solid #6b21a8; }
+        .cash-bank-total { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); text-align: right; }
+        [dir="ltr"] .cash-bank-total { text-align: left; }
+        /* Quick Reports Grid */
+        .quick-reports-grid { display: flex; flex-direction: column; gap: 16px; }
+        .quick-report-group h5 { font-size: 0.85rem; color: #6b21a8; margin: 0 0 8px; padding-bottom: 4px; border-bottom: 1px solid rgba(107, 33, 168, 0.2); }
+        .quick-report-group a { display: block; padding: 6px 0; color: var(--text-primary); text-decoration: none; font-size: 0.88rem; transition: color 0.15s; }
+        .quick-report-group a:hover { color: #6b21a8; text-decoration: underline; }
+        /* Transaction Detail Grid */
+        .tx-detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .tx-detail-item { padding: 10px; background: var(--bg-secondary); border-radius: var(--radius-sm); }
+        .tx-detail-item.full { grid-column: 1 / -1; }
+        .tx-detail-label { display: block; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 4px; }
+        .tx-detail-value { font-size: 0.92rem; color: var(--text-primary); word-break: break-word; }
+        /* Enhanced Statement Row Actions */
+        .stmt-col-act { display: flex; gap: 2px; align-items: center; }
+        .stmt-act-view, .stmt-act-edit { font-size: 0.85rem; padding: 2px 4px; }
+        .stmt-type-buy { background: rgba(234, 88, 12, 0.15); color: #ea580c; }
+        .stmt-type-sell { background: rgba(37, 99, 235, 0.15); color: #2563eb; }
+        .stmt-type-cash_in { background: rgba(22, 163, 106, 0.15); color: #16a34a; }
+        .stmt-type-cash_out { background: rgba(220, 38, 38, 0.15); color: #dc2626; }
+        .stmt-type-income { background: rgba(22, 163, 106, 0.15); color: #16a34a; }
+        .stmt-type-expense { background: rgba(220, 38, 38, 0.15); color: #dc2626; }
+        .stmt-debit { color: #dc2626; }
+        .stmt-credit { color: #16a34a; }
+        /* Reports — Responsive */
+        @media (max-width: 768px) {
+            .reports-nav { gap: 6px; }
+            .report-nav-btn { padding: 8px 12px; font-size: 0.82rem; }
+            .reports-filter-bar { flex-direction: column; align-items: stretch; }
+            .reports-filter-bar input, .reports-filter-bar select { width: 100%; }
+            .pl-summary-cards { grid-template-columns: 1fr 1fr; }
+            .tx-detail-grid { grid-template-columns: 1fr; }
+            .report-table { font-size: 0.78rem; }
+            .quick-reports-grid { gap: 12px; }
         }

@@ -1275,6 +1275,7 @@
                             <button type="button" class="services-tab" data-tab="cashboxes" role="tab" aria-selected="false" data-i18n="tab_cashboxes">صندوق‌ها</button>
                             <button type="button" class="services-tab" data-tab="bankaccounts" role="tab" aria-selected="false" data-i18n="tab_bankaccounts">حساب‌های بانکی</button>
                             <button type="button" class="services-tab" data-tab="transactions" role="tab" aria-selected="false" data-i18n="tab_transactions">تراکنش‌ها</button>
+                            <button type="button" class="services-tab" data-tab="reports" role="tab" aria-selected="false" data-i18n="tab_reports">گزارش‌ها</button>
                         </div>
                     </div>
                     <div id="servicesSummaryPanel" class="services-panel show" role="tabpanel">
@@ -1311,6 +1312,49 @@
                             <div class="exchange-summary-section">
                                 <h4 data-i18n="pending_outward">پرداخت‌های در انتظار</h4>
                                 <div id="summaryPendingOutward" class="exchange-summary-list"></div>
+                            </div>
+                        </div>
+                        <div class="commitment-summary-wrap" style="margin-top:24px;">
+                            <h4 data-i18n="commitment_summary">خلاصه تعهدات <button type="button" class="btn-icon-sm" onclick="loadServicesSummary()" title="بروزرسانی">&#8635;</button></h4>
+                            <div class="commitment-table-wrap">
+                                <table class="commitment-table" id="commitmentTable">
+                                    <thead>
+                                        <tr>
+                                            <th data-i18n="currency">ارز</th>
+                                            <th class="stmt-num" data-i18n="col_cash_pos">صندوق</th>
+                                            <th class="stmt-num" data-i18n="col_bank_pos">بانک</th>
+                                            <th class="stmt-num" data-i18n="col_total">مجموع</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="commitmentBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="exchange-summary-grid" style="margin-top:24px;">
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="bank_position">وضعیت حساب‌های بانکی</h4>
+                                <div class="bank-position-table-wrap">
+                                    <table class="bank-position-table" id="bankPositionTable">
+                                        <thead><tr><th data-i18n="bankaccount_name">حساب</th><th data-i18n="currency">ارز</th><th class="stmt-num" data-i18n="col_fc_amount">موجودی</th></tr></thead>
+                                        <tbody id="bankPositionBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="report_links">دسترسی سریع گزارش‌ها</h4>
+                                <div class="quick-reports-grid">
+                                    <div class="quick-report-group">
+                                        <h5 data-i18n="accounts_reports">گزارش‌های حساب</h5>
+                                        <a href="#" onclick="switchToReport('statement'); return false;" data-i18n="rpt_statement">صورت حساب</a>
+                                        <a href="#" onclick="switchToReport('turnover'); return false;" data-i18n="rpt_turnover">گردش حساب</a>
+                                        <a href="#" onclick="switchToReport('expense-journal'); return false;" data-i18n="rpt_expense_journal">دفتر هزینه</a>
+                                    </div>
+                                    <div class="quick-report-group">
+                                        <h5 data-i18n="financials">مالی</h5>
+                                        <a href="#" onclick="switchToReport('profit-loss'); return false;" data-i18n="rpt_profit_loss">سود و زیان</a>
+                                        <a href="#" onclick="switchToReport('cash-bank'); return false;" data-i18n="rpt_cash_bank">وضعیت صندوق و بانک</a>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1380,6 +1424,46 @@
                             </div>
                         </div>
                         <div id="transactionList" class="transaction-list"></div>
+                    </div>
+                    <div id="servicesReportsPanel" class="services-panel" role="tabpanel">
+                        <div class="reports-page-header">
+                            <h3 data-i18n="tab_reports">گزارش‌ها</h3>
+                            <p class="text-muted" data-i18n="reports_intro">انتخاب نوع گزارش و مشاهده اطلاعات مالی صرافی</p>
+                        </div>
+                        <div class="reports-nav">
+                            <button type="button" class="report-nav-btn active" data-report="turnover" onclick="showReport('turnover')" data-i18n="rpt_turnover">گردش حساب</button>
+                            <button type="button" class="report-nav-btn" data-report="profit-loss" onclick="showReport('profit-loss')" data-i18n="rpt_profit_loss">سود و زیان</button>
+                            <button type="button" class="report-nav-btn" data-report="expense-journal" onclick="showReport('expense-journal')" data-i18n="rpt_expense_journal">دفتر هزینه</button>
+                            <button type="button" class="report-nav-btn" data-report="cash-bank" onclick="showReport('cash-bank')" data-i18n="rpt_cash_bank">وضعیت صندوق و بانک</button>
+                        </div>
+                        <div class="reports-filter-bar">
+                            <label data-i18n="from_date">از تاریخ</label>
+                            <input type="date" id="reportFromDate">
+                            <label data-i18n="to_date">تا تاریخ</label>
+                            <input type="date" id="reportToDate">
+                            <label data-i18n="currency">ارز</label>
+                            <select id="reportCurrency">
+                                <option value="">همه</option>
+                                <option value="IRR">تومان</option><option value="TMN">TMN</option>
+                                <option value="USD">دلار</option><option value="EUR">یورو</option>
+                                <option value="DHS">درهم</option><option value="GBP">پوند</option>
+                                <option value="TRY">لیر</option><option value="USDT">تتر</option>
+                            </select>
+                            <button type="button" class="btn-primary btn-sm" onclick="loadCurrentReport()" data-i18n="btn_generate">تولید گزارش</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="exportCurrentReportExcel()" data-i18n="export_excel">Excel</button>
+                        </div>
+                        <div id="reportTurnover" class="report-content show">
+                            <div id="turnoverContent"></div>
+                        </div>
+                        <div id="reportProfitLoss" class="report-content">
+                            <div id="profitLossContent"></div>
+                        </div>
+                        <div id="reportExpenseJournal" class="report-content">
+                            <div id="expenseJournalContent"></div>
+                        </div>
+                        <div id="reportCashBank" class="report-content">
+                            <div id="cashBankContent"></div>
+                        </div>
                     </div>
                 </div>
                 <div id="pagePanelSettings" class="page page-panel-settings">
@@ -1772,43 +1856,100 @@
                     </div>
                 </div>
                 <div id="transactionModal" class="modal-overlay" style="display:none;">
-                    <div class="modal-box" style="max-width:480px;">
-                        <div class="modal-header"><h3 id="txModalTitle" data-i18n="transaction_add">ثبت تراکنش</h3><button type="button" class="modal-close" onclick="closeTransactionModal()">&times;</button></div>
-                        <div class="modal-body">
-                            <input type="hidden" id="txModalId" value="">
-                            <label data-i18n="tx_customer_label">مشتری (اختیاری)</label>
-                            <select id="txModalCustomer"><option value="">بدون مشتری</option></select>
-                            <label data-i18n="transaction_type">نوع تراکنش</label>
-                            <select id="txModalType">
-                                <option value="cash_in">ورود به صندوق</option>
-                                <option value="cash_out">خروج از صندوق</option>
-                                <option value="transfer_box">انتقال بین صندوق‌ها</option>
-                                <option value="bank_deposit">واریز به بانک</option>
-                                <option value="bank_withdraw">برداشت از بانک</option>
-                                <option value="transfer_account">انتقال بین حساب‌ها</option>
-                                <option value="income">درآمد</option>
-                                <option value="expense">هزینه</option>
-                                <option value="buy">خرید</option>
-                                <option value="sell">فروش</option>
-                            </select>
-                            <label data-i18n="amount">مبلغ</label>
-                            <input type="number" id="txModalAmount" placeholder="0" step="0.01" required>
-                            <label data-i18n="currency">واحد پول</label>
-                            <select id="txModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
-                            <div id="txModalFromBoxWrap" class="tx-field-wrap"><label>از صندوق</label><select id="txModalFromCashBox"><option value="">انتخاب صندوق</option></select></div>
-                            <div id="txModalToBoxWrap" class="tx-field-wrap"><label>به صندوق</label><select id="txModalToCashBox"><option value="">انتخاب صندوق</option></select></div>
-                            <div id="txModalFromBankWrap" class="tx-field-wrap" style="display:none;"><label>از حساب بانکی</label><select id="txModalFromBankAccount"><option value="">انتخاب حساب</option></select></div>
-                            <div id="txModalToBankWrap" class="tx-field-wrap" style="display:none;"><label>به حساب بانکی</label><select id="txModalToBankAccount"><option value="">انتخاب حساب</option></select></div>
-                            <label data-i18n="description">شرح</label>
-                            <input type="text" id="txModalDescription" placeholder="شرح تراکنش">
-                            <label data-i18n="reference">شماره مرجع / رسید</label>
-                            <input type="text" id="txModalReference" placeholder="اختیاری">
-                            <label data-i18n="transaction_date">تاریخ</label>
-                            <input type="date" id="txModalDate">
+                    <div class="modal-box tx-modal-box">
+                        <input type="hidden" id="txModalId" value="">
+                        <div class="tx-modal-header">
+                            <div class="tx-modal-header-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            </div>
+                            <div class="tx-modal-header-text">
+                                <h3 id="txModalTitle" data-i18n="transaction_add">ثبت تراکنش</h3>
+                                <p class="tx-modal-subtitle" data-i18n="transaction_modal_subtitle">اطلاعات تراکنش مالی را وارد کنید</p>
+                            </div>
+                            <button type="button" class="tx-modal-close" onclick="closeTransactionModal()" aria-label="Close">&times;</button>
                         </div>
-                        <div class="modal-footer">
+                        <div class="tx-modal-body">
+                            <div class="tx-modal-section">
+                                <div class="tx-modal-section-title" data-i18n="tx_section_basic">اطلاعات اصلی</div>
+                                <div class="tx-modal-grid">
+                                    <div class="tx-modal-field tx-modal-field-full">
+                                        <label data-i18n="transaction_type">نوع تراکنش</label>
+                                        <select id="txModalType">
+                                            <option value="cash_in">ورود به صندوق</option>
+                                            <option value="cash_out">خروج از صندوق</option>
+                                            <option value="transfer_box">انتقال بین صندوق‌ها</option>
+                                            <option value="bank_deposit">واریز به بانک</option>
+                                            <option value="bank_withdraw">برداشت از بانک</option>
+                                            <option value="transfer_account">انتقال بین حساب‌ها</option>
+                                            <option value="income">درآمد</option>
+                                            <option value="expense">هزینه</option>
+                                            <option value="buy">خرید</option>
+                                            <option value="sell">فروش</option>
+                                        </select>
+                                    </div>
+                                    <div class="tx-modal-field">
+                                        <label data-i18n="amount">مبلغ</label>
+                                        <input type="number" id="txModalAmount" placeholder="0" step="0.01" required>
+                                    </div>
+                                    <div class="tx-modal-field">
+                                        <label data-i18n="currency">واحد پول</label>
+                                        <select id="txModalCurrency">
+                                            <option value="IRR">تومان (IRR)</option>
+                                            <option value="TMN">تومان (TMN)</option>
+                                            <option value="USD">دلار (USD)</option>
+                                            <option value="EUR">یورو (EUR)</option>
+                                            <option value="GBP">پوند (GBP)</option>
+                                            <option value="DHS">درهم (DHS)</option>
+                                            <option value="TRY">لیر (TRY)</option>
+                                            <option value="RUB">روبل (RUB)</option>
+                                            <option value="USDT">تتر (USDT)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tx-modal-section tx-modal-section-dynamic">
+                                <div id="txModalFromBoxWrap" class="tx-field-wrap tx-modal-field">
+                                    <label>از صندوق</label>
+                                    <select id="txModalFromCashBox"><option value="">انتخاب صندوق</option></select>
+                                </div>
+                                <div id="txModalToBoxWrap" class="tx-field-wrap tx-modal-field">
+                                    <label>به صندوق</label>
+                                    <select id="txModalToCashBox"><option value="">انتخاب صندوق</option></select>
+                                </div>
+                                <div id="txModalFromBankWrap" class="tx-field-wrap tx-modal-field" style="display:none;">
+                                    <label>از حساب بانکی</label>
+                                    <select id="txModalFromBankAccount"><option value="">انتخاب حساب</option></select>
+                                </div>
+                                <div id="txModalToBankWrap" class="tx-field-wrap tx-modal-field" style="display:none;">
+                                    <label>به حساب بانکی</label>
+                                    <select id="txModalToBankAccount"><option value="">انتخاب حساب</option></select>
+                                </div>
+                            </div>
+                            <div class="tx-modal-section">
+                                <div class="tx-modal-section-title" data-i18n="tx_section_details">جزئیات</div>
+                                <div class="tx-modal-grid">
+                                    <div class="tx-modal-field tx-modal-field-full">
+                                        <label data-i18n="tx_customer_label">مشتری (اختیاری)</label>
+                                        <select id="txModalCustomer"><option value="">بدون مشتری</option></select>
+                                    </div>
+                                    <div class="tx-modal-field tx-modal-field-full">
+                                        <label data-i18n="description">توضیحات</label>
+                                        <input type="text" id="txModalDescription" placeholder="شرح تراکنش">
+                                    </div>
+                                    <div class="tx-modal-field">
+                                        <label data-i18n="reference">شماره مرجع / رسید</label>
+                                        <input type="text" id="txModalReference" placeholder="اختیاری">
+                                    </div>
+                                    <div class="tx-modal-field">
+                                        <label data-i18n="transaction_date">تاریخ</label>
+                                        <input type="date" id="txModalDate">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tx-modal-footer">
                             <button type="button" class="btn-secondary" onclick="closeTransactionModal()" data-i18n="btn_cancel">انصراف</button>
-                            <button type="button" class="btn-primary" onclick="saveTransactionFromModal()" data-i18n="btn_save">ثبت</button>
+                            <button type="button" class="btn-primary tx-modal-save" onclick="saveTransactionFromModal()" data-i18n="btn_save">ثبت</button>
                         </div>
                     </div>
                 </div>

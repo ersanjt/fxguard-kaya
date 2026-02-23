@@ -1428,7 +1428,7 @@
         function initServicesTabs() {
             var tabs = document.querySelectorAll('.services-tab');
             var panels = document.querySelectorAll('.services-panel');
-            var tabMap = { summary: 'Summary', statement: 'Statement', services: 'Services', cashboxes: 'Cashboxes', bankaccounts: 'Bankaccounts', transactions: 'Transactions' };
+            var tabMap = { summary: 'Summary', statement: 'Statement', services: 'Services', cashboxes: 'Cashboxes', bankaccounts: 'Bankaccounts', transactions: 'Transactions', reports: 'Reports' };
             tabs.forEach(function(tab) {
                 tab.onclick = function() {
                     var t = tab.getAttribute('data-tab');
@@ -1444,6 +1444,7 @@
                     else if (t === 'cashboxes') loadCashBoxes();
                     else if (t === 'bankaccounts') loadBankAccounts();
                     else if (t === 'transactions') { loadCustomerFilterForTransactions(); loadTransactions(); }
+                    else if (t === 'reports') { loadCurrentReport(); }
                 };
             });
         }
@@ -1465,6 +1466,7 @@
             else if (t === 'cashboxes') loadCashBoxes();
             else if (t === 'bankaccounts') loadBankAccounts();
             else if (t === 'transactions') { loadCustomerFilterForTransactions(); loadTransactions(); }
+            else if (t === 'reports') { loadCurrentReport(); }
         }
         var currencySymbols = { USD: '$', EUR: '€', GBP: '£', DHS: 'د.إ', TRY: '₺', RUB: '₽', USDT: '₮', IRR: 'تومان', TMN: 'تومان' };
         function formatMoney(n, curr) { var x = parseFloat(n) || 0; var sym = currencySymbols[curr] || curr || 'تومان'; return x.toLocaleString('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym; }
@@ -1515,6 +1517,8 @@
                         return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--danger);">' + formatMoneyEn(e[1]) + '</span></div>';
                     }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'پرداختی در انتظار نیست' : 'No pending outward') + '</div>';
                 }
+                renderCommitmentTable(cp);
+                renderBankPositionTable(cp);
             }
         }
         async function loadCashBoxes() {
@@ -1882,20 +1886,50 @@
         }
 
         function buildStmtRow(item) {
-            var bg = stmtMarkedRows[item.id] ? ' style="background:' + stmtMarkedRows[item.id] + ';"' : '';
+            var isMarked = stmtMarkedRows[item.id];
+            var bg = isMarked ? ' style="background:' + isMarked + ';"' : '';
+            var checkAttr = isMarked ? ' checked' : '';
             return '<tr class="stmt-row-data" data-id="' + item.id + '"' + bg + '>' +
-                '<td class="stmt-col-sel"><input type="checkbox" class="stmt-check" onchange="toggleStmtMark(this,\'' + item.id + '\')"></td>' +
-                '<td class="stmt-col-act"><button type="button" class="btn-icon-sm" onclick="openTransactionModalForEdit(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">&#9998;</button></td>' +
+                '<td class="stmt-col-sel"><input type="checkbox" class="stmt-check"' + checkAttr + ' onchange="toggleStmtMark(this,\'' + item.id + '\')"></td>' +
+                '<td class="stmt-col-act"><button type="button" class="btn-icon-sm stmt-act-view" onclick="viewTransactionDetail(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'مشاهده' : 'View') + '">&#128065;</button><button type="button" class="btn-icon-sm stmt-act-edit" onclick="openTransactionModalForEdit(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">&#9998;</button></td>' +
                 '<td>' + escapeHtml(item.date || '') + '</td>' +
-                '<td><span class="stmt-type-badge">' + escapeHtml(item.type) + '</span></td>' +
+                '<td><span class="stmt-type-badge stmt-type-' + item.typeRaw + '">' + escapeHtml(item.type) + '</span></td>' +
                 '<td>' + escapeHtml(item.number) + '</td>' +
-                '<td class="stmt-narration">' + escapeHtml(item.narration) + '</td>' +
+                '<td class="stmt-narration" title="' + escapeHtml(item.narration) + '">' + escapeHtml(item.narration) + '</td>' +
                 '<td>' + escapeHtml(item.currency) + '</td>' +
-                '<td class="stmt-num">' + (item.debit > 0 ? formatMoneyEn(item.debit) : '') + '</td>' +
-                '<td class="stmt-num">' + (item.credit > 0 ? formatMoneyEn(item.credit) : '') + '</td>' +
-                '<td class="stmt-num">' + formatMoneyEn(Math.abs(item.balance)) + '</td>' +
+                '<td class="stmt-num stmt-debit">' + (item.debit > 0 ? formatMoneyEn(item.debit) : '') + '</td>' +
+                '<td class="stmt-num stmt-credit">' + (item.credit > 0 ? formatMoneyEn(item.credit) : '') + '</td>' +
+                '<td class="stmt-num stmt-balance">' + formatMoneyEn(Math.abs(item.balance)) + '</td>' +
                 '<td class="stmt-sign ' + (item.sign === 'Cr' ? 'stmt-sign-cr' : 'stmt-sign-dr') + '">' + item.sign + '</td>' +
                 '</tr>';
+        }
+
+        async function viewTransactionDetail(txId) {
+            var res = await apiFetch('/api/exchange/transactions/' + txId);
+            if (!res.ok || !res.data) { toast(t('err_generic'), true); return; }
+            var tx = res.data;
+            var typeLabels = { cash_in: LANG === 'fa' ? 'ورود به صندوق' : 'Cash In', cash_out: LANG === 'fa' ? 'خروج از صندوق' : 'Cash Out', transfer_box: LANG === 'fa' ? 'انتقال صندوق' : 'Transfer Box', bank_deposit: LANG === 'fa' ? 'واریز بانک' : 'Bank Deposit', bank_withdraw: LANG === 'fa' ? 'برداشت بانک' : 'Bank Withdraw', transfer_account: LANG === 'fa' ? 'انتقال حساب' : 'Transfer Account', income: LANG === 'fa' ? 'درآمد' : 'Income', expense: LANG === 'fa' ? 'هزینه' : 'Expense', buy: LANG === 'fa' ? 'خرید' : 'Buy', sell: LANG === 'fa' ? 'فروش' : 'Sell' };
+            var statusLabels = { pending: LANG === 'fa' ? 'در انتظار' : 'Pending', approved: LANG === 'fa' ? 'تایید شده' : 'Approved', rejected: LANG === 'fa' ? 'رد شده' : 'Rejected' };
+            var info = '<div class="tx-detail-grid">' +
+                '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'نوع' : 'Type') + '</span><span class="tx-detail-value"><span class="stmt-type-badge">' + (typeLabels[tx.type] || tx.type) + '</span></span></div>' +
+                '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'مبلغ' : 'Amount') + '</span><span class="tx-detail-value" style="font-weight:700;font-size:1.1rem;">' + formatMoneyEn(tx.amount) + ' ' + (tx.currency || '') + '</span></div>' +
+                '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'تاریخ' : 'Date') + '</span><span class="tx-detail-value">' + escapeHtml(tx.transactionDate || '') + '</span></div>' +
+                '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</span><span class="tx-detail-value"><span class="badge badge-' + tx.status + '">' + (statusLabels[tx.status] || tx.status) + '</span></span></div>' +
+                (tx.description ? '<div class="tx-detail-item full"><span class="tx-detail-label">' + (LANG === 'fa' ? 'شرح' : 'Description') + '</span><span class="tx-detail-value">' + escapeHtml(tx.description) + '</span></div>' : '') +
+                (tx.reference ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'مرجع' : 'Reference') + '</span><span class="tx-detail-value">' + escapeHtml(tx.reference) + '</span></div>' : '') +
+                (tx.fromCashBox ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'از صندوق' : 'From Cash Box') + '</span><span class="tx-detail-value">' + escapeHtml(tx.fromCashBox.name) + '</span></div>' : '') +
+                (tx.toCashBox ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'به صندوق' : 'To Cash Box') + '</span><span class="tx-detail-value">' + escapeHtml(tx.toCashBox.name) + '</span></div>' : '') +
+                (tx.fromBankAccount ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'از بانک' : 'From Bank') + '</span><span class="tx-detail-value">' + escapeHtml(tx.fromBankAccount.name) + '</span></div>' : '') +
+                (tx.toBankAccount ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'به بانک' : 'To Bank') + '</span><span class="tx-detail-value">' + escapeHtml(tx.toBankAccount.name) + '</span></div>' : '') +
+                (tx.customer ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'مشتری' : 'Customer') + '</span><span class="tx-detail-value">' + escapeHtml(tx.customer.name || tx.customer.phone || '') + '</span></div>' : '') +
+                (tx.user ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'ثبت‌کننده' : 'Created by') + '</span><span class="tx-detail-value">' + escapeHtml(tx.user.name) + '</span></div>' : '') +
+                '</div>';
+            var m = document.getElementById('accountBalanceModal');
+            var content = document.getElementById('accountBalanceContent');
+            var title = m ? m.querySelector('.modal-header h3') : null;
+            if (title) title.textContent = LANG === 'fa' ? 'جزئیات تراکنش' : 'Transaction Detail';
+            if (content) content.innerHTML = info;
+            if (m) m.style.display = 'flex';
         }
 
         function toggleStmtMark(checkbox, id) {
@@ -2035,6 +2069,229 @@
             var link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'statement-of-account-' + new Date().toISOString().slice(0, 10) + '.csv';
+            link.click();
+        }
+
+        // ========== Commitment Summary & Bank Position (خلاصه تعهدات) ==========
+        function renderCommitmentTable(cpData) {
+            var body = document.getElementById('commitmentBody');
+            if (!body || !cpData) return;
+            var cp = cpData.currencyPosition || {};
+            var entries = Object.entries(cp);
+            if (entries.length === 0) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px;">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</td></tr>'; return; }
+            body.innerHTML = entries.map(function(e) {
+                var curr = e[0], d = e[1];
+                var diff = d.total;
+                return '<tr><td><strong>' + escapeHtml(curr) + '</strong></td>' +
+                    '<td class="stmt-num">' + formatMoneyEn(d.cashBoxes) + '</td>' +
+                    '<td class="stmt-num">' + formatMoneyEn(d.bankAccounts) + '</td>' +
+                    '<td class="stmt-num" style="font-weight:700;color:' + (diff >= 0 ? 'var(--accent)' : 'var(--danger)') + ';">' + formatMoneyEn(d.total) + '</td></tr>';
+            }).join('');
+        }
+
+        function renderBankPositionTable(cpData) {
+            var body = document.getElementById('bankPositionBody');
+            if (!body || !cpData) return;
+            var banks = cpData.bankAccounts || [];
+            if (banks.length === 0) { body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px;">' + (LANG === 'fa' ? 'حساب بانکی ندارید' : 'No bank accounts') + '</td></tr>'; return; }
+            body.innerHTML = banks.map(function(b) {
+                return '<tr><td>' + escapeHtml(b.name) + (b.bankName ? ' <small style="color:var(--text-muted);">(' + escapeHtml(b.bankName) + ')</small>' : '') + '</td>' +
+                    '<td>' + escapeHtml(b.currency) + '</td>' +
+                    '<td class="stmt-num" style="font-weight:600;color:' + (b.balance >= 0 ? 'var(--accent)' : 'var(--danger)') + ';">' + formatMoneyEn(b.balance) + '</td></tr>';
+            }).join('');
+        }
+
+        // ========== Reports Page (گزارش‌ها) ==========
+        var currentReportType = 'turnover';
+
+        function showReport(type) {
+            currentReportType = type;
+            var btns = document.querySelectorAll('.report-nav-btn');
+            btns.forEach(function(b) { b.classList.remove('active'); });
+            var activeBtn = document.querySelector('.report-nav-btn[data-report="' + type + '"]');
+            if (activeBtn) activeBtn.classList.add('active');
+            var panels = document.querySelectorAll('.report-content');
+            panels.forEach(function(p) { p.classList.remove('show'); });
+            var rptMap = { turnover: 'reportTurnover', 'profit-loss': 'reportProfitLoss', 'expense-journal': 'reportExpenseJournal', 'cash-bank': 'reportCashBank' };
+            var panel = document.getElementById(rptMap[type]);
+            if (panel) panel.classList.add('show');
+            loadCurrentReport();
+        }
+
+        function switchToReport(type) {
+            var tab = document.querySelector('.services-tab[data-tab="reports"]');
+            if (tab) tab.click();
+            setTimeout(function() { showReport(type === 'statement' ? 'turnover' : type); }, 100);
+        }
+
+        function loadCurrentReport() {
+            if (currentReportType === 'turnover') loadTurnoverReport();
+            else if (currentReportType === 'profit-loss') loadProfitLossReport();
+            else if (currentReportType === 'expense-journal') loadExpenseJournalReport();
+            else if (currentReportType === 'cash-bank') loadCashBankReport();
+        }
+
+        async function loadTurnoverReport() {
+            var el = document.getElementById('turnoverContent');
+            if (!el) return;
+            el.innerHTML = '<div style="padding:24px;text-align:center;">' + t('loading') + '</div>';
+            var params = [];
+            var fd = document.getElementById('reportFromDate'); if (fd && fd.value) params.push('fromDate=' + fd.value);
+            var td = document.getElementById('reportToDate'); if (td && td.value) params.push('toDate=' + td.value);
+            var cr = document.getElementById('reportCurrency'); if (cr && cr.value) params.push('currency=' + cr.value);
+            var res = await apiFetch('/api/exchange/account-turnover?' + params.join('&'));
+            if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
+            var data = res.data || [];
+            if (data.length === 0) { el.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'حسابی یافت نشد' : 'No accounts found') + '</div>'; return; }
+            var totalDebit = 0, totalCredit = 0, totalTurnover = 0;
+            data.forEach(function(a) { totalDebit += a.debit; totalCredit += a.credit; totalTurnover += a.turnover; });
+            el.innerHTML = '<table class="report-table"><thead><tr>' +
+                '<th>' + (LANG === 'fa' ? 'حساب' : 'Account') + '</th>' +
+                '<th>' + (LANG === 'fa' ? 'نوع' : 'Type') + '</th>' +
+                '<th>' + (LANG === 'fa' ? 'ارز' : 'Currency') + '</th>' +
+                '<th class="stmt-num">' + (LANG === 'fa' ? 'بدهکار' : 'Debit') + '</th>' +
+                '<th class="stmt-num">' + (LANG === 'fa' ? 'بستانکار' : 'Credit') + '</th>' +
+                '<th class="stmt-num">' + (LANG === 'fa' ? 'گردش' : 'Turnover') + '</th>' +
+                '<th class="stmt-num">' + (LANG === 'fa' ? 'خالص' : 'Net') + '</th>' +
+                '<th class="stmt-num">' + (LANG === 'fa' ? 'موجودی' : 'Balance') + '</th>' +
+                '</tr></thead><tbody>' +
+                data.map(function(a) {
+                    var typeLabel = a.type === 'cashbox' ? (LANG === 'fa' ? 'صندوق' : 'Cash Box') : (LANG === 'fa' ? 'بانک' : 'Bank');
+                    return '<tr><td>' + escapeHtml(a.name) + '</td>' +
+                        '<td><span class="stmt-type-badge">' + typeLabel + '</span></td>' +
+                        '<td>' + escapeHtml(a.currency) + '</td>' +
+                        '<td class="stmt-num">' + formatMoneyEn(a.debit) + '</td>' +
+                        '<td class="stmt-num">' + formatMoneyEn(a.credit) + '</td>' +
+                        '<td class="stmt-num" style="font-weight:600;">' + formatMoneyEn(a.turnover) + '</td>' +
+                        '<td class="stmt-num" style="color:' + (a.net >= 0 ? 'var(--accent)' : 'var(--danger)') + ';font-weight:600;">' + formatMoneyEn(a.net) + '</td>' +
+                        '<td class="stmt-num" style="font-weight:700;">' + formatMoneyEn(a.balance) + '</td></tr>';
+                }).join('') +
+                '<tr class="stmt-row-total"><td colspan="3"><strong>' + (LANG === 'fa' ? 'مجموع' : 'Total') + '</strong></td>' +
+                '<td class="stmt-num"><strong>' + formatMoneyEn(totalDebit) + '</strong></td>' +
+                '<td class="stmt-num"><strong>' + formatMoneyEn(totalCredit) + '</strong></td>' +
+                '<td class="stmt-num"><strong>' + formatMoneyEn(totalTurnover) + '</strong></td>' +
+                '<td></td><td></td></tr>' +
+                '</tbody></table>';
+        }
+
+        async function loadProfitLossReport() {
+            var el = document.getElementById('profitLossContent');
+            if (!el) return;
+            el.innerHTML = '<div style="padding:24px;text-align:center;">' + t('loading') + '</div>';
+            var params = [];
+            var fd = document.getElementById('reportFromDate'); if (fd && fd.value) params.push('fromDate=' + fd.value);
+            var td = document.getElementById('reportToDate'); if (td && td.value) params.push('toDate=' + td.value);
+            var res = await apiFetch('/api/exchange/profit-loss?' + params.join('&'));
+            if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
+            var d = res.data || {};
+            var currEntries = Object.entries(d.byCurrency || {});
+            el.innerHTML = '<div class="pl-summary-cards">' +
+                '<div class="pl-card pl-income"><div class="pl-label">' + (LANG === 'fa' ? 'مجموع درآمد' : 'Total Income') + '</div><div class="pl-value">' + formatMoneyEn(d.totalIncome) + '</div></div>' +
+                '<div class="pl-card pl-expense"><div class="pl-label">' + (LANG === 'fa' ? 'مجموع هزینه' : 'Total Expense') + '</div><div class="pl-value">' + formatMoneyEn(d.totalExpense) + '</div></div>' +
+                '<div class="pl-card pl-buy"><div class="pl-label">' + (LANG === 'fa' ? 'مجموع خرید' : 'Total Buy') + '</div><div class="pl-value">' + formatMoneyEn(d.totalBuy) + '</div></div>' +
+                '<div class="pl-card pl-sell"><div class="pl-label">' + (LANG === 'fa' ? 'مجموع فروش' : 'Total Sell') + '</div><div class="pl-value">' + formatMoneyEn(d.totalSell) + '</div></div>' +
+                '<div class="pl-card ' + (d.grossProfit >= 0 ? 'pl-profit' : 'pl-loss') + '"><div class="pl-label">' + (LANG === 'fa' ? 'سود / زیان ناخالص' : 'Gross Profit / Loss') + '</div><div class="pl-value">' + formatMoneyEn(d.grossProfit) + '</div></div>' +
+                '</div>' +
+                (currEntries.length > 0 ? '<h4 style="margin-top:24px;">' + (LANG === 'fa' ? 'به تفکیک ارز' : 'By Currency') + '</h4>' +
+                '<table class="report-table"><thead><tr><th>' + (LANG === 'fa' ? 'ارز' : 'Currency') + '</th><th class="stmt-num">' + (LANG === 'fa' ? 'درآمد' : 'Income') + '</th><th class="stmt-num">' + (LANG === 'fa' ? 'هزینه' : 'Expense') + '</th><th class="stmt-num">' + (LANG === 'fa' ? 'خرید' : 'Buy') + '</th><th class="stmt-num">' + (LANG === 'fa' ? 'فروش' : 'Sell') + '</th><th class="stmt-num">' + (LANG === 'fa' ? 'سود/زیان' : 'P/L') + '</th></tr></thead><tbody>' +
+                currEntries.map(function(e) {
+                    return '<tr><td><strong>' + escapeHtml(e[0]) + '</strong></td>' +
+                        '<td class="stmt-num">' + formatMoneyEn(e[1].income) + '</td>' +
+                        '<td class="stmt-num">' + formatMoneyEn(e[1].expense) + '</td>' +
+                        '<td class="stmt-num">' + formatMoneyEn(e[1].buy) + '</td>' +
+                        '<td class="stmt-num">' + formatMoneyEn(e[1].sell) + '</td>' +
+                        '<td class="stmt-num" style="font-weight:700;color:' + (e[1].profit >= 0 ? 'var(--accent)' : 'var(--danger)') + ';">' + formatMoneyEn(e[1].profit) + '</td></tr>';
+                }).join('') + '</tbody></table>' : '');
+        }
+
+        async function loadExpenseJournalReport() {
+            var el = document.getElementById('expenseJournalContent');
+            if (!el) return;
+            el.innerHTML = '<div style="padding:24px;text-align:center;">' + t('loading') + '</div>';
+            var params = [];
+            var fd = document.getElementById('reportFromDate'); if (fd && fd.value) params.push('fromDate=' + fd.value);
+            var td = document.getElementById('reportToDate'); if (td && td.value) params.push('toDate=' + td.value);
+            var cr = document.getElementById('reportCurrency'); if (cr && cr.value) params.push('currency=' + cr.value);
+            var res = await apiFetch('/api/exchange/expense-journal?' + params.join('&'));
+            if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
+            var d = res.data || {};
+            var rows = d.rows || [];
+            if (rows.length === 0) { el.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هزینه‌ای ثبت نشده' : 'No expenses recorded') + '</div>'; return; }
+            el.innerHTML = '<div class="report-summary-badge">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + d.count + ' | ' + (LANG === 'fa' ? 'مجموع: ' : 'Total: ') + formatMoneyEn(d.totalAmount) + '</div>' +
+                '<table class="report-table"><thead><tr>' +
+                '<th>' + (LANG === 'fa' ? 'تاریخ' : 'Date') + '</th>' +
+                '<th>' + (LANG === 'fa' ? 'نوع' : 'Type') + '</th>' +
+                '<th>' + (LANG === 'fa' ? 'شرح' : 'Description') + '</th>' +
+                '<th class="stmt-num">' + (LANG === 'fa' ? 'مبلغ' : 'Amount') + '</th>' +
+                '<th>' + (LANG === 'fa' ? 'ارز' : 'Currency') + '</th>' +
+                '<th>' + (LANG === 'fa' ? 'صندوق' : 'Cash Box') + '</th>' +
+                '<th>' + (LANG === 'fa' ? 'مرجع' : 'Reference') + '</th>' +
+                '<th>' + (LANG === 'fa' ? 'کاربر' : 'User') + '</th>' +
+                '</tr></thead><tbody>' +
+                rows.map(function(r) {
+                    return '<tr><td>' + escapeHtml(r.date || '') + '</td>' +
+                        '<td><span class="stmt-type-badge">' + (r.type === 'expense' ? (LANG === 'fa' ? 'هزینه' : 'Expense') : (LANG === 'fa' ? 'خرید' : 'Buy')) + '</span></td>' +
+                        '<td>' + escapeHtml(r.description || '') + '</td>' +
+                        '<td class="stmt-num" style="color:var(--danger);font-weight:600;">' + formatMoneyEn(r.amount) + '</td>' +
+                        '<td>' + escapeHtml(r.currency) + '</td>' +
+                        '<td>' + (r.fromCashBox ? escapeHtml(r.fromCashBox.name) : '-') + '</td>' +
+                        '<td>' + escapeHtml(r.reference || '') + '</td>' +
+                        '<td>' + (r.user ? escapeHtml(r.user.name) : '-') + '</td></tr>';
+                }).join('') +
+                '<tr class="stmt-row-total"><td colspan="3"><strong>' + (LANG === 'fa' ? 'مجموع' : 'Total') + '</strong></td>' +
+                '<td class="stmt-num"><strong style="color:var(--danger);">' + formatMoneyEn(d.totalAmount) + '</strong></td>' +
+                '<td colspan="4"></td></tr></tbody></table>';
+        }
+
+        async function loadCashBankReport() {
+            var el = document.getElementById('cashBankContent');
+            if (!el) return;
+            el.innerHTML = '<div style="padding:24px;text-align:center;">' + t('loading') + '</div>';
+            var res = await apiFetch('/api/exchange/cash-bank-status');
+            if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
+            var data = res.data || {};
+            var currencies = Object.keys(data);
+            if (currencies.length === 0) { el.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'حسابی تعریف نشده' : 'No accounts defined') + '</div>'; return; }
+            var html = '';
+            currencies.forEach(function(curr) {
+                var grp = data[curr];
+                html += '<div class="cash-bank-currency-group"><h4 class="cash-bank-currency-title">' + escapeHtml(curr) + '</h4>';
+                if (grp.cashBoxes.length > 0) {
+                    html += '<h5>' + (LANG === 'fa' ? 'صندوق‌ها' : 'Cash Boxes') + '</h5><table class="report-table"><thead><tr><th>' + (LANG === 'fa' ? 'نام' : 'Name') + '</th><th>' + (LANG === 'fa' ? 'شعبه' : 'Branch') + '</th><th>' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</th><th class="stmt-num">' + (LANG === 'fa' ? 'موجودی' : 'Balance') + '</th></tr></thead><tbody>';
+                    grp.cashBoxes.forEach(function(cb) {
+                        html += '<tr><td>' + escapeHtml(cb.name) + '</td><td>' + escapeHtml(cb.branch || '-') + '</td><td>' + (cb.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>') + '</td><td class="stmt-num" style="font-weight:600;">' + formatMoneyEn(cb.balance) + '</td></tr>';
+                    });
+                    html += '<tr class="stmt-row-total"><td colspan="3"><strong>' + (LANG === 'fa' ? 'مجموع صندوق‌ها' : 'Cash Total') + '</strong></td><td class="stmt-num"><strong>' + formatMoneyEn(grp.totalCash) + '</strong></td></tr></tbody></table>';
+                }
+                if (grp.bankAccounts.length > 0) {
+                    html += '<h5 style="margin-top:12px;">' + (LANG === 'fa' ? 'حساب‌های بانکی' : 'Bank Accounts') + '</h5><table class="report-table"><thead><tr><th>' + (LANG === 'fa' ? 'نام' : 'Name') + '</th><th>' + (LANG === 'fa' ? 'بانک' : 'Bank') + '</th><th>' + (LANG === 'fa' ? 'شعبه' : 'Branch') + '</th><th>' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</th><th class="stmt-num">' + (LANG === 'fa' ? 'موجودی' : 'Balance') + '</th></tr></thead><tbody>';
+                    grp.bankAccounts.forEach(function(ba) {
+                        html += '<tr><td>' + escapeHtml(ba.name) + '</td><td>' + escapeHtml(ba.bankName || '-') + '</td><td>' + escapeHtml(ba.branch || '-') + '</td><td>' + (ba.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>') + '</td><td class="stmt-num" style="font-weight:600;">' + formatMoneyEn(ba.balance) + '</td></tr>';
+                    });
+                    html += '<tr class="stmt-row-total"><td colspan="4"><strong>' + (LANG === 'fa' ? 'مجموع بانک' : 'Bank Total') + '</strong></td><td class="stmt-num"><strong>' + formatMoneyEn(grp.totalBank) + '</strong></td></tr></tbody></table>';
+                }
+                html += '<div class="cash-bank-total"><strong>' + (LANG === 'fa' ? 'مجموع کل ' + curr + ':' : 'Grand Total ' + curr + ':') + '</strong> <span style="font-weight:700;color:var(--accent);font-size:1.1rem;">' + formatMoneyEn(grp.total) + '</span></div></div>';
+            });
+            el.innerHTML = html;
+        }
+
+        function exportCurrentReportExcel() {
+            var panel = document.querySelector('.report-content.show');
+            if (!panel) return;
+            var table = panel.querySelector('.report-table');
+            if (!table) { toast(LANG === 'fa' ? 'ابتدا گزارش تولید کنید' : 'Generate report first', true); return; }
+            var rows = table.querySelectorAll('tr');
+            var csv = '\ufeff';
+            rows.forEach(function(row) {
+                var cells = row.querySelectorAll('th, td');
+                var line = [];
+                cells.forEach(function(cell) { line.push('"' + cell.textContent.replace(/"/g, '""').trim() + '"'); });
+                csv += line.join(',') + '\n';
+            });
+            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'report-' + currentReportType + '-' + new Date().toISOString().slice(0, 10) + '.csv';
             link.click();
         }
 
