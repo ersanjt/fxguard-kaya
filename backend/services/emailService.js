@@ -224,6 +224,36 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
     return sendMail(mailOpts);
 }
 
+/**
+ * ارسال فرم تماس لندینگ — به ایمیل فروش/پشتیبانی
+ * toEmail: ایمیل گیرنده (از env: CONTACT_EMAIL یا sales@fxguard.io)
+ */
+async function sendContactForm({ purpose, name, email, phone, message }) {
+    const toEmail = process.env.CONTACT_EMAIL || 'sales@fxguard.io';
+    const purposeLabels = { demo: 'Demo Request', purchase: 'Purchase', quote: 'Custom Quote', support: 'Support', other: 'Other' };
+    const subject = 'WhatsApp CRM - ' + (purposeLabels[purpose] || purpose || 'New Contact');
+    const text = [
+        `Purpose: ${purposeLabels[purpose] || purpose}`,
+        `Name: ${name || '—'}`,
+        `Email: ${email || '—'}`,
+        `Phone: ${phone || '—'}`,
+        '',
+        'Message:',
+        message || '—'
+    ].join('\n');
+    const html = baseHtml(subject, `
+      <p><strong>Purpose:</strong> ${purposeLabels[purpose] || purpose}</p>
+      <p><strong>Name:</strong> ${name || '—'}</p>
+      <p><strong>Email:</strong> <a href="mailto:${email || ''}">${email || '—'}</a></p>
+      <p><strong>Phone:</strong> ${phone || '—'}</p>
+      <p><strong>Message:</strong></p>
+      <p>${(message || '—').replace(/\n/g, '<br>')}</p>
+      <p class="muted">Reply directly to ${email || 'the sender'}.</p>
+    `);
+    const ok = await sendMail({ to: toEmail, subject, text, html });
+    if (!ok) throw new Error('Email send failed');
+}
+
 module.exports = {
     isEnabled,
     sendMail,
@@ -232,6 +262,7 @@ module.exports = {
     sendWelcomeCredentials,
     sendLoginNotification,
     sendPasswordReset,
+    sendContactForm,
     getFrom,
     LOGIN_NOTIFICATION_ENABLED,
     PANEL_URL,

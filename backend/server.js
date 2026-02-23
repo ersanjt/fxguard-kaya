@@ -40,16 +40,27 @@ const mongoose = require('mongoose');
 const app = express();
 app.set("trust proxy", 1);
 const server = http.createServer(app);
+
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3002').split(',').map(s => s.trim());
+
 const io = socketIo(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-        credentials: true
-    }
+        origin: (origin, cb) => {
+            if (!origin) return cb(null, true);
+            if (allowedOrigins.includes(origin)) return cb(null, true);
+            cb(null, allowedOrigins[0] || true);
+        },
+        credentials: true,
+        methods: ['GET', 'POST']
+    },
+    pingTimeout: 60000,
+    pingInterval: 25000,
+    transports: ['websocket', 'polling'],
+    allowUpgrades: true
 });
 
 // ==================== Middleware ====================
-app.use(helmet({ contentSecurityPolicy: false })); // اجازه اسکریپت داخل داشبورد
-const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3002').split(',').map(s => s.trim());
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({
     origin: (origin, cb) => {
         if (!origin) return cb(null, true);
@@ -76,6 +87,15 @@ app.use('/api/', (req, res, next) => {
   const p = req.path || '';
   if (p.endsWith('/auth/login') || p.endsWith('/ping')) return next();
   return limiter(req, res, next);
+});
+
+// Rate limit برای فرم تماس عمومی — ۵ درخواست در ۱۵ دقیقه به ازای هر IP
+const contactLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { error: 'تعداد ارسال فرم زیاد است. چند دقیقه صبر کنید.' },
+    standardHeaders: true,
+    legacyHeaders: false
 });
 
 // ==================== Logger ====================
@@ -1018,6 +1038,33 @@ apiRouter.get('/config', (req, res) => {
         timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
         supportUrl: supportLink
     });
+});
+
+// فرم تماس لندینگ — عمومی، بدون auth، rate limit جداگانه
+apiRouter.post('/contact', contactLimiter, async (req, res) => {
+    const { purpose, name, email, phone, message } = req.body || {};
+    if (!email || !name || !message) {
+        return res.status(400).json({ error: 'نام، ایمیل و پیام الزامی است.' });
+    }
+    const purposeVal = ['demo', 'purchase', 'quote', 'support', 'other'].includes(purpose) ? purpose : 'other';
+    try {
+        const emailService = require('./services/emailService');
+        if (!emailService.isEnabled()) {
+            logger.warn('Contact form: email disabled, skipping send');
+            return res.json({ ok: true, message: 'پیام دریافت شد. به زودی با شما تماس می‌گیریم.' });
+        }
+        await emailService.sendContactForm({
+            purpose: purposeVal,
+            name: String(name).trim(),
+            email: String(email).trim(),
+            phone: phone ? String(phone).trim() : '',
+            message: String(message).trim()
+        });
+        res.json({ ok: true, message: 'پیام ارسال شد. به زودی با شما تماس می‌گیریم.' });
+    } catch (err) {
+        logger.error('Contact form send error:', err);
+        res.status(500).json({ error: 'خطا در ارسال پیام. لطفاً دوباره تلاش کنید یا از واتساپ استفاده کنید.' });
+    }
 });
 
 const { gatewayGet, gatewayPost } = require('./lib/gatewayClient');

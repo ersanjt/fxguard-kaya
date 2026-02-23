@@ -60,3 +60,52 @@
 |------|-----|--------|
 | app | 92.205.58.83 | **فقط معرفی و فروش** — لندینگ، نه پنل یا اپلیکیشن |
 | kaya | 92.205.58.83 | پنل CRM (در صورت استفاده از kaya.fxguard.io) |
+
+---
+
+## تنظیمات Cloudflare برای WebSocket (Socket.IO)
+
+اگر `kaya.fxguard.io` پشت **Cloudflare Proxy** است و داشبورد از Socket.IO استفاده می‌کند:
+
+1. **Cloudflare → Network → WebSockets** باید **فعال (On)** باشد
+2. در **SSL/TLS** حالت **Full (Strict)** استفاده کنید اگر سرور SSL دارد، وگرنه **Full**
+3. **Caching Rule**: مسیر `/socket.io/*` را از Cache حذف کنید (Bypass Cache)
+
+### نمونه تنظیم Apache (reverse proxy برای Node.js)
+
+اگر از Apache استفاده می‌کنید (cPanel)، در VirtualHost دامنه `kaya.fxguard.io`:
+
+```apache
+# Reverse proxy to Node.js backend
+ProxyPreserveHost On
+ProxyPass / http://127.0.0.1:3002/
+ProxyPassReverse / http://127.0.0.1:3002/
+
+# WebSocket support for Socket.IO
+RewriteEngine On
+RewriteCond %{HTTP:Upgrade} =websocket [NC]
+RewriteRule /socket.io/(.*) ws://127.0.0.1:3002/socket.io/$1 [P,L]
+```
+
+### نمونه تنظیم Nginx
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:3002;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 86400;
+}
+```
+
+### عیب‌یابی خطای 502 Bad Gateway
+
+1. بررسی اجرای بک‌اند: `pm2 status` و `pm2 logs kayaCRM`
+2. بررسی پورت: `curl http://127.0.0.1:3002/health`
+3. لاگ Apache: `tail -f /var/log/apache2/error.log`
+4. اگر Cloudflare 502 می‌دهد: موقتاً Proxy را خاموش کنید (DNS only) و تست کنید

@@ -211,25 +211,86 @@
 
     var form = document.getElementById('contactForm');
     var formSuccess = document.getElementById('formSuccess');
+    var formError = document.getElementById('formError');
     if (form) {
         var nextInput = form.querySelector('input[name="_next"]');
         if (nextInput) nextInput.value = window.location.origin + window.location.pathname + '#contact-form';
     }
     if (form && formSuccess) {
+        var submitBtn = form.querySelector('button[type="submit"]');
+        var originalBtnText = submitBtn ? submitBtn.textContent : '';
+        var errEl = form.querySelector('.form-error');
+        if (!errEl) {
+            errEl = document.createElement('div');
+            errEl.className = 'form-error';
+            errEl.style.cssText = 'color:#ef4444;margin-top:12px;font-size:0.9rem;display:none;';
+            form.insertBefore(errEl, submitBtn);
+        }
         form.addEventListener('submit', function(e) {
+            e.preventDefault();
             var purpose = form.querySelector('#purpose');
+            var nameEl = form.querySelector('#name');
+            var emailEl = form.querySelector('#email');
+            var messageEl = form.querySelector('#message');
+            var phoneEl = form.querySelector('#phone');
+            var action = form.getAttribute('action') || '';
+            var useApi = action.indexOf('YOUR_FORM_ID') >= 0 && (typeof CONTACT_API_URL !== 'undefined' && CONTACT_API_URL);
+            if (useApi) {
+                errEl.style.display = 'none';
+                errEl.textContent = '';
+                var name = nameEl ? nameEl.value.trim() : '';
+                var email = emailEl ? emailEl.value.trim() : '';
+                var message = messageEl ? messageEl.value.trim() : '';
+                if (!name || !email || !message) {
+                    errEl.textContent = (LANG === 'fa' ? 'نام، ایمیل و پیام الزامی است.' : LANG === 'tr' ? 'Ad, e-posta ve mesaj zorunludur.' : 'Name, email and message are required.');
+                    errEl.style.display = 'block';
+                    return;
+                }
+                var emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRe.test(email)) {
+                    errEl.textContent = (LANG === 'fa' ? 'ایمیل معتبر نیست.' : LANG === 'tr' ? 'Geçerli e-posta girin.' : 'Please enter a valid email.');
+                    errEl.style.display = 'block';
+                    return;
+                }
+                var purposeVal = purpose && purpose.value ? purpose.value : 'other';
+                if (!['demo', 'purchase', 'quote', 'support', 'other'].includes(purposeVal)) purposeVal = 'other';
+                var payload = { purpose: purposeVal, name: name, email: email, message: message };
+                if (phoneEl && phoneEl.value.trim()) payload.phone = phoneEl.value.trim();
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = (LANG === 'fa' ? 'در حال ارسال...' : LANG === 'tr' ? 'Gönderiliyor...' : 'Sending...');
+                }
+                var apiBase = (typeof CONTACT_API_URL !== 'undefined' ? CONTACT_API_URL : '').replace(/\/$/, '');
+                fetch((apiBase || '') + '/api/contact', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(function(r) {
+                    return r.json().then(function(data) { return { ok: r.ok, data: data }; });
+                }).then(function(result) {
+                    if (result.ok && result.data.ok) {
+                        formSuccess.classList.add('show');
+                        form.style.display = 'none';
+                        formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        errEl.textContent = result.data.error || (LANG === 'fa' ? 'خطا در ارسال. دوباره تلاش کنید.' : LANG === 'tr' ? 'Gönderim hatası. Tekrar deneyin.' : 'Send failed. Please try again.');
+                        errEl.style.display = 'block';
+                    }
+                }).catch(function(err) {
+                    errEl.textContent = (LANG === 'fa' ? 'خطای شبکه. واتساپ را امتحان کنید.' : LANG === 'tr' ? 'Ağ hatası. WhatsApp deneyin.' : 'Network error. Try WhatsApp.');
+                    errEl.style.display = 'block';
+                }).finally(function() {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalBtnText;
+                    }
+                });
+                return false;
+            }
             var subj = form.querySelector('input[name="_subject"]');
             if (purpose && subj && purpose.value) {
                 var labels = { demo: 'Demo Request', purchase: 'Purchase', quote: 'Custom Quote', support: 'Support', other: 'Other' };
                 subj.value = 'WhatsApp CRM - ' + (labels[purpose.value] || purpose.value);
-            }
-            var action = form.getAttribute('action') || '';
-            if (action.indexOf('YOUR_FORM_ID') >= 0) {
-                e.preventDefault();
-                formSuccess.classList.add('show');
-                form.style.display = 'none';
-                formSuccess.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return false;
             }
         });
     }

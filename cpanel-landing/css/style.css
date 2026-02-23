@@ -106,22 +106,25 @@ a.btn-outline:hover {
     color: var(--accent-light) !important;
     transform: translateY(-1px);
 }
-/* CTA outline (glass style on green bg) - high contrast */
+/* CTA outline (glass style on green bg) - white font, high contrast */
 .btn-outline-light,
 a.btn-outline-light {
-    background: rgba(255,255,255,0.2) !important;
-    color: white !important;
-    border: 2px solid rgba(255,255,255,0.75) !important;
+    background: rgba(255,255,255,0.25) !important;
+    color: #ffffff !important;
+    border: 2px solid rgba(255,255,255,0.85) !important;
     text-decoration: none !important;
     cursor: pointer;
+    font-weight: 600;
 }
 .btn-outline-light:hover,
-a.btn-outline-light:hover {
-    background: rgba(255,255,255,0.4) !important;
-    color: white !important;
-    border-color: white !important;
+.btn-outline-light:focus,
+a.btn-outline-light:hover,
+a.btn-outline-light:focus {
+    background: rgba(255,255,255,0.45) !important;
+    color: #ffffff !important;
+    border-color: #ffffff !important;
     transform: translateY(-2px);
-    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
 }
 /* Header buttons - ensure correct colors */
 header .btn-primary { background: linear-gradient(135deg, var(--accent) 0%, #047857 100%) !important; color: white !important; }
