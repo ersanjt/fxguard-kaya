@@ -1155,6 +1155,7 @@ apiRouter.use('/conversations', authMiddleware, conversationRoutes);
 apiRouter.use('/departments', authMiddleware, departmentRoutes);
 apiRouter.use('/analytics', authMiddleware, analyticsRoutes);
 apiRouter.use('/customers', authMiddleware, customerRoutes);
+apiRouter.use('/tags', authMiddleware, require('./routes/tags'));
 apiRouter.use('/tickets', authMiddleware, require('./routes/tickets')(io));
 apiRouter.use('/branches', authMiddleware, branchRoutes);
 apiRouter.use('/supervision', authMiddleware, supervisionRoutes);
