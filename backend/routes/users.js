@@ -65,9 +65,6 @@ router.get('/me', (req, res) => {
 router.patch('/me', async (req, res) => {
     try {
         const user = req.user;
-        if (isMainAdmin(user)) {
-            return res.status(403).json({ error: 'اطلاعات ادمین اصلی سیستم غیر قابل ویرایش است' });
-        }
         const { username, firstName, lastName, dateOfBirth, name, phone, password, avatar, email } = req.body;
         if (username !== undefined) {
             const trimmed = String(username).trim();

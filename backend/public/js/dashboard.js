@@ -3051,23 +3051,12 @@
                 if (avatarFileEl && !avatarFileEl._bound) { avatarFileEl._bound = true; avatarFileEl.addEventListener('change', function() { if (avatarFileEl.files && avatarFileEl.files[0]) uploadProfileAvatar(avatarFileEl.files[0]); }); }
                 if (document.getElementById('profilePassword')) document.getElementById('profilePassword').value = '';
                 updateProfileAvatarPreview(u.avatar || displayName);
-                var isProtectedAdmin = !!(u && u.isProtectedAdmin);
                 var profileFields = ['profileUsername','profileFirstName','profileLastName','profileDateOfBirth','profilePhone','profileAvatar','profilePassword','profileEmailInput','profileAvatarFile'];
-                profileFields.forEach(function(fid) { var el = document.getElementById(fid); if (el) el.disabled = isProtectedAdmin; });
+                profileFields.forEach(function(fid) { var el = document.getElementById(fid); if (el) el.disabled = false; });
                 var profileSaveBtn = document.getElementById('profileSaveBtn');
-                if (profileSaveBtn) profileSaveBtn.style.display = isProtectedAdmin ? 'none' : '';
+                if (profileSaveBtn) profileSaveBtn.style.display = '';
                 var profileProtectedBanner = document.getElementById('profileProtectedBanner');
-                if (!profileProtectedBanner) {
-                    profileProtectedBanner = document.createElement('div');
-                    profileProtectedBanner.id = 'profileProtectedBanner';
-                    profileProtectedBanner.style.cssText = 'background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:14px;text-align:center;font-weight:600;';
-                    var profileSection = document.getElementById('section-profile');
-                    if (profileSection) { var firstChild = profileSection.querySelector('.profile-panel,.profile-card,.profile-form,.form-grid'); if (firstChild) firstChild.parentNode.insertBefore(profileProtectedBanner, firstChild); else profileSection.insertBefore(profileProtectedBanner, profileSection.firstChild); }
-                }
-                if (profileProtectedBanner) {
-                    profileProtectedBanner.style.display = isProtectedAdmin ? 'block' : 'none';
-                    profileProtectedBanner.textContent = LANG === 'fa' ? 'شما ادمین اصلی سیستم هستید — اطلاعات حساب شما غیر قابل ویرایش است' : 'You are the main system admin — your account info is read-only';
-                }
+                if (profileProtectedBanner) profileProtectedBanner.style.display = 'none';
             }
             var statusEl = document.getElementById('profileTotpStatus');
             var actionsEl = document.getElementById('profileTotpActions');
@@ -3245,6 +3234,8 @@
                 if (can('customers')) summaryItems.push({ page: 'customers', num: n(stats.totalCustomers), label: t('dashboard_stat_customers') });
                 if (can('tasks')) summaryItems.push({ page: 'tasks', num: n(stats.tasksPending), label: t('dashboard_stat_tasks') });
                 if (can('conversations')) summaryItems.push({ page: 'conversations', num: n(stats.todayMessages), label: t('dashboard_stat_messages_today') });
+                if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min'), label: (LANG === 'fa' ? 'میانگین زمان پاسخ' : 'Avg response time') });
+                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgRating + '/5', label: (LANG === 'fa' ? 'نرخ رضایت' : 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + stats.ratedConversationsCount + ')' : '') });
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: n(stats.unreadAnnouncements), label: t('dashboard_stat_announcements'), warn: true });
                 var summaryHtml = summaryItems.map(function(item) {
                     var cls = 'dashboard-stat-box' + (item.warn ? ' warn' : '');
@@ -3779,6 +3770,29 @@
                 if (delBtn) delBtn.style.display = canManageConversations() ? '' : 'none';
                 var chatSend = document.querySelector('.chat-send');
                 if (chatSend) chatSend.style.display = (d.status === 'archived') ? 'none' : '';
+                var ratingSection = document.getElementById('convRatingSection');
+                if (ratingSection) {
+                    ratingSection.style.display = 'block';
+                    var stars = ratingSection.querySelectorAll('.conv-rating-star');
+                    var r = d.rating || 0;
+                    stars.forEach(function(s) {
+                        var v = parseInt(s.getAttribute('data-rating'), 10);
+                        s.classList.toggle('active', v <= r);
+                        s.onclick = function() {
+                            var newR = parseInt(this.getAttribute('data-rating'), 10);
+                            stars.forEach(function(x) { x.classList.toggle('active', parseInt(x.getAttribute('data-rating'), 10) <= newR); });
+                            apiFetch('/api/conversations/' + id, { method: 'PATCH', body: JSON.stringify({ rating: newR }) }).then(function(res) { if (res.ok && currentConvDetail) currentConvDetail.rating = newR; });
+                        };
+                    });
+                    var feedbackEl = document.getElementById('convFeedback');
+                    if (feedbackEl) {
+                        feedbackEl.value = d.feedback || '';
+                        feedbackEl.onblur = function() {
+                            var v = (feedbackEl.value || '').trim();
+                            if (v !== (d.feedback || '')) apiFetch('/api/conversations/' + id, { method: 'PATCH', body: JSON.stringify({ feedback: v }) }).then(function(res) { if (res.ok && currentConvDetail) currentConvDetail.feedback = v; });
+                        };
+                    }
+                }
             });
         }
         async function loadConvAssignees() {
@@ -3857,6 +3871,11 @@
             if (prioritySel) body.priority = prioritySel.value;
             if (assigneeSel) body.assignedTo = assigneeSel.value || null;
             if (deptSel) body.departmentId = deptSel.value || null;
+            var ratingStars = document.querySelectorAll('#convRatingSection .conv-rating-star.active');
+            var lastActive = ratingStars.length > 0 ? Math.max.apply(null, Array.from(ratingStars).map(function(s) { return parseInt(s.getAttribute('data-rating'), 10); })) : null;
+            if (lastActive) body.rating = lastActive;
+            var feedbackEl = document.getElementById('convFeedback');
+            if (feedbackEl) body.feedback = (feedbackEl.value || '').trim() || null;
             var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; var h = document.getElementById('chatHeader'); var activeItem = document.querySelector('.conv-list-item.active[data-id="' + currentConvId + '"]'); var pic = (activeItem && activeItem.getAttribute('data-profile-pic')) || (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.profilePic) || ''; openChat(currentConvId, h ? h.textContent : '', '', pic); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
@@ -4354,6 +4373,8 @@
             if (res.ok) { if (textarea) textarea.value = ''; toast(t('saved') || (LANG === 'fa' ? 'ذخیره شد' : 'Saved')); loadCustomerNotes(custId); loadCustomerTimeline(custId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
+        var customerModalSelectedTags = [];
+        var allTagsCache = [];
         function openCustomerModal(customerId) {
             var modal = document.getElementById('customerModal');
             if (!modal) return;
@@ -4365,13 +4386,35 @@
             document.getElementById('customerModalEmail').value = '';
             document.getElementById('customerModalStatus').value = 'active';
             document.getElementById('customerModalNotes').value = '';
-            if (customerId && currentCustomerData && currentCustomerData.id === customerId) {
-                document.getElementById('customerModalName').value = currentCustomerData.name || '';
-                document.getElementById('customerModalPhone').value = currentCustomerData.phone || '';
-                document.getElementById('customerModalEmail').value = currentCustomerData.email || '';
-                document.getElementById('customerModalStatus').value = currentCustomerData.status || 'active';
-                document.getElementById('customerModalNotes').value = currentCustomerData.notes || '';
+            document.getElementById('customerModalProfilePic').value = '';
+            customerModalSelectedTags = [];
+            updateCustomerModalAvatarPreview('');
+            if (customerId) {
+                (async function() {
+                    var res = await apiFetch('/api/customers/' + customerId);
+                    if (res.ok && res.data) {
+                        var c = res.data;
+                        document.getElementById('customerModalName').value = c.name || '';
+                        document.getElementById('customerModalPhone').value = c.phone || '';
+                        document.getElementById('customerModalEmail').value = c.email || '';
+                        document.getElementById('customerModalStatus').value = c.status || 'active';
+                        document.getElementById('customerModalNotes').value = c.notes || '';
+                        document.getElementById('customerModalProfilePic').value = c.profilePic || '';
+                        updateCustomerModalAvatarPreview(c.profilePic || '');
+                        customerModalSelectedTags = (c.tags || []).map(function(t) { return t.id; });
+                        renderCustomerModalCustomFields(c.customFields || {});
+                        if (currentCustomerId === customerId) currentCustomerData = c;
+                    }
+                    renderCustomerModalTags();
+                })();
+            } else {
+                renderCustomerModalCustomFields({});
             }
+            renderCustomerModalTags();
+            loadAllTagsForModal();
+            bindCustomerModalAvatarUpload();
+            bindCustomerModalAddTag();
+            bindCustomerModalAddCustomField();
             var delWrap = document.getElementById('customerModalDeleteWrap');
             var delBtn = document.getElementById('btnCustomerModalDelete');
             if (delWrap && delBtn) {
@@ -4381,6 +4424,128 @@
                 } else {
                     delWrap.style.display = 'none';
                 }
+            }
+        }
+        function updateCustomerModalAvatarPreview(url) {
+            var el = document.getElementById('customerModalAvatarPreview');
+            if (!el) return;
+            var u = (url || '').trim();
+            if (u && u.indexOf('/') === 0) u = (window.location.origin || '') + u;
+            if (u && u.indexOf('http') === 0) {
+                var img = new Image();
+                img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
+                img.onload = function() { el.innerHTML = ''; el.appendChild(img); };
+                img.onerror = function() { el.textContent = '?'; };
+                img.src = u;
+            } else {
+                el.innerHTML = ''; el.textContent = '?';
+            }
+        }
+        async function loadAllTagsForModal() {
+            var res = await apiFetch('/api/tags');
+            if (res.ok && res.data && res.data.data) { allTagsCache = res.data.data; renderCustomerModalTagSelect(); }
+        }
+        function renderCustomerModalTagSelect() {
+            var sel = document.getElementById('customerModalTagSelect');
+            if (!sel) return;
+            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? '— افزودن تگ —' : '— Add tag —') + '</option>';
+            allTagsCache.forEach(function(t) {
+                if (customerModalSelectedTags.indexOf(t.id) >= 0) return;
+                var opt = document.createElement('option');
+                opt.value = t.id;
+                opt.textContent = t.name;
+                opt.style.backgroundColor = t.color || '#95a5a6';
+                sel.appendChild(opt);
+            });
+        }
+        function renderCustomerModalTags() {
+            var list = document.getElementById('customerModalTagsList');
+            if (!list) return;
+            var tags = allTagsCache.filter(function(t) { return customerModalSelectedTags.indexOf(t.id) >= 0; });
+            list.innerHTML = tags.map(function(t) {
+                return '<span class="customer-modal-tag-chip" data-tag-id="' + escapeHtml(t.id) + '"><span class="tag-dot" style="background:' + escapeHtml(t.color || '#95a5a6') + '"></span>' + escapeHtml(t.name) + '<span class="tag-remove" onclick="removeCustomerModalTag(\'' + escapeHtml(t.id) + '\')">&times;</span></span>';
+            }).join('');
+        }
+        function removeCustomerModalTag(tagId) {
+            customerModalSelectedTags = customerModalSelectedTags.filter(function(id) { return id !== tagId; });
+            renderCustomerModalTags();
+            renderCustomerModalTagSelect();
+        }
+        function addCustomerModalTag(tagId) {
+            if (!tagId || customerModalSelectedTags.indexOf(tagId) >= 0) return;
+            customerModalSelectedTags.push(tagId);
+            renderCustomerModalTags();
+            renderCustomerModalTagSelect();
+        }
+        function bindCustomerModalAddTag() {
+            var btn = document.getElementById('btnCustomerModalAddTag');
+            var sel = document.getElementById('customerModalTagSelect');
+            var newBtn = document.getElementById('btnCustomerModalNewTag');
+            if (btn && sel) {
+                btn.onclick = function() {
+                    var v = sel.value;
+                    if (v) { addCustomerModalTag(v); sel.value = ''; }
+                };
+            }
+            if (newBtn) {
+                newBtn.onclick = async function() {
+                    var name = prompt(LANG === 'fa' ? 'نام تگ جدید:' : 'New tag name:');
+                    if (!name || !name.trim()) return;
+                    var res = await apiFetch('/api/tags', { method: 'POST', body: JSON.stringify({ name: name.trim() }) });
+                    if (res.needLogin) return;
+                    if (res.ok) { allTagsCache.push(res.data); addCustomerModalTag(res.data.id); renderCustomerModalTagSelect(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+                };
+            }
+        }
+        function renderCustomerModalCustomFields(cf) {
+            var container = document.getElementById('customerModalCustomFields');
+            if (!container) return;
+            var keys = Object.keys(cf || {});
+            container.innerHTML = keys.map(function(k) {
+                return '<div class="customer-modal-custom-field-row"><input type="text" class="cf-key" value="' + escapeHtml(k) + '" placeholder="' + (LANG === 'fa' ? 'کلید' : 'Key') + '"><input type="text" class="cf-val" value="' + escapeHtml(String(cf[k] || '')) + '" placeholder="' + (LANG === 'fa' ? 'مقدار' : 'Value') + '"><button type="button" class="btn-remove-field" onclick="this.parentNode.remove()">×</button></div>';
+            }).join('');
+        }
+        function bindCustomerModalAddCustomField() {
+            var btn = document.getElementById('btnCustomerModalAddCustomField');
+            var container = document.getElementById('customerModalCustomFields');
+            if (btn && container) {
+                btn.onclick = function() {
+                    var row = document.createElement('div');
+                    row.className = 'customer-modal-custom-field-row';
+                    row.innerHTML = '<input type="text" class="cf-key" placeholder="' + (LANG === 'fa' ? 'کلید' : 'Key') + '"><input type="text" class="cf-val" placeholder="' + (LANG === 'fa' ? 'مقدار' : 'Value') + '"><button type="button" class="btn-remove-field" onclick="this.parentNode.remove()">×</button>';
+                    container.appendChild(row);
+                };
+            }
+        }
+        function getCustomerModalCustomFields() {
+            var container = document.getElementById('customerModalCustomFields');
+            if (!container) return {};
+            var out = {};
+            container.querySelectorAll('.customer-modal-custom-field-row').forEach(function(row) {
+                var k = (row.querySelector('.cf-key') && row.querySelector('.cf-key').value || '').trim();
+                var v = (row.querySelector('.cf-val') && row.querySelector('.cf-val').value || '').trim();
+                if (k) out[k] = v;
+            });
+            return out;
+        }
+        function bindCustomerModalAvatarUpload() {
+            var fileInput = document.getElementById('customerModalAvatarFile');
+            var btn = document.getElementById('btnCustomerModalAvatarUpload');
+            if (btn && fileInput) {
+                btn.onclick = function() { fileInput.click(); };
+                fileInput.onchange = async function() {
+                    if (!fileInput.files || !fileInput.files[0]) return;
+                    var formData = new FormData();
+                    formData.append('file', fileInput.files[0]);
+                    var r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                    var data = await r.json().catch(function() { return {}; });
+                    if (data.url) {
+                        document.getElementById('customerModalProfilePic').value = data.url;
+                        updateCustomerModalAvatarPreview(data.url);
+                        toast(LANG === 'fa' ? 'تصویر بارگذاری شد' : 'Image uploaded');
+                    } else { toast((data.error) || t('err_generic'), true); }
+                    fileInput.value = '';
+                };
             }
         }
         function closeCustomerModal() { var m = document.getElementById('customerModal'); if (m) m.style.display = 'none'; }
@@ -4400,16 +4565,27 @@
             var email = (document.getElementById('customerModalEmail').value || '').trim();
             var status = document.getElementById('customerModalStatus').value || 'active';
             var notes = (document.getElementById('customerModalNotes').value || '').trim();
+            var profilePic = (document.getElementById('customerModalProfilePic') && document.getElementById('customerModalProfilePic').value || '').trim();
+            var customFields = getCustomerModalCustomFields();
             if (!name) { toast(LANG === 'fa' ? 'نام الزامی است' : 'Name required', true); return; }
             if (!id && !phone) { toast(LANG === 'fa' ? 'تلفن برای مشتری جدید الزامی است' : 'Phone required', true); return; }
             if (id) {
-                var res = await apiFetch('/api/customers/' + id, { method: 'PUT', body: JSON.stringify({ name: name || undefined, phone: phone || undefined, email: email || undefined, status: status, notes: notes || undefined }) });
+                var body = { name: name || undefined, phone: phone || undefined, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined };
+                var res = await apiFetch('/api/customers/' + id, { method: 'PUT', body: JSON.stringify(body) });
                 if (res.needLogin) return;
-                if (res.ok) { closeCustomerModal(); toast(t('btn_save')); if (currentCustomerId === id) currentCustomerData = res.data; showCustomerHistory(id, res.data.name || res.data.phone); loadCustomers(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+                if (res.ok) {
+                    var tagRes = await apiFetch('/api/customers/' + id + '/tags', { method: 'PUT', body: JSON.stringify({ tagIds: customerModalSelectedTags }) });
+                    if (tagRes.ok && currentCustomerId === id) currentCustomerData = res.data;
+                    closeCustomerModal(); toast(t('btn_save')); if (currentCustomerId === id) showCustomerHistory(id, res.data.name || res.data.phone); loadCustomers();
+                } else toast((res.data && res.data.error) || t('err_generic'), true);
             } else {
-                var res = await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify({ name: name, phone: phone, email: email || undefined, status: status, notes: notes || undefined }) });
+                var res = await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify({ name: name, phone: phone, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }) });
                 if (res.needLogin) return;
-                if (res.ok) { closeCustomerModal(); toast(t('btn_save')); loadCustomers(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+                if (res.ok) {
+                    var newId = res.data && res.data.id;
+                    if (newId && customerModalSelectedTags.length) await apiFetch('/api/customers/' + newId + '/tags', { method: 'PUT', body: JSON.stringify({ tagIds: customerModalSelectedTags }) });
+                    closeCustomerModal(); toast(t('btn_save')); loadCustomers();
+                } else toast((res.data && res.data.error) || t('err_generic'), true);
             }
         }
 
@@ -4978,7 +5154,7 @@
             }
             if (btn) { btn.disabled = false; btn.textContent = t('panel_test_email_btn'); }
         }
-        var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
+        var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
         function applyHashRoute() {
             initSidebarCollapsedState();
             var hash = (location.hash || '').replace(/^#/, '');
@@ -5001,7 +5177,7 @@
             navLinks.forEach(function(l) { l.classList.remove('active'); });
             navLinks.forEach(function(l) { if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             updateMobileTabBar(page);
-            var pageTitles = { dashboard: 'nav_dashboard', conversations: 'nav_conversations', customers: 'nav_customers', tickets: 'nav_tickets', tasks: 'nav_tasks', processes: 'nav_processes', departments: 'nav_departments', users: 'nav_users', branches: 'nav_branches', supervision: 'nav_supervision', 'staff-activity': 'nav_staff_activity', profile: 'nav_profile', announcements: 'nav_announcements', 'internal-chat': 'nav_internal_chat', whatsapp: 'nav_whatsapp', rates: 'nav_rates', 'rates-charts': 'nav_rates_charts', services: 'nav_services', 'panel-settings': 'nav_panel_settings' };
+            var pageTitles = { dashboard: 'nav_dashboard', conversations: 'nav_conversations', customers: 'nav_customers', tickets: 'nav_tickets', tasks: 'nav_tasks', processes: 'nav_processes', departments: 'nav_departments', users: 'nav_users', branches: 'nav_branches', supervision: 'nav_supervision', 'staff-activity': 'nav_staff_activity', profile: 'nav_profile', announcements: 'nav_announcements', 'internal-chat': 'nav_internal_chat', whatsapp: 'nav_whatsapp', 'message-templates': 'nav_message_templates', rates: 'nav_rates', 'rates-charts': 'nav_rates_charts', services: 'nav_services', 'panel-settings': 'nav_panel_settings' };
             var titleKey = pageTitles[page] || 'nav_dashboard';
             var titleText = t(titleKey);
             var pt = document.getElementById('headerPageTitle');
@@ -5011,7 +5187,7 @@
             if (pb) pb.textContent = titleText;
             if (pm) pm.textContent = titleText;
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
-            var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', 'rates-charts': 'pageRatesCharts', services: 'pageServices', 'panel-settings': 'pagePanelSettings' };
+            var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', 'message-templates': 'pageMessageTemplates', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', 'rates-charts': 'pageRatesCharts', services: 'pageServices', 'panel-settings': 'pagePanelSettings' };
             if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations' || page === 'internal-chat') ? 'flex' : 'block'; el.classList.add('show'); } }
             var content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
@@ -5024,6 +5200,7 @@
             if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
             if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); }
+            if (page === 'message-templates') loadMessageTemplates();
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); }
             if (page === 'rates-charts') loadRatesCharts();
             if (page === 'services') { initServicesTabs(); loadServicesPage(); }
@@ -7099,6 +7276,103 @@
             }).join('');
         }
 
+        var chatTemplatesCache = [];
+        async function loadMessageTemplates() {
+            var list = document.getElementById('messageTemplatesList');
+            if (!list) return;
+            var res = await apiFetch('/api/message-templates');
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            var data = (res.data && res.data.data) || [];
+            chatTemplatesCache = data;
+            if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCDD</span><p>' + (LANG === 'fa' ? 'تمپلیتی وجود ندارد. افزودن تمپلیت را بزنید.' : 'No templates. Click Add template.') + '</p></div>'; return; }
+            list.innerHTML = data.map(function(t) {
+                var preview = (t.content || '').slice(0, 80);
+                if ((t.content || '').length > 80) preview += '…';
+                var usage = (t.usageCount || 0) > 0 ? (LANG === 'fa' ? t.usageCount + ' بار استفاده' : t.usageCount + ' uses') : '';
+                return '<div class="message-template-card" data-id="' + t.id + '"><div class="tpl-info"><div class="tpl-name">' + escapeHtml(t.name || '') + '</div>' + (t.category ? '<div class="tpl-category">' + escapeHtml(t.category) + '</div>' : '') + '<div class="tpl-content">' + escapeHtml(preview) + '</div><div class="tpl-meta">' + usage + '</div></div><div class="tpl-actions"><button type="button" class="btn-secondary btn-sm" onclick="editTemplate(\'' + t.id + '\')">' + t('edit') + '</button><button type="button" class="btn-danger btn-sm" onclick="deleteTemplate(\'' + t.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+            }).join('');
+        }
+        async function openTemplateModal(id) {
+            document.getElementById('templateModalId').value = id || '';
+            document.getElementById('templateModalTitle').textContent = id ? (LANG === 'fa' ? 'ویرایش تمپلیت' : 'Edit template') : t('template_add');
+            document.getElementById('templateModalName').value = '';
+            document.getElementById('templateModalCategory').value = '';
+            document.getElementById('templateModalContent').value = '';
+            document.getElementById('templateModalActive').checked = true;
+            if (id) {
+                var t = chatTemplatesCache.find(function(x) { return x.id === id; });
+                if (!t) {
+                    var res = await apiFetch('/api/message-templates/' + id);
+                    if (res.ok && res.data) t = res.data;
+                }
+                if (t) {
+                    document.getElementById('templateModalName').value = t.name || '';
+                    document.getElementById('templateModalCategory').value = t.category || '';
+                    document.getElementById('templateModalContent').value = t.content || '';
+                    document.getElementById('templateModalActive').checked = t.isActive !== false;
+                }
+            }
+            document.getElementById('templateModal').style.display = 'flex';
+        }
+        function closeTemplateModal() { document.getElementById('templateModal').style.display = 'none'; }
+        async function saveTemplate() {
+            var id = document.getElementById('templateModalId').value.trim();
+            var name = (document.getElementById('templateModalName').value || '').trim();
+            var category = (document.getElementById('templateModalCategory').value || '').trim();
+            var content = (document.getElementById('templateModalContent').value || '').trim();
+            var isActive = document.getElementById('templateModalActive').checked;
+            if (!name) { toast(LANG === 'fa' ? 'نام الزامی است' : 'Name required', true); return; }
+            if (!content) { toast(LANG === 'fa' ? 'محتوا الزامی است' : 'Content required', true); return; }
+            var url = id ? '/api/message-templates/' + id : '/api/message-templates';
+            var method = id ? 'PUT' : 'POST';
+            var res = await apiFetch(url, { method: method, body: JSON.stringify({ name: name, category: category || null, content: content, isActive: isActive }) });
+            if (res.needLogin) return;
+            if (res.ok) { closeTemplateModal(); loadMessageTemplates(); chatTemplatesCache = (await apiFetch('/api/message-templates')).data?.data || chatTemplatesCache; toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        function editTemplate(id) { openTemplateModal(id); }
+        async function deleteTemplate(id) {
+            if (!confirm(LANG === 'fa' ? 'حذف این تمپلیت؟' : 'Delete this template?')) return;
+            var res = await apiFetch('/api/message-templates/' + id, { method: 'DELETE' });
+            if (res.ok) { loadMessageTemplates(); chatTemplatesCache = chatTemplatesCache.filter(function(x) { return x.id !== id; }); toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        async function toggleTemplateDropdown() {
+            var dd = document.getElementById('chatTemplateDropdown');
+            var btn = document.getElementById('msgTemplateBtn');
+            if (!dd || !btn) return;
+            if (dd.style.display === 'block') { dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); return; }
+            if (chatTemplatesCache.length === 0) {
+                var res = await apiFetch('/api/message-templates');
+                if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data;
+            }
+            dd.innerHTML = chatTemplatesCache.length === 0 ? '<div class="chat-template-dropdown-item" style="color:var(--text-muted);">' + (LANG === 'fa' ? 'تمپلیتی وجود ندارد' : 'No templates') + '</div>' : chatTemplatesCache.filter(function(t) { return t.isActive !== false; }).map(function(t) {
+                var preview = (t.content || '').slice(0, 50);
+                if ((t.content || '').length > 50) preview += '…';
+                var contentEsc = (t.content || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                return '<div class="chat-template-dropdown-item" data-id="' + t.id + '" data-content="' + contentEsc + '"><div class="tpl-name">' + escapeHtml(t.name || '') + '</div><div class="tpl-preview">' + escapeHtml(preview) + '</div></div>';
+            }).join('');
+            dd.querySelectorAll('.chat-template-dropdown-item[data-id]').forEach(function(el) {
+                var tid = el.getAttribute('data-id');
+                var c = (el.getAttribute('data-content') || '').replace(/&quot;/g, '"').replace(/\\\\/g, '\\');
+                el.onclick = function() { insertTemplateIntoChat(c, tid); dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); };
+            });
+            dd.style.display = 'block';
+            btn.setAttribute('aria-expanded', 'true');
+            document.addEventListener('click', function closeTemplateDd(e) {
+                if (!dd.contains(e.target) && e.target !== btn) { dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', closeTemplateDd); }
+            });
+        }
+        function insertTemplateIntoChat(content, templateId) {
+            if (!content) return;
+            var custName = (currentConvDetail && currentConvDetail.customer && (currentConvDetail.customer.name || currentConvDetail.customer.phone)) || '';
+            var today = new Date();
+            var dateStr = today.getFullYear() + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + String(today.getDate()).padStart(2, '0');
+            var timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
+            var text = content.replace(/\{name\}/gi, custName).replace(/\{date\}/g, dateStr).replace(/\{time\}/g, timeStr);
+            var input = document.getElementById('msgInput');
+            if (input) { input.value = text; input.focus(); }
+            if (templateId) apiFetch('/api/message-templates/' + templateId + '/use', { method: 'POST' }).catch(function() {});
+        }
+
         async function loadDepartments() {
             var list = document.getElementById('deptList');
             setLoading('deptList', 4);
@@ -7244,15 +7518,21 @@
             html += '<div class="stat-card"><div class="val">' + (summary.pendingCount || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'در انتظار' : 'Pending') + '</div></div>';
             html += '<div class="stat-card"><div class="val">' + (summary.unassignedCount || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</div></div>';
             html += '<div class="stat-card"><div class="val">' + (summary.todayMessageCount || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'پیام امروز' : 'Today') + '</div></div>';
+            if (summary.avgResponseTimeMinutes != null) html += '<div class="stat-card"><div class="val">' + summary.avgResponseTimeMinutes + '</div><div class="label">' + (t('avg_response_time') || (LANG === 'fa' ? 'میانگین زمان پاسخ (دقیقه)' : 'Avg response (min)')) + '</div></div>';
+            if (summary.avgRating != null) html += '<div class="stat-card"><div class="val">' + summary.avgRating + ' ★</div><div class="label">' + (t('avg_rating') || (LANG === 'fa' ? 'میانگین رضایت' : 'Avg rating')) + '</div></div>';
+            if (summary.ratedConversationsCount != null && summary.ratedConversationsCount > 0) html += '<div class="stat-card"><div class="val">' + summary.ratedConversationsCount + '</div><div class="label">' + (t('rated_conversations') || (LANG === 'fa' ? 'مکالمات رتبه‌دار' : 'Rated')) + '</div></div>';
             html += '</div>';
             if (d.branches && d.branches.length) {
                 html += '<h3 class="sup-section-title">' + t('sup_by_branch') + '</h3><div class="sup-branch-cards">';
-                d.branches.forEach(function(b) { html += '<div class="sup-branch-card"><div class="sup-branch-name">' + escapeHtml(b.name) + '</div><div class="sup-branch-meta">' + escapeHtml((b.city || '') + (b.city && b.country ? ' \u00B7 ' : '') + (b.country || '')) + '</div><div class="sup-branch-count">' + (b.conversationCount || 0) + '</div></div>'; });
+                d.branches.forEach(function(b) {
+                    var extra = (b.avgResponseTimeMinutes != null) ? '<div class="sup-branch-extra">' + (LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + b.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min') + '</div>' : '';
+                    html += '<div class="sup-branch-card"><div class="sup-branch-name">' + escapeHtml(b.name) + '</div><div class="sup-branch-meta">' + escapeHtml((b.city || '') + (b.city && b.country ? ' \u00B7 ' : '') + (b.country || '')) + '</div><div class="sup-branch-count">' + (b.conversationCount || 0) + '</div>' + extra + '</div>';
+                });
                 html += '</div>';
             }
             if (d.users && d.users.length) {
                 html += '<h3 class="sup-section-title">' + t('sup_by_user') + '</h3><div class="sup-user-cards">';
-                d.users.forEach(function(u) { var bn = (u.branch && u.branch.name) ? u.branch.name : ''; html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '�') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div></div>'; });
+                d.users.forEach(function(u) { var bn = (u.branch && u.branch.name) ? u.branch.name : ''; html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '�') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div>' + (function() { var u2 = u; var extras = []; if (u2.avgResponseTimeMinutes != null) extras.push((LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + u2.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')); if (u2.avgRating != null) extras.push((LANG === 'fa' ? 'رضایت: ' : 'Rating: ') + u2.avgRating + ' ★'); return extras.length ? '<div class="sup-user-extra">' + extras.join(' · ') + '</div>' : ''; })() + '</div>'; });
                 html += '</div>';
             }
             el.className = '';
@@ -7337,6 +7617,59 @@
                 }
             } else { if (loginsList) loginsList.innerHTML = '<div class="empty">' + t('login_err_load') + '</div>'; if (loginsTodayEl) loginsTodayEl.textContent = '0'; if (loginsTotalEl) loginsTotalEl.textContent = '0'; }
             if (updatedEl) { updatedEl.style.display = 'block'; updatedEl.textContent = (LANG === 'fa' ? 'آخرین به\u200Cروزرسانی: ' : 'Last updated: ') + fmtTZ(new Date().toISOString(), 'datetime'); }
+            loadAttendanceReportFilters().then(function() { loadAttendanceReport(); });
+        }
+
+        async function loadAttendanceReportFilters() {
+            var branchSel = document.getElementById('attendanceBranch');
+            var userSel = document.getElementById('attendanceUser');
+            var fromInp = document.getElementById('attendanceFrom');
+            var toInp = document.getElementById('attendanceTo');
+            if (!branchSel && !userSel) return;
+            var today = new Date();
+            var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            if (fromInp) fromInp.value = fmtTZ(firstDay, 'date');
+            if (toInp) toInp.value = fmtTZ(today, 'date');
+            var [branchRes, userRes] = await Promise.all([apiFetch('/api/branches'), apiFetch('/api/users')]);
+            if (branchRes.ok && branchRes.data && branchRes.data.data && branchSel) {
+                branchSel.innerHTML = '<option value="">' + (t('all_branches') || 'همه شعب') + '</option>' + branchRes.data.data.filter(function(b){ return b.isActive !== false; }).map(function(b){ return '<option value="' + b.id + '">' + escapeHtml(b.name || '') + '</option>'; }).join('');
+            }
+            if (userRes.ok && userRes.data && userRes.data.data && userSel) {
+                userSel.innerHTML = '<option value="">' + (t('all_users') || 'همه کاربران') + '</option>' + userRes.data.data.filter(function(u){ return u.isActive !== false; }).map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(userDisplay(u)) + '</option>'; }).join('');
+            }
+        }
+
+        async function loadAttendanceReport() {
+            var el = document.getElementById('attendanceReportContent');
+            if (!el) return;
+            el.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var branchId = (document.getElementById('attendanceBranch') && document.getElementById('attendanceBranch').value) || '';
+            var userId = (document.getElementById('attendanceUser') && document.getElementById('attendanceUser').value) || '';
+            var from = (document.getElementById('attendanceFrom') && document.getElementById('attendanceFrom').value) || '';
+            var to = (document.getElementById('attendanceTo') && document.getElementById('attendanceTo').value) || '';
+            var q = '?';
+            if (branchId) q += 'branchId=' + encodeURIComponent(branchId) + '&';
+            if (userId) q += 'userId=' + encodeURIComponent(userId) + '&';
+            if (from) q += 'from=' + encodeURIComponent(from) + '&';
+            if (to) q += 'to=' + encodeURIComponent(to) + '&';
+            var res = await apiFetch('/api/supervision/attendance-report' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { el.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            var d = res.data;
+            var summary = d.summary || [];
+            var sessions = d.sessions || [];
+            if (summary.length === 0 && sessions.length === 0) { el.innerHTML = '<div class="empty">' + (t('no_data') || 'داده‌ای یافت نشد') + '</div>'; return; }
+            var html = '<div class="attendance-summary-table-wrap"><table class="sup-table attendance-summary-table"><thead><tr><th>' + (t('label_name') || 'نام') + '</th><th>' + (LANG === 'fa' ? 'جمع ساعات' : 'Total hours') + '</th><th>' + (LANG === 'fa' ? 'دقیقه' : 'Minutes') + '</th></tr></thead><tbody>';
+            summary.forEach(function(s) { html += '<tr><td>' + escapeHtml(s.userName || '') + '</td><td>' + (s.totalHours || 0) + '</td><td>' + (s.totalMinutes || 0) + '</td></tr>'; });
+            html += '</tbody></table></div>';
+            if (sessions.length > 0 && sessions.length <= 100) {
+                html += '<h4 style="font-size:0.95rem;margin:16px 0 8px;">' + (LANG === 'fa' ? 'جلسات (ورود/خروج)' : 'Sessions') + '</h4><table class="sup-table"><thead><tr><th>' + (t('label_name') || 'نام') + '</th><th>' + (LANG === 'fa' ? 'ورود' : 'Login') + '</th><th>' + (LANG === 'fa' ? 'خروج' : 'Logout') + '</th><th>' + (LANG === 'fa' ? 'دقیقه' : 'Min') + '</th></tr></thead><tbody>';
+                var userMap = {};
+                summary.forEach(function(s) { userMap[s.userId] = s.userName; });
+                sessions.forEach(function(s) { var login = s.loginAt ? fmtTZ(s.loginAt, 'datetime') : '\u2014'; var logout = s.logoutAt ? fmtTZ(s.logoutAt, 'datetime') : (LANG === 'fa' ? 'در حال حاضر' : 'Now'); html += '<tr><td>' + escapeHtml(userMap[s.userId] || s.userId) + '</td><td>' + login + '</td><td>' + logout + '</td><td>' + (s.minutes || 0) + '</td></tr>'; });
+                html += '</tbody></table>';
+            }
+            el.innerHTML = html;
         }
 
         function openStaffDetailModal(userId) {
