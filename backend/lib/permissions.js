@@ -81,11 +81,12 @@ function getDefaults(role) {
 
 /**
  * دسترسی نهایی کاربر را برمی‌گرداند (پیش‌فرض نقش + override از user.permissions).
- * ادمین اصلی پنل (MAIN_ADMIN_EMAIL) همیشه دسترسی کامل دارد.
+ * ادمین اصلی پنل (MAIN_ADMIN_EMAIL) و مالک (owner) همیشه دسترسی کامل دارند.
  */
 function getPermissions(user) {
     if (!user) return getDefaults('agent');
     if (isMainAdmin(user)) return getDefaults('owner');
+    if (user.role === 'owner') return getDefaults('owner'); // مالک همیشه دسترسی کامل
     const role = user.role || 'agent';
     const defaults = getDefaults(role);
     const overrides = user.permissions && typeof user.permissions === 'object' ? user.permissions : {};
