@@ -1075,7 +1075,7 @@ io.on('connection', (socket) => {
     });
 });
 
-const { authMiddleware } = require('./middleware/auth');
+const { authMiddleware, requireSection } = require('./middleware/auth');
 const { spawn } = require('child_process');
 
 // ==================== API Router (همه /api فقط از این مسیر — هرگز به static نمی‌رسد) ====================
@@ -1134,7 +1134,7 @@ apiRouter.post('/contact', contactLimiter, async (req, res) => {
 const { gatewayGet, gatewayPost } = require('./lib/gatewayClient');
 let gatewayProcess = null;
 
-apiRouter.get('/gateway/status', authMiddleware, (req, res) => {
+apiRouter.get('/gateway/status', authMiddleware, requireSection('whatsapp'), (req, res) => {
     gatewayGet('/api/status', { timeout: 5000 })
         .then(r => res.json(r.data))
         .catch((e) => {
@@ -1146,7 +1146,7 @@ apiRouter.get('/gateway/status', authMiddleware, (req, res) => {
         });
 });
 
-apiRouter.get('/gateway/qr', authMiddleware, (req, res) => {
+apiRouter.get('/gateway/qr', authMiddleware, requireSection('whatsapp'), (req, res) => {
     gatewayGet('/api/qr', { timeout: 5000 })
         .then(r => res.json(r.data))
         .catch((e) => {
@@ -1156,7 +1156,7 @@ apiRouter.get('/gateway/qr', authMiddleware, (req, res) => {
 });
 
 // پراکسی شروع واتساپ به Gateway (وقتی Gateway در دسترس است)
-apiRouter.post('/gateway/start', authMiddleware, (req, res) => {
+apiRouter.post('/gateway/start', authMiddleware, requireSection('whatsapp'), (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
     gatewayPost('/api/start', {}, { timeout: 10000 })
         .then(r => res.json(r.data))
@@ -1164,7 +1164,7 @@ apiRouter.post('/gateway/start', authMiddleware, (req, res) => {
 });
 
 // قطع دستی اتصال واتساپ (بدون خروج از حساب)
-apiRouter.post('/gateway/stop', authMiddleware, (req, res) => {
+apiRouter.post('/gateway/stop', authMiddleware, requireSection('whatsapp'), (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
     gatewayPost('/api/stop', {}, { timeout: 10000 })
         .then(r => res.json(r.data))
@@ -1172,17 +1172,23 @@ apiRouter.post('/gateway/stop', authMiddleware, (req, res) => {
 });
 
 // خروج کامل از واتساپ و حذف سشن (برای اتصال شماره جدید)
-apiRouter.post('/gateway/logout', authMiddleware, (req, res) => {
+apiRouter.post('/gateway/logout', authMiddleware, requireSection('whatsapp'), (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
     gatewayPost('/api/logout', {}, { timeout: 20000 })
         .then(r => res.json(r.data))
         .catch(e => res.status(503).json({ error: e.response?.data?.error || 'Gateway در دسترس نیست' }));
 });
 
-apiRouter.post('/admin/start-gateway', authMiddleware, (req, res) => {
+apiRouter.post('/admin/start-gateway', authMiddleware, requireSection('whatsapp'), async (req, res) => {
     if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
     if (gatewayProcess) return res.json({ message: 'Gateway از قبل در حال اجراست' });
     try {
+        const GATEWAY_URL = (process.env.GATEWAY_URL || 'http://localhost:3001').replace(/\/$/, '');
+        const axios = require('axios');
+        const testRes = await axios.get(GATEWAY_URL + '/test', { timeout: 3000 }).catch(() => null);
+        if (testRes && testRes.status === 200) {
+            return res.json({ message: 'Gateway از قبل در حال اجراست' });
+        }
         const gatewayPath = path.join(__dirname, '..', 'gateway');
         gatewayProcess = spawn('node', ['src/index.js'], { cwd: gatewayPath, stdio: 'ignore', detached: true });
         gatewayProcess.unref();

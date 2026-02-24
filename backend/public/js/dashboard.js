@@ -5167,6 +5167,7 @@
         function initSidebarCollapsedState() { var s = document.getElementById('sidebar'); var btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; var collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 769px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
         function showPage(page) {
             if (page === 'panel-settings' && (!currentUser || !currentUser.permissions || currentUser.permissions.panel_settings !== true)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
+            if (page === 'whatsapp' && (!currentUser || !currentUser.permissions || currentUser.permissions.whatsapp !== true)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             closeSidebarMobile();
@@ -7027,6 +7028,8 @@
         }
 
         async function loadWhatsappStatus(isInitial) {
+            var perms = (currentUser && currentUser.permissions) || {};
+            if (!token || perms.whatsapp === false) return;
             var st = document.getElementById('gatewayStatus');
             var qrBox = document.getElementById('qrBox');
             var qrUnavailable = document.getElementById('whatsappQrUnavailable');
@@ -7172,12 +7175,13 @@
                     toast(LANG === 'fa' ? 'QR جدید در حال آماده‌سازی... لطفاً چند ثانیه صبر کنید.' : 'New QR code loading... Please wait a few seconds.');
                 } else {
                     toast(LANG === 'fa' ? 'خطا در شروع مجدد واتساپ' : 'Error restarting WhatsApp', true);
+                    if (btnDisconnect) btnDisconnect.disabled = false;
                 }
                 setTimeout(loadWhatsappStatus, 3000);
             } catch (e) {
                 toast((e && e.message) || t('err_generic'), true);
+                if (btnDisconnect) btnDisconnect.disabled = false;
             }
-            if (btnDisconnect) btnDisconnect.disabled = false;
         }
         async function loadWhatsappWelcomeConfig() {
             var ta = document.getElementById('whatsappWelcomeMessage');
