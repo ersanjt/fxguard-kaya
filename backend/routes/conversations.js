@@ -383,6 +383,7 @@ router.post('/:id/send', async (req, res) => {
         if (conversation.status === 'archived') return res.status(400).json({ error: 'امکان ارسال پیام به مکالمه آرشیو شده وجود ندارد. ابتدا وضعیت را تغییر دهید.' });
         const content = (req.body.content || '').trim();
         const media = req.body.media || null;
+        const replyTo = req.body.replyTo || null;
         if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
         // معرفی کارمند قبل از اولین پاسخ او
         if (req.userId) {
@@ -440,8 +441,11 @@ router.post('/:id/send', async (req, res) => {
             payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
             if (msgType === 'audio') payload.media.sendAsVoice = true;
         }
+        if (replyTo) payload.replyTo = replyTo;
         try {
-            await gatewayPost('/api/send-message', payload, { timeout: 10000 });
+            const gwRes = await gatewayPost('/api/send-message', payload, { timeout: 10000 });
+            const waId = gwRes?.data?.messageId;
+            if (waId) await msg.update({ whatsappId: waId, status: 'sent' });
         } catch (gwErr) {
             const errMsg = gwErr?.response?.data?.error || gwErr?.message || 'خطا در ارسال به واتساپ';
             return res.status(502).json({ error: 'پیام در پنل ذخیره شد اما به واتساپ ارسال نشد: ' + errMsg });

@@ -375,10 +375,15 @@ function attachClientEvents(c) {
 
   c.on('message_ack', (msg, ack) => {
     const status = ['error', 'pending', 'server', 'device', 'read', 'played'];
-    io.emit('message_status', {
-      messageId: msg?.id?.id,
-      status: status[ack] || 'unknown',
-    });
+    const statusStr = status[ack] || 'unknown';
+    io.emit('message_status', { messageId: msg?.id?.id, status: statusStr });
+    const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
+    const secret = process.env.GATEWAY_API_SECRET || '';
+    axios.post(backendUrl + '/api/webhook/message-status', { messageId: msg?.id?.id, status: statusStr }, {
+      headers: secret ? { 'X-Gateway-Secret': secret } : {},
+      timeout: 5000,
+      validateStatus: () => true,
+    }).catch(() => {});
   });
 }
 
@@ -586,24 +591,25 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
   try {
     if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
 
-    const { to, message, media } = req.body || {};
+    const { to, message, media, replyTo } = req.body || {};
     if (!to || (!message && !media)) return res.status(400).json({ error: 'Invalid payload' });
 
     const chatId = to.includes('@c.us') || to.includes('@g.us') ? to : `${to}@c.us`;
 
     let sentMsg;
+    const sendOpts = replyTo ? { quotedMessageId: replyTo } : {};
     if (media?.url) {
       if (!isSafeMediaUrl(media.url)) {
         return res.status(400).json({ error: 'Invalid or unsafe media URL' });
       }
       const mediaObj = await MessageMedia.fromUrl(media.url);
-      const sendOpts = { caption: message || '' };
+      sendOpts.caption = message || '';
       if (media.sendAsVoice || (media.mimetype && /^audio\/(ogg|webm|opus)/i.test(media.mimetype))) {
         sendOpts.sendAudioAsVoice = true;
       }
       sentMsg = await client.sendMessage(chatId, mediaObj, sendOpts);
     } else {
-      sentMsg = await client.sendMessage(chatId, message);
+      sentMsg = await client.sendMessage(chatId, message || '', sendOpts);
     }
 
     logger.info('✉️ Message sent', { to });

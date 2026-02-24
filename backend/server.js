@@ -1208,6 +1208,8 @@ apiRouter.use('/analytics', authMiddleware, analyticsRoutes);
 apiRouter.use('/customers', authMiddleware, customerRoutes);
 apiRouter.use('/tags', authMiddleware, require('./routes/tags'));
 apiRouter.use('/message-templates', authMiddleware, require('./routes/templates'));
+apiRouter.use('/bulk', authMiddleware, require('./routes/bulk'));
+apiRouter.use('/customers/import', authMiddleware, require('./routes/customersImport'));
 apiRouter.use('/tickets', authMiddleware, require('./routes/tickets')(io));
 apiRouter.use('/branches', authMiddleware, branchRoutes);
 apiRouter.use('/supervision', authMiddleware, supervisionRoutes);
@@ -1232,6 +1234,30 @@ apiRouter.post('/webhook/incoming-message', (req, res) => {
         logger.error('Webhook process error:', err);
         res.status(500).json({ error: err.message });
     });
+});
+
+// وب‌هوک وضعیت پیام (ارسال/تحویل/خوانده) — از Gateway
+apiRouter.post('/webhook/message-status', async (req, res) => {
+    try {
+        const { messageId, status } = req.body || {};
+        if (!messageId) return res.json({ ok: true });
+        const statusMap = { server: 'sent', device: 'delivered', read: 'read', played: 'read', error: 'failed', pending: 'pending' };
+        const dbStatus = statusMap[status] || null;
+        if (!dbStatus) return res.json({ ok: true });
+        const { Message } = require('./models');
+        const [updated] = await Message.update(
+            { status: dbStatus },
+            { where: { whatsappId: messageId, direction: 'outgoing' } }
+        );
+        if (updated > 0) {
+            const msg = await Message.findOne({ where: { whatsappId: messageId }, attributes: ['id', 'conversationId', 'status'] });
+            if (msg) io.emit('message_status_updated', { messageId: msg.id, conversationId: msg.conversationId, status: msg.status });
+        }
+        res.json({ ok: true });
+    } catch (err) {
+        logger.error('Message status webhook error:', err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // هر مسیر /api که جایی جواب نگرفت → 404 به صورت JSON
