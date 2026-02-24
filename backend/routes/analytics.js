@@ -33,7 +33,10 @@ router.get('/dashboard', async (req, res) => {
             announcementsCount,
             unreadAnnouncements,
             staffOnline,
-            loginsToday
+            loginsToday,
+            avgResponseTimeMinutes,
+            avgRating,
+            ratedCount
         ] = await Promise.all([
             Conversation.count({ where: convWhere }),
             Conversation.count({ where: { ...convWhere, status: 'open' } }),
@@ -54,7 +57,35 @@ router.get('/dashboard', async (req, res) => {
                 return Announcement.count({ where: { id: { [Op.notIn]: readIds } } });
             })(),
             User.count({ where: { isActive: true, status: { [Op.in]: ['online', 'away', 'busy'] } } }),
-            User.count({ where: { isActive: true, lastLoginAt: { [Op.gte]: today } } })
+            User.count({ where: { isActive: true, lastLoginAt: { [Op.gte]: today } } }),
+            (async () => {
+                const convs = await Conversation.findAll({
+                    where: { ...convWhere, lastIncomingMessageAt: { [Op.ne]: null }, lastOutgoingMessageAt: { [Op.ne]: null } },
+                    attributes: ['lastIncomingMessageAt', 'lastOutgoingMessageAt'],
+                    raw: true
+                });
+                const diffs = convs.map(c => {
+                    const inc = new Date(c.lastIncomingMessageAt).getTime();
+                    const out = new Date(c.lastOutgoingMessageAt).getTime();
+                    if (out >= inc) return (out - inc) / 60000;
+                    return null;
+                }).filter(x => x != null && x >= 0 && x < 10080);
+                if (diffs.length === 0) return null;
+                return Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length * 10) / 10;
+            })(),
+            (async () => {
+                const convs = await Conversation.findAll({
+                    where: { ...convWhere, rating: { [Op.ne]: null } },
+                    attributes: ['rating'],
+                    raw: true
+                });
+                if (convs.length === 0) return null;
+                const sum = convs.reduce((a, c) => a + (c.rating || 0), 0);
+                return Math.round(sum / convs.length * 10) / 10;
+            })(),
+            (async () => {
+                return Conversation.count({ where: { ...convWhere, rating: { [Op.ne]: null } } });
+            })()
         ]);
 
         res.json({
@@ -68,7 +99,10 @@ router.get('/dashboard', async (req, res) => {
             announcementsCount,
             unreadAnnouncements: unreadAnnouncements || 0,
             staffOnline: staffOnline || 0,
-            loginsToday: loginsToday || 0
+            loginsToday: loginsToday || 0,
+            avgResponseTimeMinutes: avgResponseTimeMinutes ?? null,
+            avgRating: avgRating ?? null,
+            ratedConversationsCount: ratedCount ?? 0
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

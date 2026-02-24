@@ -53,6 +53,10 @@ const ConversationModel = (sequelize) => {
             type: DataTypes.DATE,
             comment: 'زمان آخرین پاسخ ما — unanswered = lastIncoming > lastOutgoing'
         },
+        firstReplyAt: {
+            type: DataTypes.DATE,
+            comment: 'زمان اولین پاسخ کارمند به مشتری — فاصله تا lastIncomingMessageAt = زمان اولین پاسخ'
+        },
         lastMessagePreview: {
             type: DataTypes.STRING(500),
             comment: 'پیش‌نمایش آخرین پیام برای لیست'

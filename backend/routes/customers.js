@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Customer, Conversation, Message, CustomerNote, User, ActivityLog, Department, Transaction, CashBox, BankAccount } = require('../models');
+const { Customer, Conversation, Message, CustomerNote, User, ActivityLog, Department, Transaction, CashBox, BankAccount, Tag } = require('../models');
 const { logActivity } = require('../services/activityLog');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
@@ -76,7 +76,9 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
-        const customer = await Customer.findByPk(req.params.id);
+        const customer = await Customer.findByPk(req.params.id, {
+            include: [{ model: Tag, as: 'tags', attributes: ['id', 'name', 'color'], through: { attributes: [] } }]
+        });
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
         const allowed = await canAccessCustomer(req, customer.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
@@ -173,7 +175,13 @@ router.post('/', async (req, res) => {
         if (body.phone) body.phone = normalizePhone(body.phone) || body.phone;
         body.source = body.source || 'manual';
         const customer = await Customer.create(body);
-        res.status(201).json(customer);
+        if (body.tagIds && Array.isArray(body.tagIds) && body.tagIds.length) {
+            await customer.setTags(body.tagIds);
+        }
+        const created = await Customer.findByPk(customer.id, {
+            include: [{ model: Tag, as: 'tags', attributes: ['id', 'name', 'color'], through: { attributes: [] } }]
+        });
+        res.status(201).json(created || customer);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -193,6 +201,7 @@ router.put('/:id', async (req, res) => {
         if (email !== undefined) updateData.email = email;
         if (notes !== undefined) updateData.notes = notes;
         if (customFields !== undefined) updateData.customFields = customFields;
+        if (req.body.profilePic !== undefined) updateData.profilePic = req.body.profilePic;
         const role = req.user.role;
         const canEditStatus = ['owner', 'admin', 'manager'].indexOf(role) !== -1 || (req.user.permissions && req.user.permissions.manage_users);
         if (status !== undefined && canEditStatus) updateData.status = status;
@@ -310,6 +319,41 @@ router.post('/:id/notes', async (req, res) => {
             metadata: { contentLength: content.length }
         });
         res.status(201).json(withUser);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ——— تگ‌های مشتری
+router.get('/:id/tags', async (req, res) => {
+    try {
+        if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        const allowed = await canAccessCustomer(req, req.params.id);
+        if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+        const customer = await Customer.findByPk(req.params.id, {
+            include: [{ model: Tag, as: 'tags', attributes: ['id', 'name', 'color'], through: { attributes: [] } }]
+        });
+        if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
+        res.json({ data: customer.tags || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.put('/:id/tags', async (req, res) => {
+    try {
+        if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        const customer = await Customer.findByPk(req.params.id);
+        if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
+        const allowed = await canAccessCustomer(req, customer.id);
+        if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+        const tagIds = Array.isArray(req.body.tagIds) ? req.body.tagIds : (req.body.tagIds ? [req.body.tagIds] : []);
+        const validIds = tagIds.filter(id => id && String(id).trim()).map(id => String(id).trim());
+        await customer.setTags(validIds);
+        const updated = await Customer.findByPk(req.params.id, {
+            include: [{ model: Tag, as: 'tags', attributes: ['id', 'name', 'color'], through: { attributes: [] } }]
+        });
+        res.json({ data: updated.tags || [] });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

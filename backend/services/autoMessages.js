@@ -33,7 +33,9 @@ async function sendOutgoingAutoMessage(conversation, text) {
         });
         const preview = (text || '').slice(0, 120) + ((text || '').length > 120 ? '…' : '');
         const now = new Date();
-        await conversation.update({ lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview, unansweredAlertSentAt: null, escalatedAt: null });
+        const upd = { lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview, unansweredAlertSentAt: null, escalatedAt: null };
+        if (!conversation.firstReplyAt) upd.firstReplyAt = now;
+        await conversation.update(upd);
         return true;
     } catch (err) {
         console.error('sendOutgoingAutoMessage error:', err.message);

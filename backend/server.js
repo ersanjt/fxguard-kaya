@@ -224,6 +224,15 @@ async function connectDatabases() {
         } catch (migErr) {
             logger.warn('Conversations branchId migration:', migErr.message);
         }
+        try {
+            const convDesc = await sequelize.getQueryInterface().describeTable('Conversations').catch(() => null);
+            if (!convDesc || !convDesc.firstReplyAt) {
+                await sequelize.getQueryInterface().addColumn('Conversations', 'firstReplyAt', { type: require('sequelize').DataTypes.DATE, allowNull: true });
+                logger.info('✅ Conversations.firstReplyAt column added (auto-migration)');
+            }
+        } catch (migErr) {
+            logger.warn('Conversations firstReplyAt migration:', migErr.message);
+        }
         if (sequelize.getDialect() === 'postgres') {
             try {
                 await sequelize.query("ALTER TYPE \"enum_Tickets_status\" ADD VALUE IF NOT EXISTS 'archived';");
@@ -702,16 +711,54 @@ async function sendFirstMessageWelcome(conversation, customer) {
 }
 
 // ==================== Auto-Response ====================
+function matchesAutoResponseConditions(rule, conversation, now) {
+    const cond = rule.conditions || {};
+    if (!cond || typeof cond !== 'object') return true;
+
+    // زمان روز: { start: "09:00", end: "18:00" } — بازه زمانی فعال
+    if (cond.timeOfDay && typeof cond.timeOfDay === 'object') {
+        const start = (cond.timeOfDay.start || '00:00').toString();
+        const end = (cond.timeOfDay.end || '23:59').toString();
+        const [sh, sm] = start.split(':').map(Number);
+        const [eh, em] = end.split(':').map(Number);
+        const nowMins = now.getHours() * 60 + now.getMinutes();
+        const startMins = (sh || 0) * 60 + (sm || 0);
+        const endMins = (eh || 0) * 60 + (em || 0);
+        if (startMins <= endMins) {
+            if (nowMins < startMins || nowMins > endMins) return false;
+        } else {
+            if (nowMins < startMins && nowMins > endMins) return false;
+        }
+    }
+
+    // روزهای هفته: [0,1,2,3,4,5,6] — 0=یکشنبه
+    if (cond.daysOfWeek && Array.isArray(cond.daysOfWeek) && cond.daysOfWeek.length > 0) {
+        const day = now.getDay();
+        if (!cond.daysOfWeek.includes(day)) return false;
+    }
+
+    // دپارتمان: فقط اگر مکالمه به این دپارتمان تخصیص شده
+    if (cond.departmentId && conversation.departmentId) {
+        if (String(conversation.departmentId) !== String(cond.departmentId)) return false;
+    }
+
+    return true;
+}
+
 async function checkAutoResponse(conversation, message) {
     try {
         const responses = await AutoResponse.findAll({
-            where: { isActive: true }
+            where: { isActive: true },
+            order: [['priority', 'DESC'], ['createdAt', 'ASC']]
         });
-        
+
         const messageText = (message.content || '').toLowerCase();
+        const now = new Date();
+
         for (const rule of responses) {
             const keywords = rule.keywords.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
             if (keywords.length && keywords.some(keyword => messageText.includes(keyword))) {
+                if (!matchesAutoResponseConditions(rule, conversation, now)) continue;
                 await sendAutoReply(conversation, rule.response);
                 return true;
             }
@@ -749,7 +796,9 @@ async function sendAutoReply(conversation, responseText) {
         var preview = (responseText || '').slice(0, 120);
         if ((responseText || '').length > 120) preview += '…';
         const now = new Date();
-        await conversation.update({ lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview, unansweredAlertSentAt: null, escalatedAt: null });
+        const upd = { lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview, unansweredAlertSentAt: null, escalatedAt: null };
+        if (!conversation.firstReplyAt) upd.firstReplyAt = now;
+        await conversation.update(upd);
         logger.info(`🤖 Auto-reply sent to ${customer.phone}`);
     } catch (error) {
         logger.error('Send auto-reply error:', error);
@@ -901,13 +950,9 @@ io.on('connection', (socket) => {
             
             // بروزرسانی مکالمه
             const now = new Date();
-            await conversation.update({
-                lastMessageAt: now,
-                lastOutgoingMessageAt: now,
-                unreadCount: 0,
-                unansweredAlertSentAt: null,
-                escalatedAt: null
-            });
+            const upd = { lastMessageAt: now, lastOutgoingMessageAt: now, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };
+            if (!conversation.firstReplyAt) upd.firstReplyAt = now;
+            await conversation.update(upd);
             
             // اطلاع‌رسانی به همه کاربران
             io.emit('message_sent', {
@@ -1156,6 +1201,7 @@ apiRouter.use('/departments', authMiddleware, departmentRoutes);
 apiRouter.use('/analytics', authMiddleware, analyticsRoutes);
 apiRouter.use('/customers', authMiddleware, customerRoutes);
 apiRouter.use('/tags', authMiddleware, require('./routes/tags'));
+apiRouter.use('/message-templates', authMiddleware, require('./routes/templates'));
 apiRouter.use('/tickets', authMiddleware, require('./routes/tickets')(io));
 apiRouter.use('/branches', authMiddleware, branchRoutes);
 apiRouter.use('/supervision', authMiddleware, supervisionRoutes);

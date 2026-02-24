@@ -249,7 +249,7 @@ router.get('/internal-chats/:threadId/messages', async (req, res) => {
 // خلاصه عملکرد به تفکیک شعبه و کاربر — برای مالک
 router.get('/performance', async (req, res) => {
     try {
-        const [branches, users, conversationCount, messageCount, openCount, pendingCount, unassignedCount, todayMsgCount] = await Promise.all([
+        const [branches, users, conversationCount, messageCount, openCount, pendingCount, unassignedCount, todayMsgCount, allConvsForResponse, allConvsForRating] = await Promise.all([
             Branch.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'city', 'country'], order: [['name', 'ASC']] }),
             User.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'email', 'role', 'branchId'], include: [{ model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false }] }),
             Conversation.count(),
@@ -257,7 +257,9 @@ router.get('/performance', async (req, res) => {
             Conversation.count({ where: { status: 'open' } }),
             Conversation.count({ where: { status: 'pending' } }),
             Conversation.count({ where: { assignedTo: null } }),
-            Message.count({ where: { direction: 'outgoing', createdAt: { [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0)) } } })
+            Message.count({ where: { direction: 'outgoing', createdAt: { [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0)) } } }),
+            Conversation.findAll({ where: { lastIncomingMessageAt: { [Op.ne]: null }, lastOutgoingMessageAt: { [Op.ne]: null } }, attributes: ['id', 'branchId', 'assignedTo', 'lastIncomingMessageAt', 'lastOutgoingMessageAt', 'firstReplyAt', 'rating'], raw: true }),
+            Conversation.findAll({ where: { rating: { [Op.ne]: null } }, attributes: ['id', 'branchId', 'assignedTo', 'rating'], raw: true })
         ]);
         const branchIds = branches.map(b => b.id);
         const convCountByBranch = await Conversation.findAll({
@@ -276,6 +278,58 @@ router.get('/performance', async (req, res) => {
         convCountByBranch.forEach(r => { countByBranch[r.branchId] = parseInt(r.count, 10); });
         const countByUser = {};
         msgCountByUser.forEach(r => { countByUser[r.userId] = parseInt(r.count, 10); });
+
+        function calcResponseTimeMinutes(convs) {
+            const diffs = convs.map(c => {
+                const inc = new Date(c.lastIncomingMessageAt).getTime();
+                const out = new Date(c.lastOutgoingMessageAt).getTime();
+                if (out >= inc) return (out - inc) / 60000;
+                return null;
+            }).filter(x => x != null && x >= 0 && x < 10080);
+            if (diffs.length === 0) return null;
+            return Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length * 10) / 10;
+        }
+        function calcAvgRating(convs) {
+            if (!convs.length) return null;
+            const sum = convs.reduce((a, c) => a + (c.rating || 0), 0);
+            return Math.round(sum / convs.length * 10) / 10;
+        }
+
+        const overallDiffs = allConvsForResponse.map(c => {
+            const inc = new Date(c.lastIncomingMessageAt).getTime();
+            const out = new Date(c.lastOutgoingMessageAt).getTime();
+            if (out >= inc) return (out - inc) / 60000;
+            return null;
+        }).filter(x => x != null && x >= 0 && x < 10080);
+        const avgResponseTimeMinutes = overallDiffs.length ? Math.round(overallDiffs.reduce((a, b) => a + b, 0) / overallDiffs.length * 10) / 10 : null;
+        const avgRating = allConvsForRating.length ? Math.round(allConvsForRating.reduce((a, c) => a + (c.rating || 0), 0) / allConvsForRating.length * 10) / 10 : null;
+        const ratedConversationsCount = allConvsForRating.length;
+
+        const usersWithStats = users.map(u => {
+            const userConvsResp = allConvsForResponse.filter(c => c.assignedTo === u.id);
+            const userConvsRate = allConvsForRating.filter(c => c.assignedTo === u.id);
+            return {
+                id: u.id,
+                name: u.name,
+                email: u.email,
+                role: u.role,
+                branch: u.branch,
+                outgoingMessageCount: countByUser[u.id] || 0,
+                avgResponseTimeMinutes: calcResponseTimeMinutes(userConvsResp),
+                avgRating: calcAvgRating(userConvsRate),
+                ratedConversationsCount: userConvsRate.length
+            };
+        });
+
+        const branchesWithStats = branches.map(b => {
+            const branchConvs = allConvsForResponse.filter(c => c.branchId === b.id);
+            return {
+                ...b.toJSON(),
+                conversationCount: countByBranch[b.id] || 0,
+                avgResponseTimeMinutes: calcResponseTimeMinutes(branchConvs)
+            };
+        });
+
         res.json({
             summary: {
                 conversationCount,
@@ -283,11 +337,72 @@ router.get('/performance', async (req, res) => {
                 openCount,
                 pendingCount,
                 unassignedCount,
-                todayMessageCount: todayMsgCount
+                todayMessageCount: todayMsgCount,
+                avgResponseTimeMinutes,
+                avgRating,
+                ratedConversationsCount
             },
-            branches: branches.map(b => ({ ...b.toJSON(), conversationCount: countByBranch[b.id] || 0 })),
-            users: users.map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role, branch: u.branch, outgoingMessageCount: countByUser[u.id] || 0 }))
+            branches: branchesWithStats,
+            users: usersWithStats
         });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// گزارش حضور و غیاب — بر اساس ActivityLog (user_login, user_logout)
+router.get('/attendance-report', canViewStaffActivity, async (req, res) => {
+    try {
+        const { branchId, userId, from, to } = req.query;
+        const fromDate = from ? new Date(from) : new Date(new Date().setDate(1));
+        const toDate = to ? new Date(to) : new Date();
+        fromDate.setHours(0, 0, 0, 0);
+        toDate.setHours(23, 59, 59, 999);
+
+        const whereLogin = { action: 'user_login', createdAt: { [Op.between]: [fromDate, toDate] } };
+        const whereLogout = { action: 'user_logout', createdAt: { [Op.between]: [fromDate, toDate] } };
+        if (branchId) { whereLogin.branchId = branchId; whereLogout.branchId = branchId; }
+        if (userId) { whereLogin.userId = userId; whereLogout.userId = userId; }
+
+        const [logins, logouts, users] = await Promise.all([
+            ActivityLog.findAll({ where: whereLogin, include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }, { model: Branch, as: 'branch', attributes: ['id', 'name'] }], order: [['createdAt', 'ASC']] }),
+            ActivityLog.findAll({ where: whereLogout, order: [['createdAt', 'ASC']] }),
+            User.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'email'], include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'], required: false }] })
+        ]);
+
+        const sessions = [];
+        const loginByUser = {};
+        logins.forEach(l => {
+            if (!loginByUser[l.userId]) loginByUser[l.userId] = [];
+            loginByUser[l.userId].push({ at: new Date(l.createdAt), branchId: l.branchId, id: l.id });
+        });
+        const logoutByUser = {};
+        logouts.forEach(l => {
+            if (!logoutByUser[l.userId]) logoutByUser[l.userId] = [];
+            logoutByUser[l.userId].push({ at: new Date(l.createdAt), branchId: l.branchId });
+        });
+
+        const userMinutes = {};
+        for (const uid of [...new Set([...Object.keys(loginByUser), ...Object.keys(logoutByUser)])]) {
+            const loginsU = (loginByUser[uid] || []).sort((a, b) => a.at - b.at);
+            const logoutsU = (logoutByUser[uid] || []).sort((a, b) => a.at - b.at);
+            let lo = 0;
+            for (const login of loginsU) {
+                let logoutAt = null;
+                while (lo < logoutsU.length && logoutsU[lo].at <= login.at) lo++;
+                if (lo < logoutsU.length) { logoutAt = logoutsU[lo].at; lo++; }
+                const mins = logoutAt ? Math.round((logoutAt - login.at) / 60000) : Math.round((new Date() - login.at) / 60000);
+                sessions.push({ userId: uid, loginAt: login.at, logoutAt, minutes: mins, branchId: login.branchId });
+                userMinutes[uid] = (userMinutes[uid] || 0) + mins;
+            }
+        }
+
+        const summary = Object.entries(userMinutes).map(([uid, mins]) => {
+            const u = users.find(x => x.id === uid);
+            return { userId: uid, userName: u ? (u.name || u.email) : uid, totalMinutes: mins, totalHours: Math.round(mins / 60 * 10) / 10 };
+        }).sort((a, b) => b.totalMinutes - a.totalMinutes);
+
+        res.json({ sessions, summary, from: fromDate, to: toDate });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

@@ -256,7 +256,7 @@ router.patch('/:id', async (req, res) => {
         const accessibleCustomerIds = await getAccessibleCustomerIds(req);
         if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
 
-        const { assignedTo, departmentId, branchId, status, priority, subject, markRead } = req.body;
+        const { assignedTo, departmentId, branchId, status, priority, subject, markRead, rating, feedback } = req.body;
 
         if (markRead === true || markRead === 'true') {
             await conversation.update({ unreadCount: 0 });
@@ -292,6 +292,8 @@ router.patch('/:id', async (req, res) => {
         }
         if (canManage && priority !== undefined) updateData.priority = priority;
         if (canManage && subject !== undefined) updateData.subject = subject;
+        if (rating !== undefined && Number(rating) >= 1 && Number(rating) <= 5) updateData.rating = Math.round(Number(rating));
+        if (feedback !== undefined) updateData.feedback = String(feedback || '').trim() || null;
 
         await conversation.update(updateData);
 
@@ -426,6 +428,7 @@ router.post('/:id/send', async (req, res) => {
         if ((content || '').length > 120) preview += '…';
         const now = new Date();
         const updateData = { lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };
+        if (!conversation.firstReplyAt) updateData.firstReplyAt = now;
         if (!conversation.branchId && req.user.branchId) updateData.branchId = req.user.branchId;
         await conversation.update(updateData);
         const { gatewayPost } = require('../lib/gatewayClient');

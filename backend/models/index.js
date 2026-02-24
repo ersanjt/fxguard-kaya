@@ -56,7 +56,8 @@ const models = {
     Transaction: require('./Transaction')(sequelize),
     PanelSetting: require('./PanelSetting')(sequelize),
     PasswordResetToken: require('./PasswordResetToken')(sequelize),
-    CompanyEmail: require('./CompanyEmail')(sequelize)
+    CompanyEmail: require('./CompanyEmail')(sequelize),
+    Attendance: require('./Attendance')(sequelize)
 };
 
 // تعریف روابط
