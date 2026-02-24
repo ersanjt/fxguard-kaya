@@ -350,8 +350,12 @@ async function connectDatabases() {
     }
 }
 
-// ایجاد کاربر ادمین اصلی (بالاترین سطح دسترسی) اگر وجود نداشته باشد؛ اگر وجود داشت همیشه نقش owner و فعال است
-const MAIN_ADMIN_EMAIL_LOWER = MAIN_ADMIN_EMAIL.toLowerCase();
+// ایجاد کاربران ادمین اصلی (بالاترین سطح دسترسی) اگر وجود نداشته باشند؛ اگر وجود داشتند همیشه نقش owner و فعال هستند
+const MAIN_ADMIN_EMAILS_LIST = MAIN_ADMIN_EMAIL.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
+const ADMIN_CONFIGS = [
+    { email: 'admin@kaya.fxguard.io', name: 'Admin', username: 'Admin', password: MAIN_ADMIN_PASSWORD },
+    { email: 'ersanjahedtabrizi@gmail.com', name: 'Ersan', username: 'Ersan', password: MAIN_ADMIN_PASSWORD },
+];
 async function ensureAdminUser() {
     try {
         let dept = await Department.findOne({ where: { isDefault: true } });
@@ -366,32 +370,31 @@ async function ensureAdminUser() {
             });
             logger.info('✅ دپارتمان پیش‌فرض ایجاد شد');
         }
-        let existing = await User.findOne({
-            where: sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), MAIN_ADMIN_EMAIL_LOWER)
-        });
-        if (!existing) {
-            await User.create({
-                name: 'Admin',
-                username: 'Admin',
-                email: MAIN_ADMIN_EMAIL_LOWER,
-                password: MAIN_ADMIN_PASSWORD,
-                role: 'owner',
-                branchId: null,
-                departmentId: null,
-                isActive: true
+        for (const cfg of ADMIN_CONFIGS) {
+            if (!MAIN_ADMIN_EMAILS_LIST.includes(cfg.email)) continue;
+            let existing = await User.findOne({
+                where: sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), cfg.email)
             });
-            logger.info('✅ کاربر ادمین اصلی ایجاد شد: ' + MAIN_ADMIN_EMAIL_LOWER);
-        } else {
-            let changed = false;
-            if (existing.role !== 'owner') { existing.role = 'owner'; changed = true; }
-            if (!existing.isActive) { existing.isActive = true; changed = true; }
-            if (existing.name !== 'Admin') { existing.name = 'Admin'; changed = true; }
-            if (existing.username !== 'Admin') { existing.username = 'Admin'; changed = true; }
-            if (existing.branchId !== null) { existing.branchId = null; changed = true; }
-            if (existing.departmentId !== null) { existing.departmentId = null; changed = true; }
-            if (changed) {
-                await existing.save();
-                logger.info('✅ ادمین اصلی به‌روز شد: ' + existing.email);
+            if (!existing) {
+                await User.create({
+                    name: cfg.name,
+                    username: cfg.username,
+                    email: cfg.email,
+                    password: cfg.password,
+                    role: 'owner',
+                    branchId: null,
+                    departmentId: null,
+                    isActive: true
+                });
+                logger.info('✅ کاربر ادمین اصلی ایجاد شد: ' + cfg.email);
+            } else {
+                let changed = false;
+                if (existing.role !== 'owner') { existing.role = 'owner'; changed = true; }
+                if (!existing.isActive) { existing.isActive = true; changed = true; }
+                if (changed) {
+                    await existing.save();
+                    logger.info('✅ ادمین اصلی به‌روز شد: ' + existing.email);
+                }
             }
         }
     } catch (err) {
@@ -1048,7 +1051,7 @@ apiRouter.get('/ping', (req, res) => {
 apiRouter.get('/config', (req, res) => {
     const supportUrl = process.env.SUPPORT_URL || null;
     const supportEmail = process.env.SUPPORT_EMAIL || null;
-    const defaultEmail = process.env.MAIN_ADMIN_EMAIL || 'Admin@kaya.fxguard.io';
+    const defaultEmail = (process.env.MAIN_ADMIN_EMAIL || 'Admin@kaya.fxguard.io').split(',')[0].trim();
     const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : 'mailto:' + defaultEmail);
     res.json({
         timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',

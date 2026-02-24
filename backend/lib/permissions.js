@@ -27,12 +27,13 @@ const SECTION_KEYS = [
 const MANAGE_USERS_KEY = 'manage_users'; // owner، admin، manager یا دارنده این دسترسی می‌توانند کاربران و دپارتمان‌ها را ویرایش/مدیریت کنند
 const MANAGE_TICKETS_KEY = 'manage_tickets'; // حذف و آرشیو تیکت
 
-/** ادمین اصلی پنل — این ایمیل (از env یا پیش‌فرض) دسترسی کامل دارد. خالی بودن = هیچ‌کس ادمین اصلی نیست و همه قابل حذف/ویرایش هستند. */
+/** ادمین‌های اصلی پنل — این ایمیل‌ها (از env یا پیش‌فرض) دسترسی کامل دارند. خالی بودن = هیچ‌کس ادمین اصلی نیست. با کاما جدا کنید. */
 const MAIN_ADMIN_EMAIL = (process.env.MAIN_ADMIN_EMAIL || 'Admin@kaya.fxguard.io').trim();
+const MAIN_ADMIN_EMAILS = MAIN_ADMIN_EMAIL.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
 function isMainAdmin(user) {
-    if (!user || !user.email || !MAIN_ADMIN_EMAIL) return false;
-    return String(user.email).trim().toLowerCase() === MAIN_ADMIN_EMAIL.toLowerCase();
+    if (!user || !user.email || !MAIN_ADMIN_EMAILS.length) return false;
+    return MAIN_ADMIN_EMAILS.includes(String(user.email).trim().toLowerCase());
 }
 
 /** پیش‌فرض دسترسی هر نقش (بدون override در user.permissions) */
@@ -165,4 +166,5 @@ module.exports = {
     SECTION_KEYS,
     MANAGE_USERS_KEY,
     MAIN_ADMIN_EMAIL,
+    MAIN_ADMIN_EMAILS,
 };
