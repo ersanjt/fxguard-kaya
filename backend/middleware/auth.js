@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
-const { getPermissions, canAccess, canManageUsers, canDeleteCustomer, canDeleteUser, canManageConversations, canViewArchivedConversations } = require('../lib/permissions');
+const { getPermissions, canAccess, canManageUsers, canManageTickets, canDeleteCustomer, canDeleteUser, canManageConversations, canViewArchivedConversations } = require('../lib/permissions');
 
 async function authMiddleware(req, res, next) {
     const authHeader = req.headers.authorization;
@@ -23,6 +23,7 @@ async function authMiddleware(req, res, next) {
         req.permissions = getPermissions(user);
         req.canAccess = (section) => canAccess(user, section);
         req.canManageUsers = () => canManageUsers(req.user);
+        req.canManageTickets = () => canManageTickets(req.user);
         req.canDeleteCustomer = () => canDeleteCustomer(req.user);
         req.canDeleteUser = () => canDeleteUser(req.user);
         req.canManageConversations = () => canManageConversations(req.user);

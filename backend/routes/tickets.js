@@ -1,12 +1,10 @@
 const express = require('express');
 const { Ticket, User, Department, TicketReply } = require('../models');
 const { Op, literal } = require('sequelize');
-const { isMainAdmin } = require('../lib/permissions');
+const { canManageTickets } = require('../lib/permissions');
 
 function canManageTicket(req) {
-    if (!req.user) return false;
-    if (isMainAdmin(req.user)) return true;
-    return req.user.role === 'owner';
+    return canManageTickets(req.user);
 }
 
 function createTicketsRouter(io) {

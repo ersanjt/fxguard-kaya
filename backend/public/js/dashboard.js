@@ -3636,18 +3636,23 @@
         }
         async function syncWhatsAppGroups() {
             var btn = document.getElementById('btnSyncGroups');
-            if (btn) btn.disabled = true;
+            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); }
             try {
                 var res = await apiFetch('/api/conversations/sync-groups', { method: 'POST' });
                 if (res.needLogin) return;
                 if (res.ok) {
                     toast((res.data && res.data.message) || (LANG === 'fa' ? 'گروه‌ها همگام شدند' : 'Groups synced'));
+                    setConvQuickTab('groups');
                     loadConversations();
                 } else {
-                    toast((res.data && res.data.error) || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed'), true);
+                    var errMsg = (res.data && res.data.error) || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed');
+                    if (errMsg.indexOf('503') !== -1 || errMsg.indexOf('not ready') !== -1) {
+                        errMsg = LANG === 'fa' ? 'واتساپ متصل نیست. ابتدا اتصال را برقرار کنید.' : 'WhatsApp not connected. Connect first.';
+                    }
+                    toast(errMsg, true);
                 }
             } finally {
-                if (btn) btn.disabled = false;
+                if (btn) { btn.disabled = false; btn.textContent = '👥 ' + (t('conv_sync_groups') || (LANG === 'fa' ? 'همگام‌سازی گروه‌ها' : 'Sync groups')); }
             }
         }
         async function loadConversations() {
@@ -3665,12 +3670,13 @@
             else if (convQuickTab === 'unanswered') q += '&unanswered=true';
             else if (convQuickTab === 'open') q += '&status=open';
             else if (convQuickTab === 'archived') q += '&status=archived';
+            else if (convQuickTab === 'groups') q += '&isGroup=true';
             else if (convQuickTab === 'mine' && currentUser && currentUser.id) q += '&assignedTo=' + encodeURIComponent(currentUser.id);
-            if (convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'archived') { if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value); }
+            if (convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'archived' || convQuickTab === 'groups') { if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value); }
             if (priorityEl && priorityEl.value) q += '&priority=' + encodeURIComponent(priorityEl.value);
             if (branchEl && branchEl.value) q += '&branchId=' + encodeURIComponent(branchEl.value);
             if (deptEl && deptEl.value) q += '&departmentId=' + encodeURIComponent(deptEl.value);
-            if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open' || convQuickTab === 'archived') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
+            if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open' || convQuickTab === 'archived' || convQuickTab === 'groups') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
             var res = await apiFetch('/api/conversations' + q);
             if (res.needLogin) return;
@@ -3716,7 +3722,7 @@
                     unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + waitStr + '</span>';
                 }
                 var activeClass = (c.id === currentConvId) ? ' active' : '';
-                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\', this.getAttribute(\'data-profile-pic\')||\'\')"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(metaPhone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\', this.getAttribute(\'data-profile-pic\')||\'\', ' + (isGroup ? 'true' : 'false') + ')"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(metaPhone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
         }
 
@@ -3747,9 +3753,11 @@
             }
         }
         if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
-        function openChat(id, name, phone, profilePic) {
+        var currentConvIsGroup = false;
+        function openChat(id, name, phone, profilePic, isGroup) {
             currentConvId = id;
             currentConvDetail = null;
+            currentConvIsGroup = !!isGroup;
             cancelReply();
             var headerEl = document.getElementById('chatHeader');
             var avatarEl = document.getElementById('chatHeaderAvatar');
@@ -3758,7 +3766,7 @@
             var actionsEl = document.getElementById('convDetailActions');
             var supPanel = document.getElementById('convSupervisionPanel');
             var supStats = document.getElementById('convSupervisionStats');
-            if (headerEl) headerEl.textContent = name || phone || t('customer');
+            if (headerEl) headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
             if (avatarEl) {
                 var pic = (profilePic || '').trim();
                 if (pic && pic.indexOf('/') === 0) pic = (window.location.origin || '') + pic;
@@ -3939,7 +3947,7 @@
             if (feedbackEl) body.feedback = (feedbackEl.value || '').trim() || null;
             var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; var h = document.getElementById('chatHeader'); var activeItem = document.querySelector('.conv-list-item.active[data-id="' + currentConvId + '"]'); var pic = (activeItem && activeItem.getAttribute('data-profile-pic')) || (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.profilePic) || ''; openChat(currentConvId, h ? h.textContent : '', '', pic); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+            if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; var h = document.getElementById('chatHeader'); var activeItem = document.querySelector('.conv-list-item.active[data-id="' + currentConvId + '"]'); var pic = (activeItem && activeItem.getAttribute('data-profile-pic')) || (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.profilePic) || ''; var ig = (activeItem && activeItem.getAttribute('data-is-group') === '1') || (res.data && res.data.metadata && res.data.metadata.isGroup); openChat(currentConvId, (currentConvDetail && (currentConvDetail.customer && currentConvDetail.customer.name)) || (h ? h.textContent.replace(/^👥\s*/, '') : ''), (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.phone) || '', pic, ig); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
         async function archiveConversation() {
             if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را آرشیو کند' : 'Only owner can archive', true); return; }
@@ -3959,7 +3967,8 @@
         function openChatFromHistory(el) {
             var convId = el.getAttribute('data-convid');
             var name = el.getAttribute('data-customername') || '';
-            if (convId) { openChat(convId, name, ''); showPage('conversations'); }
+            var isGrp = el.getAttribute('data-is-group') === '1';
+            if (convId) { openChat(convId, name, '', '', isGrp); showPage('conversations'); }
         }
 
         async function loadMessages(id) {
@@ -3981,6 +3990,13 @@
                 var senderLabel = '';
                 if (isOut && m.user && (m.user.name || m.user.username)) {
                     senderLabel = '<div class="msg-sender">' + escapeHtml(m.user.name || m.user.username) + '</div>';
+                } else if (!isOut && currentConvIsGroup) {
+                    var sn = (m.metadata && m.metadata.senderName) || null;
+                    var sid = (m.metadata && m.metadata.senderId) || null;
+                    if (sn || sid) {
+                        var displayName = sn || (sid ? sid.replace(/@c\.us$/i, '').replace(/\D/g, '').replace(/^98/, '0') : '') || (LANG === 'fa' ? 'عضو گروه' : 'Group member');
+                        senderLabel = '<div class="msg-sender msg-sender-group">' + escapeHtml(displayName) + '</div>';
+                    }
                 }
                 var mediaHtml = '';
                 var baseUrl = (API && String(API).length) ? String(API).replace(/\/$/, '') : (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : '');
@@ -4385,7 +4401,8 @@
                 var date = conv.lastMessageAt ? fmtTZ(conv.lastMessageAt, 'datetime') : '';
                 var who = [conv.assignee && conv.assignee.name, conv.lastOutgoingBy].filter(Boolean);
                 var whoStr = who.length ? ' · ' + (LANG === 'fa' ? 'مسئول/چت: ' : 'by ') + who.join(', ') : '';
-                return '<div class="list-item" data-convid="' + conv.id + '" data-customername="' + safeName + '" onclick="openChatFromHistory(this)"><div><span class="name">' + t('conversation') + ' ' + (conv.status || '') + '</span><div class="meta">' + (conv.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + whoStr + ' · ' + date + '</div></div></div>';
+                var isGrp = !!(conv.metadata && conv.metadata.isGroup);
+                return '<div class="list-item" data-convid="' + conv.id + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)"><div><span class="name">' + (isGrp ? '👥 ' : '') + t('conversation') + ' ' + (conv.status || '') + '</span><div class="meta">' + (conv.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + whoStr + ' · ' + date + '</div></div></div>';
                 }).join('');
             }
             loadCustomerTimeline(custId);
@@ -4446,7 +4463,8 @@
                 if (item.type === 'conversation') {
                     var d = item.data;
                     var who = [d.assignee && d.assignee.name].filter(Boolean).join(', ');
-                    return '<div class="customer-timeline-item customer-timeline-conv" data-convid="' + d.id + '" data-customername="' + safeName + '" onclick="openChatFromHistory(this)"><div class="customer-timeline-icon">💬</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (LANG === 'fa' ? 'مکالمه' : 'Conversation') + ' ' + (d.status || '') + '</div><div class="customer-timeline-meta">' + (d.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + (who ? ' · ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + escapeHtml(who) : '') + ' · ' + date + '</div></div></div>';
+                    var isGrp = !!(d.metadata && d.metadata.isGroup);
+                    return '<div class="customer-timeline-item customer-timeline-conv" data-convid="' + d.id + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)"><div class="customer-timeline-icon">' + (isGrp ? '👥' : '💬') + '</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (LANG === 'fa' ? 'مکالمه' : 'Conversation') + ' ' + (d.status || '') + '</div><div class="customer-timeline-meta">' + (d.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + (who ? ' · ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + escapeHtml(who) : '') + ' · ' + date + '</div></div></div>';
                 }
                 if (item.type === 'note') {
                     var n = item.data;
@@ -5471,7 +5489,7 @@
             document.getElementById('ticketReplyAttachments').textContent = '';
             loadTickets();
         }
-        function canManageTickets() { var r = (currentUser && currentUser.role) || ''; return r === 'owner'; }
+        function canManageTickets() { return !!(currentUser && (currentUser.canManageTickets === true || (currentUser.permissions && currentUser.permissions.manage_tickets === true))); }
         var ticketEditMode = false;
         function toggleTicketEditMode() {
             ticketEditMode = !ticketEditMode;
@@ -7760,12 +7778,13 @@
                 if (countEl) countEl.textContent = users.length;
                 if (onlineList) {
                     if (users.length === 0) onlineList.innerHTML = '<div class="empty">' + t('no_staff_online') + '</div>';
-                    else onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('label_name') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_status') + '</th><th>' + t('th_last_login') + '</th></tr></thead><tbody>' + users.map(function(u) {
+                    else onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('label_name') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_status') + '</th><th>' + t('th_last_login') + '</th><th>' + t('th_ip') + '</th><th>' + t('th_country') + '</th></tr></thead><tbody>' + users.map(function(u) {
                         var statusClass = (u.status || 'offline').toLowerCase();
                         var statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
                         var lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '�';
                         var branchName = (u.branch && u.branch.name) ? u.branch.name : '�';
-                        var lbl = [t('label_name'),t('th_email'),t('th_branch'),t('th_status'),t('th_last_login')]; return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer"><td data-label="'+lbl[0]+'">' + escapeHtml(userDisplay(u)) + '</td><td data-label="'+lbl[1]+'">' + escapeHtml(u.email || '\u2014') + '</td><td data-label="'+lbl[2]+'">' + escapeHtml(branchName) + '</td><td data-label="'+lbl[3]+'"><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td data-label="'+lbl[4]+'">' + lastLogin + '</td></tr>';
+                        var ip = u.lastLoginIp || '\u2014'; var country = u.lastLoginCountry || '\u2014';
+                        var lbl = [t('label_name'),t('th_email'),t('th_branch'),t('th_status'),t('th_last_login'),t('th_ip'),t('th_country')]; return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer"><td data-label="'+lbl[0]+'">' + escapeHtml(userDisplay(u)) + '</td><td data-label="'+lbl[1]+'">' + escapeHtml(u.email || '\u2014') + '</td><td data-label="'+lbl[2]+'">' + escapeHtml(branchName) + '</td><td data-label="'+lbl[3]+'"><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td data-label="'+lbl[4]+'">' + lastLogin + '</td><td data-label="'+lbl[5]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+lbl[6]+'">' + escapeHtml(country) + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
             } else { if (onlineList) onlineList.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; if (countEl) countEl.textContent = '0'; }
@@ -7780,13 +7799,14 @@
                 if (loginsTotalEl) loginsTotalEl.textContent = rows.length;
                 if (loginsList) {
                     if (rows.length === 0) loginsList.innerHTML = '<div class="empty">' + t('empty_no_logins') + '</div>';
-                    else loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
+                    else loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_ip') + '</th><th>' + t('th_country') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
                         var user = r.user || {};
                         var branch = r.branch ? r.branch.name : '�';
                         var time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
                         var uid = r.userId || (user && user.id) || '';
                         var rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
-                        var ll = [t('th_user'),t('th_email'),t('th_branch'),t('th_login_time'),t('th_summary')]; return '<tr' + rowAttrs + '><td data-label="'+ll[0]+'">' + escapeHtml(userDisplay(user)) + '</td><td data-label="'+ll[1]+'">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="'+ll[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+ll[3]+'">' + time + '</td><td data-label="'+ll[4]+'">' + escapeHtml(r.summary || '') + '</td></tr>';
+                        var ip = r.ip || '\u2014'; var country = r.country || '\u2014';
+                        var ll = [t('th_user'),t('th_email'),t('th_branch'),t('th_login_time'),t('th_ip'),t('th_country'),t('th_summary')]; return '<tr' + rowAttrs + '><td data-label="'+ll[0]+'">' + escapeHtml(userDisplay(user)) + '</td><td data-label="'+ll[1]+'">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="'+ll[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+ll[3]+'">' + time + '</td><td data-label="'+ll[4]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+ll[5]+'">' + escapeHtml(country) + '</td><td data-label="'+ll[6]+'">' + escapeHtml(r.summary || '') + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
             } else { if (loginsList) loginsList.innerHTML = '<div class="empty">' + t('login_err_load') + '</div>'; if (loginsTodayEl) loginsTodayEl.textContent = '0'; if (loginsTotalEl) loginsTotalEl.textContent = '0'; }

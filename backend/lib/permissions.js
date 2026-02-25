@@ -145,6 +145,15 @@ function canViewArchivedConversations(user) {
     return ['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1;
 }
 
+/** مالک و هر کاربری که دسترسی manage_tickets دارد می‌تواند تیکت را حذف یا آرشیو کند */
+function canManageTickets(user) {
+    if (!user) return false;
+    if (isMainAdmin(user)) return true;
+    if (user.role === 'owner') return true;
+    const p = getPermissions(user);
+    return !!p[MANAGE_TICKETS_KEY];
+}
+
 function getSectionKeys() {
     return [...SECTION_KEYS];
 }
@@ -157,6 +166,7 @@ module.exports = {
     getPermissions,
     canAccess,
     canManageUsers,
+    canManageTickets,
     canDeleteCustomer,
     canDeleteUser,
     canManageConversations,
@@ -166,6 +176,7 @@ module.exports = {
     getManageUsersKey,
     SECTION_KEYS,
     MANAGE_USERS_KEY,
+    MANAGE_TICKETS_KEY,
     MAIN_ADMIN_EMAIL,
     MAIN_ADMIN_EMAILS,
 };

@@ -7,9 +7,10 @@ const { User, sequelize, PasswordResetToken } = require('../models');
 const { Op } = require('sequelize');
 const crypto = require('crypto');
 const { logActivity } = require('../services/activityLog');
+const { getCountryFromIp } = require('../lib/geoip');
 const emailService = require('../services/emailService');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
-const { getPermissions, canDeleteCustomer, canDeleteUser } = require('../lib/permissions');
+const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
 const TOTP_TEMP_EXPIRY = '5m';
@@ -78,6 +79,7 @@ router.post('/login', async (req, res) => {
         }
         const now = new Date();
         await user.update({ lastLoginAt: now, status: 'online' });
+        const clientIp = req.ip || req.connection?.remoteAddress || '';
         await logActivity({
             userId: user.id,
             branchId: user.branchId || null,
@@ -87,7 +89,8 @@ router.post('/login', async (req, res) => {
             entityId: user.id,
             summary: 'ورود به پورتال کارکنان کایا',
             metadata: {
-                ip: req.ip || req.connection?.remoteAddress,
+                ip: clientIp,
+                country: getCountryFromIp(clientIp),
                 userAgent: (req.get && req.get('user-agent')) || null,
                 email: user.email
             }
@@ -118,7 +121,8 @@ router.post('/login', async (req, res) => {
                 permissions,
                 totpEnabled: false,
                 canDeleteCustomer: canDeleteCustomer(user),
-                canDeleteUser: canDeleteUser(user)
+                canDeleteUser: canDeleteUser(user),
+                canManageTickets: canManageTickets(user)
             }
         });
     } catch (err) {
@@ -192,6 +196,7 @@ router.post('/totp/verify-login', async (req, res) => {
         if (!verified) return res.status(401).json({ error: 'کد احراز هویت اشتباه یا منقضی است' });
         const now = new Date();
         await user.update({ lastLoginAt: now, status: 'online' });
+        const clientIp = req.ip || req.connection?.remoteAddress || '';
         await logActivity({
             userId: user.id,
             branchId: user.branchId || null,
@@ -200,7 +205,12 @@ router.post('/totp/verify-login', async (req, res) => {
             entityType: 'user',
             entityId: user.id,
             summary: 'ورود به پورتال کارکنان کایا (۲FA)',
-            metadata: { email: user.email }
+            metadata: {
+                ip: clientIp,
+                country: getCountryFromIp(clientIp),
+                userAgent: (req.get && req.get('user-agent')) || null,
+                email: user.email
+            }
         });
         const token = issueToken(user);
         const permissions = getPermissions(user);
@@ -225,7 +235,8 @@ router.post('/totp/verify-login', async (req, res) => {
                 permissions,
                 totpEnabled: true,
                 canDeleteCustomer: canDeleteCustomer(user),
-                canDeleteUser: canDeleteUser(user)
+                canDeleteUser: canDeleteUser(user),
+                canManageTickets: canManageTickets(user)
             }
         });
     } catch (err) {
@@ -256,6 +267,7 @@ router.get('/me', async (req, res) => {
         u.permissions = getPermissions(user);
         u.canDeleteCustomer = canDeleteCustomer(user);
         u.canDeleteUser = canDeleteUser(user);
+        u.canManageTickets = canManageTickets(user);
         res.json(u);
     } catch (err) {
         res.status(401).json({ error: 'توکن نامعتبر است' });

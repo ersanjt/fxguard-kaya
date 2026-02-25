@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { User, Department, Branch, Conversation, Message, Task, Ticket, ProcessInstance, ProcessInstanceStep, ActivityLog, TaskUpdate, TicketReply, AnnouncementRead, InternalThreadParticipant, InternalMessage, CustomerNote, Transaction, PasswordResetToken } = require('../models');
-const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser } = require('../lib/permissions');
+const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 
 router.get('/', async (req, res) => {
@@ -57,6 +57,7 @@ router.get('/me', (req, res) => {
         totpEnabled: !!u.totpEnabled,
         canDeleteCustomer: canDeleteCustomer(u),
         canDeleteUser: canDeleteUser(u),
+        canManageTickets: canManageTickets(u),
         isProtectedAdmin: isMainAdmin(u)
     };
     res.json(out);
