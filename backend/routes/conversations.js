@@ -158,8 +158,8 @@ router.get('/', async (req, res) => {
             if (req.user.branchId) orConditions.push({ branchId: req.user.branchId });
             const dialect = sequelize.getDialect();
             const groupCond = dialect === 'postgres'
-                ? sequelize.literal("(metadata->>'isGroup')::text = 'true'")
-                : sequelize.literal("(json_extract(metadata, '$.isGroup') = 1 OR json_extract(metadata, '$.isGroup') = 'true')");
+                ? sequelize.literal('("Conversations".metadata->>\'isGroup\')::text = \'true\'')
+                : sequelize.literal("(json_extract(\"Conversations\".metadata, '$.isGroup') = 1 OR json_extract(\"Conversations\".metadata, '$.isGroup') = 'true')");
             orConditions.push(groupCond);
             where[Op.or] = orConditions;
         }
