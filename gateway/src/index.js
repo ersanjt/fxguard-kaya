@@ -43,6 +43,8 @@ const CONFIG = {
     .split(',')
     .map((s) => s.trim().toLowerCase())
     .filter(Boolean),
+  // اجازه localhost برای رسانه (توسعه یا وقتی backend و gateway روی یک ماشین هستند)
+  mediaAllowLocalhost: process.env.MEDIA_ALLOW_LOCALHOST === 'true' || process.env.NODE_ENV !== 'production',
 };
 
 let reconnectAttemptCount = 0;
@@ -431,6 +433,8 @@ function isSafeMediaUrl(url) {
       return allowed;
     }
 
+    // localhost مجاز وقتی MEDIA_ALLOW_LOCALHOST=true یا در محیط توسعه (برای ارسال ویس و رسانه)
+    if (CONFIG.mediaAllowLocalhost && (host === 'localhost' || host === '127.0.0.1')) return true;
     if (host === 'localhost' || host === '127.0.0.1' || host.endsWith('.local')) return false;
     if (host.startsWith('10.') || host.startsWith('172.16.') || host.startsWith('172.17.') || host.startsWith('172.18.') || host.startsWith('172.19.') || host.startsWith('172.2') || host.startsWith('172.30.') || host.startsWith('172.31.') || host.startsWith('192.168.')) return false;
     if (host === '0.0.0.0' || host === '::1') return false;
