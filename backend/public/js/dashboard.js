@@ -3636,7 +3636,9 @@
         }
         async function syncWhatsAppGroups() {
             var btn = document.getElementById('btnSyncGroups');
-            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); }
+            var textSpan = btn && btn.querySelector('.conv-sync-text');
+            var syncText = t('conv_sync_groups') || (LANG === 'fa' ? 'همگام‌سازی گروه‌ها' : 'Sync groups');
+            if (btn) { btn.disabled = true; if (textSpan) textSpan.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); else btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); }
             try {
                 var res = await apiFetch('/api/conversations/sync-groups', { method: 'POST' });
                 if (res.needLogin) return;
@@ -3652,7 +3654,7 @@
                     toast(errMsg, true);
                 }
             } finally {
-                if (btn) { btn.disabled = false; btn.textContent = '👥 ' + (t('conv_sync_groups') || (LANG === 'fa' ? 'همگام‌سازی گروه‌ها' : 'Sync groups')); }
+                if (btn) { btn.disabled = false; if (textSpan) textSpan.textContent = syncText; else btn.textContent = '👥 ' + syncText; }
             }
         }
         async function loadConversations() {

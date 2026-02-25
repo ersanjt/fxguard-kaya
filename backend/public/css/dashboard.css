@@ -1010,6 +1010,8 @@
         .conv-page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
         .conv-page-header h2 { margin: 0; }
         .conv-header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .conv-sync-groups-btn { display: inline-flex; align-items: center; gap: 6px; }
+        .conv-sync-icon { flex-shrink: 0; }
         .conv-page-desc { color: var(--text-secondary); font-size: 0.9rem; margin: 4px 0 0; line-height: 1.5; }
         .conv-stats { display: flex; gap: 20px; margin-bottom: 16px; padding: 12px 20px; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); font-size: 0.9rem; flex-wrap: wrap; }
         .conv-stat { color: var(--text-secondary); }
@@ -1842,6 +1844,10 @@
             .dashboard-card { padding: 16px; }
             .stat-cards { flex-direction: column; }
             .stat-card { min-width: 100%; }
+            .customer-page-desc { display: none; }
+            .customer-page-header { flex-direction: column; align-items: stretch; gap: 12px; }
+            .customer-header-actions { width: 100%; flex-wrap: wrap; gap: 8px; }
+            .customer-header-actions .btn-primary { flex: 1; min-width: 120px; }
             .customer-toolbar { flex-direction: column; align-items: stretch; }
             .customer-search-wrap { min-width: 0; }
             .customer-list-grid { grid-template-columns: 1fr; }
@@ -1892,10 +1898,14 @@
             .ticket-card, .list-item { flex-wrap: wrap; min-width: 0; }
             .chat-attach-btn { min-width: 44px; min-height: 44px; flex-shrink: 0; }
             .chat-send { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-            .conv-quick-tabs { flex-wrap: wrap; gap: 6px; }
-            .conv-stats { flex-wrap: wrap; gap: 8px; }
+            .conv-quick-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .conv-stats { flex-wrap: wrap; gap: 8px; padding: 10px 14px; font-size: 0.85rem; }
+            .conv-stat { white-space: nowrap; }
             .conv-page-desc { display: none; }
-            .conv-page-header { margin-bottom: 10px; }
+            .conv-page-header { margin-bottom: 10px; flex-direction: column; align-items: stretch; }
+            .conv-header-actions { width: 100%; justify-content: flex-start; }
+            .conv-sync-groups-btn .conv-sync-text { display: none; }
+            .conv-sync-groups-btn { min-width: 44px; min-height: 44px; padding: 10px; }
             .conv-page-header h2 { font-size: 1.05rem; }
             .conv-quick-tabs { margin-bottom: 10px; }
             .conv-toolbar { margin-bottom: 10px; }
@@ -1904,6 +1914,13 @@
             .dept-form-grid, .branch-form-grid { grid-template-columns: 1fr; }
             .dept-form-checks { flex-direction: column; align-items: flex-start; gap: 12px; }
             .dept-list.dept-cards, .branch-list.branch-cards { grid-template-columns: 1fr; }
+            .dept-intro, .dept-help-box { display: none; }
+            .dept-page-header h2 { margin-bottom: 4px; }
+            .users-page-intro, .users-page-hint { display: none; }
+            .users-page-header { margin-bottom: 12px; }
+            .announcements-intro { display: none; }
+            .announcements-header-text h2 { margin-bottom: 4px; }
+            .dashboard-sub { display: none; }
             .announcements-send-grid { grid-template-columns: 1fr; }
             .announcements-tabs { gap: 6px; }
             .announcements-tab { padding: 8px 14px; font-size: 0.85rem; }
@@ -2221,9 +2238,20 @@
             .app-footer-inner { padding-top: 12px; gap: 8px 14px; justify-content: center; text-align: center; }
             .app-footer-brand { display: inline-block; font-size: 0.8125rem; }
             .main-wrap { padding-bottom: max(82px, calc(72px + env(safe-area-inset-bottom))); }
-            .conv-page-header { margin-bottom: 12px; gap: 10px; }
+            .conv-page-desc, .customer-page-desc, .ticket-page-desc, .task-page-desc, .dashboard-sub { display: none; }
+            .customer-page-header, .ticket-page-header, .task-page-header { flex-direction: column; align-items: stretch; gap: 12px; }
+            .customer-header-actions { width: 100%; }
+            .customer-header-actions .btn-primary { flex: 1; min-width: 0; }
+            .ticket-create-btn { width: 100%; }
+            .conv-page-header { margin-bottom: 12px; gap: 10px; flex-direction: column; align-items: stretch; }
+            .conv-page-header > div:first-child { flex: 1; min-width: 0; }
+            .conv-header-actions { width: 100%; justify-content: flex-start; gap: 8px; flex-wrap: nowrap; }
+            .conv-header-actions .btn-primary { flex: 1; min-width: 0; justify-content: center; }
+            .conv-sync-groups-btn .conv-sync-text { display: none; }
+            .conv-sync-groups-btn { min-width: 44px; min-height: 44px; padding: 10px 14px; }
+            .conv-sync-groups-btn { min-width: 44px; min-height: 44px; padding: 10px 14px; }
             .conv-page-header h2 { font-size: 1.15rem; }
-            .conv-page-desc { font-size: 0.82rem; margin: 2px 0 0; line-height: 1.4; }
+            .conv-page-desc { display: none; }
             .conv-page-header .btn-primary { padding: 10px 16px; font-size: 0.9rem; min-height: 44px; flex-shrink: 0; }
             .conv-quick-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; margin-bottom: 12px; padding-bottom: 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
             .conv-quick-tabs::-webkit-scrollbar { display: none; }
@@ -2342,7 +2370,8 @@
         }
         /* ========== Responsive: 576px و کمتر ========== */
         @media (max-width: 576px) {
-            .task-page-header { flex-direction: column; align-items: stretch; }
+            .task-page-desc { display: none; }
+            .task-page-header { flex-direction: column; align-items: stretch; gap: 12px; }
             .task-filters-row { flex-direction: column; align-items: stretch; }
             .task-search-input { min-width: 0; }
             .task-form-row > div { min-width: 0; }

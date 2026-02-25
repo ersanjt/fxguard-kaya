@@ -1,0 +1,364 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A100000125F2771500FEBACA /* KayaCRMApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000225F2771500FEBACA /* KayaCRMApp.swift */; };
+		A100000325F2771500FEBACA /* ApiConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000425F2771500FEBACA /* ApiConfig.swift */; };
+		A100000525F2771500FEBACA /* Models.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000625F2771500FEBACA /* Models.swift */; };
+		A100000725F2771500FEBACA /* AuthStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000825F2771500FEBACA /* AuthStorage.swift */; };
+		A100000925F2771500FEBACA /* ApiService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000A25F2771500FEBACA /* ApiService.swift */; };
+		A100000B25F2771500FEBACA /* LoginView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000C25F2771500FEBACA /* LoginView.swift */; };
+		A100000D25F2771500FEBACA /* TotpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100000E25F2771500FEBACA /* TotpView.swift */; };
+		A100000F25F2771500FEBACA /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001025F2771500FEBACA /* MainView.swift */; };
+		A100001125F2771500FEBACA /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001225F2771500FEBACA /* DashboardView.swift */; };
+		A100001325F2771500FEBACA /* ConversationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001425F2771500FEBACA /* ConversationsView.swift */; };
+		A100001525F2771500FEBACA /* CustomersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001625F2771500FEBACA /* CustomersView.swift */; };
+		A100001725F2771500FEBACA /* TicketsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001825F2771500FEBACA /* TicketsView.swift */; };
+		A100001925F2771500FEBACA /* TasksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001A25F2771500FEBACA /* TasksView.swift */; };
+		A100001B25F2771500FEBACA /* InternalChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001C25F2771500FEBACA /* InternalChatView.swift */; };
+		A100001D25F2771500FEBACA /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100001E25F2771500FEBACA /* ProfileView.swift */; };
+		A100001F25F2771500FEBACA /* LoginViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100002025F2771500FEBACA /* LoginViewModel.swift */; };
+		A100002125F2771500FEBACA /* DashboardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100002225F2771500FEBACA /* DashboardViewModel.swift */; };
+		A100002325F2771500FEBACA /* ConversationsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100002425F2771500FEBACA /* ConversationsViewModel.swift */; };
+		A100002525F2771500FEBACA /* CustomersViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100002625F2771500FEBACA /* CustomersViewModel.swift */; };
+		A100002725F2771500FEBACA /* TicketsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100002825F2771500FEBACA /* TicketsViewModel.swift */; };
+		A100002925F2771500FEBACA /* TasksViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100002A25F2771500FEBACA /* TasksViewModel.swift */; };
+		A100002B25F2771500FEBACA /* InternalChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A100002C25F2771500FEBACA /* InternalChatViewModel.swift */; };
+		A100002F25F2771700FEBACA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A100003025F2771700FEBACA /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A100003125F2771500FEBACA /* KayaCRM.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KayaCRM.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A100000225F2771500FEBACA /* KayaCRMApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KayaCRMApp.swift; sourceTree = "<group>"; };
+		A100000425F2771500FEBACA /* ApiConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiConfig.swift; sourceTree = "<group>"; };
+		A100000625F2771500FEBACA /* Models.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Models.swift; sourceTree = "<group>"; };
+		A100000825F2771500FEBACA /* AuthStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStorage.swift; sourceTree = "<group>"; };
+		A100000A25F2771500FEBACA /* ApiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApiService.swift; sourceTree = "<group>"; };
+		A100000C25F2771500FEBACA /* LoginView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginView.swift; sourceTree = "<group>"; };
+		A100000E25F2771500FEBACA /* TotpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TotpView.swift; sourceTree = "<group>"; };
+		A100001025F2771500FEBACA /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		A100001225F2771500FEBACA /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		A100001425F2771500FEBACA /* ConversationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsView.swift; sourceTree = "<group>"; };
+		A100001625F2771500FEBACA /* CustomersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomersView.swift; sourceTree = "<group>"; };
+		A100001825F2771500FEBACA /* TicketsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketsView.swift; sourceTree = "<group>"; };
+		A100001A25F2771500FEBACA /* TasksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksView.swift; sourceTree = "<group>"; };
+		A100001C25F2771500FEBACA /* InternalChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalChatView.swift; sourceTree = "<group>"; };
+		A100001E25F2771500FEBACA /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		A100002025F2771500FEBACA /* LoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewModel.swift; sourceTree = "<group>"; };
+		A100002225F2771500FEBACA /* DashboardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardViewModel.swift; sourceTree = "<group>"; };
+		A100002425F2771500FEBACA /* ConversationsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConversationsViewModel.swift; sourceTree = "<group>"; };
+		A100002625F2771500FEBACA /* CustomersViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomersViewModel.swift; sourceTree = "<group>"; };
+		A100002825F2771500FEBACA /* TicketsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TicketsViewModel.swift; sourceTree = "<group>"; };
+		A100002A25F2771500FEBACA /* TasksViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TasksViewModel.swift; sourceTree = "<group>"; };
+		A100002C25F2771500FEBACA /* InternalChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InternalChatViewModel.swift; sourceTree = "<group>"; };
+		A100003025F2771700FEBACA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A100003225F2771700FEBACA /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A100003325F2771500FEBACA /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A100003425F2771500FEBACA = {
+			isa = PBXGroup;
+			children = (
+				A100003525F2771500FEBACA /* KayaCRM */,
+				A100003625F2771500FEBACA /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A100003625F2771500FEBACA /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				A100003125F2771500FEBACA /* KayaCRM.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		A100003525F2771500FEBACA /* KayaCRM */ = {
+			isa = PBXGroup;
+			children = (
+				A100000225F2771500FEBACA /* KayaCRMApp.swift */,
+				A100000425F2771500FEBACA /* ApiConfig.swift */,
+				A100000625F2771500FEBACA /* Models.swift */,
+				A100000825F2771500FEBACA /* AuthStorage.swift */,
+				A100000A25F2771500FEBACA /* ApiService.swift */,
+				A100003825F2771500FEBACA /* Views */,
+				A100003925F2771500FEBACA /* ViewModels */,
+				A100003025F2771700FEBACA /* Assets.xcassets */,
+				A100003225F2771700FEBACA /* Info.plist */,
+			);
+			path = KayaCRM;
+			sourceTree = "<group>";
+		};
+		A100003825F2771500FEBACA /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				A100000C25F2771500FEBACA /* LoginView.swift */,
+				A100000E25F2771500FEBACA /* TotpView.swift */,
+				A100001025F2771500FEBACA /* MainView.swift */,
+				A100001225F2771500FEBACA /* DashboardView.swift */,
+				A100001425F2771500FEBACA /* ConversationsView.swift */,
+				A100001625F2771500FEBACA /* CustomersView.swift */,
+				A100001825F2771500FEBACA /* TicketsView.swift */,
+				A100001A25F2771500FEBACA /* TasksView.swift */,
+				A100001C25F2771500FEBACA /* InternalChatView.swift */,
+				A100001E25F2771500FEBACA /* ProfileView.swift */,
+			);
+			name = Views;
+			path = Views;
+			sourceTree = "<group>";
+		};
+		A100003925F2771500FEBACA /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+				A100002025F2771500FEBACA /* LoginViewModel.swift */,
+				A100002225F2771500FEBACA /* DashboardViewModel.swift */,
+				A100002425F2771500FEBACA /* ConversationsViewModel.swift */,
+				A100002625F2771500FEBACA /* CustomersViewModel.swift */,
+				A100002825F2771500FEBACA /* TicketsViewModel.swift */,
+				A100002A25F2771500FEBACA /* TasksViewModel.swift */,
+				A100002C25F2771500FEBACA /* InternalChatViewModel.swift */,
+			);
+			name = ViewModels;
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A100003A25F2771500FEBACA /* KayaCRM */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A100003B25F2771700FEBACA /* Build configuration list for PBXNativeTarget "KayaCRM" */;
+			buildPhases = (
+				A100003C25F2771500FEBACA /* Sources */,
+				A100003325F2771500FEBACA /* Frameworks */,
+				A100003D25F2771500FEBACA /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = KayaCRM;
+			productName = KayaCRM;
+			productReference = A100003125F2771500FEBACA /* KayaCRM.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A100003E25F2771500FEBACA /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1500;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = A100003F25F2771500FEBACA /* Build configuration list for PBXProject "KayaCRM" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = fa;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				fa,
+				Base,
+			);
+			mainGroup = A100003425F2771500FEBACA;
+			productRefGroup = A100003625F2771500FEBACA /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				A100003A25F2771500FEBACA /* KayaCRM */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A100003D25F2771500FEBACA /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A100002F25F2771700FEBACA /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A100003C25F2771500FEBACA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A100000125F2771500FEBACA /* KayaCRMApp.swift in Sources */,
+				A100000325F2771500FEBACA /* ApiConfig.swift in Sources */,
+				A100000525F2771500FEBACA /* Models.swift in Sources */,
+				A100000725F2771500FEBACA /* AuthStorage.swift in Sources */,
+				A100000925F2771500FEBACA /* ApiService.swift in Sources */,
+				A100000B25F2771500FEBACA /* LoginView.swift in Sources */,
+				A100000D25F2771500FEBACA /* TotpView.swift in Sources */,
+				A100000F25F2771500FEBACA /* MainView.swift in Sources */,
+				A100001125F2771500FEBACA /* DashboardView.swift in Sources */,
+				A100001325F2771500FEBACA /* ConversationsView.swift in Sources */,
+				A100001525F2771500FEBACA /* CustomersView.swift in Sources */,
+				A100001725F2771500FEBACA /* TicketsView.swift in Sources */,
+				A100001925F2771500FEBACA /* TasksView.swift in Sources */,
+				A100001B25F2771500FEBACA /* InternalChatView.swift in Sources */,
+				A100001D25F2771500FEBACA /* ProfileView.swift in Sources */,
+				A100001F25F2771500FEBACA /* LoginViewModel.swift in Sources */,
+				A100002125F2771500FEBACA /* DashboardViewModel.swift in Sources */,
+				A100002325F2771500FEBACA /* ConversationsViewModel.swift in Sources */,
+				A100002525F2771500FEBACA /* CustomersViewModel.swift in Sources */,
+				A100002725F2771500FEBACA /* TicketsViewModel.swift in Sources */,
+				A100002925F2771500FEBACA /* TasksViewModel.swift in Sources */,
+				A100002B25F2771500FEBACA /* InternalChatViewModel.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		A100004025F2771700FEBACA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_QUARANTINE = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		A100004125F2771700FEBACA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_QUARANTINE = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		A100004225F2771700FEBACA /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KayaCRM/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kaya.crm;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A100004325F2771700FEBACA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "";
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = KayaCRM/Info.plist;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.kaya.crm;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A100003F25F2771500FEBACA /* Build configuration list for PBXProject "KayaCRM" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A100004025F2771700FEBACA /* Debug */,
+				A100004125F2771700FEBACA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A100003B25F2771700FEBACA /* Build configuration list for PBXNativeTarget "KayaCRM" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A100004225F2771700FEBACA /* Debug */,
+				A100004325F2771700FEBACA /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = A100003E25F2771500FEBACA /* Project object */;
+}

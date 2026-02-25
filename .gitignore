@@ -31,3 +31,15 @@ gateway/sessions/
 
 backend/.env
 backend/env-production-paste.txt
+
+# android
+android-app/.gradle/
+android-app/app/build/
+android-app/build/
+android-app/local.properties
+
+# ios
+ios-app/build/
+ios-app/DerivedData/
+*.xcworkspace/xcuserdata/
+*.xcodeproj/xcuserdata/
