@@ -2926,3 +2926,4 @@
         .msg-reply-btn:hover { color: var(--accent); opacity: 1; }
         .msg-status { font-size: 0.75rem; color: var(--text-muted); }
         .msg-status-read { color: var(--accent); }
+        .msg-status-failed { color: var(--danger, #ef4444); }

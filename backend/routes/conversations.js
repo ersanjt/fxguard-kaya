@@ -255,7 +255,9 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/messages', async (req, res) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        const conversation = await Conversation.findByPk(req.params.id);
+        const conversation = await Conversation.findByPk(req.params.id, {
+            include: [{ model: Customer, as: 'customer', attributes: ['id', 'phone'], required: false }]
+        });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
         const accessibleCustomerIds = await getAccessibleCustomerIds(req);
         if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
@@ -267,6 +269,33 @@ router.get('/:id/messages', async (req, res) => {
             include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username'], required: false }],
             order: [['timestamp', 'ASC']]
         });
+        // برای چت گروهی: اگر پیام‌هایی senderId دارند ولی senderName ندارند، از Gateway لیست اعضا را بگیر و نام را پر کن
+        const meta = conversation.metadata || {};
+        const isGroup = meta.isGroup || (conversation.customer && String(conversation.customer.phone || '').includes('@g.us'));
+        if (isGroup && conversation.customer && conversation.customer.phone) {
+            const needResolve = messages.some(m => m.direction === 'incoming' && m.metadata?.senderId && !m.metadata?.senderName);
+            if (needResolve) {
+                try {
+                    const { gatewayGet } = require('../lib/gatewayClient');
+                    const groupId = String(conversation.customer.phone).trim();
+                    const gwRes = await gatewayGet('/api/chats/groups/' + encodeURIComponent(groupId) + '/participants', { timeout: 10000 });
+                    const participants = (gwRes?.data?.participants || []);
+                    const idToName = {};
+                    for (const p of participants) {
+                        if (p.name && p.id) idToName[String(p.id)] = p.name;
+                    }
+                    for (const m of messages) {
+                        if (m.direction === 'incoming' && m.metadata?.senderId && !m.metadata?.senderName) {
+                            const sid = String(m.metadata.senderId);
+                            const name = idToName[sid];
+                            if (name) m.metadata = { ...m.metadata, senderName: name };
+                        }
+                    }
+                } catch (e) {
+                    // Gateway در دسترس نبود یا خطا — بدون تغییر ادامه بده
+                }
+            }
+        }
         res.json({ data: messages });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -528,11 +557,15 @@ router.post('/:id/send', async (req, res) => {
         }
         if (replyTo) payload.replyTo = replyTo;
         try {
-            const gwRes = await gatewayPost('/api/send-message', payload, { timeout: 10000 });
+            const gwRes = await gatewayPost('/api/send-message', payload, { timeout: 15000 });
             const waId = gwRes?.data?.messageId;
             if (waId) await msg.update({ whatsappId: waId, status: 'sent' });
         } catch (gwErr) {
-            const errMsg = gwErr?.response?.data?.error || gwErr?.message || 'خطا در ارسال به واتساپ';
+            let errMsg = gwErr?.response?.data?.error || gwErr?.message || 'خطا در ارسال به واتساپ';
+            if (errMsg.includes('Invalid or unsafe media URL') || errMsg.includes('media URL')) {
+                errMsg += ' — برای پیام صوتی/فایل، در Gateway: MEDIA_ALLOW_LOCALHOST=true یا MEDIA_URL_WHITELIST تنظیم کنید؛ در Backend: BACKEND_PUBLIC_URL را به آدرسی که Gateway به آن دسترسی دارد تنظیم کنید.';
+            }
+            await msg.update({ status: 'failed' });
             return res.status(502).json({ error: 'پیام در پنل ذخیره شد اما به واتساپ ارسال نشد: ' + errMsg });
         }
         await logActivity({
