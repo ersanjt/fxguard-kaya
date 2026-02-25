@@ -333,6 +333,7 @@ function attachClientEvents(c) {
           name: chat?.name || null,
           isGroup: chat?.isGroup || false,
         },
+        author: chat?.isGroup ? (msg.author || msg.from) : null,
       };
 
       if (msg.hasMedia) {
@@ -617,6 +618,22 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
   } catch (error) {
     logger.error('Send message error', { error: error?.message });
     return res.status(500).json({ error: error?.message || 'send_failed' });
+  }
+});
+
+// لیست گروه‌های واتساپ — برای همگام‌سازی با CRM
+app.get('/api/chats/groups', async (req, res) => {
+  try {
+    if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
+    const chats = await client.getChats();
+    const groups = chats.filter((c) => c.isGroup).map((c) => ({
+      id: c.id?._serialized || c.id,
+      name: c.name || null,
+    }));
+    return res.json({ success: true, groups });
+  } catch (error) {
+    logger.error('Get groups error', { error: error?.message });
+    return res.status(500).json({ error: error?.message || 'get_groups_failed' });
   }
 });
 

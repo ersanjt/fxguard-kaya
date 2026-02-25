@@ -3634,6 +3634,22 @@
                 if (!hasArchived) { var opt = document.createElement('option'); opt.value = 'archived'; opt.textContent = t('filter_archived') || t('status_archived') || 'آرشیو'; statusFilter.appendChild(opt); }
             }
         }
+        async function syncWhatsAppGroups() {
+            var btn = document.getElementById('btnSyncGroups');
+            if (btn) btn.disabled = true;
+            try {
+                var res = await apiFetch('/api/conversations/sync-groups', { method: 'POST' });
+                if (res.needLogin) return;
+                if (res.ok) {
+                    toast((res.data && res.data.message) || (LANG === 'fa' ? 'گروه‌ها همگام شدند' : 'Groups synced'));
+                    loadConversations();
+                } else {
+                    toast((res.data && res.data.error) || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed'), true);
+                }
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
         async function loadConversations() {
             var list = document.getElementById('convList');
             var statsEl = document.getElementById('convStats');
@@ -3675,15 +3691,17 @@
             }
             list.innerHTML = data.data.map(function(c) {
                 var cust = c.customer || {};
-                var name = cust.name || cust.phone || t('customer');
+                var isGroup = !!(c.metadata && c.metadata.isGroup);
+                var name = cust.name || cust.phone || (isGroup ? (LANG === 'fa' ? 'گروه' : 'Group') : t('customer'));
                 var phone = cust.phone || '';
+                var metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
                 var safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 var safePhone = (phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                var initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
+                var initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
                 var profilePic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
                 if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
                 profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
-                var avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
+                var avatarHtml = (isGroup || !profilePic || profilePic.indexOf('http') !== 0) ? '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (profilePic && profilePic.indexOf('http') === 0 ? '<img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : '') : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">';
                 var assigneeName = userDisplay(c.assignee);
                 var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
                 var statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
@@ -3698,7 +3716,7 @@
                     unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + waitStr + '</span>';
                 }
                 var activeClass = (c.id === currentConvId) ? ' active' : '';
-                return '<div class="conv-list-item' + activeClass + '" data-id="' + c.id + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\', this.getAttribute(\'data-profile-pic\')||\'\')"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(phone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\', this.getAttribute(\'data-profile-pic\')||\'\')"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta">' + escapeHtml(metaPhone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
         }
 

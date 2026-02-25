@@ -13,4 +13,14 @@ function normalizePhone(val) {
     return s;
 }
 
-module.exports = { normalizePhone };
+/**
+ * آدرس ارسال پیام — برای گروه‌ها شناسه کامل گروه (@g.us) و برای چت مستقیم شماره نرمال‌شده
+ */
+function getSendTarget(phone) {
+    if (phone == null || phone === '') return '';
+    const s = String(phone).trim();
+    if (s.includes('@g.us')) return s; // گروه: همان شناسه را برگردان
+    return normalizePhone(s) || s;
+}
+
+module.exports = { normalizePhone, getSendTarget };

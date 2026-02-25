@@ -412,7 +412,7 @@ async function ensureAdminUser() {
 }
 
 // ==================== Process Incoming Messages ====================
-const { normalizePhone } = require('./lib/phoneUtils');
+const { normalizePhone, getSendTarget } = require('./lib/phoneUtils');
 
 const uploadsDir = path.join(__dirname, 'uploads');
 if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
@@ -504,12 +504,12 @@ function inferMessageTypeFromMedia(media) {
 async function processIncomingMessage(messageData) {
     try {
         if (messageData.isStatus) return;
-        // پیام‌های گروهی را نادیده بگیر — فقط چت مستقیم با مشتری در CRM ثبت و پاسخ خودکار ارسال شود
-        if (messageData.chat && messageData.chat.isGroup) return;
-        const { body, contact, from, timestamp, hasMedia, media } = messageData;
-        const rawPhone = (contact && contact.number != null) ? contact.number : from;
+        const { body, contact, from, timestamp, hasMedia, media, chat } = messageData;
+        const isGroup = !!(chat && chat.isGroup);
+        // برای گروه: از شناسه گروه استفاده کن؛ برای چت مستقیم: از شماره فرستنده
+        const rawPhone = isGroup ? (chat?.id || from) : ((contact && contact.number != null) ? contact.number : from);
         if (rawPhone == null || rawPhone === '') return;
-        const phone = normalizePhone(rawPhone) || normalizePhone(from);
+        const phone = isGroup ? String(rawPhone).trim() : (normalizePhone(rawPhone) || normalizePhone(from));
         if (!phone) return;
         const rawType = (messageData.type || '').toLowerCase();
         if (rawType === 'reaction' || rawType === 'read_receipt' || rawType === 'delivery' || rawType === 'update') return;
@@ -530,27 +530,27 @@ async function processIncomingMessage(messageData) {
         }
         if (msgType === 'ptt') msgType = 'audio';
         
-        // 1. پیدا کردن یا ایجاد مشتری
+        // 1. پیدا کردن یا ایجاد مشتری (برای گروه‌ها: یک رکورد با شناسه گروه به‌عنوان «مشتری»)
         let customer = await Customer.findOne({ 
             where: { phone } 
         });
         
         if (!customer) {
-            const contactName = (contact && (contact.name || contact.pushname)) || `مشتری ${phone}`;
-            const profilePic = (contact && contact.profilePicUrl) || null;
+            const contactName = isGroup ? (chat?.name || `گروه ${phone}`) : ((contact && (contact.name || contact.pushname)) || `مشتری ${phone}`);
+            const profilePic = isGroup ? null : (contact && contact.profilePicUrl) || null;
             customer = await Customer.create({
                 phone,
                 name: contactName,
                 profilePic: profilePic,
-                source: 'whatsapp'
+                source: isGroup ? 'whatsapp' : 'whatsapp'
             });
-            logger.info(`✨ New customer created: ${phone}`);
+            logger.info(isGroup ? `✨ New group conversation: ${chat?.name || phone}` : `✨ New customer created: ${phone}`);
         } else {
             const tsContact = timestamp ? new Date((timestamp < 1e12 ? timestamp * 1000 : timestamp)) : new Date();
-            const contactName = (contact && (contact.name || contact.pushname)) || null;
+            const contactName = isGroup ? (chat?.name || null) : (contact && (contact.name || contact.pushname)) || null;
             const updates = { lastContactAt: tsContact };
             if (contactName && String(contactName).trim() && String(customer.name || '').trim() !== String(contactName).trim()) updates.name = String(contactName).trim();
-            if (contact && contact.profilePicUrl && contact.profilePicUrl !== customer.profilePic) updates.profilePic = contact.profilePicUrl;
+            if (!isGroup && contact && contact.profilePicUrl && contact.profilePicUrl !== customer.profilePic) updates.profilePic = contact.profilePicUrl;
             await customer.update(updates);
         }
         
@@ -568,7 +568,8 @@ async function processIncomingMessage(messageData) {
                 customerId: customer.id,
                 status: 'open',
                 priority: 'normal',
-                source: 'whatsapp'
+                source: 'whatsapp',
+                metadata: isGroup ? { isGroup: true } : {}
             });
         }
         
@@ -583,6 +584,7 @@ async function processIncomingMessage(messageData) {
             unreadCount: (conversation.unreadCount || 0) + 1
         });
         
+        const msgMetadata = isGroup && messageData.author ? { senderId: messageData.author, senderName: (contact && (contact.name || contact.pushname)) || null } : {};
         const newMessage = await Message.create({
             conversationId: conversation.id,
             customerId: customer.id,
@@ -592,26 +594,29 @@ async function processIncomingMessage(messageData) {
             type: msgType,
             hasMedia: !!(hasMedia && resolvedMedia),
             mediaData: resolvedMedia || null,
-            timestamp: ts
+            timestamp: ts,
+            metadata: Object.keys(msgMetadata).length ? msgMetadata : {}
         });
         
-        // 3.5. پاسخ خودکار به اولین پیام (خوش‌آمدگویی)
-        const incomingCount = await Message.count({ where: { customerId: customer.id, direction: 'incoming' } });
-        if (incomingCount === 1) {
-            await sendFirstMessageWelcome(conversation, customer);
+        // 3.5. پاسخ خودکار به اولین پیام (خوش‌آمدگویی) — فقط برای چت مستقیم، نه گروه
+        if (!isGroup) {
+            const incomingCount = await Message.count({ where: { customerId: customer.id, direction: 'incoming' } });
+            if (incomingCount === 1) {
+                await sendFirstMessageWelcome(conversation, customer);
+            }
         }
         
-        // 4. تخصیص خودکار به دپارتمان و کارمند مناسب (قبل از پاسخ AI برای داشتن context)
-        if (!conversation.assignedTo) {
+        // 4. تخصیص خودکار به دپارتمان و کارمند مناسب — فقط برای چت مستقیم
+        if (!isGroup && !conversation.assignedTo) {
             await autoAssignment(conversation, body || '', customer.id);
             await conversation.reload({ include: [{ model: Department, as: 'department', required: false }] });
         }
         
-        // 5. بررسی Auto-Response Rules (کلمات کلیدی)
-        const autoResponseSent = await checkAutoResponse(conversation, newMessage);
+        // 5. بررسی Auto-Response Rules — فقط برای چت مستقیم (در گروه‌ها پاسخ خودکار ارسال نشود)
+        const autoResponseSent = isGroup ? false : await checkAutoResponse(conversation, newMessage);
         
-        // 6. پاسخ هوش مصنوعی — اگر هیچ پاسخ خودکاری ارسال نشد و AI فعال است
-        if (!autoResponseSent && hasText) {
+        // 6. پاسخ هوش مصنوعی — فقط برای چت مستقیم؛ گروه‌ها پاسخ خودکار نمی‌گیرند
+        if (!isGroup && !autoResponseSent && hasText) {
             const { generateAIResponse, isAIAnswerEnabled } = require('./services/aiResponseService');
             let aiEnabled = isAIAnswerEnabled();
             if (!aiEnabled) {
@@ -774,7 +779,7 @@ async function sendAutoReply(conversation, responseText) {
     try {
         const customer = await Customer.findByPk(conversation.customerId);
         
-        const toPhone = normalizePhone(customer.phone) || customer.phone;
+        const toPhone = getSendTarget(customer.phone) || customer.phone;
         if (rabbitChannel) {
             rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
                 to: toPhone, message: responseText, conversationId: conversation.id
@@ -938,8 +943,7 @@ io.on('connection', (socket) => {
                 timestamp: new Date()
             });
             
-            const { normalizePhone } = require('./lib/phoneUtils');
-            const toPhone = normalizePhone(conversation.customer.phone) || conversation.customer.phone;
+            const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;
             if (rabbitChannel) {
                 rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
                     to: toPhone, message: content, media: media, conversationId: conversation.id

@@ -111,6 +111,7 @@ window.__I18N_EN = {
     page_conversations: 'Conversations',
     conv_page_desc: 'Manage customer conversations, respond and assign to departments.',
     conv_new: 'New conversation',
+    conv_sync_groups: 'Sync groups',
     conv_search_ph: 'Search name or phone...',
     conv_list_title: 'Conversations',
     more_filters: 'More filters',

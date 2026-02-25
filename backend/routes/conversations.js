@@ -79,6 +79,44 @@ router.post('/', async (req, res) => {
     }
 });
 
+// ——— همگام‌سازی گروه‌های واتساپ — همه گروه‌ها را در CRM نمایش می‌دهد
+router.post('/sync-groups', async (req, res) => {
+    try {
+        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        const { gatewayGet } = require('../lib/gatewayClient');
+        const gwRes = await gatewayGet('/api/chats/groups', { timeout: 15000 });
+        const groups = gwRes?.data?.groups || [];
+        for (const g of groups) {
+            const groupId = (g.id || '').toString().trim();
+            if (!groupId) continue;
+            let [customer] = await Customer.findOrCreate({
+                where: { phone: groupId },
+                defaults: { name: g.name || `گروه ${groupId}`, source: 'whatsapp' }
+            });
+            if (customer && g.name && String(g.name).trim() !== String(customer.name || '').trim()) {
+                await customer.update({ name: g.name.trim() });
+            }
+            let conv = await Conversation.findOne({
+                where: { customerId: customer.id, status: { [Op.ne]: 'closed' } }
+            });
+            if (!conv) {
+                await Conversation.create({
+                    customerId: customer.id,
+                    status: 'open',
+                    priority: 'normal',
+                    source: 'whatsapp',
+                    metadata: { isGroup: true }
+                });
+            } else if (!(conv.metadata && conv.metadata.isGroup)) {
+                await conv.update({ metadata: { ...(conv.metadata || {}), isGroup: true } });
+            }
+        }
+        res.json({ ok: true, groupsCount: groups.length, message: `${groups.length} گروه همگام شد` });
+    } catch (err) {
+        res.status(500).json({ error: err.message || 'خطا در همگام‌سازی گروه‌ها' });
+    }
+});
+
 // ——— لیست مکالمات (با فیلتر و سیاست دسترسی)
 router.get('/', async (req, res) => {
     try {
@@ -113,11 +151,16 @@ router.get('/', async (req, res) => {
             ]);
         }
 
-        // کارمند/ناظر فقط مکالمات تخصیص‌یافته به خود یا دپارتمانش را می‌بیند (نه همه بدون تخصیص)
+        // کارمند/ناظر فقط مکالمات تخصیص‌یافته به خود یا دپارتمانش را می‌بیند — گروه‌ها برای همه با دسترسی مکالمات قابل مشاهده‌اند
         if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.role !== 'manager') {
             const orConditions = [{ assignedTo: req.userId }];
             if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
             if (req.user.branchId) orConditions.push({ branchId: req.user.branchId });
+            const dialect = sequelize.getDialect();
+            const groupCond = dialect === 'postgres'
+                ? sequelize.literal("(metadata->>'isGroup')::text = 'true'")
+                : sequelize.literal("(json_extract(metadata, '$.isGroup') = 1 OR json_extract(metadata, '$.isGroup') = 'true')");
+            orConditions.push(groupCond);
             where[Op.or] = orConditions;
         }
 
@@ -433,8 +476,8 @@ router.post('/:id/send', async (req, res) => {
         if (!conversation.branchId && req.user.branchId) updateData.branchId = req.user.branchId;
         await conversation.update(updateData);
         const { gatewayPost } = require('../lib/gatewayClient');
-        const { normalizePhone } = require('../lib/phoneUtils');
-        const toPhone = normalizePhone(conversation.customer.phone) || conversation.customer.phone;
+        const { getSendTarget } = require('../lib/phoneUtils');
+        const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;
         if (!toPhone) return res.status(400).json({ error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح (مثلاً 09121234567 یا 989121234567) وارد کنید.' });
         const payload = { to: toPhone, message: content };
         if (mediaUrl) {

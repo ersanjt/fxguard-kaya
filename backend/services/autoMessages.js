@@ -2,7 +2,7 @@
  * پیام‌های خودکار: تخصیص دپارتمان و معرفی کارمند
  */
 const { gatewayPost } = require('../lib/gatewayClient');
-const { normalizePhone } = require('../lib/phoneUtils');
+const { getSendTarget } = require('../lib/phoneUtils');
 const { Message, Customer, User, Department } = require('../models');
 
 let rabbitChannel = null;
@@ -14,7 +14,7 @@ function setRabbitChannel(ch) {
 async function sendOutgoingAutoMessage(conversation, text) {
     try {
         const customer = await Customer.findByPk(conversation.customerId);
-        const toPhone = normalizePhone(customer.phone) || customer.phone;
+        const toPhone = getSendTarget(customer.phone) || customer.phone;
         if (rabbitChannel) {
             rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
                 to: toPhone, message: text, conversationId: conversation.id

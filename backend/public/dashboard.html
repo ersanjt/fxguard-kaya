@@ -336,7 +336,10 @@
                             <h2 data-i18n="page_conversations">مکالمات</h2>
                             <p class="conv-page-desc" data-i18n="conv_page_desc">مدیریت مکالمات با مشتریان، پاسخ‌دهی و تخصیص به دپارتمان‌ها.</p>
                         </div>
-                        <button type="button" class="btn-primary" onclick="openNewConvModal()" data-i18n="conv_new">مکالمه جدید</button>
+                        <div class="conv-header-actions">
+                            <button type="button" class="btn-secondary" id="btnSyncGroups" onclick="syncWhatsAppGroups()" data-i18n="conv_sync_groups" title="همگام‌سازی گروه‌های واتساپ">👥 همگام‌سازی گروه‌ها</button>
+                            <button type="button" class="btn-primary" onclick="openNewConvModal()" data-i18n="conv_new">مکالمه جدید</button>
+                        </div>
                     </div>
                     <div id="convStats" class="conv-stats" style="display:none;"></div>
                     <div class="conv-quick-tabs" role="tablist">
