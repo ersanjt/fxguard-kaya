@@ -83,18 +83,37 @@ router.post('/', async (req, res) => {
 router.post('/sync-groups', async (req, res) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        const { gatewayGet } = require('../lib/gatewayClient');
-        const gwRes = await gatewayGet('/api/chats/groups', { timeout: 15000 });
-        const groups = gwRes?.data?.groups || [];
+        const { gatewayGet, GATEWAY_URL } = require('../lib/gatewayClient');
+        let gwRes;
+        try {
+            gwRes = await gatewayGet('/api/chats/groups', { timeout: 15000 });
+        } catch (gwErr) {
+            const status = gwErr?.response?.status;
+            const msg = gwErr?.message || '';
+            if (status === 404 || msg.includes('404')) {
+                return res.status(503).json({
+                    error: 'مسیر /api/chats/groups در Gateway یافت نشد. احتمالاً GATEWAY_URL در .env اشتباه است (باید آدرس Gateway باشد، نه Backend) یا نسخه Gateway قدیمی است.'
+                });
+            }
+            if (status === 401) {
+                return res.status(503).json({ error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را در .env بررسی کنید.' });
+            }
+            if (status === 503 || msg.includes('503') || msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND')) {
+                return res.status(503).json({ error: 'Gateway در دسترس نیست. مطمئن شوید Gateway روی پورت صحیح در حال اجراست و GATEWAY_URL=' + (GATEWAY_URL || 'http://localhost:3001') + ' درست است.' });
+            }
+            throw gwErr;
+        }
+        const groups = gwRes?.data?.groups || gwRes?.data?.data?.groups || [];
         for (const g of groups) {
             const groupId = (g.id || '').toString().trim();
             if (!groupId) continue;
+            const groupName = (g.name || g.subject || g.formattedTitle || '').toString().trim();
             let [customer] = await Customer.findOrCreate({
                 where: { phone: groupId },
-                defaults: { name: g.name || `گروه ${groupId}`, source: 'whatsapp' }
+                defaults: { name: groupName || `گروه ${groupId}`, source: 'whatsapp' }
             });
-            if (customer && g.name && String(g.name).trim() !== String(customer.name || '').trim()) {
-                await customer.update({ name: g.name.trim() });
+            if (customer && groupName && String(customer.name || '').trim() !== groupName) {
+                await customer.update({ name: groupName });
             }
             let conv = await Conversation.findOne({
                 where: { customerId: customer.id, status: { [Op.ne]: 'closed' } }
@@ -105,10 +124,14 @@ router.post('/sync-groups', async (req, res) => {
                     status: 'open',
                     priority: 'normal',
                     source: 'whatsapp',
-                    metadata: { isGroup: true }
+                    metadata: { isGroup: true, groupName: groupName || null }
                 });
-            } else if (!(conv.metadata && conv.metadata.isGroup)) {
-                await conv.update({ metadata: { ...(conv.metadata || {}), isGroup: true } });
+            } else {
+                const meta = conv.metadata || {};
+                const needsUpdate = !meta.isGroup || (groupName && meta.groupName !== groupName);
+                if (needsUpdate) {
+                    await conv.update({ metadata: { ...meta, isGroup: true, groupName: groupName || meta.groupName || null } });
+                }
             }
         }
         res.json({ ok: true, groupsCount: groups.length, message: `${groups.length} گروه همگام شد` });

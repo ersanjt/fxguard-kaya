@@ -351,7 +351,7 @@ function attachClientEvents(c) {
         },
         chat: {
           id: chat?.id?._serialized,
-          name: chat?.name || null,
+          name: chat?.name || chat?.subject || chat?.formattedTitle || null,
           isGroup: chat?.isGroup || false,
         },
         author: authorId,
@@ -652,7 +652,7 @@ app.get('/api/chats/groups', async (req, res) => {
     const chats = await client.getChats();
     const groups = chats.filter((c) => c.isGroup).map((c) => ({
       id: c.id?._serialized || c.id,
-      name: c.name || null,
+      name: c.name || c.subject || c.formattedTitle || null,
     }));
     return res.json({ success: true, groups });
   } catch (error) {

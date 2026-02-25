@@ -539,8 +539,9 @@ async function processIncomingMessage(messageData) {
             where: { phone } 
         });
         
+        const groupNameFromChat = isGroup ? (chat?.name || chat?.subject || chat?.formattedTitle || '').toString().trim() : '';
         if (!customer) {
-            const contactName = isGroup ? (chat?.name || `گروه ${phone}`) : ((contact && (contact.name || contact.pushname)) || `مشتری ${phone}`);
+            const contactName = isGroup ? (groupNameFromChat || `گروه ${phone}`) : ((contact && (contact.name || contact.pushname)) || `مشتری ${phone}`);
             const profilePic = isGroup ? null : (contact && contact.profilePicUrl) || null;
             customer = await Customer.create({
                 phone,
@@ -548,10 +549,10 @@ async function processIncomingMessage(messageData) {
                 profilePic: profilePic,
                 source: isGroup ? 'whatsapp' : 'whatsapp'
             });
-            logger.info(isGroup ? `✨ New group conversation: ${chat?.name || phone}` : `✨ New customer created: ${phone}`);
+            logger.info(isGroup ? `✨ New group conversation: ${groupNameFromChat || phone}` : `✨ New customer created: ${phone}`);
         } else {
             const tsContact = timestamp ? new Date((timestamp < 1e12 ? timestamp * 1000 : timestamp)) : new Date();
-            const contactName = isGroup ? (chat?.name || null) : (contact && (contact.name || contact.pushname)) || null;
+            const contactName = isGroup ? groupNameFromChat : (contact && (contact.name || contact.pushname)) || null;
             const updates = { lastContactAt: tsContact };
             if (contactName && String(contactName).trim() && String(customer.name || '').trim() !== String(contactName).trim()) updates.name = String(contactName).trim();
             if (!isGroup && contact && contact.profilePicUrl && contact.profilePicUrl !== customer.profilePic) updates.profilePic = contact.profilePicUrl;
@@ -573,8 +574,13 @@ async function processIncomingMessage(messageData) {
                 status: 'open',
                 priority: 'normal',
                 source: 'whatsapp',
-                metadata: isGroup ? { isGroup: true } : {}
+                metadata: isGroup ? { isGroup: true, groupName: groupNameFromChat || null } : {}
             });
+        } else if (isGroup && groupNameFromChat) {
+            const meta = conversation.metadata || {};
+            if (meta.groupName !== groupNameFromChat) {
+                await conversation.update({ metadata: { ...meta, isGroup: true, groupName: groupNameFromChat } });
+            }
         }
         
         // بروزرسانی آخرین پیام
