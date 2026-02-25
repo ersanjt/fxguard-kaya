@@ -311,6 +311,16 @@ function attachClientEvents(c) {
     try {
       const contact = await msg.getContact();
       const chat = await msg.getChat();
+      // برای گروه‌ها: contact از getContact() مربوط به گروه است؛ فرستنده را جداگانه بگیر
+      let authorId = null;
+      let authorName = null;
+      if (chat?.isGroup && msg.author) {
+        authorId = typeof msg.author === 'string' ? msg.author : (msg.author?._serialized || msg.author?.id);
+        try {
+          const authorContact = await client.getContactById(authorId);
+          authorName = authorContact?.name || authorContact?.pushname || authorContact?.shortName || null;
+        } catch (_) {}
+      }
 
       const messageData = {
         id: msg?.id?.id,
@@ -335,7 +345,8 @@ function attachClientEvents(c) {
           name: chat?.name || null,
           isGroup: chat?.isGroup || false,
         },
-        author: chat?.isGroup ? (msg.author || msg.from) : null,
+        author: authorId,
+        authorName: authorName,
       };
 
       if (msg.hasMedia) {

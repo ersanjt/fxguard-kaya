@@ -1195,6 +1195,9 @@
         .conv-stat-unread .conv-stat-label { color: var(--accent); }
         .msg-sender { font-size: 0.7rem; opacity: 0.9; margin-bottom: 2px; font-weight: 500; }
         .msg.out .msg-sender { color: rgba(255,255,255,0.9); }
+        .msg-sender-group { color: var(--accent); font-size: 0.75rem; }
+        .chat-header-group-badge { margin-left: 4px; font-size: 1rem; vertical-align: middle; }
+        body.ltr .chat-header-group-badge { margin-left: 0; margin-right: 4px; }
         .conv-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
         .conv-detail-actions select { padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.85rem; }
         .btn-sm { padding: 6px 12px; font-size: 0.85rem; }

@@ -103,7 +103,8 @@ router.get('/:id/conversations', async (req, res) => {
             const lastOutgoing = await Message.findOne({ where: { conversationId: c.id, direction: 'outgoing' }, order: [['timestamp', 'DESC']], include: [{ model: User, as: 'user', attributes: ['id', 'name'] }] });
             return {
                 id: c.id, status: c.status, priority: c.priority, lastMessageAt: c.lastMessageAt, messageCount: count, createdAt: c.createdAt,
-                assignedTo: c.assignedTo, assignee: c.assignee, lastOutgoingBy: lastOutgoing && lastOutgoing.user ? lastOutgoing.user.name : null
+                assignedTo: c.assignedTo, assignee: c.assignee, lastOutgoingBy: lastOutgoing && lastOutgoing.user ? lastOutgoing.user.name : null,
+                metadata: c.metadata || {}
             };
         }));
         res.json({ data: withCount });
