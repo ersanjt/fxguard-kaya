@@ -3908,7 +3908,7 @@
                 var profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
                 profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
-                var avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
+                var avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" onclick="startNewConversation(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
@@ -3978,7 +3978,7 @@
             if (res.needLogin) return;
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (!data.data || data.data.length === 0) { el.innerHTML = '<div class="empty"><span class="empty-icon">�x�</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
+            if (!data.data || data.data.length === 0) { el.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCAC</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
             var list = data.data.filter(function(m) {
                 if (m.direction === 'outgoing') return true;
                 var hasContent = (m.content && String(m.content).trim()) || (m.hasMedia && m.mediaData && (m.mediaData.url || m.mediaData.filename));
@@ -4398,7 +4398,7 @@
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">�x9</span><br>' + t('no_conv_history') + '</div>'; } else {
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('no_conv_history') + '</div>'; } else {
             var safeName = (name || '').replace(/'/g, '&#39;');
             list.innerHTML = data.data.map(function(conv) {
                 var date = conv.lastMessageAt ? fmtTZ(conv.lastMessageAt, 'datetime') : '';
@@ -5352,8 +5352,10 @@
         function toggleSidebarDesktop() { var s = document.getElementById('sidebar'); var btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; var collapsed = s.classList.toggle('sidebar-collapsed'); try { localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0'); } catch (_) {} btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true'); btn.setAttribute('aria-label', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); btn.setAttribute('title', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = collapsed ? t('sidebar_toggle_expand') : t('sidebar_toggle_collapse'); }
         function initSidebarCollapsedState() { var s = document.getElementById('sidebar'); var btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; var collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
         function showPage(page) {
-            if (page === 'panel-settings' && (!currentUser || !currentUser.permissions || currentUser.permissions.panel_settings !== true)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
-            if (page === 'whatsapp' && (!currentUser || !currentUser.permissions || currentUser.permissions.whatsapp !== true)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
+            var perms = (currentUser && currentUser.permissions) || {};
+            var pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
+            var section = pageToSection[page];
+            if (section && page !== 'profile' && perms[section] === false) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             closeSidebarMobile();

@@ -5,12 +5,14 @@ const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
 
 function ownerOnly(req, res, next) {
+    if (!req.canAccess('supervision')) return res.status(403).json({ error: 'دسترسی به بخش نظارت ندارید' });
     if (isMainAdmin(req.user) || req.user.role === 'owner') return next();
     return res.status(403).json({ error: 'فقط مالک شرکت به این بخش دسترسی دارد' });
 }
 
 // مالک، ادمین اصلی، ادمین، مدیر، ناظر — برای مشاهده ورودها و وضعیت آنلاین کارکنان
 function canViewStaffActivity(req, res, next) {
+    if (!req.canAccess('staff_activity')) return res.status(403).json({ error: 'دسترسی به بخش ورودها و وضعیت آنلاین ندارید' });
     if (isMainAdmin(req.user) || ['owner', 'admin', 'manager', 'supervisor'].indexOf(req.user.role) !== -1) return next();
     return res.status(403).json({ error: 'دسترسی به این بخش محدود است' });
 }

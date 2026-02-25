@@ -1,10 +1,30 @@
 const express = require('express');
 const { Ticket, User, Department, TicketReply } = require('../models');
 const { Op, literal } = require('sequelize');
-const { canManageTickets } = require('../lib/permissions');
+const { canManageTickets, isMainAdmin } = require('../lib/permissions');
 
 function canManageTicket(req) {
     return canManageTickets(req.user);
+}
+
+/** شرط دسترسی تیکت‌ها: ادمین/مالک/مدیر همه؛ کارمند/ناظر فقط تیکت‌های تخصیص‌یافته به خود، ایجادشده توسط خود، یا دپارتمان خود */
+function ticketAccessWhere(req) {
+    if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role || '') !== -1) return {};
+    const orConditions = [
+        { assignedTo: req.userId },
+        { createdBy: req.userId }
+    ];
+    if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
+    return { [Op.or]: orConditions };
+}
+
+/** آیا کاربر به این تیکت دسترسی دارد؟ */
+function canAccessTicket(req, ticket) {
+    if (!ticket) return false;
+    if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role || '') !== -1) return true;
+    if (ticket.assignedTo === req.userId || ticket.createdBy === req.userId) return true;
+    if (req.user.departmentId && ticket.departmentId === req.user.departmentId) return true;
+    return false;
 }
 
 function createTicketsRouter(io) {
@@ -12,7 +32,8 @@ const router = express.Router();
 
 router.get('/stats', async (req, res) => {
     try {
-        const rows = await Ticket.findAll({ attributes: ['status'], raw: true });
+        const accessWhere = ticketAccessWhere(req);
+        const rows = await Ticket.findAll({ where: accessWhere, attributes: ['status'], raw: true });
         const stats = { total: rows.length, open: 0, in_progress: 0, resolved: 0, closed: 0, archived: 0 };
         rows.forEach(t => { if (stats[t.status] !== undefined) stats[t.status]++; });
         res.json(stats);
@@ -24,6 +45,8 @@ router.get('/stats', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const { status, priority, assignedTo, createdBy, departmentId, search, sort = 'newest', page = 1, limit = 50 } = req.query;
+        const accessWhere = ticketAccessWhere(req);
+        const andParts = Object.keys(accessWhere).length > 0 ? [accessWhere] : [];
         const where = {};
         if (status) where.status = status;
         if (priority) where.priority = priority;
@@ -32,12 +55,15 @@ router.get('/', async (req, res) => {
         if (departmentId) where.departmentId = departmentId;
         if (search && String(search).trim()) {
             const term = '%' + String(search).trim() + '%';
-            where[Op.or] = [
-                { title: { [Op.like]: term } },
-                { description: { [Op.like]: term } },
-                { ticketNumber: { [Op.like]: term } }
-            ];
+            andParts.push({
+                [Op.or]: [
+                    { title: { [Op.like]: term } },
+                    { description: { [Op.like]: term } },
+                    { ticketNumber: { [Op.like]: term } }
+                ]
+            });
         }
+        if (andParts.length > 0) where[Op.and] = andParts;
         let order = [['createdAt', 'DESC']];
         if (sort === 'oldest') order = [['createdAt', 'ASC']];
         else if (sort === 'priority') order = [[literal("CASE \"Tickets\".\"priority\" WHEN 'urgent' THEN 4 WHEN 'high' THEN 3 WHEN 'normal' THEN 2 WHEN 'low' THEN 1 ELSE 0 END"), 'DESC'], ['createdAt', 'DESC']];
@@ -69,6 +95,7 @@ router.get('/:id', async (req, res) => {
             ]
         });
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
+        if (!canAccessTicket(req, ticket)) return res.status(403).json({ error: 'دسترسی به این تیکت ندارید' });
         res.json(ticket);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -79,6 +106,7 @@ router.post('/:id/replies', async (req, res) => {
     try {
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
+        if (!canAccessTicket(req, ticket)) return res.status(403).json({ error: 'دسترسی به این تیکت ندارید' });
         const content = (req.body.content || '').trim();
         const attachments = Array.isArray(req.body.attachments) ? req.body.attachments : (req.body.attachments ? [req.body.attachments] : []);
         if (!content && attachments.length === 0) return res.status(400).json({ error: 'متن پاسخ یا حداقل یک پیوست الزامی است' });
@@ -135,6 +163,7 @@ router.put('/:id', async (req, res) => {
     try {
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
+        if (!canAccessTicket(req, ticket)) return res.status(403).json({ error: 'دسترسی به این تیکت ندارید' });
         const { title, description, assignedTo, departmentId, status, priority, dueDate } = req.body;
         if ((title !== undefined || description !== undefined) && !canManageTicket(req)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند عنوان و توضیحات تیکت را ویرایش کند' });
         if (title !== undefined) ticket.title = (title || '').trim();
@@ -156,6 +185,7 @@ router.delete('/:id', async (req, res) => {
         if (!canManageTicket(req)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند تیکت را حذف کند' });
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
+        if (!canAccessTicket(req, ticket)) return res.status(403).json({ error: 'دسترسی به این تیکت ندارید' });
         await TicketReply.destroy({ where: { ticketId: ticket.id } });
         await ticket.destroy();
         res.json({ ok: true });

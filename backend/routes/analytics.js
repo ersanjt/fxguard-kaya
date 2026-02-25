@@ -15,6 +15,7 @@ function conversationWhere(req) {
 
 router.get('/dashboard', async (req, res) => {
     try {
+        if (!req.canAccess('dashboard')) return res.status(403).json({ error: 'دسترسی به داشبورد ندارید' });
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const convWhere = conversationWhere(req);

@@ -10,9 +10,10 @@ function ownerOrAdmin(req, res, next) {
     return res.status(403).json({ error: 'فقط مالک یا ادمین' });
 }
 
-// لیست شعب — ادمین اصلی/مالک/ادمین همه، بقیه فقط شعب خود
+// لیست شعب — نیاز به دسترسی branches؛ ادمین اصلی/مالک/ادمین همه، بقیه فقط شعب خود
 router.get('/', async (req, res) => {
     try {
+        if (!req.canAccess('branches')) return res.status(403).json({ error: 'دسترسی به بخش شعب ندارید' });
         const where = { isActive: true };
         if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin') {
             if (req.user.branchId) where.id = req.user.branchId;
@@ -35,6 +36,7 @@ router.get('/', async (req, res) => {
 // یک شعبه
 router.get('/:id', async (req, res) => {
     try {
+        if (!req.canAccess('branches')) return res.status(403).json({ error: 'دسترسی به بخش شعب ندارید' });
         const branch = await Branch.findByPk(req.params.id);
         if (!branch) return res.status(404).json({ error: 'شعبه یافت نشد' });
         if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.branchId !== branch.id) {
