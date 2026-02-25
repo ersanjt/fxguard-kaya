@@ -594,11 +594,11 @@ async function processIncomingMessage(messageData) {
             unreadCount: (conversation.unreadCount || 0) + 1
         });
         
-        // برای گروه‌ها: فرستنده هر پیام را ذخیره کن (حتی اگر فقط senderId داشته باشیم)
+        // برای گروه‌ها: فرستنده را ذخیره کن. contact از getContact وقتی author هست = فرستنده
         const msgMetadata = isGroup && (messageData.author || messageData.authorName)
           ? {
               senderId: messageData.author || null,
-              senderName: messageData.authorName || (contact && (contact.name || contact.pushname)) || null
+              senderName: messageData.authorName || (messageData.author && contact && (contact.name || contact.pushname)) || null
             }
           : {};
         const newMessage = await Message.create({

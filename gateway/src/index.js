@@ -309,9 +309,9 @@ function attachClientEvents(c) {
 
   c.on('message', async (msg) => {
     try {
-      const contact = await msg.getContact();
       const chat = await msg.getChat();
-      // برای گروه‌ها: contact از getContact() مربوط به گروه است؛ فرستنده را جداگانه بگیر
+      // برای گروه: getContact() با author فرستنده را برمی‌گرداند؛ برای چت مستقیم: contact فرستنده است
+      const contact = await msg.getContact();
       let authorId = null;
       let authorName = null;
       if (chat?.isGroup && !msg.fromMe) {
@@ -319,7 +319,8 @@ function attachClientEvents(c) {
         const rawAuthor = msg.author
           || msg._data?.participant
           || msg._data?.key?.participant
-          || (msg.id && typeof msg.id === 'object' && (msg.id.participant || msg.id.from));
+          || (msg.id && typeof msg.id === 'object' && (msg.id.participant || msg.id.from))
+          || (msg._data?.key && typeof msg._data.key === 'object' && msg._data.key.participant);
         authorId = rawAuthor
           ? (typeof rawAuthor === 'string' ? rawAuthor : (rawAuthor?._serialized || rawAuthor?.id || rawAuthor))
           : null;
@@ -328,6 +329,11 @@ function attachClientEvents(c) {
             const authorContact = await client.getContactById(authorId);
             authorName = authorContact?.name || authorContact?.pushname || authorContact?.shortName || null;
           } catch (_) {}
+        }
+        // fallback: نام فرستنده از پروتکل واتساپ
+        if (!authorName && msg._data) {
+          authorName = (msg._data.notify || msg._data.pushName || msg._data.pushname || msg._data.senderName || null);
+          if (authorName) authorName = String(authorName).trim() || null;
         }
       }
 
