@@ -2434,12 +2434,28 @@
                     socket.on('call_answer', function(data) {
                         if (data.threadId !== currentInternalThreadId) return;
                         var pc = internalCallPeers[data.fromUserId];
-                        if (pc) pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(function() {}).catch(function(e) { console.warn('setRemoteDesc:', e); });
+                        if (pc) {
+                            pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(function() {
+                                var queue = internalCallIceQueue[data.fromUserId] || [];
+                                internalCallIceQueue[data.fromUserId] = [];
+                                queue.forEach(function(c) {
+                                    if (c) pc.addIceCandidate(new RTCIceCandidate(c)).catch(function(e) { console.warn('addIce:', e); });
+                                });
+                            }).catch(function(e) { console.warn('setRemoteDesc:', e); });
+                        }
                     });
                     socket.on('call_ice', function(data) {
                         if (data.threadId !== currentInternalThreadId) return;
+                        if (!data.candidate) return;
                         var pc = internalCallPeers[data.fromUserId];
-                        if (pc && data.candidate) pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(function(e) { console.warn('addIce:', e); });
+                        if (pc) {
+                            if (pc.remoteDescription) {
+                                pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(function(e) { console.warn('addIce:', e); });
+                            } else {
+                                if (!internalCallIceQueue[data.fromUserId]) internalCallIceQueue[data.fromUserId] = [];
+                                internalCallIceQueue[data.fromUserId].push(data.candidate);
+                            }
+                        }
                     });
                     socket.on('call_participant_joined', function(data) {
                         if (data.threadId !== currentInternalThreadId || !internalCallLocalStream) return;
@@ -6428,6 +6444,7 @@
         var currentInternalThreadOtherUserId = null;
         var currentInternalThreadParticipants = [];
         var internalCallPeers = {};
+        var internalCallIceQueue = {};
         var internalCallLocalStream = null;
         var internalCallPendingOffer = null;
         var internalCallPendingInvite = null;
@@ -6673,6 +6690,7 @@
             if (localV) localV.srcObject = null;
             Object.keys(internalCallPeers).forEach(function(uid) { var pc = internalCallPeers[uid]; if (pc) pc.close(); });
             internalCallPeers = {};
+            internalCallIceQueue = {};
             var container = document.getElementById('internalCallRemoteVideos');
             if (container) container.innerHTML = '';
             internalCallPendingOffer = null;

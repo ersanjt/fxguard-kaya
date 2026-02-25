@@ -899,8 +899,8 @@ io.use(socketAuth);
 io.on('connection', (socket) => {
     logger.info(`🔌 User connected: ${socket.userId}`);
     
-    // اتصال کاربر به روم شخصی
-    socket.join(`user_${socket.userId}`);
+    // اتصال کاربر به روم شخصی (استفاده از String برای سازگاری)
+    if (socket.userId) socket.join('user_' + String(socket.userId));
     
     // اتصال به روم دپارتمان
     if (socket.departmentId) {
@@ -974,18 +974,18 @@ io.on('connection', (socket) => {
         if (!toUserId || !threadId || !sdp) return;
         if (!callRooms[threadId]) callRooms[threadId] = { participants: new Set(), type: type || 'voice' };
         callRooms[threadId].participants.add(String(socket.userId));
-        io.to(`user_${toUserId}`).emit('call_offer', { fromUserId: socket.userId, threadId, type: type || 'voice', sdp });
+        io.to('user_' + String(toUserId)).emit('call_offer', { fromUserId: socket.userId, threadId, type: type || 'voice', sdp });
     });
     socket.on('call_answer', (data) => {
         const { toUserId, threadId, sdp } = data;
         if (!toUserId || !threadId || !sdp) return;
         if (callRooms[threadId]) callRooms[threadId].participants.add(String(socket.userId));
-        io.to(`user_${toUserId}`).emit('call_answer', { fromUserId: socket.userId, threadId, sdp });
+        io.to('user_' + String(toUserId)).emit('call_answer', { fromUserId: socket.userId, threadId, sdp });
     });
     socket.on('call_ice', (data) => {
         const { toUserId, threadId, candidate } = data;
         if (!toUserId || !threadId) return;
-        io.to(`user_${toUserId}`).emit('call_ice', { fromUserId: socket.userId, threadId, candidate });
+        io.to('user_' + String(toUserId)).emit('call_ice', { fromUserId: socket.userId, threadId, candidate });
     });
     socket.on('call_end', (data) => {
         const { threadId } = data;
@@ -1000,7 +1000,7 @@ io.on('connection', (socket) => {
     socket.on('call_reject', (data) => {
         const { toUserId, threadId } = data;
         if (!toUserId || !threadId) return;
-        io.to(`user_${toUserId}`).emit('call_reject', { fromUserId: socket.userId, threadId });
+        io.to('user_' + String(toUserId)).emit('call_reject', { fromUserId: socket.userId, threadId });
     });
     socket.on('call_invite', async (data) => {
         const { toUserId, threadId, type, participantIds } = data;
@@ -1009,7 +1009,7 @@ io.on('connection', (socket) => {
         if (!room || !room.participants.has(String(socket.userId))) return;
         const fromUser = await User.findByPk(socket.userId, { attributes: ['name', 'email'] });
         const fromUserName = (fromUser && (fromUser.name || fromUser.email)) || '';
-        io.to(`user_${toUserId}`).emit('call_invite', { fromUserId: socket.userId, fromUserName, threadId, type: type || room.type, participantIds: participantIds || Array.from(room.participants) });
+        io.to('user_' + String(toUserId)).emit('call_invite', { fromUserId: socket.userId, fromUserName, threadId, type: type || room.type, participantIds: participantIds || Array.from(room.participants) });
     });
     socket.on('call_invite_accept', (data) => {
         const { threadId, type } = data;
@@ -1019,14 +1019,14 @@ io.on('connection', (socket) => {
         const participants = Array.from(room.participants);
         room.participants.add(String(socket.userId));
         participants.forEach(uid => io.to(`user_${uid}`).emit('call_participant_joined', { userId: socket.userId, threadId }));
-        io.to(`user_${socket.userId}`).emit('call_room_info', { threadId, participantIds: participants, type: type || room.type });
+        io.to('user_' + String(socket.userId)).emit('call_room_info', { threadId, participantIds: participants, type: type || room.type });
     });
     socket.on('call_invite_reject', async (data) => {
         const { fromUserId, threadId } = data;
         if (!fromUserId || !threadId) return;
         const rejecter = await User.findByPk(socket.userId, { attributes: ['name', 'email'] });
         const userName = (rejecter && (rejecter.name || rejecter.email)) || '';
-        io.to(`user_${fromUserId}`).emit('call_invite_reject', { userId: socket.userId, userName, threadId });
+        io.to('user_' + String(fromUserId)).emit('call_invite_reject', { userId: socket.userId, userName, threadId });
     });
 
     // تغییر وضعیت کاربر
