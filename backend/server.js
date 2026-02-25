@@ -230,6 +230,10 @@ async function connectDatabases() {
                 await sequelize.getQueryInterface().addColumn('Conversations', 'firstReplyAt', { type: require('sequelize').DataTypes.DATE, allowNull: true });
                 logger.info('✅ Conversations.firstReplyAt column added (auto-migration)');
             }
+            if (!convDesc || !convDesc.metadata) {
+                await sequelize.getQueryInterface().addColumn('Conversations', 'metadata', { type: require('sequelize').DataTypes.JSON, allowNull: true });
+                logger.info('✅ Conversations.metadata column added (auto-migration)');
+            }
         } catch (migErr) {
             logger.warn('Conversations firstReplyAt migration:', migErr.message);
         }
@@ -584,7 +588,7 @@ async function processIncomingMessage(messageData) {
             unreadCount: (conversation.unreadCount || 0) + 1
         });
         
-        const msgMetadata = isGroup && messageData.author ? { senderId: messageData.author, senderName: (contact && (contact.name || contact.pushname)) || null } : {};
+        const msgMetadata = isGroup && (messageData.author || messageData.authorName) ? { senderId: messageData.author || null, senderName: messageData.authorName || (contact && (contact.name || contact.pushname)) || null } : {};
         const newMessage = await Message.create({
             conversationId: conversation.id,
             customerId: customer.id,

@@ -121,7 +121,7 @@ router.post('/sync-groups', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        const { status, priority, assignedTo, unread, unassigned, unanswered, branchId, departmentId, search, archived, page = 1, limit = 20 } = req.query;
+        const { status, priority, assignedTo, unread, unassigned, unanswered, branchId, departmentId, search, archived, isGroup, page = 1, limit = 20 } = req.query;
         const where = {};
 
         const canViewArchived = req.canViewArchivedConversations && req.canViewArchivedConversations();
@@ -137,6 +137,16 @@ router.get('/', async (req, res) => {
         if (assignedTo) where.assignedTo = assignedTo;
         if (unassigned === '1' || unassigned === 'true') { where.assignedTo = null; where.departmentId = null; }
         if (unread === '1' || unread === 'true') where.unreadCount = { [Op.gt]: 0 };
+        if (isGroup === '1' || isGroup === 'true') {
+            const dialect = sequelize.getDialect();
+            const tbl = Conversation.tableName || 'Conversations';
+            const subq = dialect === 'postgres'
+                ? `(SELECT id FROM "${tbl}" WHERE (metadata->>'isGroup')::text = 'true')`
+                : `(SELECT id FROM "${tbl}" WHERE (json_extract(metadata, '$.isGroup') = 1 OR json_extract(metadata, '$.isGroup') = 'true'))`;
+            where[Op.and] = (where[Op.and] || []).concat([
+                sequelize.where(sequelize.col('Conversation.id'), Op.in, sequelize.literal(subq))
+            ]);
+        }
         if (branchId) where.branchId = branchId;
         if (departmentId) where.departmentId = departmentId;
         // مکالمات بدون پاسخ: آخرین پیام از مشتری بوده و ما جواب نداده‌ایم (فقط باز/در انتظار)
@@ -151,16 +161,25 @@ router.get('/', async (req, res) => {
             ]);
         }
 
-        // کارمند/ناظر فقط مکالمات تخصیص‌یافته به خود یا دپارتمانش را می‌بیند — گروه‌ها برای همه با دسترسی مکالمات قابل مشاهده‌اند
+        // کارمند/ناظر: مکالمات تخصیص‌یافته، دپارتمان، شعبه، گروه‌ها، مشارکت قبلی، مشتریان قابل دسترسی
         if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.role !== 'manager') {
             const orConditions = [{ assignedTo: req.userId }];
             if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
             if (req.user.branchId) orConditions.push({ branchId: req.user.branchId });
             const dialect = sequelize.getDialect();
-            const groupCond = dialect === 'postgres'
-                ? sequelize.literal('("Conversations".metadata->>\'isGroup\')::text = \'true\'')
-                : sequelize.literal("(json_extract(\"Conversations\".metadata, '$.isGroup') = 1 OR json_extract(\"Conversations\".metadata, '$.isGroup') = 'true')");
-            orConditions.push(groupCond);
+            const convTbl = Conversation.tableName || 'Conversations';
+            const msgTbl = Message.tableName || 'Messages';
+            const groupSubq = dialect === 'postgres'
+                ? `(SELECT id FROM "${convTbl}" WHERE (metadata->>'isGroup')::text = 'true')`
+                : `(SELECT id FROM "${convTbl}" WHERE (json_extract(metadata, '$.isGroup') = 1 OR json_extract(metadata, '$.isGroup') = 'true'))`;
+            orConditions.push(sequelize.where(sequelize.col('Conversation.id'), Op.in, sequelize.literal(groupSubq)));
+            // مکالماتی که کاربر در آن‌ها پیام فرستاده (مشارکت قبلی)
+            const escapedUserId = sequelize.escape(req.userId);
+            orConditions.push(sequelize.where(sequelize.col('Conversation.id'), Op.in, sequelize.literal(`(SELECT "conversationId" FROM "${msgTbl}" WHERE "userId" = ${escapedUserId})`)));
+            const accessibleCustomerIds = await getAccessibleCustomerIds(req);
+            if (accessibleCustomerIds && accessibleCustomerIds.length > 0) {
+                orConditions.push({ customerId: { [Op.in]: accessibleCustomerIds } });
+            }
             where[Op.or] = orConditions;
         }
 
