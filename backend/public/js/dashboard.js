@@ -905,7 +905,7 @@
             var tabBar = document.getElementById('mobileTabBar');
             var bottomBar = document.getElementById('bottomBar');
             if (!tabBar || !bottomBar) return;
-            var isMobile = window.innerWidth <= 768;
+            var isMobile = window.innerWidth <= 900;
             bottomBar.classList.toggle('has-mobile-tab', isMobile);
             if (!isMobile) return;
             document.querySelectorAll('.mobile-tab-bar .mobile-tab-item').forEach(function(item) {
@@ -1315,7 +1315,7 @@
         async function saveRatesAdjustments() {
             var container = document.getElementById('ratesAdjustmentsTable');
             if (!container) return;
-            var isMobile = window.matchMedia('(max-width: 768px)').matches;
+            var isMobile = window.matchMedia('(max-width: 900px)').matches;
             var items = isMobile ? container.querySelectorAll('.rate-card') : container.querySelectorAll('tbody tr');
             var adjustments = [];
             items.forEach(function(el) {
@@ -3719,13 +3719,13 @@
             var btn = document.querySelector('.chat-back-btn');
             if (btn) btn.style.display = 'none';
             var pm = document.getElementById('headerMobileTitle');
-            if (pm && window.matchMedia('(max-width: 768px)').matches) pm.textContent = t('nav_conversations');
+            if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = t('nav_conversations');
         }
         function updateChatBackBtn() {
             var btn = document.querySelector('.chat-back-btn');
             var chatArea = document.getElementById('chatArea');
             if (btn && chatArea && chatArea.classList.contains('show')) {
-                btn.style.display = window.matchMedia('(max-width: 768px)').matches ? 'flex' : 'none';
+                btn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
             }
         }
         if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
@@ -3757,9 +3757,9 @@
             if (chatArea) chatArea.classList.add('show');
             if (layout) layout.classList.add('chat-open');
             var backBtn = document.querySelector('.chat-back-btn');
-            if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 768px)').matches ? 'flex' : 'none';
+            if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
             var pm = document.getElementById('headerMobileTitle');
-            if (pm && window.matchMedia('(max-width: 768px)').matches) pm.textContent = name || phone || t('customer');
+            if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = name || phone || t('customer');
             if (barEl) barEl.style.display = 'none';
             apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); });
             loadMessages(id);
@@ -4800,7 +4800,7 @@
             var tickerHidden = !tickerEl || tickerEl.style.display === 'none';
             var footerHidden = !appFooter || appFooter.style.display === 'none';
             var bothHidden = tickerHidden && footerHidden;
-            var isMobile = window.innerWidth <= 768;
+            var isMobile = window.innerWidth <= 900;
             if (isMobile && mobileTabBar) {
                 bottomBar.style.display = '';
                 document.body.classList.remove('bottom-bar-hidden');
@@ -5311,7 +5311,7 @@
         function toggleSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s && s.classList.contains('sidebar-open')) { closeSidebarMobile(); } else { if (s) s.classList.add('sidebar-open'); if (o) { o.classList.add('show'); o.style.display = 'block'; document.body.style.overflow = 'hidden'; } if (btn) btn.setAttribute('aria-expanded', 'true'); } }
         function closeSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
         function toggleSidebarDesktop() { var s = document.getElementById('sidebar'); var btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; var collapsed = s.classList.toggle('sidebar-collapsed'); try { localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0'); } catch (_) {} btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true'); btn.setAttribute('aria-label', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); btn.setAttribute('title', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = collapsed ? t('sidebar_toggle_expand') : t('sidebar_toggle_collapse'); }
-        function initSidebarCollapsedState() { var s = document.getElementById('sidebar'); var btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; var collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 769px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
+        function initSidebarCollapsedState() { var s = document.getElementById('sidebar'); var btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; var collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
         function showPage(page) {
             if (page === 'panel-settings' && (!currentUser || !currentUser.permissions || currentUser.permissions.panel_settings !== true)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             if (page === 'whatsapp' && (!currentUser || !currentUser.permissions || currentUser.permissions.whatsapp !== true)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
@@ -6935,7 +6935,7 @@
             if (wrap) { wrap.classList.remove('internal-chat-mobile-chat-open', 'internal-chat-has-chat'); }
             if (pane) pane.style.display = 'none';
         }
-        function isInternalChatMobile() { return window.matchMedia('(max-width: 768px)').matches; }
+        function isInternalChatMobile() { return window.matchMedia('(max-width: 900px)').matches; }
         async function openInternalThread(threadId) {
             currentInternalThreadId = threadId;
             currentInternalThreadOtherUserId = null;
@@ -7996,7 +7996,7 @@
         (function initNavSectionToggles() {
             document.querySelectorAll('.sidebar .nav-section-collapsible .nav-section-title').forEach(function(btn) {
                 btn.addEventListener('click', function() {
-                    if (window.innerWidth > 768) return;
+                    if (window.innerWidth > 900) return;
                     var section = this.closest('.nav-section-collapsible');
                     if (!section) return;
                     var collapsed = section.classList.toggle('collapsed');
@@ -8017,7 +8017,7 @@
             var btn = document.getElementById('tickerToggleMobile');
             var ticker = document.getElementById('priceTicker');
             if (!btn || !ticker) return;
-            var isMobile = function() { return window.innerWidth <= 768; };
+            var isMobile = function() { return window.innerWidth <= 900; };
             if (isMobile()) ticker.classList.add('ticker-collapsed');
             window.addEventListener('resize', function() { if (!isMobile()) ticker.classList.remove('ticker-collapsed'); });
             btn.addEventListener('click', function() { ticker.classList.toggle('ticker-collapsed'); });
