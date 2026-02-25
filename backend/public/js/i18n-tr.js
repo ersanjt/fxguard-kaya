@@ -586,6 +586,8 @@ window.__I18N_TR = {
     th_action: 'İşlem',
     th_summary: 'Özet',
     th_login_time: 'Giriş zamanı',
+    th_ip: 'IP',
+    th_country: 'Ülke',
     all_actions: 'Tüm işlemler',
     action_message_sent: 'Mesaj gönderildi',
     action_conv_assigned: 'Konuşma atandı',

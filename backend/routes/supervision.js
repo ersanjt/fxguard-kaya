@@ -15,7 +15,7 @@ function canViewStaffActivity(req, res, next) {
     return res.status(403).json({ error: 'دسترسی به این بخش محدود است' });
 }
 
-// لاگ ورود کارکنان — برای مدیر و بالاتر
+// لاگ ورود کارکنان — برای مدیر و بالاتر (شامل IP و کشور)
 router.get('/logins', canViewStaffActivity, async (req, res) => {
     try {
         const { limit = 50, page = 1 } = req.query;
@@ -29,13 +29,21 @@ router.get('/logins', canViewStaffActivity, async (req, res) => {
             limit: Math.min(parseInt(limit) || 50, 100),
             offset: (parseInt(page) - 1) * (parseInt(limit) || 50)
         });
-        res.json({ data: rows, total: count, page: parseInt(page) });
+        const data = rows.map(r => {
+            const m = r.metadata || {};
+            return {
+                ...r.toJSON(),
+                ip: m.ip || null,
+                country: m.country || null
+            };
+        });
+        res.json({ data, total: count, page: parseInt(page) });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-// لیست کارکنان آنلاین — برای مدیر و بالاتر
+// لیست کارکنان آنلاین — برای مدیر و بالاتر (شامل IP و کشور آخرین ورود)
 router.get('/online', canViewStaffActivity, async (req, res) => {
     try {
         const users = await User.findAll({
@@ -44,7 +52,30 @@ router.get('/online', canViewStaffActivity, async (req, res) => {
             include: [{ model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false }],
             order: [['lastLoginAt', 'DESC']]
         });
-        res.json({ data: users });
+        const userIds = users.map(u => u.id);
+        const loginByUser = {};
+        if (userIds.length > 0) {
+            const latestLogins = await Promise.all(userIds.map(uid =>
+                ActivityLog.findOne({
+                    where: { action: 'user_login', userId: uid },
+                    attributes: ['userId', 'metadata'],
+                    order: [['createdAt', 'DESC']],
+                    raw: true
+                })
+            ));
+            latestLogins.forEach((l, i) => {
+                if (l) loginByUser[userIds[i]] = l;
+            });
+        }
+        const data = users.map(u => {
+            const j = u.toJSON();
+            const lastLogin = loginByUser[u.id];
+            const m = lastLogin && lastLogin.metadata ? lastLogin.metadata : {};
+            j.lastLoginIp = m.ip || null;
+            j.lastLoginCountry = m.country || null;
+            return j;
+        });
+        res.json({ data });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
