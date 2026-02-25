@@ -3993,15 +3993,13 @@
                 } else if (!isOut && currentConvIsGroup) {
                     var sn = (m.metadata && m.metadata.senderName) || null;
                     var sid = (m.metadata && m.metadata.senderId) || null;
-                    if (sn || sid) {
-                        var displayName = sn;
-                        if (!displayName && sid) {
-                            var raw = String(sid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, '');
-                            displayName = raw ? (raw.replace(/^98/, '0') || raw) : (LANG === 'fa' ? 'عضو گروه' : 'Group member');
-                        }
-                        if (!displayName) displayName = LANG === 'fa' ? 'عضو گروه' : 'Group member';
-                        senderLabel = '<div class="msg-sender msg-sender-group">' + escapeHtml(displayName) + '</div>';
+                    var displayName = sn;
+                    if (!displayName && sid) {
+                        var raw = String(sid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, '');
+                        displayName = raw ? (raw.replace(/^98/, '0') || raw) : null;
                     }
+                    if (!displayName) displayName = LANG === 'fa' ? 'عضو گروه' : 'Group member';
+                    senderLabel = '<div class="msg-sender msg-sender-group">' + escapeHtml(displayName) + '</div>';
                 }
                 var mediaHtml = '';
                 var baseUrl = (API && String(API).length) ? String(API).replace(/\/$/, '') : (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : '');

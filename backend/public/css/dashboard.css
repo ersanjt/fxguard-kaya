@@ -1193,9 +1193,10 @@
         .conv-stat-item { display: inline-flex; align-items: baseline; gap: 6px; }
         .conv-stat-item .conv-stat-label { color: var(--text-muted); font-size: 0.8rem; }
         .conv-stat-unread .conv-stat-label { color: var(--accent); }
-        .msg-sender { font-size: 0.7rem; opacity: 0.9; margin-bottom: 2px; font-weight: 500; }
-        .msg.out .msg-sender { color: rgba(255,255,255,0.9); }
-        .msg-sender-group { color: var(--accent); font-size: 0.75rem; }
+        .msg-sender { font-size: 0.8rem; margin-bottom: 4px; font-weight: 600; }
+        .msg.out .msg-sender { color: rgba(255,255,255,0.95); }
+        .msg-sender-group { color: var(--accent); font-size: 0.85rem; font-weight: 600; }
+        .msg.in .msg-sender-group { color: var(--accent); margin-bottom: 6px; }
         .chat-header-group-badge { margin-left: 4px; font-size: 1rem; vertical-align: middle; }
         body.ltr .chat-header-group-badge { margin-left: 0; margin-right: 4px; }
         .conv-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
