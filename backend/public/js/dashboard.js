@@ -3994,7 +3994,12 @@
                     var sn = (m.metadata && m.metadata.senderName) || null;
                     var sid = (m.metadata && m.metadata.senderId) || null;
                     if (sn || sid) {
-                        var displayName = sn || (sid ? sid.replace(/@c\.us$/i, '').replace(/\D/g, '').replace(/^98/, '0') : '') || (LANG === 'fa' ? 'عضو گروه' : 'Group member');
+                        var displayName = sn;
+                        if (!displayName && sid) {
+                            var raw = String(sid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, '');
+                            displayName = raw ? (raw.replace(/^98/, '0') || raw) : (LANG === 'fa' ? 'عضو گروه' : 'Group member');
+                        }
+                        if (!displayName) displayName = LANG === 'fa' ? 'عضو گروه' : 'Group member';
                         senderLabel = '<div class="msg-sender msg-sender-group">' + escapeHtml(displayName) + '</div>';
                     }
                 }

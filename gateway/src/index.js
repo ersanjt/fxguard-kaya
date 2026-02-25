@@ -314,12 +314,21 @@ function attachClientEvents(c) {
       // برای گروه‌ها: contact از getContact() مربوط به گروه است؛ فرستنده را جداگانه بگیر
       let authorId = null;
       let authorName = null;
-      if (chat?.isGroup && msg.author) {
-        authorId = typeof msg.author === 'string' ? msg.author : (msg.author?._serialized || msg.author?.id);
-        try {
-          const authorContact = await client.getContactById(authorId);
-          authorName = authorContact?.name || authorContact?.pushname || authorContact?.shortName || null;
-        } catch (_) {}
+      if (chat?.isGroup && !msg.fromMe) {
+        // چند منبع برای شناسه فرستنده (وابسته به نسخه whatsapp-web.js و پروتکل)
+        const rawAuthor = msg.author
+          || msg._data?.participant
+          || msg._data?.key?.participant
+          || (msg.id && typeof msg.id === 'object' && (msg.id.participant || msg.id.from));
+        authorId = rawAuthor
+          ? (typeof rawAuthor === 'string' ? rawAuthor : (rawAuthor?._serialized || rawAuthor?.id || rawAuthor))
+          : null;
+        if (authorId) {
+          try {
+            const authorContact = await client.getContactById(authorId);
+            authorName = authorContact?.name || authorContact?.pushname || authorContact?.shortName || null;
+          } catch (_) {}
+        }
       }
 
       const messageData = {

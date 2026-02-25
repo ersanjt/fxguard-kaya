@@ -588,7 +588,13 @@ async function processIncomingMessage(messageData) {
             unreadCount: (conversation.unreadCount || 0) + 1
         });
         
-        const msgMetadata = isGroup && (messageData.author || messageData.authorName) ? { senderId: messageData.author || null, senderName: messageData.authorName || (contact && (contact.name || contact.pushname)) || null } : {};
+        // برای گروه‌ها: فرستنده هر پیام را ذخیره کن (حتی اگر فقط senderId داشته باشیم)
+        const msgMetadata = isGroup && (messageData.author || messageData.authorName)
+          ? {
+              senderId: messageData.author || null,
+              senderName: messageData.authorName || (contact && (contact.name || contact.pushname)) || null
+            }
+          : {};
         const newMessage = await Message.create({
             conversationId: conversation.id,
             customerId: customer.id,
