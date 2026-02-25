@@ -316,11 +316,18 @@ function attachClientEvents(c) {
       let authorName = null;
       if (chat?.isGroup && !msg.fromMe) {
         // چند منبع برای شناسه فرستنده (وابسته به نسخه whatsapp-web.js و پروتکل)
-        const rawAuthor = msg.author
+        let rawAuthor = msg.author
           || msg._data?.participant
           || msg._data?.key?.participant
           || (msg.id && typeof msg.id === 'object' && (msg.id.participant || msg.id.from))
           || (msg._data?.key && typeof msg._data.key === 'object' && msg._data.key.participant);
+        // fallback: استخراج participant از _serialized (مثلاً false_groupId@g.us_msgId_98xxx@c.us)
+        if (!rawAuthor && msg.id && typeof msg.id === 'object' && msg.id._serialized) {
+          const parts = String(msg.id._serialized).split('_');
+          // آخرین بخشی که شبیه JID کاربر است (نه گروه @g.us)
+          const jidPart = [...parts].reverse().find((p) => /@(c\.us|s\.whatsapp\.net|lid)$/.test(p));
+          if (jidPart) rawAuthor = jidPart;
+        }
         authorId = rawAuthor
           ? (typeof rawAuthor === 'string' ? rawAuthor : (rawAuthor?._serialized || rawAuthor?.id || rawAuthor))
           : null;
@@ -629,7 +636,15 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
 
     let sentMsg;
     const sendOpts = replyTo ? { quotedMessageId: replyTo } : {};
-    if (media?.url) {
+    if (media?.data) {
+      const mime = media.mimetype || 'application/octet-stream';
+      const mediaObj = new MessageMedia(mime, media.data, media.filename || null);
+      sendOpts.caption = message || '';
+      if (media.sendAsVoice || /^audio\/(ogg|webm|opus)/i.test(mime)) {
+        sendOpts.sendAudioAsVoice = true;
+      }
+      sentMsg = await client.sendMessage(chatId, mediaObj, sendOpts);
+    } else if (media?.url) {
       if (!isSafeMediaUrl(media.url)) {
         return res.status(400).json({ error: 'Invalid or unsafe media URL' });
       }
@@ -664,6 +679,34 @@ app.get('/api/chats/groups', async (req, res) => {
   } catch (error) {
     logger.error('Get groups error', { error: error?.message });
     return res.status(500).json({ error: error?.message || 'get_groups_failed' });
+  }
+});
+
+// اعضای گروه — برای نمایش نام فرستنده‌ها در چت گروهی (وقتی senderName ذخیره نشده)
+app.get('/api/chats/groups/:groupId/participants', async (req, res) => {
+  try {
+    if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
+    const groupId = (req.params.groupId || '').trim();
+    if (!groupId) return res.status(400).json({ error: 'groupId required' });
+    const chatId = groupId.includes('@g.us') ? groupId : `${groupId}@g.us`;
+    const chat = await client.getChatById(chatId);
+    if (!chat || !chat.isGroup) return res.status(404).json({ error: 'Group not found' });
+    const participants = chat.participants || [];
+    const list = await Promise.all(
+      participants.map(async (p) => {
+        const id = (typeof p === 'object' && p?.id) ? (p.id._serialized || p.id) : String(p);
+        let name = '';
+        try {
+          const c = await client.getContactById(id);
+          name = (c?.name || c?.pushname || c?.shortName || '').toString().trim();
+        } catch (_) {}
+        return { id, name: name || null };
+      })
+    );
+    return res.json({ success: true, participants: list });
+  } catch (error) {
+    logger.error('Get group participants error', { error: error?.message });
+    return res.status(500).json({ error: error?.message || 'get_participants_failed' });
   }
 });
 

@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 const { sequelize, Conversation, Customer, Message, User, Branch, Department } = require('../models');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { Op } = require('sequelize');
@@ -551,9 +553,27 @@ router.post('/:id/send', async (req, res) => {
         const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;
         if (!toPhone) return res.status(400).json({ error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح (مثلاً 09121234567 یا 989121234567) وارد کنید.' });
         const payload = { to: toPhone, message: content };
-        if (mediaUrl) {
-            payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
-            if (msgType === 'audio') payload.media.sendAsVoice = true;
+        if (hasMedia && media && (media.url || media.filename)) {
+            const relPath = media.url || ('/uploads/' + media.filename);
+            const uploadsDir = path.join(__dirname, '..', 'uploads');
+            const fileName = (relPath.replace(/^\/uploads\/?/, '') || media.filename || media.name || 'file').split('/').pop();
+            const filePath = path.join(uploadsDir, fileName);
+            if (!relPath.startsWith('http') && fs.existsSync(filePath)) {
+                try {
+                    const fileBuf = fs.readFileSync(filePath);
+                    const base64 = fileBuf.toString('base64');
+                    payload.media = { data: base64, mimetype: media.mimetype || 'application/octet-stream', filename: media.filename || media.name || fileName };
+                    if (msgType === 'audio') payload.media.sendAsVoice = true;
+                } catch (readErr) {
+                    if (mediaUrl) {
+                        payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
+                        if (msgType === 'audio') payload.media.sendAsVoice = true;
+                    }
+                }
+            } else if (mediaUrl) {
+                payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
+                if (msgType === 'audio') payload.media.sendAsVoice = true;
+            }
         }
         if (replyTo) payload.replyTo = replyTo;
         try {
