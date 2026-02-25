@@ -9,7 +9,6 @@ function conversationWhere(req) {
     if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role) !== -1) return {};
     const orConditions = [{ assignedTo: req.userId }];
     if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
-    if (req.user.branchId) orConditions.push({ branchId: req.user.branchId });
     return { [Op.or]: orConditions };
 }
 

@@ -7,7 +7,7 @@ const { sequelize, Conversation, Customer, Message, User, Branch, Department } =
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
-const { getAccessibleCustomerIds } = require('../lib/customerAccess');
+const { canAccessCustomer } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
@@ -15,18 +15,14 @@ function canArchiveOrDeleteConversation(req) {
     return req.canManageConversations && req.canManageConversations();
 }
 
-/** آیا کاربر جاری به این مکالمه دسترسی دارد؟ (نقش، تخصیص، دپارتمان، شعبه، مشارکت قبلی) */
-async function canAccessConversation(req, conversation, accessibleCustomerIds) {
+/** آیا کاربر جاری به این مکالمه دسترسی دارد؟ فقط: تخصیص به خود، دپارتمان، یا نقش مدیریتی */
+async function canAccessConversation(req, conversation) {
     if (!conversation) return false;
     if (isMainAdmin(req.user)) return true;
     const role = req.user.role;
     if (role === 'owner' || role === 'admin' || role === 'manager') return true;
     if (conversation.assignedTo === req.userId) return true;
     if (req.user.departmentId && conversation.departmentId === req.user.departmentId) return true;
-    if (req.user.branchId && conversation.branchId === req.user.branchId) return true;
-    if (accessibleCustomerIds && conversation.customerId && accessibleCustomerIds.includes(conversation.customerId)) return true;
-    const participated = await Message.findOne({ where: { conversationId: conversation.id, userId: req.userId }, attributes: ['id'] });
-    if (participated) return true;
     return false;
 }
 
@@ -41,8 +37,6 @@ router.post('/', async (req, res) => {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const { customerId } = req.body;
         if (!customerId) return res.status(400).json({ error: 'شناسه مشتری الزامی است' });
-        const accessibleCustomerIds = await getAccessibleCustomerIds(req);
-        const { canAccessCustomer } = require('../lib/customerAccess');
         if (!(await canAccessCustomer(req, customerId))) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         const customer = await Customer.findByPk(customerId);
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
@@ -186,25 +180,10 @@ router.get('/', async (req, res) => {
             ]);
         }
 
-        // کارمند/ناظر: مکالمات تخصیص‌یافته، دپارتمان، شعبه، گروه‌ها، مشارکت قبلی، مشتریان قابل دسترسی
+        // کارمند/ناظر: فقط مکالمات تخصیص‌یافته به خود یا دپارتمان خود (بدون شعبه، مشارکت قبلی، یا مشتریان دیگر)
         if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.role !== 'manager') {
             const orConditions = [{ assignedTo: req.userId }];
             if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
-            if (req.user.branchId) orConditions.push({ branchId: req.user.branchId });
-            const dialect = sequelize.getDialect();
-            const convTbl = Conversation.tableName || 'Conversations';
-            const msgTbl = Message.tableName || 'Messages';
-            const groupSubq = dialect === 'postgres'
-                ? `(SELECT id FROM "${convTbl}" WHERE (metadata->>'isGroup')::text = 'true')`
-                : `(SELECT id FROM "${convTbl}" WHERE (json_extract(metadata, '$.isGroup') = 1 OR json_extract(metadata, '$.isGroup') = 'true'))`;
-            orConditions.push(sequelize.where(sequelize.col('Conversation.id'), Op.in, sequelize.literal(groupSubq)));
-            // مکالماتی که کاربر در آن‌ها پیام فرستاده (مشارکت قبلی)
-            const escapedUserId = sequelize.escape(req.userId);
-            orConditions.push(sequelize.where(sequelize.col('Conversation.id'), Op.in, sequelize.literal(`(SELECT "conversationId" FROM "${msgTbl}" WHERE "userId" = ${escapedUserId})`)));
-            const accessibleCustomerIds = await getAccessibleCustomerIds(req);
-            if (accessibleCustomerIds && accessibleCustomerIds.length > 0) {
-                orConditions.push({ customerId: { [Op.in]: accessibleCustomerIds } });
-            }
             where[Op.or] = orConditions;
         }
 
@@ -242,8 +221,7 @@ router.get('/:id', async (req, res) => {
             ]
         });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        const accessibleCustomerIds = await getAccessibleCustomerIds(req);
-        if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         if (conversation.status === 'archived' && !(req.canViewArchivedConversations && req.canViewArchivedConversations())) {
             return res.status(403).json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
         }
@@ -261,8 +239,7 @@ router.get('/:id/messages', async (req, res) => {
             include: [{ model: Customer, as: 'customer', attributes: ['id', 'phone'], required: false }]
         });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        const accessibleCustomerIds = await getAccessibleCustomerIds(req);
-        if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         if (conversation.status === 'archived' && !(req.canViewArchivedConversations && req.canViewArchivedConversations())) {
             return res.status(403).json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
         }
@@ -310,8 +287,7 @@ router.get('/:id/stats', async (req, res) => {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const conversation = await Conversation.findByPk(req.params.id);
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        const accessibleCustomerIds = await getAccessibleCustomerIds(req);
-        if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         if (conversation.status === 'archived' && !(req.canViewArchivedConversations && req.canViewArchivedConversations())) {
             return res.status(403).json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
         }
@@ -369,8 +345,7 @@ router.patch('/:id', async (req, res) => {
             ]
         });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        const accessibleCustomerIds = await getAccessibleCustomerIds(req);
-        if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
 
         const { assignedTo, departmentId, branchId, status, priority, subject, markRead, rating, feedback } = req.body;
 
@@ -482,8 +457,7 @@ router.post('/:id/read', async (req, res) => {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const conversation = await Conversation.findByPk(req.params.id);
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        const accessibleCustomerIds = await getAccessibleCustomerIds(req);
-        if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         await conversation.update({ unreadCount: 0 });
         res.json({ ok: true });
     } catch (err) {
@@ -497,8 +471,7 @@ router.post('/:id/send', async (req, res) => {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const conversation = await Conversation.findByPk(req.params.id, { include: [{ model: Customer, as: 'customer' }, { model: Department, as: 'department', required: false }] });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        const accessibleCustomerIds = await getAccessibleCustomerIds(req);
-        if (!(await canAccessConversation(req, conversation, accessibleCustomerIds))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         if (conversation.status === 'archived') return res.status(400).json({ error: 'امکان ارسال پیام به مکالمه آرشیو شده وجود ندارد. ابتدا وضعیت را تغییر دهید.' });
         const content = (req.body.content || '').trim();
         const media = req.body.media || null;
