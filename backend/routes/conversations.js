@@ -427,7 +427,10 @@ router.patch('/:id', async (req, res) => {
             });
         }
         if (departmentId !== undefined && updateData.departmentId !== undefined) {
-            if (updateData.departmentId) {
+            // فقط هنگام تغییر واقعی دپارتمان پیام خودکار ارسال شود (نه هر بار ذخیره فرم)
+            const prevDeptId = conversation.departmentId ? String(conversation.departmentId) : null;
+            const newDeptId = updateData.departmentId ? String(updateData.departmentId) : null;
+            if (updateData.departmentId && prevDeptId !== newDeptId) {
                 const dept = await Department.findByPk(updateData.departmentId);
                 const convForDept = await Conversation.findByPk(req.params.id, { include: [{ model: Department, as: 'department' }] });
                 if (convForDept && dept) await sendDeptAssignedMessage(convForDept, dept);
