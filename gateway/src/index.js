@@ -729,17 +729,29 @@ async function sendWhatsAppMessage(data) {
 
   const chatId = to.includes('@c.us') || to.includes('@g.us') ? to : `${to}@c.us`;
 
+  const sendOpts = replyTo ? { quotedMessageId: replyTo } : {};
+
+  if (media?.data) {
+    const mime = media.mimetype || 'application/octet-stream';
+    const mediaObj = new MessageMedia(mime, media.data, media.filename || null);
+    sendOpts.caption = message || '';
+    if (media.sendAsVoice || /^audio\/(ogg|webm|opus)/i.test(mime)) {
+      sendOpts.sendAudioAsVoice = true;
+    }
+    return client.sendMessage(chatId, mediaObj, sendOpts);
+  }
+
   if (media?.url) {
     if (!isSafeMediaUrl(media.url)) throw new Error('Invalid or unsafe media URL');
     const mediaObj = await MessageMedia.fromUrl(media.url);
-    const sendOpts = { caption: message || '', quotedMessageId: replyTo };
+    sendOpts.caption = message || '';
     if (media.sendAsVoice || (media.mimetype && /^audio\/(ogg|webm|opus)/i.test(media.mimetype))) {
       sendOpts.sendAudioAsVoice = true;
     }
     return client.sendMessage(chatId, mediaObj, sendOpts);
   }
 
-  return client.sendMessage(chatId, message || '', { quotedMessageId: replyTo });
+  return client.sendMessage(chatId, message || '', sendOpts);
 }
 
 // ==================== Startup ====================

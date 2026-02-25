@@ -699,12 +699,13 @@ async function processIncomingMessage(messageData) {
         }
         
         if (mongoose.connection.readyState === 1 && mongoose.models.MessageLog) {
+            const ts = timestamp != null ? (timestamp < 1e12 ? timestamp * 1000 : timestamp) : Date.now();
             await mongoose.model('MessageLog').create({
                 conversationId: conversation.id,
                 customerId: customer.id,
                 messageId: newMessage.id,
                 content: body,
-                timestamp: new Date(timestamp * 1000),
+                timestamp: new Date(ts),
                 metadata: messageData
             });
         }
@@ -777,7 +778,7 @@ async function checkAutoResponse(conversation, message) {
         const now = new Date();
 
         for (const rule of responses) {
-            const keywords = rule.keywords.split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
+            const keywords = (rule.keywords || '').split(',').map(k => k.trim().toLowerCase()).filter(Boolean);
             if (keywords.length && keywords.some(keyword => messageText.includes(keyword))) {
                 if (!matchesAutoResponseConditions(rule, conversation, now)) continue;
                 await sendAutoReply(conversation, rule.response);
@@ -794,7 +795,10 @@ async function checkAutoResponse(conversation, message) {
 async function sendAutoReply(conversation, responseText) {
     try {
         const customer = await Customer.findByPk(conversation.customerId);
-        
+        if (!customer) {
+            logger.warn('sendAutoReply: customer not found', { conversationId: conversation.id });
+            return;
+        }
         const toPhone = getSendTarget(customer.phone) || customer.phone;
         if (rabbitChannel) {
             rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
@@ -939,6 +943,9 @@ io.on('connection', (socket) => {
             
             if (!conversation) {
                 return socket.emit('error', { message: 'Conversation not found' });
+            }
+            if (!conversation.customer) {
+                return socket.emit('error', { message: 'Customer not found for this conversation' });
             }
             
             // معرفی کارمند قبل از اولین پاسخ او
