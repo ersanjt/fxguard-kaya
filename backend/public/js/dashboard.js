@@ -918,7 +918,7 @@
             var hidden = HIDDEN_SECTIONS || [];
             document.querySelectorAll('.mobile-tab-bar .mobile-tab-item[data-section]').forEach(function(item) {
                 var sec = item.getAttribute('data-section');
-                var visible = (sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] !== false && hidden.indexOf(sec) < 0);
+                var visible = (sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] === true && hidden.indexOf(sec) < 0);
                 item.style.display = visible ? '' : 'none';
             });
         }
@@ -3233,7 +3233,7 @@
             var cardsTitleEl = document.getElementById('dashboardCardsTitle');
             if (!container) return;
             var perms = (currentUser && currentUser.permissions) || {};
-            var can = function(section) { return section === 'profile' || perms[section] !== false; };
+            var can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
             if (container) container.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (summaryEl) summaryEl.innerHTML = '';
             if (quickEl) quickEl.innerHTML = '';
@@ -4805,10 +4805,10 @@
         }
         function applyNavByRole() {
             var perms = (currentUser && currentUser.permissions) || {};
-            var can = function(section) { return section === 'profile' || perms[section] !== false; };
+            var can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
             document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
                 var section = link.getAttribute('data-section');
-                link.style.display = perms[section] !== false ? '' : 'none';
+                link.style.display = can(section) ? '' : 'none';
             });
             document.querySelectorAll('.header-quick-btn[data-perm]').forEach(function(btn) {
                 var perm = btn.getAttribute('data-perm');
@@ -4828,6 +4828,19 @@
             document.querySelectorAll('.notify-section[data-perm]').forEach(function(el) {
                 var perm = el.getAttribute('data-perm');
                 el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
+            });
+            document.querySelectorAll('[data-perm]').forEach(function(el) {
+                if (el.closest('.nav-link') || el.closest('.header-quick-btn') || el.closest('.user-dropdown-menu') || el.closest('.notify-section') || el.closest('.header-status-wrap')) return;
+                var perm = el.getAttribute('data-perm');
+                el.style.display = can(perm) ? '' : 'none';
+            });
+            document.querySelectorAll('.nav-section').forEach(function(section) {
+                var body = section.querySelector('.nav-section-body');
+                if (!body) return;
+                var links = body.querySelectorAll('.nav-link[data-section]');
+                var hasVisible = false;
+                links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
+                section.style.display = hasVisible ? '' : 'none';
             });
             var activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
@@ -5357,7 +5370,7 @@
             var perms = (currentUser && currentUser.permissions) || {};
             var pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
             var section = pageToSection[page];
-            if (section && page !== 'profile' && perms[section] === false) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
+            if (section && page !== 'profile' && page !== 'dashboard' && perms[section] !== true) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             closeSidebarMobile();
