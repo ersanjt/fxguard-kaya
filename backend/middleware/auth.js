@@ -9,7 +9,7 @@ async function authMiddleware(req, res, next) {
     }
     try {
         const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findByPk(decoded.id, {
             include: [
                 { association: 'branch', required: false },

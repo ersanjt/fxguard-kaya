@@ -415,8 +415,9 @@ function attachClientEvents(c) {
     io.emit('message_status', { messageId: msg?.id?.id, status: statusStr });
     const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
     const secret = process.env.GATEWAY_API_SECRET || '';
+    const webhookSecret = process.env.WEBHOOK_SECRET || '';
     axios.post(backendUrl + '/api/webhook/message-status', { messageId: msg?.id?.id, status: statusStr }, {
-      headers: secret ? { 'X-Gateway-Secret': secret } : {},
+      headers: { ...(secret ? { 'X-Gateway-Secret': secret } : {}), ...(webhookSecret ? { 'x-webhook-secret': webhookSecret } : {}) },
       timeout: 5000,
       validateStatus: () => true,
     }).catch(() => {});
@@ -432,6 +433,7 @@ async function ensureDir(dir) {
 
 async function sendToBackendWithRetry(messageData) {
   const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
+  const webhookSecret = process.env.WEBHOOK_SECRET || '';
   const maxRetries = CONFIG.backendWebhookRetries;
   const baseDelay = CONFIG.backendWebhookRetryDelayMs;
   for (let i = 0; i < maxRetries; i++) {
@@ -439,6 +441,7 @@ async function sendToBackendWithRetry(messageData) {
       const res = await axios.post(`${backendUrl}/api/webhook/incoming-message`, messageData, {
         timeout: 15000,
         validateStatus: () => true,
+        headers: webhookSecret ? { 'x-webhook-secret': webhookSecret } : {},
       });
       if (res.status >= 200 && res.status < 300) return;
     } catch (err) {

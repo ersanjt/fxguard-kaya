@@ -1,7 +1,15 @@
 require("dotenv").config();
 
-const MAIN_ADMIN_EMAIL = process.env.MAIN_ADMIN_EMAIL || 'Admin@kaya.fxguard.io';
-const MAIN_ADMIN_PASSWORD = process.env.MAIN_ADMIN_PASSWORD || '2468097531KayaFx';
+const MAIN_ADMIN_EMAIL = process.env.MAIN_ADMIN_EMAIL;
+const MAIN_ADMIN_PASSWORD = process.env.MAIN_ADMIN_PASSWORD;
+if (!MAIN_ADMIN_EMAIL || !MAIN_ADMIN_PASSWORD) {
+    console.error('❌ MAIN_ADMIN_EMAIL و MAIN_ADMIN_PASSWORD باید در فایل .env تنظیم شوند');
+    process.exit(1);
+}
+if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+    console.error('❌ JWT_SECRET باید در .env تنظیم شود و حداقل ۳۲ کاراکتر باشد');
+    process.exit(1);
+}
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -48,7 +56,7 @@ const io = socketIo(server, {
         origin: (origin, cb) => {
             if (!origin) return cb(null, true);
             if (allowedOrigins.includes(origin)) return cb(null, true);
-            cb(null, allowedOrigins[0] || true);
+            cb(new Error(`CORS: origin not allowed: ${origin}`));
         },
         credentials: true,
         methods: ['GET', 'POST']
@@ -65,7 +73,7 @@ app.use(cors({
     origin: (origin, cb) => {
         if (!origin) return cb(null, true);
         if (allowedOrigins.includes(origin)) return cb(null, true);
-        cb(null, allowedOrigins[0] || true);
+        cb(new Error(`CORS: origin not allowed: ${origin}`));
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -75,17 +83,27 @@ app.use(compression());
 app.use(express.json({ limit: "25mb" }));
 app.use(express.urlencoded({ extended: true, limit: "25mb" }));
 
-// Rate Limiting
+// Rate Limiting — عمومی
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 دقیقه
-    max: 1500, // حداکثر ۱۵۰۰ درخواست در ۱۵ دقیقه (~۱۰۰/دقیقه)
+    windowMs: 15 * 60 * 1000,
+    max: 1500,
     message: { error: 'تعداد درخواست‌ها زیاد است. چند دقیقه صبر کنید.' },
     standardHeaders: true,
     legacyHeaders: false
 });
+// Rate Limiting — لاگین: حداکثر ۱۰ تلاش در ۱۵ دقیقه به ازای هر IP
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { error: 'تعداد تلاش‌های ورود زیاد است. ۱۵ دقیقه صبر کنید.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+    skipSuccessfulRequests: true,
+});
 app.use('/api/', (req, res, next) => {
   const p = req.path || '';
-  if (p.endsWith('/auth/login') || p.endsWith('/ping')) return next();
+  if (p.endsWith('/ping')) return next();
+  if (p.endsWith('/auth/login')) return loginLimiter(req, res, next);
   return limiter(req, res, next);
 });
 
@@ -365,10 +383,11 @@ async function connectDatabases() {
 
 // ایجاد کاربران ادمین اصلی (بالاترین سطح دسترسی) اگر وجود نداشته باشند؛ اگر وجود داشتند همیشه نقش owner و فعال هستند
 const MAIN_ADMIN_EMAILS_LIST = MAIN_ADMIN_EMAIL.split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
-const ADMIN_CONFIGS = [
-    { email: 'admin@kaya.fxguard.io', name: 'Admin', username: 'Admin', password: MAIN_ADMIN_PASSWORD },
-    { email: 'ersanjahedtabrizi@gmail.com', name: 'Ersan', username: 'Ersan', password: MAIN_ADMIN_PASSWORD },
-];
+const ADMIN_CONFIGS = MAIN_ADMIN_EMAIL.split(',').map(e => {
+    const email = e.trim().toLowerCase();
+    const name = email.split('@')[0];
+    return { email, name, username: name, password: MAIN_ADMIN_PASSWORD };
+});
 async function ensureAdminUser() {
     try {
         let dept = await Department.findOne({ where: { isDefault: true } });
@@ -1254,9 +1273,24 @@ apiRouter.use('/internal', authMiddleware, requireSection('internal_chat'), inte
 apiRouter.use('/panel-settings', require('./routes/panelSettings'));
 apiRouter.use('/company-emails', authMiddleware, require('./routes/companyEmails'));
 
+// میان‌افزار احراز هویت webhook — فقط Gateway مجاز است
+function webhookAuth(req, res, next) {
+    const secret = process.env.WEBHOOK_SECRET;
+    if (!secret) {
+        logger.warn('⚠️ WEBHOOK_SECRET تنظیم نشده — webhook بدون احراز هویت در دسترس است');
+        return next();
+    }
+    const provided = req.headers['x-webhook-secret'] || req.query.secret;
+    if (!provided || provided !== secret) {
+        logger.warn('Webhook auth failed — invalid secret', { ip: req.ip });
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+    next();
+}
+
 // وب‌هوک پیام ورودی واتساپ. بدنه: from/contact, body, timestamp, hasMedia, type؟, media؟
 // رسانه: اگر media.url با http/https باشد → دانلود و ذخیره در uploads و mediaData.url نسبی؛ اگر media.data (base64) باشد → ذخیره در uploads و mediaData.url. نوع پیام از mimetype/filename استنتاج می‌شود.
-apiRouter.post('/webhook/incoming-message', (req, res) => {
+apiRouter.post('/webhook/incoming-message', webhookAuth, (req, res) => {
     processIncomingMessage(req.body).then(() => res.json({ ok: true })).catch(err => {
         logger.error('Webhook process error:', err);
         res.status(500).json({ error: err.message });
@@ -1264,7 +1298,7 @@ apiRouter.post('/webhook/incoming-message', (req, res) => {
 });
 
 // وب‌هوک وضعیت پیام (ارسال/تحویل/خوانده) — از Gateway
-apiRouter.post('/webhook/message-status', async (req, res) => {
+apiRouter.post('/webhook/message-status', webhookAuth, async (req, res) => {
     try {
         const { messageId, status } = req.body || {};
         if (!messageId) return res.json({ ok: true });
@@ -1323,7 +1357,11 @@ app.get('/contact', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'contact.html'));
 });
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', (req, res, next) => {
+    res.setHeader('Content-Disposition', 'attachment');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    next();
+}, express.static(path.join(__dirname, 'uploads')));
 
 // Error handling
 app.use((err, req, res, next) => {

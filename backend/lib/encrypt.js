@@ -1,17 +1,17 @@
 /**
- * رمزنگاری ساده برای ذخیرهٔ رمز عبور ایمیل شرکتی (با کلید JWT_SECRET)
+ * رمزنگاری AES-256-GCM برای ذخیرهٔ رمز عبور ایمیل شرکتی
+ * از ENCRYPT_SECRET جداگانه استفاده می‌کند (نه JWT_SECRET)
  */
 const crypto = require('crypto');
 
 const ALGO = 'aes-256-gcm';
 const IV_LEN = 16;
-const TAG_LEN = 16;
-const SALT_LEN = 64;
 const KEY_LEN = 32;
 
 function getKey() {
-    const secret = process.env.JWT_SECRET || 'default-secret';
-    return crypto.scryptSync(secret, 'company-email-salt', KEY_LEN);
+    const secret = process.env.ENCRYPT_SECRET || process.env.JWT_SECRET;
+    if (!secret) throw new Error('ENCRYPT_SECRET یا JWT_SECRET باید در .env تنظیم شود');
+    return crypto.scryptSync(secret, 'company-email-salt-v2', KEY_LEN);
 }
 
 function encrypt(plain) {

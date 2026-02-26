@@ -5,23 +5,18 @@ module.exports = async (socket, next) => {
     try {
         const token = socket.handshake.auth?.token || socket.handshake.headers?.authorization?.replace('Bearer ', '');
         if (!token) {
-            socket.userId = null;
-            socket.departmentId = null;
-            return next();
+            return next(new Error('احراز هویت الزامی است'));
         }
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findByPk(decoded.id || decoded.userId);
-        if (user && user.isActive) {
-            socket.userId = user.id;
-            socket.departmentId = user.departmentId;
-        } else {
-            socket.userId = null;
-            socket.departmentId = null;
+        if (!user || !user.isActive) {
+            return next(new Error('کاربر نامعتبر یا غیرفعال است'));
         }
+        socket.userId = user.id;
+        socket.departmentId = user.departmentId;
+        socket.userRole = user.role;
         next();
     } catch (err) {
-        socket.userId = null;
-        socket.departmentId = null;
-        next();
+        next(new Error('توکن نامعتبر یا منقضی'));
     }
 };

@@ -18,7 +18,7 @@ const TOTP_TEMP_EXPIRY = '5m';
 function issueToken(user) {
     return jwt.sign(
         { id: user.id, email: user.email },
-        process.env.JWT_SECRET || 'default-secret',
+        process.env.JWT_SECRET,
         JWT_OPTIONS
     );
 }
@@ -72,7 +72,7 @@ router.post('/login', async (req, res) => {
         if (user.totpEnabled) {
             const tempToken = jwt.sign(
                 { id: user.id, totpStep: true },
-                process.env.JWT_SECRET || 'default-secret',
+                process.env.JWT_SECRET,
                 { expiresIn: TOTP_TEMP_EXPIRY }
             );
             return sendJson(200, { needTotp: true, tempToken, email: user.email, username: user.username });
@@ -181,7 +181,7 @@ router.post('/totp/verify-login', async (req, res) => {
     try {
         const { tempToken, code } = req.body;
         if (!tempToken || !code) return res.status(400).json({ error: 'کد احراز هویت الزامی است' });
-        const decoded = jwt.verify(tempToken, process.env.JWT_SECRET || 'default-secret');
+        const decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
         if (!decoded.totpStep || !decoded.id) return res.status(401).json({ error: 'لینک ورود منقضی شده. دوباره وارد شوید.' });
         const user = await User.findByPk(decoded.id);
         if (!user || !user.isActive || !user.totpEnabled || !user.totpSecret) {
@@ -252,7 +252,7 @@ router.get('/me', async (req, res) => {
             return res.status(401).json({ error: 'توکن یافت نشد' });
         }
         const token = authHeader.split(' ')[1];
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default-secret');
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findByPk(decoded.id, {
             attributes: { exclude: ['password'] },
             include: [

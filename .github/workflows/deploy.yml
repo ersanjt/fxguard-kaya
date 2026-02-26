@@ -24,15 +24,78 @@ jobs:
 
             cd /var/www/kayaCRM
 
+            # ---- بررسی متغیرهای الزامی در .env قبل از هر کاری ----
+            echo "🔍 بررسی متغیرهای .env ..."
+            ENV_FILE="backend/.env"
+            check_env() {
+              VAR=$1
+              if ! grep -q "^${VAR}=" "$ENV_FILE" 2>/dev/null; then
+                echo "❌ خطا: متغیر ${VAR} در ${ENV_FILE} تنظیم نشده است"
+                exit 1
+              fi
+              VAL=$(grep "^${VAR}=" "$ENV_FILE" | cut -d= -f2-)
+              if [ -z "$VAL" ]; then
+                echo "❌ خطا: متغیر ${VAR} در ${ENV_FILE} خالی است"
+                exit 1
+              fi
+              echo "  ✅ ${VAR} تنظیم شده"
+            }
+            check_env "JWT_SECRET"
+            check_env "MAIN_ADMIN_EMAIL"
+            check_env "MAIN_ADMIN_PASSWORD"
+            check_env "WEBHOOK_SECRET"
+
+            # بررسی طول JWT_SECRET (حداقل ۳۲ کاراکتر)
+            JWT_LEN=$(grep "^JWT_SECRET=" "$ENV_FILE" | cut -d= -f2- | wc -c)
+            if [ "$JWT_LEN" -lt 33 ]; then
+              echo "❌ خطا: JWT_SECRET باید حداقل ۳۲ کاراکتر باشد"
+              exit 1
+            fi
+            echo "  ✅ JWT_SECRET طول کافی دارد"
+
+            # ---- بکاپ دیتابیس ----
+            echo "💾 بکاپ دیتابیس ..."
+            cd backend
+            node scripts/backup-database.js || true
+            cd ..
+
+            # ---- دریافت کد جدید ----
+            echo "📥 دریافت کد جدید از git ..."
             git fetch origin
             git reset --hard origin/master
 
+            # ---- نصب dependencies ----
+            echo "📦 نصب dependencies ..."
             cd backend
-            node scripts/backup-database.js || true
             npm ci --only=production
 
+            # ---- اجرای migration scripts ----
+            echo "🗄️ اجرای migration scripts ..."
             node scripts/add-unanswered-columns.js
             node scripts/add-conversation-indexes.js
 
+            # ---- بررسی syntax فایل‌های اصلی ----
+            echo "🔎 بررسی syntax ..."
+            node --check server.js
+            node --check middleware/auth.js
+            node --check middleware/socketAuth.js
+            node --check lib/encrypt.js
+            node --check routes/upload.js
+            echo "  ✅ syntax بدون خطا"
+
+            # ---- reload با PM2 ----
+            echo "🔄 reload سرویس‌ها ..."
+            cd ..
             pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js --update-env
             pm2 save
+
+            # ---- بررسی سلامت بعد از deploy ----
+            echo "⏳ انتظار برای راه‌اندازی (۱۰ ثانیه) ..."
+            sleep 10
+            if curl -sf http://localhost:3002/api/ping > /dev/null; then
+              echo "✅ Deploy موفق — سرور پاسخ می‌دهد"
+            else
+              echo "❌ هشدار: سرور پس از deploy پاسخ نمی‌دهد — لاگ‌ها را بررسی کنید"
+              pm2 logs crm-backend --lines 30 --nostream || true
+              exit 1
+            fi
