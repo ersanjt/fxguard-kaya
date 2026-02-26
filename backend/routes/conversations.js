@@ -187,8 +187,10 @@ router.get('/', async (req, res) => {
             where[Op.or] = orConditions;
         }
 
+        // escape کاراکترهای خاص LIKE برای جلوگیری از wildcard abuse
+        const escapedSearch = search ? search.replace(/[%_\\]/g, '\\$&') : null;
         const include = [
-            { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'], ...(search ? { where: { [Op.or]: [{ name: { [Op.like]: '%' + search + '%' } }, { phone: { [Op.like]: '%' + search + '%' } }] }, required: true } : {}) },
+            { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'], ...(escapedSearch ? { where: { [Op.or]: [{ name: { [Op.like]: '%' + escapedSearch + '%' } }, { phone: { [Op.like]: '%' + escapedSearch + '%' } }] }, required: true } : {}) },
             { model: User, as: 'assignee', attributes: ['id', 'name'] },
             { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
             { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
@@ -243,11 +245,20 @@ router.get('/:id/messages', async (req, res) => {
         if (conversation.status === 'archived' && !(req.canViewArchivedConversations && req.canViewArchivedConversations())) {
             return res.status(403).json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
         }
+        // pagination: پیش‌فرض آخرین ۱۰۰ پیام، با before برای بارگذاری پیام‌های قدیمی‌تر
+        const pageLimit = Math.min(parseInt(req.query.limit) || 100, 200);
+        const beforeId = req.query.before || null;
+        const msgWhere = { conversationId: req.params.id };
+        if (beforeId) msgWhere.id = { [Op.lt]: beforeId };
+        const total = await Message.count({ where: { conversationId: req.params.id } });
         const messages = await Message.findAll({
-            where: { conversationId: req.params.id },
+            where: msgWhere,
             include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username'], required: false }],
-            order: [['timestamp', 'ASC']]
+            order: [['timestamp', 'DESC']],
+            limit: pageLimit
         });
+        // برگشت به ترتیب صعودی برای نمایش صحیح در UI
+        messages.reverse();
         // برای چت گروهی: اگر پیام‌هایی senderId دارند ولی senderName ندارند، از Gateway لیست اعضا را بگیر و نام را پر کن
         const meta = conversation.metadata || {};
         const isGroup = meta.isGroup || (conversation.customer && String(conversation.customer.phone || '').includes('@g.us'));
@@ -275,7 +286,8 @@ router.get('/:id/messages', async (req, res) => {
                 }
             }
         }
-        res.json({ data: messages });
+        const oldestId = messages.length > 0 ? messages[0].id : null;
+        res.json({ data: messages, total, hasMore: messages.length === pageLimit, oldestId });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

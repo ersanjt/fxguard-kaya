@@ -635,31 +635,34 @@ async function processIncomingMessage(messageData) {
         if (msgType === 'ptt') msgType = 'audio';
         
         // 1. پیدا کردن یا ایجاد مشتری (برای گروه‌ها: یک رکورد با شناسه گروه به‌عنوان «مشتری»)
-        let customer = await Customer.findOne({ 
-            where: { phone } 
-        });
-        
         const groupNameFromChat = isGroup ? (chat?.name || chat?.subject || chat?.formattedTitle || '').toString().trim() : '';
-        if (!customer) {
-            const contactName = isGroup ? (groupNameFromChat || `گروه ${phone}`) : ((contact && (contact.name || contact.pushname)) || `مشتری ${phone}`);
-            const profilePic = isGroup ? null : (contact && contact.profilePicUrl) || null;
-            customer = await Customer.create({
-                phone,
+        const contactName = isGroup ? (groupNameFromChat || `گروه ${phone}`) : ((contact && (contact.name || contact.pushname)) || `مشتری ${phone}`);
+        const profilePic = isGroup ? null : (contact && contact.profilePicUrl) || null;
+
+        let customer;
+        let customerCreated = false;
+        // findOrCreate از race condition جلوگیری می‌کند
+        [customer, customerCreated] = await Customer.findOrCreate({
+            where: { phone },
+            defaults: {
                 name: contactName,
                 profilePic: profilePic,
-                source: isGroup ? 'whatsapp' : 'whatsapp'
-            });
+                source: 'whatsapp'
+            }
+        });
+
+        if (customerCreated) {
             logger.info(isGroup ? `✨ New group conversation: ${groupNameFromChat || phone}` : `✨ New customer created: ${phone}`);
         } else {
             const tsContact = timestamp ? new Date((timestamp < 1e12 ? timestamp * 1000 : timestamp)) : new Date();
-            const contactName = isGroup ? groupNameFromChat : (contact && (contact.name || contact.pushname)) || null;
+            const updatedContactName = isGroup ? groupNameFromChat : (contact && (contact.name || contact.pushname)) || null;
             const updates = { lastContactAt: tsContact };
-            if (contactName && String(contactName).trim() && String(customer.name || '').trim() !== String(contactName).trim()) updates.name = String(contactName).trim();
+            if (updatedContactName && String(updatedContactName).trim() && String(customer.name || '').trim() !== String(updatedContactName).trim()) updates.name = String(updatedContactName).trim();
             if (!isGroup && contact && contact.profilePicUrl && contact.profilePicUrl !== customer.profilePic) updates.profilePic = contact.profilePicUrl;
             await customer.update(updates);
         }
         
-        // 2. پیدا کردن یا ایجاد مکالمه
+        // 2. پیدا کردن یا ایجاد مکالمه — با transaction از ایجاد مکالمات تکراری جلوگیری می‌شود
         const { Op } = require('sequelize');
         let conversation = await Conversation.findOne({
             where: { 
@@ -669,13 +672,33 @@ async function processIncomingMessage(messageData) {
         });
         
         if (!conversation) {
-            conversation = await Conversation.create({
-                customerId: customer.id,
-                status: 'open',
-                priority: 'normal',
-                source: 'whatsapp',
-                metadata: isGroup ? { isGroup: true, groupName: groupNameFromChat || null } : {}
-            });
+            // transaction برای جلوگیری از race condition در درخواست‌های همزمان
+            const t = await sequelize.transaction();
+            try {
+                // بررسی مجدد داخل transaction
+                conversation = await Conversation.findOne({
+                    where: { customerId: customer.id, status: { [Op.ne]: 'closed' } },
+                    transaction: t,
+                    lock: t.LOCK.UPDATE
+                });
+                if (!conversation) {
+                    conversation = await Conversation.create({
+                        customerId: customer.id,
+                        status: 'open',
+                        priority: 'normal',
+                        source: 'whatsapp',
+                        metadata: isGroup ? { isGroup: true, groupName: groupNameFromChat || null } : {}
+                    }, { transaction: t });
+                }
+                await t.commit();
+            } catch (txErr) {
+                await t.rollback();
+                // اگر unique constraint violation بود، مکالمه موجود را بگیر
+                conversation = await Conversation.findOne({
+                    where: { customerId: customer.id, status: { [Op.ne]: 'closed' } }
+                });
+                if (!conversation) throw txErr;
+            }
         } else if (isGroup && groupNameFromChat) {
             const meta = conversation.metadata || {};
             if (meta.groupName !== groupNameFromChat) {
@@ -867,12 +890,40 @@ function matchesAutoResponseConditions(rule, conversation, now) {
     return true;
 }
 
+const AUTO_RESPONSE_CACHE_KEY = 'cache:autoresponse:active';
+const AUTO_RESPONSE_CACHE_TTL = 60; // ثانیه
+
+async function getActiveAutoResponses() {
+    try {
+        if (redisClient && typeof redisClient.get === 'function') {
+            const cached = await redisClient.get(AUTO_RESPONSE_CACHE_KEY).catch(() => null);
+            if (cached) return JSON.parse(cached);
+        }
+    } catch (_) {}
+    const responses = await AutoResponse.findAll({
+        where: { isActive: true },
+        order: [['priority', 'DESC'], ['createdAt', 'ASC']]
+    });
+    try {
+        if (redisClient && typeof redisClient.setEx === 'function') {
+            await redisClient.setEx(AUTO_RESPONSE_CACHE_KEY, AUTO_RESPONSE_CACHE_TTL, JSON.stringify(responses)).catch(() => {});
+        }
+    } catch (_) {}
+    return responses;
+}
+
+// هنگام تغییر قوانین auto-response، cache را پاک کن
+async function invalidateAutoResponseCache() {
+    try {
+        if (redisClient && typeof redisClient.del === 'function') {
+            await redisClient.del(AUTO_RESPONSE_CACHE_KEY).catch(() => {});
+        }
+    } catch (_) {}
+}
+
 async function checkAutoResponse(conversation, message) {
     try {
-        const responses = await AutoResponse.findAll({
-            where: { isActive: true },
-            order: [['priority', 'DESC'], ['createdAt', 'ASC']]
-        });
+        const responses = await getActiveAutoResponses();
 
         const messageText = (message.content || '').toLowerCase();
         const now = new Date();
@@ -900,24 +951,31 @@ async function sendAutoReply(conversation, responseText) {
             return;
         }
         const toPhone = getSendTarget(customer.phone) || customer.phone;
-        if (rabbitChannel) {
-            rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
-                to: toPhone, message: responseText, conversationId: conversation.id
-            })), { persistent: true });
-        } else {
-            gatewayPost('/api/send-message', { to: toPhone, message: responseText }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
-        }
-        
-        // ذخیره پیام در دیتابیس
-        await Message.create({
+        // ذخیره پیام در دیتابیس — ابتدا با status pending
+        const autoMsg = await Message.create({
             conversationId: conversation.id,
             customerId: customer.id,
             direction: 'outgoing',
             content: responseText,
             type: 'text',
             isAutoReply: true,
+            status: 'pending',
             timestamp: new Date()
         });
+
+        if (rabbitChannel) {
+            rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
+                to: toPhone, message: responseText, conversationId: conversation.id, messageId: autoMsg.id
+            })), { persistent: true });
+        } else {
+            try {
+                await gatewayPost('/api/send-message', { to: toPhone, message: responseText }, { timeout: 10000 });
+                await autoMsg.update({ status: 'sent' });
+            } catch (err) {
+                logger.error('Gateway send error:', err.message);
+                await autoMsg.update({ status: 'failed' });
+            }
+        }
         var preview = (responseText || '').slice(0, 120);
         if ((responseText || '').length > 120) preview += '…';
         const now = new Date();
@@ -979,7 +1037,7 @@ async function autoAssignment(conversation, messageContent, customerId) {
                 where: {
                     departmentId: assignedDepartment.id,
                     isActive: true,
-                    role: { [Op.ne]: 'admin' }
+                    role: { [Op.in]: ['agent', 'supervisor'] }
                 },
                 attributes: { include: ['status', 'settings'] },
                 include: [{

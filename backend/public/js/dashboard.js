@@ -3603,8 +3603,11 @@
         }
 
         var convQuickTab = 'all';
+        var convCurrentPage = 1;
+        var convPageSize = 50;
         function setConvQuickTab(tab) {
             convQuickTab = tab || 'all';
+            convCurrentPage = 1;
             document.querySelectorAll('.conv-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === convQuickTab); });
             applyConvFilters();
         }
@@ -3657,11 +3660,11 @@
                 if (btn) { btn.disabled = false; if (textSpan) textSpan.textContent = syncText; else btn.textContent = '👥 ' + syncText; }
             }
         }
-        async function loadConversations() {
+        async function loadConversations(appendMode) {
             var list = document.getElementById('convList');
             var statsEl = document.getElementById('convStats');
-            setLoading('convList', 4);
-            var q = '?limit=50';
+            if (!appendMode) setLoading('convList', 4);
+            var q = '?limit=' + convPageSize + '&page=' + convCurrentPage;
             var statusEl = document.getElementById('convFilterStatus');
             var priorityEl = document.getElementById('convFilterPriority');
             var branchEl = document.getElementById('convFilterBranch');
@@ -3684,27 +3687,29 @@
             if (res.needLogin) return;
             if (!res.ok) { var ce = document.getElementById('convListCount'); if (ce) ce.textContent = ''; list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + (res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
             var data = res.data;
+            var totalCount = data.total != null ? data.total : (data.data || []).length;
+            // آمار از total واقعی سرور گرفته می‌شه نه فقط صفحه جاری
             if (statsEl && data.total != null) {
-                var open = (data.data || []).filter(function(c){ return c.status === 'open'; }).length;
-                var unread = (data.data || []).reduce(function(s,c){ return s + (c.unreadCount || 0); }, 0);
-                statsEl.innerHTML = '<span class="conv-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</span><span class="conv-stat"><strong>' + open + '</strong> ' + (LANG === 'fa' ? 'باز' : 'open') + '</span><span class="conv-stat"><strong>' + unread + '</strong> ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread') + '</span>';
+                var openCount = data.openCount != null ? data.openCount : (data.data || []).filter(function(c){ return c.status === 'open'; }).length;
+                var unreadCount = data.unreadCount != null ? data.unreadCount : (data.data || []).reduce(function(s,c){ return s + (c.unreadCount || 0); }, 0);
+                statsEl.innerHTML = '<span class="conv-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</span><span class="conv-stat"><strong>' + openCount + '</strong> ' + (LANG === 'fa' ? 'باز' : 'open') + '</span><span class="conv-stat"><strong>' + unreadCount + '</strong> ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread') + '</span>';
                 statsEl.style.display = 'flex';
             }
             var countEl = document.getElementById('convListCount');
-            var totalCount = data.total != null ? data.total : (data.data || []).length;
             if (countEl) countEl.textContent = totalCount > 0 ? '(' + totalCount + ')' : '';
             if (!data.data || data.data.length === 0) {
-                list.innerHTML = '<div class="empty conv-empty"><span class="empty-icon">💬</span><p>' + t('empty_conv') + '</p><button type="button" class="btn-primary" onclick="openNewConvModal()">' + (t('conv_new') || (LANG === 'fa' ? 'مکالمه جدید' : 'New conversation')) + '</button></div>';
+                if (!appendMode) list.innerHTML = '<div class="empty conv-empty"><span class="empty-icon">💬</span><p>' + t('empty_conv') + '</p><button type="button" class="btn-primary" onclick="openNewConvModal()">' + (t('conv_new') || (LANG === 'fa' ? 'مکالمه جدید' : 'New conversation')) + '</button></div>';
+                // دکمه load more رو مخفی کن
+                var lmBtn = document.getElementById('convLoadMoreBtn');
+                if (lmBtn) lmBtn.style.display = 'none';
                 return;
             }
-            list.innerHTML = data.data.map(function(c) {
+            var newItems = data.data.map(function(c) {
                 var cust = c.customer || {};
                 var isGroup = !!(c.metadata && c.metadata.isGroup);
                 var name = (isGroup && (c.metadata && (c.metadata.groupName || c.metadata.name))) || cust.name || cust.phone || (isGroup ? (LANG === 'fa' ? 'گروه' : 'Group') : t('customer'));
                 var phone = cust.phone || '';
                 var metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
-                var safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                var safePhone = (phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 var initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
                 var profilePic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
                 if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
@@ -3724,8 +3729,28 @@
                     unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + waitStr + '</span>';
                 }
                 var activeClass = (c.id === currentConvId) ? ' active' : '';
-                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" onclick="openChat(\'' + c.id + '\', \'' + safeName + '\', \'' + safePhone + '\', this.getAttribute(\'data-profile-pic\')||\'\', ' + (isGroup ? 'true' : 'false') + ')"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+                // نام و شماره در data-* ذخیره می‌شن — بدون escape دستی در onclick (امن در برابر XSS)
+                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" onclick="var el=this;openChat(el.getAttribute(\'data-id\'),el.getAttribute(\'data-name\')||\'\',el.getAttribute(\'data-phone\')||\'\',el.getAttribute(\'data-profile-pic\')||\'\',el.getAttribute(\'data-is-group\')===\'1\')"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
+            if (appendMode) {
+                // آیتم‌های جدید به انتهای لیست اضافه می‌شن
+                var lmBtn = document.getElementById('convLoadMoreBtn');
+                if (lmBtn) lmBtn.insertAdjacentHTML('beforebegin', newItems);
+                else list.insertAdjacentHTML('beforeend', newItems);
+            } else {
+                list.innerHTML = newItems;
+            }
+            // نمایش/مخفی کردن دکمه load more
+            var loadedSoFar = convCurrentPage * convPageSize;
+            var lmBtn = document.getElementById('convLoadMoreBtn');
+            if (!lmBtn) {
+                lmBtn = document.createElement('div');
+                lmBtn.id = 'convLoadMoreBtn';
+                lmBtn.style.cssText = 'text-align:center;padding:10px;';
+                lmBtn.innerHTML = '<button type="button" class="btn-secondary" onclick="convCurrentPage++;loadConversations(true)">' + (LANG === 'fa' ? 'بارگذاری بیشتر' : 'Load more') + '</button>';
+                list.appendChild(lmBtn);
+            }
+            lmBtn.style.display = loadedSoFar < totalCount ? '' : 'none';
         }
 
         var currentConvDetail = null;
@@ -3886,7 +3911,7 @@
                 }
             }
         }
-        function applyConvFilters() { loadConversations(); }
+        function applyConvFilters() { convCurrentPage = 1; loadConversations(); }
         function openNewConvModal() {
             document.getElementById('newConvModal').style.display = 'flex';
             document.getElementById('newConvCustomerSearch').value = '';
@@ -3973,20 +3998,41 @@
             if (convId) { openChat(convId, name, '', '', isGrp); showPage('conversations'); }
         }
 
-        async function loadMessages(id) {
+        var _loadMessagesController = null;
+        var _currentMsgConvId = null;
+        var _currentMsgOldestId = null;
+        async function loadMessages(id, loadOlder) {
+            // لغو درخواست قبلی در صورت تغییر مکالمه
+            if (_loadMessagesController) { _loadMessagesController.abort(); _loadMessagesController = null; }
+            if (!loadOlder) {
+                _currentMsgConvId = id;
+                _currentMsgOldestId = null;
+            }
+            // اگر مکالمه عوض شده باشه، نتیجه قدیمی رو نشون نده
+            var thisConvId = id;
+            _loadMessagesController = typeof AbortController !== 'undefined' ? new AbortController() : null;
             var el = document.getElementById('chatMessages');
-            el.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
-            var res = await apiFetch('/api/conversations/' + id + '/messages');
+            if (!loadOlder) {
+                el.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
+            }
+            var url = '/api/conversations/' + id + '/messages';
+            if (loadOlder && _currentMsgOldestId) url += '?before=' + encodeURIComponent(_currentMsgOldestId);
+            var fetchOpts = _loadMessagesController ? { signal: _loadMessagesController.signal } : {};
+            var res = await apiFetch(url, fetchOpts);
+            // اگر مکالمه عوض شده بود نتیجه رو نادیده بگیر
+            if (_currentMsgConvId !== thisConvId) return;
             if (res.needLogin) return;
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (!data.data || data.data.length === 0) { el.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCAC</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
+            if (!data.data || data.data.length === 0) { if (!loadOlder) el.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCAC</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
+            // ذخیره قدیمی‌ترین id برای load older
+            if (data.oldestId) _currentMsgOldestId = data.oldestId;
             var list = data.data.filter(function(m) {
                 if (m.direction === 'outgoing') return true;
                 var hasContent = (m.content && String(m.content).trim()) || (m.hasMedia && m.mediaData && (m.mediaData.url || m.mediaData.filename));
                 return !!hasContent;
             });
-            el.innerHTML = list.map(function(m) {
+            var newMsgs = list.map(function(m) {
                 var isOut = m.direction === 'outgoing';
                 var time = m.timestamp ? fmtTZ(m.timestamp, 'time') : '';
                 var senderLabel = '';
@@ -4061,7 +4107,30 @@
                 var statusHtml = (isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + (m.status === 'read' ? '✓✓' : m.status === 'delivered' || m.status === 'sent' ? '✓' : m.status === 'failed' ? '!' : '') + '</span>' : '';
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');
-            scrollChatToEnd(el);
+            if (loadOlder) {
+                // اضافه کردن پیام‌های قدیمی‌تر به ابتدای لیست با حفظ scroll position
+                var prevScrollHeight = el.scrollHeight;
+                var loadOlderBtn = el.querySelector('.load-older-btn');
+                if (loadOlderBtn) loadOlderBtn.insertAdjacentHTML('afterend', newMsgs);
+                else el.insertAdjacentHTML('afterbegin', newMsgs);
+                el.scrollTop = el.scrollHeight - prevScrollHeight;
+            } else {
+                el.innerHTML = newMsgs;
+                scrollChatToEnd(el);
+            }
+            // نمایش/مخفی کردن دکمه بارگذاری پیام‌های قدیمی‌تر
+            var existingBtn = el.querySelector('.load-older-btn');
+            if (data.hasMore) {
+                if (!existingBtn) {
+                    var olderBtn = document.createElement('div');
+                    olderBtn.className = 'load-older-btn';
+                    olderBtn.style.cssText = 'text-align:center;padding:8px;';
+                    olderBtn.innerHTML = '<button type="button" class="btn-secondary" style="font-size:0.8rem;" onclick="loadMessages(\'' + id + '\', true)">' + (LANG === 'fa' ? 'پیام‌های قدیمی‌تر' : 'Load older messages') + '</button>';
+                    el.insertBefore(olderBtn, el.firstChild);
+                }
+            } else if (existingBtn) {
+                existingBtn.remove();
+            }
         }
         function scrollChatToEnd(el) {
             if (!el) return;
