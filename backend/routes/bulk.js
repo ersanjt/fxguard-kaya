@@ -81,8 +81,8 @@ router.post('/send', async (req, res) => {
 
         if (toSend.length === 0) return res.status(400).json({ error: 'هیچ مشتری معتبری برای ارسال یافت نشد' });
 
-        const delayMsNum = typeof delayMs === 'number' && !isNaN(delayMs) ? delayMs : BULK_SEND_DELAY_MS;
-        const delay = Math.max(2000, Math.min(delayMsNum, 60000)); // 2–60 ثانیه
+        const delayMsNum = Number(delayMs);
+        const delay = Math.max(2000, Math.min(Number.isFinite(delayMsNum) ? delayMsNum : BULK_SEND_DELAY_MS, 60000)); // 2–60 ثانیه
         const jobId = `bulk_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
         // ثبت job در حافظه

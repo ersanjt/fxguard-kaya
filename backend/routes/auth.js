@@ -67,6 +67,14 @@ router.post('/login', async (req, res) => {
             });
         }
         if (!user || !(await user.comparePassword(password))) {
+            const clientIp = req.ip || req.connection?.remoteAddress || '';
+            await logActivity({
+                userId: user ? user.id : null,
+                action: 'login_failed',
+                entityType: 'auth',
+                summary: `ورود ناموفق برای: ${identifier}`,
+                metadata: { ip: clientIp, identifier }
+            }).catch(() => {});
             return sendJson(401, { error: 'ایمیل/نام کاربری یا رمز عبور اشتباه است' });
         }
         if (user.totpEnabled) {

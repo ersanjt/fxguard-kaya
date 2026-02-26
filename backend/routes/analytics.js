@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { Conversation, Message, Customer, Ticket, Task, Announcement, AnnouncementRead, User } = require('../models');
-const { Op } = require('sequelize');
+const { Conversation, Message, Customer, Ticket, Task, Announcement, AnnouncementRead, User, sequelize } = require('../models');
+const { Op, fn, col, literal } = require('sequelize');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
 
@@ -18,9 +18,7 @@ router.get('/dashboard', async (req, res) => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const convWhere = conversationWhere(req);
-
-        const convIds = await Conversation.findAll({ where: convWhere, attributes: ['id'], raw: true }).then(r => r.map(x => x.id));
-        const convIdList = convIds.length ? convIds : [null];
+        const hasConvFilter = Object.keys(convWhere).length > 0;
 
         const [
             totalConversations,
@@ -34,14 +32,18 @@ router.get('/dashboard', async (req, res) => {
             unreadAnnouncements,
             staffOnline,
             loginsToday,
-            avgResponseTimeMinutes,
-            avgRating,
-            ratedCount
+            responseAndRating,
         ] = await Promise.all([
             Conversation.count({ where: convWhere }),
             Conversation.count({ where: { ...convWhere, status: 'open' } }),
             Conversation.count({ where: { ...convWhere, unreadCount: { [Op.gt]: 0 } } }),
-            convIdList[0] ? Message.count({ where: { conversationId: { [Op.in]: convIdList }, timestamp: { [Op.gte]: today } } }) : 0,
+            // پیام‌های امروز — با subquery به جای لود همه convIds
+            hasConvFilter
+                ? Message.count({
+                    where: { timestamp: { [Op.gte]: today } },
+                    include: [{ model: Conversation, as: 'conversation', where: convWhere, required: true, attributes: [] }]
+                })
+                : Message.count({ where: { timestamp: { [Op.gte]: today } } }),
             (async () => {
                 const ids = await getAccessibleCustomerIds(req);
                 if (ids === null) return Customer.count();
@@ -51,42 +53,50 @@ router.get('/dashboard', async (req, res) => {
             Ticket.count({ where: { status: { [Op.in]: ['open', 'in_progress', 'resolved'] } } }),
             Task.count({ where: { status: { [Op.in]: ['pending', 'in_progress'] } } }),
             Announcement.count(),
-            (async () => {
-                const readIds = await AnnouncementRead.findAll({ where: { userId: req.userId }, attributes: ['announcementId'], raw: true }).then(r => r.map(x => x.announcementId));
-                if (readIds.length === 0) return Announcement.count();
-                return Announcement.count({ where: { id: { [Op.notIn]: readIds } } });
-            })(),
+            // اعلانات خوانده‌نشده — با subquery
+            Announcement.count({
+                where: {
+                    id: {
+                        [Op.notIn]: literal(
+                            `(SELECT "announcementId" FROM "AnnouncementReads" WHERE "userId" = ${req.userId})`
+                        )
+                    }
+                }
+            }).catch(() => Announcement.count()),
             User.count({ where: { isActive: true, status: { [Op.in]: ['online', 'away', 'busy'] } } }),
             User.count({ where: { isActive: true, lastLoginAt: { [Op.gte]: today } } }),
-            (async () => {
-                const convs = await Conversation.findAll({
-                    where: { ...convWhere, lastIncomingMessageAt: { [Op.ne]: null }, lastOutgoingMessageAt: { [Op.ne]: null } },
-                    attributes: ['lastIncomingMessageAt', 'lastOutgoingMessageAt'],
-                    raw: true
-                });
-                const diffs = convs.map(c => {
-                    const inc = new Date(c.lastIncomingMessageAt).getTime();
-                    const out = new Date(c.lastOutgoingMessageAt).getTime();
-                    if (out >= inc) return (out - inc) / 60000;
-                    return null;
-                }).filter(x => x != null && x >= 0 && x < 10080);
-                if (diffs.length === 0) return null;
-                return Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length * 10) / 10;
-            })(),
-            (async () => {
-                const convs = await Conversation.findAll({
-                    where: { ...convWhere, rating: { [Op.ne]: null } },
-                    attributes: ['rating'],
-                    raw: true
-                });
-                if (convs.length === 0) return null;
-                const sum = convs.reduce((a, c) => a + (c.rating || 0), 0);
-                return Math.round(sum / convs.length * 10) / 10;
-            })(),
-            (async () => {
-                return Conversation.count({ where: { ...convWhere, rating: { [Op.ne]: null } } });
-            })()
+            // میانگین زمان پاسخ و امتیاز — یک query به جای دو
+            Conversation.findAll({
+                where: {
+                    ...convWhere,
+                    lastIncomingMessageAt: { [Op.ne]: null },
+                    lastOutgoingMessageAt: { [Op.ne]: null },
+                },
+                attributes: ['lastIncomingMessageAt', 'lastOutgoingMessageAt', 'rating'],
+                raw: true,
+            }),
         ]);
+
+        // محاسبه میانگین زمان پاسخ و امتیاز از یک query
+        let avgResponseTimeMinutes = null;
+        let avgRating = null;
+        let ratedCount = 0;
+        if (Array.isArray(responseAndRating)) {
+            const diffs = responseAndRating.map(c => {
+                const inc = new Date(c.lastIncomingMessageAt).getTime();
+                const out = new Date(c.lastOutgoingMessageAt).getTime();
+                if (out >= inc) return (out - inc) / 60000;
+                return null;
+            }).filter(x => x != null && x >= 0 && x < 10080);
+            if (diffs.length > 0) {
+                avgResponseTimeMinutes = Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length * 10) / 10;
+            }
+            const rated = responseAndRating.filter(c => c.rating != null);
+            ratedCount = rated.length;
+            if (ratedCount > 0) {
+                avgRating = Math.round(rated.reduce((a, c) => a + (c.rating || 0), 0) / ratedCount * 10) / 10;
+            }
+        }
 
         res.json({
             totalConversations,

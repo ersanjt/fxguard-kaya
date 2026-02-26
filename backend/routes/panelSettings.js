@@ -110,6 +110,13 @@ router.put('/', authMiddleware, async (req, res) => {
 // Cooldown برای ارسال تست ایمیل (۶۰ ثانیه) — جلوگیری از اسپم و فیلتر Gmail
 const testEmailCooldown = new Map();
 const TEST_EMAIL_COOLDOWN_MS = 60000;
+// پاک‌سازی خودکار هر ۱۰ دقیقه برای جلوگیری از memory leak
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, ts] of testEmailCooldown.entries()) {
+        if (now - ts > TEST_EMAIL_COOLDOWN_MS * 2) testEmailCooldown.delete(key);
+    }
+}, 10 * 60 * 1000);
 
 // ارسال ایمیل تست — برای اطمینان از صحت تنظیمات SMTP
 // اگر smtpHost و smtpPort در body ارسال شوند، از آن‌ها استفاده می‌شود (تست قبل از ذخیره)
