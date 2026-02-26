@@ -4529,6 +4529,7 @@
         if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
         var currentConvIsGroup = false;
         function openChat(id, name, phone, profilePic, isGroup) {
+            console.log('💬 openChat called:', { id, name, phone, profilePic, isGroup });
             currentConvId = id;
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
