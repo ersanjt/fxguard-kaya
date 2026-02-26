@@ -3328,6 +3328,10 @@
         window._marqueeAnnouncements = [];
         function pauseAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.add('paused'); }
         function resumeAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.remove('paused'); }
+        function closeAnnouncementMarquee() { 
+            var el = document.getElementById('announcementMarquee'); 
+            if (el) { el.style.display = 'none'; localStorage.setItem('ann_marquee_hidden', '1'); }
+        }
         function pauseTickerRatesMarquee() { var el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.add('paused'); }
         function resumeTickerRatesMarquee() { var el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.remove('paused'); }
         function renderMarqueeItem(a) {
@@ -3604,6 +3608,74 @@
 
         var convQuickTab = 'all';
         var convCurrentPage = 1;
+        
+        /* ========== Conversation Event Handlers Setup ========== */
+        function setupConversationEventHandlers() {
+            // Close button handlers
+            var annCloseBtn = document.getElementById('annMarqueeCloseBtn');
+            if (annCloseBtn) {
+                annCloseBtn.removeEventListener('click', closeAnnouncementMarquee);
+                annCloseBtn.addEventListener('click', function() { closeAnnouncementMarquee(); });
+            }
+            
+            var annMoreBtn = document.getElementById('annMarqueeMoreBtn');
+            if (annMoreBtn) {
+                annMoreBtn.removeEventListener('click', handleAnnMoreClick);
+                annMoreBtn.addEventListener('click', handleAnnMoreClick);
+            }
+            
+            var annTrack = document.getElementById('annMarqueeTrack');
+            if (annTrack) {
+                annTrack.removeEventListener('mouseenter', pauseAnnouncementMarquee);
+                annTrack.removeEventListener('mouseleave', resumeAnnouncementMarquee);
+                annTrack.addEventListener('mouseenter', pauseAnnouncementMarquee);
+                annTrack.addEventListener('mouseleave', resumeAnnouncementMarquee);
+            }
+            
+            // Conversation buttons
+            var newConvBtn = document.querySelector('button[onclick*="openNewConvModal"]');
+            if (newConvBtn) {
+                newConvBtn.removeEventListener('click', openNewConvModal);
+                newConvBtn.addEventListener('click', openNewConvModal);
+            }
+            
+            // Quick tab buttons
+            document.querySelectorAll('.conv-quick-tabs .conv-tab').forEach(function(btn) {
+                btn.removeEventListener('click', handleQuickTabClick);
+                btn.addEventListener('click', handleQuickTabClick);
+            });
+            
+            // Search input
+            var searchInput = document.getElementById('convSearch');
+            if (searchInput) {
+                searchInput.removeEventListener('keypress', handleSearchKeyPress);
+                searchInput.addEventListener('keypress', handleSearchKeyPress);
+            }
+            
+            // Filter toggle
+            var filterToggle = document.getElementById('convFilterToggle');
+            if (filterToggle) {
+                filterToggle.removeEventListener('click', toggleConvAdvancedFilters);
+                filterToggle.addEventListener('click', toggleConvAdvancedFilters);
+            }
+        }
+        
+        function handleAnnMoreClick() { 
+            showPage('announcements'); 
+        }
+        
+        function handleQuickTabClick(e) {
+            if (e && e.target && e.target.getAttribute) {
+                var tab = e.target.getAttribute('data-tab');
+                if (tab) setConvQuickTab(tab);
+            }
+        }
+        
+        function handleSearchKeyPress(e) {
+            if (e && e.key === 'Enter') {
+                applyConvFilters();
+            }
+        }
         var convPageSize = 50;
         function setConvQuickTab(tab) {
             convQuickTab = tab || 'all';
@@ -5491,7 +5563,7 @@
             var content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
             if (page === 'dashboard') loadDashboard();
-            if (page === 'conversations') { loadConvFiltersInit(); loadConversations(); }
+            if (page === 'conversations') { loadConvFiltersInit(); loadConversations(); setTimeout(setupConversationEventHandlers, 100); }
             if (page === 'customers') loadCustomers();
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
             if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }

@@ -231,12 +231,15 @@
                     <span data-i18n="ann_marquee_label">اعلان‌ها</span>
                     <span id="annMarqueeCount" class="ann-marquee-count" style="display:none;"></span>
                 </div>
-                <div class="announcement-marquee-track" onmouseenter="pauseAnnouncementMarquee()" onmouseleave="resumeAnnouncementMarquee()">
+                <div class="announcement-marquee-track" id="annMarqueeTrack">
                     <div class="announcement-marquee-inner"></div>
                 </div>
-                <button type="button" class="announcement-marquee-more" onclick="showPage('announcements'); event.stopPropagation();" title="مشاهده همه اعلان‌ها" aria-label="مشاهده همه اعلان‌ها">
+                <button type="button" class="announcement-marquee-more" id="annMarqueeMoreBtn" title="مشاهده همه اعلان‌ها" aria-label="مشاهده همه اعلان‌ها">
                     <span data-i18n="ann_view_all">مشاهده همه</span>
                     <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+                <button type="button" class="announcement-marquee-close" id="annMarqueeCloseBtn" title="بستن اعلان‌ها" aria-label="بستن">
+                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
                 </button>
             </div>
         </div>
