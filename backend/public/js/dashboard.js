@@ -3889,6 +3889,96 @@
                 headerSearch.removeEventListener('keyup', searchHandler);
                 headerSearch.addEventListener('keyup', searchHandler);
             }
+            
+            // Header quick action buttons (Show conversations, add customer, add ticket)
+            var headerQuickBtns = document.querySelectorAll('.header-quick-btn');
+            if (headerQuickBtns) {
+                headerQuickBtns.forEach(function(btn) {
+                    btn.removeEventListener('click', function handleQuickBtnClick(e) { handleHeaderQuickBtnClick(e, btn); });
+                    btn.addEventListener('click', function handleQuickBtnClick(e) { handleHeaderQuickBtnClick(e, btn); });
+                });
+            }
+            
+            // Header notification button (desktop)
+            var notifyBtnDesktop = document.getElementById('headerNotifyBtn');
+            if (notifyBtnDesktop) {
+                var notifyHandler = function(e) { toggleNotifyDropdown(e); };
+                notifyBtnDesktop.removeEventListener('click', notifyHandler);
+                notifyBtnDesktop.addEventListener('click', notifyHandler);
+            }
+            
+            // Header language buttons
+            var headerLangBtns = document.querySelectorAll('.header-lang-btn');
+            if (headerLangBtns) {
+                headerLangBtns.forEach(function(btn) {
+                    btn.removeEventListener('click', function handleLangClick(e) { 
+                        var lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
+                    btn.addEventListener('click', function handleLangClick(e) { 
+                        var lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
+                });
+            }
+            
+            // Header language dropdown items (in languageDropdown)
+            var langDropdownItems = document.querySelectorAll('.language-dropdown button[data-lang]');
+            if (langDropdownItems) {
+                langDropdownItems.forEach(function(btn) {
+                    btn.removeEventListener('click', function handleLangDropdownClick(e) {
+                        e.preventDefault();
+                        var lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang);
+                    });
+                    btn.addEventListener('click', function handleLangDropdownClick(e) {
+                        e.preventDefault();
+                        var lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang);
+                    });
+                });
+            }
+            
+            // User dropdown items
+            var userDropdownItems = document.querySelectorAll('.user-dropdown a, .user-dropdown button');
+            if (userDropdownItems) {
+                userDropdownItems.forEach(function(item) {
+                    var dataset = item.getAttribute('data-action');
+                    if (dataset === 'logout') {
+                        item.removeEventListener('click', function handleLogout(e) { 
+                            e.preventDefault(); 
+                            logout(); 
+                        });
+                        item.addEventListener('click', function handleLogout(e) { 
+                            e.preventDefault(); 
+                            logout(); 
+                        });
+                    } else if (dataset === 'profile') {
+                        item.removeEventListener('click', function handleProfile(e) { 
+                            e.preventDefault(); 
+                            showPage('profile'); 
+                        });
+                        item.addEventListener('click', function handleProfile(e) { 
+                            e.preventDefault(); 
+                            showPage('profile'); 
+                        });
+                    }
+                });
+            }
+        }
+        
+        function handleHeaderQuickBtnClick(e, btn) {
+            var onclick = btn.getAttribute('data-onclick') || '';
+            if (onclick === "showPage('conversations'); openNewConvModal();") {
+                showPage('conversations');
+                setTimeout(openNewConvModal, 100);
+            } else if (onclick === "showPage('customers'); openCustomerModal();") {
+                showPage('customers');
+                setTimeout(openCustomerModal, 100);
+            } else if (onclick === "showPage('tickets'); setTimeout(function(){ toggleTicketForm(); }, 350);") {
+                showPage('tickets');
+                setTimeout(toggleTicketForm, 350);
+            }
         }
         
         /* ========== Conversation Event Handlers Setup ========== */
