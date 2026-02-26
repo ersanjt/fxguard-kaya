@@ -1518,7 +1518,17 @@ async function startServer() {
         server.listen(PORT, () => {
             logger.info(`🚀 CRM Backend running on port ${PORT}`);
         });
-        
+
+        server.on('error', (err) => {
+            if (err.code === 'EADDRINUSE') {
+                logger.error(`❌ پورت ${PORT} در حال استفاده است. یک پروسه دیگر روی این پورت اجرا می‌شود.`);
+                logger.error('برای رفع: lsof -ti:' + PORT + ' | xargs kill -9');
+            } else {
+                logger.error('Server error:', err);
+            }
+            process.exit(1);
+        });
+
     } catch (error) {
         logger.error('Server startup error:', error);
         process.exit(1);
