@@ -415,6 +415,17 @@
         .announcement-marquee-close:hover { background: rgba(255,255,255,0.3); }
         .announcement-marquee-close:active { transform: scale(0.92); }
         .announcement-marquee-close svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        
+        /* Announcement Toggle Button in Header */
+        .header-ann-toggle-btn { width: 36px; height: 36px; padding: 0; display: none; align-items: center; justify-content: center; background: var(--accent-soft, rgba(59, 130, 246, 0.1)); border: 1px solid var(--accent, #3b82f6); border-radius: 8px; color: var(--accent, #3b82f6); cursor: pointer; transition: all 0.2s ease; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+        .header-ann-toggle-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .header-ann-toggle-btn:hover { background: var(--accent, #3b82f6); color: white; transform: translateY(-1px); box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); }
+        .header-ann-toggle-btn:active { transform: scale(0.95); }
+        @media (max-width: 768px) {
+            .header-ann-toggle-btn { width: 32px; height: 32px; }
+            .header-ann-toggle-btn svg { width: 18px; height: 18px; }
+        }
+        
         /* نوار نرخ ارز — همان منطق و ظاهر نوار اعلان‌ها */
         .price-ticker.rates-marquee { position: relative; flex-shrink: 0; direction: rtl; color: #fff; font-size: 0.9rem; background: linear-gradient(135deg, rgba(16,185,129,0.95) 0%, rgba(5,150,105,0.92) 50%, rgba(4,120,87,0.9) 100%); border-top: 1px solid rgba(16,185,129,0.4); box-shadow: 0 -2px 12px rgba(16,185,129,0.2); padding: 0; }
         .rates-marquee-bar { display: flex; align-items: center; gap: 10px; padding: 6px 14px; padding-bottom: max(6px, env(safe-area-inset-bottom)); min-height: 36px; }

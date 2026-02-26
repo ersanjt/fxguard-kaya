@@ -118,18 +118,19 @@
         <header class="header" role="banner">
             <!-- موبایل: هدر سبک اپلیکیشن -->
             <div class="header-mobile-bar">
-                <button type="button" class="header-menu-btn" id="headerMenuBtn" onclick="toggleSidebarMobile()" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+                <button type="button" class="header-menu-btn" id="headerMenuBtn" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
                 <h1 class="header-mobile-title" id="headerMobileTitle">داشبورد</h1>
                 <div class="header-mobile-actions">
-                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-perm="announcements" onclick="toggleNotifyDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadgeMobile" style="display:none;">0</span></button>
-                    <button type="button" class="header-search-trigger header-mobile-search" id="headerSearchTrigger" onclick="openHeaderSearchPopup()" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
-                    <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" onclick="toggleUserDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
+                    <button type="button" class="header-ann-toggle-btn" id="headerAnnToggleBtn" style="display:none;" aria-label="نمایش اعلان‌ها" title="نمایش اعلان‌ها"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M6 17h12v2H6z"/></svg></button>
+                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-perm="announcements" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadgeMobile" style="display:none;">0</span></button>
+                    <button type="button" class="header-search-trigger header-mobile-search" id="headerSearchTrigger" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
+                    <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
                 </div>
             </div>
             <!-- دسکتاپ: هدر حرفه‌ای -->
             <div class="header-desktop">
                 <div class="header-left">
-                    <a href="#dashboard" class="logo" id="headerLogo" onclick="showPage('dashboard'); closeSidebarMobile(); return false;" aria-label="صرافی کایا — بازگشت به داشبورد">
+                    <a href="#dashboard" class="logo" id="headerLogo" aria-label="صرافی کایا — بازگشت به داشبورد">
                         <span class="logo-icon" id="headerLogoIcon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
                         <span class="logo-text"><span class="logo-dot"></span> <span id="headerLogoText" data-i18n="logo_kaya">صرافی کایا</span></span>
                     </a>
@@ -138,10 +139,10 @@
                         <span class="header-page-title" id="headerPageTitle" data-i18n="nav_dashboard">داشبورد</span>
                     </div>
                     <div class="search-wrap header-search-wrap">
-                        <button type="button" class="header-search-trigger" onclick="openHeaderSearchPopup()" aria-label="جستجو" title="جستجو" style="display:none;"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
+                        <button type="button" class="header-search-trigger" id="headerSearchTriggerDesktop" aria-label="جستجو" title="جستجو" style="display:none;"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
                         <label class="header-search-field" for="headerSearch">
                             <span class="header-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
-                            <input type="text" id="headerSearch" data-i18n-ph="header_search" data-i18n-aria-label="header_search_aria" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو در مکالمات و مشتریان" onkeyup="if(event.key==='Enter') doHeaderSearch();" autocomplete="off">
+                            <input type="text" id="headerSearch" data-i18n-ph="header_search" data-i18n-aria-label="header_search_aria" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو در مکالمات و مشتریان" autocomplete="off">
                         </label>
                     </div>
                 </div>
@@ -340,33 +341,33 @@
                             <p class="conv-page-desc" data-i18n="conv_page_desc">مدیریت مکالمات با مشتریان، پاسخ‌دهی و تخصیص به دپارتمان‌ها.</p>
                         </div>
                         <div class="conv-header-actions">
-                            <button type="button" class="btn-secondary conv-sync-groups-btn" id="btnSyncGroups" onclick="syncWhatsAppGroups()" data-i18n-title="conv_sync_groups" title="همگام‌سازی گروه‌های واتساپ" aria-label="همگام‌سازی گروه‌ها"><span class="conv-sync-icon" aria-hidden="true">👥</span><span class="conv-sync-text" data-i18n="conv_sync_groups">همگام‌سازی گروه‌ها</span></button>
-                            <button type="button" class="btn-primary" onclick="openNewConvModal()" data-i18n="conv_new">مکالمه جدید</button>
+                            <button type="button" class="btn-secondary conv-sync-groups-btn" id="btnSyncGroups" data-i18n-title="conv_sync_groups" title="همگام‌سازی گروه‌های واتساپ" aria-label="همگام‌سازی گروه‌ها"><span class="conv-sync-icon" aria-hidden="true">👥</span><span class="conv-sync-text" data-i18n="conv_sync_groups">همگام‌سازی گروه‌ها</span></button>
+                            <button type="button" class="btn-primary" id="btnNewConv" data-i18n="conv_new">مکالمه جدید</button>
                         </div>
                     </div>
                     <div id="convStats" class="conv-stats" style="display:none;"></div>
                     <div class="conv-quick-tabs" role="tablist">
-                        <button type="button" class="conv-tab active" data-tab="all" onclick="setConvQuickTab('all')" data-i18n="filter_all">همه</button>
-                        <button type="button" class="conv-tab" data-tab="unread" onclick="setConvQuickTab('unread')" data-i18n="filter_unread">خوانده‌نشده</button>
-                        <button type="button" class="conv-tab" data-tab="unanswered" onclick="setConvQuickTab('unanswered')" data-i18n="filter_unanswered">بدون پاسخ</button>
-                        <button type="button" class="conv-tab" data-tab="open" onclick="setConvQuickTab('open')" data-i18n="filter_open">باز</button>
-                        <button type="button" class="conv-tab" data-tab="mine" onclick="setConvQuickTab('mine')" data-i18n="conv_tab_mine">مشخص‌شده به من</button>
-                        <button type="button" class="conv-tab" data-tab="groups" onclick="setConvQuickTab('groups')" data-i18n="conv_tab_groups">👥 گروه‌ها</button>
-                        <button type="button" class="conv-tab" id="convTabArchived" data-tab="archived" onclick="setConvQuickTab('archived')" data-i18n="filter_archived" style="display:none;">آرشیو</button>
+                        <button type="button" class="conv-tab active" data-tab="all" data-i18n="filter_all">همه</button>
+                        <button type="button" class="conv-tab" data-tab="unread" data-i18n="filter_unread">خوانده‌نشده</button>
+                        <button type="button" class="conv-tab" data-tab="unanswered" data-i18n="filter_unanswered">بدون پاسخ</button>
+                        <button type="button" class="conv-tab" data-tab="open" data-i18n="filter_open">باز</button>
+                        <button type="button" class="conv-tab" data-tab="mine" data-i18n="conv_tab_mine">مشخص‌شده به من</button>
+                        <button type="button" class="conv-tab" data-tab="groups" data-i18n="conv_tab_groups">👥 گروه‌ها</button>
+                        <button type="button" class="conv-tab" id="convTabArchived" data-tab="archived" data-i18n="filter_archived" style="display:none;">آرشیو</button>
                     </div>
                     <div class="conv-toolbar">
                         <div class="conv-search-wrap">
                             <span class="conv-search-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
-                            <input type="text" id="convSearch" data-i18n-ph="conv_search_ph" placeholder="جستجو نام یا شماره مشتری..." class="conv-filter-input" onkeypress="if(event.key==='Enter')applyConvFilters()">
+                            <input type="text" id="convSearch" data-i18n-ph="conv_search_ph" placeholder="جستجو نام یا شماره مشتری..." class="conv-filter-input">
                         </div>
-                        <button type="button" class="btn-filter-toggle" id="convFilterToggle" onclick="toggleConvAdvancedFilters()" aria-expanded="false" data-i18n="more_filters">فیلترهای بیشتر</button>
+                        <button type="button" class="btn-filter-toggle" id="convFilterToggle" aria-expanded="false" data-i18n="more_filters">فیلترهای بیشتر</button>
                         <div class="conv-advanced-filters" id="convAdvancedFilters">
                             <select id="convFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
                             <select id="convFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
                             <select id="convFilterBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
                             <select id="convFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
                             <select id="convFilterAssignee"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
-                            <button type="button" class="btn-secondary btn-sm" onclick="applyConvFilters()" data-i18n="apply_filter">اعمال</button>
+                            <button type="button" class="btn-secondary btn-sm" id="btnApplyConvFilters" data-i18n="apply_filter">اعمال</button>
                         </div>
                     </div>
                     <div class="conv-layout">
@@ -379,11 +380,11 @@
                         </div>
                         <div id="chatArea" class="chat-area">
                         <div class="chat-header-wrap">
-                            <button type="button" class="chat-back-btn" onclick="closeChatMobile()" aria-label="بازگشت به لیست" data-i18n-title="back_to_list" title="بازگشت به لیست" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                            <button type="button" class="chat-back-btn" id="chatBackBtn" aria-label="بازگشت به لیست" data-i18n-title="back_to_list" title="بازگشت به لیست" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
                             <div class="chat-header-main">
                                 <div class="chat-header-avatar" id="chatHeaderAvatar"></div>
                                 <div class="chat-header" id="chatHeader"></div>
-                                <button type="button" class="chat-detail-toggle" id="chatDetailToggle" onclick="toggleChatDetailBar()" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                                <button type="button" class="chat-detail-toggle" id="chatDetailToggle" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
                             </div>
                             <div id="convDetailBar" class="conv-detail-bar" style="display:none;">
                                 <div class="conv-detail-badges" id="convDetailBadges"></div>

@@ -3330,14 +3330,71 @@
         function resumeAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.remove('paused'); }
         function closeAnnouncementMarquee() { 
             var el = document.getElementById('announcementMarquee'); 
-            if (el) { el.style.display = 'none'; localStorage.setItem('ann_marquee_hidden', '1'); }
+            if (el) { 
+                el.style.display = 'none'; 
+                localStorage.setItem('ann_marquee_hidden', '1');
+            }
+            // Show toggle button
+            var toggleBtn = document.getElementById('headerAnnToggleBtn');
+            if (toggleBtn) toggleBtn.style.display = 'flex';
+        }
+        function openAnnouncementMarquee() {
+            var el = document.getElementById('announcementMarquee');
+            if (el) {
+                el.style.display = 'flex';
+                localStorage.removeItem('ann_marquee_hidden');
+            }
+            // Hide toggle button
+            var toggleBtn = document.getElementById('headerAnnToggleBtn');
+            if (toggleBtn) toggleBtn.style.display = 'none';
+        }
+        function toggleAnnouncementMarquee() {
+            var el = document.getElementById('announcementMarquee');
+            if (el && el.style.display !== 'none') {
+                closeAnnouncementMarquee();
+            } else {
+                showAnnouncementMarquee();
+            }
+        }
+        function showAnnouncementMarquee() {
+            var el = document.getElementById('announcementMarquee');
+            if (el && window._marqueeAnnouncements && window._marqueeAnnouncements.length > 0) {
+                el.style.display = '';
+                localStorage.removeItem('ann_marquee_hidden');
+            }
+            // Hide toggle button
+            var toggleBtn = document.getElementById('headerAnnToggleBtn');
+            if (toggleBtn) toggleBtn.style.display = 'none';
+        }
+        function checkAnnouncementMarqueeVisibility() {
+            var hidden = localStorage.getItem('ann_marquee_hidden');
+            var el = document.getElementById('announcementMarquee');
+            var toggleBtn = document.getElementById('headerAnnToggleBtn');
+            
+            if (hidden === '1') {
+                if (el) el.style.display = 'none';
+                if (toggleBtn && window._marqueeAnnouncements && window._marqueeAnnouncements.length > 0) {
+                    toggleBtn.style.display = 'flex';
+                }
+            } else {
+                if (toggleBtn) toggleBtn.style.display = 'none';
+            }
+        }
+        function marqueeAnnouncementClick(id) {
+            if (id) {
+                showPage('announcements');
+                setTimeout(function() {
+                    var el = document.querySelector('.announcement-item[data-id="' + id + '"]');
+                    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('highlight'); }
+                }, 300);
+            }
         }
         function pauseTickerRatesMarquee() { var el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.add('paused'); }
         function resumeTickerRatesMarquee() { var el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.remove('paused'); }
         function renderMarqueeItem(a) {
             var badge = a.isImportant ? '<span class="ann-marquee-badge important">' + (t('ann_type_important') || 'Important') + '</span>' : '<span class="ann-marquee-badge info">' + (t('ann_type_info') || 'Info') + '</span>';
             var text = (a.title || '') + (a.body ? (LANG === 'fa' ? ': ' : ': ') + String(a.body).substring(0, 80) + (a.body.length > 80 ? '…' : '') : '');
-            return '<div class="announcement-marquee-item' + (a.isImportant ? ' ann-important' : '') + '" data-id="' + escapeHtml(a.id) + '" onclick="marqueeAnnouncementClick(\'' + escapeHtml(a.id) + '\'); event.stopPropagation();"><span class="ann-marquee-badge-wrap">' + badge + '</span><span class="ann-marquee-sep">|</span><span class="ann-marquee-text">' + escapeHtml(text) + '</span></div>';
+            return '<div class="announcement-marquee-item' + (a.isImportant ? ' ann-important' : '') + '" data-id="' + escapeHtml(a.id) + '" style="cursor:pointer;"><span class="ann-marquee-badge-wrap">' + badge + '</span><span class="ann-marquee-sep">|</span><span class="ann-marquee-text">' + escapeHtml(text) + '</span></div>';
         }
         function marqueeAnnouncementClick(id) {
             var a = (window._marqueeAnnouncements || []).find(function(x) { return String(x.id) === String(id); });
@@ -3608,6 +3665,75 @@
 
         var convQuickTab = 'all';
         var convCurrentPage = 1;
+
+        /* ========== Global Event Handlers Setup ========== */
+        function setupGlobalEventHandlers() {
+            // Header menu button
+            var menuBtn = document.getElementById('headerMenuBtn');
+            if (menuBtn) {
+                menuBtn.removeEventListener('click', toggleSidebarMobile);
+                menuBtn.addEventListener('click', toggleSidebarMobile);
+            }
+            
+            // Header announcement toggle button
+            var annToggleBtn = document.getElementById('headerAnnToggleBtn');
+            if (annToggleBtn) {
+                annToggleBtn.removeEventListener('click', toggleAnnouncementMarquee);
+                annToggleBtn.addEventListener('click', toggleAnnouncementMarquee);
+            }
+            
+            // Header notify buttons
+            var notifyBtnMobile = document.getElementById('headerNotifyBtnMobile');
+            if (notifyBtnMobile) {
+                var notifyHandler = function(e) { toggleNotifyDropdown(e); };
+                notifyBtnMobile.removeEventListener('click', notifyHandler);
+                notifyBtnMobile.addEventListener('click', notifyHandler);
+            }
+            
+            // Header search triggers
+            var searchTrigger = document.getElementById('headerSearchTrigger');
+            if (searchTrigger) {
+                searchTrigger.removeEventListener('click', openHeaderSearchPopup);
+                searchTrigger.addEventListener('click', openHeaderSearchPopup);
+            }
+            
+            var searchTriggerDesktop = document.getElementById('headerSearchTriggerDesktop');
+            if (searchTriggerDesktop) {
+                searchTriggerDesktop.removeEventListener('click', openHeaderSearchPopup);
+                searchTriggerDesktop.addEventListener('click', openHeaderSearchPopup);
+            }
+            
+            // Header user dropdown triggers
+            var userDropdownMobile = document.getElementById('userDropdownTriggerMobile');
+            if (userDropdownMobile) {
+                var userDropdownHandler = function(e) { toggleUserDropdown(e); };
+                userDropdownMobile.removeEventListener('click', userDropdownHandler);
+                userDropdownMobile.addEventListener('click', userDropdownHandler);
+            }
+            
+            // Header logo
+            var headerLogo = document.getElementById('headerLogo');
+            if (headerLogo) {
+                var logoHandler = function(e) {
+                    e.preventDefault();
+                    showPage('dashboard');
+                    closeSidebarMobile();
+                    return false;
+                };
+                headerLogo.removeEventListener('click', logoHandler);
+                headerLogo.addEventListener('click', logoHandler);
+            }
+            
+            // Header search input - Enter key
+            var headerSearch = document.getElementById('headerSearch');
+            if (headerSearch) {
+                var searchHandler = function(e) {
+                    if (e.key === 'Enter') doHeaderSearch();
+                };
+                headerSearch.removeEventListener('keyup', searchHandler);
+                headerSearch.addEventListener('keyup', searchHandler);
+            }
+        }
         
         /* ========== Conversation Event Handlers Setup ========== */
         function setupConversationEventHandlers() {
@@ -3632,36 +3758,26 @@
                 annTrack.addEventListener('mouseleave', resumeAnnouncementMarquee);
             }
             
-            // Conversation buttons
-            var newConvBtn = document.querySelector('button[onclick*="openNewConvModal"]');
-            if (newConvBtn) {
-                newConvBtn.removeEventListener('click', openNewConvModal);
-                newConvBtn.addEventListener('click', openNewConvModal);
+            // Marquee items delegation
+            var marqueeInner = document.querySelector('.announcement-marquee-inner');
+            if (marqueeInner) {
+                marqueeInner.removeEventListener('click', handleMarqueeItemClick);
+                marqueeInner.addEventListener('click', handleMarqueeItemClick);
             }
             
-            // Quick tab buttons
-            document.querySelectorAll('.conv-quick-tabs .conv-tab').forEach(function(btn) {
-                btn.removeEventListener('click', handleQuickTabClick);
-                btn.addEventListener('click', handleQuickTabClick);
-            });
-            
-            // Search input
-            var searchInput = document.getElementById('convSearch');
-            if (searchInput) {
-                searchInput.removeEventListener('keypress', handleSearchKeyPress);
-                searchInput.addEventListener('keypress', handleSearchKeyPress);
+            // Sync groups button
+            var syncBtn = document.getElementById('btnSyncGroups');
+            if (syncBtn) {
+                syncBtn.removeEventListener('click', syncWhatsAppGroups);
+                syncBtn.addEventListener('click', syncWhatsAppGroups);
             }
             
-            // Filter toggle
-            var filterToggle = document.getElementById('convFilterToggle');
-            if (filterToggle) {
-                filterToggle.removeEventListener('click', toggleConvAdvancedFilters);
-                filterToggle.addEventListener('click', toggleConvAdvancedFilters);
+
+            var isGroup = item.getAttribute('data-is-group') === '1';
+            
+            if (id) {
+                openChat(id, name || '', phone || '', profilePic || '', isGroup);
             }
-        }
-        
-        function handleAnnMoreClick() { 
-            showPage('announcements'); 
         }
         
         function handleQuickTabClick(e) {
@@ -3676,6 +3792,86 @@
                 applyConvFilters();
             }
         }
+        
+        /* ========== Global Header Event Handlers ========== */
+        function setupGlobalEventHandlers() {
+            // Header menu button (mobile)
+            var menuBtn = document.getElementById('headerMenuBtn');
+            if (menuBtn) {
+                menuBtn.removeEventListener('click', toggleSidebarMobile);
+                menuBtn.addEventListener('click', toggleSidebarMobile);
+            }
+            
+            // Header notification buttons
+            var notifyBtnMobile = document.getElementById('headerNotifyBtnMobile');
+            if (notifyBtnMobile) {
+                notifyBtnMobile.removeEventListener('click', handleNotifyClick);
+                notifyBtnMobile.addEventListener('click', handleNotifyClick);
+            }
+            
+            // Header search trigger buttons
+            var searchTrigger = document.getElementById('headerSearchTrigger');
+            if (searchTrigger) {
+                searchTrigger.removeEventListener('click', openHeaderSearchPopup);
+                searchTrigger.addEventListener('click', openHeaderSearchPopup);
+            }
+            
+            var searchTriggerDesktop = document.getElementById('headerSearchTriggerDesktop');
+            if (searchTriggerDesktop) {
+                searchTriggerDesktop.removeEventListener('click', openHeaderSearchPopup);
+                searchTriggerDesktop.addEventListener('click', openHeaderSearchPopup);
+            }
+            
+            // Header profile dropdown
+            var profileBtnMobile = document.getElementById('userDropdownTriggerMobile');
+            if (profileBtnMobile) {
+                profileBtnMobile.removeEventListener('click', handleUserDropdownClick);
+                profileBtnMobile.addEventListener('click', handleUserDropdownClick);
+            }
+            
+            // Header logo
+            var logo = document.getElementById('headerLogo');
+            if (logo) {
+                logo.removeEventListener('click', handleLogoClick);
+                logo.addEventListener('click', handleLogoClick);
+            }
+            
+            // Header search input (Enter key)
+            var headerSearch = document.getElementById('headerSearch');
+            if (headerSearch) {
+                headerSearch.removeEventListener('keyup', handleHeaderSearchKeyup);
+                headerSearch.addEventListener('keyup', handleHeaderSearchKeyup);
+            }
+            
+            // Announcement toggle button
+            var annToggleBtn = document.getElementById('headerAnnToggleBtn');
+            if (annToggleBtn) {
+                annToggleBtn.removeEventListener('click', showAnnouncementMarquee);
+                annToggleBtn.addEventListener('click', showAnnouncementMarquee);
+            }
+        }
+        
+        function handleNotifyClick(e) {
+            toggleNotifyDropdown(e);
+        }
+        
+        function handleUserDropdownClick(e) {
+            toggleUserDropdown(e);
+        }
+        
+        function handleLogoClick(e) {
+            e.preventDefault();
+            showPage('dashboard');
+            closeSidebarMobile();
+            return false;
+        }
+        
+        function handleHeaderSearchKeyup(e) {
+            if (e && e.key === 'Enter') {
+                doHeaderSearch();
+            }
+        }
+        
         var convPageSize = 50;
         function setConvQuickTab(tab) {
             convQuickTab = tab || 'all';
@@ -3801,8 +3997,8 @@
                     unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + waitStr + '</span>';
                 }
                 var activeClass = (c.id === currentConvId) ? ' active' : '';
-                // نام و شماره در data-* ذخیره می‌شن — بدون escape دستی در onclick (امن در برابر XSS)
-                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" onclick="var el=this;openChat(el.getAttribute(\'data-id\'),el.getAttribute(\'data-name\')||\'\',el.getAttribute(\'data-phone\')||\'\',el.getAttribute(\'data-profile-pic\')||\'\',el.getAttribute(\'data-is-group\')===\'1\')"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+                // نام و شماره در data-* ذخیره می‌شن — event handler میتواند کلیک رو handle کند
+                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
             if (appendMode) {
                 // آیتم‌های جدید به انتهای لیست اضافه می‌شن
@@ -8528,6 +8724,8 @@
                         await loadPanelSettingsAndApply();
                         applyHashRoute();
                         loadGeneralAnnouncementsMarquee();
+                        setupGlobalEventHandlers();
+                        checkAnnouncementMarqueeVisibility();
                         startRatesInterval();
                         startPresenceInterval();
                         connectSocket();
