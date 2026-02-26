@@ -3106,9 +3106,23 @@
                 var enabled = !!(u && u.totpEnabled);
                 statusEl.innerHTML = enabled ? '<span class="badge done">' + t('totp_active') + '</span>' : '<span class="badge pending">' + t('totp_inactive') + '</span>';
                 if (enabled) {
-                    actionsEl.innerHTML = '<button type="button" class="btn-secondary" onclick="openTotpDisableModal()">' + t('totp_disable_btn') + '</button>';
+                    actionsEl.innerHTML = '<button type="button" class="btn-secondary" id="totpDisableBtnDynamic">' + t('totp_disable_btn') + '</button>';
+                    setTimeout(function() {
+                        var btn = document.getElementById('totpDisableBtnDynamic');
+                        if (btn) {
+                            btn.removeEventListener('click', openTotpDisableModal);
+                            btn.addEventListener('click', openTotpDisableModal);
+                        }
+                    }, 50);
                 } else {
-                    actionsEl.innerHTML = '<button type="button" class="btn-primary" onclick="openTotpSetup()">' + t('totp_setup_btn') + '</button>';
+                    actionsEl.innerHTML = '<button type="button" class="btn-primary" id="totpSetupBtnDynamic">' + t('totp_setup_btn') + '</button>';
+                    setTimeout(function() {
+                        var btn = document.getElementById('totpSetupBtnDynamic');
+                        if (btn) {
+                            btn.removeEventListener('click', openTotpSetup);
+                            btn.addEventListener('click', openTotpSetup);
+                        }
+                    }, 50);
                 }
             }
         }
@@ -4400,10 +4414,18 @@
             var countEl = document.getElementById('convListCount');
             if (countEl) countEl.textContent = totalCount > 0 ? '(' + totalCount + ')' : '';
             if (!data.data || data.data.length === 0) {
-                if (!appendMode) list.innerHTML = '<div class="empty conv-empty"><span class="empty-icon">💬</span><p>' + t('empty_conv') + '</p><button type="button" class="btn-primary" onclick="openNewConvModal()">' + (t('conv_new') || (LANG === 'fa' ? 'مکالمه جدید' : 'New conversation')) + '</button></div>';
+                if (!appendMode) list.innerHTML = '<div class="empty conv-empty"><span class="empty-icon">💬</span><p>' + t('empty_conv') + '</p><button type="button" class="btn-primary" id="emptyConvNewBtn">' + (t('conv_new') || (LANG === 'fa' ? 'مکالمه جدید' : 'New conversation')) + '</button></div>';
                 // دکمه load more رو مخفی کن
                 var lmBtn = document.getElementById('convLoadMoreBtn');
                 if (lmBtn) lmBtn.style.display = 'none';
+                // Bind empty state button
+                setTimeout(function() {
+                    var emptyBtn = document.getElementById('emptyConvNewBtn');
+                    if (emptyBtn) {
+                        emptyBtn.removeEventListener('click', openNewConvModal);
+                        emptyBtn.addEventListener('click', openNewConvModal);
+                    }
+                }, 50);
                 return;
             }
             var newItems = data.data.map(function(c) {
@@ -4449,7 +4471,14 @@
                 lmBtn = document.createElement('div');
                 lmBtn.id = 'convLoadMoreBtn';
                 lmBtn.style.cssText = 'text-align:center;padding:10px;';
-                lmBtn.innerHTML = '<button type="button" class="btn-secondary" onclick="convCurrentPage++;loadConversations(true)">' + (LANG === 'fa' ? 'بارگذاری بیشتر' : 'Load more') + '</button>';
+                lmBtn.innerHTML = '<button type="button" class="btn-secondary" id="convLoadMoreBtnInner">' + (LANG === 'fa' ? 'بارگذاری بیشتر' : 'Load more') + '</button>';
+                setTimeout(function() {
+                    var loadBtn = document.getElementById('convLoadMoreBtnInner');
+                    if (loadBtn) {
+                        loadBtn.removeEventListener('click', function() { convCurrentPage++; loadConversations(true); });
+                        loadBtn.addEventListener('click', function() { convCurrentPage++; loadConversations(true); });
+                    }
+                }, 50);
                 list.appendChild(lmBtn);
             }
             lmBtn.style.display = loadedSoFar < totalCount ? '' : 'none';
@@ -4827,7 +4856,14 @@
                     var olderBtn = document.createElement('div');
                     olderBtn.className = 'load-older-btn';
                     olderBtn.style.cssText = 'text-align:center;padding:8px;';
-                    olderBtn.innerHTML = '<button type="button" class="btn-secondary" style="font-size:0.8rem;" onclick="loadMessages(\'' + id + '\', true)">' + (LANG === 'fa' ? 'پیام‌های قدیمی‌تر' : 'Load older messages') + '</button>';
+                    olderBtn.innerHTML = '<button type="button" class="btn-secondary" style="font-size:0.8rem;" id="loadOlderBtn_' + id + '" data-msg-id="' + id + '">' + (LANG === 'fa' ? 'پیام‌های قدیمی‌تر' : 'Load older messages') + '</button>';
+                    setTimeout(function() {
+                        var btn = document.getElementById('loadOlderBtn_' + id);
+                        if (btn) {
+                            btn.removeEventListener('click', function() { loadMessages(id, true); });
+                            btn.addEventListener('click', function() { loadMessages(id, true); });
+                        }
+                    }, 50);
                     el.insertBefore(olderBtn, el.firstChild);
                 }
             } else if (existingBtn) {
@@ -5006,7 +5042,16 @@
             var data = res.data;
             if (statsEl && data.stats) { statsEl.style.display = 'flex'; statsEl.innerHTML = '<span class="customer-stat"><strong>' + data.stats.total + '</strong> ' + (LANG === 'fa' ? 'مشتری' : 'customers') + '</span><span class="customer-stat"><strong>' + data.stats.active + '</strong> ' + (LANG === 'fa' ? 'فعال' : 'active') + '</span><span class="customer-stat"><strong>' + data.stats.inactive + '</strong> ' + (LANG === 'fa' ? 'غیرفعال' : 'inactive') + '</span><span class="customer-stat"><strong>' + data.stats.blocked + '</strong> ' + (LANG === 'fa' ? 'مسدود' : 'blocked') + '</span>'; }
             if (countEl) countEl.textContent = (data.total || 0) + ' ' + (LANG === 'fa' ? 'مشتری' : '');
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + t('empty_customers') + '</p><button type="button" class="btn-primary" onclick="openCustomerModal()">' + escapeHtml(t('customer_add')) + '</button></div>'; return; }
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + t('empty_customers') + '</p><button type="button" class="btn-primary" id="emptyCustomerAddBtn">' + escapeHtml(t('customer_add')) + '</button></div>'; 
+                setTimeout(function() {
+                    var emptyBtn = document.getElementById('emptyCustomerAddBtn');
+                    if (emptyBtn) {
+                        emptyBtn.removeEventListener('click', function() { openCustomerModal(); });
+                        emptyBtn.addEventListener('click', function() { openCustomerModal(); });
+                    }
+                }, 50);
+                return; 
+            }
             var sortEl = document.getElementById('customerSort');
             var sortVal = sortEl ? sortEl.value : 'newest';
             var sorted = sortCustomerList(data.data, sortVal);
@@ -5159,8 +5204,35 @@
             if (quickActionsEl) {
                 var qName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 var qPhone = (c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                var delBtn = (currentUser && currentUser.canDeleteCustomer) ? '<button type="button" class="btn-danger btn-danger-outline customer-detail-action-btn" onclick="deleteCustomer(\'' + c.id + '\')">' + escapeHtml(t('customer_delete') || (LANG === 'fa' ? 'حذف مشتری' : 'Delete customer')) + '</button>' : '';
-                quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" onclick="startCustomerChat(\'' + c.id + '\', \'' + qName + '\', \'' + qPhone + '\')">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" onclick="openCustomerModal(\'' + c.id + '\')">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" onclick="openTransactionModal(\'' + c.id + '\')">' + escapeHtml(t('transaction_add')) + '</button>' + delBtn;
+                var delBtn = (currentUser && currentUser.canDeleteCustomer) ? '<button type="button" class="btn-danger btn-danger-outline customer-detail-action-btn" id="custDeleteBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_delete') || (LANG === 'fa' ? 'حذف مشتری' : 'Delete customer')) + '</button>' : '';
+                quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" id="custChatBtn" data-cust-id="' + c.id + '" data-cust-name="' + qName + '" data-cust-phone="' + qPhone + '">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custEditBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custTransBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('transaction_add')) + '</button>' + delBtn;
+                setTimeout(function() {
+                    var chatBtn = document.getElementById('custChatBtn');
+                    var editBtn = document.getElementById('custEditBtn');
+                    var transBtn = document.getElementById('custTransBtn');
+                    var delBtnEl = document.getElementById('custDeleteBtn');
+                    if (chatBtn) {
+                        chatBtn.removeEventListener('click', function() {});
+                        chatBtn.addEventListener('click', function(e) {
+                            var cid = chatBtn.getAttribute('data-cust-id');
+                            var cn = chatBtn.getAttribute('data-cust-name');
+                            var cp = chatBtn.getAttribute('data-cust-phone');
+                            startCustomerChat(cid, cn, cp);
+                        });
+                    }
+                    if (editBtn) {
+                        editBtn.removeEventListener('click', function() {});
+                        editBtn.addEventListener('click', function() { openCustomerModal(c.id); });
+                    }
+                    if (transBtn) {
+                        transBtn.removeEventListener('click', function() {});
+                        transBtn.addEventListener('click', function() { openTransactionModal(c.id); });
+                    }
+                    if (delBtnEl) {
+                        delBtnEl.removeEventListener('click', function() {});
+                        delBtnEl.addEventListener('click', function() { deleteCustomer(c.id); });
+                    }
+                }, 50);
             }
             var detailProfilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
             if (detailProfilePic && detailProfilePic.indexOf('/') === 0) detailProfilePic = (window.location.origin || '') + detailProfilePic;
@@ -5461,8 +5533,16 @@
             if (!container) return;
             var keys = Object.keys(cf || {});
             container.innerHTML = keys.map(function(k) {
-                return '<div class="customer-modal-custom-field-row"><input type="text" class="cf-key" value="' + escapeHtml(k) + '" placeholder="' + (LANG === 'fa' ? 'کلید' : 'Key') + '"><input type="text" class="cf-val" value="' + escapeHtml(String(cf[k] || '')) + '" placeholder="' + (LANG === 'fa' ? 'مقدار' : 'Value') + '"><button type="button" class="btn-remove-field" onclick="this.parentNode.remove()">×</button></div>';
+                return '<div class="customer-modal-custom-field-row"><input type="text" class="cf-key" value="' + escapeHtml(k) + '" placeholder="' + (LANG === 'fa' ? 'کلید' : 'Key') + '"><input type="text" class="cf-val" value="' + escapeHtml(String(cf[k] || '')) + '" placeholder="' + (LANG === 'fa' ? 'مقدار' : 'Value') + '"><button type="button" class="btn-remove-field">×</button></div>';
             }).join('');
+            // Bind remove buttons for all custom field rows
+            setTimeout(function() {
+                var removeButtons = container.querySelectorAll('.btn-remove-field');
+                removeButtons.forEach(function(btn) {
+                    btn.removeEventListener('click', function handleRemove(e) { btn.parentNode.remove(); });
+                    btn.addEventListener('click', function handleRemove(e) { btn.parentNode.remove(); });
+                });
+            }, 50);
         }
         function bindCustomerModalAddCustomField() {
             var btn = document.getElementById('btnCustomerModalAddCustomField');
@@ -5471,7 +5551,12 @@
                 btn.onclick = function() {
                     var row = document.createElement('div');
                     row.className = 'customer-modal-custom-field-row';
-                    row.innerHTML = '<input type="text" class="cf-key" placeholder="' + (LANG === 'fa' ? 'کلید' : 'Key') + '"><input type="text" class="cf-val" placeholder="' + (LANG === 'fa' ? 'مقدار' : 'Value') + '"><button type="button" class="btn-remove-field" onclick="this.parentNode.remove()">×</button>';
+                    row.innerHTML = '<input type="text" class="cf-key" placeholder="' + (LANG === 'fa' ? 'کلید' : 'Key') + '"><input type="text" class="cf-val" placeholder="' + (LANG === 'fa' ? 'مقدار' : 'Value') + '"><button type="button" class="btn-remove-field">×</button>';
+                var removeBtn = row.querySelector('.btn-remove-field');
+                if (removeBtn) {
+                    removeBtn.removeEventListener('click', function(e) { row.remove(); });
+                    removeBtn.addEventListener('click', function(e) { row.remove(); });
+                }
                     container.appendChild(row);
                 };
             }
@@ -6280,7 +6365,16 @@
                     statsEl.innerHTML = '<div class="ticket-stat-card"><div class="ticket-stat-val">' + (stats.total || 0) + '</div><div class="ticket-stat-label">' + (LANG === 'fa' ? 'کل' : 'Total') + '</div></div><div class="ticket-stat-card ticket-stat-open"><div class="ticket-stat-val">' + (stats.open || 0) + '</div><div class="ticket-stat-label">' + t('status_open') + '</div></div><div class="ticket-stat-card ticket-stat-progress"><div class="ticket-stat-val">' + (stats.in_progress || 0) + '</div><div class="ticket-stat-label">' + t('status_in_progress') + '</div></div><div class="ticket-stat-card ticket-stat-resolved"><div class="ticket-stat-val">' + (stats.resolved || 0) + '</div><div class="ticket-stat-label">' + t('status_resolved') + '</div></div><div class="ticket-stat-card ticket-stat-closed"><div class="ticket-stat-val">' + (stats.closed || 0) + '</div><div class="ticket-stat-label">' + t('status_closed') + '</div></div><div class="ticket-stat-card ticket-stat-archived"><div class="ticket-stat-val">' + archCount + '</div><div class="ticket-stat-label">' + t('status_archived') + '</div></div>';
                     statsEl.style.display = 'grid';
                 }
-                if (rows.length === 0) { list.innerHTML = '<div class="empty ticket-list-empty"><span class="empty-icon">🎫</span><p>' + t('empty_tickets') + '</p><button type="button" class="btn-primary" onclick="toggleTicketForm()" style="margin-top:12px;">' + t('create_ticket') + '</button></div>'; return; }
+                if (rows.length === 0) { list.innerHTML = '<div class="empty ticket-list-empty"><span class="empty-icon">🎫</span><p>' + t('empty_tickets') + '</p><button type="button" class="btn-primary" id="emptyTicketCreateBtn" style="margin-top:12px;">' + t('create_ticket') + '</button></div>'; 
+                    setTimeout(function() {
+                        var emptyBtn = document.getElementById('emptyTicketCreateBtn');
+                        if (emptyBtn) {
+                            emptyBtn.removeEventListener('click', toggleTicketForm);
+                            emptyBtn.addEventListener('click', toggleTicketForm);
+                        }
+                    }, 50);
+                    return; 
+                }
                 list.innerHTML = rows.map(function(tk) {
                     var statusLabel = tk.status === 'open' ? t('status_open') : tk.status === 'in_progress' ? t('status_in_progress') : tk.status === 'resolved' ? t('status_resolved') : tk.status === 'closed' ? t('status_closed') : tk.status === 'archived' ? t('status_archived') : tk.status || '';
                     var prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[tk.priority] || tk.priority || '';
@@ -6533,7 +6627,16 @@
             var countEl = document.getElementById('taskListCount');
             var loadMoreEl = document.getElementById('taskListLoadMore');
             if (!data.data || data.data.length === 0) {
-                if (!append) list.innerHTML = '<div class="empty task-list-empty"><span class="empty-icon">\uD83D\uDCCB</span><p>' + t('empty_tasks') + '</p><button type="button" class="btn-primary" onclick="toggleTaskForm()" style="margin-top:12px;">' + t('new_task') + '</button></div>';
+                if (!append) {
+                    list.innerHTML = '<div class="empty task-list-empty"><span class="empty-icon">📋</span><p>' + t('empty_tasks') + '</p><button type="button" class="btn-primary" id="emptyTaskFormBtn" style="margin-top:12px;">' + t('new_task') + '</button></div>';
+                    setTimeout(function() {
+                        var emptyBtn = document.getElementById('emptyTaskFormBtn');
+                        if (emptyBtn) {
+                            emptyBtn.removeEventListener('click', toggleTaskForm);
+                            emptyBtn.addEventListener('click', toggleTaskForm);
+                        }
+                    }, 50);
+                }
                 if (countEl) countEl.style.display = 'none';
                 if (loadMoreEl) loadMoreEl.style.display = 'none';
                 return;
@@ -6835,7 +6938,12 @@
             var container = document.getElementById('processTemplateStagesContainer');
             var div = document.createElement('div');
             div.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center;';
-            div.innerHTML = '<input type="text" class="process-stage-name" data-i18n-ph="process_stage_name" placeholder="' + (t('process_stage_name') || 'نام مرحله') + '" value="' + escapeHtml(name) + '" style="flex:1;"> <button type="button" class="btn-secondary" style="padding:4px 10px;" onclick="this.parentElement.remove()">×</button>';
+            div.innerHTML = '<input type="text" class="process-stage-name" data-i18n-ph="process_stage_name" placeholder="' + (t('process_stage_name') || 'نام مرحله') + '" value="' + escapeHtml(name) + '" style="flex:1;"><button type="button" class="btn-secondary" style="padding:4px 10px;" class="process-stage-remove">×</button>';
+            var removeStageBtn = div.querySelector('.process-stage-remove');
+            if (removeStageBtn) {
+                removeStageBtn.removeEventListener('click', function(e) { div.remove(); });
+                removeStageBtn.addEventListener('click', function(e) { div.remove(); });
+            }
             container.appendChild(div);
         }
         function closeProcessTemplateModal() { document.getElementById('modalProcessTemplate').style.display = 'none'; }
