@@ -4041,7 +4041,35 @@
         }
         
         /* ========== Conversation Event Handlers Setup ========== */
+        var convListClickHandler = null;
+        
         function setupConversationEventHandlers() {
+            // Conversation list items - event delegation
+            var convList = document.getElementById('convList');
+            if (convList) {
+                // Remove old handler
+                if (convListClickHandler) {
+                    convList.removeEventListener('click', convListClickHandler);
+                }
+                
+                // Create new handler
+                convListClickHandler = function(e) {
+                    var item = e.target.closest('.conv-list-item');
+                    if (!item) return;
+                    
+                    var id = item.getAttribute('data-id');
+                    var name = item.getAttribute('data-name');
+                    var phone = item.getAttribute('data-phone');
+                    var profilePic = item.getAttribute('data-profile-pic');
+                    var isGroup = item.getAttribute('data-is-group') === '1';
+                    
+                    if (id) {
+                        openChat(id, name || '', phone || '', profilePic || '', isGroup);
+                    }
+                };
+                
+                convList.addEventListener('click', convListClickHandler);
+            }
             // Close button handlers
             var annCloseBtn = document.getElementById('annMarqueeCloseBtn');
             if (annCloseBtn) {
@@ -4132,13 +4160,6 @@
             if (detailToggle) {
                 detailToggle.removeEventListener('click', toggleChatDetailBar);
                 detailToggle.addEventListener('click', toggleChatDetailBar);
-            }
-            
-            // Conversation list items - event delegation
-            var convList = document.getElementById('convList');
-            if (convList) {
-                convList.removeEventListener('click', handleConvListItemClick);
-                convList.addEventListener('click', handleConvListItemClick);
             }
             
             // New conversation modal close button
@@ -4290,21 +4311,6 @@
                     return false;
                 });
             });
-        }
-        
-        function handleConvListItemClick(e) {
-            var item = e.target.closest('.conv-list-item');
-            if (!item) return;
-            
-            var id = item.getAttribute('data-id');
-            var name = item.getAttribute('data-name');
-            var phone = item.getAttribute('data-phone');
-            var profilePic = item.getAttribute('data-profile-pic');
-            var isGroup = item.getAttribute('data-is-group') === '1';
-            
-            if (id) {
-                openChat(id, name || '', phone || '', profilePic || '', isGroup);
-            }
         }
         
         function handleQuickTabClick(e) {
