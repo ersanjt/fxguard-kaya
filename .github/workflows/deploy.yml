@@ -92,16 +92,25 @@ jobs:
             # ---- reload با PM2 ----
             echo "🔄 reload سرویس‌ها ..."
             cd ..
-            pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js --update-env
+            # سعی می‌کنیم با ecosystem reload کنیم؛ اگر نشد stop/start می‌کنیم
+            if pm2 reload ecosystem.config.js --update-env; then
+              echo "  ✅ pm2 reload موفق"
+            else
+              echo "  ⚠️ reload شکست خورد، stop/start می‌کنیم..."
+              pm2 stop ecosystem.config.js 2>/dev/null || true
+              sleep 3
+              pm2 start ecosystem.config.js --update-env
+            fi
             pm2 save
 
             # ---- بررسی سلامت بعد از deploy ----
-            echo "⏳ انتظار برای راه‌اندازی (۱۰ ثانیه) ..."
-            sleep 10
+            echo "⏳ انتظار برای راه‌اندازی (۱۵ ثانیه) ..."
+            sleep 15
             if curl -sf http://localhost:3002/api/ping > /dev/null; then
               echo "✅ Deploy موفق — سرور پاسخ می‌دهد"
             else
               echo "❌ هشدار: سرور پس از deploy پاسخ نمی‌دهد — لاگ‌ها را بررسی کنید"
               pm2 logs crm-backend --lines 30 --nostream || true
+              pm2 logs kayaCRM --lines 30 --nostream || true
               exit 1
             fi
