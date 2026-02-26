@@ -3675,6 +3675,13 @@
                 menuBtn.addEventListener('click', toggleSidebarMobile);
             }
             
+            // Sidebar overlay
+            var sidebarOverlay = document.getElementById('sidebarOverlay');
+            if (sidebarOverlay) {
+                sidebarOverlay.removeEventListener('click', closeSidebarMobile);
+                sidebarOverlay.addEventListener('click', closeSidebarMobile);
+            }
+            
             // Header announcement toggle button
             var annToggleBtn = document.getElementById('headerAnnToggleBtn');
             if (annToggleBtn) {
@@ -3701,6 +3708,33 @@
             if (searchTriggerDesktop) {
                 searchTriggerDesktop.removeEventListener('click', openHeaderSearchPopup);
                 searchTriggerDesktop.addEventListener('click', openHeaderSearchPopup);
+            }
+            
+            // Header search modal overlay - close on background click
+            var headerSearchModal = document.getElementById('headerSearchModal');
+            if (headerSearchModal) {
+                var searchModalCloseHandler = function(e) {
+                    if (e.target === headerSearchModal) closeHeaderSearchPopup();
+                };
+                headerSearchModal.removeEventListener('click', searchModalCloseHandler);
+                headerSearchModal.addEventListener('click', searchModalCloseHandler);
+            }
+            
+            // Header search modal close button
+            var headerSearchClose = document.querySelector('#headerSearchModal .modal-close');
+            if (headerSearchClose) {
+                headerSearchClose.removeEventListener('click', closeHeaderSearchPopup);
+                headerSearchClose.addEventListener('click', closeHeaderSearchPopup);
+            }
+            
+            // Header search modal input - Enter key
+            var headerSearchModalInput = document.getElementById('headerSearchModalInput');
+            if (headerSearchModalInput) {
+                var searchInputHandler = function(e) {
+                    if (e.key === 'Enter') doHeaderSearchFromModal();
+                };
+                headerSearchModalInput.removeEventListener('keyup', searchInputHandler);
+                headerSearchModalInput.addEventListener('keyup', searchInputHandler);
             }
             
             // Header user dropdown triggers
@@ -3772,7 +3806,229 @@
                 syncBtn.addEventListener('click', syncWhatsAppGroups);
             }
             
-
+            // New conversation button
+            var newConvBtn = document.getElementById('btnNewConv');
+            if (newConvBtn) {
+                newConvBtn.removeEventListener('click', openNewConvModal);
+                newConvBtn.addEventListener('click', openNewConvModal);
+            }
+            
+            // Quick tab buttons
+            document.querySelectorAll('.conv-quick-tabs .conv-tab').forEach(function(btn) {
+                btn.removeEventListener('click', handleQuickTabClick);
+                btn.addEventListener('click', handleQuickTabClick);
+            });
+            
+            // Search input
+            var searchInput = document.getElementById('convSearch');
+            if (searchInput) {
+                searchInput.removeEventListener('keypress', handleSearchKeyPress);
+                searchInput.addEventListener('keypress', handleSearchKeyPress);
+            }
+            
+            // Filter toggle
+            var filterToggle = document.getElementById('convFilterToggle');
+            if (filterToggle) {
+                filterToggle.removeEventListener('click', toggleConvAdvancedFilters);
+                filterToggle.addEventListener('click', toggleConvAdvancedFilters);
+            }
+            
+            // Apply filters button
+            var applyBtn = document.getElementById('btnApplyConvFilters');
+            if (applyBtn) {
+                applyBtn.removeEventListener('click', applyConvFilters);
+                applyBtn.addEventListener('click', applyConvFilters);
+            }
+            
+            // Filter selects - change events
+            ['convFilterStatus', 'convFilterPriority', 'convFilterBranch', 'convFilterDept', 'convFilterAssignee'].forEach(function(id) {
+                var select = document.getElementById(id);
+                if (select) {
+                    select.removeEventListener('change', applyConvFilters);
+                    select.addEventListener('change', applyConvFilters);
+                }
+            });
+            
+            // Chat back button
+            var backBtn = document.getElementById('chatBackBtn');
+            if (backBtn) {
+                backBtn.removeEventListener('click', closeChatMobile);
+                backBtn.addEventListener('click', closeChatMobile);
+            }
+            
+            // Chat detail toggle
+            var detailToggle = document.getElementById('chatDetailToggle');
+            if (detailToggle) {
+                detailToggle.removeEventListener('click', toggleChatDetailBar);
+                detailToggle.addEventListener('click', toggleChatDetailBar);
+            }
+            
+            // Conversation list items - event delegation
+            var convList = document.getElementById('convList');
+            if (convList) {
+                convList.removeEventListener('click', handleConvListItemClick);
+                convList.addEventListener('click', handleConvListItemClick);
+            }
+            
+            // New conversation modal close button
+            var newConvModalClose = document.querySelector('#newConvModal .modal-close');
+            if (newConvModalClose) {
+                newConvModalClose.removeEventListener('click', closeNewConvModal);
+                newConvModalClose.addEventListener('click', closeNewConvModal);
+            }
+            
+            // Conversation detail delete/archive buttons
+            var convDeleteBtn = document.getElementById('btnConvDelete');
+            if (convDeleteBtn) {
+                convDeleteBtn.removeEventListener('click', deleteConversation);
+                convDeleteBtn.addEventListener('click', deleteConversation);
+            }
+            
+            var convArchiveBtn = document.getElementById('btnConvArchive');
+            if (convArchiveBtn) {
+                convArchiveBtn.removeEventListener('click', archiveConversation);
+                convArchiveBtn.addEventListener('click', archiveConversation);
+            }
+            
+            var assignBtn = document.getElementById('btnAssignToMe');
+            if (assignBtn) {
+                assignBtn.removeEventListener('click', assignConvToMe);
+                assignBtn.addEventListener('click', assignConvToMe);
+            }
+            
+            // Conversation detail update button
+            var updateConvBtn = document.querySelector('[onclick*="updateConvFromDetail"]');
+            if (!updateConvBtn) {
+                updateConvBtn = document.querySelector('.conv-detail-bar button[data-i18n="btn_apply"]');
+            }
+            if (updateConvBtn) {
+                updateConvBtn.removeEventListener('click', updateConvFromDetail);
+                updateConvBtn.addEventListener('click', updateConvFromDetail);
+            }
+            
+            // Conversation detail selects - change handlers
+            ['convDetailStatus', 'convDetailPriority', 'convDetailAssignee', 'convDetailDept'].forEach(function(id) {
+                var select = document.getElementById(id);
+                if (select) {
+                    select.removeEventListener('change', function() {});
+                    select.addEventListener('change', function() {});
+                }
+            });
+            
+            // Chat message handlers
+            var msgAttachBtn = document.getElementById('msgAttachBtn');
+            if (msgAttachBtn) {
+                msgAttachBtn.removeEventListener('click', function() {
+                    document.getElementById('msgFileInput').click();
+                });
+                msgAttachBtn.addEventListener('click', function() {
+                    document.getElementById('msgFileInput').click();
+                });
+            }
+            
+            var msgTemplateBtn = document.getElementById('msgTemplateBtn');
+            if (msgTemplateBtn) {
+                msgTemplateBtn.removeEventListener('click', toggleTemplateDropdown);
+                msgTemplateBtn.addEventListener('click', toggleTemplateDropdown);
+            }
+            
+            var chatReplyCancelBtn = document.querySelector('.chat-reply-cancel');
+            if (chatReplyCancelBtn) {
+                chatReplyCancelBtn.removeEventListener('click', cancelReply);
+                chatReplyCancelBtn.addEventListener('click', cancelReply);
+            }
+            
+            // Chat rating stars
+            document.querySelectorAll('.conv-rating-star').forEach(function(star) {
+                star.removeEventListener('click', function() {
+                    var newRating = parseInt(this.getAttribute('data-rating'), 10);
+                    updateConvRating(currentConvId, newRating);
+                });
+                star.addEventListener('click', function() {
+                    var newRating = parseInt(this.getAttribute('data-rating'), 10);
+                    updateConvRating(currentConvId, newRating);
+                });
+            });
+            
+            // Dashboard refresh button
+            var dashRefreshBtn = document.getElementById('dashboardRefreshBtn');
+            if (dashRefreshBtn) {
+                dashRefreshBtn.removeEventListener('click', refreshDashboard);
+                dashRefreshBtn.addEventListener('click', refreshDashboard);
+            }
+            
+            // Sidebar toggle (desktop)
+            var sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            if (sidebarToggleBtn) {
+                sidebarToggleBtn.removeEventListener('click', toggleSidebarDesktop);
+                sidebarToggleBtn.addEventListener('click', toggleSidebarDesktop);
+            }
+            
+            // Language buttons - all instances
+            document.querySelectorAll('[data-lang]').forEach(function(btn) {
+                // Skip the sidebar and dropdown buttons since they have other logic
+                if (btn.classList.contains('lang-switch')) return;
+                btn.removeEventListener('click', function() {
+                    var lang = this.getAttribute('data-lang');
+                    if (lang) setLang(lang);
+                });
+                btn.addEventListener('click', function() {
+                    var lang = this.getAttribute('data-lang');
+                    if (lang) setLang(lang);
+                });
+            });
+            
+            // Language dropdown
+            var langDropdownBtn = document.getElementById('langDropdownBtn');
+            if (langDropdownBtn) {
+                langDropdownBtn.removeEventListener('click', toggleLangDropdown);
+                langDropdownBtn.addEventListener('click', toggleLangDropdown);
+            }
+            
+            // Language dropdown menu items
+            document.querySelectorAll('.lang-dropdown-menu button').forEach(function(btn) {
+                var langHandler = function() {
+                    var lang = this.getAttribute('data-lang');
+                    if (lang) {
+                        setLang(lang);
+                        if (typeof closeLangDropdown === 'function') closeLangDropdown();
+                    }
+                };
+                btn.removeEventListener('click', langHandler);
+                btn.addEventListener('click', langHandler);
+            });
+            
+            // Mobile footer navigation
+            document.querySelectorAll('.mobile-tab-item').forEach(function(tab) {
+                tab.removeEventListener('click', function(e) {
+                    e.preventDefault();
+                    var page = this.getAttribute('data-page');
+                    if (page) {
+                        showPage(page);
+                        closeSidebarMobile();
+                    }
+                    return false;
+                });
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var page = this.getAttribute('data-page');
+                    if (page) {
+                        showPage(page);
+                        closeSidebarMobile();
+                    }
+                    return false;
+                });
+            });
+        }
+        
+        function handleConvListItemClick(e) {
+            var item = e.target.closest('.conv-list-item');
+            if (!item) return;
+            
+            var id = item.getAttribute('data-id');
+            var name = item.getAttribute('data-name');
+            var phone = item.getAttribute('data-phone');
+            var profilePic = item.getAttribute('data-profile-pic');
             var isGroup = item.getAttribute('data-is-group') === '1';
             
             if (id) {
