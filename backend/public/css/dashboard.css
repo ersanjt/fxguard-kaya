@@ -588,7 +588,7 @@
             .mobile-tab-bar .mobile-tab-item.active { color: var(--accent); font-weight: 600; }
             .mobile-tab-bar .mobile-tab-item.active .mobile-tab-icon { color: var(--accent); }
             .mobile-tab-bar .mobile-tab-item.active .mobile-tab-icon svg { stroke-width: 2.5; }
-            .mobile-tab-bar .mobile-tab-item .mobile-tab-badge { position: absolute; top: 0; left: 50%; margin-inline-start: 10px; transform: translateY(-50%); min-width: 16px; height: 16px; padding: 0 4px; font-size: 0.6rem; font-weight: 700; line-height: 16px; text-align: center; background: var(--danger, #ef4444); color: #fff; border-radius: 8px; }
+            .mobile-tab-bar .mobile-tab-item .mobile-tab-badge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 4px; font-size: 0.65rem; font-weight: 700; line-height: 18px; text-align: center; background: var(--danger, #ef4444); color: #fff; border-radius: 9px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
             .bottom-bar.has-mobile-tab .app-footer { display: none !important; }
         }
         /* ========== هدر و نوار پایین دسکتاپ (ویندوز) — min-width: 769px ========== */
@@ -1900,7 +1900,9 @@
             .chat-attach-btn { min-width: 44px; min-height: 44px; flex-shrink: 0; }
             .chat-send { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
             .conv-quick-tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
-            .conv-stats { flex-wrap: wrap; gap: 8px; padding: 10px 14px; font-size: 0.85rem; }
+            .conv-stats { display: flex; gap: 12px; margin-bottom: 12px; padding: 10px 14px; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); font-size: 0.8rem; flex-wrap: wrap; }
+            .conv-stat { color: var(--text-secondary); white-space: nowrap; }
+            .conv-stat strong { color: var(--accent); margin-left: 4px; font-weight: 600; }
             .conv-stat { white-space: nowrap; }
             .conv-page-desc { display: none; }
             .conv-page-header { margin-bottom: 10px; flex-direction: column; align-items: stretch; }
@@ -2202,7 +2204,7 @@
             .sidebar a { padding: 12px 16px; font-size: 0.95rem; margin: 0 12px 2px; min-height: 44px; display: flex; align-items: center; min-width: 0; }
             .sidebar a span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
             .sidebar .nav-icon { display: flex; }
-            .content { padding: 16px; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+            .content { padding: 12px; padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); padding-bottom: max(12px, env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; touch-action: pan-y; overflow-y: auto; }
             .login-box { padding: 24px; }
             .msg { max-width: 90%; }
             .price-ticker { display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 10px 0; font-size: 0.8rem; padding: 10px 12px; padding-inline-start: max(12px, env(safe-area-inset-inline-start)); padding-inline-end: max(12px, env(safe-area-inset-inline-end)); padding-bottom: max(10px, env(safe-area-inset-bottom)); position: relative; transition: max-height 0.3s ease, padding 0.3s ease; min-width: 0; }
@@ -2251,22 +2253,21 @@
             .conv-page-header { margin-bottom: 12px; gap: 10px; flex-direction: column; align-items: stretch; }
             .conv-page-header > div:first-child { flex: 1; min-width: 0; }
             .conv-header-actions { width: 100%; justify-content: flex-start; gap: 8px; flex-wrap: nowrap; }
-            .conv-header-actions .btn-primary { flex: 1; min-width: 0; justify-content: center; }
-            .conv-sync-groups-btn .conv-sync-text { display: none; }
+            .conv-header-actions .btn-primary { flex: 1; min-width: 0; justify-content: center; min-height: 44px; }
+            .conv-sync-groups-btn { display: none; }
             .conv-sync-groups-btn { min-width: 44px; min-height: 44px; padding: 10px 14px; }
             .conv-sync-groups-btn { min-width: 44px; min-height: 44px; padding: 10px 14px; }
             .conv-page-header h2 { font-size: 1.15rem; }
             .conv-page-desc { display: none; }
             .conv-page-header .btn-primary { padding: 10px 16px; font-size: 0.9rem; min-height: 48px; flex-shrink: 0; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
             .conv-page-header .btn-primary:active { transform: scale(0.97); }
-            .conv-quick-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin-bottom: 12px; padding: 0 4px 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x proximity; overscroll-behavior-x: contain; }
+            .conv-quick-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin-bottom: 12px; padding: 4px 4px 8px 4px; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; }
             .conv-quick-tabs::-webkit-scrollbar { display: none; }
-            .conv-quick-tabs .conv-tab { flex-shrink: 0; padding: 10px 16px; font-size: 0.875rem; min-height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: start; }
-            .conv-toolbar { margin-bottom: 12px; gap: 10px; }
-            .conv-search-wrap { flex: 1; min-width: 0; }
-            .conv-search-wrap .conv-filter-input { min-height: 48px; padding: 12px 44px 12px 16px; font-size: 0.9rem; }
-            .btn-filter-toggle { min-height: 48px; padding: 12px 16px; font-size: 0.875rem; white-space: nowrap; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-            .btn-filter-toggle:active { transform: scale(0.96); }
+            .conv-quick-tabs .conv-tab { flex-shrink: 0; padding: 8px 14px; font-size: 0.8rem; min-height: 40px; display: flex; align-items: center; justify-content: center; scroll-snap-align: start; white-space: nowrap; }
+            .conv-toolbar { margin-bottom: 12px; gap: 8px; display: flex; flex-wrap: wrap; align-items: stretch; }
+            .conv-search-wrap { flex: 1; min-width: 0; display: flex; align-items: center; }
+            .conv-search-wrap .conv-filter-input { min-height: 44px; padding: 10px 40px 10px 14px; font-size: 0.9rem; width: 100%; }
+            .btn-filter-toggle { min-height: 44px; padding: 10px 12px; font-size: 0.8rem; white-space: nowrap; flex-shrink: 0; }
             .conv-layout { flex-direction: column; min-height: min(500px, 75vh, 75dvh); gap: 0; position: relative; }
             .conv-list-wrap { flex: 0 0 auto; width: 100%; max-width: 100%; max-height: min(500px, 70vh, 70dvh); min-height: 260px; }
             .conv-list-pane { flex: 1; min-height: 0; max-height: none; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 10px 12px; }
@@ -2274,9 +2275,7 @@
             .conv-layout .chat-area.show { display: flex; flex: 1; min-height: 280px; }
             .conv-layout.chat-open .conv-list-wrap { display: none !important; }
             .conv-layout:has(.chat-area.show) .conv-list-wrap { display: none !important; }
-            .conv-list-header { padding: 10px 12px; min-height: 44px; min-width: 0; overflow: hidden; }
-            .conv-list-header .conv-list-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
-            .conv-list-header .conv-list-count { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+            .conv-list-header { padding: 8px 10px; min-height: 40px; min-width: 0; overflow: hidden; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; border-bottom: 1px solid var(--border); }\n            .conv-list-header .conv-list-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; font-size: 0.9rem; font-weight: 600; }\n            .conv-list-header .conv-list-count { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; }
             .conv-list-wrap { overflow-x: hidden; }
             /* موبایل: وقتی چت باز است، هدر/تب‌ها/فیلترها مخفی شوند تا چت تمام‌صفحه شود */
             #pageConversations:has(.conv-layout.chat-open) .conv-page-header,
@@ -2286,17 +2285,17 @@
             #pageConversations:has(.conv-layout.chat-open) { position: relative; }
             #pageConversations:has(.conv-layout.chat-open) .conv-layout { flex: 1; min-height: 0; position: absolute; inset: 0; }
             #pageConversations:has(.conv-layout.chat-open) .conv-layout .chat-area.show { min-height: 0; flex: 1; border-radius: 0; border: none; }
-            .conv-list-item { padding: 14px 16px; min-height: 76px; gap: 12px; margin-bottom: 8px; flex-wrap: wrap; align-items: flex-start; border-radius: 12px; }
-            .conv-list-item .conv-item-body { flex: 1 1 200px; min-width: 0; }
-            .conv-list-item .conv-item-badges { flex-basis: 100%; order: 10; margin-top: 8px; padding-inline-start: 62px; }
-            .conv-item-avatar { width: 50px; height: 50px; min-width: 50px; font-size: 1.25rem; border-radius: 12px; }
+            .conv-list-item { padding: 12px 14px; min-height: 72px; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; align-items: flex-start; border-radius: 10px; }
+            .conv-list-item .conv-item-body { flex: 1 1 160px; min-width: 0; }
+            .conv-list-item .conv-item-badges { flex-basis: 100%; order: 10; margin-top: 6px; padding-inline-start: 56px; }
+            .conv-item-avatar { width: 44px; height: 44px; min-width: 44px; font-size: 1.1rem; border-radius: 10px; }
             .conv-item-body { min-width: 0; flex: 1 1 auto; }
-            .conv-item-top .name { font-size: 0.95rem; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; line-height: 1.4; font-weight: 600; }
-            .conv-item-meta { min-width: 0; font-size: 0.85rem; line-height: 1.4; }
-            .conv-item-preview { font-size: 0.85rem; margin-top: 4px; line-height: 1.4; -webkit-line-clamp: 2; }
-            .conv-item-time { font-size: 0.75rem; white-space: nowrap; }
-            .conv-item-badges { flex-wrap: wrap; flex-shrink: 1; min-width: 0; gap: 6px; }
-            .conv-item-badges .badge { font-size: 0.72rem; padding: 4px 10px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 6px; font-weight: 500; }
+            .conv-item-top .name { font-size: 0.9rem; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; line-height: 1.3; font-weight: 600; }
+            .conv-item-meta { min-width: 0; font-size: 0.8rem; line-height: 1.3; opacity: 0.9; }
+            .conv-item-preview { font-size: 0.8rem; margin-top: 2px; line-height: 1.3; -webkit-line-clamp: 1; opacity: 0.8; }
+            .conv-item-time { font-size: 0.7rem; white-space: nowrap; opacity: 0.75; flex-shrink: 0; order: 2; }
+            .conv-item-badges { flex-wrap: wrap; flex-shrink: 0; min-width: 0; gap: 4px; }
+            .conv-item-badges .badge { font-size: 0.65rem; padding: 2px 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; font-weight: 500; }
             .chat-back-btn { display: none; }
             .conv-layout.chat-open .chat-back-btn { display: flex !important; }
             .chat-back-btn { margin-inline-end: 8px; border-radius: 12px; touch-action: manipulation; transition: background 0.2s, transform 0.1s; }
