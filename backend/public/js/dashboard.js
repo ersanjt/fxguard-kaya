@@ -4044,8 +4044,12 @@
         var convListClickHandler = null;
         
         function setupConversationEventHandlers() {
+            console.log('✅ setupConversationEventHandlers called');
+            
             // Conversation list items - event delegation
             var convList = document.getElementById('convList');
+            console.log('📋 convList element:', convList ? 'found' : 'NOT FOUND');
+            
             if (convList) {
                 // Remove old handler
                 if (convListClickHandler) {
@@ -4054,7 +4058,10 @@
                 
                 // Create new handler
                 convListClickHandler = function(e) {
+                    console.log('🖱️ Click on conversation list:', e.target);
                     var item = e.target.closest('.conv-list-item');
+                    console.log('📌 Closest .conv-list-item:', item ? 'found' : 'NOT FOUND');
+                    
                     if (!item) return;
                     
                     var id = item.getAttribute('data-id');
@@ -4063,12 +4070,15 @@
                     var profilePic = item.getAttribute('data-profile-pic');
                     var isGroup = item.getAttribute('data-is-group') === '1';
                     
+                    console.log('💬 Opening chat with:', { id, name, phone });
+                    
                     if (id) {
                         openChat(id, name || '', phone || '', profilePic || '', isGroup);
                     }
                 };
                 
                 convList.addEventListener('click', convListClickHandler);
+                console.log('✅ Click handler attached to convList');
             }
             // Close button handlers
             var annCloseBtn = document.getElementById('annMarqueeCloseBtn');
@@ -6284,7 +6294,16 @@
             var content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
             if (page === 'dashboard') loadDashboard();
-            if (page === 'conversations') { loadConvFiltersInit(); loadConversations(); setTimeout(function() { removeAllInlineHandlers(); setupConversationEventHandlers(); }, 100); }
+            if (page === 'conversations') { 
+                console.log('📍 Loading conversations page');
+                loadConvFiltersInit(); 
+                loadConversations(); 
+                setTimeout(function() { 
+                    console.log('⏱️ Timeout reached - setting up event handlers');
+                    removeAllInlineHandlers(); 
+                    setupConversationEventHandlers(); 
+                }, 250);  // Increased timeout from 100ms to 250ms for slower loads
+            }
             if (page === 'customers') loadCustomers();
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
             if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }
