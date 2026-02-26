@@ -7,7 +7,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const XLSX = require('xlsx');
+const ExcelJS = require('exceljs');
 const { Customer } = require('../models');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { normalizePhone } = require('../lib/phoneUtils');
@@ -22,11 +22,15 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 5 * 1024 * 1024 } });
 
-function parseExcelBuffer(buffer) {
-    const workbook = XLSX.read(buffer, { type: 'buffer' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+async function parseExcelBuffer(buffer) {
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(buffer);
+    const sheet = workbook.worksheets[0];
     if (!sheet) return [];
-    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+    const rows = [];
+    sheet.eachRow((row) => {
+        rows.push(row.values.slice(1)); // values[0] is undefined in exceljs
+    });
     if (rows.length < 2) return [];
     const headers = (rows[0] || []).map(h => String(h || '').toLowerCase().trim());
     const nameIdx = headers.findIndex(h => h === 'name' || h === 'نام');
@@ -49,7 +53,7 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!req.file) return res.status(400).json({ error: 'فایلی انتخاب نشده است' });
         const buffer = fs.readFileSync(req.file.path);
-        const rows = parseExcelBuffer(buffer);
+        const rows = await parseExcelBuffer(buffer);
         try { fs.unlinkSync(req.file.path); } catch (_) {}
         if (rows.length === 0) return res.status(400).json({ error: 'هیچ ردیف معتبری در فایل یافت نشد. ستون‌های name و phone الزامی‌اند.' });
         res.json({ rows, total: rows.length });

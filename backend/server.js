@@ -117,17 +117,42 @@ const contactLimiter = rateLimit({
 });
 
 // ==================== Logger ====================
+let DailyRotateFile;
+try { DailyRotateFile = require('winston-daily-rotate-file'); } catch (_) {}
+
+const logFormat = winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.json()
+);
+
+const logTransports = [new winston.transports.Console()];
+
+if (DailyRotateFile) {
+    const logsDir = process.env.LOG_DIR || './logs';
+    logTransports.push(new DailyRotateFile({
+        filename: `${logsDir}/error-%DATE%.log`,
+        datePattern: 'YYYY-MM-DD',
+        level: 'error',
+        maxSize: '20m',
+        maxFiles: '14d',
+        zippedArchive: true,
+    }));
+    logTransports.push(new DailyRotateFile({
+        filename: `${logsDir}/combined-%DATE%.log`,
+        datePattern: 'YYYY-MM-DD',
+        maxSize: '50m',
+        maxFiles: '30d',
+        zippedArchive: true,
+    }));
+} else {
+    logTransports.push(new winston.transports.File({ filename: 'error.log', level: 'error' }));
+    logTransports.push(new winston.transports.File({ filename: 'combined.log' }));
+}
+
 const logger = winston.createLogger({
-    level: 'info',
-    format: winston.format.combine(
-        winston.format.timestamp(),
-        winston.format.json()
-    ),
-    transports: [
-        new winston.transports.File({ filename: 'error.log', level: 'error' }),
-        new winston.transports.File({ filename: 'combined.log' }),
-        new winston.transports.Console()
-    ]
+    level: process.env.LOG_LEVEL || 'info',
+    format: logFormat,
+    transports: logTransports,
 });
 
 // ==================== Redis (optional) ====================
@@ -157,21 +182,44 @@ async function connectRabbitMQ() {
         rabbitChannel = await connection.createChannel();
         require('./services/autoMessages').setRabbitChannel(rabbitChannel);
         
-        await rabbitChannel.assertQueue('whatsapp_messages', { durable: true });
+        // Dead-letter queue برای پیام‌های خراب (poison messages)
+        await rabbitChannel.assertQueue('whatsapp_messages_dead', { durable: true });
+        await rabbitChannel.assertQueue('whatsapp_messages', {
+            durable: true,
+            arguments: {
+                'x-dead-letter-exchange': '',
+                'x-dead-letter-routing-key': 'whatsapp_messages_dead',
+                'x-message-ttl': 60000,
+            }
+        });
         await rabbitChannel.assertQueue('outgoing_messages', { durable: true });
-        
+
         logger.info('✅ Connected to RabbitMQ');
-        
-        // مصرف پیام‌های دریافتی از WhatsApp Gateway — nack در صورت خطا تا پیام دوباره در صف قرار گیرد
+
+        // مصرف پیام‌های دریافتی — بعد از ۳ بار شکست به dead-letter می‌رود
         rabbitChannel.consume('whatsapp_messages', async (msg) => {
             if (!msg) return;
+            const retryCount = (msg.properties.headers?.['x-retry-count'] || 0);
+            const MAX_RETRIES = 3;
             try {
                 const messageData = JSON.parse(msg.content.toString());
                 await processIncomingMessage(messageData);
                 rabbitChannel.ack(msg);
             } catch (err) {
-                logger.error('processIncomingMessage failed, message requeued', { error: err?.message });
-                rabbitChannel.nack(msg, false, true);
+                logger.error('processIncomingMessage failed', { error: err?.message, retryCount });
+                if (retryCount >= MAX_RETRIES) {
+                    logger.error('Message moved to dead-letter queue after max retries', { retryCount });
+                    rabbitChannel.nack(msg, false, false); // به dead-letter می‌رود
+                } else {
+                    // requeue با شمارنده retry
+                    rabbitChannel.nack(msg, false, false);
+                    setTimeout(() => {
+                        rabbitChannel.sendToQueue('whatsapp_messages', msg.content, {
+                            persistent: true,
+                            headers: { 'x-retry-count': retryCount + 1 }
+                        });
+                    }, Math.min(1000 * Math.pow(2, retryCount), 30000)); // exponential backoff
+                }
             }
         });
         

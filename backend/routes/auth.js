@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const speakeasy = require('speakeasy');
+const { authenticator } = require('otplib');
 const QRCode = require('qrcode');
 const { User, sequelize, PasswordResetToken } = require('../models');
 const { Op } = require('sequelize');
@@ -187,12 +187,8 @@ router.post('/totp/verify-login', async (req, res) => {
         if (!user || !user.isActive || !user.totpEnabled || !user.totpSecret) {
             return res.status(401).json({ error: 'کاربر نامعتبر است' });
         }
-        const verified = speakeasy.totp.verify({
-            secret: user.totpSecret,
-            encoding: 'base32',
-            token: String(code).replace(/\s/g, ''),
-            window: 1
-        });
+        authenticator.options = { window: 1 };
+        const verified = authenticator.verify({ token: String(code).replace(/\s/g, ''), secret: user.totpSecret });
         if (!verified) return res.status(401).json({ error: 'کد احراز هویت اشتباه یا منقضی است' });
         const now = new Date();
         await user.update({ lastLoginAt: now, status: 'online' });
@@ -279,11 +275,11 @@ const { authMiddleware } = require('../middleware/auth');
 router.get('/totp/setup', authMiddleware, async (req, res) => {
     try {
         if (req.user.totpEnabled) return res.status(400).json({ error: 'احراز دو مرحله‌ای از قبل فعال است' });
-        const secret = speakeasy.generateSecret({ name: 'Kaya CRM (' + req.user.email + ')', length: 20 });
-        await req.user.update({ totpSecret: secret.base32 });
-        const otpauth = secret.otpauth_url;
+        const secret = authenticator.generateSecret(20);
+        await req.user.update({ totpSecret: secret });
+        const otpauth = authenticator.keyuri(req.user.email, 'Kaya CRM', secret);
         const qrDataUrl = await QRCode.toDataURL(otpauth, { width: 220, margin: 2 });
-        res.json({ secret: secret.base32, qrCode: qrDataUrl });
+        res.json({ secret, qrCode: qrDataUrl });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -294,12 +290,8 @@ router.post('/totp/confirm-setup', authMiddleware, async (req, res) => {
         const code = (req.body.code || '').toString().replace(/\s/g, '');
         if (!code) return res.status(400).json({ error: 'کد شش‌رقمی را وارد کنید' });
         if (!req.user.totpSecret) return res.status(400).json({ error: 'ابتدا مرحلهٔ اسکن QR را انجام دهید' });
-        const verified = speakeasy.totp.verify({
-            secret: req.user.totpSecret,
-            encoding: 'base32',
-            token: code,
-            window: 1
-        });
+        authenticator.options = { window: 1 };
+        const verified = authenticator.verify({ token: code, secret: req.user.totpSecret });
         if (!verified) return res.status(400).json({ error: 'کد اشتباه یا منقضی است' });
         await req.user.update({ totpEnabled: true });
         res.json({ ok: true, message: 'احراز هویت دو مرحله‌ای فعال شد' });
