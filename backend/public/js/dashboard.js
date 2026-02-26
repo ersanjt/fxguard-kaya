@@ -3666,6 +3666,23 @@
         var convQuickTab = 'all';
         var convCurrentPage = 1;
 
+        /* ========== Remove All Inline Handlers (CSP Compliance) ========== */
+        function removeAllInlineHandlers() {
+            // Remove all onclick, onkeyup, onchange, onkeypress attributes to comply with CSP
+            document.querySelectorAll('[onclick]').forEach(function(el) {
+                el.removeAttribute('onclick');
+            });
+            document.querySelectorAll('[onkeyup]').forEach(function(el) {
+                el.removeAttribute('onkeyup');
+            });
+            document.querySelectorAll('[onchange]').forEach(function(el) {
+                el.removeAttribute('onchange');
+            });
+            document.querySelectorAll('[onkeypress]').forEach(function(el) {
+                el.removeAttribute('onkeypress');
+            });
+        }
+
         /* ========== Global Event Handlers Setup ========== */
         function setupGlobalEventHandlers() {
             // Header menu button
@@ -5936,7 +5953,7 @@
             var content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
             if (page === 'dashboard') loadDashboard();
-            if (page === 'conversations') { loadConvFiltersInit(); loadConversations(); setTimeout(setupConversationEventHandlers, 100); }
+            if (page === 'conversations') { loadConvFiltersInit(); loadConversations(); setTimeout(function() { removeAllInlineHandlers(); setupConversationEventHandlers(); }, 100); }
             if (page === 'customers') loadCustomers();
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
             if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }
@@ -8901,6 +8918,7 @@
                         await loadPanelSettingsAndApply();
                         applyHashRoute();
                         loadGeneralAnnouncementsMarquee();
+                        removeAllInlineHandlers();
                         setupGlobalEventHandlers();
                         checkAnnouncementMarqueeVisibility();
                         startRatesInterval();
