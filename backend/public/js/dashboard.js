@@ -3683,6 +3683,111 @@
             });
         }
 
+        /* ========== Login Page Event Handlers Setup ========== */
+        function setupLoginEventHandlers() {
+            // Language buttons on login page
+            var loginLangButtons = document.querySelectorAll('.login-langs button[data-lang]');
+            if (loginLangButtons) {
+                loginLangButtons.forEach(function(btn) {
+                    btn.removeEventListener('click', function handleLangClick(e) { 
+                        var lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
+                    btn.addEventListener('click', function handleLangClick(e) { 
+                        var lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
+                });
+            }
+            
+            // Login button
+            var btnLogin = document.getElementById('btnLogin');
+            if (btnLogin) {
+                btnLogin.removeEventListener('click', window.login);
+                btnLogin.addEventListener('click', window.login);
+            }
+            
+            // Forgot password link
+            var linkForgot = document.getElementById('linkForgotPassword');
+            if (linkForgot) {
+                linkForgot.removeEventListener('click', function(e) { e.preventDefault(); window.showForgotStep(); });
+                linkForgot.addEventListener('click', function(e) { e.preventDefault(); window.showForgotStep(); });
+            }
+            
+            // TOTP verify button
+            var btnTotpVerify = document.getElementById('btnTotpVerify');
+            if (btnTotpVerify) {
+                btnTotpVerify.removeEventListener('click', window.verifyTotpLogin);
+                btnTotpVerify.addEventListener('click', window.verifyTotpLogin);
+            }
+            
+            // Back to login button (from TOTP)
+            var btnBackToLogin1 = document.querySelector('[onclick="backToLoginStep1()"]');
+            if (!btnBackToLogin1) btnBackToLogin1 = document.evaluateXPath("//button[contains(text(), 'بازگشت')]", null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+            if (btnBackToLogin1) {
+                btnBackToLogin1.removeEventListener('click', window.backToLoginStep1);
+                btnBackToLogin1.addEventListener('click', window.backToLoginStep1);
+            }
+            
+            // Forgot password submit button
+            var btnForgotSubmit = document.getElementById('btnForgotSubmit');
+            if (btnForgotSubmit) {
+                btnForgotSubmit.removeEventListener('click', window.submitForgotPassword);
+                btnForgotSubmit.addEventListener('click', window.submitForgotPassword);
+            }
+            
+            // Back to login from forgot
+            var btnBackFromForgot = document.querySelectorAll('[onclick="backToLoginFromForgot()"]')[0];
+            if (btnBackFromForgot) {
+                btnBackFromForgot.removeEventListener('click', window.backToLoginFromForgot);
+                btnBackFromForgot.addEventListener('click', window.backToLoginFromForgot);
+            }
+            
+            // Reset password submit button
+            var btnResetSubmit = document.getElementById('btnResetSubmit');
+            if (btnResetSubmit) {
+                btnResetSubmit.removeEventListener('click', window.submitResetPassword);
+                btnResetSubmit.addEventListener('click', window.submitResetPassword);
+            }
+            
+            // Back to login from reset
+            var btnBackFromReset = document.querySelectorAll('[onclick="backToLoginFromReset(); return false;"]')[0];
+            if (btnBackFromReset) {
+                btnBackFromReset.removeEventListener('click', function(e) { e.preventDefault(); window.backToLoginFromReset(); });
+                btnBackFromReset.addEventListener('click', function(e) { e.preventDefault(); window.backToLoginFromReset(); });
+            }
+            
+            // Language buttons in forgot/reset modal
+            var forgotLangButtons = document.querySelectorAll('.forgot-langs button[data-lang]');
+            if (forgotLangButtons) {
+                forgotLangButtons.forEach(function(btn) {
+                    btn.removeEventListener('click', function handleLangClick(e) { 
+                        var lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
+                    btn.addEventListener('click', function handleLangClick(e) { 
+                        var lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
+                });
+            }
+            
+            // Skip to content link
+            var skipLink = document.getElementById('skipLink');
+            if (skipLink) {
+                skipLink.removeEventListener('click', function(e) { 
+                    e.preventDefault(); 
+                    var m = document.getElementById('mainContent');
+                    if (m) m.focus(); 
+                });
+                skipLink.addEventListener('click', function(e) { 
+                    e.preventDefault(); 
+                    var m = document.getElementById('mainContent');
+                    if (m) m.focus(); 
+                });
+            }
+        }
+
         /* ========== Global Event Handlers Setup ========== */
         function setupGlobalEventHandlers() {
             // Header menu button
@@ -8919,6 +9024,7 @@
                         applyHashRoute();
                         loadGeneralAnnouncementsMarquee();
                         removeAllInlineHandlers();
+                        setupLoginEventHandlers();
                         setupGlobalEventHandlers();
                         checkAnnouncementMarqueeVisibility();
                         startRatesInterval();
