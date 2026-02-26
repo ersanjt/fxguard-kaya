@@ -4842,6 +4842,12 @@
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 section.style.display = hasVisible ? '' : 'none';
             });
+            document.querySelectorAll('.nav-subsection').forEach(function(sub) {
+                var links = sub.querySelectorAll('.nav-link[data-section]');
+                var hasVisible = false;
+                links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
+                sub.style.display = hasVisible ? '' : 'none';
+            });
             var activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
         }
@@ -4905,9 +4911,15 @@
         var HIDDEN_SECTIONS = [];
         function applyHiddenSections(hidden) {
             HIDDEN_SECTIONS = Array.isArray(hidden) ? hidden : [];
+            var perms = (currentUser && currentUser.permissions) || {};
+            var can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
+            var pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
                 var page = link.getAttribute('data-page');
-                link.style.display = HIDDEN_SECTIONS.indexOf(page) >= 0 ? 'none' : '';
+                var section = link.getAttribute('data-section') || pageToSection[page];
+                var inHidden = HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0);
+                var noPerm = section && !can(section);
+                link.style.display = (inHidden || noPerm) ? 'none' : '';
             });
             var annBanner = document.getElementById('announcementMarquee');
             if (annBanner) {
@@ -4924,6 +4936,20 @@
             ratesInterval = null;
             tickerTimeInterval = null;
             if (HIDDEN_SECTIONS.indexOf('rates') < 0 && typeof startRatesInterval === 'function') startRatesInterval();
+            document.querySelectorAll('.nav-section').forEach(function(section) {
+                var body = section.querySelector('.nav-section-body');
+                if (!body) return;
+                var links = body.querySelectorAll('.nav-link[data-section]');
+                var hasVisible = false;
+                links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
+                section.style.display = hasVisible ? '' : 'none';
+            });
+            document.querySelectorAll('.nav-subsection').forEach(function(sub) {
+                var links = sub.querySelectorAll('.nav-link[data-section]');
+                var hasVisible = false;
+                links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
+                sub.style.display = hasVisible ? '' : 'none';
+            });
         }
         async function loadPanelSettingsAndApply() {
             var res = await apiFetch('/api/panel-settings');
