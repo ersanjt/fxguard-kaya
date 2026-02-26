@@ -3666,10 +3666,55 @@
         var convQuickTab = 'all';
         var convCurrentPage = 1;
 
+        /* ========== Global Delegated Event Handler for Dynamic Content ========== */
+        function setupGlobalDelegatedHandlers() {
+            // Global document-level click handler to catch dynamically generated buttons with onclick
+            document.addEventListener('click', function(e) {
+                var target = e.target;
+                
+                // Handle buttons with specific functions
+                if (target.matches('[onclick*="openNewConvModal"]')) {
+                    e.preventDefault();
+                    openNewConvModal();
+                }
+                else if (target.matches('[onclick*="openCustomerModal"]')) {
+                    e.preventDefault();
+                    var customerId = target.getAttribute('data-id') || '';
+                    openCustomerModal(customerId);
+                }
+                else if (target.matches('[onclick*="toggleTicketForm"]')) {
+                    e.preventDefault();
+                    toggleTicketForm();
+                }
+                else if (target.matches('[onclick*="startCustomerChat"]')) {
+                    e.preventDefault();
+                    var custId = target.getAttribute('data-cust-id') || '';
+                    var custName = target.getAttribute('data-cust-name') || '';
+                    var custPhone = target.getAttribute('data-cust-phone') || '';
+                    if (custId) startCustomerChat(custId, custName, custPhone);
+                }
+                else if (target.matches('[onclick*="openTransactionModal"]')) {
+                    e.preventDefault();
+                    var custId = target.getAttribute('data-cust-id') || '';
+                    if (custId) openTransactionModal(custId);
+                }
+                else if (target.matches('[onclick*="loadTicketDetail"]')) {
+                    e.preventDefault();
+                    var ticketId = target.getAttribute('data-ticket-id') || '';
+                    if (ticketId) loadTicketDetail(ticketId);
+                }
+            }, true); // Use capturing phase to catch before other handlers
+        }
+        
         /* ========== Remove All Inline Handlers (CSP Compliance) ========== */
         function removeAllInlineHandlers() {
             // Remove all onclick, onkeyup, onchange, onkeypress attributes to comply with CSP
             document.querySelectorAll('[onclick]').forEach(function(el) {
+                // Save the onclick content as data attribute for dynamic handler
+                var onclickVal = el.getAttribute('onclick');
+                if (onclickVal && !el.hasAttribute('data-onclick-backup')) {
+                    el.setAttribute('data-onclick-backup', onclickVal);
+                }
                 el.removeAttribute('onclick');
             });
             document.querySelectorAll('[onkeyup]').forEach(function(el) {
@@ -9114,6 +9159,7 @@
                         applyHashRoute();
                         loadGeneralAnnouncementsMarquee();
                         removeAllInlineHandlers();
+                        setupGlobalDelegatedHandlers();
                         setupLoginEventHandlers();
                         setupGlobalEventHandlers();
                         checkAnnouncementMarqueeVisibility();
