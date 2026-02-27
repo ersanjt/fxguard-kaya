@@ -1393,6 +1393,7 @@ apiRouter.use('/analytics', authMiddleware, analyticsRoutes);
 apiRouter.use('/customers', authMiddleware, customerRoutes);
 apiRouter.use('/tags', authMiddleware, require('./routes/tags'));
 apiRouter.use('/message-templates', authMiddleware, require('./routes/templates'));
+apiRouter.use('/file-templates', authMiddleware, require('./routes/fileTemplates'));
 apiRouter.use('/bulk', authMiddleware, require('./routes/bulk'));
 apiRouter.use('/customers/import', authMiddleware, require('./routes/customersImport'));
 apiRouter.use('/tickets', authMiddleware, requireSection('tickets'), require('./routes/tickets')(io));

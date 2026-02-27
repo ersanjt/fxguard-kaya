@@ -3107,23 +3107,11 @@
                 statusEl.innerHTML = enabled ? '<span class="badge done">' + t('totp_active') + '</span>' : '<span class="badge pending">' + t('totp_inactive') + '</span>';
                 if (enabled) {
                     actionsEl.innerHTML = '<button type="button" class="btn-secondary" id="totpDisableBtnDynamic">' + t('totp_disable_btn') + '</button>';
-                    setTimeout(function() {
-                        var btn = document.getElementById('totpDisableBtnDynamic');
-                        if (btn) {
-                            btn.removeEventListener('click', openTotpDisableModal);
-                            btn.addEventListener('click', openTotpDisableModal);
-                        }
-                    }, 50);
                 } else {
                     actionsEl.innerHTML = '<button type="button" class="btn-primary" id="totpSetupBtnDynamic">' + t('totp_setup_btn') + '</button>';
-                    setTimeout(function() {
-                        var btn = document.getElementById('totpSetupBtnDynamic');
-                        if (btn) {
-                            btn.removeEventListener('click', openTotpSetup);
-                            btn.addEventListener('click', openTotpSetup);
-                        }
-                    }, 50);
                 }
+                // Bind event handlers after DOM update
+                setupProfileEventHandlers();
             }
         }
         async function uploadProfileAvatar(file) {
@@ -4196,6 +4184,47 @@
             if (assignBtn) {
                 assignBtn.removeEventListener('click', assignConvToMe);
                 assignBtn.addEventListener('click', assignConvToMe);
+            }
+        }
+        
+        // Setup Profile page event handlers
+        function setupProfileEventHandlers() {
+            // Save profile button
+            var saveBtn = document.getElementById('profileSaveBtn');
+            if (saveBtn) {
+                saveBtn.removeEventListener('click', saveProfile);
+                saveBtn.addEventListener('click', saveProfile);
+            }
+            
+            // TOTP setup button (dynamically created)
+            var totpSetupBtn = document.getElementById('totpSetupBtnDynamic');
+            if (totpSetupBtn) {
+                totpSetupBtn.removeEventListener('click', openTotpSetup);
+                totpSetupBtn.addEventListener('click', openTotpSetup);
+            }
+            
+            // TOTP disable button (dynamically created)
+            var totpDisableBtn = document.getElementById('totpDisableBtnDynamic');
+            if (totpDisableBtn) {
+                totpDisableBtn.removeEventListener('click', openTotpDisableModal);
+                totpDisableBtn.addEventListener('click', openTotpDisableModal);
+            }
+        }
+        
+        // Setup Staff Activity event handlers
+        function setupStaffActivityEventHandlers() {
+            // Refresh button
+            var refreshBtn = document.getElementById('staffActivityRefresh');
+            if (refreshBtn) {
+                refreshBtn.removeEventListener('click', loadStaffActivity);
+                refreshBtn.addEventListener('click', loadStaffActivity);
+            }
+            
+            // Attendance apply button
+            var applyBtn = document.getElementById('attendanceApplyBtn');
+            if (applyBtn) {
+                applyBtn.removeEventListener('click', loadAttendanceReport);
+                applyBtn.addEventListener('click', loadAttendanceReport);
             }
             
             // Conversation detail update button
@@ -6317,8 +6346,23 @@
             if (page === 'rates-charts') loadRatesCharts();
             if (page === 'services') { initServicesTabs(); loadServicesPage(); }
             if (page === 'branches') { loadBranches(); }
-            if (page === 'staff-activity') { loadStaffActivity(); startStaffActivityLive(); } else { stopStaffActivityLive(); }
-            if (page === 'profile') loadProfile();
+            if (page === 'staff-activity') { 
+                loadStaffActivity(); 
+                startStaffActivityLive(); 
+                setTimeout(function() { 
+                    removeAllInlineHandlers(); 
+                    setupStaffActivityEventHandlers(); 
+                }, 100);
+            } else { 
+                stopStaffActivityLive(); 
+            }
+            if (page === 'profile') {
+                loadProfile();
+                setTimeout(function() {
+                    removeAllInlineHandlers();
+                    setupProfileEventHandlers();
+                }, 100);
+            }
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
             if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); var popupTid = currentInternalThreadId; closeInternalChatPopup(); var wrap = document.getElementById('internalChatLayoutWrap'); if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open'); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
             if (page === 'supervision') { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }

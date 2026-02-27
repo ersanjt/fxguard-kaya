@@ -32,6 +32,7 @@ const models = {
     Message: convModels.Message(sequelize),
     AutoResponse: convModels.AutoResponse(sequelize),
     Template: convModels.Template(sequelize),
+    FileTemplate: require('./FileTemplate')(sequelize),
     Tag: convModels.Tag(sequelize),
     Ticket: require('./Ticket')(sequelize),
     TicketReply: require('./TicketReply')(sequelize),
