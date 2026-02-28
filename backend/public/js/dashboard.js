@@ -3948,13 +3948,7 @@
                 annToggleBtn.addEventListener('click', toggleAnnouncementMarquee);
             }
             
-            // Header notify buttons
-            var notifyBtnMobile = document.getElementById('headerNotifyBtnMobile');
-            if (notifyBtnMobile) {
-                var notifyHandler = function(e) { toggleNotifyDropdown(e); };
-                notifyBtnMobile.removeEventListener('click', notifyHandler);
-                notifyBtnMobile.addEventListener('click', notifyHandler);
-            }
+            // Header notify buttons — use onclick from HTML only (avoid duplicate handlers)
             
             // Header search triggers
             var searchTrigger = document.getElementById('headerSearchTrigger');
@@ -4047,13 +4041,7 @@
                 });
             }
             
-            // Header notification button (desktop)
-            var notifyBtnDesktop = document.getElementById('headerNotifyBtn');
-            if (notifyBtnDesktop) {
-                var notifyHandler = function(e) { toggleNotifyDropdown(e); };
-                notifyBtnDesktop.removeEventListener('click', notifyHandler);
-                notifyBtnDesktop.addEventListener('click', notifyHandler);
-            }
+            // Header notification button (desktop) — use onclick from HTML only
             
             // Header language buttons
             var headerLangBtns = document.querySelectorAll('.header-lang-btn');
@@ -9409,6 +9397,7 @@
                 if (trigger) trigger.setAttribute('aria-expanded', 'false');
                 if (triggerMobile) triggerMobile.setAttribute('aria-expanded', 'false');
             };
+            var _notifyCloseOnOutside = null;
             window.toggleNotifyDropdown = function(e) {
                 if (e) e.stopPropagation();
                 var header = document.querySelector('header.header');
@@ -9423,14 +9412,17 @@
                 if (open) {
                     closeUserDropdown();
                     closeLangDropdown();
+                    if (dropdown) dropdown.style.display = '';
                     loadNotifyDropdownData();
-                    var closeOnOutside = function(ev) {
+                    if (_notifyCloseOnOutside) { document.removeEventListener('click', _notifyCloseOnOutside); _notifyCloseOnOutside = null; }
+                    _notifyCloseOnOutside = function(ev) {
                         if (!header.contains(ev.target)) {
                             closeNotifyDropdown();
-                            document.removeEventListener('click', closeOnOutside);
                         }
                     };
-                    setTimeout(function() { document.addEventListener('click', closeOnOutside); }, 0);
+                    setTimeout(function() { document.addEventListener('click', _notifyCloseOnOutside); }, 0);
+                } else {
+                    closeNotifyDropdown();
                 }
             };
             window.closeNotifyDropdown = function() {
@@ -9439,9 +9431,11 @@
                 var btn = document.getElementById('headerNotifyBtn');
                 var btnMobile = document.getElementById('headerNotifyBtnMobile');
                 if (header) header.classList.remove('notify-dropdown-open');
-                if (dropdown) dropdown.setAttribute('aria-hidden', 'true');
+                if (dropdown) { dropdown.setAttribute('aria-hidden', 'true'); dropdown.style.display = 'none'; }
                 if (btn) btn.setAttribute('aria-expanded', 'false');
                 if (btnMobile) btnMobile.setAttribute('aria-expanded', 'false');
+                if (_notifyCloseOnOutside) { document.removeEventListener('click', _notifyCloseOnOutside); _notifyCloseOnOutside = null; }
+                apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
             };
             window.loadNotifyDropdownData = async function() {
                 var perms = (currentUser && currentUser.permissions) || {};
