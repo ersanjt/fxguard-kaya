@@ -5,6 +5,7 @@
 const emailService = require('./emailService');
 const { NotificationPreference, User, PanelSetting } = require('../models');
 const { getPanelEmailConfig } = require('./panelSettingsLoader');
+const logger = require('../config/logger');
 
 /**
  * دریافت یا ایجاد تنظیمات اطلاعات یک کاربر
@@ -40,7 +41,7 @@ async function notifyAnnouncement(announcement, recipientIds, io) {
                         timestamp: announcement.createdAt
                     });
                 } catch (err) {
-                    console.error(`Socket.IO notification error for user ${userId}:`, err.message);
+                    logger.error(`Socket.IO notification error for user ${userId}:`, err.message);
                 }
             }
 
@@ -73,12 +74,12 @@ async function notifyAnnouncement(announcement, recipientIds, io) {
                     }
                     results.push({ userId, type: 'email', ok: true });
                 } catch (err) {
-                    console.error(`Email notification error for user ${userId}:`, err.message);
+                    logger.error(`Email notification error for user ${userId}:`, err.message);
                     results.push({ userId, type: 'email', ok: false, error: err.message });
                 }
             }
         } catch (err) {
-            console.error(`Notification error for user ${userId}:`, err.message);
+            logger.error(`Notification error for user ${userId}:`, err.message);
             results.push({ userId, ok: false, error: err.message });
         }
     }
@@ -107,7 +108,7 @@ async function notifyTaskAssigned(task, io) {
                     dueDate: task.dueDate
                 });
             } catch (err) {
-                console.error(`Socket notification error:`, err.message);
+                logger.error(`Socket notification error:`, err.message);
             }
         }
 
@@ -145,12 +146,12 @@ async function notifyTaskAssigned(task, io) {
                 }
                 results.push({ userId: task.assignedTo, type: 'email', ok: true });
             } catch (err) {
-                console.error(`Task email error:`, err.message);
+                logger.error(`Task email error:`, err.message);
                 results.push({ userId: task.assignedTo, type: 'email', ok: false });
             }
         }
     } catch (err) {
-        console.error(`Task notification error:`, err.message);
+        logger.error(`Task notification error:`, err.message);
     }
 
     return results;
@@ -177,7 +178,7 @@ async function notifyTicketAssigned(ticket, io) {
                     priority: ticket.priority
                 });
             } catch (err) {
-                console.error(`Ticket socket error:`, err.message);
+                logger.error(`Ticket socket error:`, err.message);
             }
         }
 
@@ -214,12 +215,12 @@ async function notifyTicketAssigned(ticket, io) {
                 }
                 results.push({ userId: ticket.assignedTo, type: 'email', ok: true });
             } catch (err) {
-                console.error(`Ticket email error:`, err.message);
+                logger.error(`Ticket email error:`, err.message);
                 results.push({ userId: ticket.assignedTo, type: 'email', ok: false });
             }
         }
     } catch (err) {
-        console.error(`Ticket notification error:`, err.message);
+        logger.error(`Ticket notification error:`, err.message);
     }
 
     return results;
@@ -253,7 +254,7 @@ async function notifyTicketReply(ticket, reply, io) {
                         fromUser: reply.user || {}
                     });
                 } catch (err) {
-                    console.error(`Socket error:`, err.message);
+                    logger.error(`Socket error:`, err.message);
                 }
             }
 
@@ -285,12 +286,12 @@ async function notifyTicketReply(ticket, reply, io) {
                     }
                     results.push({ userId, type: 'email', ok: true });
                 } catch (err) {
-                    console.error(`Reply email error:`, err.message);
+                    logger.error(`Reply email error:`, err.message);
                     results.push({ userId, type: 'email', ok: false });
                 }
             }
         } catch (err) {
-            console.error(`Reply notification error:`, err.message);
+            logger.error(`Reply notification error:`, err.message);
             results.push({ userId, ok: false });
         }
     }

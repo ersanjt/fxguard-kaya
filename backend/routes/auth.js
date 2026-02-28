@@ -12,6 +12,7 @@ const emailService = require('../services/emailService');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
+const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
 
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
 const TOTP_TEMP_EXPIRY = '5m';
@@ -106,6 +107,7 @@ router.post('/login', async (req, res) => {
         });
         const token = issueToken(user);
         const permissions = getPermissions(user);
+        setAuthCookie(res, token);
         try { (req.app && req.app.get('io'))?.emit('user_login', { userId: user.id }); } catch (_) {}
         setImmediate(async () => {
             try {
@@ -220,6 +222,7 @@ router.post('/totp/verify-login', async (req, res) => {
         });
         const token = issueToken(user);
         const permissions = getPermissions(user);
+        setAuthCookie(res, token);
         try { (req.app && req.app.get('io'))?.emit('user_login', { userId: user.id }); } catch (_) {}
         setImmediate(async () => {
             try {
@@ -253,11 +256,14 @@ router.post('/totp/verify-login', async (req, res) => {
 
 router.get('/me', async (req, res) => {
     try {
+        let token = null;
         const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            return res.status(401).json({ error: 'توکن یافت نشد' });
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        } else if (req.cookies && req.cookies.crm_token) {
+            token = req.cookies.crm_token;
         }
-        const token = authHeader.split(' ')[1];
+        if (!token) return res.status(401).json({ error: 'توکن یافت نشد' });
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await User.findByPk(decoded.id, {
             attributes: { exclude: ['password'] },
@@ -325,6 +331,7 @@ router.post('/totp/disable', authMiddleware, async (req, res) => {
 
 router.post('/logout', authMiddleware, async (req, res) => {
     try {
+        clearAuthCookie(res);
         const user = req.user;
         await user.update({ status: 'offline' });
         await logActivity({

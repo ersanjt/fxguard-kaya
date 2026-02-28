@@ -5,6 +5,7 @@
 const { gatewayPost } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
 const { Message, Customer, User, Department, Conversation, WhatsappConfig } = require('../models');
+const logger = require('../config/logger');
 
 const DEFAULT_DEPT_ASSIGNED = 'شما به دپارتمان {{deptName}} وصل شدید. به زودی پاسخگوی شما خواهیم بود.';
 const DEFAULT_EMPLOYEE_INTRO = 'من {{name}} از دپارتمان {{deptName}} هستم.';
@@ -42,7 +43,7 @@ async function sendOutgoingAutoMessage(conversation, text) {
         await conversation.update(upd);
         return true;
     } catch (err) {
-        console.error('sendOutgoingAutoMessage error:', err.message);
+        logger.error('sendOutgoingAutoMessage error', { error: err.message });
         return false;
     }
 }
@@ -80,7 +81,7 @@ async function sendDeptAssignedMessage(conversation, department) {
             await conv.update({ metadata: newMeta });
         }
     } catch (err) {
-        console.error('sendDeptAssignedMessage error:', err.message);
+        logger.error('sendDeptAssignedMessage error', { error: err.message });
     }
 }
 
@@ -114,7 +115,7 @@ async function maybeSendEmployeeIntro(conversation, userId, user, department) {
         if (existing) return;
         await sendOutgoingAutoMessage(conversation, text);
     } catch (err) {
-        console.error('maybeSendEmployeeIntro error:', err.message);
+        logger.error('maybeSendEmployeeIntro error', { error: err.message });
     }
 }
 

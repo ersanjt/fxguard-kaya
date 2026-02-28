@@ -923,7 +923,11 @@
             });
         }
 
-        function headers() { return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token }; }
+        function headers() {
+            var h = { 'Content-Type': 'application/json' };
+            if (token) h['Authorization'] = 'Bearer ' + token;
+            return h;
+        }
         function timeAgo(d) {
             if (!d) return '';
             var date = d instanceof Date ? d : new Date(d);
@@ -2749,7 +2753,7 @@
             if (opt.body instanceof FormData) { delete h['Content-Type']; }
             var r, text;
             try {
-                r = await fetch(API + url, { ...opt, headers: { ...h, ...opt.headers }, body: opt.body });
+                r = await fetch(API + url, { ...opt, credentials: 'include', headers: { ...h, ...opt.headers }, body: opt.body });
                 text = await r.text();
             } catch (e) {
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.' : 'Could not connect to server. Check network or server address.') };
@@ -2829,7 +2833,7 @@
             btn.textContent = t('login_loading');
             var r, text;
             try {
-                r = await fetch(API + '/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: pass }) });
+                r = await fetch(API + '/api/auth/login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: pass }) });
                 text = await r.text();
             } catch (e) {
                 btn.disabled = false;
@@ -2978,7 +2982,7 @@
             if (!window._totpTempToken) { document.getElementById('totpErr').textContent = t('login_totp_retry'); return; }
             document.getElementById('totpErr').textContent = '';
             document.getElementById('btnTotpVerify').disabled = true;
-            var r = await fetch(API + '/api/auth/totp/verify-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempToken: window._totpTempToken, code: code }) });
+            var r = await fetch(API + '/api/auth/totp/verify-login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempToken: window._totpTempToken, code: code }) });
             var data = await r.json().catch(function() { return {}; });
             document.getElementById('btnTotpVerify').disabled = false;
             if (data.token) {
@@ -3195,9 +3199,7 @@
         }
 
         async function logout() {
-            if (token) {
-                try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
-            }
+            try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
             if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
             if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
             if (tickerTimeInterval) { clearInterval(tickerTimeInterval); tickerTimeInterval = null; }
