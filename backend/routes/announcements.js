@@ -5,6 +5,7 @@ const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
 const notificationService = require('../services/notificationService');
 const logger = require('../config/logger');
+const { isValidUUID } = require('../lib/validation');
 
 // لیست اعلان‌های برای من (با فلگ خوانده شده)
 router.get('/for-me', async (req, res) => {
@@ -26,20 +27,26 @@ router.get('/for-me', async (req, res) => {
             order: [['createdAt', 'DESC']],
             limit: 100
         });
-        const withRead = await Promise.all(list.map(async (a) => {
+        // batch-load target names to avoid N+1
+        const deptIds = [...new Set(list.filter(a => a.targetType === 'department' && a.targetId).map(a => a.targetId))];
+        const userIds = [...new Set(list.filter(a => a.targetType === 'user' && a.targetId).map(a => a.targetId))];
+        const [depts, targetUsers] = await Promise.all([
+            deptIds.length ? Department.findAll({ where: { id: deptIds }, attributes: ['id', 'name'] }) : [],
+            userIds.length ? User.findAll({ where: { id: userIds }, attributes: ['id', 'name'] }) : []
+        ]);
+        const deptMap = Object.fromEntries(depts.map(d => [d.id, d.name]));
+        const userMap = Object.fromEntries(targetUsers.map(u => [u.id, u.name]));
+
+        const withRead = list.map((a) => {
             const j = a.toJSON();
             j.read = (j.reads && j.reads.length > 0);
             delete j.reads;
             j.canDelete = (a.fromUserId === me.id) || isMainAdmin(me) || me.role === 'owner' || me.role === 'admin';
-            if (a.targetType === 'department' && a.targetId) {
-                const d = await Department.findByPk(a.targetId, { attributes: ['name'] });
-                j.targetName = d ? d.name : null;
-            } else if (a.targetType === 'user' && a.targetId) {
-                const u = await User.findByPk(a.targetId, { attributes: ['name'] });
-                j.targetName = u ? u.name : null;
-            } else j.targetName = null;
+            if (a.targetType === 'department' && a.targetId) j.targetName = deptMap[a.targetId] || null;
+            else if (a.targetType === 'user' && a.targetId) j.targetName = userMap[a.targetId] || null;
+            else j.targetName = null;
             return j;
-        }));
+        });
         res.json({ data: withRead });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -48,6 +55,7 @@ router.get('/for-me', async (req, res) => {
 
 // علامت‌گذاری به‌عنوان خوانده‌شده
 router.post('/:id/read', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه اعلان نامعتبر است' });
     try {
         const ann = await Announcement.findByPk(req.params.id);
         if (!ann) return res.status(404).json({ error: 'اعلان یافت نشد' });
@@ -143,6 +151,7 @@ router.get('/targets', async (req, res) => {
 
 // حذف اعلان — فقط فرستنده یا مالک/ادمین
 router.delete('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه اعلان نامعتبر است' });
     try {
         const me = req.user;
         const ann = await Announcement.findByPk(req.params.id);
@@ -169,17 +178,22 @@ router.get('/sent', async (req, res) => {
             order: [['createdAt', 'DESC']],
             limit: 100
         });
-        const withTarget = await Promise.all(list.map(async (a) => {
+        const sentDeptIds = [...new Set(list.filter(a => a.targetType === 'department' && a.targetId).map(a => a.targetId))];
+        const sentUserIds = [...new Set(list.filter(a => a.targetType === 'user' && a.targetId).map(a => a.targetId))];
+        const [sentDepts, sentTargetUsers] = await Promise.all([
+            sentDeptIds.length ? Department.findAll({ where: { id: sentDeptIds }, attributes: ['id', 'name'] }) : [],
+            sentUserIds.length ? User.findAll({ where: { id: sentUserIds }, attributes: ['id', 'name'] }) : []
+        ]);
+        const sentDeptMap = Object.fromEntries(sentDepts.map(d => [d.id, d.name]));
+        const sentUserMap = Object.fromEntries(sentTargetUsers.map(u => [u.id, u.name]));
+
+        const withTarget = list.map((a) => {
             const j = a.toJSON();
-            if (a.targetType === 'department' && a.targetId) {
-                const d = await Department.findByPk(a.targetId, { attributes: ['id', 'name'] });
-                j.targetName = d ? d.name : null;
-            } else if (a.targetType === 'user' && a.targetId) {
-                const u = await User.findByPk(a.targetId, { attributes: ['id', 'name'] });
-                j.targetName = u ? u.name : null;
-            } else j.targetName = 'all';
+            if (a.targetType === 'department' && a.targetId) j.targetName = sentDeptMap[a.targetId] || null;
+            else if (a.targetType === 'user' && a.targetId) j.targetName = sentUserMap[a.targetId] || null;
+            else j.targetName = 'all';
             return j;
-        }));
+        });
         res.json({ data: withTarget });
     } catch (err) {
         res.status(500).json({ error: err.message });

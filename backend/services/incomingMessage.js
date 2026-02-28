@@ -3,6 +3,7 @@
  */
 const path = require('path');
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 const axios = require('axios');
 const mongoose = require('mongoose');
 const models = require('../models');
@@ -53,7 +54,7 @@ async function resolveIncomingMedia(media, logger) {
         if (!ext) ext = '.bin';
         const safeName = (Date.now() + '-' + suggestedName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)) + (ext.startsWith('.') ? ext : '.' + ext);
         const filePath = path.join(uploadsDir, safeName);
-        fs.writeFileSync(filePath, buf);
+        await fsPromises.writeFile(filePath, buf);
         return { url: '/uploads/' + safeName, filename: media.filename || suggestedName, mimetype: media.mimetype || ct || null };
     } catch (err) {
         logger.warn('resolveIncomingMedia download failed', { url: url.slice(0, 80), error: err.message });
@@ -61,7 +62,7 @@ async function resolveIncomingMedia(media, logger) {
     }
 }
 
-function resolveIncomingMediaFromBase64(media, logger) {
+async function resolveIncomingMediaFromBase64(media, logger) {
     if (!media || !media.data) return media;
     try {
         const buf = Buffer.from(media.data, 'base64');
@@ -82,7 +83,7 @@ function resolveIncomingMediaFromBase64(media, logger) {
         if (!ext) ext = '.bin';
         const safeName = (Date.now() + '-' + suggestedName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)) + (ext.startsWith('.') ? ext : '.' + ext);
         const filePath = path.join(uploadsDir, safeName);
-        fs.writeFileSync(filePath, buf);
+        await fsPromises.writeFile(filePath, buf);
         return { url: '/uploads/' + safeName, filename: media.filename || suggestedName, mimetype: media.mimetype || ct || null };
     } catch (err) {
         logger.warn('resolveIncomingMediaFromBase64 failed', { error: err.message });
@@ -157,7 +158,7 @@ async function sendFirstMessageWelcome(conversation, customer, rabbitChannel, lo
         await sendAutoReply(conversation, String(cfg.welcomeMessage).trim(), rabbitChannel, logger);
         logger.info(`👋 Welcome message sent to ${customer.phone} (first contact)`);
     } catch (error) {
-        logger.error('First message welcome error:', error);
+        logger.error('First message welcome error', { error: error.message });
     }
 }
 
@@ -176,7 +177,7 @@ async function checkAutoResponse(conversation, message, redisClient, rabbitChann
         }
         return false;
     } catch (error) {
-        logger.error('Auto-response error:', error);
+        logger.error('Auto-response error', { error: error.message });
         return false;
     }
 }
@@ -208,7 +209,7 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger) 
                 await gatewayPost('/api/send-message', { to: toPhone, message: responseText }, { timeout: 10000 });
                 await autoMsg.update({ status: 'sent' });
             } catch (err) {
-                logger.error('Gateway send error:', err.message);
+                logger.error('Gateway send error', { error: err.message });
                 await autoMsg.update({ status: 'failed' });
             }
         }
@@ -219,7 +220,7 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger) 
         await conversation.update(upd);
         logger.info(`🤖 Auto-reply sent to ${customer.phone}`);
     } catch (error) {
-        logger.error('Send auto-reply error:', error);
+        logger.error('Send auto-reply error', { error: error.message });
     }
 }
 
@@ -281,7 +282,7 @@ async function autoAssignment(conversation, messageContent, customerId, logger) 
             }
         }
     } catch (error) {
-        logger.error('Auto-assignment error:', error);
+        logger.error('Auto-assignment error', { error: error.message });
     }
 }
 
@@ -310,7 +311,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             if (media.url && (String(media.url).trim().startsWith('http://') || String(media.url).trim().startsWith('https://'))) {
                 resolvedMedia = await resolveIncomingMedia(media, logger);
             } else if (media.data) {
-                resolvedMedia = resolveIncomingMediaFromBase64(media, logger);
+                resolvedMedia = await resolveIncomingMediaFromBase64(media, logger);
             }
             if (resolvedMedia && (resolvedMedia.url || resolvedMedia.filename || resolvedMedia.data)) msgType = inferMessageTypeFromMedia(resolvedMedia);
         }
@@ -375,8 +376,9 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         }
 
         const ts = timestamp ? new Date((timestamp < 1e12 ? timestamp * 1000 : timestamp)) : new Date();
-        let preview = (body || '').slice(0, 120);
-        if ((body || '').length > 120) preview += '…';
+        const previewText = body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '';
+        let preview = previewText.slice(0, 120);
+        if (previewText.length > 120) preview += '…';
         await conversation.update({
             lastMessageAt: ts,
             lastIncomingMessageAt: ts,
@@ -400,11 +402,8 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             metadata: Object.keys(msgMetadata).length ? msgMetadata : {}
         });
 
-        if (!isGroup) {
-            const incomingCount = await Message.count({ where: { customerId: customer.id, direction: 'incoming' } });
-            if (incomingCount === 1) {
-                await sendFirstMessageWelcome(conversation, customer, rabbitChannel, logger);
-            }
+        if (!isGroup && customerCreated) {
+            await sendFirstMessageWelcome(conversation, customer, rabbitChannel, logger);
         }
 
         if (!isGroup && !conversation.assignedTo) {
@@ -481,7 +480,13 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
 
         logger.info(`📩 Message processed: ${phone}`);
     } catch (error) {
-        logger.error('Error processing incoming message:', error);
+        logger.error('Error processing incoming message:', {
+            error: error.message,
+            stack: error.stack,
+            from: messageData?.from,
+            type: messageData?.type
+        });
+        throw error;
     }
 }
 
