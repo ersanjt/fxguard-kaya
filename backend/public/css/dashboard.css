@@ -2318,16 +2318,19 @@
             .conv-layout .chat-area.show { display: flex; flex: 1; min-height: 280px; }
             .conv-layout.chat-open .conv-list-wrap { display: none !important; }
             .conv-layout:has(.chat-area.show) .conv-list-wrap { display: none !important; }
-            .conv-list-header { padding: 8px 10px; min-height: 40px; min-width: 0; overflow: hidden; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; border-bottom: 1px solid var(--border); }\n            .conv-list-header .conv-list-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; font-size: 0.9rem; font-weight: 600; }\n            .conv-list-header .conv-list-count { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; }
+            .conv-list-header { padding: 8px 10px; min-height: 40px; min-width: 0; overflow: hidden; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+            .conv-list-header .conv-list-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; font-size: 0.9rem; font-weight: 600; }
+            .conv-list-header .conv-list-count { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; }
             .conv-list-wrap { overflow-x: hidden; }
             /* موبایل: وقتی چت باز است، هدر/تب‌ها/فیلترها مخفی شوند تا چت تمام‌صفحه شود */
             #pageConversations:has(.conv-layout.chat-open) .conv-page-header,
             #pageConversations:has(.conv-layout.chat-open) .conv-quick-tabs,
             #pageConversations:has(.conv-layout.chat-open) .conv-toolbar,
             #pageConversations:has(.conv-layout.chat-open) #convStats { display: none !important; }
-            #pageConversations:has(.conv-layout.chat-open) { position: relative; }
+            #pageConversations:has(.conv-layout.chat-open) { position: relative; flex: 1; min-height: 0; }
             #pageConversations:has(.conv-layout.chat-open) .conv-layout { flex: 1; min-height: 0; position: absolute; inset: 0; }
             #pageConversations:has(.conv-layout.chat-open) .conv-layout .chat-area.show { min-height: 0; flex: 1; border-radius: 0; border: none; }
+            .content:has(#pageConversations.show .conv-layout.chat-open) { padding: 0 !important; }
             .conv-list-item { padding: 12px 14px; min-height: 72px; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; align-items: flex-start; border-radius: 10px; }
             .conv-list-item .conv-item-body { flex: 1 1 160px; min-width: 0; }
             .conv-list-item .conv-item-badges { flex-basis: 100%; order: 10; margin-top: 6px; padding-inline-start: 56px; }
@@ -2348,9 +2351,14 @@
             .chat-messages { padding: 12px; padding-bottom: max(12px, env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
             .chat-messages .msg { max-width: 90%; }
             .chat-messages .msg-media video { max-height: min(200px, 35vh); }
-            .chat-send { padding: 10px 12px; gap: 8px; flex-wrap: wrap; padding-inline: max(12px, env(safe-area-inset-inline)); padding-bottom: max(10px, env(safe-area-inset-bottom)); }
-            .chat-send input, .chat-send #msgInput { min-width: 0; font-size: 16px; min-height: 44px; }
+            .chat-send { padding: 10px 12px; gap: 8px; flex-wrap: wrap; padding-inline: max(12px, env(safe-area-inset-inline)); padding-bottom: max(10px, env(safe-area-inset-bottom)); align-items: center; }
+            .chat-send input, .chat-send #msgInput { flex: 1; min-width: 60px; font-size: 16px; min-height: 44px; }
             .chat-send button, .chat-send .chat-attach-btn, .chat-send .chat-voice-btn, .chat-send .chat-send-btn { flex-shrink: 0; min-height: 44px; min-width: 44px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 0.1s; }
+            .chat-send .chat-template-wrap { flex-shrink: 0; }
+            .chat-reply-preview { min-width: 0; }
+            .chat-reply-text { min-width: 0; }
+            .conv-detail-bar { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+            .conv-detail-actions { min-width: 0; }
             .chat-send button:active, .chat-send .chat-attach-btn:active, .chat-send .chat-voice-btn:active, .chat-send .chat-send-btn:active { transform: scale(0.92); }
             .conv-detail-actions { gap: 6px; flex-wrap: wrap; }
             .conv-detail-actions select { min-width: 0; }
@@ -2458,8 +2466,10 @@
             .dashboard-sub { font-size: 0.9rem; margin-bottom: 16px; }
             .conv-toolbar { flex-direction: column; align-items: stretch; }
             .conv-search-wrap { min-width: 0; }
+            .conv-advanced-filters { flex-wrap: wrap; gap: 8px; min-width: 0; }
             .conv-advanced-filters.show { margin-top: 8px; padding-top: 8px; }
-            .conv-advanced-filters select { min-width: 0; }
+            .conv-advanced-filters select { min-width: 0; flex: 1 1 120px; }
+            .announcements-page, .ticket-page, .task-page, .dept-page, .users-page { min-width: 0; overflow-x: hidden; }
             .page h2 { font-size: 1.1rem; }
             .list-item { padding: 12px 14px; min-height: 44px; }
             /* ورودها و وضعیت آنلاین — موبایل */
