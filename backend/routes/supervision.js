@@ -58,11 +58,12 @@ router.get('/online', canViewStaffActivity, async (req, res) => {
         const userIds = users.map(u => u.id);
         const loginByUser = {};
         if (userIds.length > 0) {
-            // batch load: get latest login per user using subquery approach
+            // یک query برای آخرین login هر کاربر — با limit برای جلوگیری از کشیدن کل جدول
             const latestLogins = await ActivityLog.findAll({
                 where: { action: 'user_login', userId: { [Op.in]: userIds } },
                 attributes: ['userId', 'metadata', 'createdAt'],
                 order: [['createdAt', 'DESC']],
+                limit: userIds.length * 3,
                 raw: true
             });
             latestLogins.forEach(l => {
@@ -293,7 +294,17 @@ router.get('/internal-chats/:threadId/messages', async (req, res) => {
 // خلاصه عملکرد به تفکیک شعبه و کاربر — برای مالک
 router.get('/performance', async (req, res) => {
     try {
-        const [branches, users, conversationCount, messageCount, openCount, pendingCount, unassignedCount, todayMsgCount, allConvsForResponse, allConvsForRating] = await Promise.all([
+        const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
+
+        // همه query‌ها به‌صورت موازی — بدون full table scan
+        const [
+            branches, users,
+            conversationCount, messageCount, openCount, pendingCount, unassignedCount, todayMsgCount,
+            convCountByBranch, msgCountByUser,
+            responseTimeByUser, responseTimeByBranch,
+            ratingByUser, ratingByBranch,
+            overallResponseRows, overallRatingRows
+        ] = await Promise.all([
             Branch.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'city', 'country'], order: [['name', 'ASC']] }),
             User.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'email', 'role', 'branchId'], include: [{ model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false }] }),
             Conversation.count(),
@@ -301,78 +312,153 @@ router.get('/performance', async (req, res) => {
             Conversation.count({ where: { status: 'open' } }),
             Conversation.count({ where: { status: 'pending' } }),
             Conversation.count({ where: { assignedTo: null } }),
-            Message.count({ where: { direction: 'outgoing', createdAt: { [Op.gte]: new Date(new Date().setHours(0, 0, 0, 0)) } } }),
-            Conversation.findAll({ where: { lastIncomingMessageAt: { [Op.ne]: null }, lastOutgoingMessageAt: { [Op.ne]: null } }, attributes: ['id', 'branchId', 'assignedTo', 'lastIncomingMessageAt', 'lastOutgoingMessageAt', 'firstReplyAt', 'rating'], raw: true }),
-            Conversation.findAll({ where: { rating: { [Op.ne]: null } }, attributes: ['id', 'branchId', 'assignedTo', 'rating'], raw: true })
+            Message.count({ where: { direction: 'outgoing', createdAt: { [Op.gte]: todayStart } } }),
+            // تعداد مکالمات به تفکیک شعبه — GROUP BY در DB
+            Conversation.findAll({
+                attributes: ['branchId', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+                where: { branchId: { [Op.ne]: null } },
+                group: ['branchId'],
+                raw: true
+            }).catch(() => []),
+            // تعداد پیام‌های خروجی به تفکیک کاربر — GROUP BY در DB
+            Message.findAll({
+                attributes: ['userId', [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']],
+                where: { direction: 'outgoing', userId: { [Op.ne]: null } },
+                group: ['userId'],
+                raw: true
+            }).catch(() => []),
+            // میانگین زمان پاسخ به تفکیک کاربر — GROUP BY در DB
+            Conversation.findAll({
+                attributes: [
+                    'assignedTo',
+                    [Sequelize.fn('AVG', Sequelize.literal(
+                        "EXTRACT(EPOCH FROM (\"lastOutgoingMessageAt\" - \"lastIncomingMessageAt\")) / 60"
+                    )), 'avgResponseMinutes'],
+                    [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
+                ],
+                where: {
+                    assignedTo: { [Op.ne]: null },
+                    lastIncomingMessageAt: { [Op.ne]: null },
+                    lastOutgoingMessageAt: { [Op.ne]: null }
+                },
+                group: ['assignedTo'],
+                raw: true
+            }).catch(() => []),
+            // میانگین زمان پاسخ به تفکیک شعبه — GROUP BY در DB
+            Conversation.findAll({
+                attributes: [
+                    'branchId',
+                    [Sequelize.fn('AVG', Sequelize.literal(
+                        "EXTRACT(EPOCH FROM (\"lastOutgoingMessageAt\" - \"lastIncomingMessageAt\")) / 60"
+                    )), 'avgResponseMinutes']
+                ],
+                where: {
+                    branchId: { [Op.ne]: null },
+                    lastIncomingMessageAt: { [Op.ne]: null },
+                    lastOutgoingMessageAt: { [Op.ne]: null }
+                },
+                group: ['branchId'],
+                raw: true
+            }).catch(() => []),
+            // میانگین امتیاز به تفکیک کاربر — GROUP BY در DB
+            Conversation.findAll({
+                attributes: [
+                    'assignedTo',
+                    [Sequelize.fn('AVG', Sequelize.col('rating')), 'avgRating'],
+                    [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
+                ],
+                where: { assignedTo: { [Op.ne]: null }, rating: { [Op.ne]: null } },
+                group: ['assignedTo'],
+                raw: true
+            }).catch(() => []),
+            // میانگین امتیاز به تفکیک شعبه — GROUP BY در DB
+            Conversation.findAll({
+                attributes: [
+                    'branchId',
+                    [Sequelize.fn('AVG', Sequelize.col('rating')), 'avgRating'],
+                    [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
+                ],
+                where: { branchId: { [Op.ne]: null }, rating: { [Op.ne]: null } },
+                group: ['branchId'],
+                raw: true
+            }).catch(() => []),
+            // میانگین کلی زمان پاسخ — یک aggregate query
+            Conversation.findAll({
+                attributes: [
+                    [Sequelize.fn('AVG', Sequelize.literal(
+                        "EXTRACT(EPOCH FROM (\"lastOutgoingMessageAt\" - \"lastIncomingMessageAt\")) / 60"
+                    )), 'avgResponseMinutes'],
+                    [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
+                ],
+                where: {
+                    lastIncomingMessageAt: { [Op.ne]: null },
+                    lastOutgoingMessageAt: { [Op.ne]: null }
+                },
+                raw: true
+            }).catch(() => []),
+            // میانگین کلی امتیاز — یک aggregate query
+            Conversation.findAll({
+                attributes: [
+                    [Sequelize.fn('AVG', Sequelize.col('rating')), 'avgRating'],
+                    [Sequelize.fn('COUNT', Sequelize.col('id')), 'count']
+                ],
+                where: { rating: { [Op.ne]: null } },
+                raw: true
+            }).catch(() => [])
         ]);
-        const branchIds = branches.map(b => b.id);
-        const convCountByBranch = await Conversation.findAll({
-            attributes: ['branchId', [Sequelize.fn('COUNT', '*'), 'count']],
-            where: { branchId: { [Op.in]: branchIds } },
-            group: ['branchId'],
-            raw: true
-        }).catch(() => []);
-        const msgCountByUser = await Message.findAll({
-            attributes: ['userId', [Sequelize.fn('COUNT', '*'), 'count']],
-            where: { direction: 'outgoing', userId: { [Op.ne]: null } },
-            group: ['userId'],
-            raw: true
-        }).catch(() => []);
+
+        // ساخت map‌ها از نتایج aggregate
         const countByBranch = {};
-        convCountByBranch.forEach(r => { countByBranch[r.branchId] = parseInt(r.count, 10); });
+        convCountByBranch.forEach(r => { countByBranch[r.branchId] = parseInt(r.count, 10) || 0; });
+
         const countByUser = {};
-        msgCountByUser.forEach(r => { countByUser[r.userId] = parseInt(r.count, 10); });
+        msgCountByUser.forEach(r => { countByUser[r.userId] = parseInt(r.count, 10) || 0; });
 
-        function calcResponseTimeMinutes(convs) {
-            const diffs = convs.map(c => {
-                const inc = new Date(c.lastIncomingMessageAt).getTime();
-                const out = new Date(c.lastOutgoingMessageAt).getTime();
-                if (out >= inc) return (out - inc) / 60000;
-                return null;
-            }).filter(x => x != null && x >= 0 && x < 10080);
-            if (diffs.length === 0) return null;
-            return Math.round(diffs.reduce((a, b) => a + b, 0) / diffs.length * 10) / 10;
-        }
-        function calcAvgRating(convs) {
-            if (!convs.length) return null;
-            const sum = convs.reduce((a, c) => a + (c.rating || 0), 0);
-            return Math.round(sum / convs.length * 10) / 10;
-        }
+        const respTimeByUser = {};
+        responseTimeByUser.forEach(r => { respTimeByUser[r.assignedTo] = r.avgResponseMinutes != null ? Math.round(parseFloat(r.avgResponseMinutes) * 10) / 10 : null; });
 
-        const overallDiffs = allConvsForResponse.map(c => {
-            const inc = new Date(c.lastIncomingMessageAt).getTime();
-            const out = new Date(c.lastOutgoingMessageAt).getTime();
-            if (out >= inc) return (out - inc) / 60000;
-            return null;
-        }).filter(x => x != null && x >= 0 && x < 10080);
-        const avgResponseTimeMinutes = overallDiffs.length ? Math.round(overallDiffs.reduce((a, b) => a + b, 0) / overallDiffs.length * 10) / 10 : null;
-        const avgRating = allConvsForRating.length ? Math.round(allConvsForRating.reduce((a, c) => a + (c.rating || 0), 0) / allConvsForRating.length * 10) / 10 : null;
-        const ratedConversationsCount = allConvsForRating.length;
+        const respTimeByBranch = {};
+        responseTimeByBranch.forEach(r => { respTimeByBranch[r.branchId] = r.avgResponseMinutes != null ? Math.round(parseFloat(r.avgResponseMinutes) * 10) / 10 : null; });
 
-        const usersWithStats = users.map(u => {
-            const userConvsResp = allConvsForResponse.filter(c => c.assignedTo === u.id);
-            const userConvsRate = allConvsForRating.filter(c => c.assignedTo === u.id);
-            return {
-                id: u.id,
-                name: u.name,
-                email: u.email,
-                role: u.role,
-                branch: u.branch,
-                outgoingMessageCount: countByUser[u.id] || 0,
-                avgResponseTimeMinutes: calcResponseTimeMinutes(userConvsResp),
-                avgRating: calcAvgRating(userConvsRate),
-                ratedConversationsCount: userConvsRate.length
-            };
+        const avgRatingByUser = {};
+        const ratedCountByUser = {};
+        ratingByUser.forEach(r => {
+            avgRatingByUser[r.assignedTo] = r.avgRating != null ? Math.round(parseFloat(r.avgRating) * 10) / 10 : null;
+            ratedCountByUser[r.assignedTo] = parseInt(r.count, 10) || 0;
         });
 
-        const branchesWithStats = branches.map(b => {
-            const branchConvs = allConvsForResponse.filter(c => c.branchId === b.id);
-            return {
-                ...b.toJSON(),
-                conversationCount: countByBranch[b.id] || 0,
-                avgResponseTimeMinutes: calcResponseTimeMinutes(branchConvs)
-            };
-        });
+        const avgRatingByBranch = {};
+        ratingByBranch.forEach(r => { avgRatingByBranch[r.branchId] = r.avgRating != null ? Math.round(parseFloat(r.avgRating) * 10) / 10 : null; });
+
+        const overallResp = overallResponseRows[0];
+        const avgResponseTimeMinutes = overallResp && overallResp.avgResponseMinutes != null
+            ? Math.round(parseFloat(overallResp.avgResponseMinutes) * 10) / 10
+            : null;
+
+        const overallRating = overallRatingRows[0];
+        const avgRating = overallRating && overallRating.avgRating != null
+            ? Math.round(parseFloat(overallRating.avgRating) * 10) / 10
+            : null;
+        const ratedConversationsCount = overallRating ? parseInt(overallRating.count, 10) || 0 : 0;
+
+        const usersWithStats = users.map(u => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            role: u.role,
+            branch: u.branch,
+            outgoingMessageCount: countByUser[u.id] || 0,
+            avgResponseTimeMinutes: respTimeByUser[u.id] ?? null,
+            avgRating: avgRatingByUser[u.id] ?? null,
+            ratedConversationsCount: ratedCountByUser[u.id] || 0
+        }));
+
+        const branchesWithStats = branches.map(b => ({
+            ...b.toJSON(),
+            conversationCount: countByBranch[b.id] || 0,
+            avgResponseTimeMinutes: respTimeByBranch[b.id] ?? null,
+            avgRating: avgRatingByBranch[b.id] ?? null
+        }));
 
         res.json({
             summary: {

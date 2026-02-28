@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { User, Department, Branch, Conversation, Message, Task, Ticket, ProcessInstance, ProcessInstanceStep, ActivityLog, TaskUpdate, TicketReply, AnnouncementRead, InternalThreadParticipant, InternalMessage, CustomerNote, Transaction, PasswordResetToken } = require('../models');
+const { User, Department, Branch, Conversation, Message, Task, Ticket, ProcessInstance, ProcessInstanceStep, ActivityLog, TaskUpdate, TicketReply, AnnouncementRead, InternalThreadParticipant, InternalMessage, CustomerNote, Transaction, PasswordResetToken, sequelize } = require('../models');
 const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { isValidUUID } = require('../lib/validation');
@@ -91,7 +91,7 @@ router.patch('/me', async (req, res) => {
         }
         if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth ? String(dateOfBirth).trim() || null : null;
         if (phone !== undefined) user.phone = phone ? String(phone).trim() : null;
-        if (avatar !== undefined) user.avatar = avatar ? String(avatar).trim() || null : undefined;
+        if (avatar !== undefined) user.avatar = avatar ? String(avatar).trim() || null : null;
         if (email !== undefined && req.canManageUsers()) {
             const trimmed = String(email).trim().toLowerCase();
             if (!trimmed) return res.status(400).json({ error: 'ایمیل الزامی است' });
@@ -299,29 +299,33 @@ router.post('/:id/permanent-delete', async (req, res) => {
         if (!transferTo || !transferTo.isActive) return res.status(400).json({ error: 'کاربر مقصد معتبر نیست' });
         if (transferTo.id === userId) return res.status(400).json({ error: 'کاربر مقصد نمی‌تواند خود کاربر حذفشونده باشد' });
 
-        await Conversation.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
-        await Conversation.update({ closedBy: transferToUserId }, { where: { closedBy: userId } });
-        if (Message) await Message.update({ userId: transferToUserId }, { where: { userId } });
-        await Task.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
-        await Task.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
-        await Ticket.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
-        await Ticket.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
-        await ProcessInstance.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
-        await ProcessInstance.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
-        await ProcessInstanceStep.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
-
-        if (ActivityLog) await ActivityLog.update({ userId: transferToUserId }, { where: { userId } });
-        if (TaskUpdate) await TaskUpdate.update({ userId: transferToUserId }, { where: { userId } });
-        if (TicketReply) await TicketReply.update({ userId: transferToUserId }, { where: { userId } });
-        if (CustomerNote) await CustomerNote.update({ userId: transferToUserId }, { where: { userId } });
-        if (Transaction) await Transaction.update({ userId: transferToUserId }, { where: { userId } });
-
-        if (AnnouncementRead) await AnnouncementRead.destroy({ where: { userId } });
-        if (InternalThreadParticipant) await InternalThreadParticipant.destroy({ where: { userId } });
-        if (InternalMessage) await InternalMessage.update({ fromUserId: transferToUserId }, { where: { fromUserId: userId } });
-        if (PasswordResetToken) await PasswordResetToken.destroy({ where: { userId } });
-
-        await user.destroy();
+        const t = await sequelize.transaction();
+        try {
+            await Conversation.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId }, transaction: t });
+            await Conversation.update({ closedBy: transferToUserId }, { where: { closedBy: userId }, transaction: t });
+            if (Message) await Message.update({ userId: transferToUserId }, { where: { userId }, transaction: t });
+            await Task.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId }, transaction: t });
+            await Task.update({ createdBy: transferToUserId }, { where: { createdBy: userId }, transaction: t });
+            await Ticket.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId }, transaction: t });
+            await Ticket.update({ createdBy: transferToUserId }, { where: { createdBy: userId }, transaction: t });
+            await ProcessInstance.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId }, transaction: t });
+            await ProcessInstance.update({ createdBy: transferToUserId }, { where: { createdBy: userId }, transaction: t });
+            await ProcessInstanceStep.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId }, transaction: t });
+            if (ActivityLog) await ActivityLog.update({ userId: transferToUserId }, { where: { userId }, transaction: t });
+            if (TaskUpdate) await TaskUpdate.update({ userId: transferToUserId }, { where: { userId }, transaction: t });
+            if (TicketReply) await TicketReply.update({ userId: transferToUserId }, { where: { userId }, transaction: t });
+            if (CustomerNote) await CustomerNote.update({ userId: transferToUserId }, { where: { userId }, transaction: t });
+            if (Transaction) await Transaction.update({ userId: transferToUserId }, { where: { userId }, transaction: t });
+            if (AnnouncementRead) await AnnouncementRead.destroy({ where: { userId }, transaction: t });
+            if (InternalThreadParticipant) await InternalThreadParticipant.destroy({ where: { userId }, transaction: t });
+            if (InternalMessage) await InternalMessage.update({ fromUserId: transferToUserId }, { where: { fromUserId: userId }, transaction: t });
+            if (PasswordResetToken) await PasswordResetToken.destroy({ where: { userId }, transaction: t });
+            await user.destroy({ transaction: t });
+            await t.commit();
+        } catch (txErr) {
+            await t.rollback();
+            throw txErr;
+        }
         res.json({ message: 'کاربر به‌طور دائمی از سیستم حذف شد' });
     } catch (err) {
         res.status(500).json({ error: err.message });

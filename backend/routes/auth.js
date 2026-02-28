@@ -199,8 +199,9 @@ router.post('/totp/verify-login', async (req, res) => {
         if (!user || !user.isActive || !user.totpEnabled || !user.totpSecret) {
             return res.status(401).json({ error: 'کاربر نامعتبر است' });
         }
-        authenticator.options = { window: 1 };
-        const verified = authenticator.verify({ token: String(code).replace(/\s/g, ''), secret: user.totpSecret });
+        const totpVerifier = authenticator.clone();
+        totpVerifier.options = { window: 1 };
+        const verified = totpVerifier.verify({ token: String(code).replace(/\s/g, ''), secret: user.totpSecret });
         if (!verified) return res.status(401).json({ error: 'کد احراز هویت اشتباه یا منقضی است' });
         const now = new Date();
         await user.update({ lastLoginAt: now, status: 'online' });
@@ -254,18 +255,11 @@ router.post('/totp/verify-login', async (req, res) => {
     }
 });
 
-router.get('/me', async (req, res) => {
+const { authMiddleware } = require('../middleware/auth');
+
+router.get('/me', authMiddleware, async (req, res) => {
     try {
-        let token = null;
-        const authHeader = req.headers.authorization;
-        if (authHeader && authHeader.startsWith('Bearer ')) {
-            token = authHeader.split(' ')[1];
-        } else if (req.cookies && req.cookies.crm_token) {
-            token = req.cookies.crm_token;
-        }
-        if (!token) return res.status(401).json({ error: 'توکن یافت نشد' });
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        const user = await User.findByPk(decoded.id, {
+        const user = await User.findByPk(req.user.id, {
             attributes: { exclude: ['password'] },
             include: [
                 { association: 'branch', required: false },
@@ -282,11 +276,9 @@ router.get('/me', async (req, res) => {
         u.canManageTickets = canManageTickets(user);
         res.json(u);
     } catch (err) {
-        res.status(401).json({ error: 'توکن نامعتبر است' });
+        res.status(500).json({ error: err.message || 'خطای سرور' });
     }
 });
-
-const { authMiddleware } = require('../middleware/auth');
 
 router.get('/totp/setup', authMiddleware, async (req, res) => {
     try {
@@ -306,8 +298,9 @@ router.post('/totp/confirm-setup', authMiddleware, async (req, res) => {
         const code = (req.body.code || '').toString().replace(/\s/g, '');
         if (!code) return res.status(400).json({ error: 'کد شش‌رقمی را وارد کنید' });
         if (!req.user.totpSecret) return res.status(400).json({ error: 'ابتدا مرحلهٔ اسکن QR را انجام دهید' });
-        authenticator.options = { window: 1 };
-        const verified = authenticator.verify({ token: code, secret: req.user.totpSecret });
+        const totpVerifier = authenticator.clone();
+        totpVerifier.options = { window: 1 };
+        const verified = totpVerifier.verify({ token: code, secret: req.user.totpSecret });
         if (!verified) return res.status(400).json({ error: 'کد اشتباه یا منقضی است' });
         await req.user.update({ totpEnabled: true });
         res.json({ ok: true, message: 'احراز هویت دو مرحله‌ای فعال شد' });

@@ -5,7 +5,7 @@ const MIN_LENGTH = 8;
 const MAX_LENGTH = 128;
 
 function validatePassword(password) {
-    const p = String(password || '').trim();
+    const p = String(password || '');
     if (p.length < MIN_LENGTH) {
         return { valid: false, message: `رمز عبور حداقل ${MIN_LENGTH} کاراکتر باشد` };
     }

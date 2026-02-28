@@ -1,12 +1,27 @@
 /**
  * هندلرهای Socket.IO — ارسال پیام، تماس تصویری/صوتی، وضعیت کاربر
  */
-const { User, Conversation, Message } = require('../models');
+const { User, Conversation, Message, Department } = require('../models');
 const { getSendTarget } = require('../lib/phoneUtils');
 const { gatewayPost } = require('../lib/gatewayClient');
 const { maybeSendEmployeeIntro } = require('../services/autoMessages');
+const { logActivity } = require('../services/activityLog');
+
+const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
+const CALL_ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 ساعت
 
 const callRooms = {};
+
+function cleanupStaleCallRooms() {
+    const now = Date.now();
+    for (const threadId of Object.keys(callRooms)) {
+        const room = callRooms[threadId];
+        if (room && room.createdAt && (now - room.createdAt) > CALL_ROOM_TTL_MS) {
+            delete callRooms[threadId];
+        }
+    }
+}
+setInterval(cleanupStaleCallRooms, 30 * 60 * 1000);
 
 function setupSocketHandlers(io, getRabbitChannel, logger) {
     io.on('connection', (socket) => {
@@ -19,7 +34,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
             try {
                 const { conversationId, content, type, media } = data;
                 const conversation = await Conversation.findByPk(conversationId, {
-                    include: ['customer', { model: require('../models').Department, as: 'department', required: false }]
+                    include: ['customer', { model: Department, as: 'department', required: false }]
                 });
                 if (!conversation) {
                     return socket.emit('error', { message: 'Conversation not found' });
@@ -28,8 +43,20 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     return socket.emit('error', { message: 'Customer not found for this conversation' });
                 }
 
+                const user = socket.userId ? await User.findByPk(socket.userId, {
+                    include: [{ model: Department, as: 'department', required: false }]
+                }) : null;
+
+                if (!user) return socket.emit('error', { message: 'Unauthorized' });
+
+                const isPrivileged = ['owner', 'admin', 'manager', 'supervisor'].includes(user.role);
+                const isAssigned = conversation.assignedTo === socket.userId;
+                const sameDept = user.departmentId && conversation.departmentId && String(user.departmentId) === String(conversation.departmentId);
+                if (!isPrivileged && !isAssigned && !sameDept) {
+                    return socket.emit('error', { message: 'دسترسی به این مکالمه ندارید' });
+                }
+
                 if (socket.userId) {
-                    const user = await User.findByPk(socket.userId, { include: [{ model: require('../models').Department, as: 'department', required: false }] });
                     const dept = conversation.department || (user && user.department) || null;
                     await maybeSendEmployeeIntro(conversation, socket.userId, user, dept);
                 }
@@ -70,7 +97,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
         socket.on('call_offer', (data) => {
             const { toUserId, threadId, type, sdp } = data;
             if (!toUserId || !threadId || !sdp) return;
-            if (!callRooms[threadId]) callRooms[threadId] = { participants: new Set(), type: type || 'voice' };
+            if (!callRooms[threadId]) callRooms[threadId] = { participants: new Set(), type: type || 'voice', createdAt: Date.now() };
             callRooms[threadId].participants.add(String(socket.userId));
             io.to('user_' + String(toUserId)).emit('call_offer', { fromUserId: socket.userId, threadId, type: type || 'voice', sdp });
         });
@@ -128,8 +155,9 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
         });
 
         socket.on('status_change', async (status) => {
-            await User.update({ status: status }, { where: { id: socket.userId } });
-            io.emit('user_status', { userId: socket.userId, status: status });
+            if (!VALID_STATUSES.includes(status)) return;
+            await User.update({ status }, { where: { id: socket.userId } });
+            io.emit('user_status', { userId: socket.userId, status });
         });
 
         socket.on('disconnect', async () => {
@@ -147,7 +175,6 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     const user = await User.findByPk(socket.userId);
                     if (user) {
                         await user.update({ status: 'offline' });
-                        const { logActivity } = require('../services/activityLog');
                         await logActivity({
                             userId: user.id,
                             branchId: user.branchId || null,

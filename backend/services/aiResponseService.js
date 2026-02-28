@@ -1,4 +1,5 @@
 const axios = require('axios');
+const logger = require('../config/logger');
 
 /**
  * سرویس پاسخ‌دهی هوش مصنوعی با OpenAI
@@ -22,7 +23,7 @@ const REQUEST_TIMEOUT_MS = 15000;
 async function generateAIResponse({ conversation, customer, incomingMessage, messageHistory = [], department = null }) {
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-        if (process.env.NODE_ENV !== 'test') console.warn('AI: OPENAI_API_KEY not set in .env');
+        if (process.env.NODE_ENV !== 'test') logger.warn('AI: OPENAI_API_KEY not set in .env');
         return null;
     }
     if (!incomingMessage || !String(incomingMessage).trim()) return null;
@@ -82,7 +83,7 @@ ${deptInfo ? `\n${deptInfo}` : ''}`;
             const errCode = err?.response?.data?.error?.code || err?.code;
             const status = err?.response?.status;
             const hint = errCode === 'insufficient_quota' ? ' → سقف اعتبار OpenAI تمام شده. به https://platform.openai.com/account/billing مراجعه کنید.' : '';
-            console.warn('AI response generation failed:', errMsg + hint, { code: errCode, status });
+            logger.warn('AI response generation failed: ' + errMsg + hint, { code: errCode, status });
         }
         return null;
     }

@@ -47,8 +47,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.get('/config', (req, res) => {
         const supportUrl = process.env.SUPPORT_URL || null;
         const supportEmail = process.env.SUPPORT_EMAIL || null;
-        const defaultEmail = (process.env.MAIN_ADMIN_EMAIL || 'Admin@kaya.fxguard.io').split(',')[0].trim();
-        const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : 'mailto:' + defaultEmail);
+        const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : null);
         res.json({
             timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
             supportUrl: supportLink
@@ -88,7 +87,9 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         }
     });
 
-    let gatewayProcess = null;
+    let gatewayStarting = false;
+    let gatewayStartedAt = null;
+    const GATEWAY_START_COOLDOWN_MS = 15000;
 
     apiRouter.get('/gateway/status', authMiddleware, requireSection('whatsapp'), (req, res) => {
         gatewayGet('/api/status', { timeout: 5000 })
@@ -134,21 +135,26 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
 
     apiRouter.post('/admin/start-gateway', authMiddleware, requireSection('whatsapp'), async (req, res) => {
         if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
-        if (gatewayProcess) return res.json({ message: 'Gateway از قبل در حال اجراست' });
+        const now = Date.now();
+        if (gatewayStarting && gatewayStartedAt && (now - gatewayStartedAt) < GATEWAY_START_COOLDOWN_MS) {
+            return res.json({ message: 'Gateway در حال بالا آمدن است. چند ثانیه صبر کنید.' });
+        }
         try {
             const GATEWAY_URL = (process.env.GATEWAY_URL || 'http://localhost:3001').replace(/\/$/, '');
             const axios = require('axios');
-            const testRes = await axios.get(GATEWAY_URL + '/test', { timeout: 3000 }).catch(() => null);
+            const testRes = await axios.get(GATEWAY_URL + '/api/status', { timeout: 3000 }).catch(() => null);
             if (testRes && testRes.status === 200) {
                 return res.json({ message: 'Gateway از قبل در حال اجراست' });
             }
             const gatewayPath = path.join(__dirname, '..', '..', 'gateway');
-            gatewayProcess = spawn('node', ['src/index.js'], { cwd: gatewayPath, stdio: 'ignore', detached: true });
-            gatewayProcess.unref();
-            gatewayProcess = true;
-            setTimeout(() => { gatewayProcess = null; }, 1000);
+            const proc = spawn('node', ['src/index.js'], { cwd: gatewayPath, stdio: 'ignore', detached: true });
+            proc.unref();
+            gatewayStarting = true;
+            gatewayStartedAt = now;
+            setTimeout(() => { gatewayStarting = false; gatewayStartedAt = null; }, GATEWAY_START_COOLDOWN_MS);
             res.json({ message: 'Gateway در حال بالا آمدن است. چند ثانیه صبر کنید و QR را در تنظیمات واتساپ ببینید.' });
         } catch (e) {
+            gatewayStarting = false;
             res.status(500).json({ error: e.message });
         }
     });
@@ -180,12 +186,19 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.use('/company-emails', authMiddleware, require('./companyEmails'));
 
     apiRouter.post('/webhook/incoming-message', webhookAuth, (req, res) => {
+        const body = req.body;
+        if (!body || typeof body !== 'object') {
+            return res.status(400).json({ error: 'Invalid payload' });
+        }
+        if (body.from !== undefined && typeof body.from !== 'string') {
+            return res.status(400).json({ error: 'Invalid payload: from must be string' });
+        }
         const rabbitChannel = typeof getRabbitChannel === 'function' ? getRabbitChannel() : getRabbitChannel;
-        processIncomingMessage(req.body, { io, rabbitChannel, redisClient, logger })
+        processIncomingMessage(body, { io, rabbitChannel, redisClient, logger })
             .then(() => res.json({ ok: true }))
             .catch(err => {
                 logger.error('Webhook process error:', err);
-                res.status(500).json({ error: err.message });
+                res.status(500).json({ error: 'Internal server error' });
             });
     });
 

@@ -3,6 +3,7 @@
  */
 const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3002')
     .split(',')
-    .map(s => s.trim());
+    .map(s => s.trim())
+    .filter(Boolean);
 
 module.exports = { allowedOrigins };

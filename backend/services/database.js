@@ -53,7 +53,7 @@ async function connectDatabases(logger) {
         // Auto-migrate: add branchId to Conversations
         try {
             const qi = sequelize.getQueryInterface();
-            const tableName = sequelize.getDialect() === 'postgres' ? 'Conversations' : 'Conversations';
+            const tableName = 'Conversations';
             const tableDesc = await qi.describeTable(tableName).catch(() => null);
             if (!tableDesc || !tableDesc.branchId) {
                 await qi.addColumn(tableName, 'branchId', {

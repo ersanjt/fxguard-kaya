@@ -100,22 +100,23 @@
             --border-hover: rgba(16,185,129,0.35);
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        html { scroll-behavior: smooth; }
+        html { scroll-behavior: smooth; overflow-x: hidden; }
         body { font-family: 'Inter', 'Vazirmatn', sans-serif; background: var(--bg-dark); background-image: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(5,150,105,0.05) 0%, transparent 50%); color: var(--text); line-height: 1.7; overflow-x: hidden; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 max(20px, env(safe-area-inset-inline)); }
         @media (min-width: 768px) { .container { padding: 0 24px; } }
         a { color: var(--accent-light); text-decoration: none; transition: color 0.2s; }
         a:hover { color: var(--accent); }
         img { max-width: 100%; height: auto; }
 
         /* WhatsApp Float Button */
-        .wa-float { position: fixed; bottom: 24px; right: 24px; z-index: 999; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #25D366 0%, #20bd5a 100%); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(37,211,102,0.5); transition: all 0.3s; }
+        .wa-float { position: fixed; bottom: max(24px, env(safe-area-inset-bottom)); right: max(24px, env(safe-area-inset-right)); z-index: 999; width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg, #25D366 0%, #20bd5a 100%); color: #fff; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(37,211,102,0.5); transition: all 0.3s; -webkit-tap-highlight-color: transparent; }
         .wa-float:hover { transform: scale(1.1); box-shadow: 0 8px 32px rgba(37,211,102,0.6); color: #fff; }
-        html[dir="rtl"] .wa-float { right: auto; left: 24px; }
+        html[dir="rtl"] .wa-float { right: auto; left: max(24px, env(safe-area-inset-left)); }
+        @media (max-width: 480px) { .wa-float { bottom: max(16px, env(safe-area-inset-bottom)); right: max(16px, env(safe-area-inset-right)); width: 52px; height: 52px; } html[dir="rtl"] .wa-float { left: max(16px, env(safe-area-inset-left)); } }
         .wa-float svg { width: 32px; height: 32px; }
 
         /* Header */
-        header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 16px 0; background: linear-gradient(180deg, rgba(10,14,23,0.98) 0%, rgba(10,14,23,0) 100%); backdrop-filter: blur(12px); transition: background 0.3s; }
+        header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 16px 0; padding-top: max(16px, env(safe-area-inset-top)); background: linear-gradient(180deg, rgba(10,14,23,0.98) 0%, rgba(10,14,23,0) 100%); backdrop-filter: blur(12px); transition: background 0.3s; }
         header.scrolled { background: rgba(10,14,23,0.98); }
         .header-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
         .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--text); }
@@ -129,12 +130,13 @@
         .nav-toggle:hover { background: var(--accent-soft); border-color: var(--border-hover); }
         @media (min-width: 900px) { .nav-toggle { display: none; } }
         .nav-toggle span { width: 22px; height: 2px; background: var(--text-muted); }
-        .nav-mobile { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10,14,23,0.98); z-index: 200; padding: 80px 24px 24px; display: none; flex-direction: column; gap: 20px; }
+        .nav-mobile { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(10,14,23,0.98); z-index: 200; padding-top: max(80px, calc(60px + env(safe-area-inset-top))); padding-bottom: max(24px, env(safe-area-inset-bottom)); padding-inline: max(24px, env(safe-area-inset-inline)); display: none; flex-direction: column; gap: 20px; overflow-y: auto; -webkit-overflow-scrolling: touch; }
         .nav-mobile.open { display: flex; }
         .nav-mobile a { font-size: 1.2rem; color: var(--text); }
         .nav-mobile .btn { width: 100%; justify-content: center; }
-        .nav-close { position: absolute; top: 20px; right: 20px; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 8px; border-radius: 8px; transition: all 0.25s; }
+        .nav-close { position: absolute; top: max(20px, env(safe-area-inset-top)); right: 20px; left: auto; background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; padding: 8px; border-radius: 8px; transition: all 0.25s; -webkit-tap-highlight-color: transparent; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
         .nav-close:hover { color: var(--accent-light); background: var(--accent-soft); }
+        html[dir="rtl"] .nav-close { right: auto; left: max(20px, env(safe-area-inset-left)); }
         .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; border: none; font-family: inherit; text-align: center; }
         @media (min-width: 768px) { .btn { padding: 12px 24px; font-size: 0.95rem; } }
         .btn-primary { background: linear-gradient(135deg, var(--accent) 0%, #047857 100%); color: white !important; box-shadow: 0 4px 20px var(--accent-glow); }
@@ -277,9 +279,10 @@
         .cta-box .btn { background: white; color: var(--accent) !important; }
         .cta-box .btn:hover { background: #f0fdf4; transform: translateY(-2px); color: var(--accent) !important; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
         .cta-btns { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
-        footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+        footer { padding: 40px max(20px, env(safe-area-inset-inline)); padding-bottom: max(40px, env(safe-area-inset-bottom)); border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.9rem; }
         footer a { margin: 0 8px; padding: 4px 8px; border-radius: 6px; transition: all 0.25s; }
         footer a:hover { color: var(--accent-light); background: var(--accent-soft); }
+        @media (max-width: 480px) { footer { padding: 24px 16px; padding-bottom: max(24px, env(safe-area-inset-bottom)); font-size: 0.85rem; } footer p { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; } }
         html[dir="rtl"] body { font-family: 'Vazirmatn', sans-serif; }
     </style>
 </head>

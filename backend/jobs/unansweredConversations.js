@@ -28,7 +28,7 @@ async function checkUnansweredConversations(io, logger) {
         const unanswered = await Conversation.findAll({
             where: {
                 status: { [Op.in]: ['open', 'pending'] },
-                lastIncomingMessageAt: { [Op.ne]: null },
+                lastIncomingMessageAt: { [Op.ne]: null, [Op.lte]: alertThreshold },
                 [Op.or]: [
                     { lastOutgoingMessageAt: null },
                     sequelize.where(sequelize.col('lastIncomingMessageAt'), Op.gt, sequelize.col('lastOutgoingMessageAt'))
@@ -38,7 +38,8 @@ async function checkUnansweredConversations(io, logger) {
                 { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'] },
                 { model: User, as: 'assignee', attributes: ['id', 'name'] },
                 { model: Department, as: 'department', attributes: ['id', 'name'] }
-            ]
+            ],
+            limit: 500
         });
 
         for (const conv of unanswered) {

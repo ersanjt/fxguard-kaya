@@ -13,7 +13,7 @@ module.exports = {
     : {
         database: process.env.DB_NAME || 'whatsapp_crm',
         username: process.env.DB_USER || 'crm_user',
-        password: process.env.DB_PASSWORD || 'StrongPassword123!',
+        password: process.env.DB_PASSWORD || null,
         host: process.env.DB_HOST || 'localhost',
         port: process.env.DB_PORT || 5432,
         dialect: 'postgres'

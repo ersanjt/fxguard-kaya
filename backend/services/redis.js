@@ -10,24 +10,33 @@ try {
 
 function createRedisClient(logger) {
     let redisClient = {
+        isStub: true,
         quit: () => Promise.resolve(),
         connect: () => Promise.resolve(),
         get: () => Promise.resolve(null),
+        set: () => Promise.resolve(),
         setEx: () => Promise.resolve(),
         del: () => Promise.resolve(),
+        hSet: () => Promise.resolve(),
+        hGet: () => Promise.resolve(null),
+        hGetAll: () => Promise.resolve({}),
+        expire: () => Promise.resolve(),
+        exists: () => Promise.resolve(0),
+        sendCommand: () => Promise.reject(new Error('Redis not available')),
     };
 
     if (redis) {
         try {
-            redisClient = redis.createClient({
+            const client = redis.createClient({
                 url: process.env.REDIS_URL || 'redis://localhost:6379'
             });
-            redisClient.on('error', (err) => {
+            client.on('error', (err) => {
                 logger.warn('Redis error:', err?.message || err);
             });
-            redisClient.connect().catch((err) => {
+            client.connect().catch((err) => {
                 logger.warn('⚠️ Redis not available - continuing without cache:', err?.message || err);
             });
+            redisClient = client;
         } catch (e) {
             logger.warn('⚠️ Redis init failed:', e.message);
         }

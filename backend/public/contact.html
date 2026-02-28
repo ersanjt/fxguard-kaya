@@ -21,14 +21,15 @@
         :root { --bg-dark: #0a0e17; --bg-card: #111827; --bg-card-hover: #151d2e; --accent: #059669; --accent-light: #10b981; --accent-soft: rgba(16,185,129,0.12); --text: #f3f4f6; --text-muted: #9ca3af; --border: rgba(255,255,255,0.08); --border-hover: rgba(16,185,129,0.35); }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', 'Vazirmatn', sans-serif; background: var(--bg-dark); background-image: radial-gradient(ellipse 80% 50% at 50% 0%, rgba(5,150,105,0.05) 0%, transparent 50%); color: var(--text); line-height: 1.7; overflow-x: hidden; }
-        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 max(20px, env(safe-area-inset-inline)); }
         @media (min-width: 768px) { .container { padding: 0 24px; } }
         a { color: var(--accent-light); text-decoration: none; transition: color 0.25s; }
         a:hover { color: var(--accent); }
-        header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 16px 0; background: rgba(10,14,23,0.98); backdrop-filter: blur(12px); }
-        .header-inner { display: flex; justify-content: space-between; align-items: center; }
-        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--text); }
+        header { position: fixed; top: 0; left: 0; right: 0; z-index: 100; padding: 16px 0; padding-top: max(16px, env(safe-area-inset-top)); background: rgba(10,14,23,0.98); backdrop-filter: blur(12px); }
+        .header-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.1rem; color: var(--text); flex-shrink: 0; }
         .logo svg { width: 32px; height: 32px; }
+        @media (max-width: 480px) { .header-inner .btn-wa { font-size: 0.85rem; padding: 10px 16px; white-space: nowrap; } }
         .btn { display: inline-flex; align-items: center; padding: 12px 20px; border-radius: 10px; font-weight: 600; font-size: 0.9rem; border: none; font-family: inherit; transition: all 0.25s; }
         .btn-primary { background: linear-gradient(135deg, var(--accent) 0%, #047857 100%); color: white !important; }
         .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(5,150,105,0.35); color: white !important; }
@@ -60,9 +61,10 @@
         .contact-note p { color: var(--text-muted); margin-bottom: 20px; font-size: 0.95rem; }
         .back-link { display: inline-flex; align-items: center; gap: 8px; color: var(--accent-light); margin-top: 24px; padding: 8px 14px; border-radius: 8px; transition: all 0.25s; }
         .back-link:hover { background: var(--accent-soft); color: var(--accent-light); }
-        footer { padding: 40px 0; border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+        footer { padding: 40px max(20px, env(safe-area-inset-inline)); padding-bottom: max(40px, env(safe-area-inset-bottom)); border-top: 1px solid var(--border); text-align: center; color: var(--text-muted); font-size: 0.9rem; }
         footer a { margin: 0 8px; padding: 4px 8px; border-radius: 6px; transition: all 0.25s; }
         footer a:hover { color: var(--accent-light); background: var(--accent-soft); }
+        @media (max-width: 480px) { footer { padding: 24px 16px; padding-bottom: max(24px, env(safe-area-inset-bottom)); font-size: 0.85rem; } footer p { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; } }
     </style>
 </head>
 <body>

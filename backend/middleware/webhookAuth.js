@@ -3,6 +3,22 @@
  * در production حتماً WEBHOOK_SECRET باید تنظیم شود
  * secret فقط از header خوانده می‌شود (نه query) تا در لاگ‌ها لو نرود
  */
+const crypto = require('crypto');
+
+function timingSafeEqual(a, b) {
+    try {
+        const bufA = Buffer.from(String(a));
+        const bufB = Buffer.from(String(b));
+        if (bufA.length !== bufB.length) {
+            crypto.timingSafeEqual(bufA, bufA);
+            return false;
+        }
+        return crypto.timingSafeEqual(bufA, bufB);
+    } catch (_) {
+        return false;
+    }
+}
+
 function createWebhookAuth(logger) {
     const isProduction = process.env.NODE_ENV === 'production';
     return function webhookAuth(req, res, next) {
@@ -16,7 +32,7 @@ function createWebhookAuth(logger) {
             return next();
         }
         const provided = req.headers['x-webhook-secret'];
-        if (!provided || provided !== secret) {
+        if (!provided || !timingSafeEqual(provided, secret)) {
             logger.warn('Webhook auth failed — invalid or missing secret', { ip: req.ip });
             return res.status(401).json({ error: 'Unauthorized' });
         }
