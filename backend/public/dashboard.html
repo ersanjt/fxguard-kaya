@@ -461,6 +461,7 @@
                     </div>
                 </div>
                 <div id="pageCustomers" class="page">
+                    <!-- هدر صفحه — فقط desktop -->
                     <div class="customer-page-header">
                         <div>
                             <h2 data-i18n="page_customers_club">باشگاه مشتریان</h2>
@@ -472,27 +473,54 @@
                             <button type="button" class="btn-primary" onclick="openCustomerModal()" data-i18n="customer_add">افزودن مشتری</button>
                         </div>
                     </div>
+                    <!-- دکمه FAB موبایل — افزودن مشتری -->
+                    <button type="button" class="customer-fab-btn" id="customerFabBtn" onclick="openCustomerModal()" aria-label="افزودن مشتری" title="افزودن مشتری">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
                     <div id="customerStats" class="customer-stats" style="display:none;"></div>
+                    <!-- نوار جستجو + فیلتر -->
                     <div class="customer-toolbar">
-                        <div class="customer-search-wrap">
-                            <span class="customer-search-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
-                            <input type="text" id="customerSearch" class="customer-search conv-filter-input" data-i18n-ph="customer_search_ph" placeholder="جستجو نام، تلفن یا ایمیل...">
-                            <button type="button" class="customer-search-clear" id="customerSearchClear" style="display:none;" title="پاک کردن جستجو" aria-label="پاک کردن جستجو">&times;</button>
+                        <div class="customer-search-bar">
+                            <span class="customer-search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+                            <input type="text" id="customerSearch" class="customer-search conv-filter-input customer-search-input" data-i18n-ph="customer_search_ph" placeholder="جستجو نام، تلفن یا ایمیل...">
+                            <button type="button" class="customer-search-clear" id="customerSearchClear" style="display:none;" title="پاک کردن" aria-label="پاک کردن">&times;</button>
+                            <button type="button" class="customer-filter-chip" id="customerFilterToggle" aria-expanded="false" title="فیلترها">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                                <span class="customer-filter-chip-label">فیلتر</span>
+                                <span class="customer-filter-active-dot" id="customerFilterActiveDot" style="display:none;"></span>
+                            </button>
                         </div>
-                        <select id="customerFilterStatus" class="customer-toolbar-select" aria-label="وضعیت">
-                            <option value="" data-i18n="filter_all">همه</option>
-                            <option value="active" data-i18n="status_active">فعال</option>
-                            <option value="inactive" data-i18n="status_inactive">غیرفعال</option>
-                            <option value="blocked" data-i18n="status_blocked">مسدود</option>
-                        </select>
-                        <select id="customerSort" class="customer-toolbar-select" aria-label="مرتب‌سازی" onchange="applyCustomerFilters()">
-                            <option value="newest" data-i18n="sort_newest">جدیدترین</option>
-                            <option value="oldest" data-i18n="sort_oldest">قدیمی‌ترین</option>
-                            <option value="name" data-i18n="sort_by_name">بر اساس نام</option>
-                            <option value="last_contact" data-i18n="sort_by_last_contact">آخرین تماس</option>
-                        </select>
-                        <button type="button" class="btn-secondary" onclick="applyCustomerFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
+                        <!-- فیلترهای پیشرفته — desktop inline / mobile bottom-sheet -->
+                        <div class="customer-advanced-filters" id="customerAdvancedFilters">
+                            <div class="customer-filters-sheet-handle"></div>
+                            <div class="customer-filters-sheet-title">
+                                <span>فیلترها</span>
+                                <button type="button" class="customer-filters-sheet-close" onclick="document.getElementById('customerFilterToggle').click()" aria-label="بستن">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                            <div class="customer-filters-grid">
+                                <select id="customerFilterStatus" class="customer-toolbar-select" aria-label="وضعیت">
+                                    <option value="" data-i18n="filter_all">همه</option>
+                                    <option value="active" data-i18n="status_active">فعال</option>
+                                    <option value="inactive" data-i18n="status_inactive">غیرفعال</option>
+                                    <option value="blocked" data-i18n="status_blocked">مسدود</option>
+                                </select>
+                                <select id="customerSort" class="customer-toolbar-select" aria-label="مرتب‌سازی">
+                                    <option value="newest" data-i18n="sort_newest">جدیدترین</option>
+                                    <option value="oldest" data-i18n="sort_oldest">قدیمی‌ترین</option>
+                                    <option value="name" data-i18n="sort_by_name">بر اساس نام</option>
+                                    <option value="last_contact" data-i18n="sort_by_last_contact">آخرین تماس</option>
+                                </select>
+                            </div>
+                            <div class="customer-filters-actions">
+                                <button type="button" class="btn-secondary btn-sm customer-filters-reset" onclick="resetCustomerFilters && resetCustomerFilters()">پاک کردن</button>
+                                <button type="button" class="btn-primary customer-filters-apply" onclick="applyCustomerFilters(); document.getElementById('customerFilterToggle').click()" data-i18n="apply_filter">اعمال فیلتر</button>
+                            </div>
+                        </div>
+                        <div class="customer-filters-backdrop" id="customerFiltersBackdrop" onclick="document.getElementById('customerFilterToggle').click()"></div>
                     </div>
+                    <!-- هدر لیست: شمارنده + refresh — فقط desktop -->
                     <div class="customer-list-header">
                         <span class="customer-list-title" data-i18n="conv_list_title">مشتریان</span>
                         <div class="customer-list-header-right">
@@ -2833,6 +2861,19 @@
         document.addEventListener('DOMContentLoaded', function() {
             var wrap = document.getElementById('headerStickyWrap');
             if (wrap) mo.observe(wrap, { childList: true, subtree: true, attributes: true });
+        });
+
+        // toggle فیلترهای مشتریان
+        document.addEventListener('DOMContentLoaded', function() {
+            var btn = document.getElementById('customerFilterToggle');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    var el = document.getElementById('customerAdvancedFilters');
+                    if (!el) return;
+                    el.classList.toggle('show');
+                    btn.setAttribute('aria-expanded', el.classList.contains('show'));
+                });
+            }
         });
     })();
     </script>
