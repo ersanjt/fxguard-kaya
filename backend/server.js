@@ -17,6 +17,7 @@ const mongoose = require('mongoose');
 
 const logger = require('./config/logger');
 const { allowedOrigins } = require('./config/cors');
+const crypto = require('crypto');
 const { createRedisClient } = require('./services/redis');
 const { connectDatabases } = require('./services/database');
 const { ensureAdminUser } = require('./services/seed');
@@ -99,13 +100,38 @@ app.use(cookieParser());
 app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
-// Rate Limiting
+// Request Correlation ID
+app.use((req, res, next) => {
+    req.id = req.headers['x-request-id'] || crypto.randomUUID();
+    res.setHeader('X-Request-Id', req.id);
+    next();
+});
+
+// ==================== Redis ====================
+const redisClient = createRedisClient(logger);
+
+// Rate Limiting — اگر Redis در دسترس باشد از Redis store استفاده می‌شود (multi-process safe)
+// در غیر این صورت به in-memory fallback می‌رود
+function buildRedisStore(prefix) {
+    if (redisClient.isStub) return undefined;
+    try {
+        const { RedisStore } = require('rate-limit-redis');
+        return new RedisStore({
+            sendCommand: (...args) => redisClient.sendCommand(args),
+            prefix
+        });
+    } catch (_) {
+        return undefined;
+    }
+}
+
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
     max: 1500,
     message: { error: 'تعداد درخواست‌ها زیاد است. چند دقیقه صبر کنید.' },
     standardHeaders: true,
-    legacyHeaders: false
+    legacyHeaders: false,
+    store: buildRedisStore('rl:api:')
 });
 const loginLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -114,16 +140,23 @@ const loginLimiter = rateLimit({
     standardHeaders: true,
     legacyHeaders: false,
     skipSuccessfulRequests: true,
+    store: buildRedisStore('rl:login:')
+});
+const passwordResetLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000,
+    max: 5,
+    message: { error: 'تعداد درخواست‌های بازیابی رمز زیاد است. یک ساعت دیگر تلاش کنید.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+    store: buildRedisStore('rl:pwreset:')
 });
 app.use('/api/', (req, res, next) => {
     const p = req.path || '';
     if (p.endsWith('/ping')) return next();
-    if (p.endsWith('/auth/login')) return loginLimiter(req, res, next);
+    if (p.endsWith('/auth/login') || p.endsWith('/auth/totp/verify-login')) return loginLimiter(req, res, next);
+    if (p.endsWith('/auth/forgot-password') || p.endsWith('/auth/reset-password')) return passwordResetLimiter(req, res, next);
     return limiter(req, res, next);
 });
-
-// ==================== Redis ====================
-const redisClient = createRedisClient(logger);
 
 // ==================== Socket.IO ====================
 app.set('io', io);
@@ -211,12 +244,25 @@ async function startServer() {
 startServer();
 
 // Graceful shutdown
-process.on('SIGINT', async () => {
-    logger.info('Shutting down gracefully...');
-    await sequelize.close();
-    if (mongoose.connection.readyState === 1) await mongoose.connection.close().catch(() => {});
-    redisClient.quit().catch(() => {});
-    process.exit(0);
-});
+async function gracefulShutdown(signal) {
+    logger.info(`${signal} received — shutting down gracefully...`);
+    server.close(async () => {
+        try {
+            await sequelize.close();
+            if (mongoose.connection.readyState === 1) await mongoose.connection.close().catch(() => {});
+            redisClient.quit().catch(() => {});
+            logger.info('All connections closed. Exiting.');
+        } catch (e) {
+            logger.error('Error during shutdown:', e);
+        }
+        process.exit(0);
+    });
+    setTimeout(() => {
+        logger.warn('Graceful shutdown timed out — forcing exit');
+        process.exit(1);
+    }, 10000);
+}
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 
 module.exports = { io, getRabbitChannel };
