@@ -4,7 +4,10 @@ const { Op, literal } = require('sequelize');
 const { canManageTickets, isMainAdmin } = require('../lib/permissions');
 const notificationService = require('../services/notificationService');
 const logger = require('../config/logger');
-const { isValidUUID } = require('../lib/validation');
+const { isValidUUID, parsePagination } = require('../lib/validation');
+
+const VALID_TICKET_STATUSES = new Set(['open', 'in_progress', 'resolved', 'closed', 'archived']);
+const VALID_TICKET_PRIORITIES = new Set(['low', 'normal', 'high', 'urgent']);
 
 function canManageTicket(req) {
     return canManageTickets(req.user);
@@ -47,12 +50,19 @@ router.get('/stats', async (req, res) => {
 
 router.get('/', async (req, res) => {
     try {
-        const { status, priority, assignedTo, createdBy, departmentId, search, sort = 'newest', page = 1, limit = 50 } = req.query;
+        const { status, priority, assignedTo, createdBy, departmentId, search, sort = 'newest' } = req.query;
+        const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
         const accessWhere = ticketAccessWhere(req);
         const andParts = Object.keys(accessWhere).length > 0 ? [accessWhere] : [];
         const where = {};
-        if (status) where.status = status;
-        if (priority) where.priority = priority;
+        if (status) {
+            if (!VALID_TICKET_STATUSES.has(status)) return res.status(400).json({ error: 'وضعیت تیکت نامعتبر است' });
+            where.status = status;
+        }
+        if (priority) {
+            if (!VALID_TICKET_PRIORITIES.has(priority)) return res.status(400).json({ error: 'اولویت تیکت نامعتبر است' });
+            where.priority = priority;
+        }
         if (assignedTo) where.assignedTo = assignedTo;
         if (createdBy) where.createdBy = createdBy;
         if (departmentId) where.departmentId = departmentId;
@@ -78,10 +88,10 @@ router.get('/', async (req, res) => {
                 { model: Department, as: 'department', attributes: ['id', 'name'] }
             ],
             order,
-            limit: Math.min(parseInt(limit) || 50, 100),
-            offset: (Math.max(1, parseInt(page)) - 1) * (parseInt(limit) || 50)
+            limit,
+            offset
         });
-        res.json({ data: rows, total: count, page: parseInt(page) });
+        res.json({ data: rows, total: count, page });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -148,13 +158,15 @@ router.post('/', async (req, res) => {
     try {
         const { title, description, assignedTo, departmentId, priority, dueDate } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'عنوان الزامی است' });
+        const resolvedPriority = priority || 'normal';
+        if (!VALID_TICKET_PRIORITIES.has(resolvedPriority)) return res.status(400).json({ error: 'اولویت تیکت نامعتبر است' });
         const ticket = await Ticket.create({
             title: title.trim(),
             description: description || '',
             createdBy: req.userId,
             assignedTo: assignedTo || null,
             departmentId: departmentId || null,
-            priority: priority || 'normal',
+            priority: resolvedPriority,
             status: 'open',
             dueDate: dueDate ? new Date(dueDate) : null
         });
@@ -195,8 +207,14 @@ router.put('/:id', async (req, res) => {
         if (description !== undefined) ticket.description = description;
         if (assignedTo !== undefined) ticket.assignedTo = assignedTo;
         if (departmentId !== undefined) ticket.departmentId = departmentId;
-        if (status !== undefined) ticket.status = status;
-        if (priority !== undefined) ticket.priority = priority;
+        if (status !== undefined) {
+            if (!VALID_TICKET_STATUSES.has(status)) return res.status(400).json({ error: 'وضعیت تیکت نامعتبر است' });
+            ticket.status = status;
+        }
+        if (priority !== undefined) {
+            if (!VALID_TICKET_PRIORITIES.has(priority)) return res.status(400).json({ error: 'اولویت تیکت نامعتبر است' });
+            ticket.priority = priority;
+        }
         if (dueDate !== undefined) ticket.dueDate = dueDate ? new Date(dueDate) : null;
         await ticket.save();
         

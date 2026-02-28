@@ -5,7 +5,10 @@ const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
 const notificationService = require('../services/notificationService');
 const logger = require('../config/logger');
-const { isValidUUID } = require('../lib/validation');
+const { isValidUUID, parsePagination } = require('../lib/validation');
+
+const VALID_TASK_STATUSES = new Set(['pending', 'in_progress', 'done', 'cancelled']);
+const VALID_TASK_PRIORITIES = new Set(['low', 'normal', 'high', 'urgent']);
 
 /** ساخت شرط دسترسی: ادمین/مالک همه؛ مدیر دپارتمان خودش؛ کارمند/ناظر تسک‌های اختصاص‌یافته به خود + تسک‌های دپارتمان خود */
 async function taskAccessWhere(req) {
@@ -68,9 +71,13 @@ const includeList = [
 router.get('/', async (req, res) => {
     try {
         const accessWhere = await taskAccessWhere(req);
-        const { status, assignedTo, assignedToDepartmentId, branchId, createdBy, search, page = 1, limit = 50 } = req.query;
+        const { status, assignedTo, assignedToDepartmentId, branchId, createdBy, search } = req.query;
+        const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
         const where = { ...accessWhere };
-        if (status) where.status = status;
+        if (status) {
+            if (!VALID_TASK_STATUSES.has(status)) return res.status(400).json({ error: 'وضعیت تسک نامعتبر است' });
+            where.status = status;
+        }
         if (assignedTo) where.assignedTo = assignedTo;
         if (assignedToDepartmentId) where.assignedToDepartmentId = assignedToDepartmentId;
         if (branchId) where.branchId = branchId;
@@ -89,10 +96,10 @@ router.get('/', async (req, res) => {
             where,
             include: includeList,
             order: [['createdAt', 'DESC']],
-            limit: Math.min(parseInt(limit) || 50, 100),
-            offset: (parseInt(page) - 1) * (parseInt(limit) || 50)
+            limit,
+            offset
         });
-        res.json({ data: rows, total: count, page: parseInt(page) });
+        res.json({ data: rows, total: count, page });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -154,6 +161,8 @@ router.post('/', async (req, res) => {
         const { title, description, assignedTo, assignedToDepartmentId, dueDate, priority, branchId } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'عنوان تسک الزامی است' });
         if (!assignedTo && !assignedToDepartmentId) return res.status(400).json({ error: 'تسک باید به یک کارمند یا یک دپارتمان اختصاص داده شود' });
+        const resolvedPriority = priority || 'normal';
+        if (!VALID_TASK_PRIORITIES.has(resolvedPriority)) return res.status(400).json({ error: 'اولویت تسک نامعتبر است' });
 
         const task = await Task.create({
             title: title.trim(),
@@ -162,7 +171,7 @@ router.post('/', async (req, res) => {
             assignedTo: assignedTo || null,
             assignedToDepartmentId: assignedToDepartmentId || null,
             dueDate: dueDate ? new Date(dueDate) : null,
-            priority: priority || 'normal',
+            priority: resolvedPriority,
             branchId: branchId || null,
             status: 'pending'
         });
@@ -197,6 +206,7 @@ router.put('/:id', async (req, res) => {
         if (title !== undefined) task.title = title.trim();
         if (description !== undefined) task.description = description;
         if (newStatus !== undefined) {
+            if (!VALID_TASK_STATUSES.has(newStatus)) return res.status(400).json({ error: 'وضعیت تسک نامعتبر است' });
             task.status = newStatus;
             if (newStatus === 'done' || newStatus === 'cancelled') {
                 task.completedAt = new Date();
@@ -206,7 +216,10 @@ router.put('/:id', async (req, res) => {
         if (assignedTo !== undefined) task.assignedTo = assignedTo || null;
         if (assignedToDepartmentId !== undefined) task.assignedToDepartmentId = assignedToDepartmentId || null;
         if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate) : null;
-        if (priority !== undefined) task.priority = priority;
+        if (priority !== undefined) {
+            if (!VALID_TASK_PRIORITIES.has(priority)) return res.status(400).json({ error: 'اولویت تسک نامعتبر است' });
+            task.priority = priority;
+        }
         if (branchId !== undefined) task.branchId = branchId || null;
         await task.save();
         const updated = await Task.findByPk(task.id, { include: includeList });
@@ -239,8 +252,8 @@ router.post('/:id/updates', async (req, res) => {
         const content = (req.body.content || '').trim();
         const statusChange = req.body.statusChange || null;
         if (!content && !statusChange) return res.status(400).json({ error: 'متن پیگیری یا تغییر وضعیت الزامی است' });
-        const validStatuses = ['pending', 'in_progress', 'done', 'cancelled'];
-        if (statusChange && validStatuses.includes(statusChange)) {
+        if (statusChange && !VALID_TASK_STATUSES.has(statusChange)) return res.status(400).json({ error: 'وضعیت تسک نامعتبر است' });
+        if (statusChange && VALID_TASK_STATUSES.has(statusChange)) {
             task.status = statusChange;
             if (statusChange === 'done' || statusChange === 'cancelled') {
                 task.completedAt = new Date();
