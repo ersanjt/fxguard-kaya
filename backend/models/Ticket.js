@@ -45,7 +45,18 @@ module.exports = (sequelize) => {
             type: DataTypes.JSON,
             defaultValue: {}
         }
-    }, { timestamps: true, indexes: [{ fields: ['ticketNumber'] }, { fields: ['status'] }, { fields: ['dueDate'] }] });
+    }, {
+        timestamps: true,
+        indexes: [
+            { fields: ['ticketNumber'] },
+            { fields: ['status'] },
+            { fields: ['dueDate'] },
+            { fields: ['createdBy'] },
+            { fields: ['assignedTo'] },
+            { fields: ['departmentId'] },
+            { fields: ['status', 'assignedTo'] }
+        ]
+    });
 
     Ticket.beforeCreate(async (ticket) => {
         if (!ticket.ticketNumber) {
