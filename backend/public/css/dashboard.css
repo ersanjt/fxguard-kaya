@@ -1043,20 +1043,36 @@
         .conv-tab:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border); }
         .conv-tab:active { transform: scale(0.96); transition: transform 0.1s; }
         .conv-tab.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 500; }
-        .conv-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 16px; }
-        .conv-search-wrap { flex: 1; min-width: 200px; position: relative; }
-        .conv-search-wrap .conv-filter-input { width: 100%; padding: 10px 40px 10px 14px; }
-        .conv-search-icon { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
-        body.ltr .conv-search-wrap .conv-filter-input { padding: 10px 14px 10px 40px; }
-        body.ltr .conv-search-icon { right: auto; left: 12px; }
-        .btn-filter-toggle { padding: 10px 16px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-secondary); font-family: var(--font); font-size: 0.9rem; cursor: pointer; transition: all 0.2s; }
-        .btn-filter-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
-        .btn-filter-toggle[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
-        .conv-advanced-filters { display: none; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding: 12px 0 0; border-top: 1px solid var(--border); margin-top: 12px; width: 100%; }
+        .conv-toolbar { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; position: relative; }
+        /* نوار جستجو یکپارچه */
+        .conv-search-bar { display: flex; align-items: center; gap: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
+        .conv-search-bar:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+        .conv-search-icon { display: flex; align-items: center; justify-content: center; padding: 0 10px 0 14px; color: var(--text-muted); flex-shrink: 0; pointer-events: none; }
+        body.ltr .conv-search-icon { padding: 0 14px 0 10px; }
+        .conv-search-input { flex: 1; min-width: 0; padding: 10px 0; background: transparent; border: none; outline: none; color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; }
+        .conv-search-input::placeholder { color: var(--text-muted); }
+        /* دکمه فیلتر داخل نوار جستجو */
+        .conv-filter-chip { display: flex; align-items: center; gap: 5px; padding: 0 14px; height: 100%; min-height: 42px; border: none; border-inline-start: 1px solid var(--border); background: transparent; color: var(--text-secondary); font-family: var(--font); font-size: 0.85rem; cursor: pointer; transition: background 0.2s, color 0.2s; flex-shrink: 0; white-space: nowrap; position: relative; }
+        .conv-filter-chip:hover { background: var(--bg-hover); color: var(--text-primary); }
+        .conv-filter-chip[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); }
+        .conv-filter-active-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); position: absolute; top: 8px; inset-inline-end: 8px; }
+        /* فیلترهای پیشرفته — desktop */
+        .conv-advanced-filters { display: none; flex-direction: column; gap: 12px; padding: 14px 0 0; border-top: 1px solid var(--border); margin-top: 12px; width: 100%; }
         .conv-advanced-filters.show { display: flex; }
-        .conv-advanced-filters select { padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; }
+        .conv-filters-sheet-handle { display: none; }
+        .conv-filters-sheet-title { display: none; }
+        .conv-filters-sheet-close { display: none; }
+        .conv-filters-grid { display: flex; flex-wrap: wrap; gap: 8px 12px; }
+        .conv-filters-grid select { padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; flex: 1 1 160px; min-width: 140px; }
+        .conv-filters-actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; }
+        .conv-filters-apply { padding: 8px 20px; font-size: 0.9rem; }
+        .conv-filters-reset { padding: 8px 16px; font-size: 0.9rem; }
+        .conv-filters-backdrop { display: none; }
+        /* legacy compat */
+        .conv-search-wrap { flex: 1; min-width: 200px; position: relative; }
         .conv-filter-input { padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; }
         .conv-filter-input:focus { outline: none; border-color: var(--accent); }
+        body.ltr .conv-search-wrap .conv-filter-input { padding: 10px 14px 10px 40px; }
         .conv-layout { display: flex; flex: 1; min-height: 400px; gap: 12px; overflow: hidden; min-width: 0; max-width: 100%; }
         .conv-list-wrap { flex: 0 0 min(380px, 30vw); min-width: 280px; max-width: 380px; display: flex; flex-direction: column; overflow: hidden; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); }
         .conv-list-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; min-width: 0; overflow: hidden; }
@@ -2437,11 +2453,33 @@
             .conv-quick-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; margin-bottom: 10px; padding: 4px 0 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; }
             .conv-quick-tabs::-webkit-scrollbar { display: none; }
             .conv-quick-tabs .conv-tab { flex-shrink: 0; padding: 7px 14px; font-size: 0.8rem; min-height: 36px; display: flex; align-items: center; justify-content: center; scroll-snap-align: start; white-space: nowrap; border-radius: 20px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; font-weight: 500; }
-            /* نوار ابزار: جستجو + فیلتر در یک ردیف */
-            .conv-toolbar { margin-bottom: 10px; gap: 8px; display: flex; flex-wrap: nowrap; align-items: center; padding-inline: 0; }
-            .conv-search-wrap { flex: 1; min-width: 0; display: flex; align-items: center; position: relative; }
-            .conv-search-wrap .conv-filter-input { min-height: 42px; padding: 10px 40px 10px 14px; font-size: 14px !important; width: 100%; border-radius: 10px; -webkit-tap-highlight-color: transparent; min-height: 42px !important; }
-            .btn-filter-toggle { min-height: 42px; padding: 10px 14px; font-size: 0.82rem; white-space: nowrap; flex-shrink: 0; border-radius: 10px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; font-weight: 500; }
+            /* نوار جستجو + فیلتر موبایل */
+            .conv-toolbar { margin-bottom: 10px; gap: 0; display: flex; flex-direction: column; padding-inline: 0; position: relative; }
+            .conv-search-bar { border-radius: 12px; min-height: 44px; }
+            .conv-search-input { font-size: 14px; padding: 11px 0; }
+            .conv-filter-chip { min-height: 44px; padding: 0 12px; font-size: 0.8rem; border-radius: 0 12px 12px 0; }
+            body[dir="rtl"] .conv-filter-chip { border-radius: 12px 0 0 12px; }
+            /* فیلترهای پیشرفته — bottom-sheet در موبایل */
+            .conv-advanced-filters { position: fixed; inset-inline: 0; bottom: 0; top: auto; z-index: 10000; background: var(--bg-card); border-radius: 20px 20px 0 0; padding: 0 0 max(20px, env(safe-area-inset-bottom)); margin: 0; border: none; border-top: 1px solid var(--border); box-shadow: 0 -8px 32px rgba(0,0,0,0.25); transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1); display: flex !important; flex-direction: column; gap: 0; width: 100%; max-height: 80vh; overflow-y: auto; }
+            .conv-advanced-filters.show { transform: translateY(0); }
+            /* handle کشویی */
+            .conv-filters-sheet-handle { display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--border); margin: 12px auto 0; flex-shrink: 0; }
+            /* عنوان sheet */
+            .conv-filters-sheet-title { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 10px; font-size: 1rem; font-weight: 600; color: var(--text-primary); flex-shrink: 0; }
+            .conv-filters-sheet-close { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: none; background: var(--bg-secondary); border-radius: 50%; cursor: pointer; color: var(--text-secondary); -webkit-tap-highlight-color: transparent; }
+            /* گرید فیلترها */
+            .conv-filters-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 8px 16px 0; }
+            .conv-filters-grid select { padding: 11px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 14px; min-height: 44px; width: 100%; flex: none; min-width: 0; }
+            .conv-filters-grid select:last-child:nth-child(odd) { grid-column: 1 / -1; }
+            /* دکمه‌های اعمال */
+            .conv-filters-actions { display: flex; gap: 10px; padding: 14px 16px 4px; flex-shrink: 0; }
+            .conv-filters-apply { flex: 1; min-height: 48px; font-size: 0.95rem; font-weight: 600; border-radius: 12px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+            .conv-filters-reset { min-height: 48px; padding: 12px 16px; font-size: 0.9rem; border-radius: 12px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; flex-shrink: 0; }
+            /* backdrop */
+            .conv-filters-backdrop { display: block; position: fixed; inset: 0; background: rgba(0,0,0,0); z-index: 9999; pointer-events: none; transition: background 0.3s; }
+            .conv-advanced-filters.show ~ .conv-filters-backdrop { background: rgba(0,0,0,0.5); pointer-events: auto; }
+            /* وقتی sheet باز است scroll body قفل شود */
+            body:has(#convAdvancedFilters.show) { overflow: hidden; }
             /* لیست مکالمات */
             .conv-layout { flex-direction: column; min-height: min(500px, 75vh, 75dvh); gap: 0; position: relative; }
             .conv-layout { flex-direction: column; flex: 1; min-height: 0; gap: 0; position: relative; }
@@ -2598,14 +2636,7 @@
             .dashboard-card .card-title { font-size: 0.95rem; }
             .dashboard-card .card-meta { font-size: 0.8rem; }
             .dashboard-sub { font-size: 0.9rem; margin-bottom: 16px; }
-            .conv-toolbar { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 10px; }
-            .conv-toolbar .conv-search-wrap { flex: 1 1 100%; min-width: 0; }
-            .conv-toolbar .btn-filter-toggle { flex: 0 0 auto; }
             .conv-search-wrap { min-width: 0; }
-            .conv-advanced-filters { flex-wrap: wrap; gap: 10px; min-width: 0; padding: 14px 0 0; margin-top: 14px; border-top: 1px solid var(--border); width: 100%; flex-basis: 100%; }
-            .conv-advanced-filters.show { margin-top: 14px; padding-top: 14px; display: flex; }
-            .conv-advanced-filters select { min-width: 0; flex: 1 1 140px; min-height: 48px; padding: 12px 16px; font-size: 16px; border-radius: 10px; }
-            .conv-advanced-filters #btnApplyConvFilters { min-height: 48px; padding: 12px 20px; border-radius: 10px; font-weight: 600; -webkit-tap-highlight-color: transparent; touch-action: manipulation; flex: 0 0 auto; }
             .announcements-page, .ticket-page, .task-page, .dept-page, .users-page, .whatsapp-page { min-width: 0; overflow-x: hidden; }
             .page h2 { font-size: 1.1rem; }
             .list-item { padding: 12px 14px; min-height: 44px; }

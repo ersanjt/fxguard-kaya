@@ -363,19 +363,37 @@
                         <button type="button" class="conv-tab" id="convTabArchived" data-tab="archived" data-i18n="filter_archived" style="display:none;">آرشیو</button>
                     </div>
                     <div class="conv-toolbar">
-                        <div class="conv-search-wrap">
-                            <span class="conv-search-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
-                            <input type="text" id="convSearch" data-i18n-ph="conv_search_ph" placeholder="جستجو نام یا شماره مشتری..." class="conv-filter-input">
+                        <div class="conv-search-bar">
+                            <span class="conv-search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+                            <input type="text" id="convSearch" data-i18n-ph="conv_search_ph" placeholder="جستجو نام یا شماره مشتری..." class="conv-filter-input conv-search-input">
+                            <button type="button" class="conv-filter-chip" id="convFilterToggle" aria-expanded="false" title="فیلترها">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                                <span class="conv-filter-chip-label" data-i18n="more_filters">فیلتر</span>
+                                <span class="conv-filter-active-dot" id="convFilterActiveDot" style="display:none;"></span>
+                            </button>
                         </div>
-                        <button type="button" class="btn-filter-toggle" id="convFilterToggle" aria-expanded="false" data-i18n="more_filters">فیلترهای بیشتر</button>
+                        <!-- فیلترهای پیشرفته — desktop inline / mobile bottom-sheet -->
                         <div class="conv-advanced-filters" id="convAdvancedFilters">
-                            <select id="convFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
-                            <select id="convFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
-                            <select id="convFilterBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
-                            <select id="convFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
-                            <select id="convFilterAssignee"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
-                            <button type="button" class="btn-secondary btn-sm" id="btnApplyConvFilters" data-i18n="apply_filter">اعمال</button>
+                            <div class="conv-filters-sheet-handle"></div>
+                            <div class="conv-filters-sheet-title">
+                                <span data-i18n="more_filters">فیلترها</span>
+                                <button type="button" class="conv-filters-sheet-close" onclick="document.getElementById('convFilterToggle').click()" aria-label="بستن">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                            <div class="conv-filters-grid">
+                                <select id="convFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
+                                <select id="convFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                                <select id="convFilterBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                                <select id="convFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
+                                <select id="convFilterAssignee"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
+                            </div>
+                            <div class="conv-filters-actions">
+                                <button type="button" class="btn-secondary btn-sm conv-filters-reset" id="btnResetConvFilters" data-i18n="reset_filter" onclick="resetConvFilters && resetConvFilters()">پاک کردن</button>
+                                <button type="button" class="btn-primary conv-filters-apply" id="btnApplyConvFilters" data-i18n="apply_filter">اعمال فیلتر</button>
+                            </div>
                         </div>
+                        <div class="conv-filters-backdrop" id="convFiltersBackdrop" onclick="document.getElementById('convFilterToggle').click()"></div>
                     </div>
                     <div class="conv-layout">
                         <div class="conv-list-wrap">
