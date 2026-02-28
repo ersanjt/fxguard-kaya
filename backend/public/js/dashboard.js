@@ -3330,11 +3330,16 @@
         window._marqueeAnnouncements = [];
         function pauseAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.add('paused'); }
         function resumeAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.remove('paused'); }
+        function getAnnMarqueeDismissedKey() {
+            var uid = (currentUser && currentUser.id) ? String(currentUser.id) : 'guest';
+            return 'ann_marquee_dismissed_' + uid;
+        }
         function closeAnnouncementMarquee() { 
             var el = document.getElementById('announcementMarquee'); 
             if (el) { 
                 el.style.display = 'none'; 
-                localStorage.setItem('ann_marquee_hidden', '1');
+                var ids = (window._marqueeAnnouncements || []).map(function(a) { return String(a.id); });
+                try { localStorage.setItem(getAnnMarqueeDismissedKey(), JSON.stringify(ids)); } catch (e) {}
             }
             // Show toggle button
             var toggleBtn = document.getElementById('headerAnnToggleBtn');
@@ -3342,10 +3347,7 @@
         }
         function openAnnouncementMarquee() {
             var el = document.getElementById('announcementMarquee');
-            if (el) {
-                el.style.display = 'flex';
-                localStorage.removeItem('ann_marquee_hidden');
-            }
+            if (el) el.style.display = 'flex';
             // Hide toggle button
             var toggleBtn = document.getElementById('headerAnnToggleBtn');
             if (toggleBtn) toggleBtn.style.display = 'none';
@@ -3361,25 +3363,22 @@
         function showAnnouncementMarquee() {
             var el = document.getElementById('announcementMarquee');
             if (el && window._marqueeAnnouncements && window._marqueeAnnouncements.length > 0) {
-                el.style.display = '';
-                localStorage.removeItem('ann_marquee_hidden');
+                el.style.display = 'flex';
             }
             // Hide toggle button
             var toggleBtn = document.getElementById('headerAnnToggleBtn');
             if (toggleBtn) toggleBtn.style.display = 'none';
         }
         function checkAnnouncementMarqueeVisibility() {
-            var hidden = localStorage.getItem('ann_marquee_hidden');
             var el = document.getElementById('announcementMarquee');
             var toggleBtn = document.getElementById('headerAnnToggleBtn');
-            
-            if (hidden === '1') {
-                if (el) el.style.display = 'none';
-                if (toggleBtn && window._marqueeAnnouncements && window._marqueeAnnouncements.length > 0) {
-                    toggleBtn.style.display = 'flex';
-                }
-            } else {
+            var announcements = window._marqueeAnnouncements || [];
+            if (el && el.style.display !== 'none') {
                 if (toggleBtn) toggleBtn.style.display = 'none';
+            } else if (announcements.length > 0 && toggleBtn) {
+                toggleBtn.style.display = 'flex';
+            } else if (toggleBtn) {
+                toggleBtn.style.display = 'none';
             }
         }
         function marqueeAnnouncementClick(id) {
@@ -3446,7 +3445,21 @@
                         inner.classList.add('scrolling');
                     }
                 }
-                banner.style.display = 'block';
+                var currentIds = general.map(function(a) { return String(a.id); });
+                var dismissedIds = [];
+                try {
+                    var stored = localStorage.getItem(getAnnMarqueeDismissedKey());
+                    if (stored) dismissedIds = JSON.parse(stored) || [];
+                } catch (e) {}
+                var hasNew = currentIds.some(function(id) { return dismissedIds.indexOf(id) === -1; });
+                var toggleBtn = document.getElementById('headerAnnToggleBtn');
+                if (dismissedIds.length > 0 && !hasNew) {
+                    banner.style.display = 'none';
+                    if (toggleBtn) toggleBtn.style.display = 'flex';
+                } else {
+                    banner.style.display = 'block';
+                    if (toggleBtn) toggleBtn.style.display = 'none';
+                }
             } catch (e) { banner.style.display = 'none'; }
         }
 
@@ -3680,7 +3693,26 @@
             // Global document-level click handler to catch dynamically generated buttons with onclick
             document.addEventListener('click', function(e) {
                 var target = e.target;
-                
+                // Chat back button (mobile) — fallback for returning to conversation list
+                if (target.closest('.chat-back-btn') && typeof closeChatMobile === 'function') {
+                    e.preventDefault();
+                    closeChatMobile();
+                    return;
+                }
+                // Handle elements whose onclick was moved to data-onclick-backup (CSP compliance)
+                var backupEl = target.closest('[data-onclick-backup]');
+                if (backupEl) {
+                    var backup = backupEl.getAttribute('data-onclick-backup');
+                    if (backup) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        try {
+                            var fn = new Function('event', backup);
+                            fn.call(backupEl, e);
+                        } catch (err) { console.error('onclick-backup:', err); }
+                        return;
+                    }
+                }
                 // Handle buttons with specific functions
                 if (target.matches('[onclick*="openNewConvModal"]')) {
                     e.preventDefault();
@@ -3913,12 +3945,17 @@
                 headerSearchModalInput.addEventListener('keyup', searchInputHandler);
             }
             
-            // Header user dropdown triggers
+            // Header user dropdown triggers (mobile + desktop)
+            var userDropdownHandler = function(e) { toggleUserDropdown(e); };
             var userDropdownMobile = document.getElementById('userDropdownTriggerMobile');
             if (userDropdownMobile) {
-                var userDropdownHandler = function(e) { toggleUserDropdown(e); };
                 userDropdownMobile.removeEventListener('click', userDropdownHandler);
                 userDropdownMobile.addEventListener('click', userDropdownHandler);
+            }
+            var userDropdownDesktop = document.getElementById('userDropdownTrigger');
+            if (userDropdownDesktop) {
+                userDropdownDesktop.removeEventListener('click', userDropdownHandler);
+                userDropdownDesktop.addEventListener('click', userDropdownHandler);
             }
             
             // Header logo
@@ -3932,6 +3969,12 @@
                 };
                 headerLogo.removeEventListener('click', logoHandler);
                 headerLogo.addEventListener('click', logoHandler);
+            }
+            // Chat back button (mobile) — bind globally so it works when chat is open
+            var chatBackBtn = document.getElementById('chatBackBtn');
+            if (chatBackBtn && typeof closeChatMobile === 'function') {
+                chatBackBtn.removeEventListener('click', closeChatMobile);
+                chatBackBtn.addEventListener('click', closeChatMobile);
             }
             
             // Header search input - Enter key
@@ -4022,7 +4065,7 @@
         }
         
         function handleHeaderQuickBtnClick(e, btn) {
-            var onclick = btn.getAttribute('data-onclick') || '';
+            var onclick = btn.getAttribute('data-onclick-backup') || btn.getAttribute('data-onclick') || '';
             if (onclick === "showPage('conversations'); openNewConvModal();") {
                 showPage('conversations');
                 setTimeout(openNewConvModal, 100);
@@ -4039,11 +4082,8 @@
         var convListClickHandler = null;
         
         function setupConversationEventHandlers() {
-            console.log('✅ setupConversationEventHandlers called');
-            
             // Conversation list items - event delegation
             var convList = document.getElementById('convList');
-            console.log('📋 convList element:', convList ? 'found' : 'NOT FOUND');
             
             if (convList) {
                 // Remove old handler
@@ -4053,10 +4093,7 @@
                 
                 // Create new handler
                 convListClickHandler = function(e) {
-                    console.log('🖱️ Click on conversation list:', e.target);
                     var item = e.target.closest('.conv-list-item');
-                    console.log('📌 Closest .conv-list-item:', item ? 'found' : 'NOT FOUND');
-                    
                     if (!item) return;
                     
                     var id = item.getAttribute('data-id');
@@ -4065,21 +4102,18 @@
                     var profilePic = item.getAttribute('data-profile-pic');
                     var isGroup = item.getAttribute('data-is-group') === '1';
                     
-                    console.log('💬 Opening chat with:', { id, name, phone });
-                    
                     if (id) {
                         openChat(id, name || '', phone || '', profilePic || '', isGroup);
                     }
                 };
                 
                 convList.addEventListener('click', convListClickHandler);
-                console.log('✅ Click handler attached to convList');
             }
             // Close button handlers
             var annCloseBtn = document.getElementById('annMarqueeCloseBtn');
             if (annCloseBtn) {
                 annCloseBtn.removeEventListener('click', closeAnnouncementMarquee);
-                annCloseBtn.addEventListener('click', function() { closeAnnouncementMarquee(); });
+                annCloseBtn.addEventListener('click', closeAnnouncementMarquee);
             }
             
             var annMoreBtn = document.getElementById('annMarqueeMoreBtn');
@@ -4570,7 +4604,6 @@
         if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
         var currentConvIsGroup = false;
         function openChat(id, name, phone, profilePic, isGroup) {
-            console.log('💬 openChat called:', { id, name, phone, profilePic, isGroup });
             currentConvId = id;
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
@@ -6337,14 +6370,12 @@
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
             if (page === 'dashboard') loadDashboard();
             if (page === 'conversations') { 
-                console.log('📍 Loading conversations page');
                 loadConvFiltersInit(); 
                 loadConversations(); 
                 setTimeout(function() { 
-                    console.log('⏱️ Timeout reached - setting up event handlers');
                     removeAllInlineHandlers(); 
                     setupConversationEventHandlers(); 
-                }, 250);  // Increased timeout from 100ms to 250ms for slower loads
+                }, 250);
             }
             if (page === 'customers') loadCustomers();
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
