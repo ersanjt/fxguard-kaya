@@ -80,7 +80,7 @@ async function checkUnansweredConversations(io, logger) {
             }
         }
     } catch (err) {
-        logger.error('checkUnansweredConversations:', err.message);
+        logger.error('checkUnansweredConversations error', { error: err?.message || String(err) });
     }
 }
 
