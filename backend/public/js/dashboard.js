@@ -2733,9 +2733,11 @@
             var list = document.getElementById(listId);
             if (!list) return;
             var isTicketList = listId === 'ticketList';
+            var isCustomerList = listId === 'customerList';
             var html = '';
             for (var i = 0; i < (count || 5); i++) {
                 if (isTicketList) html += '<div class="ticket-card ticket-card-skeleton"><div class="ticket-card-body"><div class="loading-skeleton" style="height:12px;width:80px;margin-bottom:8px;"></div><div class="loading-skeleton" style="height:16px;width:90%;margin-bottom:6px;"></div><div class="loading-skeleton" style="height:12px;width:60%;"></div></div><div class="ticket-card-badges"><span class="loading-skeleton" style="height:24px;width:50px;border-radius:8px;"></span><span class="loading-skeleton" style="height:24px;width:60px;border-radius:8px;"></span></div></div>';
+                else if (isCustomerList) html += '<div class="customer-card customer-card-skeleton"><div class="customer-card-main"><div class="loading-skeleton" style="width:44px;height:44px;border-radius:10px;"></div><div class="customer-card-body" style="flex:1;"><div class="loading-skeleton" style="height:14px;width:70%;margin-bottom:8px;"></div><div class="loading-skeleton" style="height:12px;width:90%;margin-bottom:4px;"></div><div class="loading-skeleton" style="height:12px;width:60%;"></div></div></div><div class="loading-skeleton" style="width:70px;height:36px;border-radius:8px;"></div></div>';
                 else html += '<div class="loading-skeleton loading-row"></div>';
             }
             list.innerHTML = html;
@@ -3718,21 +3720,40 @@
                     e.preventDefault();
                     openNewConvModal();
                 }
-                else if (target.matches('[onclick*="openCustomerModal"]')) {
+                else if (target.matches('[onclick*="openCustomerModal"]') || target.closest('#emptyCustomerAddBtn')) {
                     e.preventDefault();
-                    var customerId = target.getAttribute('data-id') || '';
+                    var customerId = (target.closest('[data-id]') || target).getAttribute('data-id') || '';
                     openCustomerModal(customerId);
+                }
+                else if (target.closest('#customerRetryBtn') || target.closest('#customerRefreshBtn')) {
+                    e.preventDefault();
+                    if (typeof loadCustomers === 'function') loadCustomers();
                 }
                 else if (target.matches('[onclick*="toggleTicketForm"]')) {
                     e.preventDefault();
                     toggleTicketForm();
                 }
-                else if (target.matches('[onclick*="startCustomerChat"]')) {
+                else if (target.matches('[onclick*="startCustomerChat"]') || target.closest('.customer-send-btn')) {
                     e.preventDefault();
-                    var custId = target.getAttribute('data-cust-id') || '';
-                    var custName = target.getAttribute('data-cust-name') || '';
-                    var custPhone = target.getAttribute('data-cust-phone') || '';
+                    e.stopPropagation();
+                    var btn = target.closest('.customer-send-btn') || target;
+                    var custId = btn.getAttribute('data-customer-id') || btn.getAttribute('data-cust-id') || '';
+                    var custName = btn.getAttribute('data-customer-name') || btn.getAttribute('data-cust-name') || '';
+                    var custPhone = btn.getAttribute('data-customer-phone') || btn.getAttribute('data-cust-phone') || '';
                     if (custId) startCustomerChat(custId, custName, custPhone);
+                }
+                else if (target.closest('.bulk-customer-check')) {
+                    e.stopPropagation();
+                    toggleBulkSelect(target.closest('.bulk-customer-check'));
+                }
+                else if (target.closest('.customer-card') && !target.closest('.customer-card-skeleton')) {
+                    var card = target.closest('.customer-card');
+                    if (!card || target.closest('.bulk-customer-check') || target.closest('.customer-send-btn')) return;
+                    e.preventDefault();
+                    var custId = card.getAttribute('data-customer-id');
+                    var custName = card.getAttribute('data-customer-name') || '';
+                    var custPhone = card.getAttribute('data-customer-phone') || '';
+                    if (custId && typeof showCustomerHistory === 'function') showCustomerHistory(custId, custName);
                 }
                 else if (target.matches('[onclick*="openTransactionModal"]')) {
                     e.preventDefault();
@@ -3745,6 +3766,20 @@
                     if (ticketId) loadTicketDetail(ticketId);
                 }
             }, true); // Use capturing phase to catch before other handlers
+            document.addEventListener('keydown', function(e) {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                var active = document.activeElement;
+                if (!active || !active.closest) return;
+                if (active.closest('.bulk-customer-check') || active.closest('.customer-send-btn')) return;
+                var card = active.closest('.customer-card:not(.customer-card-skeleton)');
+                if (!card) return;
+                var custId = card.getAttribute('data-customer-id');
+                var custName = card.getAttribute('data-customer-name') || '';
+                if (custId) {
+                    e.preventDefault();
+                    if (typeof showCustomerHistory === 'function') showCustomerHistory(custId, custName);
+                }
+            }, true);
         }
         
         /* ========== Remove All Inline Handlers (CSP Compliance) ========== */
@@ -4480,6 +4515,7 @@
             var searchEl = document.getElementById('convSearch');
             if (convQuickTab === 'unread') q += '&unread=true';
             else if (convQuickTab === 'unanswered') q += '&unanswered=true';
+            else if (convQuickTab === 'unassigned') q += '&unassigned=true';
             else if (convQuickTab === 'open') q += '&status=open';
             else if (convQuickTab === 'archived') q += '&status=archived';
             else if (convQuickTab === 'groups') q += '&isGroup=true';
@@ -5121,6 +5157,7 @@
             var list = document.getElementById('customerList');
             var statsEl = document.getElementById('customerStats');
             var countEl = document.getElementById('customerListCount');
+            if (!list) return;
             setLoading('customerList', 5);
             var q = '?limit=200';
             var searchEl = document.getElementById('customerSearch');
@@ -5128,21 +5165,12 @@
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
             if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value);
             var res = await apiFetch('/api/customers' + q);
-            if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty"><span class="empty-icon">&#128101;</span><br>' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (res.needLogin) { list.innerHTML = '<div class="empty"><span class="empty-icon">&#128101;</span><p>' + (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please log in again') + '</p></div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128101;</span><p>' + (res.data && res.data.error ? escapeHtml(res.data.error) : (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load failed')) + '</p><button type="button" class="btn-primary" id="customerRetryBtn">' + (LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>'; return; }
             var data = res.data;
             if (statsEl && data.stats) { statsEl.style.display = 'flex'; statsEl.innerHTML = '<span class="customer-stat"><strong>' + data.stats.total + '</strong> ' + (LANG === 'fa' ? 'مشتری' : 'customers') + '</span><span class="customer-stat"><strong>' + data.stats.active + '</strong> ' + (LANG === 'fa' ? 'فعال' : 'active') + '</span><span class="customer-stat"><strong>' + data.stats.inactive + '</strong> ' + (LANG === 'fa' ? 'غیرفعال' : 'inactive') + '</span><span class="customer-stat"><strong>' + data.stats.blocked + '</strong> ' + (LANG === 'fa' ? 'مسدود' : 'blocked') + '</span>'; }
             if (countEl) countEl.textContent = (data.total || 0) + ' ' + (LANG === 'fa' ? 'مشتری' : '');
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + t('empty_customers') + '</p><button type="button" class="btn-primary" id="emptyCustomerAddBtn">' + escapeHtml(t('customer_add')) + '</button></div>'; 
-                setTimeout(function() {
-                    var emptyBtn = document.getElementById('emptyCustomerAddBtn');
-                    if (emptyBtn) {
-                        emptyBtn.removeEventListener('click', function() { openCustomerModal(); });
-                        emptyBtn.addEventListener('click', function() { openCustomerModal(); });
-                    }
-                }, 50);
-                return; 
-            }
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + t('empty_customers') + '</p><button type="button" class="btn-primary" id="emptyCustomerAddBtn">' + escapeHtml(t('customer_add')) + '</button></div>'; return; }
             var sortEl = document.getElementById('customerSort');
             var sortVal = sortEl ? sortEl.value : 'newest';
             var sorted = sortCustomerList(data.data, sortVal);
@@ -5162,8 +5190,9 @@
                 var assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
                 var safeName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 var checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
-                return '<div class="customer-card" data-customer-id="' + c.id + '" onclick="showCustomerHistory(\'' + c.id + '\', \'' + safeName + '\')" role="button" tabindex="0" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();showCustomerHistory(\'' + c.id + '\', \'' + safeName + '\')}"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '" onclick="event.stopPropagation();toggleBulkSelect(this)"' + checked + '><div class="customer-card-main"><div class="customer-card-avatar">' + avatarHtml + '</div><div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" onclick="event.stopPropagation();startCustomerChat(\'' + c.id + '\', \'' + safeName + '\', \'' + (c.phone || '').replace(/'/g, "\\'") + '\')" data-i18n="btn_send">ارسال</button></div>';
+                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main"><div class="customer-card-avatar">' + avatarHtml + '</div><div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" data-i18n="btn_send">ارسال</button></div>';
             }).join('');
+            updateBulkSelectedCount();
         }
         async function startCustomerChat(customerId, name, phone) {
             var res = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customerId }) });
@@ -5176,6 +5205,49 @@
         }
 
         function applyCustomerFilters() { loadCustomers(); }
+        function initCustomerFilters() {
+            if (window._customerFiltersInited) return;
+            window._customerFiltersInited = true;
+            var searchEl = document.getElementById('customerSearch');
+            var clearBtn = document.getElementById('customerSearchClear');
+            var statusEl = document.getElementById('customerFilterStatus');
+            var sortEl = document.getElementById('customerSort');
+            try {
+                var saved = localStorage.getItem('crm_customer_filters');
+                if (saved) {
+                    var o = JSON.parse(saved);
+                    if (searchEl && o.search != null) searchEl.value = o.search;
+                    if (statusEl && o.status != null) statusEl.value = o.status;
+                    if (sortEl && o.sort != null) sortEl.value = o.sort;
+                }
+            } catch (_) {}
+            function saveFilters() {
+                try {
+                    localStorage.setItem('crm_customer_filters', JSON.stringify({
+                        search: searchEl ? searchEl.value : '',
+                        status: statusEl ? statusEl.value : '',
+                        sort: sortEl ? sortEl.value : 'newest'
+                    }));
+                } catch (_) {}
+            }
+            function updateClearBtn() {
+                if (clearBtn) clearBtn.style.display = (searchEl && searchEl.value.trim()) ? 'flex' : 'none';
+            }
+            if (searchEl) {
+                searchEl.addEventListener('input', function() {
+                    clearTimeout(window._custSearchT);
+                    window._custSearchT = setTimeout(function() { applyCustomerFilters(); saveFilters(); updateClearBtn(); }, 400);
+                    updateClearBtn();
+                });
+                searchEl.addEventListener('keypress', function(e) { if (e.key === 'Enter') { applyCustomerFilters(); saveFilters(); } });
+            }
+            if (clearBtn) clearBtn.addEventListener('click', function() {
+                if (searchEl) { searchEl.value = ''; searchEl.focus(); applyCustomerFilters(); saveFilters(); updateClearBtn(); }
+            });
+            if (statusEl) statusEl.addEventListener('change', function() { applyCustomerFilters(); saveFilters(); });
+            if (sortEl) sortEl.addEventListener('change', function() { applyCustomerFilters(); saveFilters(); });
+            updateClearBtn();
+        }
 
         window._bulkSelectedIds = window._bulkSelectedIds || [];
         function toggleBulkSelect(el) {
@@ -5187,8 +5259,15 @@
             updateBulkSelectedCount();
         }
         function updateBulkSelectedCount() {
+            var n = window._bulkSelectedIds.length || 0;
             var el = document.getElementById('bulkSelectedCount');
-            if (el) el.textContent = (window._bulkSelectedIds.length || 0) + ' ' + (LANG === 'fa' ? 'مشتری انتخاب شده' : 'customers selected');
+            if (el) el.textContent = n + ' ' + (LANG === 'fa' ? 'مشتری انتخاب شده' : 'customers selected');
+            var bar = document.getElementById('customerBulkBar');
+            var barCount = document.getElementById('customerBulkBarCount');
+            if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
+            if (barCount) barCount.textContent = n + ' ' + (LANG === 'fa' ? 'انتخاب شده' : 'selected');
+            var submitBtn = document.getElementById('bulkSendSubmitBtn');
+            if (submitBtn) { submitBtn.disabled = n === 0; submitBtn.title = n === 0 ? (LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer') : ''; }
         }
         function bulkSelectFiltered() {
             var data = window._currentCustomerListData || [];
@@ -5208,6 +5287,7 @@
             document.getElementById('bulkMessageContent').value = '';
             document.getElementById('bulkDelaySec').value = 5;
             updateBulkSelectedCount();
+            if ((window._bulkSelectedIds || []).length === 0) toast(LANG === 'fa' ? 'ابتدا مشتریان را از لیست انتخاب کنید' : 'Select customers from the list first', false);
         }
         function closeBulkSendModal() { document.getElementById('modalBulkSend').style.display = 'none'; }
         async function submitBulkSend() {
@@ -6377,13 +6457,13 @@
                     setupConversationEventHandlers(); 
                 }, 250);
             }
-            if (page === 'customers') loadCustomers();
+            if (page === 'customers') { initCustomerFilters(); loadCustomers(); }
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
             if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }
             if (page === 'tickets') { loadTicketFiltersInit(); loadTickets(); }
             if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
-            if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); }
+            if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); loadWhatsappStats(); }
             if (page === 'message-templates') loadMessageTemplates();
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); }
             if (page === 'rates-charts') loadRatesCharts();
@@ -8421,6 +8501,10 @@
                 if (aiCb) aiCb.checked = res.data.aiAnswerEnabled !== false;
                 if (alertIn) alertIn.value = res.data.alertUnansweredAfterMinutes ?? 5;
                 if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
+                var deptMsg = document.getElementById('whatsappDeptAssignedMessage');
+                var empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+                if (deptMsg) deptMsg.value = res.data.deptAssignedMessage || '';
+                if (empMsg) empMsg.value = res.data.employeeIntroMessage || '';
                 if (deptSel) {
                     var deptRes = await apiFetch('/api/departments');
                     if (deptRes.ok && deptRes.data && deptRes.data.data) {
@@ -8467,6 +8551,37 @@
             });
             if (res.needLogin) return;
             toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
+        }
+        async function saveWhatsappAutoMessagesConfig() {
+            var deptMsg = document.getElementById('whatsappDeptAssignedMessage');
+            var empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+            if (!deptMsg || !empMsg) return;
+            var res = await apiFetch('/api/whatsapp/config', {
+                method: 'PUT',
+                body: JSON.stringify({
+                    deptAssignedMessage: deptMsg.value.trim(),
+                    employeeIntroMessage: empMsg.value.trim()
+                })
+            });
+            if (res.needLogin) return;
+            toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
+        }
+        async function loadWhatsappStats() {
+            var perms = (currentUser && currentUser.permissions) || {};
+            if (!token || perms.conversations === false) return;
+            var openEl = document.getElementById('whatsappStatOpen');
+            var unassignedEl = document.getElementById('whatsappStatUnassigned');
+            var unansweredEl = document.getElementById('whatsappStatUnanswered');
+            if (!openEl && !unassignedEl && !unansweredEl) return;
+            try {
+                var resOpen = apiFetch('/api/conversations?status=open&limit=1');
+                var resUnassigned = apiFetch('/api/conversations?unassigned=1&limit=1');
+                var resUnanswered = apiFetch('/api/conversations?unanswered=1&limit=1');
+                var arr = await Promise.all([resOpen, resUnassigned, resUnanswered]);
+                if (openEl) openEl.textContent = (arr[0].ok && arr[0].data && arr[0].data.total != null) ? arr[0].data.total : '—';
+                if (unassignedEl) unassignedEl.textContent = (arr[1].ok && arr[1].data && arr[1].data.total != null) ? arr[1].data.total : '—';
+                if (unansweredEl) unansweredEl.textContent = (arr[2].ok && arr[2].data && arr[2].data.total != null) ? arr[2].data.total : '—';
+            } catch (e) { if (openEl) openEl.textContent = '—'; if (unassignedEl) unassignedEl.textContent = '—'; if (unansweredEl) unansweredEl.textContent = '—'; }
         }
         async function loadWhatsappDeptRouting() {
             var box = document.getElementById('whatsappDeptRouting');

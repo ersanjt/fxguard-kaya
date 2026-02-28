@@ -1585,6 +1585,9 @@
         .whatsapp-dept-row { margin-top: 12px; }
         .whatsapp-dept-row label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; }
         .whatsapp-dept-row select { width: 100%; padding: 8px; margin-top: 4px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); }
+        .whatsapp-auto-messages-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 12px; }
+        .whatsapp-auto-message-field label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; }
+        .whatsapp-auto-message-field textarea { width: 100%; box-sizing: border-box; }
         .whatsapp-meta-list { display: grid; gap: 8px 16px; margin: 0; font-size: 0.9rem; }
         .whatsapp-meta-list dt { margin: 0; color: var(--text-muted); font-weight: 500; }
         .whatsapp-meta-list dd { margin: 0; color: var(--text-primary); }
@@ -1680,27 +1683,38 @@
         .staff-activity-list .empty { padding: 32px 20px; background: var(--bg-secondary); border: 1px dashed var(--border); border-radius: var(--radius-sm); text-align: center; color: var(--text-muted); }
         .stat-card .val { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
         .stat-card .label { font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; }
-        .customer-page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
+        #pageCustomers, #pageCustomerDetail { min-width: 0; overflow-x: hidden; width: 100%; }
+        .customer-page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; min-width: 0; }
         .customer-header-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         .customer-page-header h2 { margin: 0; }
         .customer-page-desc { color: var(--text-secondary); font-size: 0.9rem; margin: 4px 0 0; line-height: 1.5; }
-        .customer-stats { display: flex; gap: 20px; margin-bottom: 16px; padding: 12px 20px; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); font-size: 0.9rem; flex-wrap: wrap; }
+        .customer-stats { display: flex; gap: 20px; margin-bottom: 16px; padding: 12px 20px; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); font-size: 0.9rem; flex-wrap: wrap; min-width: 0; }
         .customer-stat { color: var(--text-secondary); }
         .customer-stat strong { color: var(--accent); margin-left: 4px; }
-        .customer-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
-        .customer-search-wrap { flex: 1; min-width: 200px; position: relative; }
+        .customer-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; min-width: 0; }
+        .customer-search-wrap { flex: 1; min-width: 0; position: relative; }
+        @media (min-width: 420px) { .customer-search-wrap { min-width: 180px; } }
         /* RTL: icon on right → padding-right must clear icon so placeholder doesn't overlap */
-        .customer-search-wrap .conv-filter-input { width: 100%; padding: 12px 44px 12px 16px; min-height: 44px; box-sizing: border-box; border-radius: var(--radius-sm); transition: border-color 0.2s, box-shadow 0.2s; }
+        .customer-search-wrap .conv-filter-input { width: 100%; padding: 12px 72px 12px 16px; min-height: 44px; box-sizing: border-box; border-radius: var(--radius-sm); transition: border-color 0.2s, box-shadow 0.2s; }
         .customer-search-wrap .conv-filter-input::placeholder { color: var(--text-muted); }
         .customer-search-wrap .conv-filter-input:focus { box-shadow: 0 0 0 2px var(--accent-soft); }
         .customer-search-icon { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
         .customer-search-icon svg { width: 18px; height: 18px; flex-shrink: 0; }
-        body.ltr .customer-search-wrap .conv-filter-input { padding: 12px 16px 12px 44px; }
         body.ltr .customer-search-icon { right: auto; left: 14px; }
-        .customer-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+        .customer-search-wrap { position: relative; }
+        .customer-search-clear { position: absolute; inset-inline-end: 40px; top: 50%; transform: translateY(-50%); width: 24px; height: 24px; padding: 0; border: none; background: var(--bg-secondary); color: var(--text-muted); border-radius: 50%; cursor: pointer; font-size: 1.2rem; line-height: 1; display: flex; align-items: center; justify-content: center; transition: color 0.2s, background 0.2s; z-index: 1; }
+        .customer-search-clear:hover { color: var(--text-primary); background: var(--bg-hover); }
+        body.ltr .customer-search-wrap .conv-filter-input { padding: 12px 16px 12px 72px; }
+        body.ltr .customer-search-clear { inset-inline-end: 40px; }
+        .customer-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; flex-wrap: wrap; gap: 8px; }
         .customer-list-title { font-weight: 600; font-size: 0.95rem; color: var(--text-primary); }
+        .customer-list-header-right { display: flex; align-items: center; gap: 10px; }
+        .customer-list-header-right .btn-icon-text { padding: 6px 10px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-secondary); border-radius: var(--radius-sm); cursor: pointer; font-size: 1.1rem; transition: color 0.2s, background 0.2s, border-color 0.2s; }
+        .customer-list-header-right .btn-icon-text:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
         .customer-list-count { font-size: 0.85rem; color: var(--text-muted); }
-        .customer-list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+        .customer-bulk-bar { display: flex; align-items: center; gap: 12px; padding: 10px 16px; margin-bottom: 12px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius); flex-wrap: wrap; }
+        .customer-bulk-bar-count { font-weight: 600; color: var(--accent); font-size: 0.95rem; }
+        .customer-list-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 12px; min-width: 0; }
         .customer-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; cursor: pointer; transition: all 0.2s; flex-wrap: wrap; position: relative; }
         .customer-card .bulk-customer-check { position: absolute; inset-inline-start: 12px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; cursor: pointer; accent-color: var(--accent); z-index: 2; }
         .customer-card .customer-card-main { padding-inline-start: 28px; }
@@ -1711,6 +1725,8 @@
         .customer-card-name { font-weight: 600; color: var(--text-primary); display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .customer-card-meta { font-size: 0.82rem; color: var(--text-secondary); margin-top: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .customer-send-btn { padding: 8px 16px; font-size: 0.9rem; flex-shrink: 0; }
+        .customer-card-skeleton { pointer-events: none; cursor: default; }
+        .customer-card-skeleton:hover { background: var(--bg-card); border-color: var(--border); }
         .customer-card-avatar { position: relative; overflow: hidden; }
         .customer-card-avatar-fallback { display: flex; align-items: center; justify-content: center; position: absolute; inset: 0; font-weight: 700; font-size: 1.1rem; color: var(--accent); background: var(--accent-soft); }
         .customer-card-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; position: relative; z-index: 1; }
@@ -1968,6 +1984,7 @@
             .ticker-config-list { flex-wrap: wrap; }
             #pageWhatsapp .form-box, #pageWhatsapp .qr-box, #pageWhatsapp .whatsapp-card, .qr-box { width: 100%; max-width: 100%; box-sizing: border-box; }
             .whatsapp-unanswered-grid { grid-template-columns: 1fr; }
+            .whatsapp-auto-messages-grid { grid-template-columns: 1fr; }
             /* صفحه نرخ ارز — موبایل: یک ستون، کارت‌ها به‌جای جدول */
             .rates-page-header h2 { font-size: 1.15rem; }
             .rates-page-layout { grid-template-columns: 1fr; }
@@ -1999,6 +2016,9 @@
             .customer-card { flex-direction: column; align-items: stretch; }
             .customer-card .customer-card-main { flex: none; }
             .customer-card .customer-send-btn { align-self: flex-end; order: unset; }
+            .customer-transactions-header { flex-direction: column; align-items: stretch; }
+            .customer-transactions-header .btn-primary,
+            .customer-transactions-header .btn-secondary { width: 100%; }
         }
         .modal-body label { display: block; margin-top: 12px; margin-bottom: 4px; font-size: 0.9rem; color: var(--text-secondary); }
         .modal-body label:first-of-type { margin-top: 0; }
@@ -2561,7 +2581,7 @@
         .customer-timeline-content { font-size: 0.9rem; color: var(--text-secondary); margin: 4px 0; white-space: pre-wrap; }
         .customer-timeline-meta { font-size: 0.85rem; color: var(--text-muted); }
         .customer-timeline-transaction .tx-amount { font-weight: 600; }
-        .customer-transactions-header { margin-bottom: 16px; }
+        .customer-transactions-header { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 16px; min-width: 0; }
         .customer-transaction-row { margin-bottom: 8px; }
         .customer-transactions-list { min-height: 120px; }
         .customer-transactions-empty { text-align: center; padding: 32px 24px; background: var(--bg-secondary); border-radius: var(--radius-md); border: 1px dashed var(--border); margin-top: 8px; }
@@ -2924,6 +2944,9 @@
             .services-panel-toolbar .btn-primary { width: 100%; min-height: 44px; }
             .customer-detail-tabs { flex-wrap: wrap; gap: 6px; }
             .customer-detail-tab { padding: 8px 12px; font-size: 0.85rem; }
+            #pageCustomerDetail .customer-detail-header { flex-direction: column; align-items: stretch; gap: 10px; }
+            #pageCustomerDetail .customer-detail-quick-actions { width: 100%; justify-content: flex-start; flex-wrap: wrap; }
+            .customer-timeline-item, .customer-transaction-row { min-width: 0; overflow-wrap: break-word; }
         }
         /* خدمات صرافی — موبایل کوچک */
         @media (max-width: 480px) {

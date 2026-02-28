@@ -38,6 +38,16 @@ module.exports = (sequelize) => {
             defaultValue: true,
             allowNull: true,
             comment: 'فعال بودن پاسخ خودکار هوش مصنوعی (نیاز به OPENAI_API_KEY در .env)'
+        },
+        deptAssignedMessage: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'پیام هنگام تخصیص به دپارتمان — {{deptName}} = نام دپارتمان. خالی = پیش‌فرض'
+        },
+        employeeIntroMessage: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'پیام معرفی کارمند — {{name}} و {{deptName}}. خالی = پیش‌فرض'
         }
     }, {
         timestamps: true,

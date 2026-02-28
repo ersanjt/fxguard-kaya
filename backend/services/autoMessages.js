@@ -1,9 +1,13 @@
 /**
  * پیام‌های خودکار: تخصیص دپارتمان و معرفی کارمند
+ * متن‌ها از WhatsappConfig خوانده می‌شوند؛ خالی = پیش‌فرض
  */
 const { gatewayPost } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
-const { Message, Customer, User, Department, Conversation } = require('../models');
+const { Message, Customer, User, Department, Conversation, WhatsappConfig } = require('../models');
+
+const DEFAULT_DEPT_ASSIGNED = 'شما به دپارتمان {{deptName}} وصل شدید. به زودی پاسخگوی شما خواهیم بود.';
+const DEFAULT_EMPLOYEE_INTRO = 'من {{name}} از دپارتمان {{deptName}} هستم.';
 
 let rabbitChannel = null;
 
@@ -46,16 +50,21 @@ async function sendOutgoingAutoMessage(conversation, text) {
 /** پیام خودکار: شما به دپارتمان X وصل شدید — فقط یک‌بار هنگام تخصیص/تغییر دپارتمان */
 async function sendDeptAssignedMessage(conversation, department) {
     try {
-        // بارگذاری مجدد برای اطمینان از metadata به‌روز (جلوگیری از ارسال تکراری)
         const conv = await Conversation.findByPk(conversation.id, { attributes: ['id', 'customerId', 'metadata', 'firstReplyAt'] });
         if (!conv) return;
         const meta = conv.metadata || {};
         const lastDeptId = meta.deptAssignedForDeptId;
         const newDeptId = department ? String(department.id) : null;
-        // اگر قبلاً برای همین دپارتمان ارسال شده، ارسال نکن
         if (lastDeptId === newDeptId && meta.deptAssignedMsgSent) return;
         const deptName = department && department.name ? department.name : 'پشتیبانی';
-        const text = `شما به دپارتمان ${deptName} وصل شدید. به زودی پاسخگوی شما خواهیم بود.`;
+        let template = DEFAULT_DEPT_ASSIGNED;
+        try {
+            const cfg = await WhatsappConfig.findByPk('default').catch(() => null);
+            if (cfg && cfg.deptAssignedMessage && String(cfg.deptAssignedMessage).trim()) {
+                template = String(cfg.deptAssignedMessage).trim();
+            }
+        } catch (_) {}
+        const text = template.replace(/\{\{deptName\}\}/g, deptName);
         // بررسی وجود پیام مشابه (fallback برای جلوگیری از ارسال تکراری)
         const existing = await Message.findOne({
             where: {
@@ -85,7 +94,14 @@ async function maybeSendEmployeeIntro(conversation, userId, user, department) {
         if (prevCount > 0) return;
         const name = (user && (user.name || user.username || user.email)) || 'کارشناس';
         const deptName = (department && department.name) ? department.name : 'پشتیبانی';
-        const text = `من ${name} از دپارتمان ${deptName} هستم.`;
+        let template = DEFAULT_EMPLOYEE_INTRO;
+        try {
+            const cfg = await WhatsappConfig.findByPk('default').catch(() => null);
+            if (cfg && cfg.employeeIntroMessage && String(cfg.employeeIntroMessage).trim()) {
+                template = String(cfg.employeeIntroMessage).trim();
+            }
+        } catch (_) {}
+        const text = template.replace(/\{\{name\}\}/g, name).replace(/\{\{deptName\}\}/g, deptName);
         // جلوگیری از ارسال تکراری: اگر همین پیام قبلاً ارسال شده، ارسال نکن
         const existing = await Message.findOne({
             where: {

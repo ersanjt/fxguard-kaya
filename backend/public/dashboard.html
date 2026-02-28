@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/dashboard.css?v=32">
+    <link rel="stylesheet" href="/css/dashboard.css?v=35">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -118,13 +118,13 @@
         <header class="header" role="banner">
             <!-- موبایل: هدر سبک اپلیکیشن -->
             <div class="header-mobile-bar">
-                <button type="button" class="header-menu-btn" id="headerMenuBtn" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+                <button type="button" class="header-menu-btn" id="headerMenuBtn" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو" onclick="toggleSidebarMobile()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
                 <h1 class="header-mobile-title" id="headerMobileTitle">داشبورد</h1>
                 <div class="header-mobile-actions">
-                    <button type="button" class="header-ann-toggle-btn" id="headerAnnToggleBtn" style="display:none;" aria-label="نمایش اعلان‌ها" title="نمایش اعلان‌ها"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M6 17h12v2H6z"/></svg></button>
-                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-perm="announcements" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadgeMobile" style="display:none;">0</span></button>
-                    <button type="button" class="header-search-trigger header-mobile-search" id="headerSearchTrigger" aria-label="جستجو" title="جستجو"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
-                    <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
+                    <button type="button" class="header-ann-toggle-btn" id="headerAnnToggleBtn" style="display:none;" aria-label="نمایش اعلان‌ها" title="نمایش اعلان‌ها" onclick="toggleAnnouncementMarquee()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M6 17h12v2H6z"/></svg></button>
+                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-perm="announcements" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها" onclick="toggleNotifyDropdown(event)"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadgeMobile" style="display:none;">0</span></button>
+                    <button type="button" class="header-search-trigger header-mobile-search" id="headerSearchTrigger" aria-label="جستجو" title="جستجو" onclick="openHeaderSearchPopup()"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
+                    <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو" onclick="toggleUserDropdown(event)"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
                 </div>
             </div>
             <!-- دسکتاپ: هدر حرفه‌ای -->
@@ -380,8 +380,8 @@
                         </div>
                         <div id="chatArea" class="chat-area">
                         <div class="chat-header-wrap">
-                            <button type="button" class="chat-back-btn" id="chatBackBtn" aria-label="بازگشت به لیست" data-i18n-title="back_to_list" title="بازگشت به لیست" style="display:none;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
                             <div class="chat-header-main">
+                                <button type="button" class="chat-back-btn" id="chatBackBtn" aria-label="بازگشت به لیست" data-i18n-title="back_to_list" title="بازگشت به لیست" onclick="closeChatMobile()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
                                 <div class="chat-header-avatar" id="chatHeaderAvatar"></div>
                                 <div class="chat-header" id="chatHeader"></div>
                                 <button type="button" class="chat-detail-toggle" id="chatDetailToggle" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
@@ -451,7 +451,8 @@
                     <div class="customer-toolbar">
                         <div class="customer-search-wrap">
                             <span class="customer-search-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
-                            <input type="text" id="customerSearch" class="customer-search conv-filter-input" data-i18n-ph="customer_search_ph" placeholder="جستجو نام، تلفن یا ایمیل..." onkeypress="if(event.key==='Enter')applyCustomerFilters()" oninput="var v=this.value;clearTimeout(window._custSearchT);window._custSearchT=setTimeout(function(){applyCustomerFilters();},400);">
+                            <input type="text" id="customerSearch" class="customer-search conv-filter-input" data-i18n-ph="customer_search_ph" placeholder="جستجو نام، تلفن یا ایمیل...">
+                            <button type="button" class="customer-search-clear" id="customerSearchClear" style="display:none;" title="پاک کردن جستجو" aria-label="پاک کردن جستجو">&times;</button>
                         </div>
                         <select id="customerFilterStatus" class="customer-toolbar-select" aria-label="وضعیت">
                             <option value="" data-i18n="filter_all">همه</option>
@@ -469,7 +470,15 @@
                     </div>
                     <div class="customer-list-header">
                         <span class="customer-list-title" data-i18n="conv_list_title">مشتریان</span>
-                        <span class="customer-list-count" id="customerListCount"></span>
+                        <div class="customer-list-header-right">
+                            <button type="button" class="btn-icon-text" id="customerRefreshBtn" onclick="loadCustomers()" title="تازه‌سازی" aria-label="تازه‌سازی">&#8635;</button>
+                            <span class="customer-list-count" id="customerListCount"></span>
+                        </div>
+                    </div>
+                    <div id="customerBulkBar" class="customer-bulk-bar" style="display:none;">
+                        <span id="customerBulkBarCount" class="customer-bulk-bar-count">۰ انتخاب شده</span>
+                        <button type="button" class="btn-primary btn-sm" onclick="openBulkSendModal()" data-i18n="bulk_send">ارسال انبوه</button>
+                        <button type="button" class="btn-secondary btn-sm" onclick="bulkClearSelection()" data-i18n="bulk_clear">پاک کردن</button>
                     </div>
                     <div id="customerList" class="customer-list-grid"></div>
                 </div>
@@ -1143,6 +1152,32 @@
                         <h2 data-i18n="page_whatsapp">اتصال واتساپ</h2>
                         <p class="whatsapp-intro text-muted" data-i18n="whatsapp_intro">پیام‌های واتساپ به‌صورت خودکار در مکالمات ذخیره می‌شوند. بر اساس کلمات کلیدی دپارتمان‌ها، تخصیص خودکار انجام می‌شود.</p>
                     </div>
+                    <div class="whatsapp-stats-row" id="whatsappStatsRow">
+                        <div class="whatsapp-stat-card" data-stat="open">
+                            <span class="whatsapp-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+                            <div class="whatsapp-stat-content">
+                                <span class="whatsapp-stat-value" id="whatsappStatOpen">—</span>
+                                <span class="whatsapp-stat-label" data-i18n="whatsapp_stat_open">مکالمات باز</span>
+                            </div>
+                            <a href="#conversations" class="whatsapp-stat-link" onclick="showPage('conversations'); setConvQuickTab('open'); return false;" data-i18n="whatsapp_view">مشاهده</a>
+                        </div>
+                        <div class="whatsapp-stat-card" data-stat="unassigned">
+                            <span class="whatsapp-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+                            <div class="whatsapp-stat-content">
+                                <span class="whatsapp-stat-value" id="whatsappStatUnassigned">—</span>
+                                <span class="whatsapp-stat-label" data-i18n="whatsapp_stat_unassigned">بدون تخصیص</span>
+                            </div>
+                            <a href="#conversations" class="whatsapp-stat-link" onclick="showPage('conversations'); setConvQuickTab('unassigned'); return false;" data-i18n="whatsapp_view">مشاهده</a>
+                        </div>
+                        <div class="whatsapp-stat-card" data-stat="unanswered">
+                            <span class="whatsapp-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+                            <div class="whatsapp-stat-content">
+                                <span class="whatsapp-stat-value" id="whatsappStatUnanswered">—</span>
+                                <span class="whatsapp-stat-label" data-i18n="whatsapp_stat_unanswered">بدون پاسخ</span>
+                            </div>
+                            <a href="#conversations" class="whatsapp-stat-link" onclick="showPage('conversations'); setConvQuickTab('unanswered'); return false;" data-i18n="whatsapp_view">مشاهده</a>
+                        </div>
+                    </div>
                     <div class="whatsapp-page-layout">
                         <div class="whatsapp-col whatsapp-col-connection">
                             <div class="whatsapp-card whatsapp-connection-card">
@@ -1198,6 +1233,21 @@
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAIEnabled" checked> <span data-i18n="whatsapp_ai_enabled">فعال</span></label>
                                 <button type="button" class="btn-primary" onclick="saveWhatsappAIConfig()" data-i18n="btn_save">ذخیره</button>
                             </div>
+                            <div id="whatsappAutoMessagesBox" class="whatsapp-card form-box">
+                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_auto_messages_title">پیام‌های خودکار تخصیص و معرفی</h3>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_auto_messages_hint">متن پیام‌هایی که هنگام تخصیص به دپارتمان یا معرفی کارمند ارسال می‌شوند. از {{deptName}} و {{name}} برای جایگزینی استفاده کنید. خالی = پیش‌فرض.</p>
+                                <div class="whatsapp-auto-messages-grid">
+                                    <div class="whatsapp-auto-message-field">
+                                        <label data-i18n="whatsapp_dept_assigned_msg">پیام تخصیص به دپارتمان</label>
+                                        <textarea id="whatsappDeptAssignedMessage" rows="2" class="whatsapp-textarea" data-i18n-ph="whatsapp_dept_assigned_ph" placeholder="شما به دپارتمان {{deptName}} وصل شدید. به زودی پاسخگوی شما خواهیم بود."></textarea>
+                                    </div>
+                                    <div class="whatsapp-auto-message-field">
+                                        <label data-i18n="whatsapp_employee_intro_msg">پیام معرفی کارمند</label>
+                                        <textarea id="whatsappEmployeeIntroMessage" rows="2" class="whatsapp-textarea" data-i18n-ph="whatsapp_employee_intro_ph" placeholder="من {{name}} از دپارتمان {{deptName}} هستم."></textarea>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-primary" onclick="saveWhatsappAutoMessagesConfig()" data-i18n="btn_save">ذخیره</button>
+                            </div>
                             <div id="whatsappUnansweredBox" class="whatsapp-card form-box">
                                 <h3 class="whatsapp-card-title" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_unanswered_hint">وقتی مشتری پیام می‌دهد و کسی جواب نمی‌دهد، بعد از مدت مشخص اعلان ارسال می‌شود و در صورت ادامه، مکالمه به دپارتمان پشتیبانی برگردانده می‌شود.</p>
@@ -1211,7 +1261,10 @@
                         </div>
                     </div>
                     <div id="whatsappDeptRouting" class="whatsapp-card form-box whatsapp-dept-routing" style="margin-top:24px; display:none;">
-                        <h3 class="whatsapp-card-title" data-i18n="whatsapp_dept_routing">تخصیص خودکار به دپارتمان</h3>
+                        <div class="whatsapp-dept-routing-header">
+                            <h3 class="whatsapp-card-title" data-i18n="whatsapp_dept_routing">تخصیص خودکار به دپارتمان</h3>
+                            <a href="#departments" class="btn-secondary btn-sm whatsapp-edit-depts" onclick="showPage('departments'); return false;" data-i18n="whatsapp_edit_depts">ویرایش دپارتمان‌ها و کلمات کلیدی</a>
+                        </div>
                         <p class="text-muted whatsapp-hint" data-i18n="whatsapp_dept_routing_hint">بر اساس کلمات کلیدی در متن پیام، مکالمه به دپارتمان مربوطه هدایت می‌شود.</p>
                         <div id="whatsappDeptList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
                     </div>
@@ -2684,7 +2737,7 @@
                 <label data-i18n="bulk_delay">تأخیر بین پیام‌ها (ثانیه)</label>
                 <input type="number" id="bulkDelaySec" min="2" max="60" value="5" style="width:80px;">
             </div>
-            <button type="button" class="btn-primary" onclick="submitBulkSend()" data-i18n="bulk_send_submit">شروع ارسال</button>
+            <button type="button" class="btn-primary" id="bulkSendSubmitBtn" onclick="submitBulkSend()" data-i18n="bulk_send_submit">شروع ارسال</button>
         </div>
     </div>
     <!-- مودال ورود از Excel -->
@@ -2706,7 +2759,7 @@
     <script src="/js/i18n-fa.js?v=3" charset="utf-8"></script>
     <script src="/js/i18n-en.js?v=1" charset="utf-8"></script>
     <script src="/js/i18n-tr.js?v=3" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=10" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=12" charset="utf-8"></script>
 
 </body>
 </html>
