@@ -1532,7 +1532,21 @@
         .qr-box img { max-width: 280px; border-radius: var(--radius-sm); border: 2px solid var(--border); }
         /* ========== صفحه اتصال واتساپ — چیدمان و کارت‌ها ========== */
         .whatsapp-page { max-width: 100%; min-width: 0; }
-        .whatsapp-page-header { margin-bottom: 24px; }
+        .whatsapp-page-header { margin-bottom: 20px; }
+        .whatsapp-stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .whatsapp-stat-card { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.2s, box-shadow 0.2s; }
+        .whatsapp-stat-card:hover { border-color: var(--accent); box-shadow: 0 4px 12px rgba(16,185,129,0.1); }
+        .whatsapp-stat-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; background: var(--accent-soft); color: var(--accent); border-radius: var(--radius-sm); flex-shrink: 0; }
+        .whatsapp-stat-icon svg { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+        .whatsapp-stat-content { flex: 1; min-width: 0; }
+        .whatsapp-stat-value { display: block; font-size: 1.25rem; font-weight: 700; color: var(--text-primary); }
+        .whatsapp-stat-label { font-size: 0.85rem; color: var(--text-secondary); }
+        .whatsapp-stat-link { font-size: 0.85rem; font-weight: 500; color: var(--accent); text-decoration: none; white-space: nowrap; padding: 4px 10px; border-radius: var(--radius-sm); transition: background 0.2s, color 0.2s; }
+        .whatsapp-stat-link:hover { background: var(--accent-soft); color: var(--accent); }
+        .whatsapp-dept-routing-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 8px; }
+        .whatsapp-dept-routing-header .whatsapp-card-title { margin: 0; }
+        .whatsapp-edit-depts { margin: 0; padding: 6px 14px; font-size: 0.85rem; }
+        @media (max-width: 600px) { .whatsapp-stats-row { grid-template-columns: 1fr; } .whatsapp-stat-card { padding: 14px 16px; } }
         .whatsapp-page-header h2 { margin: 0 0 8px; font-size: 1.35rem; }
         .whatsapp-intro { font-size: 0.95rem; margin: 0; line-height: 1.6; color: var(--text-secondary); }
         .whatsapp-page-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; align-items: start; }
@@ -1866,9 +1880,13 @@
             .customer-page-header { flex-direction: column; align-items: stretch; gap: 12px; }
             .customer-header-actions { width: 100%; flex-wrap: wrap; gap: 8px; }
             .customer-header-actions .btn-primary { flex: 1; min-width: 120px; }
-            .customer-toolbar { flex-direction: column; align-items: stretch; }
+            .customer-toolbar { flex-direction: column; align-items: stretch; gap: 10px; }
             .customer-search-wrap { min-width: 0; }
-            .customer-list-grid { grid-template-columns: 1fr; }
+            .customer-toolbar-select { min-width: 0; width: 100%; }
+            .customer-list-grid { grid-template-columns: 1fr; gap: 10px; min-width: 0; }
+            .customer-card { min-width: 0; padding: 12px 14px; gap: 10px; flex-wrap: wrap; flex-direction: row; align-items: center; }
+            .customer-card .customer-card-main { min-width: 0; flex: 1 1 100px; }
+            .customer-card .customer-send-btn { flex: 0 0 auto; min-width: 80px; min-height: 40px; padding: 8px 14px; font-size: 0.85rem; order: 2; }
             .conv-filter-input { min-width: 0; }
             .conv-toolbar { gap: 8px; }
             .ticket-form-row > div { min-width: 0; }
@@ -1975,6 +1993,12 @@
             .price-ticker .ticker-item-track { gap: 5px 6px; }
             .price-ticker .ticker-item { padding: 4px 6px; font-size: 0.75rem; }
             .price-ticker .ticker-item .ticker-label { min-width: 2em; font-size: 0.75rem; }
+            .customer-header-actions { flex-direction: column; }
+            .customer-header-actions .btn-primary,
+            .customer-header-actions .btn-secondary { width: 100%; flex: none; }
+            .customer-card { flex-direction: column; align-items: stretch; }
+            .customer-card .customer-card-main { flex: none; }
+            .customer-card .customer-send-btn { align-self: flex-end; order: unset; }
         }
         .modal-body label { display: block; margin-top: 12px; margin-bottom: 4px; font-size: 0.9rem; color: var(--text-secondary); }
         .modal-body label:first-of-type { margin-top: 0; }
@@ -2264,8 +2288,10 @@
             .main-wrap { padding-bottom: max(82px, calc(72px + env(safe-area-inset-bottom))); }
             .conv-page-desc, .customer-page-desc, .ticket-page-desc, .task-page-desc, .dashboard-sub { display: none; }
             .customer-page-header, .ticket-page-header, .task-page-header { flex-direction: column; align-items: stretch; gap: 12px; }
-            .customer-header-actions { width: 100%; }
-            .customer-header-actions .btn-primary { flex: 1; min-width: 0; }
+            .customer-header-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 8px; min-width: 0; }
+            .customer-header-actions .btn-primary,
+            .customer-header-actions .btn-secondary { flex: 1 1 100px; min-width: 0; min-height: 44px; padding: 10px 12px; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .customer-stats { min-width: 0; flex-wrap: wrap; }
             .ticket-create-btn { width: 100%; }
             .conv-page-header { margin-bottom: 12px; gap: 10px; flex-direction: column; align-items: stretch; }
             .conv-page-header > div:first-child { flex: 1; min-width: 0; }
@@ -2313,9 +2339,9 @@
             .conv-item-time { font-size: 0.7rem; white-space: nowrap; opacity: 0.75; flex-shrink: 0; order: 2; }
             .conv-item-badges { flex-wrap: wrap; flex-shrink: 0; min-width: 0; gap: 4px; }
             .conv-item-badges .badge { font-size: 0.65rem; padding: 2px 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; font-weight: 500; }
-            .chat-back-btn { display: none; }
-            .conv-layout.chat-open .chat-back-btn { display: flex !important; }
-            .chat-back-btn { margin-inline-end: 8px; border-radius: 12px; touch-action: manipulation; transition: background 0.2s, transform 0.1s; }
+            .chat-back-btn { display: none; order: -1; }
+            .conv-layout.chat-open .chat-back-btn { display: flex !important; order: -1; }
+            .chat-back-btn { margin-inline-end: 8px; border-radius: 12px; touch-action: manipulation; transition: background 0.2s, transform 0.1s; flex-shrink: 0; }
             .chat-back-btn:active { transform: scale(0.92); background: var(--accent-soft); }
             [dir="rtl"] .chat-back-btn svg { transform: scaleX(-1); }
             .chat-header-main { padding: 10px 14px; padding-inline-start: max(10px, env(safe-area-inset-inline-start)); }
