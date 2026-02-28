@@ -2378,7 +2378,9 @@
             .sidebar a { padding: 12px 16px; font-size: 0.95rem; margin: 0 12px 2px; min-height: 44px; display: flex; align-items: center; min-width: 0; }
             .sidebar a span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
             .sidebar .nav-icon { display: flex; }
-            .content { padding: 12px; padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); padding-bottom: max(12px, env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; touch-action: pan-y; overflow-y: auto; }
+            .content { padding: 10px; padding-left: max(10px, env(safe-area-inset-left)); padding-right: max(10px, env(safe-area-inset-right)); padding-bottom: max(10px, env(safe-area-inset-bottom)); -webkit-overflow-scrolling: touch; touch-action: pan-y; overflow-y: auto; }
+            /* صفحه مکالمات: flex برای پر کردن ارتفاع */
+            .content:has(#pageConversations.show) { padding: 8px; padding-left: max(8px, env(safe-area-inset-left)); padding-right: max(8px, env(safe-area-inset-right)); padding-bottom: max(8px, env(safe-area-inset-bottom)); display: flex; flex-direction: column; overflow: hidden; }
             .login-box { padding: 24px; }
             .msg { max-width: 90%; }
             .price-ticker { display: grid; grid-template-columns: 1fr; grid-template-rows: auto auto; gap: 10px 0; font-size: 0.8rem; padding: 10px 12px; padding-inline-start: max(12px, env(safe-area-inset-inline-start)); padding-inline-end: max(12px, env(safe-area-inset-inline-end)); padding-bottom: max(10px, env(safe-area-inset-bottom)); position: relative; transition: max-height 0.3s ease, padding 0.3s ease; min-width: 0; }
@@ -2426,55 +2428,51 @@
             .customer-header-actions .btn-secondary { flex: 1 1 100px; min-width: 0; min-height: 44px; padding: 10px 12px; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
             .customer-stats { min-width: 0; flex-wrap: wrap; }
             .ticket-create-btn { width: 100%; }
-            .conv-page-header { margin-bottom: 12px; gap: 10px; flex-direction: row; align-items: center; flex-wrap: wrap; }
-            .conv-page-header > div:first-child { flex: 1; min-width: 0; }
-            .conv-header-actions { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
-            .conv-header-actions .btn-primary { flex: 1; min-width: 0; justify-content: center; min-height: 48px; padding: 12px 16px; font-size: 0.9rem; border-radius: 12px; font-weight: 600; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-            .conv-sync-groups-btn { display: inline-flex !important; align-items: center; justify-content: center; min-width: 48px; min-height: 48px; padding: 12px; border-radius: 12px; flex-shrink: 0; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-            .conv-sync-groups-btn .conv-sync-text { display: none; }
-            .conv-sync-groups-btn .conv-sync-icon { font-size: 1.25rem; margin: 0; }
-            .conv-page-header h2 { font-size: 1.15rem; }
-            .conv-page-desc { display: none; }
-            .conv-page-header .btn-primary { padding: 10px 16px; font-size: 0.9rem; min-height: 48px; flex-shrink: 0; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-            .conv-page-header .btn-primary:active { transform: scale(0.97); }
-            .conv-quick-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 8px; margin-bottom: 12px; padding: 6px 4px 10px; padding-inline: max(4px, env(safe-area-inset-inline)); -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; }
+            /* ===== موبایل: صفحه مکالمات — طراحی تمیز و حرفه‌ای ===== */
+            /* هدر صفحه: مخفی — چون هدر موبایل عنوان را نشان می‌دهد */
+            .conv-page-header { display: none !important; }
+            /* آمار: مخفی در موبایل — شلوغ‌کننده است */
+            #convStats { display: none !important; }
+            /* تب‌های سریع: اسکرول افقی pill-style */
+            .conv-quick-tabs { display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 6px; margin-bottom: 10px; padding: 4px 0 8px; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; }
             .conv-quick-tabs::-webkit-scrollbar { display: none; }
-            .conv-quick-tabs .conv-tab { flex-shrink: 0; padding: 10px 16px; font-size: 0.85rem; min-height: 44px; display: flex; align-items: center; justify-content: center; scroll-snap-align: start; white-space: nowrap; border-radius: 10px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
-            .conv-toolbar { margin-bottom: 12px; gap: 10px; display: flex; flex-wrap: wrap; align-items: stretch; padding-inline: 0; }
-            .conv-search-wrap { flex: 1; min-width: 0; display: flex; align-items: center; min-width: 0; }
-            .conv-search-wrap .conv-filter-input { min-height: 48px; padding: 12px 44px 12px 16px; font-size: 16px; width: 100%; border-radius: 12px; -webkit-tap-highlight-color: transparent; }
-            .btn-filter-toggle { min-height: 48px; padding: 12px 16px; font-size: 0.9rem; white-space: nowrap; flex-shrink: 0; border-radius: 12px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; font-weight: 500; }
+            .conv-quick-tabs .conv-tab { flex-shrink: 0; padding: 7px 14px; font-size: 0.8rem; min-height: 36px; display: flex; align-items: center; justify-content: center; scroll-snap-align: start; white-space: nowrap; border-radius: 20px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; font-weight: 500; }
+            /* نوار ابزار: جستجو + فیلتر در یک ردیف */
+            .conv-toolbar { margin-bottom: 10px; gap: 8px; display: flex; flex-wrap: nowrap; align-items: center; padding-inline: 0; }
+            .conv-search-wrap { flex: 1; min-width: 0; display: flex; align-items: center; position: relative; }
+            .conv-search-wrap .conv-filter-input { min-height: 42px; padding: 10px 40px 10px 14px; font-size: 14px !important; width: 100%; border-radius: 10px; -webkit-tap-highlight-color: transparent; min-height: 42px !important; }
+            .btn-filter-toggle { min-height: 42px; padding: 10px 14px; font-size: 0.82rem; white-space: nowrap; flex-shrink: 0; border-radius: 10px; -webkit-tap-highlight-color: transparent; touch-action: manipulation; font-weight: 500; }
+            /* لیست مکالمات */
             .conv-layout { flex-direction: column; min-height: min(500px, 75vh, 75dvh); gap: 0; position: relative; }
-            .conv-list-wrap { flex: 0 0 auto; width: 100%; max-width: 100%; max-height: min(500px, 70vh, 70dvh); min-height: 260px; }
-            .conv-list-pane { flex: 1; min-height: 0; max-height: none; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 10px 12px; }
+            .conv-layout { flex-direction: column; flex: 1; min-height: 0; gap: 0; position: relative; }
+            .conv-list-wrap { flex: 1; width: 100%; max-width: 100%; min-height: 0; overflow-x: hidden; display: flex; flex-direction: column; }
+            .conv-list-pane { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding: 6px 8px; }
+            /* هدر لیست: مخفی — تکراری است */
+            .conv-list-header { display: none !important; }
             .conv-layout .chat-area { display: none; }
             .conv-layout .chat-area.show { display: flex; flex: 1; min-height: 280px; }
             .conv-layout.chat-open .conv-list-wrap { display: none !important; }
             .conv-layout:has(.chat-area.show) .conv-list-wrap { display: none !important; }
-            .conv-list-header { padding: 8px 10px; min-height: 40px; min-width: 0; overflow: hidden; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; border-bottom: 1px solid var(--border); }
-            .conv-list-header .conv-list-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; font-size: 0.9rem; font-weight: 600; }
-            .conv-list-header .conv-list-count { flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.8rem; }
-            .conv-list-wrap { overflow-x: hidden; }
-            /* موبایل: وقتی چت باز است، هدر/تب‌ها/فیلترها مخفی شوند تا چت تمام‌صفحه شود */
-            #pageConversations:has(.conv-layout.chat-open) .conv-page-header,
+            /* موبایل: وقتی چت باز است، تب‌ها و فیلترها مخفی شوند */
             #pageConversations:has(.conv-layout.chat-open) .conv-quick-tabs,
-            #pageConversations:has(.conv-layout.chat-open) .conv-toolbar,
-            #pageConversations:has(.conv-layout.chat-open) #convStats { display: none !important; }
+            #pageConversations:has(.conv-layout.chat-open) .conv-toolbar { display: none !important; }
             #pageConversations:has(.conv-layout.chat-open) { position: relative; flex: 1; min-height: 0; }
             #pageConversations:has(.conv-layout.chat-open) .conv-layout { flex: 1; min-height: 0; position: absolute; inset: 0; }
             #pageConversations:has(.conv-layout.chat-open) .conv-layout .chat-area.show { min-height: 0; flex: 1; border-radius: 0; border: none; }
             .content:has(#pageConversations.show .conv-layout.chat-open) { padding: 0 !important; }
-            .conv-list-item { padding: 12px 14px; min-height: 72px; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; align-items: flex-start; border-radius: 10px; }
-            .conv-list-item .conv-item-body { flex: 1 1 160px; min-width: 0; }
-            .conv-list-item .conv-item-badges { flex-basis: 100%; order: 10; margin-top: 6px; padding-inline-start: 56px; }
-            .conv-item-avatar { width: 44px; height: 44px; min-width: 44px; font-size: 1.1rem; border-radius: 10px; }
+            /* آیتم‌های لیست مکالمات — طراحی تمیز و حرفه‌ای */
+            .conv-list-item { padding: 12px 14px; min-height: 68px; gap: 10px; margin-bottom: 4px; flex-wrap: nowrap; align-items: center; border-radius: 12px; border-bottom: none; }
+            .conv-list-item .conv-item-body { flex: 1 1 0; min-width: 0; }
+            .conv-list-item .conv-item-badges { display: none; }
+            .conv-item-avatar { width: 46px; height: 46px; min-width: 46px; font-size: 1.1rem; border-radius: 12px; }
             .conv-item-body { min-width: 0; flex: 1 1 auto; }
-            .conv-item-top .name { font-size: 0.9rem; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; word-break: break-word; line-height: 1.3; font-weight: 600; }
-            .conv-item-meta { min-width: 0; font-size: 0.8rem; line-height: 1.3; opacity: 0.9; }
-            .conv-item-preview { font-size: 0.8rem; margin-top: 2px; line-height: 1.3; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; word-break: break-word; text-overflow: ellipsis; opacity: 0.8; }
-            .conv-item-time { font-size: 0.7rem; white-space: nowrap; opacity: 0.75; flex-shrink: 0; order: 2; }
-            .conv-item-badges { flex-wrap: wrap; flex-shrink: 0; min-width: 0; gap: 4px; }
-            .conv-item-badges .badge { font-size: 0.65rem; padding: 2px 8px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-radius: 4px; font-weight: 500; }
+            .conv-item-top { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 3px; }
+            .conv-item-top .name { font-size: 0.88rem; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1.3; font-weight: 600; flex: 1; }
+            .conv-item-meta { min-width: 0; font-size: 0.75rem; line-height: 1.3; opacity: 0.75; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-bottom: 2px; }
+            .conv-item-preview { font-size: 0.78rem; margin-top: 0; line-height: 1.4; overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 1; word-break: break-word; text-overflow: ellipsis; opacity: 0.7; }
+            .conv-item-time { font-size: 0.68rem; white-space: nowrap; opacity: 0.6; flex-shrink: 0; }
+            .conv-item-badges { display: none; }
+            .conv-item-badges .badge { font-size: 0.62rem; padding: 2px 7px; border-radius: 4px; font-weight: 500; }
             .chat-back-btn { display: none; order: -1; }
             .conv-layout.chat-open .chat-back-btn { display: flex !important; order: -1; }
             .chat-back-btn { margin-inline-end: 8px; border-radius: 12px; touch-action: manipulation; transition: background 0.2s, transform 0.1s; flex-shrink: 0; }
@@ -2715,6 +2713,13 @@
         .customer-transactions-summary-in .tx-amount { margin-right: 4px; }
         .customer-transactions-summary-out .tx-amount { margin-right: 4px; }
         #btnRefreshCustomerTransactions { min-width: 40px; padding: 8px 12px; font-size: 1.1rem; }
+        /* دکمه شناور مکالمه جدید — فقط موبایل */
+        .conv-fab-btn { display: none; }
+        @media (max-width: 900px) {
+            .conv-fab-btn { display: flex; position: absolute; bottom: 16px; inset-inline-end: 16px; width: 52px; height: 52px; min-width: 52px; min-height: 52px; border-radius: 50%; background: var(--accent); color: #fff; border: none; box-shadow: 0 4px 16px rgba(5,150,105,0.45); cursor: pointer; align-items: center; justify-content: center; z-index: 10; -webkit-tap-highlight-color: transparent; touch-action: manipulation; transition: transform 0.15s, box-shadow 0.15s; }
+            .conv-fab-btn:active { transform: scale(0.92); box-shadow: 0 2px 8px rgba(5,150,105,0.3); }
+            #pageConversations:has(.conv-layout.chat-open) .conv-fab-btn { display: none !important; }
+        }
         /* ویجت چت داخلی شناور — فارسی: چپ، انگلیسی/ترکی: راست */
         .internal-chat-floating-btn { position: fixed; bottom: max(calc(80px + env(safe-area-inset-bottom)), 90px); right: max(20px, env(safe-area-inset-right)); left: auto; width: 48px; height: 48px; min-width: 48px; min-height: 48px; border-radius: 50%; background: var(--accent); color: #fff; border: none; box-shadow: 0 3px 14px rgba(5,150,105,0.4); cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 998; transition: width 0.2s, height 0.2s, transform 0.2s, box-shadow 0.2s; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
         @media (max-width: 768px) {
