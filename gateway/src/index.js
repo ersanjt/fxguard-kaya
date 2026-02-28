@@ -102,10 +102,33 @@ const logger = winston.createLogger({
 });
 
 // ==================== Security ====================
+const crypto = require('crypto');
+
+function timingSafeEqual(a, b) {
+  try {
+    const bufA = Buffer.from(String(a));
+    const bufB = Buffer.from(String(b));
+    if (bufA.length !== bufB.length) {
+      crypto.timingSafeEqual(bufA, bufA);
+      return false;
+    }
+    return crypto.timingSafeEqual(bufA, bufB);
+  } catch (_) {
+    return false;
+  }
+}
+
 function requireGatewaySecret(req, res, next) {
-  if (!CONFIG.gatewayApiSecret) return next();
+  if (!CONFIG.gatewayApiSecret) {
+    if (process.env.NODE_ENV === 'production') {
+      logger.error('GATEWAY_API_SECRET not set in production — blocking all API requests');
+      return res.status(503).json({ error: 'Service unavailable' });
+    }
+    logger.warn('⚠️ GATEWAY_API_SECRET not set — API open (development only)');
+    return next();
+  }
   const secret = req.headers['x-gateway-secret'] || req.headers['authorization']?.replace(/^Bearer\s+/i, '');
-  if (secret !== CONFIG.gatewayApiSecret) {
+  if (!secret || !timingSafeEqual(secret, CONFIG.gatewayApiSecret)) {
     logger.warn('Gateway API: unauthorized request', { ip: req.ip });
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -138,16 +161,35 @@ async function connectRabbitMQ() {
 
     logger.info('✅ Connected to RabbitMQ');
 
+    const OUTGOING_DLQ = OUTGOING_QUEUE + '_dead';
+    await rabbitChannel.assertQueue(OUTGOING_DLQ, { durable: true });
+
     rabbitChannel.consume(OUTGOING_QUEUE, async (msg) => {
       if (!msg) return;
+      const retryCount = (msg.properties.headers && msg.properties.headers['x-retry-count']) || 0;
+      const MAX_RETRIES = 3;
       try {
         const data = JSON.parse(msg.content.toString());
         await sendWhatsAppMessage(data);
-      } catch (e) {
-        logger.error('Outgoing consume error', { error: e?.message });
-      } finally {
-        // ack always, so queue won't get stuck
         rabbitChannel.ack(msg);
+      } catch (e) {
+        logger.error('Outgoing consume error', { error: e?.message, retryCount });
+        if (retryCount < MAX_RETRIES) {
+          const delay = Math.pow(2, retryCount) * 2000;
+          setTimeout(() => {
+            try {
+              rabbitChannel.sendToQueue(OUTGOING_QUEUE, msg.content, {
+                persistent: true,
+                headers: { 'x-retry-count': retryCount + 1 }
+              });
+            } catch (_) {}
+          }, delay);
+          rabbitChannel.ack(msg);
+        } else {
+          logger.error('Outgoing message failed after max retries — moving to DLQ', { retryCount });
+          rabbitChannel.sendToQueue(OUTGOING_DLQ, msg.content, { persistent: true });
+          rabbitChannel.ack(msg);
+        }
       }
     });
   } catch (error) {
@@ -811,13 +853,15 @@ function resetClientState() {
 }
 
 process.on('uncaughtException', (err) => {
-  logger.error('uncaughtException – resetting client state', { error: err?.message, stack: err?.stack });
-  resetClientState();
+  logger.error('uncaughtException — exiting for clean restart', { error: err?.message, stack: err?.stack });
+  try { resetClientState(); } catch (_) {}
+  setTimeout(() => process.exit(1), 500);
 });
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('unhandledRejection – resetting client state', { reason: String(reason) });
-  resetClientState();
+process.on('unhandledRejection', (reason) => {
+  logger.error('unhandledRejection — exiting for clean restart', { reason: String(reason) });
+  try { resetClientState(); } catch (_) {}
+  setTimeout(() => process.exit(1), 500);
 });
 
 // Graceful shutdown
