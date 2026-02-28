@@ -3,6 +3,7 @@ const router = express.Router();
 const { Branch, User, Department, Conversation } = require('../models');
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
+const { isValidUUID } = require('../lib/validation');
 
 // ادمین اصلی پنل، مالک یا ادمین می‌توانند شعبه اضافه/ویرایش کنند
 function ownerOrAdmin(req, res, next) {
@@ -35,6 +36,7 @@ router.get('/', async (req, res) => {
 
 // یک شعبه
 router.get('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
     try {
         if (!req.canAccess('branches')) return res.status(403).json({ error: 'دسترسی به بخش شعب ندارید' });
         const branch = await Branch.findByPk(req.params.id);
@@ -68,6 +70,7 @@ router.post('/', ownerOrAdmin, async (req, res) => {
 
 // ویرایش شعبه
 router.put('/:id', ownerOrAdmin, async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
     try {
         const branch = await Branch.findByPk(req.params.id);
         if (!branch) return res.status(404).json({ error: 'شعبه یافت نشد' });

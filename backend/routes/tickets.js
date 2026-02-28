@@ -3,6 +3,8 @@ const { Ticket, User, Department, TicketReply } = require('../models');
 const { Op, literal } = require('sequelize');
 const { canManageTickets, isMainAdmin } = require('../lib/permissions');
 const notificationService = require('../services/notificationService');
+const logger = require('../config/logger');
+const { isValidUUID } = require('../lib/validation');
 
 function canManageTicket(req) {
     return canManageTickets(req.user);
@@ -86,6 +88,7 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تیکت نامعتبر است' });
     try {
         const ticket = await Ticket.findByPk(req.params.id, {
             include: [
@@ -103,6 +106,7 @@ router.get('/:id', async (req, res) => {
     }
 });
 router.post('/:id/replies', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تیکت نامعتبر است' });
     try {
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
@@ -121,7 +125,7 @@ router.post('/:id/replies', async (req, res) => {
         // اطلاع‌دهی پاسخ تیکت
         setImmediate(() => {
             notificationService.notifyTicketReply(ticket, withUser, io).catch(err => {
-                console.error('Reply notification error:', err.message);
+                logger.error('Reply notification error', { error: err.message });
             });
         });
         
@@ -166,7 +170,7 @@ router.post('/', async (req, res) => {
         if (assignedTo) {
             setImmediate(() => {
                 notificationService.notifyTicketAssigned(withIncludes, io).catch(err => {
-                    console.error('Ticket notification error:', err.message);
+                    logger.error('Ticket notification error', { error: err.message });
                 });
             });
         }
@@ -178,6 +182,7 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تیکت نامعتبر است' });
     try {
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
@@ -207,7 +212,7 @@ router.put('/:id', async (req, res) => {
                 });
                 setImmediate(() => {
                     notificationService.notifyTicketAssigned(updated, io).catch(err => {
-                        console.error('Ticket update notification error:', err.message);
+                        logger.error('Ticket update notification error', { error: err.message });
                     });
                 });
             }
@@ -220,6 +225,7 @@ router.put('/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تیکت نامعتبر است' });
     try {
         if (!canManageTicket(req)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند تیکت را حذف کند' });
         const ticket = await Ticket.findByPk(req.params.id);

@@ -4,6 +4,8 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
 const { FileTemplate, User } = require('../models');
+const logger = require('../config/logger');
+const { isValidUUID } = require('../lib/validation');
 
 // تنظیمات multer برای آپلود فایل
 const storage = multer.diskStorage({
@@ -100,7 +102,7 @@ router.get('/', async (req, res) => {
 
         res.json({ data: filtered });
     } catch (err) {
-        console.error('Error loading file templates:', err);
+        logger.error('Error loading file templates', { error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
@@ -149,7 +151,7 @@ router.post('/', upload.single('file'), async (req, res) => {
 
         res.status(201).json(result);
     } catch (err) {
-        console.error('Error uploading file template:', err);
+        logger.error('Error uploading file template', { error: err.message });
         // حذف فایل در صورت خطا
         if (req.file && req.file.path) {
             await fs.unlink(req.file.path).catch(() => {});
@@ -160,6 +162,7 @@ router.post('/', upload.single('file'), async (req, res) => {
 
 // دریافت یک فایل قالب
 router.get('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) {
             return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -179,13 +182,14 @@ router.get('/:id', async (req, res) => {
 
         res.json(fileTemplate);
     } catch (err) {
-        console.error('Error getting file template:', err);
+        logger.error('Error getting file template', { error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
 
 // دانلود فایل قالب
 router.get('/:id/download', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) {
             return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -206,13 +210,14 @@ router.get('/:id/download', async (req, res) => {
 
         res.download(fileTemplate.filepath, fileTemplate.filename);
     } catch (err) {
-        console.error('Error downloading file template:', err);
+        logger.error('Error downloading file template', { error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
 
 // ویرایش فایل قالب (فقط متادیتا)
 router.put('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) {
             return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -254,13 +259,14 @@ router.put('/:id', async (req, res) => {
 
         res.json(result);
     } catch (err) {
-        console.error('Error updating file template:', err);
+        logger.error('Error updating file template', { error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
 
 // حذف فایل قالب
 router.delete('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) {
             return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -276,19 +282,20 @@ router.delete('/:id', async (req, res) => {
         try {
             await fs.unlink(fileTemplate.filepath);
         } catch (err) {
-            console.error('Error deleting file from disk:', err);
+            logger.warn('Error deleting file from disk', { error: err.message });
         }
 
         await fileTemplate.destroy();
         res.json({ ok: true });
     } catch (err) {
-        console.error('Error deleting file template:', err);
+        logger.error('Error deleting file template', { error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
 
 // افزایش شمارنده استفاده
 router.post('/:id/use', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) {
             return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -305,7 +312,7 @@ router.post('/:id/use', async (req, res) => {
 
         res.json(fileTemplate);
     } catch (err) {
-        console.error('Error incrementing file template usage:', err);
+        logger.error('Error incrementing file template usage', { error: err.message });
         res.status(500).json({ error: err.message });
     }
 });
@@ -328,7 +335,7 @@ router.get('/meta/categories', async (req, res) => {
         const categories = [...new Set(fileTemplates.map(ft => ft.category).filter(Boolean))];
         res.json({ data: categories });
     } catch (err) {
-        console.error('Error getting file template categories:', err);
+        logger.error('Error getting file template categories', { error: err.message });
         res.status(500).json({ error: err.message });
     }
 });

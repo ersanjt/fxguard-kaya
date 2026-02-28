@@ -8,6 +8,7 @@
  */
 
 const nodemailer = require('nodemailer');
+const logger = require('../config/logger');
 
 const FROM_NAME = process.env.SMTP_FROM_NAME || 'پورتال کارکنان';
 const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@localhost';
@@ -96,7 +97,7 @@ async function sendMailWithRetry({ to, subject, text, html, attachments = [] }, 
     const emails = Array.isArray(to) ? to : [to];
     for (const email of emails) {
         if (!isValidEmail(email)) {
-            console.error(`Invalid email address: ${email}`);
+            logger.warn('Invalid email address', { email });
             return { ok: false, error: `Invalid email: ${email}` };
         }
     }
@@ -127,15 +128,15 @@ async function sendMailWithRetry({ to, subject, text, html, attachments = [] }, 
         };
 
         await transport.sendMail(mailOpts);
-        console.log(`Email sent successfully to: ${emails.join(', ')}`);
+        logger.info('Email sent successfully', { to: emails.join(', ') });
         return { ok: true };
     } catch (err) {
         const isRetryable = err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || 
                            err.code === 'EHOSTUNREACH' || err.message.includes('SMTP');
         
         if (isRetryable && attempt < MAX_RETRIES) {
-            const delay = RETRY_DELAY_MS * attempt; // Exponential backoff
-            console.warn(`Email send failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${delay}ms: ${err.message}`);
+            const delay = RETRY_DELAY_MS * attempt;
+            logger.warn(`Email send failed, retrying`, { attempt, maxRetries: MAX_RETRIES, delay, error: err.message });
             await new Promise(resolve => setTimeout(resolve, delay));
             return sendMailWithRetry({ to, subject, text, html, attachments }, attempt + 1);
         }
@@ -144,7 +145,7 @@ async function sendMailWithRetry({ to, subject, text, html, attachments = [] }, 
         if (err.response) {
             return { ok: false, error: `SMTP Error: ${errorMsg}` };
         }
-        console.error(`Email send failed after ${attempt} attempts:`, errorMsg);
+        logger.error('Email send failed', { attempt, error: errorMsg });
         return { ok: false, error: errorMsg, retries: attempt };
     }
 }
@@ -190,7 +191,7 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
     const emails = Array.isArray(to) ? to : [to];
     for (const email of emails) {
         if (!isValidEmail(email)) {
-            console.error(`Invalid email address: ${email}`);
+            logger.warn('Invalid email address', { email });
             return { ok: false, error: `Invalid email: ${email}` };
         }
     }
@@ -231,7 +232,7 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
         };
         
         await transport.sendMail(mailOpts);
-        console.log(`Email sent successfully (custom config) to: ${emails.join(', ')}`);
+        logger.info('Email sent successfully (custom config)', { to: emails.join(', ') });
         return { ok: true };
     } catch (err) {
         const isRetryable = err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || 
@@ -239,14 +240,14 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
         
         if (isRetryable && attempt < MAX_RETRIES) {
             const delay = RETRY_DELAY_MS * attempt;
-            console.warn(`Email send failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${delay}ms: ${err.message}`);
+            logger.warn('Email send failed (custom config), retrying', { attempt, maxRetries: MAX_RETRIES, delay, error: err.message });
             await new Promise(resolve => setTimeout(resolve, delay));
             return sendMailWithConfigDetailed(config, { to, subject, text, html, attachments }, attempt + 1);
         }
 
         let msg = err.message || String(err);
         if (err.response) msg += ' — ' + (typeof err.response === 'string' ? err.response : JSON.stringify(err.response));
-        console.error('Email send error (custom config):', msg);
+        logger.error('Email send error (custom config)', { error: msg });
         return { ok: false, error: msg };
     }
 }
@@ -359,13 +360,13 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
  */
 async function sendContactForm({ purpose, name, email, phone, message }) {
     if (!isValidEmail(email)) {
-        console.error(`Invalid email in contact form: ${email}`);
+        logger.warn('Invalid email in contact form', { email });
         return { ok: false, error: 'Invalid email address' };
     }
 
     const toEmail = process.env.CONTACT_EMAIL || 'sales@fxguard.io';
     if (!isValidEmail(toEmail)) {
-        console.error(`Invalid recipient email: ${toEmail}`);
+        logger.warn('Invalid recipient email', { toEmail });
         return { ok: false, error: 'Invalid recipient email' };
     }
 
@@ -392,7 +393,7 @@ async function sendContactForm({ purpose, name, email, phone, message }) {
     
     const result = await sendMailWithRetry({ to: toEmail, subject, text, html });
     if (!result.ok) {
-        console.error(`Contact form email failed: ${result.error}`);
+        logger.error('Contact form email failed', { error: result.error });
         return result;
     }
     return { ok: true };
@@ -423,11 +424,11 @@ async function testSmtpConnection(config) {
         
         const transport = nodemailer_test.createTransport(opts);
         await transport.verify();
-        console.log('SMTP connection verified successfully');
+        logger.info('SMTP connection verified successfully');
         return { ok: true };
     } catch (err) {
         const errorMsg = err.message || String(err);
-        console.error('SMTP connection test failed:', errorMsg);
+        logger.error('SMTP connection test failed', { error: errorMsg });
         return { ok: false, error: errorMsg };
     }
 }

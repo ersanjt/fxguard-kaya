@@ -3,6 +3,7 @@ const router = express.Router();
 const { Op } = require('sequelize');
 const { Department, User, Branch } = require('../models');
 const { normalizeKeywords, normalizeDescription } = require('../lib/keywordUtils');
+const { isValidUUID } = require('../lib/validation');
 
 router.get('/', async (req, res) => {
     try {
@@ -45,6 +46,7 @@ router.post('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
     try {
         if (!req.canAccess('departments')) return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
         const dept = await Department.findByPk(req.params.id, {
@@ -58,6 +60,7 @@ router.get('/:id', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
     try {
         if (!req.canAccess('departments')) return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
         const dept = await Department.findByPk(req.params.id);

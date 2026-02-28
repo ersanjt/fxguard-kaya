@@ -4,6 +4,7 @@ const { Announcement, AnnouncementRead, User, Department } = require('../models'
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
 const notificationService = require('../services/notificationService');
+const logger = require('../config/logger');
 
 // لیست اعلان‌های برای من (با فلگ خوانده شده)
 router.get('/for-me', async (req, res) => {
@@ -109,7 +110,7 @@ router.post('/', async (req, res) => {
             const io = req.app.get('io');
             setImmediate(() => {
                 notificationService.notifyAnnouncement(withUser, recipientIds, io).catch(err => {
-                    console.error('Announcement notification error:', err.message);
+                    logger.error('Announcement notification error', { error: err.message });
                 });
             });
         }

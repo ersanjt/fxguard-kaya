@@ -4,6 +4,8 @@ const { Task, TaskUpdate, User, Department, Branch } = require('../models');
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
 const notificationService = require('../services/notificationService');
+const logger = require('../config/logger');
+const { isValidUUID } = require('../lib/validation');
 
 /** ساخت شرط دسترسی: ادمین/مالک همه؛ مدیر دپارتمان خودش؛ کارمند/ناظر تسک‌های اختصاص‌یافته به خود + تسک‌های دپارتمان خود */
 async function taskAccessWhere(req) {
@@ -130,6 +132,7 @@ router.get('/summary', async (req, res) => {
 
 // جزئیات یک تسک + بروزرسانی‌های پیگیری
 router.get('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تسک نامعتبر است' });
     try {
         const { ok, status, task } = await canAccessTask(req, req.params.id);
         if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
@@ -170,7 +173,7 @@ router.post('/', async (req, res) => {
             const io = req.app.get('io');
             setImmediate(() => {
                 notificationService.notifyTaskAssigned(task, io).catch(err => {
-                    console.error('Task notification error:', err.message);
+                    logger.error('Task notification error', { error: err.message });
                 });
             });
         }
@@ -183,6 +186,7 @@ router.post('/', async (req, res) => {
 
 // ویرایش تسک (وضعیت، تخصیص، عنوان، توضیحات، مهلت)
 router.put('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تسک نامعتبر است' });
     try {
         const { ok, status, task } = await canAccessTask(req, req.params.id);
         if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
@@ -213,7 +217,7 @@ router.put('/:id', async (req, res) => {
                 const io = req.app.get('io');
                 setImmediate(() => {
                     notificationService.notifyTaskAssigned(updated, io).catch(err => {
-                        console.error('Task update notification error:', err.message);
+                        logger.error('Task update notification error', { error: err.message });
                     });
                 });
             }
@@ -227,6 +231,7 @@ router.put('/:id', async (req, res) => {
 
 // افزودن بروزرسانی/پیگیری به تسک
 router.post('/:id/updates', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تسک نامعتبر است' });
     try {
         const { ok, status, task } = await canAccessTask(req, req.params.id);
         if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
