@@ -2952,14 +2952,24 @@
             .internal-call-local-video { width: 100px; height: 75px; }
         }
         @media (max-width: 768px) {
+            /* ===== چت داخلی — موبایل تمام‌صفحه ===== */
+            #pageInternalChat > h2 { display: none; }
+            .internal-chat-box { border: none; border-radius: 0; box-shadow: none; background: transparent; }
+            .content:has(#pageInternalChat.show) { padding: 0 !important; overflow: hidden; display: flex; flex-direction: column; }
+            .internal-chat-layout-wrap { flex-direction: column; gap: 0; flex: 1; min-height: 0; }
+            .internal-chat-thread-col { flex: 1; min-height: 0; max-height: none; min-width: 0 !important; border-inline-start: none; border-top: none; background: var(--bg-card); }
+            .internal-chat-list-header { padding: 10px 12px; gap: 8px; }
+            .internal-chat-search { border-radius: 10px; font-size: 14px; padding: 10px 14px; min-height: 42px; }
+            .internal-chat-new-btn { width: 42px; height: 42px; border-radius: 12px; }
+            .internal-chat-thread-list { padding: 6px 8px; }
+            .internal-chat-thread-list .list-item { padding: 10px 12px; min-height: 62px; border-radius: 12px; margin-bottom: 3px; border: none; }
+            .internal-chat-thread-avatar { width: 42px; height: 42px; min-width: 42px; border-radius: 12px; }
+            /* وقتی چت باز است */
             .internal-chat-back-btn { display: flex; }
             .internal-chat-layout-wrap.internal-chat-mobile-chat-open .internal-chat-thread-col { display: none !important; }
             .internal-chat-layout-wrap.internal-chat-mobile-chat-open .internal-chat-pane { flex: 1; min-height: 0; min-width: 0; }
-            .internal-chat-layout-wrap.internal-chat-mobile-chat-open #internalChatPane { min-height: 280px; flex: 1; }
-            .internal-chat-thread-col { max-height: 55vh; flex: 1; min-height: 200px; }
-            #internalThreadList .list-item { padding: 12px 14px; min-height: 44px; }
-            #internalChatPane .chat-header { padding: 10px 12px; }
-            #internalChatPane .chat-messages { padding: 10px; min-height: 160px; }
+            .internal-chat-layout-wrap.internal-chat-mobile-chat-open #internalChatPane { flex: 1; min-height: 0; }
+            #internalChatPane .chat-messages { padding: 10px 12px; min-height: 0; }
             .internal-chat-call-btns { gap: 6px; }
             .internal-call-btn { width: 44px; height: 44px; }
             .internal-chat-popup { width: min(340px, calc(100vw - 24px)); height: 360px; max-height: min(360px, calc(100vh - 140px)); inset-inline-start: 12px; border-radius: 12px; }
@@ -2976,18 +2986,15 @@
             #internalCallInviteModal .modal-box { max-width: calc(100vw - 32px); margin: 16px; }
         }
         @media (max-width: 576px) {
-            #pageInternalChat > h2 { font-size: 1.1rem; margin-bottom: 12px; }
-            .internal-chat-layout-wrap { flex-direction: column; gap: 12px; }
-            .internal-chat-thread-col { min-width: 0 !important; flex: 1; max-height: 50vh; min-height: 180px; }
-            .internal-chat-pane { min-width: 0 !important; min-height: 240px; flex: 1; }
-            #internalChatPane .chat-messages { padding: 8px; min-height: 120px; }
+            .internal-chat-pane { min-width: 0 !important; min-height: 0; flex: 1; }
+            #internalChatPane .chat-messages { padding: 8px 10px; min-height: 0; }
             #internalChatPane .chat-send { padding: 8px 10px; gap: 6px; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
             .chat-send input { font-size: 16px; min-height: 44px; }
             .internal-chat-file-wrap { order: -1; width: 100%; }
             .internal-chat-attach-btn { min-width: 44px; min-height: 44px; padding: 0; }
             .internal-chat-attach-label { display: none; }
             .internal-chat-file-option { display: block !important; font-size: 0.8rem; }
-            #internalNewChatForm { padding: 12px; margin-top: 12px; }
+            #internalNewChatForm { padding: 12px; margin-top: 0; border-radius: 0; border-inline: none; border-bottom: none; }
             #internalNewChatForm select { min-height: 72px; }
             .internal-chat-popup { width: calc(100vw - 24px); max-width: none; max-height: calc(100vh - 100px); inset-inline-start: 12px; bottom: max(calc(80px + env(safe-area-inset-bottom)), 90px) !important; border-radius: 16px 16px 0 0; }
             [dir="rtl"] .internal-chat-popup { left: 12px; right: 12px; }
@@ -3005,7 +3012,7 @@
             #internalCallInviteModal .internal-call-action-btn { min-width: 100px; }
         }
         @media (max-width: 380px) {
-            .internal-chat-thread-col { max-height: 45vh; min-height: 160px; }
+            .internal-chat-thread-col { max-height: none; min-height: 0; }
             .internal-chat-popup { width: calc(100vw - 16px); inset-inline-start: 8px; max-height: calc(100vh - 80px); }
             [dir="rtl"] .internal-chat-popup { left: 8px; right: 8px; }
             body.ltr .internal-chat-popup { left: 8px; right: 8px; }
