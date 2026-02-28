@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/dashboard.css?v=36">
+    <link rel="stylesheet" href="/css/dashboard.css?v=37">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -39,6 +39,7 @@
             <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
             <symbol id="icon-paperclip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
             <symbol id="icon-file-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></symbol>
+            <symbol id="icon-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></symbol>
             <symbol id="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></symbol>
             <symbol id="icon-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></symbol>
             <symbol id="icon-megaphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
@@ -425,7 +426,7 @@
                             <input type="file" id="msgFileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" style="display:none;">
                             <button type="button" class="chat-attach-btn" id="msgAttachBtn" onclick="document.getElementById('msgFileInput').click()" title="پیوست فایل" aria-label="پیوست فایل"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-paperclip"/></svg></button>
                             <div class="chat-template-wrap">
-                                <button type="button" class="chat-attach-btn" id="msgTemplateBtn" onclick="toggleTemplateDropdown()" title="تمپلیت پیام" aria-label="تمپلیت پیام" aria-haspopup="true" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></button>
+                                <button type="button" class="chat-attach-btn" id="msgTemplateBtn" data-i18n-title="msg_template" title="تمپلیت پیام" aria-label="تمپلیت پیام" aria-haspopup="true" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#icon-file-text"/></svg></button>
                                 <div id="chatTemplateDropdown" class="chat-template-dropdown" style="display:none;"></div>
                             </div>
                             <button type="button" class="chat-voice-btn" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
@@ -699,62 +700,82 @@
                         </div>
                     </div>
                 </div>
-                <div id="pageTasks" class="page">
+                <div id="pageTasks" class="page task-page">
                     <div class="task-page-header">
-                        <div>
+                        <div class="task-page-header-text">
                             <h2 data-i18n="page_tasks">وظایف و تسک‌ها</h2>
-                            <p class="text-muted task-page-desc" data-i18n="tasks_intro">پیگیری کارهای اختصاص‌یافته به کارمند یا دپارتمان.</p>
+                            <p class="task-page-desc" data-i18n="tasks_intro">پیگیری کارهای اختصاص‌یافته به کارمند یا دپارتمان.</p>
                         </div>
-                        <button type="button" class="btn-primary" onclick="toggleTaskForm()" id="btnTaskCreate" data-i18n="new_task">تسک جدید</button>
+                        <button type="button" class="btn-primary task-create-btn" id="btnTaskCreate" data-i18n="new_task">تسک جدید</button>
                     </div>
-                    <div id="tasksSummaryBox" class="stat-cards tasks-summary-cards" style="display:none; margin-bottom:20px;"></div>
-                    <div id="taskFormBox" class="form-box task-create-form" style="display:none; max-width:560px; margin-bottom:20px;">
-                        <h3 style="font-size:1rem; margin:0 0 12px;" data-i18n="new_task">تسک جدید</h3>
-                        <label data-i18n="label_title">عنوان</label>
-                        <input id="taskTitle" data-i18n-ph="task_ph_title" placeholder="عنوان وظیفه">
-                        <label data-i18n="dept_desc">توضیحات (اختیاری)</label>
-                        <textarea id="taskDesc" rows="2" data-i18n-ph="task_ph_desc" placeholder="شرح کار"></textarea>
-                        <label data-i18n="assign_to">اختصاص به</label>
-                        <div class="task-assign-row">
-                            <select id="taskAssignType" onchange="toggleTaskAssignTarget()"><option value="user" data-i18n="assign_user">کارمند</option><option value="department" data-i18n="assign_dept">دپارتمان</option></select>
-                            <select id="taskAssignUser" style="min-width:180px;"><option value="" data-i18n="select_user_task">انتخاب کارمند</option></select>
-                            <select id="taskAssignDept" style="min-width:180px; display:none;"><option value="" data-i18n="select_dept">انتخاب دپارتمان</option></select>
+                    <div id="tasksSummaryBox" class="task-summary-cards" style="display:none;"></div>
+                    <div id="taskFormBox" class="task-create-form form-box" style="display:none;">
+                        <h3 class="task-form-title" data-i18n="new_task">تسک جدید</h3>
+                        <div class="task-form-grid">
+                            <div class="task-form-field task-form-field-wide">
+                                <label data-i18n="label_title">عنوان</label>
+                                <input id="taskTitle" data-i18n-ph="task_ph_title" placeholder="عنوان وظیفه">
+                            </div>
+                            <div class="task-form-field task-form-field-wide">
+                                <label data-i18n="dept_desc">توضیحات (اختیاری)</label>
+                                <textarea id="taskDesc" rows="2" data-i18n-ph="task_ph_desc" placeholder="شرح کار"></textarea>
+                            </div>
+                            <div class="task-form-field">
+                                <label data-i18n="assign_to">اختصاص به</label>
+                                <div class="task-assign-row">
+                                    <select id="taskAssignType" onchange="toggleTaskAssignTarget()"><option value="user" data-i18n="assign_user">کارمند</option><option value="department" data-i18n="assign_dept">دپارتمان</option></select>
+                                    <select id="taskAssignUser"><option value="" data-i18n="select_user_task">انتخاب کارمند</option></select>
+                                    <select id="taskAssignDept" style="display:none;"><option value="" data-i18n="select_dept">انتخاب دپارتمان</option></select>
+                                </div>
+                            </div>
+                            <div class="task-form-field">
+                                <label data-i18n="th_branch">شعبه</label>
+                                <select id="taskBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
+                            </div>
+                            <div class="task-form-field">
+                                <label data-i18n="due_date">مهلت (اختیاری)</label>
+                                <input id="taskDueDate" type="datetime-local">
+                            </div>
+                            <div class="task-form-field">
+                                <label data-i18n="ticket_priority">اولویت</label>
+                                <select id="taskPriority"><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option><option value="low" data-i18n="priority_low">کم</option></select>
+                            </div>
                         </div>
-                        <label data-i18n="th_branch">شعبه</label>
-                        <select id="taskBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
-                        <div class="task-form-row">
-                            <div><label data-i18n="due_date">مهلت (اختیاری)</label>
-                            <input id="taskDueDate" type="datetime-local"></div>
-                            <div><label data-i18n="ticket_priority">اولویت</label>
-                            <select id="taskPriority"><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option><option value="low" data-i18n="priority_low">کم</option></select></div>
+                        <div class="task-form-actions">
+                            <button type="button" class="btn-primary" id="btnTaskSubmit" data-i18n="add_task">ثبت تسک</button>
+                            <button type="button" class="btn-secondary" id="btnTaskCancel" data-i18n="cancel">انصراف</button>
                         </div>
-                        <button type="button" onclick="addTask()" data-i18n="add_task">ثبت تسک</button>
-                        <button type="button" class="btn-secondary" onclick="toggleTaskForm()" data-i18n="cancel">انصراف</button>
                     </div>
-                    <div class="task-filters form-box" style="max-width:100%; margin-bottom:16px;">
-                        <label data-i18n="filter">فیلتر</label>
-                        <div class="task-filters-row">
+                    <div class="task-quick-tabs" role="tablist">
+                        <button type="button" class="task-tab active" data-tab="all" data-i18n="filter_all">همه</button>
+                        <button type="button" class="task-tab" data-tab="pending" data-i18n="status_pending">در انتظار</button>
+                        <button type="button" class="task-tab" data-tab="in_progress" data-i18n="status_in_progress">در حال انجام</button>
+                        <button type="button" class="task-tab" data-tab="done" data-i18n="status_done">انجام شده</button>
+                        <button type="button" class="task-tab" data-tab="cancelled" data-i18n="status_cancelled">لغو</button>
+                    </div>
+                    <div class="task-filters-wrap">
+                        <div class="task-filters">
                             <input type="text" id="taskSearch" class="task-search-input" data-i18n-ph="header_search" placeholder="جستجو عنوان یا توضیحات..." onkeypress="if(event.key==='Enter')loadTasks()">
                             <select id="taskFilterStatus"><option value="" data-i18n="all_statuses">همه وضعیت‌ها</option><option value="pending" data-i18n="status_pending">در انتظار</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="done" data-i18n="status_done">انجام شده</option><option value="cancelled" data-i18n="status_cancelled">لغو</option></select>
                             <select id="taskFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
                             <select id="taskFilterUser"><option value="" data-i18n="filter_all_users">همه کارمندان</option></select>
                             <select id="taskFilterBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
-                            <button type="button" class="btn-primary" onclick="loadTasks()" data-i18n="apply_filter">اعمال فیلتر</button>
+                            <button type="button" class="btn-primary task-filter-btn" id="btnApplyTaskFilters" data-i18n="apply_filter">اعمال فیلتر</button>
                         </div>
                     </div>
-                    <div id="taskListCount" class="task-list-count" style="display:none; font-size:0.85rem; color:var(--text-muted); margin-bottom:8px;"></div>
-                    <div id="taskList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    <div id="taskListCount" class="task-list-count" style="display:none;"></div>
+                    <div id="taskList" class="task-list empty" data-i18n="loading">در حال بارگذاری...</div>
                     <div id="taskListLoadMore" style="display:none; text-align:center; margin-top:16px;">
-                        <button type="button" class="btn-secondary" onclick="loadMoreTasks()" data-i18n="load_more">بارگذاری بیشتر</button>
+                        <button type="button" class="btn-secondary" id="btnLoadMoreTasks" data-i18n="load_more">بارگذاری بیشتر</button>
                     </div>
-                    <div id="taskDetailBox" style="display:none; margin-top:20px;">
-                        <button type="button" class="btn-secondary" onclick="showTaskList()" data-i18n="back_to_list">← بازگشت به لیست</button>
-                        <div id="taskDetailContent" style="margin:12px 0;"></div>
-                        <div id="taskUpdatesList" style="margin:16px 0;"></div>
-                        <div class="form-box" style="max-width:100%;">
+                    <div id="taskDetailBox" class="task-detail-view" style="display:none;">
+                        <button type="button" class="btn-secondary task-back-btn" data-i18n="back_to_list">← بازگشت به لیست</button>
+                        <div id="taskDetailContent" class="task-detail-content"></div>
+                        <div id="taskUpdatesList" class="task-updates-list"></div>
+                        <div class="task-update-form form-box">
                             <label data-i18n="add_update">افزودن پیگیری / گزارش</label>
                             <label data-i18n="change_status_optional">تغییر وضعیت (اختیاری)</label>
-                            <select id="taskUpdateStatusChange" style="margin-bottom:8px;">
+                            <select id="taskUpdateStatusChange" class="task-update-status-select">
                                 <option value="">— بدون تغییر —</option>
                                 <option value="pending" data-i18n="status_pending">در انتظار</option>
                                 <option value="in_progress" data-i18n="status_in_progress">در حال انجام</option>
@@ -762,7 +783,7 @@
                                 <option value="cancelled" data-i18n="status_cancelled">لغو</option>
                             </select>
                             <textarea id="taskUpdateContent" rows="3" data-i18n-ph="update_ph" placeholder="وضعیت یا گزارش خود را بنویسید..."></textarea>
-                            <button type="button" onclick="addTaskUpdate()" data-i18n="save_update">ثبت پیگیری</button>
+                            <button type="button" class="btn-primary" id="btnTaskUpdateSubmit" data-i18n="save_update">ثبت پیگیری</button>
                         </div>
                     </div>
                 </div>
@@ -809,8 +830,8 @@
                                 <div id="profileAvatarPreview" class="profile-avatar-preview"></div>
                             </div>
                             <div class="profile-meta">
-                                <div id="profileDisplayUsername" class="profile-display-username">—</div>
                                 <div id="profileDisplayName" class="profile-display-name">—</div>
+                                <div id="profileDisplayUsername" class="profile-display-username">—</div>
                                 <div id="profileDisplayEmail" class="profile-display-email">—</div>
                                 <div class="profile-badges">
                                     <span id="profileRoleBadge" class="profile-badge profile-badge-role">—</span>
@@ -961,33 +982,33 @@
                     <div id="internalChatLayoutWrap" class="internal-chat-layout-wrap internal-chat-box">
                         <div class="internal-chat-thread-col">
                             <div class="internal-chat-list-header">
-                                <input type="text" id="internalChatSearch" class="internal-chat-search" data-i18n-ph="search_or_start" placeholder="جستجو یا گفتگوی جدید..." oninput="filterInternalThreads(this.value)">
-                                <button type="button" class="internal-chat-new-btn" onclick="showNewChatForm()" title="گفتگوی جدید" aria-label="گفتگوی جدید"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+                                <input type="text" id="internalChatSearch" class="internal-chat-search" data-i18n-ph="search_or_start" placeholder="جستجو یا گفتگوی جدید...">
+                                <button type="button" class="internal-chat-new-btn" title="گفتگوی جدید" aria-label="گفتگوی جدید"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
                             </div>
                             <div id="internalThreadList" class="empty internal-chat-thread-list" data-i18n="loading">در حال بارگذاری...</div>
                         </div>
                         <div id="internalChatPane" class="internal-chat-pane" style="display:none;">
                             <div class="internal-chat-header-compact">
-                                <button type="button" class="internal-chat-back-btn" onclick="backToInternalChatList()" aria-label="بازگشت" data-i18n-title="back_to_list"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                                <button type="button" class="internal-chat-back-btn" aria-label="بازگشت" data-i18n-title="back_to_list"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
                                 <div class="internal-chat-header-avatar" id="internalChatHeaderAvatar"><span class="avatar-fallback">💬</span></div>
                                 <div class="internal-chat-header-info">
                                     <span id="internalChatHeader" class="internal-chat-header-title" data-i18n="select_conversation">انتخاب گفتگو</span>
                                     <span id="internalChatHeaderStatus" class="internal-chat-header-status" data-i18n="last_seen">آخرین بازدید</span>
                                 </div>
                                 <div id="internalChatCallBtns" class="internal-chat-call-btns" style="display:none;">
-                                    <button type="button" class="internal-call-btn internal-call-btn-sm" onclick="startInternalCall('voice')" title="تماس صوتی" data-i18n-title="voice_call" aria-label="تماس صوتی"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></button>
-                                    <button type="button" class="internal-call-btn internal-call-btn-sm" onclick="startInternalCall('video')" title="تماس تصویری" data-i18n-title="video_call" aria-label="تماس تصویری"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
+                                    <button type="button" class="internal-call-btn internal-call-btn-sm" data-call-type="voice" title="تماس صوتی" data-i18n-title="voice_call" aria-label="تماس صوتی"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></button>
+                                    <button type="button" class="internal-call-btn internal-call-btn-sm" data-call-type="video" title="تماس تصویری" data-i18n-title="video_call" aria-label="تماس تصویری"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
                                 </div>
                             </div>
                             <div id="internalChatQuickReplies" class="internal-chat-full-quick-replies" style="display:none;"></div>
                             <div class="chat-messages internal-chat-messages" id="internalChatMessages" style="min-height:200px;"></div>
                             <div class="internal-chat-send-wrap">
-                                <input type="file" id="internalChatFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" data-i18n-title="attach_file" onchange="toggleInternalFileOption()" style="display:none">
+                                <input type="file" id="internalChatFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" data-i18n-title="attach_file" style="display:none">
                                 <label id="internalChatFileOption" class="internal-chat-file-option" style="display:none"><input type="checkbox" id="internalChatAllowDownload" checked> <span data-i18n="file_allow_download">مجاز به دانلود</span></label>
                                 <div class="internal-chat-send-inner">
-                                    <button type="button" class="internal-chat-attach-btn-sm" onclick="document.getElementById('internalChatFile').click()" data-i18n-title="attach_file" aria-label="پیوست"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
-                                    <input type="text" id="internalChatInput" class="internal-chat-input" data-i18n-ph="msg_ph_short" placeholder="پیام بنویسید..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendInternalMessage();}">
-                                    <button type="button" class="internal-chat-send-btn-sm" onclick="sendInternalMessage()" aria-label="ارسال"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+                                    <button type="button" class="internal-chat-attach-btn-sm" data-i18n-title="attach_file" aria-label="پیوست"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+                                    <input type="text" id="internalChatInput" class="internal-chat-input" data-i18n-ph="msg_ph_short" placeholder="پیام بنویسید...">
+                                    <button type="button" class="internal-chat-send-btn-sm" aria-label="ارسال"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
                                 </div>
                             </div>
                         </div>
@@ -996,8 +1017,8 @@
                         <label data-i18n="start_chat_with">شروع گفتگو با</label>
                         <select id="internalNewChatUser" multiple style="min-height:80px;"><option value="" data-i18n="select_user">انتخاب کاربر</option></select>
                         <small class="text-muted" style="display:block; margin-top:4px;" data-i18n="select_multiple_hint">برای گفتگوی گروهی، چند نفر را انتخاب کنید</small>
-                        <button type="button" onclick="startInternalChat()" data-i18n="start_chat">شروع چت</button>
-                        <button type="button" class="btn-secondary" onclick="hideNewChatForm()" data-i18n="cancel">انصراف</button>
+                        <button type="button" id="btnInternalStartChat" data-i18n="start_chat">شروع چت</button>
+                        <button type="button" class="btn-secondary" id="btnInternalCancelChat" data-i18n="cancel">انصراف</button>
                     </div>
                 </div>
                 <div id="pageBranches" class="page branch-page">
@@ -1147,39 +1168,44 @@
                         <div id="supActList"></div>
                     </div>
                 </div>
-                <div id="pageWhatsapp" class="page whatsapp-page">
-                    <div class="whatsapp-page-header">
-                        <h2 data-i18n="page_whatsapp">اتصال واتساپ</h2>
-                        <p class="whatsapp-intro text-muted" data-i18n="whatsapp_intro">پیام‌های واتساپ به‌صورت خودکار در مکالمات ذخیره می‌شوند. بر اساس کلمات کلیدی دپارتمان‌ها، تخصیص خودکار انجام می‌شود.</p>
-                    </div>
-                    <div class="whatsapp-stats-row" id="whatsappStatsRow">
-                        <div class="whatsapp-stat-card" data-stat="open">
+                <div id="pageWhatsapp" class="page whatsapp-page" role="main" aria-labelledby="whatsapp-page-title">
+                    <header class="whatsapp-page-header">
+                        <div class="whatsapp-header-badge" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        </div>
+                        <div class="whatsapp-header-text">
+                            <h2 id="whatsapp-page-title" data-i18n="page_whatsapp">اتصال واتساپ</h2>
+                            <p class="whatsapp-intro text-muted" data-i18n="whatsapp_intro">پیام‌های واتساپ به‌صورت خودکار در مکالمات ذخیره می‌شوند. بر اساس کلمات کلیدی دپارتمان‌ها، تخصیص خودکار انجام می‌شود.</p>
+                        </div>
+                    </header>
+                    <section class="whatsapp-stats-row" id="whatsappStatsRow" aria-label="آمار مکالمات">
+                        <article class="whatsapp-stat-card" data-stat="open">
                             <span class="whatsapp-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
                             <div class="whatsapp-stat-content">
-                                <span class="whatsapp-stat-value" id="whatsappStatOpen">—</span>
+                                <span class="whatsapp-stat-value" id="whatsappStatOpen" aria-live="polite">—</span>
                                 <span class="whatsapp-stat-label" data-i18n="whatsapp_stat_open">مکالمات باز</span>
                             </div>
-                            <a href="#conversations" class="whatsapp-stat-link" onclick="showPage('conversations'); setConvQuickTab('open'); return false;" data-i18n="whatsapp_view">مشاهده</a>
-                        </div>
-                        <div class="whatsapp-stat-card" data-stat="unassigned">
+                            <a href="#conversations" class="whatsapp-stat-link" data-stat="open" data-i18n="whatsapp_view">مشاهده</a>
+                        </article>
+                        <article class="whatsapp-stat-card" data-stat="unassigned">
                             <span class="whatsapp-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
                             <div class="whatsapp-stat-content">
-                                <span class="whatsapp-stat-value" id="whatsappStatUnassigned">—</span>
+                                <span class="whatsapp-stat-value" id="whatsappStatUnassigned" aria-live="polite">—</span>
                                 <span class="whatsapp-stat-label" data-i18n="whatsapp_stat_unassigned">بدون تخصیص</span>
                             </div>
-                            <a href="#conversations" class="whatsapp-stat-link" onclick="showPage('conversations'); setConvQuickTab('unassigned'); return false;" data-i18n="whatsapp_view">مشاهده</a>
-                        </div>
-                        <div class="whatsapp-stat-card" data-stat="unanswered">
+                            <a href="#conversations" class="whatsapp-stat-link" data-stat="unassigned" data-i18n="whatsapp_view">مشاهده</a>
+                        </article>
+                        <article class="whatsapp-stat-card" data-stat="unanswered">
                             <span class="whatsapp-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
                             <div class="whatsapp-stat-content">
-                                <span class="whatsapp-stat-value" id="whatsappStatUnanswered">—</span>
+                                <span class="whatsapp-stat-value" id="whatsappStatUnanswered" aria-live="polite">—</span>
                                 <span class="whatsapp-stat-label" data-i18n="whatsapp_stat_unanswered">بدون پاسخ</span>
                             </div>
-                            <a href="#conversations" class="whatsapp-stat-link" onclick="showPage('conversations'); setConvQuickTab('unanswered'); return false;" data-i18n="whatsapp_view">مشاهده</a>
-                        </div>
-                    </div>
+                            <a href="#conversations" class="whatsapp-stat-link" data-stat="unanswered" data-i18n="whatsapp_view">مشاهده</a>
+                        </article>
+                    </section>
                     <div class="whatsapp-page-layout">
-                        <div class="whatsapp-col whatsapp-col-connection">
+                        <aside class="whatsapp-col whatsapp-col-connection">
                             <div class="whatsapp-card whatsapp-connection-card">
                                 <h3 class="whatsapp-card-title" data-i18n="whatsapp_connection_title">وضعیت اتصال</h3>
                                 <div id="gatewayStatus" class="whatsapp-status-line empty" data-i18n="whatsapp_checking">در حال بررسی...</div>
@@ -1202,12 +1228,12 @@
                                     <p data-i18n="whatsapp_qr_not_ready">QR هنوز آماده نیست. روی «شروع واتساپ» کلیک کنید و چند ثانیه صبر کنید.</p>
                                 </div>
                                 <div class="whatsapp-actions">
-                                    <button type="button" id="btnStartGateway" class="btn-primary" onclick="startGateway()" style="display:none;" data-i18n="whatsapp_start_btn">شروع Gateway واتساپ</button>
-                                    <button type="button" id="btnStartWhatsApp" class="btn-primary" onclick="startWhatsAppClient()" style="display:none;" data-i18n="whatsapp_start_client_btn">شروع واتساپ</button>
-                                    <button type="button" id="btnRefreshStatus" class="btn-secondary" onclick="loadWhatsappStatus(true)" style="display:inline-flex; align-items:center; gap:6px;" data-i18n="whatsapp_refresh_status" title="">بروزرسانی وضعیت</button>
-                                    <button type="button" id="btnDisconnectWhatsApp" class="btn-secondary" onclick="disconnectWhatsApp()" disabled title="" data-i18n="whatsapp_disconnect_btn">قطع اتصال واتساپ</button>
+                                    <button type="button" id="btnStartGateway" class="btn-primary" style="display:none;" data-i18n="whatsapp_start_btn">شروع Gateway واتساپ</button>
+                                    <button type="button" id="btnStartWhatsApp" class="btn-primary" style="display:none;" data-i18n="whatsapp_start_client_btn">شروع واتساپ</button>
+                                    <button type="button" id="btnRefreshStatus" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px;" data-i18n="whatsapp_refresh_status" title="">بروزرسانی وضعیت</button>
+                                    <button type="button" id="btnDisconnectWhatsApp" class="btn-secondary" disabled title="" data-i18n="whatsapp_disconnect_btn">قطع اتصال واتساپ</button>
                                     <a href="https://web.whatsapp.com" target="_blank" rel="noopener" class="btn-secondary whatsapp-link-btn" data-i18n="whatsapp_open_web">باز کردن واتساپ وب</a>
-                                    <a href="#conversations" class="btn-secondary whatsapp-link-btn" onclick="showPage('conversations'); return false;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
+                                    <a href="#conversations" class="btn-secondary whatsapp-link-btn" id="whatsappManageConvsLink" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
                                 </div>
                             </div>
                             <div id="whatsappLastConnectionCard" class="whatsapp-card whatsapp-last-connection" style="display:none;">
@@ -1225,13 +1251,13 @@
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_welcome_hint">هر کسی که برای اولین بار به شما پیام می‌دهد، این متن به‌صورت خودکار برایش ارسال می‌شود. خالی = غیرفعال</p>
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappWelcomeEnabled" checked> <span data-i18n="whatsapp_welcome_enabled">فعال</span></label>
                                 <textarea id="whatsappWelcomeMessage" rows="4" data-i18n-ph="whatsapp_welcome_ph" placeholder="سلام! به صرافی کایا خوش آمدید. در خدمت شما هستیم." class="whatsapp-textarea"></textarea>
-                                <button type="button" class="btn-primary" onclick="saveWhatsappWelcomeConfig()" data-i18n="btn_save">ذخیره</button>
+                                <button type="button" class="btn-primary" id="btnSaveWhatsappWelcome" data-i18n="btn_save">ذخیره</button>
                             </div>
                             <div id="whatsappAIBox" class="whatsapp-card form-box">
                                 <h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی (OpenAI)</h3>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون پاسخ خودکار (کلمات کلیدی) جواب ندهد، هوش مصنوعی به پیام مشتری پاسخ می‌دهد. همچنین مسیریابی به دپارتمان مناسب با AI انجام می‌شود. نیاز به OPENAI_API_KEY در .env</p>
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAIEnabled" checked> <span data-i18n="whatsapp_ai_enabled">فعال</span></label>
-                                <button type="button" class="btn-primary" onclick="saveWhatsappAIConfig()" data-i18n="btn_save">ذخیره</button>
+                                <button type="button" class="btn-primary" id="btnSaveWhatsappAI" data-i18n="btn_save">ذخیره</button>
                             </div>
                             <div id="whatsappAutoMessagesBox" class="whatsapp-card form-box">
                                 <h3 class="whatsapp-card-title" data-i18n="whatsapp_auto_messages_title">پیام‌های خودکار تخصیص و معرفی</h3>
@@ -1246,7 +1272,7 @@
                                         <textarea id="whatsappEmployeeIntroMessage" rows="2" class="whatsapp-textarea" data-i18n-ph="whatsapp_employee_intro_ph" placeholder="من {{name}} از دپارتمان {{deptName}} هستم."></textarea>
                                     </div>
                                 </div>
-                                <button type="button" class="btn-primary" onclick="saveWhatsappAutoMessagesConfig()" data-i18n="btn_save">ذخیره</button>
+                                <button type="button" class="btn-primary" id="btnSaveWhatsappAutoMessages" data-i18n="btn_save">ذخیره</button>
                             </div>
                             <div id="whatsappUnansweredBox" class="whatsapp-card form-box">
                                 <h3 class="whatsapp-card-title" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3>
@@ -1256,14 +1282,14 @@
                                     <div><label data-i18n="whatsapp_escalate_after">Escalation بعد از (دقیقه)</label><input type="number" id="whatsappEscalateMinutes" min="1" max="240" value="15"></div>
                                 </div>
                                 <div class="whatsapp-dept-row"><label data-i18n="whatsapp_escalation_dept">دپارتمان مقصد (خالی = پشتیبانی پیش‌فرض)</label><select id="whatsappEscalationDept"><option value="">پشتیبانی (پیش‌فرض)</option></select></div>
-                                <button type="button" class="btn-primary" onclick="saveWhatsappUnansweredConfig()" data-i18n="btn_save">ذخیره</button>
+                                <button type="button" class="btn-primary" id="btnSaveWhatsappUnanswered" data-i18n="btn_save">ذخیره</button>
                             </div>
                         </div>
                     </div>
                     <div id="whatsappDeptRouting" class="whatsapp-card form-box whatsapp-dept-routing" style="margin-top:24px; display:none;">
                         <div class="whatsapp-dept-routing-header">
                             <h3 class="whatsapp-card-title" data-i18n="whatsapp_dept_routing">تخصیص خودکار به دپارتمان</h3>
-                            <a href="#departments" class="btn-secondary btn-sm whatsapp-edit-depts" onclick="showPage('departments'); return false;" data-i18n="whatsapp_edit_depts">ویرایش دپارتمان‌ها و کلمات کلیدی</a>
+                            <a href="#departments" class="btn-secondary btn-sm whatsapp-edit-depts" id="whatsappEditDeptsLink" data-i18n="whatsapp_edit_depts">ویرایش دپارتمان‌ها و کلمات کلیدی</a>
                         </div>
                         <p class="text-muted whatsapp-hint" data-i18n="whatsapp_dept_routing_hint">بر اساس کلمات کلیدی در متن پیام، مکالمه به دپارتمان مربوطه هدایت می‌شود.</p>
                         <div id="whatsappDeptList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
@@ -1272,7 +1298,7 @@
                         <h3 class="whatsapp-card-title" data-i18n="whatsapp_unassigned">مکالمات بدون تخصیص</h3>
                         <p class="text-muted whatsapp-hint" data-i18n="whatsapp_unassigned_hint">این مکالمات نیاز به تخصیص دپارتمان یا مسئول دارند.</p>
                         <div id="whatsappUnassignedList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
-                        <a href="#conversations" class="btn-secondary" onclick="showPage('conversations'); return false;" style="margin-top:12px; display:inline-block; text-decoration:none;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
+                        <a href="#conversations" class="btn-secondary" id="whatsappUnassignedManageLink" style="margin-top:12px; display:inline-block; text-decoration:none;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
                     </div>
                 </div>
                 <div id="pageMessageTemplates" class="page message-templates-page">
@@ -2438,18 +2464,18 @@
                 </div>
             </div>
         </div>
-        <button id="internalChatFloatingBtn" class="internal-chat-floating-btn" onclick="toggleInternalChatFloating()" style="display:none" aria-label="چت داخلی" title="چت داخلی">
+        <button id="internalChatFloatingBtn" class="internal-chat-floating-btn" style="display:none" aria-label="چت داخلی" title="چت داخلی">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chat"/></svg>
             <span id="internalChatFloatingBadge" class="internal-chat-floating-badge" style="display:none">0</span>
         </button>
         <div id="internalChatPopup" class="internal-chat-popup" style="display:none;">
-            <div class="internal-chat-popup-header-compact" onclick="toggleInternalChatPopupMinimize()">
+            <div class="internal-chat-popup-header-compact">
                 <div class="internal-chat-popup-avatar"><span>💬</span></div>
                 <span id="internalChatPopupTitle" class="internal-chat-popup-title"></span>
-                <div class="internal-chat-popup-actions" onclick="event.stopPropagation()">
-                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-minimize" onclick="toggleInternalChatPopupMinimize()" data-i18n-title="chat_minimize" title="کوچک‌سازی" aria-label="کوچک‌سازی"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
-                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-expand" onclick="openInternalChatFromPopup()" data-i18n-title="internal_chat_open_full" title="باز کردن چت کامل" aria-label="باز کردن چت کامل"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-expand"/></svg></button>
-                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-close" onclick="closeInternalChatPopup()" data-i18n-title="close" title="بستن" aria-label="بستن"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                <div class="internal-chat-popup-actions">
+                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-minimize" data-i18n-title="chat_minimize" title="کوچک‌سازی" aria-label="کوچک‌سازی"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
+                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-expand" data-i18n-title="internal_chat_open_full" title="باز کردن چت کامل" aria-label="باز کردن چت کامل"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-expand"/></svg></button>
+                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-close" data-i18n-title="close" title="بستن" aria-label="بستن"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
                 </div>
             </div>
             <div id="internalChatPopupBody" class="internal-chat-popup-body">
@@ -2458,14 +2484,14 @@
                 <div id="internalChatPopupMessages" class="internal-chat-popup-messages"></div>
                 <div class="internal-chat-popup-send" style="display:none;">
                     <div class="internal-chat-popup-send-inner">
-                        <input type="text" id="internalChatPopupInput" data-i18n-ph="msg_ph_short" placeholder="پیام..." onkeydown="handlePopupChatKeydown(event)">
+                        <input type="text" id="internalChatPopupInput" data-i18n-ph="msg_ph_short" placeholder="پیام...">
                         <div class="internal-chat-popup-attach-wrap">
-                            <input type="file" id="internalChatPopupFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" class="internal-chat-popup-file-input" onchange="var f=this.files&&this.files[0]; document.getElementById('internalChatPopupFileLabel').textContent=f?f.name:''; document.getElementById('internalChatPopupFileLabel').style.display=f?'inline':'none';">
+                            <input type="file" id="internalChatPopupFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" class="internal-chat-popup-file-input">
                             <span id="internalChatPopupFileLabel" class="internal-chat-popup-file-label" style="display:none;"></span>
-                            <button type="button" class="internal-chat-popup-attach-btn" onclick="document.getElementById('internalChatPopupFile').click()" data-i18n-title="attach_file" title="پیوست فایل" aria-label="پیوست فایل"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-file-plus"/></svg></button>
+                            <button type="button" class="internal-chat-popup-attach-btn" data-i18n-title="attach_file" title="پیوست فایل" aria-label="پیوست فایل"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-file-plus"/></svg></button>
                         </div>
                     </div>
-                    <button type="button" class="internal-chat-popup-send-btn" onclick="sendInternalMessageFromPopup()" data-i18n="btn_send">ارسال</button>
+                    <button type="button" class="internal-chat-popup-send-btn" data-i18n="btn_send">ارسال</button>
                 </div>
             </div>
         </div>
@@ -2626,7 +2652,8 @@
                 <input type="text" id="templateModalName" placeholder="مثال: سلام و خوش‌آمدگویی">
                 <label data-i18n="template_category">دسته‌بندی</label>
                 <input type="text" id="templateModalCategory" placeholder="اختیاری">
-                <label data-i18n="template_content">محتوا (از {name}, {date} و ... استفاده کنید)</label>
+                <label data-i18n="template_content">محتوا</label>
+                <small class="template-vars-hint">متغیرها: {name} نام مشتری، {phone} تلفن، {email} ایمیل، {date} تاریخ، {time} ساعت</small>
                 <textarea id="templateModalContent" rows="4" placeholder="سلام {name} عزیز، امروز {date}"></textarea>
                 <label><input type="checkbox" id="templateModalActive" checked> <span data-i18n="template_active">فعال</span></label>
             </div>

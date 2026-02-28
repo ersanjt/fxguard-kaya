@@ -279,7 +279,7 @@
                     ann_send_title: 'ارسا� اع�ا�  ب�! کارک� ا� ', ann_recipient: 'گ�Rر� د�!', ann_all: '�!�&�! کارک� ا� ', ann_one_dept: '�Rک دپارت�&ا� ', ann_one_user: '�Rک � فر',
                     ann_select: 'ا� تخاب ک� �Rد', ann_title: 'ع� ��ا� ', ann_body: '�&ت� ', ann_ph_title: 'ع� ��ا�  اع�ا� ', ann_ph_body: '�&ت�  پ�Rا�&...',
                     ann_important: 'پ�Rا�& �&�!�& (پاپ�Rآپ �� صدا برا�R گ�Rر� د�!)', send_ann: 'ارسا� اع�ا� ',
-                    new_chat: 'گفتگ���R جد�Rد', select_conversation: 'ا� تخاب گفتگ��', msg_ph_short: 'پ�Rا�&...', attach_file: 'پ�R��ست فا�R�',
+                    new_chat: 'گفتگ���R جد�Rد', select_conversation: 'ا� تخاب گفتگ��', msg_ph_short: 'پ�Rا�&...', attach_file: 'پ�R��ست فا�R�', msg_template: 'تمپلیت پیام',
                     start_chat_with: 'شر��ع گفتگ�� با', start_chat: 'شر��ع � ت', internal_chat_open_full: 'باز کردن چت کامل', cancel: 'ا� صراف',
                     branch_intro: 'شعب برای تفکیک جغرافیایی و تخصیص کاربران و مکالمات استفاده می‌شوند.', branch_name: 'نام شعبه', branch_city: 'شهر', branch_country: 'کشور', branch_ph_name: 'مثال: دفتر تهران', branch_ph_city: 'مثال: تهران', branch_ph_country: 'مثال: ایران', add_branch: 'افزودن شعبه', edit: 'ویرایش',
                     staff_online: 'کارک� ا�  آ� �ا�R� ', staff_intro: 'آخر�R�  ��ر��د�!ا �� ��Rست کارک� ا�  آ� �ا�R�  � برا�R �&د�Rر �� با�اتر', last_logins: 'آخر�R�  ��ر��د�!ا',
@@ -651,7 +651,7 @@
                     ann_select: 'Select', ann_title: 'Title', ann_body: 'Message', ann_ph_title: 'Announcement title', ann_ph_body: 'Message text...',
                     ann_important: 'Important (popup and sound for recipient)', send_ann: 'Send announcement',
                     ann_intro: 'View and manage general, department and personal announcements.', ann_tab_all: 'All', ann_tab_general: 'General', ann_tab_department: 'Department', ann_tab_personal: 'Personal', ann_from: 'From', ann_to: 'To', ann_sent_at: 'Date & time:', ann_delete: 'Delete announcement', ann_delete_confirm: 'Delete this announcement?', ann_collapse: 'Collapse form', ann_expand: 'Show form', ann_reset: 'Clear', ann_search_ph: 'Search announcements...', ann_marquee_label: 'Announcements', ann_view_all: 'View all', ann_type_info: 'Info', ann_type_important: 'Important', ann_empty: 'No announcements.', ann_sort_newest: 'Newest', ann_sort_oldest: 'Oldest', ann_sort_important: 'Important first', ann_empty_hint: 'General announcements appear in the top bar.',
-                    new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file',
+                    new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file', msg_template: 'Message template',
                     file_allow_download: 'Allow download and save', file_view_only: 'View only in chat',
                     start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', close: 'Close', chat_minimize: 'Minimize', chat_expand: 'Expand', quick_reply_hi: 'Hi', quick_reply_gotit: 'Got it', quick_reply_later: 'Will reply later', quick_reply_checking: 'Checking', start_chat_hint: 'Start the conversation', cancel: 'Cancel',
                     voice_call: 'Voice call', video_call: 'Video call', incoming_voice_call: 'Incoming voice call...', incoming_video_call: 'Incoming video call...',
@@ -2746,6 +2746,7 @@
         async function apiFetch(url, opts) {
             var opt = opts || {};
             var h = opt.auth === false ? { 'Content-Type': 'application/json' } : headers();
+            if (opt.body instanceof FormData) { delete h['Content-Type']; }
             var r, text;
             try {
                 r = await fetch(API + url, { ...opt, headers: { ...h, ...opt.headers }, body: opt.body });
@@ -3401,7 +3402,7 @@
         }
         function marqueeAnnouncementClick(id) {
             var a = (window._marqueeAnnouncements || []).find(function(x) { return String(x.id) === String(id); });
-            if (a) { apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadGeneralAnnouncementsMarquee(); if (typeof updateNavBadges === 'function') updateNavBadges(); }); showAnnouncementModal(a); }
+            if (a) { apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadGeneralAnnouncementsMarquee(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); }); showAnnouncementModal(a); }
         }
         async function loadGeneralAnnouncementsMarquee() {
             var banner = document.getElementById('announcementMarquee');
@@ -3576,15 +3577,24 @@
             });
         }
         async function markAnnouncementReadAndShow(id) {
+            if (!id) return;
             var a = announcementsData.find(function(x) { return x.id === id; });
-            if (!a) return;
-            if (!a.read) {
+            var needRead = !a || !a.read;
+            if (needRead) {
                 await apiFetch('/api/announcements/' + id + '/read', { method: 'POST' });
+                apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
+            }
+            if (!a) {
+                var res = await apiFetch('/api/announcements/for-me');
+                if (res.ok && res.data && res.data.data) {
+                    a = res.data.data.find(function(x) { return x.id === id; });
+                    if (a) { a.read = true; announcementsData = res.data.data; renderAnnouncementsList(); }
+                }
+            } else if (needRead) {
                 a.read = true;
                 renderAnnouncementsList();
-                if (typeof updateNavBadges === 'function') updateNavBadges();
             }
-            showAnnouncementModal(a);
+            if (a) showAnnouncementModal(a);
         }
         function showAnnouncementModal(a) {
             var modal = document.getElementById('announcementModal');
@@ -3669,7 +3679,7 @@
             var id = window._lastImportantAnnouncementId;
             if (id) {
                 window._lastImportantAnnouncementId = null;
-                apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadAnnouncements(); loadGeneralAnnouncementsMarquee(); if (typeof updateNavBadges === 'function') updateNavBadges(); });
+                apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadAnnouncements(); loadGeneralAnnouncementsMarquee(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
             }
             var m = document.getElementById('announcementModal'); if (m) m.style.display = 'none';
         }
@@ -3695,10 +3705,202 @@
             // Global document-level click handler to catch dynamically generated buttons with onclick
             document.addEventListener('click', function(e) {
                 var target = e.target;
+                // Conversation quick tab buttons (همه، خوانده‌نشده، بدون پاسخ، ...)
+                var convTabBtn = target.closest('.conv-quick-tabs .conv-tab');
+                if (convTabBtn && typeof setConvQuickTab === 'function') {
+                    var tab = convTabBtn.getAttribute('data-tab');
+                    if (tab) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); setConvQuickTab(tab); }
+                    return;
+                }
+                // مکالمه جدید — دکمه جدید مکالمه
+                if (target.closest('#btnNewConv') && typeof openNewConvModal === 'function') {
+                    e.preventDefault(); e.stopPropagation(); openNewConvModal();
+                    return;
+                }
+                // فیلترهای بیشتر — نمایش/مخفی فیلترهای پیشرفته
+                if (target.closest('#convFilterToggle') && typeof toggleConvAdvancedFilters === 'function') {
+                    e.preventDefault(); e.stopPropagation(); toggleConvAdvancedFilters();
+                    return;
+                }
+                // همگام‌سازی گروه‌ها
+                if (target.closest('#btnSyncGroups') && typeof syncWhatsAppGroups === 'function') {
+                    e.preventDefault(); e.stopPropagation(); syncWhatsAppGroups();
+                    return;
+                }
+                // اعمال فیلتر — دکمه اعمال فیلترهای مکالمات
+                if (target.closest('#btnApplyConvFilters') && typeof applyConvFilters === 'function') {
+                    e.preventDefault(); e.stopPropagation(); applyConvFilters();
+                    return;
+                }
+                // دکمه مکالمه جدید در حالت خالی لیست
+                if (target.closest('#emptyConvNewBtn') && typeof openNewConvModal === 'function') {
+                    e.preventDefault(); e.stopPropagation(); openNewConvModal();
+                    return;
+                }
+                // تب‌های سریع تسک (همه، در انتظار، در حال انجام، ...)
+                var taskTabBtn = target.closest('.task-quick-tabs .task-tab');
+                if (taskTabBtn && typeof setTaskQuickTab === 'function') {
+                    var tab = taskTabBtn.getAttribute('data-tab');
+                    if (tab) { e.preventDefault(); e.stopPropagation(); setTaskQuickTab(tab); }
+                    return;
+                }
+                // تسک جدید — دکمه باز کردن فرم
+                if (target.closest('#btnTaskCreate') && typeof toggleTaskForm === 'function') {
+                    e.preventDefault(); e.stopPropagation(); toggleTaskForm();
+                    return;
+                }
+                // دکمه تسک جدید در حالت خالی لیست
+                if (target.closest('#emptyTaskFormBtn') && typeof toggleTaskForm === 'function') {
+                    e.preventDefault(); e.stopPropagation(); toggleTaskForm();
+                    return;
+                }
+                // اعمال فیلتر تسک‌ها
+                if (target.closest('#btnApplyTaskFilters') && typeof loadTasks === 'function') {
+                    e.preventDefault(); e.stopPropagation(); loadTasks();
+                    return;
+                }
+                // ثبت تسک جدید
+                if (target.closest('#btnTaskSubmit') && typeof addTask === 'function') {
+                    e.preventDefault(); e.stopPropagation(); addTask();
+                    return;
+                }
+                // انصراف از فرم تسک
+                if (target.closest('#btnTaskCancel') && typeof toggleTaskForm === 'function') {
+                    e.preventDefault(); e.stopPropagation(); toggleTaskForm();
+                    return;
+                }
+                // کلیک روی آیتم تسک — باز کردن جزئیات
+                var taskItem = target.closest('.task-list-item[data-task-id]');
+                if (taskItem && typeof loadTaskDetail === 'function') {
+                    var tid = taskItem.getAttribute('data-task-id');
+                    if (tid) { e.preventDefault(); e.stopPropagation(); loadTaskDetail(tid); }
+                    return;
+                }
+                // دکمه بازگشت به لیست تسک‌ها
+                if (target.closest('.task-back-btn') && typeof showTaskList === 'function') {
+                    e.preventDefault(); e.stopPropagation(); showTaskList();
+                    return;
+                }
+                // بارگذاری بیشتر تسک‌ها
+                if (target.closest('#btnLoadMoreTasks') && typeof loadMoreTasks === 'function') {
+                    e.preventDefault(); e.stopPropagation(); loadMoreTasks();
+                    return;
+                }
+                // دکمه ثبت پیگیری تسک
+                if (target.closest('#btnTaskUpdateSubmit') && typeof addTaskUpdate === 'function') {
+                    e.preventDefault(); e.stopPropagation(); addTaskUpdate();
+                    return;
+                }
+                // دکمه اعمال تغییرات جزئیات تسک
+                if (target.closest('#btnTaskDetailUpdate') && typeof updateTaskFromDetail === 'function') {
+                    e.preventDefault(); e.stopPropagation(); updateTaskFromDetail();
+                    return;
+                }
+                // تمپلیت‌های پیام — افزودن تمپلیت متنی
+                if (target.closest('#btnAddTextTemplate') && typeof openTemplateModal === 'function') {
+                    e.preventDefault(); e.stopPropagation(); openTemplateModal();
+                    return;
+                }
+                // تمپلیت‌های پیام — بارگذاری فایل
+                if (target.closest('#btnAddFileTemplate') && typeof openFileTemplateModal === 'function') {
+                    e.preventDefault(); e.stopPropagation(); openFileTemplateModal();
+                    return;
+                }
+                // مودال تمپلیت متنی — بستن و ذخیره
+                if (target.closest('#closeTemplateModalBtn') || target.closest('#cancelTemplateModalBtn')) {
+                    if (typeof closeTemplateModal === 'function') { e.preventDefault(); closeTemplateModal(); }
+                    return;
+                }
+                if (target.closest('#saveTemplateBtn') && typeof saveTemplate === 'function') {
+                    e.preventDefault(); e.stopPropagation(); saveTemplate();
+                    return;
+                }
+                // مودال فایل — بستن و ذخیره
+                if (target.closest('#closeFileTemplateModalBtn') || target.closest('#cancelFileTemplateModalBtn')) {
+                    if (typeof closeFileTemplateModal === 'function') { e.preventDefault(); closeFileTemplateModal(); }
+                    return;
+                }
+                if (target.closest('#saveFileTemplateBtn') && typeof saveFileTemplate === 'function') {
+                    e.preventDefault(); e.stopPropagation(); saveFileTemplate();
+                    return;
+                }
+                // ویرایش و حذف تمپلیت متنی
+                if (target.closest('.btn-tpl-edit') && typeof editTemplate === 'function') {
+                    var tid = (target.closest('.btn-tpl-edit') || {}).getAttribute('data-id');
+                    if (tid) { e.preventDefault(); e.stopPropagation(); editTemplate(tid); }
+                    return;
+                }
+                if (target.closest('.btn-tpl-delete') && typeof deleteTemplate === 'function') {
+                    var tid = (target.closest('.btn-tpl-delete') || {}).getAttribute('data-id');
+                    if (tid) { e.preventDefault(); e.stopPropagation(); deleteTemplate(tid); }
+                    return;
+                }
+                // لینک‌های آمار واتساپ — مشاهده مکالمات
+                var statLink = target.closest('.whatsapp-stat-link[data-stat]');
+                if (statLink && typeof showPage === 'function' && typeof setConvQuickTab === 'function') {
+                    var stat = statLink.getAttribute('data-stat');
+                    if (stat) { e.preventDefault(); e.stopPropagation(); showPage('conversations'); setConvQuickTab(stat); }
+                    return;
+                }
+                // دکمه‌های اتصال واتساپ
+                if (target.closest('#btnStartGateway') && typeof startGateway === 'function') { e.preventDefault(); e.stopPropagation(); startGateway(); return; }
+                if (target.closest('#btnStartWhatsApp') && typeof startWhatsAppClient === 'function') { e.preventDefault(); e.stopPropagation(); startWhatsAppClient(); return; }
+                if (target.closest('#btnRefreshStatus') && typeof loadWhatsappStatus === 'function') { e.preventDefault(); e.stopPropagation(); loadWhatsappStatus(true); return; }
+                if (target.closest('#btnDisconnectWhatsApp') && typeof disconnectWhatsApp === 'function') { e.preventDefault(); e.stopPropagation(); disconnectWhatsApp(); return; }
+                if (target.closest('#whatsappManageConvsLink') || target.closest('#whatsappUnassignedManageLink')) { e.preventDefault(); e.stopPropagation(); if (typeof showPage === 'function') showPage('conversations'); return; }
+                if (target.closest('#whatsappEditDeptsLink')) { e.preventDefault(); e.stopPropagation(); if (typeof showPage === 'function') showPage('departments'); return; }
+                // ذخیره تنظیمات واتساپ
+                if (target.closest('#btnSaveWhatsappWelcome') && typeof saveWhatsappWelcomeConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappWelcomeConfig(); return; }
+                if (target.closest('#btnSaveWhatsappAI') && typeof saveWhatsappAIConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAIConfig(); return; }
+                if (target.closest('#btnSaveWhatsappAutoMessages') && typeof saveWhatsappAutoMessagesConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAutoMessagesConfig(); return; }
+                if (target.closest('#btnSaveWhatsappUnanswered') && typeof saveWhatsappUnansweredConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappUnansweredConfig(); return; }
+                // ویرایش و حذف فایل تمپلیت
+                if (target.closest('.btn-ft-edit') && typeof editFileTemplate === 'function') {
+                    var fid = (target.closest('.btn-ft-edit') || {}).getAttribute('data-id');
+                    if (fid) { e.preventDefault(); e.stopPropagation(); editFileTemplate(fid); }
+                    return;
+                }
+                if (target.closest('.btn-ft-delete') && typeof deleteFileTemplate === 'function') {
+                    var fid = (target.closest('.btn-ft-delete') || {}).getAttribute('data-id');
+                    if (fid) { e.preventDefault(); e.stopPropagation(); deleteFileTemplate(fid); }
+                    return;
+                }
                 // Chat back button (mobile) — fallback for returning to conversation list
                 if (target.closest('.chat-back-btn') && typeof closeChatMobile === 'function') {
                     e.preventDefault();
                     closeChatMobile();
+                    return;
+                }
+                // چت داخلی — دکمه‌ها و المان‌های کلیکی
+                if (target.closest('.internal-chat-new-btn') && typeof showNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); showNewChatForm(); return; }
+                if (target.closest('.internal-chat-back-btn') && typeof backToInternalChatList === 'function') { e.preventDefault(); e.stopPropagation(); backToInternalChatList(); return; }
+                if (target.closest('.internal-chat-attach-btn-sm')) { e.preventDefault(); e.stopPropagation(); var f = document.getElementById('internalChatFile'); if (f) f.click(); return; }
+                if (target.closest('.internal-chat-send-btn-sm') && typeof sendInternalMessage === 'function') { e.preventDefault(); e.stopPropagation(); sendInternalMessage(); return; }
+                if (target.closest('#internalChatFloatingBtn') && typeof toggleInternalChatFloating === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatFloating(); return; }
+                if (target.closest('.internal-chat-popup-minimize') && typeof toggleInternalChatPopupMinimize === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatPopupMinimize(); return; }
+                if (target.closest('.internal-chat-popup-expand') && typeof openInternalChatFromPopup === 'function') { e.preventDefault(); e.stopPropagation(); openInternalChatFromPopup(); return; }
+                if (target.closest('.internal-chat-popup-close') && typeof closeInternalChatPopup === 'function') { e.preventDefault(); e.stopPropagation(); closeInternalChatPopup(); return; }
+                if (target.closest('.internal-chat-popup-attach-btn')) { e.preventDefault(); e.stopPropagation(); var pf = document.getElementById('internalChatPopupFile'); if (pf) pf.click(); return; }
+                if (target.closest('.internal-chat-popup-send-btn') && typeof sendInternalMessageFromPopup === 'function') { e.preventDefault(); e.stopPropagation(); sendInternalMessageFromPopup(); return; }
+                var internalThreadItem = target.closest('.internal-chat-thread-item[data-id]');
+                if (internalThreadItem && typeof openInternalThread === 'function') { var tid = internalThreadItem.getAttribute('data-id'); if (tid) { e.preventDefault(); e.stopPropagation(); openInternalThread(tid); } return; }
+                var popupThreadItem = target.closest('.internal-chat-popup-thread-item[data-id]');
+                if (popupThreadItem && typeof selectThreadInPopup === 'function') { var pid = popupThreadItem.getAttribute('data-id'); if (pid) { e.preventDefault(); e.stopPropagation(); selectThreadInPopup(pid); } return; }
+                if (target.closest('.internal-chat-popup-new-btn')) { e.preventDefault(); e.stopPropagation(); if (typeof closeInternalChatPopup === 'function') closeInternalChatPopup(); if (typeof showPage === 'function') showPage('internal-chat'); return; }
+                if (target.closest('#btnInternalStartChat') && typeof startInternalChat === 'function') { e.preventDefault(); e.stopPropagation(); startInternalChat(); return; }
+                if (target.closest('#btnInternalCancelChat') && typeof hideNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); hideNewChatForm(); return; }
+                if (target.closest('.internal-call-btn[data-call-type="voice"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('voice'); return; }
+                if (target.closest('.internal-call-btn[data-call-type="video"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('video'); return; }
+                // Handle internal chat popup header click (minimize)
+                if (target.closest('.internal-chat-popup-header-compact') && !target.closest('.internal-chat-popup-actions') && typeof toggleInternalChatPopupMinimize === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatPopupMinimize(); return; }
+                // دکمه تمپلیت پیام در چت مکالمات
+                if (target.closest('#msgTemplateBtn') && typeof toggleTemplateDropdown === 'function') { e.preventDefault(); e.stopPropagation(); toggleTemplateDropdown(); return; }
+                // آیتم‌های دراپ‌داون تمپلیت — کلیک برای درج در چت
+                var tplItem = target.closest('.chat-template-dropdown-item[data-id]');
+                if (tplItem && tplItem.hasAttribute('data-content')) {
+                    var tid = tplItem.getAttribute('data-id');
+                    var c = typeof unescapeFromDataAttr === 'function' ? unescapeFromDataAttr(tplItem.getAttribute('data-content') || '') : (tplItem.getAttribute('data-content') || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+                    if (typeof insertTemplateIntoChat === 'function') { e.preventDefault(); e.stopPropagation(); insertTemplateIntoChat(c, tid); var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('msgTemplateBtn'); if (dd) dd.style.display = 'none'; if (btn) btn.setAttribute('aria-expanded', 'false'); }
                     return;
                 }
                 // Handle elements whose onclick was moved to data-onclick-backup (CSP compliance)
@@ -3788,12 +3990,30 @@
                 }
                 if (active.closest('.bulk-customer-check') || active.closest('.customer-send-btn')) return;
                 var card = active.closest('.customer-card:not(.customer-card-skeleton)');
-                if (!card) return;
-                var custId = card.getAttribute('data-customer-id');
-                var custName = card.getAttribute('data-customer-name') || '';
-                if (custId) {
-                    e.preventDefault();
-                    if (typeof showCustomerHistory === 'function') showCustomerHistory(custId, custName);
+                if (card) {
+                    var custId = card.getAttribute('data-customer-id');
+                    var custName = card.getAttribute('data-customer-name') || '';
+                    if (custId) { e.preventDefault(); if (typeof showCustomerHistory === 'function') showCustomerHistory(custId, custName); }
+                    return;
+                }
+                var taskItem = active.closest('.task-list-item[data-task-id]');
+                if (taskItem && typeof loadTaskDetail === 'function') {
+                    var tid = taskItem.getAttribute('data-task-id');
+                    if (tid) { e.preventDefault(); loadTaskDetail(tid); }
+                }
+                // چت داخلی — Enter برای ارسال پیام
+                if (active.id === 'internalChatInput' && e.key === 'Enter' && !e.shiftKey && typeof sendInternalMessage === 'function') { e.preventDefault(); sendInternalMessage(); return; }
+                if (active.id === 'internalChatPopupInput' && typeof handlePopupChatKeydown === 'function') { handlePopupChatKeydown(e); return; }
+            }, true);
+            document.addEventListener('input', function(e) {
+                if (e.target.id === 'internalChatSearch' && typeof filterInternalThreads === 'function') filterInternalThreads(e.target.value);
+            }, true);
+            document.addEventListener('change', function(e) {
+                if (e.target.id === 'internalChatFile' && typeof toggleInternalFileOption === 'function') toggleInternalFileOption();
+                if (e.target.id === 'internalChatPopupFile') {
+                    var f = e.target.files && e.target.files[0];
+                    var label = document.getElementById('internalChatPopupFileLabel');
+                    if (label) { label.textContent = f ? f.name : ''; label.style.display = f ? 'inline' : 'none'; }
                 }
             }, true);
         }
@@ -4648,6 +4868,7 @@
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
             cancelReply();
+            if (chatTemplatesCache.length === 0) { apiFetch('/api/message-templates').then(function(res) { if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data; }).catch(function(){}); }
             var headerEl = document.getElementById('chatHeader');
             var avatarEl = document.getElementById('chatHeaderAvatar');
             var barEl = document.getElementById('convDetailBar');
@@ -4676,7 +4897,7 @@
             var pm = document.getElementById('headerMobileTitle');
             if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = name || phone || t('customer');
             if (barEl) barEl.style.display = 'none';
-            apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); });
+            apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
             loadMessages(id);
             var canViewSupervision = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
             if (canViewSupervision && supPanel && supStats) { loadConvStats(id, supStats); supPanel.style.display = 'block'; } else if (supPanel) supPanel.style.display = 'none';
@@ -6485,10 +6706,10 @@
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
             if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }
             if (page === 'tickets') { loadTicketFiltersInit(); loadTickets(); }
-            if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); }
+            if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); var ta = document.getElementById('taskAssignType'); if (ta && !ta._bound) { ta._bound = true; ta.addEventListener('change', toggleTaskAssignTarget); } }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
             if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); loadWhatsappStats(); }
-            if (page === 'message-templates') loadMessageTemplates();
+            if (page === 'message-templates') { initMessageTemplatesTabs(); loadMessageTemplates(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); }
             if (page === 'rates-charts') loadRatesCharts();
             if (page === 'services') { initServicesTabs(); loadServicesPage(); }
@@ -6758,6 +6979,15 @@
         }
 
         var currentTaskId = null;
+        var taskQuickTab = 'all';
+        function setTaskQuickTab(tab) {
+            taskQuickTab = tab || 'all';
+            var tabs = document.querySelectorAll('.task-quick-tabs .task-tab');
+            if (tabs) tabs.forEach(function(btn) { btn.classList.toggle('active', (btn.getAttribute('data-tab') || '') === taskQuickTab); });
+            var statusSel = document.getElementById('taskFilterStatus');
+            if (statusSel) statusSel.value = (tab === 'all' ? '' : tab);
+            loadTasks();
+        }
         function taskStatusLabel(s) { return { pending: t('status_pending'), in_progress: t('status_in_progress'), done: t('status_done'), cancelled: t('status_cancelled') }[s] || s; }
         function taskPriorityLabel(s) { return { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[s] || s; }
         function toggleTaskForm() {
@@ -6811,19 +7041,22 @@
         }
         var taskListPage = 1;
         var taskListTotal = 0;
-        function renderTaskItem(t) {
-            var assign = t.assignedToDepartmentId && t.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(t.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(t.assignee) || '\u2014';
-            var due = t.dueDate ? fmtTZ(t.dueDate, 'date') : '';
-            var isOverdue = t.dueDate && (t.status === 'pending' || t.status === 'in_progress') && new Date(t.dueDate) < new Date();
+        function renderTaskItem(task) {
+            var assign = task.assignedToDepartmentId && task.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(task.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(task.assignee) || '\u2014';
+            var due = task.dueDate ? fmtTZ(task.dueDate, 'date') : '';
+            var isOverdue = task.dueDate && (task.status === 'pending' || task.status === 'in_progress') && new Date(task.dueDate) < new Date();
             var overdueBadge = isOverdue ? '<span class="badge overdue" title="' + (t('overdue') || 'مهلت گذشته') + '">' + (t('overdue') || 'مهلت گذشته') + '</span>' : '';
-            var prioBadge = t.priority && t.priority !== 'normal' ? '<span class="badge ' + t.priority + '">' + escapeHtml(taskPriorityLabel(t.priority)) + '</span>' : '';
-            return '<div class="task-list-item' + (isOverdue ? ' task-overdue' : '') + '" onclick="loadTaskDetail(\'' + t.id + '\')"><div class="task-item-body"><span class="name">' + escapeHtml(t.title) + '</span><div class="meta">' + assign + ' \u00B7 ' + taskStatusLabel(t.status) + (due ? ' \u00B7 ' + t('due_label') + ' ' + due : '') + '</div></div><div class="task-item-badges">' + overdueBadge + prioBadge + '<span class="badge ' + (t.status || '') + '">' + taskStatusLabel(t.status) + '</span></div></div>';
+            var prioBadge = task.priority && task.priority !== 'normal' ? '<span class="badge ' + task.priority + '">' + escapeHtml(taskPriorityLabel(task.priority)) + '</span>' : '';
+            var dueLabel = t('due_label') || (LANG === 'fa' ? 'مهلت: ' : 'Due: ');
+            return '<div class="task-list-item' + (isOverdue ? ' task-overdue' : '') + '" data-task-id="' + escapeHtml(task.id) + '" role="button" tabindex="0"><div class="task-item-body"><span class="name">' + escapeHtml(task.title) + '</span><div class="meta">' + assign + ' \u00B7 ' + taskStatusLabel(task.status) + (due ? ' \u00B7 ' + dueLabel + ' ' + due : '') + '</div></div><div class="task-item-badges">' + overdueBadge + prioBadge + '<span class="badge ' + (task.status || '') + '">' + taskStatusLabel(task.status) + '</span></div></div>';
         }
         async function loadTasks(append) {
             var list = document.getElementById('taskList');
             if (!list) return;
             if (!append) { taskListPage = 1; setLoading('taskList', 4); }
-            var status = (document.getElementById('taskFilterStatus') && document.getElementById('taskFilterStatus').value) || '';
+            var statusSel = document.getElementById('taskFilterStatus');
+            var status = (statusSel && statusSel.value) || '';
+            if (!append && statusSel) { taskQuickTab = status || 'all'; var tabs = document.querySelectorAll('.task-quick-tabs .task-tab'); if (tabs) tabs.forEach(function(btn) { btn.classList.toggle('active', (btn.getAttribute('data-tab') || '') === taskQuickTab); }); }
             var deptEl = document.getElementById('taskFilterDept');
             var dept = deptEl ? deptEl.value : '';
             if (dept === '__my_dept__' && currentUser && currentUser.departmentId) dept = currentUser.departmentId;
@@ -6867,7 +7100,7 @@
             taskListPage = append ? taskListPage + 1 : 2;
         }
         function loadMoreTasks() {
-            var btn = document.querySelector('#taskListLoadMore button');
+            var btn = document.getElementById('btnLoadMoreTasks') || document.querySelector('#taskListLoadMore button');
             if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال بارگذاری...' : 'Loading...'); }
             loadTasks(true).finally(function() {
                 if (btn) { btn.disabled = false; btn.textContent = t('load_more'); }
@@ -6995,7 +7228,7 @@
                 '<div class="task-form-row"><div><label>' + t('due_date') + '</label><input id="taskDetailDueDate" type="datetime-local" value="' + dueVal + '"></div>' +
                 '<div><label>' + t('ticket_priority') + '</label><select id="taskDetailPriority">' + prioOpts + '</select></div></div>' +
                 '<label>' + t('change_status') + '</label><select id="taskDetailStatus">' + statusOpts + '</select>' +
-                ' <button type="button" class="btn-primary" onclick="updateTaskFromDetail()">' + t('btn_apply') + '</button></div>';
+                ' <button type="button" class="btn-primary" id="btnTaskDetailUpdate">' + t('btn_apply') + '</button></div>';
             document.getElementById('taskDetailContent').innerHTML =
                 '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(taskData.title) + '</h3>' +
                 (taskData.description ? '<p style="color:var(--text-secondary); margin:8px 0;">' + escapeHtml(taskData.description) + '</p>' : '') +
@@ -7005,6 +7238,8 @@
             }).join('');
             document.getElementById('taskUpdatesList').innerHTML = updates ? '<h4 style="font-size:1rem; margin:12px 0;">' + t('updates') + '</h4>' + updates : '<p class="text-muted" style="color:var(--text-muted);">' + t('no_updates') + '</p>';
             document.getElementById('taskUpdateContent').value = '';
+            var detailAssignType = document.getElementById('taskDetailAssignType');
+            if (detailAssignType) { detailAssignType.onchange = null; detailAssignType.addEventListener('change', toggleTaskDetailAssign); }
         }
         async function updateTaskStatus() {
             if (!currentTaskId) return;
@@ -7726,7 +7961,7 @@
                 var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 45) + ((t.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';
                 var timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
                 var fromLabel = t.lastMessage && t.lastMessage.fromUser && String(t.lastMessage.fromUser.id) !== String(me) ? (t.lastMessage.fromUser.name || '') + ': ' : '';
-                return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="openInternalThread(\'' + t.id + '\')" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + avatarHtml + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
+                return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(t.id) + '" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + avatarHtml + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
             }).join('');
         }
         function filterInternalThreads(q) {
@@ -7796,10 +8031,9 @@
                     var avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
                     var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 35) + ((t.lastMessage.content || '').length > 35 ? '\u2026' : '') : '\u2014';
                     var timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
-                    var safeId = String(t.id).replace(/'/g, "\\'");
-                    return '<button type="button" class="internal-chat-popup-thread-item" data-id="' + escapeHtml(t.id) + '" onclick="selectThreadInPopup(\'' + safeId + '\')"><span class="internal-chat-popup-thread-avatar">' + avatarHtml + '</span><div class="internal-chat-popup-thread-body"><span class="internal-chat-popup-thread-name">' + escapeHtml(names || t('chat')) + '</span><div class="internal-chat-popup-thread-meta">' + escapeHtml(last) + '</div></div><span class="internal-chat-popup-thread-time">' + escapeHtml(timeStr) + '</span></button>';
+                    return '<button type="button" class="internal-chat-popup-thread-item" data-id="' + escapeHtml(t.id) + '"><span class="internal-chat-popup-thread-avatar">' + avatarHtml + '</span><div class="internal-chat-popup-thread-body"><span class="internal-chat-popup-thread-name">' + escapeHtml(names || t('chat')) + '</span><div class="internal-chat-popup-thread-meta">' + escapeHtml(last) + '</div></div><span class="internal-chat-popup-thread-time">' + escapeHtml(timeStr) + '</span></button>';
                 }).join('');
-                var newBtn = '<button type="button" class="internal-chat-popup-new-btn" onclick="closeInternalChatPopup(); showPage(\'internal-chat\');">' + (LANG === 'fa' ? '\u2795 گفتگوی جدید' : '+ New conversation') + '</button>';
+                var newBtn = '<button type="button" class="internal-chat-popup-new-btn">' + (LANG === 'fa' ? '\u2795 گفتگوی جدید' : '+ New conversation') + '</button>';
                 listEl.innerHTML = (data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">\uD83D\uDCAC</span><p>' + (t('start_chat_hint') || '') + '</p></div>' : '') + itemsHtml + newBtn;
             } catch (e) {
                 listEl.innerHTML = '<div class="empty">' + (t('loading_err') || '') + '</div>';
@@ -8643,6 +8877,28 @@
         }
 
         var chatTemplatesCache = [];
+        function initMessageTemplatesTabs() {
+            document.querySelectorAll('.templates-tab').forEach(function(btn) {
+                btn.onclick = function() {
+                    var tab = btn.getAttribute('data-tab');
+                    document.querySelectorAll('.templates-tab').forEach(function(b) { b.classList.remove('active'); });
+                    btn.classList.add('active');
+                    var textContent = document.getElementById('textTemplatesContent');
+                    var fileContent = document.getElementById('fileTemplatesContent');
+                    if (textContent) textContent.style.display = (tab === 'text' ? 'block' : 'none');
+                    if (fileContent) fileContent.style.display = (tab === 'file' ? 'block' : 'none');
+                    if (tab === 'file') loadFileTemplates();
+                };
+            });
+            var fileSearch = document.getElementById('fileTemplatesSearch');
+            if (fileSearch && !fileSearch._bound) {
+                fileSearch._bound = true;
+                fileSearch.addEventListener('input', function() {
+                    clearTimeout(window._fileTplSearchT);
+                    window._fileTplSearchT = setTimeout(function() { loadFileTemplates(); }, 350);
+                });
+            }
+        }
         async function loadMessageTemplates() {
             var list = document.getElementById('messageTemplatesList');
             if (!list) return;
@@ -8655,7 +8911,7 @@
                 var preview = (t.content || '').slice(0, 80);
                 if ((t.content || '').length > 80) preview += '…';
                 var usage = (t.usageCount || 0) > 0 ? (LANG === 'fa' ? t.usageCount + ' بار استفاده' : t.usageCount + ' uses') : '';
-                return '<div class="message-template-card" data-id="' + t.id + '"><div class="tpl-info"><div class="tpl-name">' + escapeHtml(t.name || '') + '</div>' + (t.category ? '<div class="tpl-category">' + escapeHtml(t.category) + '</div>' : '') + '<div class="tpl-content">' + escapeHtml(preview) + '</div><div class="tpl-meta">' + usage + '</div></div><div class="tpl-actions"><button type="button" class="btn-secondary btn-sm" onclick="editTemplate(\'' + t.id + '\')">' + t('edit') + '</button><button type="button" class="btn-danger btn-sm" onclick="deleteTemplate(\'' + t.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+                return '<div class="message-template-card" data-id="' + t.id + '"><div class="tpl-info"><div class="tpl-name">' + escapeHtml(t.name || '') + '</div>' + (t.category ? '<div class="tpl-category">' + escapeHtml(t.category) + '</div>' : '') + '<div class="tpl-content">' + escapeHtml(preview) + '</div><div class="tpl-meta">' + usage + '</div></div><div class="tpl-actions"><button type="button" class="btn-secondary btn-sm btn-tpl-edit" data-id="' + t.id + '">' + t('edit') + '</button><button type="button" class="btn-danger btn-sm btn-tpl-delete" data-id="' + t.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function openTemplateModal(id) {
@@ -8701,30 +8957,119 @@
             var res = await apiFetch('/api/message-templates/' + id, { method: 'DELETE' });
             if (res.ok) { loadMessageTemplates(); chatTemplatesCache = chatTemplatesCache.filter(function(x) { return x.id !== id; }); toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
+        var fileTemplatesCache = [];
+        async function loadFileTemplates() {
+            var list = document.getElementById('fileTemplatesList');
+            if (!list) return;
+            var search = (document.getElementById('fileTemplatesSearch') && document.getElementById('fileTemplatesSearch').value || '').trim();
+            var q = search ? '?search=' + encodeURIComponent(search) : '';
+            var res = await apiFetch('/api/file-templates' + q);
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            var data = (res.data && res.data.data) || [];
+            fileTemplatesCache = data;
+            if (data.length === 0) { list.innerHTML = '<div class="empty file-templates-empty"><span class="empty-icon">📁</span><p>' + (LANG === 'fa' ? 'فایلی وجود ندارد. بارگذاری فایل را بزنید.' : 'No files. Click Upload file.') + '</p></div>'; return; }
+            list.innerHTML = data.map(function(ft) {
+                var tags = (ft.tags || []).length ? (ft.tags || []).slice(0, 3).map(function(t){ return escapeHtml(t); }).join(', ') : '';
+                var usage = (ft.usageCount || 0) > 0 ? (LANG === 'fa' ? ft.usageCount + ' بار استفاده' : ft.usageCount + ' uses') : '';
+                var size = ft.filesize ? (ft.filesize < 1024 ? ft.filesize + ' B' : (ft.filesize < 1024*1024 ? Math.round(ft.filesize/1024) + ' KB' : (ft.filesize/1024/1024).toFixed(1) + ' MB')) : '';
+                return '<div class="file-template-card" data-id="' + ft.id + '"><div class="ft-info"><div class="ft-name">' + escapeHtml(ft.name || ft.filename || '') + '</div>' + (ft.category ? '<div class="ft-category">' + escapeHtml(ft.category) + '</div>' : '') + (ft.description ? '<div class="ft-desc">' + escapeHtml((ft.description || '').slice(0, 80)) + ((ft.description || '').length > 80 ? '…' : '') + '</div>' : '') + '<div class="ft-meta">' + (size ? size + ' · ' : '') + usage + (tags ? ' · ' + tags : '') + '</div></div><div class="ft-actions"><button type="button" class="btn-secondary btn-sm btn-ft-edit" data-id="' + ft.id + '">' + t('edit') + '</button><button type="button" class="btn-danger btn-sm btn-ft-delete" data-id="' + ft.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+            }).join('');
+        }
+        async function openFileTemplateModal(id) {
+            document.getElementById('fileTemplateModalId').value = id || '';
+            document.getElementById('fileTemplateModalTitle').textContent = id ? (LANG === 'fa' ? 'ویرایش فایل' : 'Edit file') : (LANG === 'fa' ? 'بارگذاری فایل پرکاربرد' : 'Upload file');
+            document.getElementById('fileTemplateModalName').value = '';
+            document.getElementById('fileTemplateModalCategory').value = '';
+            document.getElementById('fileTemplateModalDescription').value = '';
+            document.getElementById('fileTemplateModalTags').value = '';
+            document.getElementById('fileTemplateModalActive').checked = true;
+            document.getElementById('fileTemplateFile').value = '';
+            document.getElementById('fileTemplateFileName').style.display = 'none';
+            document.getElementById('fileTemplateUploadArea').style.display = id ? 'none' : 'block';
+            document.getElementById('fileTemplateEditArea').style.display = id ? 'block' : 'none';
+            if (id) {
+                var ft = fileTemplatesCache.find(function(x) { return x.id === id; });
+                if (!ft) {
+                    var res = await apiFetch('/api/file-templates/' + id);
+                    if (res.ok && res.data) ft = res.data;
+                }
+                if (!ft) return;
+                document.getElementById('fileTemplateModalName').value = ft.name || '';
+                document.getElementById('fileTemplateModalCategory').value = ft.category || '';
+                document.getElementById('fileTemplateModalDescription').value = ft.description || '';
+                document.getElementById('fileTemplateModalTags').value = (ft.tags || []).join(', ');
+                document.getElementById('fileTemplateModalActive').checked = ft.isActive !== false;
+                document.getElementById('fileTemplateCurrentFile').textContent = ft.filename || '';
+            }
+            document.getElementById('fileTemplateModal').style.display = 'flex';
+            var fileInput = document.getElementById('fileTemplateFile');
+            if (fileInput && !fileInput._bound) {
+                fileInput._bound = true;
+                fileInput.addEventListener('change', function() {
+                    var fn = document.getElementById('fileTemplateFileName');
+                    if (fn) { fn.style.display = this.files && this.files[0] ? 'block' : 'none'; fn.textContent = this.files && this.files[0] ? this.files[0].name : ''; }
+                });
+            }
+        }
+        function closeFileTemplateModal() { document.getElementById('fileTemplateModal').style.display = 'none'; }
+        async function saveFileTemplate() {
+            var id = document.getElementById('fileTemplateModalId').value.trim();
+            var name = (document.getElementById('fileTemplateModalName').value || '').trim();
+            if (!name) { toast(LANG === 'fa' ? 'نام الزامی است' : 'Name required', true); return; }
+            if (!id) {
+                var fileInput = document.getElementById('fileTemplateFile');
+                if (!fileInput || !fileInput.files || !fileInput.files[0]) { toast(LANG === 'fa' ? 'فایل الزامی است' : 'File required', true); return; }
+                var formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('name', name);
+                formData.append('category', (document.getElementById('fileTemplateModalCategory').value || '').trim());
+                formData.append('description', (document.getElementById('fileTemplateModalDescription').value || '').trim());
+                var tagsStr = (document.getElementById('fileTemplateModalTags').value || '').trim();
+                if (tagsStr) formData.append('tags', JSON.stringify(tagsStr.split(',').map(function(t){ return t.trim(); }).filter(Boolean)));
+                var res = await apiFetch('/api/file-templates', { method: 'POST', body: formData });
+                if (res.needLogin) return;
+                if (res.ok) { closeFileTemplateModal(); loadFileTemplates(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            } else {
+                var body = { name: name, category: (document.getElementById('fileTemplateModalCategory').value || '').trim(), description: (document.getElementById('fileTemplateModalDescription').value || '').trim(), tags: (document.getElementById('fileTemplateModalTags').value || '').split(',').map(function(t){ return t.trim(); }).filter(Boolean), isActive: document.getElementById('fileTemplateModalActive').checked };
+                var res = await apiFetch('/api/file-templates/' + id, { method: 'PUT', body: JSON.stringify(body) });
+                if (res.ok) { closeFileTemplateModal(); loadFileTemplates(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            }
+        }
+        function editFileTemplate(id) { openFileTemplateModal(id); }
+        async function deleteFileTemplate(id) {
+            if (!confirm(LANG === 'fa' ? 'حذف این فایل؟' : 'Delete this file?')) return;
+            var res = await apiFetch('/api/file-templates/' + id, { method: 'DELETE' });
+            if (res.ok) { loadFileTemplates(); fileTemplatesCache = fileTemplatesCache.filter(function(x) { return x.id !== id; }); toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+        function escapeForDataAttr(str) {
+            if (!str) return '';
+            return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
+        function unescapeFromDataAttr(str) {
+            if (!str) return '';
+            return String(str).replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+        }
         async function toggleTemplateDropdown() {
             var dd = document.getElementById('chatTemplateDropdown');
             var btn = document.getElementById('msgTemplateBtn');
             if (!dd || !btn) return;
             if (dd.style.display === 'block') { dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); return; }
+            dd.innerHTML = '<div class="chat-template-dropdown-loading">' + (LANG === 'fa' ? 'در حال بارگذاری...' : 'Loading...') + '</div>';
+            dd.style.display = 'block';
+            btn.setAttribute('aria-expanded', 'true');
             if (chatTemplatesCache.length === 0) {
                 var res = await apiFetch('/api/message-templates');
                 if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data;
             }
-            dd.innerHTML = chatTemplatesCache.length === 0 ? '<div class="chat-template-dropdown-item" style="color:var(--text-muted);">' + (LANG === 'fa' ? 'تمپلیتی وجود ندارد' : 'No templates') + '</div>' : chatTemplatesCache.filter(function(t) { return t.isActive !== false; }).map(function(t) {
-                var preview = (t.content || '').slice(0, 50);
-                if ((t.content || '').length > 50) preview += '…';
-                var contentEsc = (t.content || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-                return '<div class="chat-template-dropdown-item" data-id="' + t.id + '" data-content="' + contentEsc + '"><div class="tpl-name">' + escapeHtml(t.name || '') + '</div><div class="tpl-preview">' + escapeHtml(preview) + '</div></div>';
+            var activeTpl = chatTemplatesCache.filter(function(t) { return t.isActive !== false; });
+            dd.innerHTML = activeTpl.length === 0 ? '<div class="chat-template-dropdown-empty">' + (LANG === 'fa' ? 'تمپلیتی وجود ندارد. از بخش تمپلیت‌های پیام اضافه کنید.' : 'No templates. Add from Message Templates.') + '</div>' : activeTpl.map(function(t) {
+                var preview = (t.content || '').slice(0, 55);
+                if ((t.content || '').length > 55) preview += '…';
+                var contentEsc = escapeForDataAttr(t.content || '');
+                return '<div class="chat-template-dropdown-item" data-id="' + escapeHtml(t.id) + '" data-content="' + contentEsc + '" role="button" tabindex="0"><div class="tpl-name">' + escapeHtml(t.name || (LANG === 'fa' ? 'بدون نام' : 'Untitled')) + '</div><div class="tpl-preview">' + escapeHtml(preview) + '</div></div>';
             }).join('');
-            dd.querySelectorAll('.chat-template-dropdown-item[data-id]').forEach(function(el) {
-                var tid = el.getAttribute('data-id');
-                var c = (el.getAttribute('data-content') || '').replace(/&quot;/g, '"').replace(/\\\\/g, '\\');
-                el.onclick = function() { insertTemplateIntoChat(c, tid); dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); };
-            });
-            dd.style.display = 'block';
-            btn.setAttribute('aria-expanded', 'true');
             document.addEventListener('click', function closeTemplateDd(e) {
-                if (!dd.contains(e.target) && e.target !== btn) { dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', closeTemplateDd); }
+                if (!dd.contains(e.target) && e.target !== btn && !btn.contains(e.target)) { dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', closeTemplateDd); }
             });
         }
         function insertTemplateIntoChat(content, templateId) {
