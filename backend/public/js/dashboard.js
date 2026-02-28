@@ -3729,6 +3729,16 @@
                     e.preventDefault();
                     if (typeof loadCustomers === 'function') loadCustomers();
                 }
+                else if (target.closest('.customer-avatar-clickable')) {
+                    e.preventDefault();
+                    var avatar = target.closest('.customer-avatar-clickable');
+                    var src = avatar && avatar.getAttribute('data-profile-pic');
+                    if (src && typeof openImagePreviewModal === 'function') openImagePreviewModal(src);
+                }
+                else if (target.closest('.image-preview-close') || (target.closest('#imagePreviewModal') && target.id === 'imagePreviewModal')) {
+                    e.preventDefault();
+                    if (typeof closeImagePreviewModal === 'function') closeImagePreviewModal();
+                }
                 else if (target.matches('[onclick*="toggleTicketForm"]')) {
                     e.preventDefault();
                     toggleTicketForm();
@@ -3770,6 +3780,12 @@
                 if (e.key !== 'Enter' && e.key !== ' ') return;
                 var active = document.activeElement;
                 if (!active || !active.closest) return;
+                if (active.closest('.customer-avatar-clickable')) {
+                    var avatar = active.closest('.customer-avatar-clickable');
+                    var src = avatar && avatar.getAttribute('data-profile-pic');
+                    if (src) { e.preventDefault(); if (typeof openImagePreviewModal === 'function') openImagePreviewModal(src); }
+                    return;
+                }
                 if (active.closest('.bulk-customer-check') || active.closest('.customer-send-btn')) return;
                 var card = active.closest('.customer-card:not(.customer-card-skeleton)');
                 if (!card) return;
@@ -5408,8 +5424,10 @@
             var detailProfilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
             if (detailProfilePic && detailProfilePic.indexOf('/') === 0) detailProfilePic = (window.location.origin || '') + detailProfilePic;
             detailProfilePic = detailProfilePic ? ensureHttpsUrl(detailProfilePic) : '';
-            var detailAvatarHtml = detailProfilePic && detailProfilePic.indexOf('http') === 0 ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
-            if (cardEl) cardEl.innerHTML = '<div class="customer-avatar">' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
+            var avatarClickable = detailProfilePic && detailProfilePic.indexOf('http') === 0;
+            var detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
+            var avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
+            if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailProfilePic) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             var res = await apiFetch('/api/customers/' + custId + '/conversations');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
@@ -5436,6 +5454,24 @@
             if (btnRefreshTx && !btnRefreshTx._bound) { btnRefreshTx._bound = true; btnRefreshTx.onclick = function() { if (currentCustomerId) loadCustomerTransactions(currentCustomerId); }; }
             loadCustomerNotes(custId);
         }
+        function openImagePreviewModal(imgSrc) {
+            var modal = document.getElementById('imagePreviewModal');
+            var img = document.getElementById('imagePreviewImg');
+            if (modal && img && imgSrc) { img.src = imgSrc; modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+        }
+        function closeImagePreviewModal() {
+            var modal = document.getElementById('imagePreviewModal');
+            var img = document.getElementById('imagePreviewImg');
+            if (modal) modal.style.display = 'none';
+            if (img) img.src = '';
+            document.body.style.overflow = '';
+        }
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                var modal = document.getElementById('imagePreviewModal');
+                if (modal && modal.style.display === 'flex') closeImagePreviewModal();
+            }
+        });
         function goToServicesWithCustomerFilter() {
             if (!currentCustomerId) return;
             showPage('services');

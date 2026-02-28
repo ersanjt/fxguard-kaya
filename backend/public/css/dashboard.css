@@ -1742,6 +1742,8 @@
         .customer-empty-state .btn-primary { margin-top: 8px; }
         .customer-detail-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; min-width: 0; }
         .customer-detail-card .customer-avatar { width: 56px; height: 56px; border-radius: 12px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; font-weight: 700; flex-shrink: 0; position: relative; overflow: hidden; }
+        .customer-detail-card .customer-avatar-clickable { cursor: pointer; transition: transform 0.2s, box-shadow 0.2s; }
+        .customer-detail-card .customer-avatar-clickable:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
         .customer-detail-card .customer-avatar .customer-detail-avatar-fallback { display: flex; align-items: center; justify-content: center; position: absolute; inset: 0; font-size: 1.4rem; font-weight: 700; color: var(--accent); background: var(--accent-soft); }
         .customer-detail-card .customer-avatar .customer-detail-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; position: relative; z-index: 1; }
         .customer-detail-card .customer-info { flex: 1; min-width: 0; }
@@ -2020,6 +2022,10 @@
             .customer-transactions-header .btn-primary,
             .customer-transactions-header .btn-secondary { width: 100%; }
         }
+        .image-preview-modal { cursor: pointer; padding: 24px; }
+        .image-preview-modal .image-preview-content { position: relative; cursor: default; }
+        .image-preview-modal .image-preview-close { position: absolute; top: -12px; inset-inline-end: -12px; width: 36px; height: 36px; border-radius: 50%; border: none; background: var(--bg-card); color: var(--text-primary); font-size: 1.5rem; cursor: pointer; box-shadow: 0 2px 12px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; line-height: 1; transition: background 0.2s, transform 0.2s; }
+        .image-preview-modal .image-preview-close:hover { background: var(--bg-hover); transform: scale(1.05); }
         .modal-body label { display: block; margin-top: 12px; margin-bottom: 4px; font-size: 0.9rem; color: var(--text-secondary); }
         .modal-body label:first-of-type { margin-top: 0; }
         .modal-body input, .modal-body select, .modal-body textarea { width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); margin-bottom: 4px; }
