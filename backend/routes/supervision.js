@@ -3,6 +3,7 @@ const router = express.Router();
 const { Sequelize, Conversation, Message, User, Branch, Department, Customer, ActivityLog, Ticket, TicketReply, Task, InternalThread, InternalMessage, InternalThreadParticipant } = require('../models');
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
+const { isValidUUID } = require('../lib/validation');
 
 function ownerOnly(req, res, next) {
     if (!req.canAccess('supervision')) return res.status(403).json({ error: 'دسترسی به بخش نظارت ندارید' });
@@ -57,16 +58,15 @@ router.get('/online', canViewStaffActivity, async (req, res) => {
         const userIds = users.map(u => u.id);
         const loginByUser = {};
         if (userIds.length > 0) {
-            const latestLogins = await Promise.all(userIds.map(uid =>
-                ActivityLog.findOne({
-                    where: { action: 'user_login', userId: uid },
-                    attributes: ['userId', 'metadata'],
-                    order: [['createdAt', 'DESC']],
-                    raw: true
-                })
-            ));
-            latestLogins.forEach((l, i) => {
-                if (l) loginByUser[userIds[i]] = l;
+            // batch load: get latest login per user using subquery approach
+            const latestLogins = await ActivityLog.findAll({
+                where: { action: 'user_login', userId: { [Op.in]: userIds } },
+                attributes: ['userId', 'metadata', 'createdAt'],
+                order: [['createdAt', 'DESC']],
+                raw: true
+            });
+            latestLogins.forEach(l => {
+                if (!loginByUser[l.userId]) loginByUser[l.userId] = l;
             });
         }
         const data = users.map(u => {
@@ -85,6 +85,7 @@ router.get('/online', canViewStaffActivity, async (req, res) => {
 
 // جزئیات فعالیت کاربر — ورود/خروج، ساعات آنلاین، چت‌ها، تیکت‌ها، تسک‌ها (بدون اطلاع به کاربر)
 router.get('/user/:userId/detail', canViewStaffActivity, async (req, res) => {
+    if (!isValidUUID(req.params.userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
     try {
         const { userId } = req.params;
         const user = await User.findByPk(userId, {
@@ -242,12 +243,21 @@ router.get('/internal-chats', async (req, res) => {
             limit: lim,
             offset: off
         });
-        const list = await Promise.all(rows.map(async (t) => {
-            const lastMsg = await InternalMessage.findOne({
-                where: { threadId: t.id },
-                include: [{ model: User, as: 'fromUser', attributes: ['id', 'name'] }],
-                order: [['createdAt', 'DESC']]
-            });
+        // batch load last messages for all threads
+        const threadIds = rows.map(t => t.id);
+        const lastMsgs = threadIds.length ? await InternalMessage.findAll({
+            where: { threadId: { [Op.in]: threadIds } },
+            include: [{ model: User, as: 'fromUser', attributes: ['id', 'name'] }],
+            order: [['createdAt', 'DESC']],
+            raw: false
+        }) : [];
+        const lastMsgByThread = {};
+        lastMsgs.forEach(m => {
+            if (!lastMsgByThread[m.threadId]) lastMsgByThread[m.threadId] = m;
+        });
+
+        const list = rows.map((t) => {
+            const lastMsg = lastMsgByThread[t.id] || null;
             const parts = (t.participants || []).map(p => ({ id: p.id, name: p.name, email: p.email, role: p.role }));
             return {
                 id: t.id,
@@ -255,7 +265,7 @@ router.get('/internal-chats', async (req, res) => {
                 lastMessage: lastMsg ? { content: lastMsg.content, fromUser: lastMsg.fromUser } : null,
                 participants: parts
             };
-        }));
+        });
         res.json({ data: list, total: count, page: parseInt(page) });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -264,6 +274,7 @@ router.get('/internal-chats', async (req, res) => {
 
 // پیام‌های یک چت داخلی — برای مالک/ادمین
 router.get('/internal-chats/:threadId/messages', async (req, res) => {
+    if (!isValidUUID(req.params.threadId)) return res.status(400).json({ error: 'شناسه ترد نامعتبر است' });
     try {
         const messages = await InternalMessage.findAll({
             where: { threadId: req.params.threadId },
