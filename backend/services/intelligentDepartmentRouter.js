@@ -1,4 +1,5 @@
 const axios = require('axios');
+const logger = require('../config/logger');
 
 /**
  * سرویس هوشمند مسیریابی به دپارتمان
@@ -210,7 +211,7 @@ ${JSON.stringify(deptList, null, 2)}
         }
         return null;
     } catch (err) {
-        if (process.env.NODE_ENV !== 'test') console.warn('AI department detection failed:', err?.message);
+        if (process.env.NODE_ENV !== 'test') logger.warn('AI department detection failed', { error: err?.message });
         return null;
     }
 }

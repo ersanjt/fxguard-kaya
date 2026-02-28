@@ -19,6 +19,10 @@ function setRabbitChannel(ch) {
 async function sendOutgoingAutoMessage(conversation, text) {
     try {
         const customer = await Customer.findByPk(conversation.customerId);
+        if (!customer) {
+            logger.warn('sendOutgoingAutoMessage: customer not found', { conversationId: conversation.id });
+            return false;
+        }
         const toPhone = getSendTarget(customer.phone) || customer.phone;
         if (rabbitChannel) {
             rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({

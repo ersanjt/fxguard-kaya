@@ -47,7 +47,7 @@ function checkRateLimit() {
         emailStats.resetAt = now;
     }
     if (emailStats.count >= RATE_LIMIT_REQUESTS) {
-        console.warn(`Email rate limit exceeded: ${emailStats.count}/${RATE_LIMIT_REQUESTS}`);
+        logger.warn('Email rate limit exceeded', { count: emailStats.count, limit: RATE_LIMIT_REQUESTS });
         return false;
     }
     emailStats.count++;
@@ -85,7 +85,7 @@ function getFrom() {
  */
 async function sendMailWithRetry({ to, subject, text, html, attachments = [] }, attempt = 1) {
     if (!isEnabled()) {
-        console.warn('Email service disabled: SMTP not configured');
+        logger.warn('Email service disabled: SMTP not configured');
         return { ok: false, error: 'SMTP not configured' };
     }
 

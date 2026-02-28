@@ -3,6 +3,7 @@
  * در اولین راه‌اندازی یا وقتی فقط پشتیبانی وجود دارد، این دپارتمان‌ها ایجاد می‌شوند.
  */
 const { Department } = require('../models');
+const logger = require('../config/logger');
 
 const DEFAULT_DEPARTMENTS = [
     {
@@ -51,7 +52,7 @@ async function ensureDefaultDepartments() {
             existingNames.add(nameKey);
         }
     } catch (err) {
-        console.warn('ensureDefaultDepartments:', err?.message);
+        logger.warn('ensureDefaultDepartments failed', { error: err?.message });
     }
 }
 

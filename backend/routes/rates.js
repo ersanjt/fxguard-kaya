@@ -3,6 +3,7 @@ const router = express.Router();
 const axios = require('axios');
 const { RateAdjustment, RateCurrency, TickerConfig } = require('../models');
 const defaultRateCurrencies = require('../lib/defaultRateCurrencies');
+const logger = require('../config/logger');
 
 const NAVASAN_API_KEY = process.env.NAVASAN_API_KEY || 'premVIlUQHLNK4IGQzHnZNZyHCbJrknc';
 const NAVASAN_LATEST = `https://api.navasan.tech/latest/?api_key=${NAVASAN_API_KEY}`;
@@ -56,7 +57,7 @@ router.get('/', async (req, res) => {
     try {
         const RATES_KEYS = await getRatesKeys();
         let raw = await axios.get(NAVASAN_LATEST, { timeout: 12000 }).then(r => r.data || {}).catch((e) => {
-            console.warn('Navasan API error:', e.message || e.code);
+            logger.warn('Navasan API error', { error: e.message || e.code });
             return null;
         });
         if (!raw || Object.keys(raw).length === 0) {
@@ -69,7 +70,7 @@ router.get('/', async (req, res) => {
             const rows = await RateAdjustment.findAll();
             rows.forEach(r => { adjustments[r.currencyKey] = r; });
         } catch (dbErr) {
-            console.warn('RateAdjustment error:', dbErr.message);
+            logger.warn('RateAdjustment error', { error: dbErr.message });
         }
 
         let visibleKeys = null;
