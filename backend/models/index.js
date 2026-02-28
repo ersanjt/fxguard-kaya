@@ -58,7 +58,8 @@ const models = {
     PanelSetting: require('./PanelSetting')(sequelize),
     PasswordResetToken: require('./PasswordResetToken')(sequelize),
     CompanyEmail: require('./CompanyEmail')(sequelize),
-    Attendance: require('./Attendance')(sequelize)
+    Attendance: require('./Attendance')(sequelize),
+    NotificationPreference: require('./NotificationPreference')(sequelize)
 };
 
 // تعریف روابط

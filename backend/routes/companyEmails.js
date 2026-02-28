@@ -185,4 +185,45 @@ router.post('/:id/send-credentials', authMiddleware, async (req, res) => {
     }
 });
 
+// تست اتصال SMTP
+router.post('/test/connection', authMiddleware, async (req, res) => {
+    try {
+        if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی ندارید.' });
+        const { host, port, user, pass, secure, allowSelfSigned } = req.body;
+        if (!host || !port) return res.status(400).json({ error: 'host و port الزامی است.' });
+        
+        const result = await emailService.testSmtpConnection({ host, port, user, pass, secure, allowSelfSigned });
+        if (result.ok) {
+            res.json({ ok: true, message: 'اتصال SMTP موفق بود.' });
+        } else {
+            res.status(400).json({ error: result.error || 'اتصال SMTP ناموفق بود.' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// تست ارسال ایمیل
+router.post('/test/send', authMiddleware, async (req, res) => {
+    try {
+        if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی ندارید.' });
+        const { host, port, user, pass, from, fromName, secure, allowSelfSigned, testEmail } = req.body;
+        if (!host || !port) return res.status(400).json({ error: 'host و port الزامی است.' });
+        if (!testEmail) return res.status(400).json({ error: 'ایمیل تست الزامی است.' });
+        
+        const result = await emailService.sendTestEmail(
+            { host, port, user, pass, from, fromName, secure, allowSelfSigned },
+            testEmail
+        );
+        
+        if (result.ok) {
+            res.json({ ok: true, message: `ایمیل تست به ${testEmail} ارسال شد.` });
+        } else {
+            res.status(400).json({ error: result.error || 'ارسال ایمیل تست ناموفق بود.' });
+        }
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

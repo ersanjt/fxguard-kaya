@@ -3,6 +3,7 @@ const router = express.Router();
 const { Announcement, AnnouncementRead, User, Department } = require('../models');
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
+const notificationService = require('../services/notificationService');
 
 // لیست اعلان‌های برای من (با فلگ خوانده شده)
 router.get('/for-me', async (req, res) => {
@@ -103,11 +104,14 @@ router.post('/', async (req, res) => {
                 recipientIds = [finalTargetId];
             }
             recipientIds = recipientIds.filter(id => String(id) !== String(me.id));
+            
+            // استفاده از سرویس اطلاعات برای ارسال ایمیل و Socket.IO
             const io = req.app.get('io');
-            if (io && recipientIds.length > 0) {
-                const payload = { id: ann.id, title: ann.title, body: ann.body, fromUser: withUser.fromUser };
-                recipientIds.forEach(userId => io.to('user_' + userId).emit('important_announcement', payload));
-            }
+            setImmediate(() => {
+                notificationService.notifyAnnouncement(withUser, recipientIds, io).catch(err => {
+                    console.error('Announcement notification error:', err.message);
+                });
+            });
         }
         res.status(201).json(withUser);
     } catch (err) {

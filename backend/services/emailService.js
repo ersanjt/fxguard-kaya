@@ -1,6 +1,10 @@
 /**
  * سرویس ایمیل پنل — ارسال ایمیل خوش‌آمدگویی، اعلان ورود، بازیابی رمز
  * تنظیمات از متغیرهای محیط: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM, EMAIL_LOGIN_NOTIFICATION
+ * ✓ ارسال مجدد خودکار در صورت خطا
+ * ✓ اعتبارسنجی آدرس ایمیل
+ * ✓ سرصحت‌های انطباق مع (Compliance, Unsubscribe)
+ * ✓ محدودیت میزان ارسال
  */
 
 const nodemailer = require('nodemailer');
@@ -9,13 +13,44 @@ const FROM_NAME = process.env.SMTP_FROM_NAME || 'پورتال کارکنان';
 const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@localhost';
 const LOGIN_NOTIFICATION_ENABLED = process.env.EMAIL_LOGIN_NOTIFICATION === 'true' || process.env.EMAIL_LOGIN_NOTIFICATION === '1';
 const PANEL_URL = process.env.FRONTEND_URL || process.env.PANEL_URL || 'http://localhost:3002';
+const MAX_RETRIES = parseInt(process.env.EMAIL_MAX_RETRIES || '3', 10);
+const RETRY_DELAY_MS = parseInt(process.env.EMAIL_RETRY_DELAY_MS || '2000', 10);
+const RATE_LIMIT_REQUESTS = parseInt(process.env.EMAIL_RATE_LIMIT_REQUESTS || '100', 10);
+const RATE_LIMIT_WINDOW_MS = parseInt(process.env.EMAIL_RATE_LIMIT_WINDOW_MS || '3600000', 10); // 1 hour
 
 let transporter = null;
+const emailStats = { count: 0, resetAt: Date.now() };
 
 function isEnabled() {
     const host = process.env.SMTP_HOST;
     const port = process.env.SMTP_PORT;
     return !!(host && port);
+}
+
+/**
+ * اعتبارسنجی ساده ایمیل
+ */
+function isValidEmail(email) {
+    if (!email || typeof email !== 'string') return false;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+}
+
+/**
+ * بررسی محدودیت میزان ارسال
+ */
+function checkRateLimit() {
+    const now = Date.now();
+    if (now - emailStats.resetAt > RATE_LIMIT_WINDOW_MS) {
+        emailStats.count = 0;
+        emailStats.resetAt = now;
+    }
+    if (emailStats.count >= RATE_LIMIT_REQUESTS) {
+        console.warn(`Email rate limit exceeded: ${emailStats.count}/${RATE_LIMIT_REQUESTS}`);
+        return false;
+    }
+    emailStats.count++;
+    return true;
 }
 
 function getTransporter() {
@@ -29,7 +64,12 @@ function getTransporter() {
         secure,
         auth: process.env.SMTP_USER && process.env.SMTP_PASS
             ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-            : undefined
+            : undefined,
+        connectionTimeout: 15000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000,
+        maxConnections: 5,
+        maxMessages: 100
     });
     return transporter;
 }
@@ -39,30 +79,83 @@ function getFrom() {
 }
 
 /**
- * ارسال ایمیل ساده — در صورت خطا لاگ می‌کند و false برمی‌گرداند
+ * ارسال ایمیل با منطق تکرار خودکار
+ * @returns {Promise<{ok: boolean, error?: string, retries?: number}>}
  */
-async function sendMail({ to, subject, text, html }) {
+async function sendMailWithRetry({ to, subject, text, html, attachments = [] }, attempt = 1) {
     if (!isEnabled()) {
         console.warn('Email service disabled: SMTP not configured');
-        return false;
+        return { ok: false, error: 'SMTP not configured' };
     }
+
+    if (!checkRateLimit()) {
+        return { ok: false, error: 'Rate limit exceeded' };
+    }
+
+    // اعتبارسنجی آدرس ایمیل
+    const emails = Array.isArray(to) ? to : [to];
+    for (const email of emails) {
+        if (!isValidEmail(email)) {
+            console.error(`Invalid email address: ${email}`);
+            return { ok: false, error: `Invalid email: ${email}` };
+        }
+    }
+
     try {
         const transport = getTransporter();
-        if (!transport) return false;
+        if (!transport) return { ok: false, error: 'Transporter not initialized' };
+
         const fromAddr = FROM_EMAIL.trim();
-        await transport.sendMail({
+        const unsubscribeUrl = `${PANEL_URL}?unsubscribe=1`;
+        
+        const mailOpts = {
             from: getFrom(),
-            to: Array.isArray(to) ? to.join(', ') : to,
+            to: emails.join(', '),
             subject: subject || '(بدون موضوع)',
             text: text || '',
             html: html || (text ? text.replace(/\n/g, '<br>') : ''),
-            headers: { 'X-Mailer': 'KayaCRM', 'Reply-To': fromAddr }
-        });
-        return true;
+            attachments: attachments || [],
+            headers: {
+                'X-Mailer': 'KayaCRM',
+                'Reply-To': fromAddr,
+                'List-Unsubscribe': `<${unsubscribeUrl}>`,
+                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+                'X-Priority': '3',
+                'X-MSMail-Priority': 'Normal',
+                'Precedence': 'bulk'
+            }
+        };
+
+        await transport.sendMail(mailOpts);
+        console.log(`Email sent successfully to: ${emails.join(', ')}`);
+        return { ok: true };
     } catch (err) {
-        console.error('Email send error:', err.message);
-        return false;
+        const isRetryable = err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || 
+                           err.code === 'EHOSTUNREACH' || err.message.includes('SMTP');
+        
+        if (isRetryable && attempt < MAX_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt; // Exponential backoff
+            console.warn(`Email send failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${delay}ms: ${err.message}`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return sendMailWithRetry({ to, subject, text, html, attachments }, attempt + 1);
+        }
+
+        const errorMsg = err.message || String(err);
+        if (err.response) {
+            return { ok: false, error: `SMTP Error: ${errorMsg}` };
+        }
+        console.error(`Email send failed after ${attempt} attempts:`, errorMsg);
+        return { ok: false, error: errorMsg, retries: attempt };
     }
+}
+
+/**
+ * ارسال ایمیل ساده — در صورت خطا false برمی‌گرداند
+ * @deprecated استفاده از sendMailWithRetry توصیه می‌شود
+ */
+async function sendMail({ to, subject, text, html }) {
+    const result = await sendMailWithRetry({ to, subject, text, html });
+    return result.ok;
 }
 
 /**
@@ -70,8 +163,8 @@ async function sendMail({ to, subject, text, html }) {
  * config: { host, port, user, pass, from?, fromName?, secure? }
  * @returns {Promise<boolean>} true اگر موفق، false اگر ناموفق
  */
-async function sendMailWithConfig(config, { to, subject, text, html }) {
-    const r = await sendMailWithConfigDetailed(config, { to, subject, text, html });
+async function sendMailWithConfig(config, { to, subject, text, html, attachments = [] }) {
+    const r = await sendMailWithConfigDetailed(config, { to, subject, text, html, attachments });
     return r.ok;
 }
 
@@ -84,10 +177,26 @@ function normalizeHost(host) {
     return host.replace(/\.+$/, '').trim();
 }
 
-async function sendMailWithConfigDetailed(config, { to, subject, text, html }) {
-    if (!config || !config.host || !config.port) return { ok: false, error: 'Host و پورت الزامی است.' };
+async function sendMailWithConfigDetailed(config, { to, subject, text, html, attachments = [] }, attempt = 1) {
+    if (!config || !config.host || !config.port) {
+        return { ok: false, error: 'Host و پورت الزامی است.' };
+    }
+
+    if (!checkRateLimit()) {
+        return { ok: false, error: 'Rate limit exceeded' };
+    }
+
+    // اعتبارسنجی ایمیل‌ها
+    const emails = Array.isArray(to) ? to : [to];
+    for (const email of emails) {
+        if (!isValidEmail(email)) {
+            console.error(`Invalid email address: ${email}`);
+            return { ok: false, error: `Invalid email: ${email}` };
+        }
+    }
+
     try {
-        const nodemailer = require('nodemailer');
+        const nodemailer_local = require('nodemailer');
         const host = normalizeHost(config.host);
         const opts = {
             host,
@@ -95,29 +204,49 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html }) {
             secure: !!config.secure,
             auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
             connectionTimeout: 15000,
-            greetingTimeout: 10000
+            greetingTimeout: 10000,
+            socketTimeout: 15000
         };
         if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
-        const transport = nodemailer.createTransport(opts);
+        
+        const transport = nodemailer_local.createTransport(opts);
         const fromAddr = (config.from || config.user || 'noreply@localhost').trim();
         const from = config.fromName ? `"${config.fromName}" <${fromAddr}>` : fromAddr;
+        const unsubscribeUrl = `${PANEL_URL}?unsubscribe=1`;
+        
         const mailOpts = {
             from,
-            to: Array.isArray(to) ? to.join(', ') : to,
+            to: emails.join(', '),
             subject: subject || '(بدون موضوع)',
             text: text || '',
             html: html || (text ? text.replace(/\n/g, '<br>') : ''),
+            attachments: attachments || [],
             headers: {
                 'X-Mailer': 'KayaCRM',
-                'Reply-To': fromAddr
+                'Reply-To': fromAddr,
+                'List-Unsubscribe': `<${unsubscribeUrl}>`,
+                'X-Priority': '3',
+                'Precedence': 'bulk'
             }
         };
+        
         await transport.sendMail(mailOpts);
+        console.log(`Email sent successfully (custom config) to: ${emails.join(', ')}`);
         return { ok: true };
     } catch (err) {
+        const isRetryable = err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || 
+                           err.code === 'EHOSTUNREACH' || err.message.includes('SMTP');
+        
+        if (isRetryable && attempt < MAX_RETRIES) {
+            const delay = RETRY_DELAY_MS * attempt;
+            console.warn(`Email send failed (attempt ${attempt}/${MAX_RETRIES}), retrying in ${delay}ms: ${err.message}`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+            return sendMailWithConfigDetailed(config, { to, subject, text, html, attachments }, attempt + 1);
+        }
+
         let msg = err.message || String(err);
         if (err.response) msg += ' — ' + (typeof err.response === 'string' ? err.response : JSON.stringify(err.response));
-        console.error('Email send error (config):', msg);
+        console.error('Email send error (custom config):', msg);
         return { ok: false, error: msg };
     }
 }
@@ -229,7 +358,17 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
  * toEmail: ایمیل گیرنده (از env: CONTACT_EMAIL یا sales@fxguard.io)
  */
 async function sendContactForm({ purpose, name, email, phone, message }) {
+    if (!isValidEmail(email)) {
+        console.error(`Invalid email in contact form: ${email}`);
+        return { ok: false, error: 'Invalid email address' };
+    }
+
     const toEmail = process.env.CONTACT_EMAIL || 'sales@fxguard.io';
+    if (!isValidEmail(toEmail)) {
+        console.error(`Invalid recipient email: ${toEmail}`);
+        return { ok: false, error: 'Invalid recipient email' };
+    }
+
     const purposeLabels = { demo: 'Demo Request', purchase: 'Purchase', quote: 'Custom Quote', support: 'Support', other: 'Other' };
     const subject = 'WhatsApp CRM - ' + (purposeLabels[purpose] || purpose || 'New Contact');
     const text = [
@@ -250,19 +389,81 @@ async function sendContactForm({ purpose, name, email, phone, message }) {
       <p>${(message || '—').replace(/\n/g, '<br>')}</p>
       <p class="muted">Reply directly to ${email || 'the sender'}.</p>
     `);
-    const ok = await sendMail({ to: toEmail, subject, text, html });
-    if (!ok) throw new Error('Email send failed');
+    
+    const result = await sendMailWithRetry({ to: toEmail, subject, text, html });
+    if (!result.ok) {
+        console.error(`Contact form email failed: ${result.error}`);
+        return result;
+    }
+    return { ok: true };
+}
+
+/**
+ * تست اتصال SMTP
+ * @returns {Promise<{ok: boolean, error?: string, version?: string}>}
+ */
+async function testSmtpConnection(config) {
+    if (!config || !config.host || !config.port) {
+        return { ok: false, error: 'Host و پورت الزامی است.' };
+    }
+
+    try {
+        const nodemailer_test = require('nodemailer');
+        const host = normalizeHost(config.host);
+        const opts = {
+            host,
+            port: parseInt(config.port, 10) || 587,
+            secure: !!config.secure,
+            auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
+            connectionTimeout: 10000,
+            greetingTimeout: 5000,
+            socketTimeout: 10000
+        };
+        if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
+        
+        const transport = nodemailer_test.createTransport(opts);
+        await transport.verify();
+        console.log('SMTP connection verified successfully');
+        return { ok: true };
+    } catch (err) {
+        const errorMsg = err.message || String(err);
+        console.error('SMTP connection test failed:', errorMsg);
+        return { ok: false, error: errorMsg };
+    }
+}
+
+/**
+ * ارسال ایمیل تست
+ */
+async function sendTestEmail(config, testEmail) {
+    if (!isValidEmail(testEmail)) {
+        return { ok: false, error: 'Invalid test email address' };
+    }
+
+    const result = await sendMailWithConfigDetailed(config, {
+        to: testEmail,
+        subject: 'تست SMTP - WhatsApp CRM',
+        text: 'این ایمیل برای تست تنظیمات SMTP است.',
+        html: baseHtml('تست SMTP', '<p>این ایمیل برای تست تنظیمات SMTP است.</p><p>اگر این ایمیل دریافت کردید، تنظیمات SMTP شما درست است.</p>')
+    });
+    
+    return result;
 }
 
 module.exports = {
     isEnabled,
+    isValidEmail,
+    checkRateLimit,
     sendMail,
+    sendMailWithRetry,
     sendMailWithConfig,
     sendMailWithConfigDetailed,
     sendWelcomeCredentials,
     sendLoginNotification,
     sendPasswordReset,
     sendContactForm,
+    testSmtpConnection,
+    sendTestEmail,
     getFrom,
     LOGIN_NOTIFICATION_ENABLED,
     PANEL_URL,

@@ -3,6 +3,7 @@ const router = express.Router();
 const { Task, TaskUpdate, User, Department, Branch } = require('../models');
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
+const notificationService = require('../services/notificationService');
 
 /** ساخت شرط دسترسی: ادمین/مالک همه؛ مدیر دپارتمان خودش؛ کارمند/ناظر تسک‌های اختصاص‌یافته به خود + تسک‌های دپارتمان خود */
 async function taskAccessWhere(req) {
@@ -163,6 +164,17 @@ router.post('/', async (req, res) => {
             status: 'pending'
         });
         const withIncludes = await Task.findByPk(task.id, { include: includeList });
+        
+        // ارسال اطلاع تخصیص تسک
+        if (assignedTo) {
+            const io = req.app.get('io');
+            setImmediate(() => {
+                notificationService.notifyTaskAssigned(task, io).catch(err => {
+                    console.error('Task notification error:', err.message);
+                });
+            });
+        }
+        
         res.status(201).json(withIncludes);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -176,6 +188,8 @@ router.put('/:id', async (req, res) => {
         if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
 
         const { title, description, status: newStatus, assignedTo, assignedToDepartmentId, dueDate, priority, branchId } = req.body;
+        const oldAssignedTo = task.assignedTo;
+        
         if (title !== undefined) task.title = title.trim();
         if (description !== undefined) task.description = description;
         if (newStatus !== undefined) {
@@ -192,6 +206,19 @@ router.put('/:id', async (req, res) => {
         if (branchId !== undefined) task.branchId = branchId || null;
         await task.save();
         const updated = await Task.findByPk(task.id, { include: includeList });
+        
+        // اگر تخصیص تغیر یافت، اطلاع جدید
+        if (assignedTo !== undefined && String(oldAssignedTo || '') !== String(assignedTo || '')) {
+            if (assignedTo) {
+                const io = req.app.get('io');
+                setImmediate(() => {
+                    notificationService.notifyTaskAssigned(updated, io).catch(err => {
+                        console.error('Task update notification error:', err.message);
+                    });
+                });
+            }
+        }
+        
         res.json(updated);
     } catch (err) {
         res.status(500).json({ error: err.message });

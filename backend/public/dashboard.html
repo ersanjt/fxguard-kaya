@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/dashboard.css?v=31">
+    <link rel="stylesheet" href="/css/dashboard.css?v=32">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -183,7 +183,7 @@
             <div class="user-dropdown-menu" id="userDropdownMenu" role="menu" aria-hidden="true">
                 <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg><span data-i18n="nav_profile">پروفایل</span></a>
                 <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); document.getElementById('profileAvatar')&&document.getElementById('profileAvatar').focus(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-image"/></svg><span data-i18n="header_dropdown_avatar">تغییر عکس پروفایل</span></a>
-                <a href="#staff-activity" class="user-dropdown-item nav-staff-activity" role="menuitem" data-perm="staff_activity" onclick="showPage('staff-activity'); closeUserDropdown(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-monitor"/></svg><span data-i18n="nav_staff_activity">نشست‌های فعال</span></a>
+                <a href="#staff-activity" class="user-dropdown-item nav-staff-activity" role="menuitem" data-perm="staff_activity" onclick="showPage('staff-activity'); closeUserDropdown(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-monitor"/></svg><span data-i18n="nav_staff_activity">ورودها و وضعیت آنلاین</span></a>
                 <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); document.getElementById('profilePassword')&&document.getElementById('profilePassword').focus(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-lock"/></svg><span data-i18n="header_dropdown_password">تغییر رمز عبور</span></a>
                 <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); var s=document.getElementById('profileTotpSection'); if(s)s.scrollIntoView({behavior:'smooth'}); return false;"><svg viewBox="0 0 24 24"><use href="#icon-shield"/></svg><span data-i18n="header_dropdown_2fa">احراز دو مرحله‌ای</span></a>
                 <div class="user-dropdown-divider"></div>
@@ -915,6 +915,7 @@
                                 </div>
                                 <div class="announcements-send-field announcements-send-field-wide">
                                     <label class="announcements-check-wrap"><input type="checkbox" id="annImportant" class="ann-checkbox"> <span data-i18n="ann_important">پیام مهم (پاپ‌آپ و صدا برای گیرنده)</span></label>
+                                    <p class="ann-important-hint text-muted" id="annImportantHint" style="display:none; margin:8px 0 0; font-size:0.85rem;" data-i18n="ann_important_hint">مثال صحیح: برای امنیت بیشتر، رمز عبور خود را از بخش پروفایل من تغییر دهید.</p>
                                 </div>
                             </div>
                             <div class="announcements-send-actions">
@@ -2705,7 +2706,7 @@
     <script src="/js/i18n-fa.js?v=3" charset="utf-8"></script>
     <script src="/js/i18n-en.js?v=1" charset="utf-8"></script>
     <script src="/js/i18n-tr.js?v=3" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=9"></script>
+    <script src="/js/dashboard.js?v=10" charset="utf-8"></script>
 
 </body>
 </html>

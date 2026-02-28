@@ -2,6 +2,7 @@ const express = require('express');
 const { Ticket, User, Department, TicketReply } = require('../models');
 const { Op, literal } = require('sequelize');
 const { canManageTickets, isMainAdmin } = require('../lib/permissions');
+const notificationService = require('../services/notificationService');
 
 function canManageTicket(req) {
     return canManageTickets(req.user);
@@ -101,7 +102,6 @@ router.get('/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
 router.post('/:id/replies', async (req, res) => {
     try {
         const ticket = await Ticket.findByPk(req.params.id);
@@ -117,6 +117,15 @@ router.post('/:id/replies', async (req, res) => {
             attachments: attachments.map(a => typeof a === 'object' && a.url ? { name: a.name || a.url, url: a.url, size: a.size } : null).filter(Boolean)
         });
         const withUser = await TicketReply.findByPk(reply.id, { include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }] });
+        
+        // اطلاع‌دهی پاسخ تیکت
+        setImmediate(() => {
+            notificationService.notifyTicketReply(ticket, withUser, io).catch(err => {
+                console.error('Reply notification error:', err.message);
+            });
+        });
+        
+        // Socket.IO (fallback برای سازگاری عقب‌تر)
         if (io) {
             const recipientIds = [ticket.createdBy, ticket.assignedTo].filter(Boolean).filter(id => String(id) !== String(req.userId));
             [...new Set(recipientIds)].forEach(uid => io.to(`user_${uid}`).emit('ticket_reply', {
@@ -131,7 +140,6 @@ router.post('/:id/replies', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-
 router.post('/', async (req, res) => {
     try {
         const { title, description, assignedTo, departmentId, priority, dueDate } = req.body;
@@ -153,6 +161,16 @@ router.post('/', async (req, res) => {
                 { model: Department, as: 'department', attributes: ['id', 'name'] }
             ]
         });
+        
+        // ارسال اطلاع تخصیص تیکت
+        if (assignedTo) {
+            setImmediate(() => {
+                notificationService.notifyTicketAssigned(withIncludes, io).catch(err => {
+                    console.error('Ticket notification error:', err.message);
+                });
+            });
+        }
+        
         res.status(201).json(withIncludes);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -164,6 +182,8 @@ router.put('/:id', async (req, res) => {
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
         if (!canAccessTicket(req, ticket)) return res.status(403).json({ error: 'دسترسی به این تیکت ندارید' });
+        
+        const oldAssignedTo = ticket.assignedTo;
         const { title, description, assignedTo, departmentId, status, priority, dueDate } = req.body;
         if ((title !== undefined || description !== undefined) && !canManageTicket(req)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند عنوان و توضیحات تیکت را ویرایش کند' });
         if (title !== undefined) ticket.title = (title || '').trim();
@@ -174,6 +194,25 @@ router.put('/:id', async (req, res) => {
         if (priority !== undefined) ticket.priority = priority;
         if (dueDate !== undefined) ticket.dueDate = dueDate ? new Date(dueDate) : null;
         await ticket.save();
+        
+        // اگر تخصیص تغیر یافت
+        if (assignedTo !== undefined && String(oldAssignedTo || '') !== String(assignedTo || '')) {
+            if (assignedTo) {
+                const updated = await Ticket.findByPk(ticket.id, {
+                    include: [
+                        { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
+                        { model: User, as: 'assignee', attributes: ['id', 'name', 'email'] },
+                        { model: Department, as: 'department', attributes: ['id', 'name'] }
+                    ]
+                });
+                setImmediate(() => {
+                    notificationService.notifyTicketAssigned(updated, io).catch(err => {
+                        console.error('Ticket update notification error:', err.message);
+                    });
+                });
+            }
+        }
+        
         res.json(ticket);
     } catch (err) {
         res.status(500).json({ error: err.message });

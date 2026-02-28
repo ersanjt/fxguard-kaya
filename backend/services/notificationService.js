@@ -1,0 +1,307 @@
+/**
+ * سرویس اعلان‌ها — ارسال ایمیل، Socket.IO، و... بر اساس تنظیمات کاربر
+ */
+
+const emailService = require('./emailService');
+const { NotificationPreference, User, PanelSetting } = require('../models');
+const { getPanelEmailConfig } = require('./panelSettingsLoader');
+
+/**
+ * دریافت یا ایجاد تنظیمات اطلاعات یک کاربر
+ */
+async function getOrCreatePreference(userId) {
+    const [pref] = await NotificationPreference.findOrCreate({
+        where: { userId },
+        defaults: { userId }
+    });
+    return pref;
+}
+
+/**
+ * ارسال اطلاع اعلان مهم به ایمیل و Socket.IO
+ */
+async function notifyAnnouncement(announcement, recipientIds, io) {
+    const results = [];
+
+    for (const userId of recipientIds) {
+        try {
+            const pref = await getOrCreatePreference(userId);
+            const user = await User.findByPk(userId, { attributes: ['id', 'email', 'name'] });
+            if (!user) continue;
+
+            // Socket.IO
+            if (io && pref.announceSocketEnabled) {
+                try {
+                    io.to(`user_${userId}`).emit('important_announcement', {
+                        id: announcement.id,
+                        title: announcement.title,
+                        body: announcement.body,
+                        fromUser: announcement.fromUser || {},
+                        timestamp: announcement.createdAt
+                    });
+                } catch (err) {
+                    console.error(`Socket.IO notification error for user ${userId}:`, err.message);
+                }
+            }
+
+            // ایمیل
+            if (pref.announceEmailEnabled && user.email) {
+                try {
+                    const settings = await PanelSetting.findByPk('default');
+                    const emailConfig = getPanelEmailConfig(settings);
+                    
+                    const title = `اعلان مهم: ${announcement.title}`;
+                    const from = announcement.fromUser ? announcement.fromUser.name : 'سیستم';
+                    const body = `
+                        <p>سلام ${user.name || 'کاربر'}،</p>
+                        <p><strong>اعلان مهم از ${from}:</strong></p>
+                        <p>${announcement.body.replace(/\n/g, '<br>')}</p>
+                        <p class="muted">زمان: ${new Date(announcement.createdAt).toLocaleString('fa-IR')}</p>
+                    `;
+
+                    const mailOpts = {
+                        to: user.email,
+                        subject: title,
+                        text: announcement.body,
+                        html: emailService.baseHtml(title, body)
+                    };
+
+                    if (emailConfig && emailConfig.host) {
+                        await emailService.sendMailWithConfig(emailConfig, mailOpts);
+                    } else {
+                        await emailService.sendMailWithRetry(mailOpts);
+                    }
+                    results.push({ userId, type: 'email', ok: true });
+                } catch (err) {
+                    console.error(`Email notification error for user ${userId}:`, err.message);
+                    results.push({ userId, type: 'email', ok: false, error: err.message });
+                }
+            }
+        } catch (err) {
+            console.error(`Notification error for user ${userId}:`, err.message);
+            results.push({ userId, ok: false, error: err.message });
+        }
+    }
+
+    return results;
+}
+
+/**
+ * ارسال اطلاع تخصیص تسک
+ */
+async function notifyTaskAssigned(task, io) {
+    const results = [];
+    if (!task || !task.assignedTo) return results;
+    try {
+        const pref = await getOrCreatePreference(task.assignedTo);
+        const user = await User.findByPk(task.assignedTo, { attributes: ['id', 'email', 'name'] });
+        if (!user) return results;
+
+        // Socket.IO
+        if (io && pref) {
+            try {
+                io.to(`user_${task.assignedTo}`).emit('task_assigned', {
+                    taskId: task.id,
+                    title: task.title,
+                    priority: task.priority,
+                    dueDate: task.dueDate
+                });
+            } catch (err) {
+                console.error(`Socket notification error:`, err.message);
+            }
+        }
+
+        // ایمیل
+        if (pref && pref.taskAssignedEmailEnabled && user.email) {
+            try {
+                const settings = await PanelSetting.findByPk('default');
+                const emailConfig = getPanelEmailConfig(settings);
+                const title = `تسک جدید برای شما: ${task.title}`;
+                const priorityLabel = { low: 'پایین', normal: 'متوسط', high: 'بالا', urgent: 'فوری' }[task.priority] || task.priority;
+                const dueStr = task.dueDate ? new Date(task.dueDate).toLocaleString('fa-IR') : 'تعیین نشده';
+                const body = `
+                    <p>سلام ${user.name}،</p>
+                    <p>یک تسک جدید برای شما تخصیص داده شده است:</p>
+                    <p><strong>${task.title}</strong></p>
+                    <ul>
+                        <li>اولویت: ${priorityLabel}</li>
+                        <li>مهلت: ${dueStr}</li>
+                        <li>توضیح: ${(task.description || '—').substring(0, 200)}…</li>
+                    </ul>
+                    <p>برای مشاهده جزئیات وارد پنل شوید.</p>
+                `;
+
+                const mailOpts = {
+                    to: user.email,
+                    subject: title,
+                    text: `تسک: ${task.title}`,
+                    html: emailService.baseHtml(title, body)
+                };
+
+                if (emailConfig && emailConfig.host) {
+                    await emailService.sendMailWithConfig(emailConfig, mailOpts);
+                } else {
+                    await emailService.sendMailWithRetry(mailOpts);
+                }
+                results.push({ userId: task.assignedTo, type: 'email', ok: true });
+            } catch (err) {
+                console.error(`Task email error:`, err.message);
+                results.push({ userId: task.assignedTo, type: 'email', ok: false });
+            }
+        }
+    } catch (err) {
+        console.error(`Task notification error:`, err.message);
+    }
+
+    return results;
+}
+
+/**
+ * ارسال اطلاع تخصیص تیکت
+ */
+async function notifyTicketAssigned(ticket, io) {
+    const results = [];
+    if (!ticket || !ticket.assignedTo) return results;
+    try {
+        const pref = await getOrCreatePreference(ticket.assignedTo);
+        const user = await User.findByPk(ticket.assignedTo, { attributes: ['id', 'email', 'name'] });
+        if (!user) return results;
+
+        // Socket.IO
+        if (io && pref) {
+            try {
+                io.to(`user_${ticket.assignedTo}`).emit('ticket_assigned', {
+                    ticketId: ticket.id,
+                    ticketNumber: ticket.ticketNumber,
+                    title: ticket.title,
+                    priority: ticket.priority
+                });
+            } catch (err) {
+                console.error(`Ticket socket error:`, err.message);
+            }
+        }
+
+        // ایمیل
+        if (pref && pref.ticketAssignedEmailEnabled && user.email) {
+            try {
+                const settings = await PanelSetting.findByPk('default');
+                const emailConfig = getPanelEmailConfig(settings);
+                const title = `تیکت جدید برای شما: ${ticket.title}`;
+                const priorityLabel = { low: 'پایین', normal: 'متوسط', high: 'بالا', urgent: 'فوری' }[ticket.priority] || ticket.priority;
+                const body = `
+                    <p>سلام ${user.name}،</p>
+                    <p>یک تیکت جدید برای شما تخصیص داده شده است:</p>
+                    <p><strong>${ticket.title}</strong></p>
+                    <p>شماره تیکت: <code>${ticket.ticketNumber}</code></p>
+                    <ul>
+                        <li>اولویت: ${priorityLabel}</li>
+                        <li>وضعیت: ${ticket.status}</li>
+                        <li>توضیح: ${(ticket.description || '—').substring(0, 200)}…</li>
+                    </ul>
+                `;
+
+                const mailOpts = {
+                    to: user.email,
+                    subject: title,
+                    text: `تیکت: ${ticket.ticketNumber} - ${ticket.title}`,
+                    html: emailService.baseHtml(title, body)
+                };
+
+                if (emailConfig && emailConfig.host) {
+                    await emailService.sendMailWithConfig(emailConfig, mailOpts);
+                } else {
+                    await emailService.sendMailWithRetry(mailOpts);
+                }
+                results.push({ userId: ticket.assignedTo, type: 'email', ok: true });
+            } catch (err) {
+                console.error(`Ticket email error:`, err.message);
+                results.push({ userId: ticket.assignedTo, type: 'email', ok: false });
+            }
+        }
+    } catch (err) {
+        console.error(`Ticket notification error:`, err.message);
+    }
+
+    return results;
+}
+
+/**
+ * ارسال اطلاع پاسخ تیکت
+ */
+async function notifyTicketReply(ticket, reply, io) {
+    const recipientIds = [
+        ticket.createdBy,
+        ticket.assignedTo
+    ].filter(Boolean).filter((id, i, arr) => i === arr.indexOf(id)); // unique
+
+    const results = [];
+
+    for (const userId of recipientIds) {
+        try {
+            const pref = await getOrCreatePreference(userId);
+            const user = await User.findByPk(userId, { attributes: ['id', 'email', 'name'] });
+            if (!user) continue;
+
+            // Socket.IO
+            if (io && pref) {
+                try {
+                    io.to(`user_${userId}`).emit('ticket_reply_notification', {
+                        ticketId: ticket.id,
+                        ticketNumber: ticket.ticketNumber,
+                        replyId: reply.id,
+                        replyContent: reply.content.substring(0, 100),
+                        fromUser: reply.user || {}
+                    });
+                } catch (err) {
+                    console.error(`Socket error:`, err.message);
+                }
+            }
+
+            // ایمیل
+            if (pref && pref.ticketReplyEmailEnabled && user.email) {
+                try {
+                    const settings = await PanelSetting.findByPk('default');
+                    const emailConfig = getPanelEmailConfig(settings);
+                    const title = `پاسخ برای تیکت: ${ticket.title}`;
+                    const replyFrom = reply.user ? reply.user.name : 'پاسخگو';
+                    const body = `
+                        <p>سلام ${user.name}،</p>
+                        <p><strong>${replyFrom}</strong> پاسخی برای تیکت <strong>${ticket.ticketNumber}</strong> نوشته است:</p>
+                        <p>${reply.content.substring(0, 300).replace(/\n/g, '<br>')}…</p>
+                        <p class="muted">برای مشاهده پاسخ کامل وارد پنل شوید.</p>
+                    `;
+
+                    const mailOpts = {
+                        to: user.email,
+                        subject: title,
+                        text: reply.content.substring(0, 200),
+                        html: emailService.baseHtml(title, body)
+                    };
+
+                    if (emailConfig && emailConfig.host) {
+                        await emailService.sendMailWithConfig(emailConfig, mailOpts);
+                    } else {
+                        await emailService.sendMailWithRetry(mailOpts);
+                    }
+                    results.push({ userId, type: 'email', ok: true });
+                } catch (err) {
+                    console.error(`Reply email error:`, err.message);
+                    results.push({ userId, type: 'email', ok: false });
+                }
+            }
+        } catch (err) {
+            console.error(`Reply notification error:`, err.message);
+            results.push({ userId, ok: false });
+        }
+    }
+
+    return results;
+}
+
+module.exports = {
+    getOrCreatePreference,
+    notifyAnnouncement,
+    notifyTaskAssigned,
+    notifyTicketAssigned,
+    notifyTicketReply
+};

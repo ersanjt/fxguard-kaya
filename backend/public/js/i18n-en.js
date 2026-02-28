@@ -483,6 +483,7 @@ window.__I18N_EN = {
     ann_body: 'Message',
     ann_ph_title: 'Announcement title',
     ann_ph_body: 'Message text...',
+    ann_important_hint: 'Correct example: For better security, change your password from the Profile section.',
     ann_important: 'Important (popup and sound for recipient)',
     ann_intro: 'View and manage general, department and personal announcements.',
     ann_tab_all: 'All',

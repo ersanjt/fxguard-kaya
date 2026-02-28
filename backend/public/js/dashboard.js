@@ -745,7 +745,7 @@
                 },
                 tr: {}
             };
-            if (window.__I18N_FA) { for (var k in window.__I18N_FA) I18N.fa[k] = window.__I18N_FA[k]; }
+            if (window.__I18N_FA) { I18N.fa = {}; for (var k in window.__I18N_FA) I18N.fa[k] = window.__I18N_FA[k]; }
             if (window.__I18N_EN) { for (var k in window.__I18N_EN) I18N.en[k] = window.__I18N_EN[k]; }
             if (window.__I18N_TR) { for (var k in window.__I18N_TR) I18N.tr[k] = window.__I18N_TR[k]; }
             window.LANG = LANG;
@@ -3472,7 +3472,14 @@
             if (titleEl) titleEl.value = '';
             if (bodyEl) bodyEl.value = '';
             if (importantEl) importantEl.checked = false;
+            var hintEl = document.getElementById('annImportantHint');
+            if (hintEl) hintEl.style.display = 'none';
             toast(LANG === 'fa' ? 'فرم پاک شد' : 'Form cleared');
+        }
+        function toggleAnnImportantHint() {
+            var importantEl = document.getElementById('annImportant');
+            var hintEl = document.getElementById('annImportantHint');
+            if (hintEl && importantEl) hintEl.style.display = importantEl.checked ? 'block' : 'none';
         }
         function filterAnnouncementsBySearch(q) {
             announcementsSearchQuery = (q || '').trim().toLowerCase();
@@ -4087,6 +4094,11 @@
                 annTrack.removeEventListener('mouseleave', resumeAnnouncementMarquee);
                 annTrack.addEventListener('mouseenter', pauseAnnouncementMarquee);
                 annTrack.addEventListener('mouseleave', resumeAnnouncementMarquee);
+            }
+            var annImportantEl = document.getElementById('annImportant');
+            if (annImportantEl && !annImportantEl._hintBound) {
+                annImportantEl._hintBound = true;
+                annImportantEl.addEventListener('change', toggleAnnImportantHint);
             }
             
             // Marquee items delegation
@@ -6938,7 +6950,7 @@
             list.innerHTML = data.map(function(i) {
                 var statusLabel = i.status === 'active' ? t('status_active') : i.status === 'completed' ? t('status_done') : t('status_cancelled');
                 var templateName = (i.template && i.template.name) ? i.template.name : '�';
-                var assignee = userDisplay(i.assignee) || '�';
+                var assignee = userDisplay(i.assignee) || '\u2014';
                 return '<div class="list-item" onclick="loadProcessInstanceDetail(\'' + i.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(i.title) + '</span><div class="meta">' + escapeHtml(templateName) + ' ⬢ ' + assignee + ' ⬢ ' + statusLabel + '</div></div><span class="badge ' + (i.status || '') + '">' + statusLabel + '</span></div>';
             }).join('');
         }
@@ -6961,16 +6973,16 @@
             var stages = template.stages || [];
             var currentIdx = i.currentStageIndex != null ? i.currentStageIndex : 0;
             var currentStageName = (stages[currentIdx] && stages[currentIdx].name) ? stages[currentIdx].name : t('process_current_stage');
-            var assignee = userDisplay(i.assignee) || '�';
-            var creator = userDisplay(i.creator) || '�';
+            var assignee = userDisplay(i.assignee) || '\u2014';
+            var creator = userDisplay(i.creator) || '\u2014';
             var stepsHtml = (i.steps || []).map(function(s) {
-                var done = s.completedAt ? '�S ' : '';
-                return '<div class="msg in" style="margin:6px 0;"><div>' + done + escapeHtml(s.stageName) + (s.notes ? ' � ' + escapeHtml(s.notes) : '') + '</div><div class="time">' + userDisplay(s.assignee) + ' ⬢ ' + (s.startedAt ? fmtTZ(s.startedAt, 'datetime') : '') + (s.completedAt ? ' �  ' + fmtTZ(s.completedAt, 'datetime') : '') + '</div></div>';
+                var done = s.completedAt ? '\u2713 ' : '';
+                return '<div class="msg in" style="margin:6px 0;"><div>' + done + escapeHtml(s.stageName) + (s.notes ? ' \u2014 ' + escapeHtml(s.notes) : '') + '</div><div class="time">' + userDisplay(s.assignee) + ' \u22C6 ' + (s.startedAt ? fmtTZ(s.startedAt, 'datetime') : '') + (s.completedAt ? ' \u2014 ' + fmtTZ(s.completedAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('processInstanceDetailContent').innerHTML =
                 '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(i.title) + '</h3>' +
                 '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + assignee + ' | ' + t('process_current_stage') + ': ' + escapeHtml(currentStageName) + '</p>' +
-                '<h4 style="font-size:1rem; margin:12px 0;">' + t('history') + '</h4>' + (stepsHtml || '<p class="text-muted">�</p>') + '</div>';
+                '<h4 style="font-size:1rem; margin:12px 0;">' + t('history') + '</h4>' + (stepsHtml || '<p class="text-muted">' + (t('no_updates') || '') + '</p>') + '</div>';
             var advanceBox = document.getElementById('processInstanceAdvanceBox');
             if (i.status !== 'active') { advanceBox.innerHTML = ''; return; }
             var isLast = currentIdx >= stages.length - 1;

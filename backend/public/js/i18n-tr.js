@@ -461,6 +461,7 @@ window.__I18N_TR = {
     ann_body: 'Mesaj',
     ann_ph_title: 'Duyuru başlığı',
     ann_ph_body: 'Mesaj metni...',
+    ann_important_hint: 'Doğru örnek: Daha iyi güvenlik için şifrenizi Profil bölümünden değiştirin.',
     ann_important: 'Önemli (alıcıya açılır pencere ve ses)',
     ann_intro: 'Genel ve departman duyurularını görüntüleyin.',
     ann_tab_all: 'Tümü',
