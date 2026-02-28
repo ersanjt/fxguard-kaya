@@ -8762,10 +8762,10 @@
             var dash = '\u2014';
             list.innerHTML = '<div class="sup-conv-count">' + total + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conversations') + '</div><table class="sup-table sup-responsive-table sup-conv-table"><thead><tr><th>' + t('th_customer') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_dept') + '</th><th>' + t('th_assignee') + '</th><th>' + t('th_status') + '</th><th>' + (LANG === 'fa' ? 'آخرین پیام' : 'Last') + '</th></tr></thead><tbody>' + data.map(function(c) {
                 var cust = c.customer || {};
-                var branch = c.branch ? c.branch.name : '�';
-                var dept = c.department ? c.department.name : '�';
-                var assignee = userDisplay(c.assignee) || '�';
-                var cl = [t('th_customer'),t('th_branch'),t('th_dept'),t('th_assignee'),t('th_status'),(LANG === 'fa' ? 'آخرین پیام' : 'Last')]; var lm = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : dash; return '<tr><td data-label="'+cl[0]+'">' + escapeHtml(cust.name || cust.phone || '�') + '</td><td data-label="'+cl[1]+'">' + escapeHtml(branch) + '</td><td data-label="'+cl[2]+'">' + escapeHtml(dept) + '</td><td data-label="'+cl[3]+'">' + escapeHtml(assignee) + '</td><td data-label="'+cl[4]+'">' + (c.status || '�') + '</td><td data-label="'+cl[5]+'">' + lm + '</td></tr>';
+                var branch = c.branch ? c.branch.name : '\u2014';
+                var dept = c.department ? c.department.name : '\u2014';
+                var assignee = userDisplay(c.assignee) || '\u2014';
+                var cl = [t('th_customer'),t('th_branch'),t('th_dept'),t('th_assignee'),t('th_status'),(LANG === 'fa' ? 'آخرین پیام' : 'Last')]; var lm = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : dash; return '<tr><td data-label="'+cl[0]+'">' + escapeHtml(cust.name || cust.phone || '\u2014') + '</td><td data-label="'+cl[1]+'">' + escapeHtml(branch) + '</td><td data-label="'+cl[2]+'">' + escapeHtml(dept) + '</td><td data-label="'+cl[3]+'">' + escapeHtml(assignee) + '</td><td data-label="'+cl[4]+'">' + (c.status || '\u2014') + '</td><td data-label="'+cl[5]+'">' + lm + '</td></tr>';
             }).join('') + '</tbody></table>';
         }
 
@@ -8775,6 +8775,7 @@
             var countEl = document.getElementById('onlineCount');
             var loginsTodayEl = document.getElementById('loginsTodayCount');
             var loginsTotalEl = document.getElementById('loginsTotalCount');
+            
             var updatedEl = document.getElementById('staffActivityUpdated');
             if (onlineList) onlineList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (loginsList) loginsList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
