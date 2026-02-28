@@ -3,6 +3,7 @@ const router = express.Router();
 const { User, Department, Branch, Conversation, Message, Task, Ticket, ProcessInstance, ProcessInstanceStep, ActivityLog, TaskUpdate, TicketReply, AnnouncementRead, InternalThreadParticipant, InternalMessage, CustomerNote, Transaction, PasswordResetToken } = require('../models');
 const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
+const { isValidUUID } = require('../lib/validation');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 
 router.get('/', async (req, res) => {
@@ -116,6 +117,7 @@ router.patch('/me', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         if (!req.canAccess('users')) return res.status(403).json({ error: 'دسترسی به بخش کاربران ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const user = await User.findByPk(req.params.id, {
             attributes: { exclude: ['password'] },
             include: [{ model: Department, as: 'department' }, { model: Branch, as: 'branch', required: false }]
@@ -185,6 +187,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر را ویرایش کند' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const user = await User.findByPk(req.params.id);
         if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
         if (isMainAdmin(user)) return res.status(403).json({ error: 'اطلاعات ادمین اصلی سیستم غیر قابل ویرایش است. هیچ کاربری حتی با بالاترین سطح دسترسی امکان ویرایش ادمین اصلی را ندارد.' });

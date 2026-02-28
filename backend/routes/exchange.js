@@ -3,6 +3,7 @@ const router = express.Router();
 const { CashBox, BankAccount, Transaction, Branch, User, Customer } = require('../models');
 const { Op } = require('sequelize');
 const { literal } = require('sequelize');
+const { isValidUUID } = require('../lib/validation');
 
 function requireServices(req, res, next) {
     if (!req.canAccess('services')) return res.status(403).json({ error: 'دسترسی به بخش خدمات صرافی ندارید' });
@@ -49,6 +50,7 @@ router.post('/cash-boxes', requireServices, async (req, res) => {
 
 router.put('/cash-boxes/:id', requireServices, async (req, res) => {
     try {
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const item = await CashBox.findByPk(req.params.id);
         if (!item) return res.status(404).json({ error: 'صندوق یافت نشد' });
         const { name, branchId, currency, balance, description, isActive } = req.body;
@@ -71,6 +73,7 @@ router.put('/cash-boxes/:id', requireServices, async (req, res) => {
 
 router.delete('/cash-boxes/:id', requireServices, async (req, res) => {
     try {
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const item = await CashBox.findByPk(req.params.id);
         if (!item) return res.status(404).json({ error: 'صندوق یافت نشد' });
         await item.destroy();
@@ -118,6 +121,7 @@ router.post('/bank-accounts', requireServices, async (req, res) => {
 
 router.put('/bank-accounts/:id', requireServices, async (req, res) => {
     try {
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const item = await BankAccount.findByPk(req.params.id);
         if (!item) return res.status(404).json({ error: 'حساب بانکی یافت نشد' });
         const { name, bankName, accountNumber, iban, branchId, currency, balance, description, isActive } = req.body;
@@ -143,6 +147,7 @@ router.put('/bank-accounts/:id', requireServices, async (req, res) => {
 
 router.delete('/bank-accounts/:id', requireServices, async (req, res) => {
     try {
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const item = await BankAccount.findByPk(req.params.id);
         if (!item) return res.status(404).json({ error: 'حساب بانکی یافت نشد' });
         await item.destroy();
@@ -202,6 +207,7 @@ router.get('/transactions', requireServices, async (req, res) => {
 
 router.get('/transactions/:id', requireServices, async (req, res) => {
     try {
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const tx = await Transaction.findByPk(req.params.id, {
             include: [
                 { model: Branch, as: 'branch', attributes: ['id', 'name'] },
@@ -304,6 +310,7 @@ router.post('/transactions', requireServices, async (req, res) => {
 
 router.put('/transactions/:id', requireServices, async (req, res) => {
     try {
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const tx = await Transaction.findByPk(req.params.id);
         if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
         const { description, reference, transactionDate, customerId, type, amount, currency, fromCashBoxId, toCashBoxId, fromBankAccountId, toBankAccountId } = req.body;
@@ -342,6 +349,7 @@ router.put('/transactions/:id', requireServices, async (req, res) => {
 
 router.post('/transactions/:id/approve', requireServices, async (req, res) => {
     try {
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const tx = await Transaction.findByPk(req.params.id);
         if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
         if (tx.status === 'approved') return res.status(400).json({ error: 'این تراکنش قبلاً تایید شده است' });
@@ -363,6 +371,7 @@ router.post('/transactions/:id/approve', requireServices, async (req, res) => {
 
 router.post('/transactions/:id/reject', requireServices, async (req, res) => {
     try {
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const tx = await Transaction.findByPk(req.params.id);
         if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
         if (tx.status === 'approved') return res.status(400).json({ error: 'تراکنش تاییدشده قابل رد نیست' });
