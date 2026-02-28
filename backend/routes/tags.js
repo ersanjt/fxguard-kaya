@@ -3,6 +3,7 @@ const router = express.Router();
 const { Tag, Customer, Conversation } = require('../models');
 const { Op } = require('sequelize');
 const { canAccessCustomer } = require('../lib/customerAccess');
+const { isValidUUID } = require('../lib/validation');
 
 // لیست همه تگ‌ها
 router.get('/', async (req, res) => {
@@ -38,6 +39,7 @@ router.post('/', async (req, res) => {
 
 // ویرایش تگ
 router.put('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تگ نامعتبر است' });
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         const tag = await Tag.findByPk(req.params.id);
@@ -56,6 +58,7 @@ router.put('/:id', async (req, res) => {
 
 // حذف تگ
 router.delete('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تگ نامعتبر است' });
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         const tag = await Tag.findByPk(req.params.id);

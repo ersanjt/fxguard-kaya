@@ -1,6 +1,7 @@
 const express = require('express');
 const { InternalThread, InternalMessage, InternalThreadParticipant, User } = require('../models');
 const { Op } = require('sequelize');
+const { isValidUUID } = require('../lib/validation');
 
 function createInternalRouter(io) {
 const router = express.Router();
@@ -68,6 +69,7 @@ router.post('/threads', async (req, res) => {
 
 // پیام‌های یک ترد
 router.get('/threads/:id/messages', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه ترد نامعتبر است' });
     try {
         const part = await InternalThreadParticipant.findOne({ where: { threadId: req.params.id, userId: req.userId } });
         if (!part) return res.status(403).json({ error: 'دسترسی به این گفتگو ندارید' });
@@ -84,6 +86,7 @@ router.get('/threads/:id/messages', async (req, res) => {
 
 // ارسال پیام در ترد
 router.post('/threads/:id/messages', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه ترد نامعتبر است' });
     try {
         const part = await InternalThreadParticipant.findOne({ where: { threadId: req.params.id, userId: req.userId } });
         if (!part) return res.status(403).json({ error: 'دسترسی به این گفتگو ندارید' });

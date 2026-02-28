@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { Template } = require('../models');
+const { isValidUUID } = require('../lib/validation');
 
 // لیست تمپلیت‌ها
 router.get('/', async (req, res) => {
@@ -43,6 +44,7 @@ router.post('/', async (req, res) => {
 
 // دریافت یک تمپلیت
 router.get('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تمپلیت نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const template = await Template.findByPk(req.params.id);
@@ -55,6 +57,7 @@ router.get('/:id', async (req, res) => {
 
 // ویرایش تمپلیت
 router.put('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تمپلیت نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const template = await Template.findByPk(req.params.id);
@@ -74,6 +77,7 @@ router.put('/:id', async (req, res) => {
 
 // حذف تمپلیت
 router.delete('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تمپلیت نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const template = await Template.findByPk(req.params.id);
@@ -87,6 +91,7 @@ router.delete('/:id', async (req, res) => {
 
 // افزایش شمارنده استفاده
 router.post('/:id/use', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تمپلیت نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const template = await Template.findByPk(req.params.id);

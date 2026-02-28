@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { ExchangeService } = require('../models');
+const { isValidUUID } = require('../lib/validation');
 
 router.get('/', async (req, res) => {
     try {
@@ -15,6 +16,7 @@ router.get('/', async (req, res) => {
 });
 
 router.get('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه سرویس نامعتبر است' });
     try {
         if (!req.canAccess('services')) return res.status(403).json({ error: 'دسترسی به بخش خدمات صرافی ندارید' });
         const item = await ExchangeService.findByPk(req.params.id);
@@ -45,6 +47,7 @@ router.post('/', async (req, res) => {
 });
 
 router.put('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه سرویس نامعتبر است' });
     try {
         if (!req.canAccess('services')) return res.status(403).json({ error: 'دسترسی به بخش خدمات صرافی ندارید' });
         const item = await ExchangeService.findByPk(req.params.id);
@@ -64,6 +67,7 @@ router.put('/:id', async (req, res) => {
 });
 
 router.delete('/:id', async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه سرویس نامعتبر است' });
     try {
         if (!req.canAccess('services')) return res.status(403).json({ error: 'دسترسی به بخش خدمات صرافی ندارید' });
         const item = await ExchangeService.findByPk(req.params.id);

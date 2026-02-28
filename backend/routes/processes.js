@@ -3,6 +3,7 @@ const router = express.Router();
 const { ProcessTemplate, ProcessInstance, ProcessInstanceStep, User } = require('../models');
 const { Op } = require('sequelize');
 const { requireSection } = require('../middleware/auth');
+const { isValidUUID } = require('../lib/validation');
 
 const templateInclude = [];
 const instanceInclude = [
@@ -59,6 +60,7 @@ router.post('/templates', requireSection('processes'), async (req, res) => {
 });
 
 router.get('/templates/:id', requireSection('processes'), async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
     try {
         const template = await ProcessTemplate.findByPk(req.params.id);
         if (!template) return res.status(404).json({ error: 'Template not found' });
@@ -69,6 +71,7 @@ router.get('/templates/:id', requireSection('processes'), async (req, res) => {
 });
 
 router.put('/templates/:id', requireSection('processes'), async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
     try {
         const template = await ProcessTemplate.findByPk(req.params.id);
         if (!template) return res.status(404).json({ error: 'Template not found' });
@@ -91,6 +94,7 @@ router.put('/templates/:id', requireSection('processes'), async (req, res) => {
 });
 
 router.delete('/templates/:id', requireSection('processes'), async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
     try {
         const template = await ProcessTemplate.findByPk(req.params.id);
         if (!template) return res.status(404).json({ error: 'Template not found' });
@@ -109,7 +113,8 @@ router.delete('/templates/:id', requireSection('processes'), async (req, res) =>
 
 router.get('/instances', requireSection('processes'), async (req, res) => {
     try {
-        const { status, templateId, assignedTo, createdBy, page = 1, limit = 50 } = req.query;
+        const { status, templateId, assignedTo, createdBy } = req.query;
+        const { page, limit, offset } = require('../lib/validation').parsePagination(req.query.page, req.query.limit, 100);
         const where = {};
         if (status) where.status = status;
         if (templateId) where.templateId = templateId;
@@ -120,10 +125,10 @@ router.get('/instances', requireSection('processes'), async (req, res) => {
             where,
             include: instanceInclude,
             order: [['updatedAt', 'DESC']],
-            limit: Math.min(parseInt(limit) || 50, 100),
-            offset: (parseInt(page) - 1) * (parseInt(limit) || 50)
+            limit,
+            offset
         });
-        res.json({ data: rows, total: count, page: parseInt(page) });
+        res.json({ data: rows, total: count, page });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -170,6 +175,7 @@ router.post('/instances', requireSection('processes'), async (req, res) => {
 });
 
 router.get('/instances/:id', requireSection('processes'), async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
     try {
         const instance = await ProcessInstance.findByPk(req.params.id, {
             include: [...instanceInclude, { model: ProcessInstanceStep, as: 'steps', include: stepInclude, separate: true, order: [['stageIndex', 'ASC'], ['startedAt', 'ASC']] }]
@@ -182,6 +188,7 @@ router.get('/instances/:id', requireSection('processes'), async (req, res) => {
 });
 
 router.put('/instances/:id', requireSection('processes'), async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
     try {
         const instance = await ProcessInstance.findByPk(req.params.id);
         if (!instance) return res.status(404).json({ error: 'Instance not found' });
@@ -205,6 +212,7 @@ router.put('/instances/:id', requireSection('processes'), async (req, res) => {
 
 /** Advance to next stage (or complete). Body: { assignedTo?, notes? } */
 router.post('/instances/:id/advance', requireSection('processes'), async (req, res) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
     try {
         const instance = await ProcessInstance.findByPk(req.params.id, {
             include: [{ model: ProcessTemplate, as: 'template' }, { model: ProcessInstanceStep, as: 'steps' }]
