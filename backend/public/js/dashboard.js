@@ -3893,6 +3893,13 @@
                 if (target.closest('.internal-call-btn[data-call-type="video"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('video'); return; }
                 // Handle internal chat popup header click (minimize)
                 if (target.closest('.internal-chat-popup-header-compact') && !target.closest('.internal-chat-popup-actions') && typeof toggleInternalChatPopupMinimize === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatPopupMinimize(); return; }
+                // احراز دو مرحله‌ای — دکمه‌های پروفایل
+                if (target.closest('#totpSetupBtnDynamic') && typeof openTotpSetup === 'function') { e.preventDefault(); e.stopPropagation(); openTotpSetup(); return; }
+                if (target.closest('#totpDisableBtnDynamic') && typeof openTotpDisableModal === 'function') { e.preventDefault(); e.stopPropagation(); openTotpDisableModal(); return; }
+                if (target.closest('#closeTotpSetupModalBtn') && typeof closeTotpSetupModal === 'function') { e.preventDefault(); e.stopPropagation(); closeTotpSetupModal(); return; }
+                if (target.closest('#closeTotpDisableModalBtn') && typeof closeTotpDisableModal === 'function') { e.preventDefault(); e.stopPropagation(); closeTotpDisableModal(); return; }
+                if (target.closest('#confirmTotpSetupBtn') && typeof confirmTotpSetup === 'function') { e.preventDefault(); e.stopPropagation(); confirmTotpSetup(); return; }
+                if (target.closest('#disableTotpSubmitBtn') && typeof disableTotpSubmit === 'function') { e.preventDefault(); e.stopPropagation(); disableTotpSubmit(); return; }
                 // دکمه تمپلیت پیام در چت مکالمات
                 if (target.closest('#msgTemplateBtn') && typeof toggleTemplateDropdown === 'function') { e.preventDefault(); e.stopPropagation(); toggleTemplateDropdown(); return; }
                 // آیتم‌های دراپ‌داون تمپلیت — کلیک برای درج در چت

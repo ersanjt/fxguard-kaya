@@ -2622,7 +2622,7 @@
     </div>
     <div id="totpSetupModal" class="modal-overlay" style="display:none;">
         <div class="modal-box" style="max-width:420px;">
-            <div class="modal-header"><h3 data-i18n="modal_totp_setup">فعال‌سازی Google Authenticator</h3><button type="button" class="modal-close" onclick="closeTotpSetupModal()">&times;</button></div>
+            <div class="modal-header"><h3 data-i18n="modal_totp_setup">فعال‌سازی Google Authenticator</h3><button type="button" class="modal-close" id="closeTotpSetupModalBtn">&times;</button></div>
             <div class="modal-body">
                 <p style="margin:0 0 12px; font-size:0.9rem;" data-i18n="modal_totp_scan">با اپلیکیشن Google Authenticator QR زیر را اسکن کنید (یا کلید را دستی وارد کنید):</p>
                 <div id="totpSetupQr" style="text-align:center; margin:12px 0;"></div>
@@ -2630,17 +2630,17 @@
                 <label>کد شش‌رقمی فعلی را وارد کنید</label>
                 <input type="text" id="totpSetupCode" placeholder="۱۲۳۴۵۶" maxlength="6" pattern="[0-9]*" inputmode="numeric" style="margin-top:4px;">
             </div>
-            <button type="button" class="btn-primary" onclick="confirmTotpSetup()" data-i18n="modal_totp_confirm">تأیید و فعال‌سازی</button>
+            <button type="button" class="btn-primary" id="confirmTotpSetupBtn" data-i18n="modal_totp_confirm">تأیید و فعال‌سازی</button>
         </div>
     </div>
     <div id="totpDisableModal" class="modal-overlay" style="display:none;">
         <div class="modal-box" style="max-width:400px;">
-            <div class="modal-header"><h3 data-i18n="modal_totp_disable">غیرفعال کردن احراز دو مرحله‌ای</h3><button type="button" class="modal-close" onclick="closeTotpDisableModal()">&times;</button></div>
+            <div class="modal-header"><h3 data-i18n="modal_totp_disable">غیرفعال کردن احراز دو مرحله‌ای</h3><button type="button" class="modal-close" id="closeTotpDisableModalBtn">&times;</button></div>
             <div class="modal-body">
                 <p style="margin:0 0 12px;" data-i18n="modal_totp_enter_pw">رمز عبور خود را وارد کنید:</p>
                 <input type="password" id="totpDisablePassword" data-i18n-ph="modal_totp_password_ph" placeholder="رمز عبور">
             </div>
-            <button type="button" class="btn-primary" onclick="disableTotpSubmit()" data-i18n="totp_disable_btn">غیرفعال کردن</button>
+            <button type="button" class="btn-primary" id="disableTotpSubmitBtn" data-i18n="totp_disable_btn">غیرفعال کردن</button>
         </div>
     </div>
     <div id="templateModal" class="modal-overlay" style="display:none;">
