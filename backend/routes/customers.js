@@ -1,15 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const { Customer, Conversation, Message, CustomerNote, User, ActivityLog, Department, Transaction, CashBox, BankAccount, Tag } = require('../models');
+const { sequelize, Customer, Conversation, Message, CustomerNote, User, ActivityLog, Department, Transaction, CashBox, BankAccount, Tag } = require('../models');
 const { logActivity } = require('../services/activityLog');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
 const { normalizePhone } = require('../lib/phoneUtils');
+const { isValidUUID, parsePagination } = require('../lib/validation');
 
 router.get('/', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         const { page = 1, limit = 100, search, status } = req.query;
+        const { page: p, limit: l, offset } = parsePagination(page, limit, 200);
         const customerIds = await getAccessibleCustomerIds(req);
         const where = {};
         if (customerIds && customerIds.length === 0) {
@@ -40,8 +42,8 @@ router.get('/', async (req, res) => {
             Customer.findAndCountAll({
                 where,
                 order: [['lastContactAt', 'DESC']],
-                limit: Math.min(parseInt(limit) || 100, 200),
-                offset: (Math.max(1, parseInt(page)) - 1) * (parseInt(limit) || 100)
+                limit: l,
+                offset
             })
         ]);
         const custIds = rows.map(r => r.id);
@@ -67,7 +69,7 @@ router.get('/', async (req, res) => {
                 lastOpenConv: lc ? { id: lc.id, assignee: lc.assignee ? lc.assignee.get ? lc.assignee.get({ plain: true }) : lc.assignee : null, department: lc.department ? (lc.department.get ? lc.department.get({ plain: true }) : lc.department) : null, status: lc.status } : null
             };
         });
-        res.json({ data: enriched, total: count, page: parseInt(page), stats: stats || null });
+        res.json({ data: enriched, total: count, page: p, stats: stats || null });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -76,6 +78,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const customer = await Customer.findByPk(req.params.id, {
             include: [{ model: Tag, as: 'tags', attributes: ['id', 'name', 'color'], through: { attributes: [] } }]
         });
@@ -91,6 +94,7 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/conversations', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const allowed = await canAccessCustomer(req, req.params.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         const conversations = await Conversation.findAll({
@@ -98,15 +102,38 @@ router.get('/:id/conversations', async (req, res) => {
             include: [{ model: User, as: 'assignee', attributes: ['id', 'name', 'email'] }],
             order: [['lastMessageAt', 'DESC']]
         });
-        const withCount = await Promise.all(conversations.map(async (c) => {
-            const count = await Message.count({ where: { conversationId: c.id } });
-            const lastOutgoing = await Message.findOne({ where: { conversationId: c.id, direction: 'outgoing' }, order: [['timestamp', 'DESC']], include: [{ model: User, as: 'user', attributes: ['id', 'name'] }] });
+        const convIds = conversations.map(c => c.id);
+        let countMap = {};
+        let lastOutgoingMap = {};
+        if (convIds.length > 0) {
+            const [countRows, lastOutgoings] = await Promise.all([
+                Message.findAll({
+                    where: { conversationId: { [Op.in]: convIds } },
+                    attributes: ['conversationId', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+                    group: ['conversationId'],
+                    raw: true
+                }),
+                Message.findAll({
+                    where: { conversationId: { [Op.in]: convIds }, direction: 'outgoing' },
+                    include: [{ model: User, as: 'user', attributes: ['id', 'name'] }],
+                    order: [['timestamp', 'DESC']],
+                    limit: Math.min(convIds.length * 5, 200),
+                    raw: false
+                })
+            ]);
+            countRows.forEach(r => { countMap[r.conversationId] = parseInt(r.count) || 0; });
+            lastOutgoings.forEach(m => {
+                if (!lastOutgoingMap[m.conversationId]) lastOutgoingMap[m.conversationId] = m.user ? m.user.name : null;
+            });
+        }
+        const withCount = conversations.map((c) => {
+            const lastOutgoing = lastOutgoingMap[c.id];
             return {
-                id: c.id, status: c.status, priority: c.priority, lastMessageAt: c.lastMessageAt, messageCount: count, createdAt: c.createdAt,
-                assignedTo: c.assignedTo, assignee: c.assignee, lastOutgoingBy: lastOutgoing && lastOutgoing.user ? lastOutgoing.user.name : null,
+                id: c.id, status: c.status, priority: c.priority, lastMessageAt: c.lastMessageAt, messageCount: countMap[c.id] || 0, createdAt: c.createdAt,
+                assignedTo: c.assignedTo, assignee: c.assignee, lastOutgoingBy: lastOutgoing,
                 metadata: c.metadata || {}
             };
-        }));
+        });
         res.json({ data: withCount });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -116,6 +143,7 @@ router.get('/:id/conversations', async (req, res) => {
 router.get('/:id/timeline', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const allowed = await canAccessCustomer(req, req.params.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         const customerId = req.params.id;
@@ -144,11 +172,21 @@ router.get('/:id/timeline', async (req, res) => {
             }).catch(() => [])
         ]);
         transactions = Array.isArray(txList) ? txList : [];
-        const convWithCount = await Promise.all(conversationsRaw.map(async (c) => {
-            const count = await Message.count({ where: { conversationId: c.id } });
+        const convIds = conversationsRaw.map(c => c.id);
+        let convCountMap = {};
+        if (convIds.length > 0) {
+            const countRows = await Message.findAll({
+                where: { conversationId: { [Op.in]: convIds } },
+                attributes: ['conversationId', [sequelize.fn('COUNT', sequelize.col('id')), 'count']],
+                group: ['conversationId'],
+                raw: true
+            });
+            countRows.forEach(r => { convCountMap[r.conversationId] = parseInt(r.count) || 0; });
+        }
+        const convWithCount = conversationsRaw.map((c) => {
             const plain = c.get ? c.get({ plain: true }) : c;
-            return { ...plain, messageCount: count };
-        }));
+            return { ...plain, messageCount: convCountMap[c.id] || 0 };
+        });
         const items = [];
         convWithCount.forEach(c => {
             items.push({ type: 'conversation', date: c.lastMessageAt || c.createdAt, data: c, assignee: c.assignee });
@@ -191,6 +229,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const customer = await Customer.findByPk(req.params.id);
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
         const allowed = await canAccessCustomer(req, customer.id);
@@ -218,6 +257,7 @@ router.delete('/:id', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!req.canDeleteCustomer()) return res.status(403).json({ error: 'فقط ادمین یا مدیر می‌توانند مشتری را حذف کنند' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const customer = await Customer.findByPk(req.params.id);
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
         const allowed = await canAccessCustomer(req, customer.id);
@@ -253,6 +293,7 @@ router.delete('/:id', async (req, res) => {
 router.get('/:id/transactions', async (req, res) => {
     try {
         if (!req.canAccess('customers') && !req.canAccess('services')) return res.status(403).json({ error: 'دسترسی ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const allowed = await canAccessCustomer(req, req.params.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         let transactions = [];
@@ -279,6 +320,7 @@ router.get('/:id/transactions', async (req, res) => {
 router.get('/:id/notes', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const allowed = await canAccessCustomer(req, req.params.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         const notes = await CustomerNote.findAll({
@@ -295,6 +337,7 @@ router.get('/:id/notes', async (req, res) => {
 router.post('/:id/notes', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const customer = await Customer.findByPk(req.params.id);
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
         const allowed = await canAccessCustomer(req, customer.id);
@@ -329,6 +372,7 @@ router.post('/:id/notes', async (req, res) => {
 router.get('/:id/tags', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const allowed = await canAccessCustomer(req, req.params.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         const customer = await Customer.findByPk(req.params.id, {
@@ -344,6 +388,7 @@ router.get('/:id/tags', async (req, res) => {
 router.put('/:id/tags', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const customer = await Customer.findByPk(req.params.id);
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
         const allowed = await canAccessCustomer(req, customer.id);

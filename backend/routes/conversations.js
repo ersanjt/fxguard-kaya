@@ -9,6 +9,7 @@ const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { canAccessCustomer } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
+const { isValidUUID, parsePagination } = require('../lib/validation');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
 function canArchiveOrDeleteConversation(req) {
@@ -196,15 +197,16 @@ router.get('/', async (req, res) => {
             { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
         ];
 
+        const { page: p, limit: l, offset } = parsePagination(page, limit, 100);
         const { rows, count } = await Conversation.findAndCountAll({
             where,
             include,
             distinct: true,
             order: [['lastMessageAt', 'DESC']],
-            limit: Math.min(parseInt(limit) || 20, 100),
-            offset: (Math.max(1, parseInt(page)) - 1) * (parseInt(limit) || 20)
+            limit: l,
+            offset
         });
-        res.json({ data: rows, total: count, page: Math.max(1, parseInt(page)) });
+        res.json({ data: rows, total: count, page: p });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -214,6 +216,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id, {
             include: [
                 { model: Customer, as: 'customer' },

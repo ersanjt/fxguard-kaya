@@ -3,6 +3,7 @@ const router = express.Router();
 const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
+const logger = require('../config/logger');
 
 const ALLOWED_MIME_TYPES = new Set([
     // تصاویر
@@ -37,7 +38,7 @@ const uploadDir = path.join(__dirname, '..', 'uploads');
 try {
     if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
 } catch (e) {
-    console.error('Upload dir creation failed:', e.message);
+    logger.error('Upload dir creation failed', { error: e.message });
 }
 
 const storage = multer.diskStorage({

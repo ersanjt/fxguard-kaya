@@ -1,4 +1,5 @@
 const { ActivityLog } = require('../models');
+const logger = require('../config/logger');
 
 /**
  * ثبت فعالیت برای نظارت مالک — چه کسی، در کدام شعبه/دپارتمان، چه عملی انجام داده
@@ -17,8 +18,7 @@ async function logActivity({ userId, branchId, departmentId, action, entityType,
             metadata
         });
     } catch (err) {
-        // عدم وابستگی سایر عملیات به لاگ
-        console.error('ActivityLog error:', err.message);
+        logger.error('ActivityLog error', { error: err.message });
     }
 }
 
