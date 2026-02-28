@@ -87,6 +87,7 @@ jobs:
             node --check middleware/socketAuth.js
             node --check lib/encrypt.js
             node --check routes/upload.js
+            node --check routes/api.js
             echo "  ✅ syntax بدون خطا"
 
             # ---- reload با PM2 ----
