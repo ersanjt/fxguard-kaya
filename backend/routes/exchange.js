@@ -9,6 +9,11 @@ function requireServices(req, res, next) {
     next();
 }
 
+function safeParseFloat(val, defaultValue = 0) {
+    const n = parseFloat(val);
+    return Number.isNaN(n) ? defaultValue : n;
+}
+
 // ========== Cash Boxes (صندوق‌ها) ==========
 router.get('/cash-boxes', requireServices, async (req, res) => {
     try {
@@ -32,7 +37,7 @@ router.post('/cash-boxes', requireServices, async (req, res) => {
             name: name || 'صندوق جدید',
             branchId: branchId || null,
             currency: currency || 'IRR',
-            balance: parseFloat(balance) || 0,
+            balance: safeParseFloat(balance, 0),
             description: description || null,
             isActive: isActive !== false
         });
@@ -50,7 +55,11 @@ router.put('/cash-boxes/:id', requireServices, async (req, res) => {
         if (name !== undefined) item.name = name;
         if (branchId !== undefined) item.branchId = branchId || null;
         if (currency !== undefined) item.currency = currency;
-        if (balance !== undefined) item.balance = parseFloat(balance);
+        if (balance !== undefined) {
+            const val = safeParseFloat(balance, null);
+            if (val === null) return res.status(400).json({ error: 'مقدار تراز نامعتبر است' });
+            item.balance = val;
+        }
         if (description !== undefined) item.description = description;
         if (isActive !== undefined) item.isActive = isActive;
         await item.save();
@@ -97,7 +106,7 @@ router.post('/bank-accounts', requireServices, async (req, res) => {
             iban: iban || null,
             branchId: branchId || null,
             currency: currency || 'IRR',
-            balance: parseFloat(balance) || 0,
+            balance: safeParseFloat(balance, 0),
             description: description || null,
             isActive: isActive !== false
         });
@@ -118,7 +127,11 @@ router.put('/bank-accounts/:id', requireServices, async (req, res) => {
         if (iban !== undefined) item.iban = iban;
         if (branchId !== undefined) item.branchId = branchId || null;
         if (currency !== undefined) item.currency = currency;
-        if (balance !== undefined) item.balance = parseFloat(balance);
+        if (balance !== undefined) {
+            const val = safeParseFloat(balance, null);
+            if (val === null) return res.status(400).json({ error: 'مقدار تراز نامعتبر است' });
+            item.balance = val;
+        }
         if (description !== undefined) item.description = description;
         if (isActive !== undefined) item.isActive = isActive;
         await item.save();
@@ -309,7 +322,11 @@ router.put('/transactions/:id', requireServices, async (req, res) => {
             if (transactionDate !== undefined) tx.transactionDate = transactionDate;
             if (customerId !== undefined) tx.customerId = customerId || null;
             if (type !== undefined) tx.type = type;
-            if (amount !== undefined) tx.amount = parseFloat(amount);
+            if (amount !== undefined) {
+                const val = safeParseFloat(amount, null);
+                if (val === null || val <= 0) return res.status(400).json({ error: 'مبلغ تراکنش باید عدد مثبت باشد' });
+                tx.amount = val;
+            }
             if (currency !== undefined) tx.currency = currency;
             if (fromCashBoxId !== undefined) tx.fromCashBoxId = fromCashBoxId || null;
             if (toCashBoxId !== undefined) tx.toCashBoxId = toCashBoxId || null;

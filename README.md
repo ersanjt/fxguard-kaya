@@ -274,6 +274,9 @@ RABBITMQ_URL=amqp://localhost:5672
 JWT_SECRET=your_jwt_secret_key
 JWT_EXPIRES_IN=7d
 
+# Webhook (در production اجباری — حداقل ۱۶ کاراکتر)
+WEBHOOK_SECRET=your_webhook_secret
+
 # Frontend
 FRONTEND_URL=http://localhost:3000
 

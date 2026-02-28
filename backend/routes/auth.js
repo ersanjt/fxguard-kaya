@@ -11,6 +11,7 @@ const { getCountryFromIp } = require('../lib/geoip');
 const emailService = require('../services/emailService');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
+const { validatePassword } = require('../lib/passwordValidation');
 
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
 const TOTP_TEMP_EXPIRY = '5m';
@@ -165,7 +166,8 @@ router.post('/reset-password', async (req, res) => {
     try {
         const { token: resetToken, newPassword } = req.body;
         if (!resetToken || !newPassword) return res.status(400).json({ error: 'توکن و رمز عبور جدید الزامی است' });
-        if (String(newPassword).length < 6) return res.status(400).json({ error: 'رمز عبور حداقل ۶ کاراکتر باشد' });
+        const pwdCheck = validatePassword(newPassword);
+        if (!pwdCheck.valid) return res.status(400).json({ error: pwdCheck.message });
         const row = await PasswordResetToken.findOne({
             where: { token: String(resetToken).trim() }
         });

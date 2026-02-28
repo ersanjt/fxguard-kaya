@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { User, Department, Branch, Conversation, Message, Task, Ticket, ProcessInstance, ProcessInstanceStep, ActivityLog, TaskUpdate, TicketReply, AnnouncementRead, InternalThreadParticipant, InternalMessage, CustomerNote, Transaction, PasswordResetToken } = require('../models');
 const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
+const { validatePassword } = require('../lib/passwordValidation');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 
 router.get('/', async (req, res) => {
@@ -99,7 +100,8 @@ router.patch('/me', async (req, res) => {
             user.email = trimmed;
         }
         if (password !== undefined && password) {
-            if (String(password).length < 6) return res.status(400).json({ error: 'رمز عبور حداقل ۶ کاراکتر باشد' });
+            const pwdCheck = validatePassword(password);
+            if (!pwdCheck.valid) return res.status(400).json({ error: pwdCheck.message });
             user.password = password;
         }
         await user.save();
@@ -134,7 +136,8 @@ router.post('/', async (req, res) => {
         if (!req.canManageUsers()) return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر جدید بسازد' });
         const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords, position } = req.body;
         if (!name || !email || !password) return res.status(400).json({ error: 'نام، ایمیل و رمز الزامی است' });
-        if (String(password).length < 6) return res.status(400).json({ error: 'رمز عبور حداقل ۶ کاراکتر باشد' });
+        const pwdCheck = validatePassword(password);
+        if (!pwdCheck.valid) return res.status(400).json({ error: pwdCheck.message });
         const trimmedEmail = String(email).trim().toLowerCase();
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) return res.status(400).json({ error: 'فرمت ایمیل نامعتبر است' });
         const existingEmail = await User.findOne({ where: { email: trimmedEmail } });
@@ -221,7 +224,8 @@ router.put('/:id', async (req, res) => {
         if (branchId !== undefined && req.canManageUsers()) user.branchId = branchId || null;
         if (isActive !== undefined) user.isActive = !!isActive;
         if (req.body.password) {
-            if (String(req.body.password).length < 6) return res.status(400).json({ error: 'رمز عبور حداقل ۶ کاراکتر باشد' });
+            const pwdCheck = validatePassword(req.body.password);
+            if (!pwdCheck.valid) return res.status(400).json({ error: pwdCheck.message });
             user.password = req.body.password;
         }
         if (permissions !== undefined && typeof permissions === 'object') {
