@@ -67,13 +67,10 @@ jobs:
             # ---- نصب dependencies ----
             echo "📦 نصب dependencies ..."
             cd backend
-            # اگر package-lock.json با package.json همخوانی داشت npm ci، وگرنه npm install
-            if npm ci --only=production 2>/dev/null; then
-              echo "  ✅ npm ci موفق"
-            else
-              echo "  ⚠️ npm ci شکست خورد، از npm install استفاده می‌شود..."
-              npm install --only=production
-            fi
+            # پاک کردن node_modules برای جلوگیری از مشکلات stale cache
+            rm -rf node_modules
+            npm install --omit=dev
+            echo "  ✅ npm install موفق"
 
             # ---- اجرای migration scripts ----
             echo "🗄️ اجرای migration scripts ..."
