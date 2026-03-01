@@ -124,6 +124,7 @@ router.post('/:id/replies', async (req, res) => {
         const content = (req.body.content || '').trim();
         const attachments = Array.isArray(req.body.attachments) ? req.body.attachments : (req.body.attachments ? [req.body.attachments] : []);
         if (!content && attachments.length === 0) return res.status(400).json({ error: 'متن پاسخ یا حداقل یک پیوست الزامی است' });
+        if (content.length > 10000) return res.status(400).json({ error: 'متن پاسخ بیش از ۱۰,۰۰۰ کاراکتر مجاز نیست' });
         const reply = await TicketReply.create({
             ticketId: ticket.id,
             userId: req.userId,

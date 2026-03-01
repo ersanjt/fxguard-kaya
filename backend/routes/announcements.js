@@ -74,6 +74,8 @@ router.post('/', async (req, res) => {
     try {
         const { title, body, isImportant, targetType, targetId } = req.body;
         if (!title || !body) return res.status(400).json({ error: 'عنوان و متن الزامی است' });
+        if (String(title).trim().length > 200) return res.status(400).json({ error: 'عنوان اعلان بیش از ۲۰۰ کاراکتر مجاز نیست' });
+        if (String(body).trim().length > 5000) return res.status(400).json({ error: 'متن اعلان بیش از ۵,۰۰۰ کاراکتر مجاز نیست' });
         const me = req.user;
         let allowed = false;
         let finalTargetType = targetType;

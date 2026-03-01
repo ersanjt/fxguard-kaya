@@ -344,6 +344,7 @@ router.post('/:id/notes', async (req, res) => {
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         const content = (req.body.content || '').trim();
         if (!content) return res.status(400).json({ error: 'متن گزارش/یادداشت الزامی است' });
+        if (content.length > 5000) return res.status(400).json({ error: 'متن یادداشت بیش از ۵,۰۰۰ کاراکتر مجاز نیست' });
         const note = await CustomerNote.create({
             customerId: req.params.id,
             userId: req.userId,

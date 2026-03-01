@@ -252,6 +252,7 @@ router.post('/:id/updates', async (req, res) => {
         const content = (req.body.content || '').trim();
         const statusChange = req.body.statusChange || null;
         if (!content && !statusChange) return res.status(400).json({ error: 'متن پیگیری یا تغییر وضعیت الزامی است' });
+        if (content.length > 5000) return res.status(400).json({ error: 'متن پیگیری بیش از ۵,۰۰۰ کاراکتر مجاز نیست' });
         if (statusChange && !VALID_TASK_STATUSES.has(statusChange)) return res.status(400).json({ error: 'وضعیت تسک نامعتبر است' });
         if (statusChange && VALID_TASK_STATUSES.has(statusChange)) {
             task.status = statusChange;

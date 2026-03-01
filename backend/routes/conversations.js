@@ -498,6 +498,7 @@ router.post('/:id/send', async (req, res) => {
         const media = req.body.media || null;
         const replyTo = req.body.replyTo || null;
         if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
+        if (content.length > 10000) return res.status(400).json({ error: 'متن پیام بیش از ۱۰,۰۰۰ کاراکتر مجاز نیست' });
         // معرفی کارمند قبل از اولین پاسخ او
         if (req.userId) {
             const user = await User.findByPk(req.userId, { include: [{ model: Department, as: 'department', required: false }] });

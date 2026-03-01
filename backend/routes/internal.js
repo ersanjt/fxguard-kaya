@@ -93,6 +93,7 @@ router.post('/threads/:id/messages', async (req, res) => {
         const content = (req.body.content || '').trim();
         const attachments = Array.isArray(req.body.attachments) ? req.body.attachments : (req.body.attachments ? [req.body.attachments] : []);
         if (!content && attachments.length === 0) return res.status(400).json({ error: 'متن پیام یا حداقل یک پیوست الزامی است' });
+        if (content.length > 5000) return res.status(400).json({ error: 'متن پیام بیش از ۵,۰۰۰ کاراکتر مجاز نیست' });
         const msg = await InternalMessage.create({
             threadId: req.params.id,
             fromUserId: req.userId,
