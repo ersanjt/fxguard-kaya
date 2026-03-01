@@ -174,6 +174,64 @@ async function connectDatabases(logger) {
             if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('Users position migration:', e.message);
         }
 
+        // Auto-migrate Customers: new profile fields (v2.0)
+        try {
+            const qi = sequelize.getQueryInterface();
+            const isPg = sequelize.getDialect() === 'postgres';
+            const custDesc = await qi.describeTable('Customers');
+            const newCols = [
+                ['birthDate',     { type: DataTypes.DATEONLY, allowNull: true }],
+                ['nationalId',    { type: DataTypes.STRING, allowNull: true }],
+                ['nationality',   { type: DataTypes.STRING, allowNull: true }],
+                ['occupation',    { type: DataTypes.STRING, allowNull: true }],
+                ['companyName',   { type: DataTypes.STRING, allowNull: true }],
+                ['address',       { type: DataTypes.TEXT, allowNull: true }],
+                ['city',          { type: DataTypes.STRING, allowNull: true }],
+                ['country',       { type: DataTypes.STRING, allowNull: true }],
+                ['postalCode',    { type: DataTypes.STRING, allowNull: true }],
+                ['loyaltyPoints', { type: DataTypes.INTEGER, allowNull: true, defaultValue: 0 }],
+                ['referredBy',    { type: DataTypes.UUID, allowNull: true }],
+                ['instagram',     { type: DataTypes.STRING, allowNull: true }],
+                ['telegram',      { type: DataTypes.STRING, allowNull: true }],
+                ['website',       { type: DataTypes.STRING, allowNull: true }],
+            ];
+            for (const [col, def] of newCols) {
+                if (custDesc && !custDesc[col]) {
+                    await qi.addColumn('Customers', col, def).catch(e => {
+                        if (!String(e.message || '').includes('already exists')) logger.warn(`Customers.${col} migration:`, e.message);
+                    });
+                }
+            }
+            // ENUM columns (gender, loyaltyTier) — handled by sequelize.sync() for SQLite,
+            // and by add-customer-profile-fields.js script for PostgreSQL
+            if (isPg && custDesc && !custDesc.gender) {
+                await sequelize.query(`
+                    DO $$ BEGIN
+                        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enum_Customers_gender') THEN
+                            CREATE TYPE "enum_Customers_gender" AS ENUM ('male', 'female', 'other');
+                        END IF;
+                    END $$;
+                `).catch(() => {});
+                await sequelize.query(`ALTER TABLE "Customers" ADD COLUMN IF NOT EXISTS "gender" "enum_Customers_gender";`).catch(e => {
+                    if (!String(e.message || '').includes('already exists')) logger.warn('Customers.gender migration:', e.message);
+                });
+            }
+            if (isPg && custDesc && !custDesc.loyaltyTier) {
+                await sequelize.query(`
+                    DO $$ BEGIN
+                        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'enum_Customers_loyaltyTier') THEN
+                            CREATE TYPE "enum_Customers_loyaltyTier" AS ENUM ('bronze', 'silver', 'gold', 'platinum');
+                        END IF;
+                    END $$;
+                `).catch(() => {});
+                await sequelize.query(`ALTER TABLE "Customers" ADD COLUMN IF NOT EXISTS "loyaltyTier" "enum_Customers_loyaltyTier" DEFAULT 'bronze';`).catch(e => {
+                    if (!String(e.message || '').includes('already exists')) logger.warn('Customers.loyaltyTier migration:', e.message);
+                });
+            }
+        } catch (e) {
+            logger.warn('Customers profile fields migration:', e.message);
+        }
+
         const defaultRateCurrencies = require('../lib/defaultRateCurrencies');
         const rateCurrencyCount = await RateCurrency.count();
         if (rateCurrencyCount === 0 && defaultRateCurrencies.length > 0) {

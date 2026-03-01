@@ -99,6 +99,7 @@ jobs:
             node scripts/add-transaction-customerid.js
             node scripts/add-ai-columns.js
             node scripts/add-conversation-indexes.js
+            node scripts/add-customer-profile-fields.js
             echo "  ✅ migration scripts اجرا شد"
 
             # ---- بررسی syntax فایل‌های اصلی ----
