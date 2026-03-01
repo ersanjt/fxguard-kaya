@@ -43,6 +43,8 @@ router.post('/templates', requireSection('processes'), async (req, res) => {
         if (!name || !Array.isArray(stages)) {
             return res.status(400).json({ error: 'name and stages (array) required' });
         }
+        if (String(name).trim().length > 200) return res.status(400).json({ error: 'نام فرایند بیش از ۲۰۰ کاراکتر مجاز نیست' });
+        if (stages.length > 50) return res.status(400).json({ error: 'حداکثر ۵۰ مرحله در هر فرایند مجاز است' });
         const sorted = [...stages]
             .filter(s => s && (s.name || s.nameEn))
             .map((s, i) => ({ name: s.name || s.nameEn || String(i), order: s.order ?? i }));
@@ -140,6 +142,9 @@ router.post('/instances', requireSection('processes'), async (req, res) => {
         if (!templateId || !title) {
             return res.status(400).json({ error: 'templateId and title required' });
         }
+        if (!isValidUUID(templateId)) return res.status(400).json({ error: 'شناسه قالب نامعتبر است' });
+        if (String(title).trim().length > 300) return res.status(400).json({ error: 'عنوان فرایند بیش از ۳۰۰ کاراکتر مجاز نیست' });
+        if (assignedTo && !isValidUUID(assignedTo)) return res.status(400).json({ error: 'شناسه کاربر تخصیص‌یافته نامعتبر است' });
         const template = await ProcessTemplate.findByPk(templateId);
         if (!template || !template.isActive) {
             return res.status(400).json({ error: 'Template not found or inactive' });
