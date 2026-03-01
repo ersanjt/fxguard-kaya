@@ -50,6 +50,7 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.3",
-    "sequelize-cli": "^6.6.2"
+    "sequelize-cli": "^6.6.2",
+    "supertest": "^7.2.2"
   }
 }

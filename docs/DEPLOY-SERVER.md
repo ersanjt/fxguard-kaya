@@ -67,6 +67,8 @@ NODE_ENV=production
 PORT=3002
 USE_SQLITE=true
 JWT_SECRET=یک_رشته_خیلی_طولانی_و_تصادفی_برای_امنیت
+ENCRYPT_SECRET=یک_رشته_متفاوت_و_تصادفی_برای_رمزنگاری
+WEBHOOK_SECRET=یک_رشته_تصادفی_برای_webhook
 CORS_ORIGINS=https://دامنه-شما.com,http://92.205.58.83:3002
 FRONTEND_URL=https://دامنه-شما.com
 GATEWAY_URL=http://127.0.0.1:3001
@@ -74,6 +76,15 @@ GATEWAY_URL=http://127.0.0.1:3001
 
 - اگر دامنه ندارید: `CORS_ORIGINS=http://92.205.58.83:3002` و `FRONTEND_URL=http://92.205.58.83:3002` بگذارید.
 - `JWT_SECRET` را حتماً عوض کنید (مثلاً یک رشته ۳۲ کاراکتری تصادفی).
+- `ENCRYPT_SECRET` **باید** با `JWT_SECRET` متفاوت باشد — برای تولید: `openssl rand -hex 32`
+- `WEBHOOK_SECRET` برای احراز هویت webhook لازم است.
+
+> **⚠️ اگر سرور با خطای `ENCRYPT_SECRET باید در .env تنظیم شود` متوقف شد:**
+> ```bash
+> cd /var/www/kayaCRM/backend
+> echo "ENCRYPT_SECRET=$(openssl rand -hex 32)" >> .env
+> pm2 restart ecosystem.config.js --update-env
+> ```
 
 ### مرحله ۵: ایجاد کاربر ادمین و اجرا
 

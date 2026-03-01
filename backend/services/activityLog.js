@@ -15,7 +15,10 @@ const VALID_ACTIONS = new Set([
     'announcement_created', 'announcement_deleted',
     'settings_updated', 'password_reset', 'totp_setup', 'totp_disabled',
     'transaction_created', 'transaction_updated', 'transaction_deleted',
+    'transaction_approved', 'transaction_rejected',
     'process_created', 'process_updated', 'process_completed',
+    'internal_thread_created', 'internal_message_sent',
+    'customer_note_added',
 ]);
 
 async function logActivity({ userId, branchId, departmentId, action, entityType, entityId, customerId, summary, metadata = {} }) {

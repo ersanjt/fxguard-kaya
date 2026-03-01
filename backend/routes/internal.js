@@ -2,6 +2,7 @@ const express = require('express');
 const { InternalThread, InternalMessage, InternalThreadParticipant, User } = require('../models');
 const { Op } = require('sequelize');
 const { isValidUUID } = require('../lib/validation');
+const { logActivity } = require('../services/activityLog');
 
 function createInternalRouter(io) {
 const router = express.Router();
@@ -65,6 +66,14 @@ router.post('/threads', async (req, res) => {
         const thread = await InternalThread.create({});
         await InternalThreadParticipant.bulkCreate([me, ...userIds].map(uid => ({ threadId: thread.id, userId: uid })));
         const withParticipants = await InternalThread.findByPk(thread.id, { include: [{ model: User, as: 'participants', attributes: ['id', 'name', 'email', 'avatar'], through: { attributes: [] } }] });
+        logActivity({
+            userId: me,
+            action: 'internal_thread_created',
+            entityType: 'internal_thread',
+            entityId: thread.id,
+            summary: `گفتگوی داخلی جدید با ${userIds.length} کاربر ایجاد شد`,
+            metadata: { participantIds: userIds }
+        }).catch(() => {});
         res.status(201).json(withParticipants);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -115,6 +124,14 @@ router.post('/threads/:id/messages', async (req, res) => {
                 fromUser: withUser.fromUser
             }));
         }
+        logActivity({
+            userId: req.userId,
+            action: 'internal_message_sent',
+            entityType: 'internal_thread',
+            entityId: req.params.id,
+            summary: `پیام داخلی ارسال شد`,
+            metadata: { messageId: msg.id, contentLength: content.length, hasAttachments: attachments.length > 0 }
+        }).catch(() => {});
         res.status(201).json(withUser);
     } catch (err) {
         res.status(500).json({ error: err.message });

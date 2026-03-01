@@ -363,12 +363,18 @@ router.put('/transactions/:id', requireServices, async (req, res) => {
             if (description !== undefined) tx.description = description;
             if (reference !== undefined) tx.reference = reference;
             if (transactionDate !== undefined) tx.transactionDate = transactionDate;
-            if (customerId !== undefined) tx.customerId = customerId || null;
+            if (customerId !== undefined) {
+                if (customerId && !isValidUUID(customerId)) return res.status(400).json({ error: 'شناسه مشتری نامعتبر است' });
+                tx.customerId = customerId || null;
+            }
         } else {
             if (description !== undefined) tx.description = description;
             if (reference !== undefined) tx.reference = reference;
             if (transactionDate !== undefined) tx.transactionDate = transactionDate;
-            if (customerId !== undefined) tx.customerId = customerId || null;
+            if (customerId !== undefined) {
+                if (customerId && !isValidUUID(customerId)) return res.status(400).json({ error: 'شناسه مشتری نامعتبر است' });
+                tx.customerId = customerId || null;
+            }
             if (type !== undefined) {
                 if (!VALID_TRANSACTION_TYPES.has(type)) return res.status(400).json({ error: 'نوع تراکنش نامعتبر است' });
                 tx.type = type;
@@ -379,10 +385,22 @@ router.put('/transactions/:id', requireServices, async (req, res) => {
                 tx.amount = val;
             }
             if (currency !== undefined) tx.currency = currency;
-            if (fromCashBoxId !== undefined) tx.fromCashBoxId = fromCashBoxId || null;
-            if (toCashBoxId !== undefined) tx.toCashBoxId = toCashBoxId || null;
-            if (fromBankAccountId !== undefined) tx.fromBankAccountId = fromBankAccountId || null;
-            if (toBankAccountId !== undefined) tx.toBankAccountId = toBankAccountId || null;
+            if (fromCashBoxId !== undefined) {
+                if (fromCashBoxId && !isValidUUID(fromCashBoxId)) return res.status(400).json({ error: 'شناسه صندوق مبدا نامعتبر است' });
+                tx.fromCashBoxId = fromCashBoxId || null;
+            }
+            if (toCashBoxId !== undefined) {
+                if (toCashBoxId && !isValidUUID(toCashBoxId)) return res.status(400).json({ error: 'شناسه صندوق مقصد نامعتبر است' });
+                tx.toCashBoxId = toCashBoxId || null;
+            }
+            if (fromBankAccountId !== undefined) {
+                if (fromBankAccountId && !isValidUUID(fromBankAccountId)) return res.status(400).json({ error: 'شناسه حساب بانکی مبدا نامعتبر است' });
+                tx.fromBankAccountId = fromBankAccountId || null;
+            }
+            if (toBankAccountId !== undefined) {
+                if (toBankAccountId && !isValidUUID(toBankAccountId)) return res.status(400).json({ error: 'شناسه حساب بانکی مقصد نامعتبر است' });
+                tx.toBankAccountId = toBankAccountId || null;
+            }
         }
         await tx.save();
         res.json(tx);

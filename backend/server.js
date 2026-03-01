@@ -266,26 +266,30 @@ async function startServer() {
         unansweredInterval = setInterval(() => checkUnansweredConversations(io, logger), 60000);
 
         const PORT = process.env.PORT || 3002;
-        server.listen(PORT, () => {
-            logger.info(`🚀 CRM Backend running on port ${PORT}`);
-        });
-
-        server.on('error', (err) => {
-            if (err.code === 'EADDRINUSE') {
-                logger.error(`❌ پورت ${PORT} در حال استفاده است. یک پروسه دیگر روی این پورت اجرا می‌شود.`);
-                logger.error('برای رفع: lsof -ti:' + PORT + ' | xargs kill -9');
-            } else {
-                logger.error('Server error:', err);
-            }
-            process.exit(1);
+        await new Promise((resolve, reject) => {
+            server.listen(PORT, () => {
+                logger.info(`🚀 CRM Backend running on port ${PORT}`);
+                resolve();
+            });
+            server.on('error', (err) => {
+                if (err.code === 'EADDRINUSE') {
+                    logger.error(`❌ پورت ${PORT} در حال استفاده است. یک پروسه دیگر روی این پورت اجرا می‌شود.`);
+                    logger.error('برای رفع: lsof -ti:' + PORT + ' | xargs kill -9');
+                } else {
+                    logger.error('Server error:', err);
+                }
+                if (process.env.NODE_ENV !== 'test') process.exit(1);
+                reject(err);
+            });
         });
     } catch (error) {
         logger.error('Server startup error:', error);
-        process.exit(1);
+        if (process.env.NODE_ENV !== 'test') process.exit(1);
+        throw error;
     }
 }
 
-startServer();
+const _startPromise = startServer();
 
 // Graceful shutdown — stop accepting new requests, finish in-flight, close connections
 async function gracefulShutdown(signal) {
@@ -327,4 +331,4 @@ process.on('unhandledRejection', (reason) => {
     logger.error('Unhandled promise rejection', { reason: String(reason) });
 });
 
-module.exports = { io, getRabbitChannel };
+module.exports = { app, server, io, getRabbitChannel, ready: _startPromise };
