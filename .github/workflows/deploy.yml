@@ -75,7 +75,14 @@ jobs:
             # ---- اجرای migration scripts ----
             echo "🗄️ اجرای migration scripts ..."
             node scripts/add-unanswered-columns.js
+            node scripts/add-auto-messages-columns.js
+            node scripts/add-activitylog-customerid.js
+            node scripts/add-last-message-preview.js
+            node scripts/add-ticket-number.js
+            node scripts/add-transaction-customerid.js
+            node scripts/add-ai-columns.js
             node scripts/add-conversation-indexes.js
+            echo "  ✅ migration scripts اجرا شد"
 
             # ---- بررسی syntax فایل‌های اصلی ----
             echo "🔎 بررسی syntax ..."
