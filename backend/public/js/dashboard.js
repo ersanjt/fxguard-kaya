@@ -5498,12 +5498,16 @@
         async function sendVoiceMessage(blob) {
             if (!currentConvId || !blob || blob.size === 0) return;
             var fd = new FormData();
-            var ext = (blob.type || '').indexOf('ogg') >= 0 ? '.ogg' : '.webm';
-            fd.append('file', blob, 'voice' + ext);
+            var rawType = blob.type || '';
+            var baseMime = rawType.split(';')[0].trim() || 'audio/webm';
+            var ext = baseMime.indexOf('ogg') >= 0 ? '.ogg' : baseMime.indexOf('mp4') >= 0 ? '.m4a' : '.webm';
+            // Create new blob with clean MIME type so server accepts it
+            var cleanBlob = new Blob([blob], { type: baseMime });
+            fd.append('file', cleanBlob, 'voice' + ext);
             var uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
             var uploadData = await uploadRes.json().catch(function() { return {}; });
             if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
-            var media = { url: uploadData.url, filename: uploadData.name || 'voice' + ext, mimetype: blob.type || (ext === '.ogg' ? 'audio/ogg' : 'audio/webm') };
+            var media = { url: uploadData.url, filename: uploadData.name || 'voice' + ext, mimetype: baseMime };
             var res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
             if (res.needLogin) return;
             if (res.ok) loadMessages(currentConvId);

@@ -64,7 +64,9 @@ const upload = multer({
         if (BLOCKED_EXTENSIONS.has(ext)) {
             return cb(new Error(`نوع فایل مجاز نیست: ${ext}`));
         }
-        if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
+        // MIME type can include codec params like "audio/webm;codecs=opus" — check base type
+        const baseMime = (file.mimetype || '').split(';')[0].trim().toLowerCase();
+        if (!ALLOWED_MIME_TYPES.has(baseMime) && !ALLOWED_MIME_TYPES.has(file.mimetype)) {
             return cb(new Error(`نوع فایل پشتیبانی نمی‌شود: ${file.mimetype}`));
         }
         cb(null, true);
