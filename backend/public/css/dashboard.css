@@ -1833,6 +1833,7 @@
         .customer-stat { color: var(--text-secondary); }
         .customer-stat strong { color: var(--accent); margin-left: 4px; }
         /* toolbar مشتریان — desktop */
+        .customer-fab-btn { display: none; }
         .customer-toolbar { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; min-width: 0; position: relative; }
         /* نوار جستجو یکپارچه */
         .customer-search-bar { display: flex; align-items: center; gap: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
