@@ -5088,7 +5088,7 @@
             var name = el.getAttribute('data-customername') || '';
             var isGrp = el.getAttribute('data-is-group') === '1';
             if (!convId) return;
-            // نمایش صفحه مکالمات بدون reload لیست
+            // نمایش صفحه مکالمات
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
             var convPage = document.getElementById('pageConversations');
             if (convPage) { convPage.style.display = 'flex'; convPage.classList.add('show'); }
@@ -5098,21 +5098,36 @@
             document.querySelectorAll('.sidebar .nav-link[data-page]').forEach(function(l) { l.classList.remove('active'); });
             var convLink = document.querySelector('.sidebar .nav-link[data-page="conversations"]');
             if (convLink) convLink.classList.add('active');
-            // اگر لیست مکالمات هنوز بارگذاری نشده، بارگذاری کن
-            var convList = document.getElementById('conversationsList');
-            var needsLoad = !convList || convList.children.length === 0;
-            if (needsLoad) {
-                loadConvFiltersInit();
-                loadConversations();
-                setTimeout(function() {
-                    removeAllInlineHandlers();
-                    setupConversationEventHandlers();
-                    openChat(convId, name, '', '', isGrp);
-                }, 400);
-            } else {
+            // اطلاعات مکالمه را مستقیم از API بگیر و باز کن
+            apiFetch('/api/conversations/' + convId).then(function(res) {
+                if (res.needLogin) return;
+                var convData = (res.ok && res.data) ? res.data : null;
+                var finalName = (convData && convData.customer && convData.customer.name) ? convData.customer.name : name;
+                var finalPhone = (convData && convData.customer && convData.customer.phone) ? convData.customer.phone : '';
+                var finalPic = (convData && convData.customer && convData.customer.profilePic) ? convData.customer.profilePic : '';
+                var finalIsGrp = convData ? !!(convData.metadata && convData.metadata.isGroup) : isGrp;
+                // اگر لیست مکالمات هنوز بارگذاری نشده، بارگذاری کن
+                var convList = document.getElementById('conversationsList');
+                var needsLoad = !convList || convList.children.length === 0;
+                if (needsLoad) {
+                    loadConvFiltersInit();
+                    loadConversations();
+                }
+                removeAllInlineHandlers();
+                setupConversationEventHandlers();
+                openChat(convId, finalName, finalPhone, finalPic, finalIsGrp);
+            }).catch(function() {
+                // در صورت خطا با اطلاعات موجود باز کن
+                var convList = document.getElementById('conversationsList');
+                var needsLoad = !convList || convList.children.length === 0;
+                if (needsLoad) {
+                    loadConvFiltersInit();
+                    loadConversations();
+                }
+                removeAllInlineHandlers();
                 setupConversationEventHandlers();
                 openChat(convId, name, '', '', isGrp);
-            }
+            });
         }
 
         var _loadMessagesController = null;
@@ -5760,11 +5775,12 @@
                     document.querySelectorAll('.customer-detail-tab').forEach(function(b) { b.classList.remove('active'); });
                     document.querySelectorAll('.customer-detail-panel').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
                     this.classList.add('active');
-                    var pid = tab === 'timeline' ? 'customerTimelinePanel' : tab === 'conversations' ? 'customerConversationsPanel' : tab === 'transactions' ? 'customerTransactionsPanel' : 'customerNotesPanel';
+                    var pid = tab === 'timeline' ? 'customerTimelinePanel' : tab === 'conversations' ? 'customerConversationsPanel' : tab === 'transactions' ? 'customerTransactionsPanel' : tab === 'documents' ? 'customerDocumentsPanel' : 'customerNotesPanel';
                     var panel = document.getElementById(pid);
                     if (panel) { panel.style.display = 'block'; panel.classList.add('show'); }
                     if (tab === 'notes' && currentCustomerId) loadCustomerNotes(currentCustomerId);
                     if (tab === 'transactions' && currentCustomerId) loadCustomerTransactions(currentCustomerId);
+                    if (tab === 'documents' && currentCustomerId) loadCustomerDocuments(currentCustomerId);
                 };
             });
         }
@@ -5809,6 +5825,109 @@
                 return '';
             }).join('');
         }
+        // ——— اسناد و مدیا مشتری
+        var _docUploadBound = false;
+        async function loadCustomerDocuments(custId) {
+            var list = document.getElementById('customerDocsList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            var cat = (document.getElementById('customerDocsFilterCat') || {}).value || '';
+            var ftype = (document.getElementById('customerDocsFilterType') || {}).value || '';
+            var url = '/api/customers/' + custId + '/documents';
+            var params = [];
+            if (cat) params.push('category=' + encodeURIComponent(cat));
+            if (ftype) params.push('fileType=' + encodeURIComponent(ftype));
+            if (params.length) url += '?' + params.join('&');
+            var res = await apiFetch(url);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + ((res.data && res.data.error) || 'خطا در بارگذاری') + '</div>'; return; }
+            var docs = (res.data && res.data.data) || [];
+            if (docs.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📁</span><br>هنوز سندی ثبت نشده.</div>'; }
+            else {
+                var catLabels = { identity: 'مدارک هویتی', contract: 'قرارداد', financial: 'مالی', media: 'رسانه', other: 'سایر' };
+                list.innerHTML = docs.map(function(d) {
+                    var icon = d.fileType === 'image' ? '🖼️' : d.fileType === 'video' ? '🎬' : d.fileType === 'audio' ? '🎵' : d.fileType === 'document' ? '📄' : '📎';
+                    var size = d.fileSize ? (d.fileSize > 1048576 ? (d.fileSize/1048576).toFixed(1)+'MB' : (d.fileSize/1024).toFixed(0)+'KB') : '';
+                    var expiry = d.expiresAt ? '<span class="doc-expiry' + (new Date(d.expiresAt) < new Date() ? ' doc-expiry-expired' : '') + '">انقضا: ' + d.expiresAt + '</span>' : '';
+                    var src = d.filePath && d.filePath.startsWith('http') ? d.filePath : (d.filePath ? (window.location.origin + d.filePath) : '');
+                    var previewBtn = src ? '<a href="' + escapeHtml(src) + '" target="_blank" class="btn-link btn-sm">مشاهده</a>' : '';
+                    var dlBtn = src ? '<a href="' + escapeHtml(src) + '" download class="btn-link btn-sm">دانلود</a>' : '';
+                    return '<div class="customer-doc-item" data-docid="' + d.id + '">' +
+                        '<div class="customer-doc-icon">' + icon + '</div>' +
+                        '<div class="customer-doc-info">' +
+                            '<div class="customer-doc-title">' + escapeHtml(d.title || d.fileName) + '</div>' +
+                            '<div class="customer-doc-meta">' + (catLabels[d.category] || d.category) + (size ? ' · ' + size : '') + (d.source === 'conversation' ? ' · از مکالمه' : '') + (d.uploader ? ' · ' + escapeHtml(d.uploader.name) : '') + ' · ' + fmtTZ(d.createdAt, 'date') + '</div>' +
+                            (d.description ? '<div class="customer-doc-desc">' + escapeHtml(d.description) + '</div>' : '') +
+                            expiry +
+                        '</div>' +
+                        '<div class="customer-doc-actions">' + previewBtn + dlBtn +
+                            '<button type="button" class="btn-danger btn-sm btn-icon" onclick="deleteCustomerDoc(\'' + d.id + '\',\'' + custId + '\')" title="حذف">🗑</button>' +
+                        '</div>' +
+                    '</div>';
+                }).join('');
+            }
+            // bind filters
+            var catSel = document.getElementById('customerDocsFilterCat');
+            var typeSel = document.getElementById('customerDocsFilterType');
+            if (catSel && !catSel._docBound) { catSel._docBound = true; catSel.onchange = function() { loadCustomerDocuments(custId); }; }
+            if (typeSel && !typeSel._docBound) { typeSel._docBound = true; typeSel.onchange = function() { loadCustomerDocuments(custId); }; }
+            // bind upload button
+            if (!_docUploadBound) {
+                _docUploadBound = true;
+                var uploadBtn = document.getElementById('btnCustomerUploadDoc');
+                if (uploadBtn) uploadBtn.onclick = function() {
+                    var form = document.getElementById('customerDocUploadForm');
+                    if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+                };
+                var cancelBtn = document.getElementById('btnDocUploadCancel');
+                if (cancelBtn) cancelBtn.onclick = function() {
+                    var form = document.getElementById('customerDocUploadForm');
+                    if (form) form.style.display = 'none';
+                };
+                var saveBtn = document.getElementById('btnDocUploadSave');
+                if (saveBtn) saveBtn.onclick = function() { uploadCustomerDoc(custId); };
+            }
+        }
+        async function uploadCustomerDoc(custId) {
+            var fileInput = document.getElementById('docUploadFile');
+            if (!fileInput || !fileInput.files || !fileInput.files[0]) { toast('فایل انتخاب نشده', true); return; }
+            var title = (document.getElementById('docUploadTitle').value || '').trim() || fileInput.files[0].name;
+            var category = document.getElementById('docUploadCategory').value || 'other';
+            var desc = (document.getElementById('docUploadDesc').value || '').trim();
+            var expiry = (document.getElementById('docUploadExpiry').value || '').trim();
+            var fd = new FormData();
+            fd.append('file', fileInput.files[0]);
+            fd.append('title', title);
+            fd.append('category', category);
+            if (desc) fd.append('description', desc);
+            if (expiry) fd.append('expiresAt', expiry);
+            var saveBtn = document.getElementById('btnDocUploadSave');
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'در حال آپلود...'; }
+            try {
+                var res = await apiFetch('/api/customers/' + custId + '/documents', { method: 'POST', body: fd });
+                if (res.needLogin) return;
+                if (res.ok) {
+                    toast('سند با موفقیت ذخیره شد');
+                    var form = document.getElementById('customerDocUploadForm');
+                    if (form) form.style.display = 'none';
+                    fileInput.value = '';
+                    document.getElementById('docUploadTitle').value = '';
+                    document.getElementById('docUploadDesc').value = '';
+                    document.getElementById('docUploadExpiry').value = '';
+                    loadCustomerDocuments(custId);
+                } else { toast((res.data && res.data.error) || 'خطا در آپلود', true); }
+            } finally {
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'ذخیره'; }
+            }
+        }
+        async function deleteCustomerDoc(docId, custId) {
+            if (!confirm('آیا از حذف این سند مطمئن هستید؟')) return;
+            var res = await apiFetch('/api/customers/' + custId + '/documents/' + docId, { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (res.ok) { toast('سند حذف شد'); loadCustomerDocuments(custId); }
+            else toast((res.data && res.data.error) || 'خطا در حذف', true);
+        }
+
         async function loadCustomerTransactions(custId) {
             var list = document.getElementById('customerTransactionsList');
             if (!list) return;
@@ -5893,6 +6012,9 @@
             document.getElementById('customerModalProfilePic').value = '';
             customerModalSelectedTags = [];
             updateCustomerModalAvatarPreview('');
+            // پاک کردن فیلدهای جدید
+            var _newFields = ['customerModalBirthDate','customerModalNationalId','customerModalNationality','customerModalGender','customerModalOccupation','customerModalCompanyName','customerModalAddress','customerModalCity','customerModalCountry','customerModalPostalCode','customerModalInstagram','customerModalTelegram','customerModalWebsite'];
+            _newFields.forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
             if (customerId) {
                 (async function() {
                     var res = await apiFetch('/api/customers/' + customerId);
@@ -5908,6 +6030,9 @@
                         customerModalSelectedTags = (c.tags || []).map(function(t) { return t.id; });
                         renderCustomerModalCustomFields(c.customFields || {});
                         if (currentCustomerId === customerId) currentCustomerData = c;
+                        // لود فیلدهای جدید
+                        var _map = { customerModalBirthDate: 'birthDate', customerModalNationalId: 'nationalId', customerModalNationality: 'nationality', customerModalGender: 'gender', customerModalOccupation: 'occupation', customerModalCompanyName: 'companyName', customerModalAddress: 'address', customerModalCity: 'city', customerModalCountry: 'country', customerModalPostalCode: 'postalCode', customerModalInstagram: 'instagram', customerModalTelegram: 'telegram', customerModalWebsite: 'website' };
+                        Object.keys(_map).forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = c[_map[fid]] || ''; });
                     }
                     renderCustomerModalTags();
                 })();
@@ -6084,10 +6209,27 @@
             var notes = (document.getElementById('customerModalNotes').value || '').trim();
             var profilePic = (document.getElementById('customerModalProfilePic') && document.getElementById('customerModalProfilePic').value || '').trim();
             var customFields = getCustomerModalCustomFields();
+            // فیلدهای جدید
+            var _getVal = function(fid) { var el = document.getElementById(fid); return el ? (el.value || '').trim() : ''; };
+            var extraFields = {
+                birthDate: _getVal('customerModalBirthDate') || undefined,
+                nationalId: _getVal('customerModalNationalId') || undefined,
+                nationality: _getVal('customerModalNationality') || undefined,
+                gender: _getVal('customerModalGender') || undefined,
+                occupation: _getVal('customerModalOccupation') || undefined,
+                companyName: _getVal('customerModalCompanyName') || undefined,
+                address: _getVal('customerModalAddress') || undefined,
+                city: _getVal('customerModalCity') || undefined,
+                country: _getVal('customerModalCountry') || undefined,
+                postalCode: _getVal('customerModalPostalCode') || undefined,
+                instagram: _getVal('customerModalInstagram') || undefined,
+                telegram: _getVal('customerModalTelegram') || undefined,
+                website: _getVal('customerModalWebsite') || undefined
+            };
             if (!name) { toast(LANG === 'fa' ? 'نام الزامی است' : 'Name required', true); return; }
             if (!id && !phone) { toast(LANG === 'fa' ? 'تلفن برای مشتری جدید الزامی است' : 'Phone required', true); return; }
             if (id) {
-                var body = { name: name || undefined, phone: phone || undefined, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined };
+                var body = Object.assign({ name: name || undefined, phone: phone || undefined, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }, extraFields);
                 var res = await apiFetch('/api/customers/' + id, { method: 'PUT', body: JSON.stringify(body) });
                 if (res.needLogin) return;
                 if (res.ok) {
@@ -6096,7 +6238,8 @@
                     closeCustomerModal(); toast(t('btn_save')); if (currentCustomerId === id) showCustomerHistory(id, res.data.name || res.data.phone); loadCustomers();
                 } else toast((res.data && res.data.error) || t('err_generic'), true);
             } else {
-                var res = await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify({ name: name, phone: phone, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }) });
+                var body2 = Object.assign({ name: name, phone: phone, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }, extraFields);
+                var res = await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify(body2) });
                 if (res.needLogin) return;
                 if (res.ok) {
                     var newId = res.data && res.data.id;
@@ -6134,7 +6277,9 @@
         }
         function applyNavByRole() {
             var perms = (currentUser && currentUser.permissions) || {};
-            var can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
+            var role = (currentUser && currentUser.role) || '';
+            var isOwnerOrAdmin = (role === 'owner' || role === 'admin');
+            var can = function(section) { return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
             document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
                 var section = link.getAttribute('data-section');
                 link.style.display = can(section) ? '' : 'none';
@@ -9920,6 +10065,53 @@
                 if (trigger) trigger.setAttribute('aria-expanded', 'false');
                 if (triggerMobile) triggerMobile.setAttribute('aria-expanded', 'false');
             };
+            // event delegation برای notify dropdown و دکمه زنگوله - یک بار bind می‌شود
+            (function() {
+                // handler برای dropdown items
+                var dropdown = document.getElementById('headerNotifyDropdown');
+                if (dropdown) {
+                    dropdown.addEventListener('click', function(e) {
+                        var item = e.target.closest('[data-action]');
+                        if (!item) return;
+                        e.preventDefault();
+                        var action = item.getAttribute('data-action');
+                        var id = item.getAttribute('data-id');
+                        if (action === 'open-ann' && id) {
+                            closeNotifyDropdown();
+                            if (typeof markAnnouncementReadAndShow === 'function') markAnnouncementReadAndShow(id);
+                            showPage('announcements');
+                        } else if (action === 'open-ticket' && id) {
+                            closeNotifyDropdown();
+                            showPage('tickets');
+                            setTimeout(function() {
+                                if (typeof loadTicketDetail === 'function') loadTicketDetail(id);
+                            }, 200);
+                        } else if (action === 'close-notify') {
+                            closeNotifyDropdown();
+                        } else if (action === 'see-all-ann') {
+                            closeNotifyDropdown();
+                            showPage('announcements');
+                        } else if (action === 'see-all-tickets') {
+                            closeNotifyDropdown();
+                            showPage('tickets');
+                        }
+                    });
+                }
+                // handler برای دکمه زنگوله (خارج از dropdown)
+                var notifyBtn = document.getElementById('headerNotifyBtn');
+                if (notifyBtn) {
+                    notifyBtn.addEventListener('click', function(e) {
+                        if (typeof toggleNotifyDropdown === 'function') toggleNotifyDropdown(e);
+                    });
+                }
+                var notifyBtnMobile = document.getElementById('headerNotifyBtnMobile');
+                if (notifyBtnMobile) {
+                    notifyBtnMobile.addEventListener('click', function(e) {
+                        if (typeof toggleNotifyDropdown === 'function') toggleNotifyDropdown(e);
+                    });
+                }
+            })();
+
             var _notifyCloseOnOutside = null;
             window.toggleNotifyDropdown = function(e) {
                 if (e) e.stopPropagation();
@@ -9993,7 +10185,7 @@
                                         var unreadClass = !a.read ? ' notify-item-unread' : '';
                                         var dot = !a.read ? '<span class="notify-unread-dot"></span>' : '';
                                         var iconHtml = '<span class="notify-item-icon">' + annIcon + '</span>';
-                                        return '<a href="#" class="notify-item' + unreadClass + '" onclick="closeNotifyDropdown(); markAnnouncementReadAndShow(\'' + (a.id || '').replace(/'/g, "\\'") + '\'); showPage(\'announcements\'); return false;">' + dot + iconHtml + '<div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div>' + (timeStr ? '<div class="notify-item-meta">' + escapeHtml(timeStr) + '</div>' : '') + '</div>' + arrowSvg + '</a>';
+                                        return '<a href="#" class="notify-item' + unreadClass + '" data-action="open-ann" data-id="' + escapeHtml(a.id || '') + '">' + dot + iconHtml + '<div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div>' + (timeStr ? '<div class="notify-item-meta">' + escapeHtml(timeStr) + '</div>' : '') + '</div>' + arrowSvg + '</a>';
                                     }).join('');
                                 }
                             }
@@ -10031,7 +10223,7 @@
                                     var iconHtml = '<span class="notify-item-icon' + (isOpen ? ' warn' : '') + '">' + ticketIcon + '</span>';
                                     var statusBadge = '<span class="notify-item-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span>';
                                     var timeStr = tk.createdAt && typeof fmtTZ === 'function' ? fmtTZ(tk.createdAt, 'date') : '';
-                                    return '<a href="#" class="notify-item" onclick="closeNotifyDropdown(); showPage(\'tickets\'); setTimeout(function(){ loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\'); }, 200); return false;">' + iconHtml + '<div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div><div class="notify-item-meta">' + statusBadge + (timeStr ? '<span>' + escapeHtml(timeStr) + '</span>' : '') + '</div></div>' + arrowSvg + '</a>';
+                                    return '<a href="#" class="notify-item" data-action="open-ticket" data-id="' + escapeHtml(tk.id || '') + '">' + iconHtml + '<div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div><div class="notify-item-meta">' + statusBadge + (timeStr ? '<span>' + escapeHtml(timeStr) + '</span>' : '') + '</div></div>' + arrowSvg + '</a>';
                                 }).join('');
                             }
                         }

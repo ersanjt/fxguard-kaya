@@ -65,6 +65,7 @@ const models = {
     ProcessInstanceStep: require('./ProcessInstanceStep')(sequelize),
     ExchangeService: require('./ExchangeService')(sequelize),
     CustomerNote: require('./CustomerNote')(sequelize),
+    CustomerDocument: require('./CustomerDocument')(sequelize),
     CashBox: require('./CashBox')(sequelize),
     BankAccount: require('./BankAccount')(sequelize),
     Transaction: require('./Transaction')(sequelize),

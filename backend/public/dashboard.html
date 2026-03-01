@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/dashboard.css?v=37">
+    <link rel="stylesheet" href="/css/dashboard.css?v=38">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -124,7 +124,10 @@
                 <h1 class="header-mobile-title" id="headerMobileTitle">داشبورد</h1>
                 <div class="header-mobile-actions">
                     <button type="button" class="header-ann-toggle-btn" id="headerAnnToggleBtn" style="display:none;" aria-label="نمایش اعلان‌ها" title="نمایش اعلان‌ها" onclick="toggleAnnouncementMarquee()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M6 17h12v2H6z"/></svg></button>
-
+                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها">
+                        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <span class="header-notify-badge" id="headerNotifyBadgeMobile" style="display:none;">0</span>
+                    </button>
                     <button type="button" class="header-search-trigger header-mobile-search" id="headerSearchTrigger" aria-label="جستجو" title="جستجو" onclick="openHeaderSearchPopup()"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
                     <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو" onclick="toggleUserDropdown(event)"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
                 </div>
@@ -157,7 +160,7 @@
                     <div class="header-status-wrap">
                         <span class="header-whatsapp-status" id="headerWhatsappStatus" data-perm="whatsapp" title="وضعیت واتساپ"><span class="status-dot"></span><span class="status-label" data-i18n="nav_whatsapp">واتساپ</span></span>
                         <div class="header-notify-wrap" id="headerNotifyWrap">
-                            <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-perm="announcements" onclick="toggleNotifyDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها">
+                            <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها">
                                 <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
                                 <span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span>
                             </button>
@@ -198,7 +201,7 @@
                 <!-- هدر پنل -->
                 <div class="notify-panel-header">
                     <span class="notify-panel-title" data-i18n="nav_announcements_and_tickets">اعلان‌ها</span>
-                    <button type="button" class="notify-panel-close" onclick="closeNotifyDropdown()" aria-label="بستن">
+                    <button type="button" class="notify-panel-close" data-action="close-notify" aria-label="بستن">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
                     </button>
                 </div>
@@ -216,7 +219,7 @@
                             <div class="notify-skeleton"><div class="notify-skeleton-line w70"></div><div class="notify-skeleton-line w45"></div></div>
                             <div class="notify-skeleton"><div class="notify-skeleton-line w85"></div><div class="notify-skeleton-line w55"></div></div>
                         </div>
-                        <a href="#announcements" class="notify-see-all" onclick="closeNotifyDropdown(); showPage('announcements'); return false;" data-i18n="ann_view_all">مشاهده همه اعلان‌ها</a>
+                        <a href="#announcements" class="notify-see-all" data-action="see-all-ann" data-i18n="ann_view_all">مشاهده همه اعلان‌ها</a>
                     </div>
                     <!-- بخش تیکت‌ها -->
                     <div class="notify-section notify-section-tickets" data-perm="tickets">
@@ -230,7 +233,7 @@
                         <div class="notify-section-list" id="notifyTicketsList">
                             <div class="notify-skeleton"><div class="notify-skeleton-line w75"></div><div class="notify-skeleton-line w40"></div></div>
                         </div>
-                        <a href="#tickets" class="notify-see-all" onclick="closeNotifyDropdown(); showPage('tickets'); return false;" data-i18n="notify_see_all_tickets">مشاهده همه تیکت‌ها</a>
+                        <a href="#tickets" class="notify-see-all" data-action="see-all-tickets" data-i18n="notify_see_all_tickets">مشاهده همه تیکت‌ها</a>
                     </div>
                 </div>
             </div>
@@ -2313,6 +2316,7 @@
                         <button type="button" class="customer-detail-tab" data-tab="conversations" data-i18n="customer_history">مکالمات</button>
                         <button type="button" class="customer-detail-tab" data-tab="transactions" data-i18n="customer_transactions">تراکنش‌ها</button>
                         <button type="button" class="customer-detail-tab" data-tab="notes" data-i18n="customer_notes">گزارش‌ها و یادداشت‌ها</button>
+                        <button type="button" class="customer-detail-tab" data-tab="documents">📁 اسناد و مدیا</button>
                     </div>
                     <div id="customerTimelinePanel" class="customer-detail-panel show">
                         <div id="customerTimelineList" class="customer-timeline-list"></div>
@@ -2335,6 +2339,65 @@
                             <button type="button" class="btn-primary" id="customerNoteAddBtn" data-i18n="customer_note_add">افزودن گزارش / یادداشت</button>
                         </div>
                         <div id="customerNotesList"></div>
+                    </div>
+                    <div id="customerDocumentsPanel" class="customer-detail-panel">
+                        <div class="customer-docs-toolbar">
+                            <div class="customer-docs-filters">
+                                <select id="customerDocsFilterCat" class="customer-docs-filter-select">
+                                    <option value="">همه دسته‌ها</option>
+                                    <option value="identity">مدارک هویتی</option>
+                                    <option value="contract">قرارداد</option>
+                                    <option value="financial">مالی</option>
+                                    <option value="media">رسانه (مکالمات)</option>
+                                    <option value="other">سایر</option>
+                                </select>
+                                <select id="customerDocsFilterType" class="customer-docs-filter-select">
+                                    <option value="">همه انواع</option>
+                                    <option value="image">تصویر</option>
+                                    <option value="video">ویدیو</option>
+                                    <option value="audio">صدا</option>
+                                    <option value="document">سند</option>
+                                    <option value="other">سایر</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn-primary btn-sm" id="btnCustomerUploadDoc">+ آپلود سند / فایل</button>
+                        </div>
+                        <div id="customerDocsList" class="customer-docs-list"></div>
+                        <!-- فرم آپلود سند -->
+                        <div id="customerDocUploadForm" class="customer-doc-upload-form" style="display:none;">
+                            <h4>آپلود سند جدید</h4>
+                            <div class="customer-doc-upload-grid">
+                                <div>
+                                    <label>عنوان سند</label>
+                                    <input type="text" id="docUploadTitle" placeholder="عنوان سند">
+                                </div>
+                                <div>
+                                    <label>دسته‌بندی</label>
+                                    <select id="docUploadCategory">
+                                        <option value="other">سایر</option>
+                                        <option value="identity">مدارک هویتی</option>
+                                        <option value="contract">قرارداد</option>
+                                        <option value="financial">مالی</option>
+                                        <option value="media">رسانه</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>تاریخ انقضا (اختیاری)</label>
+                                    <input type="date" id="docUploadExpiry">
+                                </div>
+                                <div>
+                                    <label>توضیحات</label>
+                                    <input type="text" id="docUploadDesc" placeholder="توضیح اختیاری">
+                                </div>
+                            </div>
+                            <div class="customer-doc-upload-file-wrap">
+                                <input type="file" id="docUploadFile" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar">
+                            </div>
+                            <div class="customer-doc-upload-actions">
+                                <button type="button" class="btn-secondary btn-sm" id="btnDocUploadCancel">انصراف</button>
+                                <button type="button" class="btn-primary btn-sm" id="btnDocUploadSave">ذخیره</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div id="customerModal" class="modal-overlay" style="display:none;">
@@ -2374,6 +2437,78 @@
                                                 <input type="hidden" id="customerModalProfilePic" value="">
                                             </div>
                                         </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title">اطلاعات شخصی</h4>
+                                <div class="customer-modal-grid">
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalBirthDate">تاریخ تولد</label>
+                                        <input type="date" id="customerModalBirthDate" placeholder="YYYY-MM-DD">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalNationalId">کد ملی / شناسه</label>
+                                        <input type="text" id="customerModalNationalId" placeholder="کد ملی یا شناسه">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalNationality">ملیت</label>
+                                        <input type="text" id="customerModalNationality" placeholder="مثال: ایرانی">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalGender">جنسیت</label>
+                                        <select id="customerModalGender">
+                                            <option value="">— انتخاب —</option>
+                                            <option value="male">مرد</option>
+                                            <option value="female">زن</option>
+                                            <option value="other">سایر</option>
+                                        </select>
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalOccupation">شغل</label>
+                                        <input type="text" id="customerModalOccupation" placeholder="شغل مشتری">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalCompanyName">نام شرکت</label>
+                                        <input type="text" id="customerModalCompanyName" placeholder="نام شرکت یا سازمان">
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title">آدرس</h4>
+                                <div class="customer-modal-grid">
+                                    <div class="customer-modal-field customer-modal-field-full">
+                                        <label for="customerModalAddress">آدرس</label>
+                                        <input type="text" id="customerModalAddress" placeholder="آدرس کامل">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalCity">شهر</label>
+                                        <input type="text" id="customerModalCity" placeholder="شهر">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalCountry">کشور</label>
+                                        <input type="text" id="customerModalCountry" placeholder="کشور">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalPostalCode">کد پستی</label>
+                                        <input type="text" id="customerModalPostalCode" placeholder="کد پستی">
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title">شبکه‌های اجتماعی</h4>
+                                <div class="customer-modal-grid">
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalInstagram">اینستاگرام</label>
+                                        <input type="text" id="customerModalInstagram" placeholder="@username">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalTelegram">تلگرام</label>
+                                        <input type="text" id="customerModalTelegram" placeholder="@username">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalWebsite">وب‌سایت</label>
+                                        <input type="text" id="customerModalWebsite" placeholder="https://...">
                                     </div>
                                 </div>
                             </section>
@@ -2928,7 +3063,7 @@
     <script src="/js/i18n-fa.js?v=3" charset="utf-8"></script>
     <script src="/js/i18n-en.js?v=1" charset="utf-8"></script>
     <script src="/js/i18n-tr.js?v=3" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=13" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=16" charset="utf-8"></script>
     <script>
     (function() {
         function updateMobileHeaderHeight() {

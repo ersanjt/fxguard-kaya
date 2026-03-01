@@ -54,13 +54,69 @@ module.exports = (sequelize) => {
         },
         lastContactAt: {
             type: DataTypes.DATE
+        },
+        // اطلاعات شخصی
+        birthDate: {
+            type: DataTypes.DATEONLY
+        },
+        nationalId: {
+            type: DataTypes.STRING
+        },
+        nationality: {
+            type: DataTypes.STRING
+        },
+        gender: {
+            type: DataTypes.ENUM('male', 'female', 'other')
+        },
+        occupation: {
+            type: DataTypes.STRING
+        },
+        companyName: {
+            type: DataTypes.STRING
+        },
+        // آدرس
+        address: {
+            type: DataTypes.TEXT
+        },
+        city: {
+            type: DataTypes.STRING
+        },
+        country: {
+            type: DataTypes.STRING
+        },
+        postalCode: {
+            type: DataTypes.STRING
+        },
+        // باشگاه مشتریان
+        loyaltyPoints: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
+        },
+        loyaltyTier: {
+            type: DataTypes.ENUM('bronze', 'silver', 'gold', 'platinum'),
+            defaultValue: 'bronze'
+        },
+        referredBy: {
+            type: DataTypes.UUID
+        },
+        // شبکه‌های اجتماعی
+        instagram: {
+            type: DataTypes.STRING
+        },
+        telegram: {
+            type: DataTypes.STRING
+        },
+        website: {
+            type: DataTypes.STRING
         }
     }, {
         timestamps: true,
         indexes: [
             { fields: ['phone'] },
             { fields: ['email'] },
-            { fields: ['status'] }
+            { fields: ['status'] },
+            { fields: ['birthDate'] },
+            { fields: ['loyaltyTier'] }
         ]
     });
 
@@ -82,6 +138,9 @@ module.exports = (sequelize) => {
         }
         if (models.Transaction) {
             Customer.hasMany(models.Transaction, { foreignKey: 'customerId', as: 'transactions' });
+        }
+        if (models.CustomerDocument) {
+            Customer.hasMany(models.CustomerDocument, { foreignKey: 'customerId', as: 'documents' });
         }
     };
 

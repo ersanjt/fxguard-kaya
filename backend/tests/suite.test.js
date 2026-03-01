@@ -2,30 +2,26 @@
  * Test Suite — Auth, Users, Customers, Conversations, Security, Permissions
  * اجرا: node tests/suite.test.js
  * از SQLite in-memory استفاده می‌کند — نیازی به DB خارجی نیست
+ * سرور را in-process بالا می‌آورد (بدون spawn)
  */
 'use strict';
 
-const path = require('path');
+// ─── Environment setup (before any require) ──────────────────────────────────
 process.env.USE_SQLITE = 'true';
 process.env.JWT_SECRET = 'test-jwt-secret-32-chars-minimum!!';
+process.env.ENCRYPT_SECRET = 'test-encrypt-secret-32-chars-min!';
 process.env.MAIN_ADMIN_EMAIL = 'admin@test.com';
 process.env.MAIN_ADMIN_PASSWORD = 'Admin@Test123!';
 process.env.NODE_ENV = 'test';
 process.env.PORT = '3099';
 process.env.DISABLE_RATE_LIMIT = 'true';
+process.env.SKIP_MONGO = 'true';
 
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
-
+const path = require('path');
 const assert = require('assert');
 const http = require('http');
 
-const BASE = 'http://localhost:3099';
-let serverProcess = null;
-let adminToken = null;
-let agentToken = null;
-let createdUserId = null;
-let createdCustomerId = null;
-let createdConvId = null;
+const BASE = 'http://127.0.0.1:3099';
 
 // ─── HTTP helpers ────────────────────────────────────────────────────────────
 
@@ -34,8 +30,8 @@ function request(method, urlPath, body, token) {
         const url = new URL(urlPath, BASE);
         const payload = body ? JSON.stringify(body) : null;
         const opts = {
-            hostname: url.hostname,
-            port: url.port,
+            hostname: '127.0.0.1',
+            port: 3099,
             path: url.pathname + url.search,
             method,
             headers: {
@@ -66,15 +62,6 @@ const put = (p, b, tok) => request('PUT', p, b, tok);
 const patch = (p, b, tok) => request('PATCH', p, b, tok);
 const del = (p, tok) => request('DELETE', p, null, tok);
 
-async function waitForServer(ms = 20000) {
-    const t = Date.now();
-    while (Date.now() - t < ms) {
-        try { const r = await get('/health'); if (r.status === 200) return true; } catch (_) {}
-        await new Promise(r => setTimeout(r, 400));
-    }
-    return false;
-}
-
 // ─── Test runner ─────────────────────────────────────────────────────────────
 
 let passed = 0, failed = 0;
@@ -97,6 +84,13 @@ function section(name) {
     console.log(`\n── ${name} ──`);
 }
 
+// ─── State ───────────────────────────────────────────────────────────────────
+
+let adminToken = null;
+let agentToken = null;
+let createdUserId = null;
+let createdCustomerId = null;
+
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
 async function runTests() {
@@ -104,14 +98,14 @@ async function runTests() {
     // ── Health & Public ──────────────────────────────────────────────────────
     section('Health & Public Endpoints');
 
-    await test('GET /health returns 200', async () => {
+    await test('GET /health returns 200 with status ok', async () => {
         const r = await get('/health');
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.status, 'ok');
         assert(r.body.uptime >= 0);
     });
 
-    await test('GET /api/ping returns ok', async () => {
+    await test('GET /api/ping returns ok:true', async () => {
         const r = await get('/api/ping');
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.ok, true);
@@ -120,37 +114,38 @@ async function runTests() {
     await test('GET /api/config returns timezone', async () => {
         const r = await get('/api/config');
         assert.strictEqual(r.status, 200);
-        assert(r.body.timezone);
+        assert(r.body.timezone, 'Expected timezone in config');
     });
 
     // ── Auth: Login ──────────────────────────────────────────────────────────
     section('Auth — Login');
 
-    await test('POST /api/auth/login with wrong password returns 401', async () => {
+    await test('Login with wrong password returns 401', async () => {
         const r = await post('/api/auth/login', { email: 'admin@test.com', password: 'WrongPass!' });
         assert.strictEqual(r.status, 401);
         assert(r.body.error);
     });
 
-    await test('POST /api/auth/login with non-existent user returns 401', async () => {
+    await test('Login with non-existent user returns 401', async () => {
         const r = await post('/api/auth/login', { email: 'nobody@test.com', password: 'Test123!' });
         assert.strictEqual(r.status, 401);
     });
 
-    await test('POST /api/auth/login with missing fields returns 400', async () => {
+    await test('Login with missing password returns 400', async () => {
         const r = await post('/api/auth/login', { email: 'admin@test.com' });
         assert.strictEqual(r.status, 400);
     });
 
-    await test('POST /api/auth/login with valid admin credentials returns token', async () => {
+    await test('Login with valid admin credentials returns token', async () => {
         const r = await post('/api/auth/login', {
             email: 'admin@test.com',
             password: 'Admin@Test123!'
         });
         assert.strictEqual(r.status, 200, `Login failed: ${JSON.stringify(r.body)}`);
-        assert(r.body.token, 'Expected token in response');
-        assert(r.body.user, 'Expected user in response');
+        assert(r.body.token, 'Expected token');
+        assert(r.body.user, 'Expected user');
         assert.strictEqual(r.body.user.email, 'admin@test.com');
+        assert(!r.body.user.password, 'Password must not be in response');
         adminToken = r.body.token;
     });
 
@@ -162,28 +157,28 @@ async function runTests() {
         assert.strictEqual(r.status, 401);
     });
 
-    await test('GET /api/auth/me with valid token returns user', async () => {
+    await test('GET /api/auth/me with valid token returns user without password', async () => {
         const r = await get('/api/auth/me', adminToken);
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.email, 'admin@test.com');
-        assert(!r.body.password, 'Password must not be in response');
+        assert(!r.body.password, 'Password must not be in /me response');
     });
 
     // ── Auth: Presence ───────────────────────────────────────────────────────
     section('Auth — Presence');
 
-    await test('PATCH /api/auth/me/presence with invalid status returns 400', async () => {
+    await test('PATCH /me/presence with invalid status returns 400', async () => {
         const r = await patch('/api/auth/me/presence', { status: 'invalid_status' }, adminToken);
         assert.strictEqual(r.status, 400);
     });
 
-    await test('PATCH /api/auth/me/presence with valid status returns ok', async () => {
+    await test('PATCH /me/presence with valid status returns correct status', async () => {
         const r = await patch('/api/auth/me/presence', { status: 'away' }, adminToken);
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.status, 'away');
     });
 
-    await test('PATCH /api/auth/me/presence without token returns 401', async () => {
+    await test('PATCH /me/presence without token returns 401', async () => {
         const r = await patch('/api/auth/me/presence', { status: 'online' });
         assert.strictEqual(r.status, 401);
     });
@@ -191,18 +186,18 @@ async function runTests() {
     // ── Auth: Password Reset ─────────────────────────────────────────────────
     section('Auth — Password Reset');
 
-    await test('POST /api/auth/forgot-password with non-existent email returns 200 (no enumeration)', async () => {
+    await test('Forgot-password with non-existent email returns 200 (no enumeration)', async () => {
         const r = await post('/api/auth/forgot-password', { email: 'nobody@nowhere.com' });
         assert.strictEqual(r.status, 200);
         assert(r.body.message);
     });
 
-    await test('POST /api/auth/forgot-password without email returns 400', async () => {
+    await test('Forgot-password without email returns 400', async () => {
         const r = await post('/api/auth/forgot-password', {});
         assert.strictEqual(r.status, 400);
     });
 
-    await test('POST /api/auth/reset-password with invalid token returns 400', async () => {
+    await test('Reset-password with invalid token returns 400', async () => {
         const r = await post('/api/auth/reset-password', { token: 'fake-token', newPassword: 'NewPass@123!' });
         assert.strictEqual(r.status, 400);
     });
@@ -230,7 +225,7 @@ async function runTests() {
         assert.strictEqual(r.status, 400);
     });
 
-    await test('POST /api/users with invalid departmentId (non-UUID) returns 400', async () => {
+    await test('POST /api/users with non-UUID departmentId returns 400', async () => {
         const r = await post('/api/users', { name: 'Test', email: 'agent2@test.com', password: 'Test@123!', departmentId: 'not-a-uuid' }, adminToken);
         assert.strictEqual(r.status, 400);
     });
@@ -243,7 +238,7 @@ async function runTests() {
             role: 'agent'
         }, adminToken);
         assert.strictEqual(r.status, 201, `Create user failed: ${JSON.stringify(r.body)}`);
-        assert(r.body.id);
+        assert(r.body.id, 'Expected id');
         assert.strictEqual(r.body.email, 'agent@test.com');
         assert(!r.body.password, 'Password must not be in response');
         createdUserId = r.body.id;
@@ -267,12 +262,12 @@ async function runTests() {
     // ── Users: Read ──────────────────────────────────────────────────────────
     section('Users — Read');
 
-    await test('GET /api/users returns list', async () => {
+    await test('GET /api/users returns list without passwords', async () => {
         const r = await get('/api/users', adminToken);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
         assert(r.body.data.length >= 2);
-        r.body.data.forEach(u => assert(!u.password, 'Password must not be in list'));
+        r.body.data.forEach(u => assert(!u.password, `Password leaked for user ${u.email}`));
     });
 
     await test('GET /api/users/:id with valid UUID returns user', async () => {
@@ -306,12 +301,17 @@ async function runTests() {
         assert.strictEqual(r.body.name, 'Agent Updated');
     });
 
-    await test('PATCH /api/users/me with invalid avatar URL returns 400', async () => {
+    await test('PATCH /api/users/me with javascript: avatar returns 400', async () => {
         const r = await patch('/api/users/me', { avatar: 'javascript:alert(1)' }, agentToken);
         assert.strictEqual(r.status, 400);
     });
 
-    await test('PATCH /api/users/me with valid avatar URL accepts it', async () => {
+    await test('PATCH /api/users/me with data: avatar returns 400', async () => {
+        const r = await patch('/api/users/me', { avatar: 'data:text/html,<script>alert(1)</script>' }, agentToken);
+        assert.strictEqual(r.status, 400);
+    });
+
+    await test('PATCH /api/users/me with valid https avatar is accepted', async () => {
         const r = await patch('/api/users/me', { avatar: 'https://example.com/avatar.jpg' }, agentToken);
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.avatar, 'https://example.com/avatar.jpg');
@@ -325,18 +325,19 @@ async function runTests() {
         assert.strictEqual(r.status, 401);
     });
 
-    await test('POST /api/customers with invalid status returns 400 or ignores it', async () => {
+    await test('POST /api/customers without name or phone returns 400', async () => {
+        const r = await post('/api/customers', { email: 'test@test.com' }, adminToken);
+        assert.strictEqual(r.status, 400);
+    });
+
+    await test('POST /api/customers with invalid status is sanitized to active', async () => {
         const r = await post('/api/customers', {
-            name: 'Test Customer',
-            phone: '09121234567',
-            status: 'hacked'
+            name: 'Status Test',
+            phone: '09000000001',
+            status: 'hacked_status'
         }, adminToken);
-        // باید یا 400 برگرداند یا status را به 'active' تبدیل کند
-        if (r.status === 201) {
-            assert.strictEqual(r.body.status, 'active', 'Invalid status must be sanitized to active');
-        } else {
-            assert.strictEqual(r.status, 400);
-        }
+        assert.strictEqual(r.status, 201);
+        assert.strictEqual(r.body.status, 'active', 'Invalid status must be sanitized');
     });
 
     await test('POST /api/customers creates customer successfully', async () => {
@@ -352,6 +353,16 @@ async function runTests() {
         createdCustomerId = r.body.id;
     });
 
+    await test('POST /api/customers cannot inject id field', async () => {
+        const r = await post('/api/customers', {
+            name: 'Hacker',
+            phone: '09999999999',
+            id: '00000000-0000-0000-0000-deadbeef0000',
+        }, adminToken);
+        assert.strictEqual(r.status, 201);
+        assert.notStrictEqual(r.body.id, '00000000-0000-0000-0000-deadbeef0000', 'ID must not be injectable');
+    });
+
     // ── Customers: Read ──────────────────────────────────────────────────────
     section('Customers — Read');
 
@@ -362,7 +373,7 @@ async function runTests() {
         assert(typeof r.body.total === 'number');
     });
 
-    await test('GET /api/customers?search= works', async () => {
+    await test('GET /api/customers?search=Ali returns results', async () => {
         const r = await get('/api/customers?search=Ali', adminToken);
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
@@ -373,7 +384,7 @@ async function runTests() {
         assert.strictEqual(r.status, 200);
     });
 
-    await test('GET /api/customers/:id with valid UUID returns customer', async () => {
+    await test('GET /api/customers/:id returns customer', async () => {
         const r = await get(`/api/customers/${createdCustomerId}`, adminToken);
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.id, createdCustomerId);
@@ -382,6 +393,11 @@ async function runTests() {
     await test('GET /api/customers/:id with invalid UUID returns 400', async () => {
         const r = await get('/api/customers/not-a-uuid', adminToken);
         assert.strictEqual(r.status, 400);
+    });
+
+    await test('GET /api/customers/:id with non-existent UUID returns 404', async () => {
+        const r = await get('/api/customers/00000000-0000-0000-0000-000000000000', adminToken);
+        assert.strictEqual(r.status, 404);
     });
 
     // ── Customers: Update ────────────────────────────────────────────────────
@@ -399,7 +415,7 @@ async function runTests() {
     });
 
     // ── Conversations ────────────────────────────────────────────────────────
-    section('Conversations — List & Read');
+    section('Conversations');
 
     await test('GET /api/conversations without auth returns 401', async () => {
         const r = await get('/api/conversations');
@@ -423,44 +439,15 @@ async function runTests() {
         assert.strictEqual(r.status, 404);
     });
 
-    // ── Security: UUID Validation ────────────────────────────────────────────
-    section('Security — UUID Validation');
-
-    await test('GET /api/users/sql-injection-attempt returns 400', async () => {
-        const r = await get("/api/users/'; DROP TABLE Users; --", adminToken);
-        assert([400, 404].includes(r.status));
-    });
-
-    await test('GET /api/customers/not-uuid returns 400', async () => {
-        const r = await get('/api/customers/12345', adminToken);
-        assert.strictEqual(r.status, 400);
-    });
-
-    await test('GET /api/conversations/messages with invalid before param returns 400', async () => {
-        const r = await get('/api/conversations/00000000-0000-0000-0000-000000000000/messages?before=not-uuid', adminToken);
-        // 404 if conv not found, 400 if UUID validation triggers first
-        assert([400, 404].includes(r.status));
-    });
-
-    // ── Security: Mass Assignment ────────────────────────────────────────────
-    section('Security — Mass Assignment');
-
-    await test('POST /api/customers cannot inject internal fields', async () => {
-        const r = await post('/api/customers', {
-            name: 'Hacker',
-            phone: '09999999999',
-            id: '00000000-0000-0000-0000-deadbeef0000',
-            createdAt: '2000-01-01',
-            source: 'hacked'
-        }, adminToken);
-        assert.strictEqual(r.status, 201);
-        assert.notStrictEqual(r.body.id, '00000000-0000-0000-0000-deadbeef0000', 'ID must not be injectable');
+    await test('GET /api/conversations/:id/messages with invalid before param returns 400', async () => {
+        const r = await get('/api/conversations/00000000-0000-0000-0000-000000000001/messages?before=not-uuid', adminToken);
+        assert([400, 404].includes(r.status), `Expected 400 or 404, got ${r.status}`);
     });
 
     // ── Security: Auth Boundaries ────────────────────────────────────────────
     section('Security — Auth Boundaries');
 
-    await test('Agent cannot create users', async () => {
+    await test('Agent cannot create users (403)', async () => {
         const r = await post('/api/users', {
             name: 'Unauthorized',
             email: 'unauth@test.com',
@@ -469,50 +456,52 @@ async function runTests() {
         assert.strictEqual(r.status, 403);
     });
 
-    await test('Agent cannot delete customers', async () => {
+    await test('Agent cannot delete customers (403)', async () => {
         const r = await del(`/api/customers/${createdCustomerId}`, agentToken);
         assert.strictEqual(r.status, 403);
     });
 
-    await test('Unauthenticated request to protected route returns 401', async () => {
-        const routes = [
-            '/api/users',
-            '/api/customers',
-            '/api/conversations',
-        ];
+    await test('All main routes require auth (401 without token)', async () => {
+        const routes = ['/api/users', '/api/customers', '/api/conversations'];
         for (const route of routes) {
             const r = await get(route);
             assert.strictEqual(r.status, 401, `Expected 401 for ${route}, got ${r.status}`);
         }
     });
 
+    // ── Security: UUID Injection ─────────────────────────────────────────────
+    section('Security — UUID Injection');
+
+    await test('GET /api/users with SQL-like UUID returns 400', async () => {
+        const r = await get("/api/users/'; DROP TABLE Users; --", adminToken);
+        assert([400, 404].includes(r.status));
+    });
+
+    await test('GET /api/customers/12345 returns 400', async () => {
+        const r = await get('/api/customers/12345', adminToken);
+        assert.strictEqual(r.status, 400);
+    });
+
     // ── Permissions: isMainAdmin ─────────────────────────────────────────────
     section('Permissions — isMainAdmin');
 
-    await test('isMainAdmin returns false for empty MAIN_ADMIN_EMAIL', async () => {
+    await test('isMainAdmin returns true for configured admin', async () => {
         const { isMainAdmin } = require('../lib/permissions');
-        const origEnv = process.env.MAIN_ADMIN_EMAIL;
-        process.env.MAIN_ADMIN_EMAIL = '';
-        // reload module to pick up new env (workaround: test the function directly)
-        const result = isMainAdmin({ email: 'admin@test.com' });
-        // Note: module is cached so we test the cached version
-        process.env.MAIN_ADMIN_EMAIL = origEnv;
-        assert(typeof result === 'boolean');
+        assert.strictEqual(isMainAdmin({ email: 'admin@test.com' }), true);
     });
 
-    await test('isMainAdmin returns true for configured admin email', async () => {
+    await test('isMainAdmin returns false for non-admin', async () => {
         const { isMainAdmin } = require('../lib/permissions');
-        const result = isMainAdmin({ email: 'admin@test.com' });
-        assert.strictEqual(result, true);
+        assert.strictEqual(isMainAdmin({ email: 'agent@test.com' }), false);
     });
 
-    await test('isMainAdmin returns false for non-admin email', async () => {
+    await test('isMainAdmin returns false for null user', async () => {
         const { isMainAdmin } = require('../lib/permissions');
-        const result = isMainAdmin({ email: 'agent@test.com' });
-        assert.strictEqual(result, false);
+        assert.strictEqual(isMainAdmin(null), false);
+        assert.strictEqual(isMainAdmin({}), false);
     });
 
-    // ── Validation Lib ───────────────────────────────────────────────────────
+    // ── Validation Library ───────────────────────────────────────────────────
     section('Validation Library');
 
     await test('isValidUUID accepts valid UUIDs', async () => {
@@ -531,26 +520,25 @@ async function runTests() {
         assert.strictEqual(isValidUUID("'; DROP TABLE--"), false);
     });
 
-    await test('parsePagination returns correct values', async () => {
+    await test('parsePagination returns correct page/limit/offset', async () => {
         const { parsePagination } = require('../lib/validation');
-        const { page, limit, offset } = parsePagination('2', '20', 100);
-        assert.strictEqual(page, 2);
-        assert.strictEqual(limit, 20);
-        assert.strictEqual(offset, 20);
+        const r = parsePagination('2', '20', 100);
+        assert.strictEqual(r.page, 2);
+        assert.strictEqual(r.limit, 20);
+        assert.strictEqual(r.offset, 20);
     });
 
     await test('parsePagination enforces maxLimit', async () => {
         const { parsePagination } = require('../lib/validation');
-        const { limit } = parsePagination('1', '9999', 50);
-        assert.strictEqual(limit, 50);
+        assert.strictEqual(parsePagination('1', '9999', 50).limit, 50);
     });
 
-    await test('parsePagination handles invalid inputs gracefully', async () => {
+    await test('parsePagination handles invalid inputs', async () => {
         const { parsePagination } = require('../lib/validation');
-        const { page, limit, offset } = parsePagination('abc', 'xyz', 100);
-        assert.strictEqual(page, 1);
-        assert(limit > 0);
-        assert.strictEqual(offset, 0);
+        const r = parsePagination('abc', 'xyz', 100);
+        assert.strictEqual(r.page, 1);
+        assert(r.limit > 0);
+        assert.strictEqual(r.offset, 0);
     });
 
     // ── Password Validation ──────────────────────────────────────────────────
@@ -589,16 +577,16 @@ async function runTests() {
         assert.strictEqual(r.status, 404);
     });
 
-    // ── Users: Delete ────────────────────────────────────────────────────────
+    // ── Users: Deactivate ────────────────────────────────────────────────────
     section('Users — Deactivate');
 
-    await test('POST /api/users/:id/delete-with-transfer without transferToUserId returns 400', async () => {
+    await test('delete-with-transfer without transferToUserId returns 400', async () => {
         const r = await post(`/api/users/${createdUserId}/delete-with-transfer`, {}, adminToken);
         assert.strictEqual(r.status, 400);
     });
 
-    await test('POST /api/users/:id/delete-with-transfer with invalid UUID returns 400', async () => {
-        const r = await post('/api/users/bad-id/delete-with-transfer', { transferToUserId: adminToken }, adminToken);
+    await test('delete-with-transfer with invalid UUID returns 400', async () => {
+        const r = await post('/api/users/bad-id/delete-with-transfer', { transferToUserId: createdUserId }, adminToken);
         assert.strictEqual(r.status, 400);
     });
 }
@@ -606,61 +594,47 @@ async function runTests() {
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
 async function main() {
-    const { spawn } = require('child_process');
+    console.log('🚀 Starting in-process test server...\n');
 
-    console.log('🚀 Starting test server...');
-    const env = {
-        ...process.env,
-        USE_SQLITE: 'true',
-        JWT_SECRET: 'test-jwt-secret-32-chars-minimum!!',
-        MAIN_ADMIN_EMAIL: 'admin@test.com',
-        MAIN_ADMIN_PASSWORD: 'Admin@Test123!',
-        NODE_ENV: 'test',
-        PORT: '3099',
-        DISABLE_RATE_LIMIT: 'true',
-    };
+    // Start server in-process
+    const serverModule = require('../server');
+    const { io } = serverModule;
 
-    serverProcess = spawn('node', ['server.js'], {
-        cwd: path.join(__dirname, '..'),
-        env,
-        stdio: ['ignore', 'pipe', 'pipe']
-    });
+    // Wait for server to be ready
+    await new Promise(r => setTimeout(r, 2000));
 
-    serverProcess.stderr.on('data', (d) => {
-        const msg = d.toString();
-        if (!msg.includes('DeprecationWarning') && !msg.includes('ExperimentalWarning')) {
-            process.stderr.write('[server] ' + msg);
-        }
-    });
-
-    const ready = await waitForServer(25000);
-    if (!ready) {
-        serverProcess.kill();
-        console.error('❌ Server did not start in time');
+    // Verify server is up
+    try {
+        const r = await get('/health');
+        if (r.status !== 200) throw new Error(`Health check failed: ${r.status}`);
+        console.log('✓ Server ready\n');
+    } catch (e) {
+        console.error('❌ Server not responding:', e.message);
         process.exit(1);
     }
-    console.log('✓ Server ready\n');
 
     try {
         await runTests();
     } finally {
-        serverProcess.kill('SIGTERM');
+        // Cleanup
+        try {
+            const { sequelize } = require('../models');
+            await sequelize.close();
+        } catch (_) {}
     }
 
     console.log('\n' + '─'.repeat(50));
     console.log(`Results: ${passed} passed, ${failed} failed`);
     if (failures.length) {
         console.log('\nFailed tests:');
-        failures.forEach(f => console.log(`  ✗ ${f.name}\n    ${f.error}`));
+        failures.forEach(f => console.log(`  ✗ ${f.name}\n    → ${f.error}`));
     }
     console.log('─'.repeat(50));
 
-    if (failed > 0) process.exit(1);
-    else console.log('\n✅ All tests passed!');
+    process.exit(failed > 0 ? 1 : 0);
 }
 
 main().catch(err => {
-    console.error('Fatal:', err);
-    if (serverProcess) serverProcess.kill();
+    console.error('Fatal:', err.message);
     process.exit(1);
 });
