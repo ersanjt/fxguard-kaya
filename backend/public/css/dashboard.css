@@ -1956,6 +1956,8 @@
         .profile-form-group input { width: 100%; padding: 8px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-primary); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; transition: border-color 0.15s; }
         .profile-form-group input:focus { outline: none; border-color: var(--accent); }
         .profile-form-group input::placeholder { color: var(--text-muted); }
+        .profile-form-group input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); opacity: 0.6; cursor: pointer; }
+        .profile-form-group input[type="date"]::-webkit-calendar-picker-indicator:hover { opacity: 1; }
         .profile-form-actions { margin-top: 14px; }
         .profile-readonly-section { padding-top: 14px; border-top: 1px solid var(--border); }
         .profile-readonly-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
