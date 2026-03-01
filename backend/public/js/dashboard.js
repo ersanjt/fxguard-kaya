@@ -5675,14 +5675,35 @@
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             var data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('no_conv_history') + '</div>'; } else {
-            var safeName = (name || '').replace(/'/g, '&#39;');
-            list.innerHTML = data.data.map(function(conv) {
-                var date = conv.lastMessageAt ? fmtTZ(conv.lastMessageAt, 'datetime') : '';
-                var who = [conv.assignee && conv.assignee.name, conv.lastOutgoingBy].filter(Boolean);
-                var whoStr = who.length ? ' · ' + (LANG === 'fa' ? 'مسئول/چت: ' : 'by ') + who.join(', ') : '';
-                var isGrp = !!(conv.metadata && conv.metadata.isGroup);
-                return '<div class="list-item" data-convid="' + conv.id + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)"><div><span class="name">' + (isGrp ? '👥 ' : '') + t('conversation') + ' ' + (conv.status || '') + '</span><div class="meta">' + (conv.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + whoStr + ' · ' + date + '</div></div></div>';
+            if (!data.data || data.data.length === 0) {
+                list.innerHTML = '<div class="cust-hist-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>' + (t('no_conv_history') || (LANG === 'fa' ? 'هیچ مکالمه‌ای ثبت نشده است.' : 'No conversation history.')) + '</p></div>';
+            } else {
+                var safeName = (c.name || c.phone || name || '').replace(/'/g, '&#39;');
+                var statusColors = { open: 'var(--accent)', waiting: '#f59e0b', closed: 'var(--text-muted)', resolved: '#22c55e', archived: 'var(--text-muted)' };
+                var statusLabels = { open: LANG === 'fa' ? 'باز' : 'Open', waiting: LANG === 'fa' ? 'در انتظار' : 'Waiting', closed: LANG === 'fa' ? 'بسته' : 'Closed', resolved: LANG === 'fa' ? 'حل‌شده' : 'Resolved', archived: LANG === 'fa' ? 'آرشیو' : 'Archived' };
+                list.innerHTML = data.data.map(function(conv) {
+                    var date = conv.lastMessageAt ? fmtTZ(conv.lastMessageAt, 'datetime') : (conv.createdAt ? fmtTZ(conv.createdAt, 'datetime') : '');
+                    var assignee = conv.assignee && conv.assignee.name ? escapeHtml(conv.assignee.name) : '';
+                    var dept = conv.department && conv.department.name ? escapeHtml(conv.department.name) : '';
+                    var isGrp = !!(conv.metadata && conv.metadata.isGroup);
+                    var st = conv.status || 'open';
+                    var stColor = statusColors[st] || 'var(--text-muted)';
+                    var stLabel = statusLabels[st] || st;
+                    var msgCount = conv.messageCount || 0;
+                    var metaParts = [];
+                    if (msgCount) metaParts.push(msgCount + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs'));
+                    if (assignee) metaParts.push((LANG === 'fa' ? 'مسئول: ' : 'By: ') + assignee);
+                    if (dept) metaParts.push(dept);
+                    if (date) metaParts.push(date);
+                    return '<div class="cust-hist-item" data-convid="' + conv.id + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)" role="button" tabindex="0">' +
+                        '<div class="cust-hist-icon">' + (isGrp ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>') + '</div>' +
+                        '<div class="cust-hist-body">' +
+                            '<div class="cust-hist-top"><span class="cust-hist-title">' + (isGrp ? (LANG === 'fa' ? 'گفتگوی گروهی' : 'Group Chat') : (LANG === 'fa' ? 'مکالمه' : 'Conversation')) + '</span>' +
+                            '<span class="cust-hist-status" style="color:' + stColor + '">' + stLabel + '</span></div>' +
+                            '<div class="cust-hist-meta">' + metaParts.join(' · ') + '</div>' +
+                        '</div>' +
+                        '<div class="cust-hist-arrow"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg></div>' +
+                    '</div>';
                 }).join('');
             }
             loadCustomerTimeline(custId);
