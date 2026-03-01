@@ -637,12 +637,24 @@ router.post('/:id/send', async (req, res) => {
             const relPath = media.url || ('/uploads/' + media.filename);
             const uploadsDir = path.join(__dirname, '..', 'uploads');
             const fileName = (relPath.replace(/^\/uploads\/?/, '') || media.filename || media.name || 'file').split('/').pop();
-            const filePath = path.join(uploadsDir, fileName);
+            let filePath = path.join(uploadsDir, fileName);
+            let sendMimetype = media.mimetype || 'application/octet-stream';
+            let sendFilename = media.filename || media.name || fileName;
             if (!relPath.startsWith('http') && fs.existsSync(filePath)) {
                 try {
+                    // For audio/voice: convert to ogg/opus so WhatsApp accepts it as voice message
+                    if (msgType === 'audio') {
+                        try {
+                            const { ensureVoiceFormat } = require('../lib/audioConverter');
+                            const converted = await ensureVoiceFormat(filePath, sendMimetype, sendFilename);
+                            filePath = converted.filePath;
+                            sendMimetype = converted.mimetype;
+                            sendFilename = converted.filename;
+                        } catch (_convErr) { /* use original if converter not available */ }
+                    }
                     const fileBuf = await fsPromises.readFile(filePath);
                     const base64 = fileBuf.toString('base64');
-                    payload.media = { data: base64, mimetype: media.mimetype || 'application/octet-stream', filename: media.filename || media.name || fileName };
+                    payload.media = { data: base64, mimetype: sendMimetype, filename: sendFilename };
                     if (msgType === 'audio') payload.media.sendAsVoice = true;
                 } catch (readErr) {
                     if (mediaUrl) {
