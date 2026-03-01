@@ -9904,33 +9904,48 @@
                 var perms = (currentUser && currentUser.permissions) || {};
                 var canAnn = perms.announcements !== false;
                 var canTickets = perms.tickets !== false;
-                var pendingLabel = (typeof t === 'function' ? t('notify_pending') : '') || (LANG === 'fa' ? 'در انتظار' : 'Pending');
+                var arrowSvg = '<span class="notify-item-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>';
+                var emptyHtml = function(icon, msg) {
+                    return '<div class="notify-empty"><div class="notify-empty-icon">' + icon + '</div><span class="notify-empty-text">' + msg + '</span></div>';
+                };
+                var annIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+                var ticketIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>';
+
                 if (canAnn) {
-                    var annCountEl = document.getElementById('notifyAnnCount');
                     var annList = document.getElementById('notifyAnnList');
+                    var pendingBadge = document.getElementById('notifyAnnPending');
                     try {
                         var annRes = await apiFetch('/api/announcements/for-me');
                         if (annRes.ok && annRes.data && annRes.data.data) {
                             var anns = (annRes.data.data || []).slice(0, 5);
                             var unreadCount = anns.filter(function(a) { return !a.read; }).length;
-                            if (annCountEl) annCountEl.textContent = String(unreadCount);
-                            var pendingBadge = document.getElementById('notifyAnnPending');
-                            if (pendingBadge) pendingBadge.innerHTML = '<span id="notifyAnnCount">' + unreadCount + '</span> <span data-i18n="notify_pending">' + pendingLabel + '</span>';
+                            if (pendingBadge) {
+                                pendingBadge.style.display = unreadCount > 0 ? '' : 'none';
+                                pendingBadge.innerHTML = '<span id="notifyAnnCount">' + unreadCount + '</span> <span>' + (LANG === 'fa' ? 'جدید' : 'New') + '</span>';
+                            }
                             if (annList) {
-                                if (anns.length === 0) annList.innerHTML = '<div class="notify-empty">' + (typeof t === 'function' ? t('ann_empty') : (LANG === 'fa' ? 'اعلانی وجود ندارد.' : 'No announcements.')) + '</div>';
-                                else annList.innerHTML = anns.map(function(a) {
-                                    var title = (a.title || '').substring(0, 50) + ((a.title || '').length > 50 ? '…' : '');
-                                    var meta = a.read ? (typeof t === 'function' ? t('ann_read') || 'خوانده شده' : 'Read') : (typeof t === 'function' ? t('ann_unread') || 'جدید' : 'New');
-                                    var timeStr = a.createdAt && typeof fmtTZ === 'function' ? fmtTZ(a.createdAt, 'datetime') : '';
-                                    return '<a href="#" class="notify-item" onclick="closeNotifyDropdown(); markAnnouncementReadAndShow(\'' + (a.id || '').replace(/'/g, "\\'") + '\'); showPage(\'announcements\'); return false;"><div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div><div class="notify-item-meta">' + escapeHtml(meta) + (timeStr ? ' · ' + escapeHtml(timeStr) : '') + '</div></div><span class="notify-item-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span></a>';
-                                }).join('');
+                                if (anns.length === 0) {
+                                    annList.innerHTML = emptyHtml(annIcon, LANG === 'fa' ? 'اعلانی وجود ندارد.' : 'No announcements.');
+                                } else {
+                                    annList.innerHTML = anns.map(function(a) {
+                                        var title = (a.title || '').substring(0, 48) + ((a.title || '').length > 48 ? '…' : '');
+                                        var timeStr = a.createdAt && typeof fmtTZ === 'function' ? fmtTZ(a.createdAt, 'datetime') : '';
+                                        var unreadClass = !a.read ? ' notify-item-unread' : '';
+                                        var dot = !a.read ? '<span class="notify-unread-dot"></span>' : '';
+                                        var iconHtml = '<span class="notify-item-icon">' + annIcon + '</span>';
+                                        return '<a href="#" class="notify-item' + unreadClass + '" onclick="closeNotifyDropdown(); markAnnouncementReadAndShow(\'' + (a.id || '').replace(/'/g, "\\'") + '\'); showPage(\'announcements\'); return false;">' + dot + iconHtml + '<div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div>' + (timeStr ? '<div class="notify-item-meta">' + escapeHtml(timeStr) + '</div>' : '') + '</div>' + arrowSvg + '</a>';
+                                    }).join('');
+                                }
                             }
                         }
-                    } catch (err) { if (annList) annList.innerHTML = '<div class="notify-empty">' + (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load error') + '</div>'; }
+                    } catch (err) {
+                        if (annList) annList.innerHTML = emptyHtml(annIcon, LANG === 'fa' ? 'خطا در بارگذاری' : 'Load error');
+                    }
                 }
+
                 if (canTickets) {
-                    var ticketsCountEl = document.getElementById('notifyTicketsCount');
                     var ticketsList = document.getElementById('notifyTicketsList');
+                    var tkPendingBadge = document.getElementById('notifyTicketsPending');
                     try {
                         var tkRes = await apiFetch('/api/tickets?limit=5');
                         var tkStatsRes = await apiFetch('/api/tickets/stats');
@@ -9939,19 +9954,30 @@
                             var s = tkStatsRes.data;
                             pendingCount = (s.open || 0) + (s.in_progress || 0);
                         }
-                        if (ticketsCountEl) ticketsCountEl.textContent = String(pendingCount);
-                        var pendingBadge = document.getElementById('notifyTicketsPending');
-                        if (pendingBadge) pendingBadge.innerHTML = '<span id="notifyTicketsCount">' + pendingCount + '</span> <span data-i18n="notify_pending">' + pendingLabel + '</span>';
+                        if (tkPendingBadge) {
+                            tkPendingBadge.style.display = pendingCount > 0 ? '' : 'none';
+                            tkPendingBadge.innerHTML = '<span id="notifyTicketsCount">' + pendingCount + '</span> <span>' + (LANG === 'fa' ? 'باز' : 'Open') + '</span>';
+                        }
                         if (ticketsList && tkRes.ok && tkRes.data) {
                             var rows = Array.isArray(tkRes.data.data) ? tkRes.data.data : (Array.isArray(tkRes.data.rows) ? tkRes.data.rows : []);
-                            if (rows.length === 0) ticketsList.innerHTML = '<div class="notify-empty">' + (typeof t === 'function' ? t('empty_tickets') : (LANG === 'fa' ? 'تیکتی وجود ندارد.' : 'No tickets.')) + '</div>';
-                            else ticketsList.innerHTML = rows.map(function(tk) {
-                                var statusLabel = tk.status === 'open' ? (typeof t === 'function' ? t('status_open') : 'Open') : tk.status === 'in_progress' ? (typeof t === 'function' ? t('status_in_progress') : 'In progress') : tk.status === 'closed' ? (typeof t === 'function' ? t('status_closed') : 'Closed') : tk.status === 'resolved' ? (typeof t === 'function' ? t('status_resolved') : 'Resolved') : tk.status || '';
-                                var title = (tk.title || '').substring(0, 45) + ((tk.title || '').length > 45 ? '…' : '');
-                                return '<a href="#" class="notify-item" onclick="closeNotifyDropdown(); showPage(\'tickets\'); setTimeout(function(){ loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\'); }, 200); return false;"><div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div><div class="notify-item-meta">' + escapeHtml(statusLabel) + '</div></div><span class="notify-item-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span></a>';
-                            }).join('');
+                            if (rows.length === 0) {
+                                ticketsList.innerHTML = emptyHtml(ticketIcon, LANG === 'fa' ? 'تیکتی وجود ندارد.' : 'No tickets.');
+                            } else {
+                                var statusMap = { open: LANG === 'fa' ? 'باز' : 'Open', in_progress: LANG === 'fa' ? 'در حال انجام' : 'In progress', closed: LANG === 'fa' ? 'بسته' : 'Closed', resolved: LANG === 'fa' ? 'حل‌شده' : 'Resolved', archived: LANG === 'fa' ? 'آرشیو' : 'Archived' };
+                                ticketsList.innerHTML = rows.map(function(tk) {
+                                    var title = (tk.title || '').substring(0, 45) + ((tk.title || '').length > 45 ? '…' : '');
+                                    var statusLabel = statusMap[tk.status] || tk.status || '';
+                                    var isOpen = tk.status === 'open' || tk.status === 'in_progress';
+                                    var iconHtml = '<span class="notify-item-icon' + (isOpen ? ' warn' : '') + '">' + ticketIcon + '</span>';
+                                    var statusBadge = '<span class="notify-item-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span>';
+                                    var timeStr = tk.createdAt && typeof fmtTZ === 'function' ? fmtTZ(tk.createdAt, 'date') : '';
+                                    return '<a href="#" class="notify-item" onclick="closeNotifyDropdown(); showPage(\'tickets\'); setTimeout(function(){ loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\'); }, 200); return false;">' + iconHtml + '<div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div><div class="notify-item-meta">' + statusBadge + (timeStr ? '<span>' + escapeHtml(timeStr) + '</span>' : '') + '</div></div>' + arrowSvg + '</a>';
+                                }).join('');
+                            }
                         }
-                    } catch (err) { if (ticketsList) ticketsList.innerHTML = '<div class="notify-empty">' + (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load error') + '</div>'; }
+                    } catch (err) {
+                        if (ticketsList) ticketsList.innerHTML = emptyHtml(ticketIcon, LANG === 'fa' ? 'خطا در بارگذاری' : 'Load error');
+                    }
                 }
             };
             window.savePanelSettings = savePanelSettings;

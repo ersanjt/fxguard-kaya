@@ -157,7 +157,10 @@
                     <div class="header-status-wrap">
                         <span class="header-whatsapp-status" id="headerWhatsappStatus" data-perm="whatsapp" title="وضعیت واتساپ"><span class="status-dot"></span><span class="status-label" data-i18n="nav_whatsapp">واتساپ</span></span>
                         <div class="header-notify-wrap" id="headerNotifyWrap">
-                            <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-perm="announcements" onclick="toggleNotifyDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها"><svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span></button>
+                            <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-perm="announcements" onclick="toggleNotifyDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها">
+                                <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                <span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span>
+                            </button>
                         </div>
                     </div>
                     <div class="lang-switch" role="group" data-i18n-aria-label="lang_label" aria-label="زبان">
@@ -192,21 +195,41 @@
                 <button type="button" class="user-dropdown-item user-dropdown-logout" role="menuitem" onclick="closeUserDropdown(); logout();"><svg viewBox="0 0 24 24"><use href="#icon-login"/></svg><span data-i18n="header_logout">خروج</span></button>
             </div>
             <div class="header-notify-dropdown" id="headerNotifyDropdown" role="dialog" aria-hidden="true">
+                <!-- هدر پنل -->
+                <div class="notify-panel-header">
+                    <span class="notify-panel-title" data-i18n="nav_announcements_and_tickets">اعلان‌ها</span>
+                    <button type="button" class="notify-panel-close" onclick="closeNotifyDropdown()" aria-label="بستن">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
                 <div class="notify-dropdown-inner">
+                    <!-- بخش اعلان‌ها -->
                     <div class="notify-section notify-section-announcements" data-perm="announcements">
                         <div class="notify-section-header">
-                            <h4 class="notify-section-title" data-i18n="nav_announcements">اعلان‌ها</h4>
-                            <span class="notify-pending-badge" id="notifyAnnPending"><span id="notifyAnnCount">0</span> <span data-i18n="notify_pending">در انتظار</span></span>
+                            <div class="notify-section-header-left">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                <h4 class="notify-section-title" data-i18n="nav_announcements">اعلان‌ها</h4>
+                            </div>
+                            <span class="notify-pending-badge" id="notifyAnnPending" style="display:none;"><span id="notifyAnnCount">0</span> <span data-i18n="notify_pending">جدید</span></span>
                         </div>
-                        <div class="notify-section-list" id="notifyAnnList"></div>
+                        <div class="notify-section-list" id="notifyAnnList">
+                            <div class="notify-skeleton"><div class="notify-skeleton-line w70"></div><div class="notify-skeleton-line w45"></div></div>
+                            <div class="notify-skeleton"><div class="notify-skeleton-line w85"></div><div class="notify-skeleton-line w55"></div></div>
+                        </div>
                         <a href="#announcements" class="notify-see-all" onclick="closeNotifyDropdown(); showPage('announcements'); return false;" data-i18n="ann_view_all">مشاهده همه اعلان‌ها</a>
                     </div>
+                    <!-- بخش تیکت‌ها -->
                     <div class="notify-section notify-section-tickets" data-perm="tickets">
                         <div class="notify-section-header">
-                            <h4 class="notify-section-title" data-i18n="nav_tickets">تیکت‌ها</h4>
-                            <span class="notify-pending-badge" id="notifyTicketsPending"><span id="notifyTicketsCount">0</span> <span data-i18n="notify_pending">در انتظار</span></span>
+                            <div class="notify-section-header-left">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
+                                <h4 class="notify-section-title" data-i18n="nav_tickets">تیکت‌ها</h4>
+                            </div>
+                            <span class="notify-pending-badge notify-pending-badge-warn" id="notifyTicketsPending" style="display:none;"><span id="notifyTicketsCount">0</span> <span data-i18n="notify_pending">باز</span></span>
                         </div>
-                        <div class="notify-section-list" id="notifyTicketsList"></div>
+                        <div class="notify-section-list" id="notifyTicketsList">
+                            <div class="notify-skeleton"><div class="notify-skeleton-line w75"></div><div class="notify-skeleton-line w40"></div></div>
+                        </div>
                         <a href="#tickets" class="notify-see-all" onclick="closeNotifyDropdown(); showPage('tickets'); return false;" data-i18n="notify_see_all_tickets">مشاهده همه تیکت‌ها</a>
                     </div>
                 </div>

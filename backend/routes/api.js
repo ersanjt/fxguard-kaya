@@ -3,6 +3,7 @@
  */
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 const { spawn } = require('child_process');
 const rateLimit = require('express-rate-limit');
 const { gatewayGet, gatewayPost } = require('../lib/gatewayClient');
@@ -147,6 +148,10 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
                 return res.json({ message: 'Gateway از قبل در حال اجراست' });
             }
             const gatewayPath = path.join(__dirname, '..', '..', 'gateway');
+            const entryPoint = path.join(gatewayPath, 'src', 'index.js');
+            if (!fs.existsSync(entryPoint)) {
+                return res.status(500).json({ error: 'فایل gateway/src/index.js یافت نشد. Gateway را نصب کنید.' });
+            }
             const proc = spawn('node', ['src/index.js'], { cwd: gatewayPath, stdio: 'ignore', detached: true });
             proc.unref();
             gatewayStarting = true;

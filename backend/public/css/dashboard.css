@@ -208,10 +208,7 @@
         .header-whatsapp-status { display: flex; align-items: center; gap: 6px; padding: 6px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.8rem; color: var(--text-secondary); }
         .header-whatsapp-status .status-dot { margin: 0; width: 6px; height: 6px; background: var(--text-muted); }
         .header-whatsapp-status.connected .status-dot { background: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.3); }
-        .header-notify-btn { position: relative; width: 40px; height: 40px; padding: 0; border: none; background: var(--bg-secondary); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s; }
-        .header-notify-btn:hover { background: var(--bg-hover); color: var(--accent); }
-        .header-notify-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-        .header-notify-badge { position: absolute; top: 4px; inset-inline-end: 4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; line-height: 1; }
+        /* header-notify-btn styles moved to notification dropdown section below */
         .header .search-wrap { flex: 1; max-width: 280px; min-width: 0; }
         .header .header-search-field { display: flex; align-items: center; gap: 10px; width: 100%; padding: 8px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); transition: border-color 0.2s, box-shadow 0.2s, background 0.2s; cursor: text; }
         .header .header-search-field:hover { background: rgba(255,255,255,0.03); }
@@ -273,28 +270,95 @@
         .header .user-dropdown-menu .user-dropdown-logout { color: #ef4444 !important; font-weight: 500; }
         .header .user-dropdown-menu .user-dropdown-logout:hover { background: rgba(239,68,68,0.12) !important; color: #dc2626 !important; }
         .header .user-dropdown-menu .user-dropdown-logout svg { stroke: currentColor; }
-        /* Notification dropdown — دراپ‌داون اعلان‌ها و تیکت‌ها */
+        /* ===== Notification Dropdown — طراحی جدید ===== */
         .header .header-notify-wrap { position: relative; }
-        .header.notify-dropdown-open .header-notify-btn { background: var(--accent-soft); color: var(--accent); }
-        .header .header-notify-dropdown { position: absolute; top: 100%; inset-inline-end: 0; margin-top: 6px; width: min(380px, calc(100vw - 32px)); max-height: min(420px, 70vh); background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 12px 40px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.05); z-index: 1001; display: none; overflow: hidden; }
-        .header.notify-dropdown-open .header-notify-dropdown { display: block; }
-        .header .notify-dropdown-inner { padding: 12px 0; max-height: 100%; overflow-y: auto; }
-        .header .notify-section { padding: 0 16px 16px; border-bottom: 1px solid var(--border); }
-        .header .notify-section:last-child { border-bottom: none; padding-bottom: 0; }
-        .header .notify-section-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
-        .header .notify-section-title { margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary); }
-        .header .notify-pending-badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 20px; background: var(--accent-soft); color: var(--accent); font-size: 0.8rem; font-weight: 600; }
-        .header .notify-section-list { display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto; margin-bottom: 10px; }
-        .header .notify-item { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: all 0.2s; text-decoration: none; color: inherit; }
-        .header .notify-item:hover { background: var(--bg-hover); border-color: var(--border-hover); }
+
+        /* دکمه زنگ */
+        .header-notify-btn { position: relative; width: 40px; height: 40px; padding: 0; border: none; background: var(--bg-secondary); border-radius: var(--radius-sm); color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s; }
+        .header-notify-btn:hover { background: var(--bg-hover); color: var(--accent); }
+        .header-notify-btn[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); }
+        .header-notify-btn svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.2s; }
+        .header-notify-btn[aria-expanded="true"] svg { transform: rotate(-15deg); }
+        .header-notify-badge { position: absolute; top: 4px; inset-inline-end: 4px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; display: flex; align-items: center; justify-content: center; line-height: 1; animation: notifyPulse 2s ease-in-out infinite; }
+        @keyframes notifyPulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow: 0 0 0 4px rgba(239,68,68,0); } }
+
+        /* پنل dropdown */
+        .header .header-notify-dropdown { position: absolute; top: calc(100% + 8px); inset-inline-end: 0; width: min(400px, calc(100vw - 24px)); background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.4), 0 0 0 1px rgba(255,255,255,0.04); z-index: 1001; display: none; overflow: hidden; transform-origin: top right; }
+        [dir="ltr"] .header .header-notify-dropdown { transform-origin: top left; }
+        .header.notify-dropdown-open .header-notify-dropdown { display: block; animation: notifyDropIn 0.22s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes notifyDropIn { from { opacity: 0; transform: scale(0.95) translateY(-8px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+        /* هدر پنل */
+        .notify-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 12px; border-bottom: 1px solid var(--border); background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(16,185,129,0.03) 100%); }
+        .notify-panel-title { font-size: 0.95rem; font-weight: 700; color: var(--text-primary); }
+        .notify-panel-close { width: 28px; height: 28px; border: none; background: var(--bg-secondary); border-radius: 50%; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s; flex-shrink: 0; }
+        .notify-panel-close:hover { background: rgba(239,68,68,0.12); color: #ef4444; }
+
+        /* اسکرول داخلی */
+        .header .notify-dropdown-inner { max-height: min(460px, 72vh); overflow-y: auto; overscroll-behavior: contain; }
+
+        /* بخش‌ها */
+        .header .notify-section { padding: 14px 16px; border-bottom: 1px solid var(--border); }
+        .header .notify-section:last-child { border-bottom: none; padding-bottom: 14px; }
+
+        /* هدر بخش */
+        .header .notify-section-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+        .notify-section-header-left { display: flex; align-items: center; gap: 7px; color: var(--text-secondary); }
+        .notify-section-header-left svg { flex-shrink: 0; opacity: 0.7; }
+        .header .notify-section-title { margin: 0; font-size: 0.85rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+        /* badge تعداد */
+        .header .notify-pending-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; background: var(--accent-soft); color: var(--accent); font-size: 0.75rem; font-weight: 700; }
+        .header .notify-pending-badge-warn { background: rgba(245,158,11,0.15); color: #f59e0b; }
+
+        /* لیست آیتم‌ها */
+        .header .notify-section-list { display: flex; flex-direction: column; gap: 5px; margin-bottom: 10px; }
+
+        /* آیتم */
+        .header .notify-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; transition: background 0.18s, border-color 0.18s, transform 0.15s; text-decoration: none; color: inherit; position: relative; overflow: hidden; }
+        .header .notify-item:hover { background: var(--bg-hover); border-color: var(--accent); transform: translateX(-2px); }
+        [dir="ltr"] .header .notify-item:hover { transform: translateX(2px); }
+        .header .notify-item.notify-item-unread { border-inline-start: 3px solid var(--accent); background: rgba(16,185,129,0.04); }
+        .header .notify-item.notify-item-unread .notify-item-title { font-weight: 700; color: var(--text-primary); }
+
+        /* نقطه خوانده‌نشده */
+        .notify-unread-dot { width: 8px; height: 8px; min-width: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; box-shadow: 0 0 0 2px var(--accent-soft); }
+        .notify-item-icon { width: 34px; height: 34px; min-width: 34px; border-radius: 9px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .notify-item-icon svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .notify-item-icon.warn { background: rgba(245,158,11,0.15); color: #f59e0b; }
+
         .header .notify-item-body { flex: 1; min-width: 0; }
-        .header .notify-item-title { font-size: 0.9rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .header .notify-item-meta { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
-        .header .notify-item-arrow { flex-shrink: 0; width: 18px; height: 18px; color: var(--text-muted); }
-        .header .notify-item-arrow svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 2; }
-        .header .notify-see-all { display: block; text-align: center; padding: 8px; font-size: 0.9rem; font-weight: 500; color: var(--accent); text-decoration: none; transition: color 0.2s; }
-        .header .notify-see-all:hover { color: var(--accent-light); }
-        .header .notify-empty { padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.9rem; }
+        .header .notify-item-title { font-size: 0.88rem; font-weight: 500; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .header .notify-item-meta { font-size: 0.73rem; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+        .notify-item-status { display: inline-flex; align-items: center; padding: 1px 7px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; }
+        .notify-item-status.open { background: rgba(16,185,129,0.12); color: var(--accent); }
+        .notify-item-status.in_progress { background: rgba(59,130,246,0.12); color: #3b82f6; }
+        .notify-item-status.closed { background: var(--bg-secondary); color: var(--text-muted); }
+        .notify-item-status.resolved { background: rgba(34,197,94,0.12); color: #22c55e; }
+        .header .notify-item-arrow { flex-shrink: 0; width: 16px; height: 16px; color: var(--text-muted); opacity: 0.5; }
+        .header .notify-item-arrow svg { width: 100%; height: 100%; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+        /* دکمه مشاهده همه */
+        .header .notify-see-all { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; font-size: 0.82rem; font-weight: 600; color: var(--accent); text-decoration: none; border-radius: 8px; transition: background 0.18s, color 0.18s; }
+        .header .notify-see-all:hover { background: var(--accent-soft); }
+        .header .notify-see-all svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 2.5; }
+
+        /* حالت خالی */
+        .header .notify-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px 16px; gap: 8px; }
+        .notify-empty-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--bg-secondary); color: var(--text-muted); display: flex; align-items: center; justify-content: center; }
+        .notify-empty-icon svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.8; opacity: 0.6; }
+        .notify-empty-text { font-size: 0.82rem; color: var(--text-muted); text-align: center; }
+
+        /* skeleton loading */
+        .notify-skeleton { display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; }
+        .notify-skeleton-line { height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--border) 25%, var(--bg-hover) 50%, var(--border) 75%); background-size: 200% 100%; animation: skeletonShimmer 1.4s ease-in-out infinite; }
+        .notify-skeleton-line.w45 { width: 45%; }
+        .notify-skeleton-line.w55 { width: 55%; }
+        .notify-skeleton-line.w70 { width: 70%; }
+        .notify-skeleton-line.w75 { width: 75%; }
+        .notify-skeleton-line.w85 { width: 85%; }
+        .notify-skeleton-line.w40 { width: 40%; }
+        @keyframes skeletonShimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
         .header .header-mobile-notify { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
         .main { display: flex; flex: 1; overflow: hidden; min-width: 0; min-height: 0; }
         .main-wrap { min-width: 0; }

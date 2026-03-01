@@ -91,7 +91,13 @@ router.patch('/me', async (req, res) => {
         }
         if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth ? String(dateOfBirth).trim() || null : null;
         if (phone !== undefined) user.phone = phone ? String(phone).trim() : null;
-        if (avatar !== undefined) user.avatar = avatar ? String(avatar).trim() || null : null;
+        if (avatar !== undefined) {
+            const a = avatar ? String(avatar).trim() : null;
+            if (a && !/^https?:\/\//i.test(a) && !a.startsWith('/uploads/')) {
+                return res.status(400).json({ error: 'آدرس آواتار نامعتبر است' });
+            }
+            user.avatar = a || null;
+        }
         if (email !== undefined && req.canManageUsers()) {
             const trimmed = String(email).trim().toLowerCase();
             if (!trimmed) return res.status(400).json({ error: 'ایمیل الزامی است' });
@@ -152,6 +158,8 @@ router.post('/', async (req, res) => {
         }
         const validRoles = ['owner', 'admin', 'manager', 'supervisor', 'agent'];
         if (role && !validRoles.includes(role)) return res.status(400).json({ error: 'نقش نامعتبر است' });
+        if (departmentId && !isValidUUID(departmentId)) return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
+        if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
         const finalBranchId = req.canManageUsers() ? (branchId || null) : (req.user.branchId || null);
         const user = await User.create({
             name,
@@ -223,8 +231,14 @@ router.put('/:id', async (req, res) => {
             }
             user.role = role;
         }
-        if (departmentId !== undefined) user.departmentId = departmentId;
-        if (branchId !== undefined && req.canManageUsers()) user.branchId = branchId || null;
+        if (departmentId !== undefined) {
+            if (departmentId && !isValidUUID(departmentId)) return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
+            user.departmentId = departmentId || null;
+        }
+        if (branchId !== undefined && req.canManageUsers()) {
+            if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
+            user.branchId = branchId || null;
+        }
         if (isActive !== undefined) user.isActive = !!isActive;
         if (req.body.password) {
             const pwdCheck = validatePassword(req.body.password);
