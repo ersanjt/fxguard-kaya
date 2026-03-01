@@ -4593,6 +4593,23 @@
                     document.getElementById('msgFileInput').click();
                 });
             }
+
+            var msgFileInput = document.getElementById('msgFileInput');
+            if (msgFileInput) {
+                var _prevFileHandler = msgFileInput._previewHandler;
+                if (_prevFileHandler) msgFileInput.removeEventListener('change', _prevFileHandler);
+                msgFileInput._previewHandler = function() {
+                    var f = this.files && this.files[0];
+                    if (f) showFilePreview(f);
+                    else clearFilePreview();
+                };
+                msgFileInput.addEventListener('change', msgFileInput._previewHandler);
+            }
+
+            var filePreviewRemove = document.getElementById('chatFilePreviewRemove');
+            if (filePreviewRemove) {
+                filePreviewRemove.onclick = function() { clearFilePreview(); };
+            }
             
             var msgTemplateBtn = document.getElementById('msgTemplateBtn');
             if (msgTemplateBtn) {
@@ -5347,6 +5364,63 @@
             if (el) el.style.display = 'none';
         }
 
+        function clearFilePreview() {
+            var bar = document.getElementById('chatFilePreview');
+            var thumb = document.getElementById('chatFilePreviewThumb');
+            var nameEl = document.getElementById('chatFilePreviewName');
+            var sizeEl = document.getElementById('chatFilePreviewSize');
+            if (bar) bar.style.display = 'none';
+            if (thumb) thumb.innerHTML = '';
+            if (nameEl) nameEl.textContent = '';
+            if (sizeEl) sizeEl.textContent = '';
+            var fi = document.getElementById('msgFileInput');
+            if (fi) fi.value = '';
+        }
+
+        function showFilePreview(file) {
+            if (!file) { clearFilePreview(); return; }
+            var bar = document.getElementById('chatFilePreview');
+            var thumb = document.getElementById('chatFilePreviewThumb');
+            var nameEl = document.getElementById('chatFilePreviewName');
+            var sizeEl = document.getElementById('chatFilePreviewSize');
+            if (!bar) return;
+
+            if (nameEl) nameEl.textContent = file.name;
+            if (sizeEl) {
+                var sz = file.size;
+                var sizeStr = sz < 1024 ? sz + ' B' : sz < 1024*1024 ? (sz/1024).toFixed(1) + ' KB' : (sz/(1024*1024)).toFixed(1) + ' MB';
+                sizeEl.textContent = sizeStr;
+            }
+            if (thumb) {
+                thumb.innerHTML = '';
+                var mime = file.type || '';
+                if (mime.startsWith('image/')) {
+                    var img = document.createElement('img');
+                    img.alt = file.name;
+                    var reader = new FileReader();
+                    reader.onload = function(e) { img.src = e.target.result; };
+                    reader.readAsDataURL(file);
+                    thumb.appendChild(img);
+                } else if (mime.startsWith('video/')) {
+                    var vid = document.createElement('video');
+                    vid.muted = true;
+                    var reader2 = new FileReader();
+                    reader2.onload = function(e) { vid.src = e.target.result; };
+                    reader2.readAsDataURL(file);
+                    thumb.appendChild(vid);
+                } else {
+                    var iconMap = { 'application/pdf': '📄', 'audio/': '🎵', 'text/': '📝', 'application/zip': '🗜️', 'application/x-rar': '🗜️', 'application/msword': '📝', 'application/vnd.openxmlformats': '📝', 'application/vnd.ms-excel': '📊' };
+                    var icon = '📎';
+                    for (var k in iconMap) { if (mime.startsWith(k)) { icon = iconMap[k]; break; } }
+                    var span = document.createElement('span');
+                    span.className = 'file-icon';
+                    span.textContent = icon;
+                    thumb.appendChild(span);
+                }
+            }
+            bar.style.display = 'block';
+        }
+
         async function sendMsg() {
             var input = document.getElementById('msgInput');
             var fileInput = document.getElementById('msgFileInput');
@@ -5362,6 +5436,7 @@
                 if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
                 media = { url: uploadData.url, filename: uploadData.name || file.name, mimetype: file.type };
                 fileInput.value = '';
+                clearFilePreview();
             }
             input.value = '';
             var body = { content: content || '', media: media };

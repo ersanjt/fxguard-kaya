@@ -3530,6 +3530,17 @@
         .chat-reply-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); }
         .chat-reply-cancel { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 0 4px; line-height: 1; }
         .chat-reply-cancel:hover { color: var(--danger); }
+        .chat-file-preview { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 8px 12px; }
+        .chat-file-preview-inner { display: flex; align-items: center; gap: 10px; }
+        .chat-file-preview-thumb { width: 52px; height: 52px; border-radius: 8px; overflow: hidden; background: var(--bg-tertiary,#f0f0f0); flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
+        .chat-file-preview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .chat-file-preview-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .chat-file-preview-thumb .file-icon { font-size: 1.6rem; line-height: 1; }
+        .chat-file-preview-info { flex: 1; min-width: 0; }
+        .chat-file-preview-name { display: block; font-size: 0.88rem; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 260px; }
+        .chat-file-preview-size { display: block; font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+        .chat-file-preview-remove { background: none; border: none; color: var(--text-muted); font-size: 1.3rem; cursor: pointer; padding: 0 4px; line-height: 1; flex-shrink: 0; }
+        .chat-file-preview-remove:hover { color: var(--danger); }
         .msg-footer { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
         .msg-footer .time { margin: 0; }
         .msg-reply-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; font-size: 1rem; opacity: 0.7; }

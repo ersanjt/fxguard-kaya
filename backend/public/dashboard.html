@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/css/dashboard.css?v=39">
+    <link rel="stylesheet" href="/css/dashboard.css?v=40">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -470,7 +470,17 @@
                         <div id="chatReplyPreview" class="chat-reply-preview" style="display:none;">
                             <span class="chat-reply-label" data-i18n="replying_to">پاسخ به:</span>
                             <span id="chatReplyText" class="chat-reply-text"></span>
-                            <button type="button" class="chat-reply-cancel" onclick="cancelReply()" aria-label="لغو">×</button>
+                            <button type="button" class="chat-reply-cancel" id="cancelReplyBtn" aria-label="لغو">×</button>
+                        </div>
+                        <div id="chatFilePreview" class="chat-file-preview" style="display:none;">
+                            <div class="chat-file-preview-inner">
+                                <div class="chat-file-preview-thumb" id="chatFilePreviewThumb"></div>
+                                <div class="chat-file-preview-info">
+                                    <span class="chat-file-preview-name" id="chatFilePreviewName"></span>
+                                    <span class="chat-file-preview-size" id="chatFilePreviewSize"></span>
+                                </div>
+                                <button type="button" class="chat-file-preview-remove" id="chatFilePreviewRemove" aria-label="حذف فایل">×</button>
+                            </div>
                         </div>
                         <div class="chat-send">
                             <input type="file" id="msgFileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" style="display:none;">
@@ -3063,7 +3073,7 @@
     <script src="/js/i18n-fa.js?v=3" charset="utf-8"></script>
     <script src="/js/i18n-en.js?v=1" charset="utf-8"></script>
     <script src="/js/i18n-tr.js?v=3" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=18" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=19" charset="utf-8"></script>
     <script>
     (function() {
         function updateMobileHeaderHeight() {
