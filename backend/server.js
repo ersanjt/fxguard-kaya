@@ -98,8 +98,20 @@ app.use(cors({
 }));
 app.use(compression());
 app.use(cookieParser());
-app.use(express.json({ limit: '512kb' }));
-app.use(express.urlencoded({ extended: true, limit: '512kb' }));
+// Webhook needs larger limit for base64 media — apply per-route in api.js
+// All other routes get 512kb limit
+app.use((req, res, next) => {
+    if (req.path && req.path.includes('/webhook/')) {
+        return next();
+    }
+    express.json({ limit: '512kb' })(req, res, next);
+});
+app.use((req, res, next) => {
+    if (req.path && req.path.includes('/webhook/')) {
+        return next();
+    }
+    express.urlencoded({ extended: true, limit: '512kb' })(req, res, next);
+});
 
 // Request Correlation ID
 app.use((req, res, next) => {
