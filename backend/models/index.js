@@ -1,23 +1,36 @@
 const { Sequelize } = require('sequelize');
 const config = require('../config/database');
 
-const dev = config.development;
-const isSqlite = dev.dialect === 'sqlite';
+const env = process.env.NODE_ENV || 'development';
+const cfg = config[env] || config.development;
+const isSqlite = cfg.dialect === 'sqlite';
 const databaseUrl = process.env.DATABASE_URL;
 
+// SSL options: rejectUnauthorized defaults to true in production
+const sslEnabled = process.env.DATABASE_SSL !== 'false';
+const sslRejectUnauthorized = process.env.DATABASE_SSL_REJECT_UNAUTHORIZED !== 'false';
+const sslOptions = sslEnabled ? { ssl: { require: true, rejectUnauthorized: sslRejectUnauthorized } } : {};
+
 const sequelize = isSqlite
-    ? new Sequelize({ storage: dev.storage, dialect: 'sqlite', logging: false })
+    ? new Sequelize({ storage: cfg.storage, dialect: 'sqlite', logging: false })
     : databaseUrl
-        ? new Sequelize(databaseUrl, { dialect: 'postgres', logging: false, pool: { max: 10, min: 0, acquire: 30000, idle: 10000 }, dialectOptions: databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://') ? { ssl: process.env.DATABASE_SSL !== 'false' ? { rejectUnauthorized: false } : false } : {} })
+        ? new Sequelize(databaseUrl, {
+            dialect: 'postgres',
+            logging: false,
+            pool: { max: parseInt(process.env.DB_POOL_MAX) || 10, min: 0, acquire: 30000, idle: 10000 },
+            dialectOptions: (databaseUrl.startsWith('postgresql://') || databaseUrl.startsWith('postgres://')) ? sslOptions : {}
+          })
         : new Sequelize(
-            process.env.DB_NAME || dev.database,
-            process.env.DB_USER || dev.username,
-            process.env.DB_PASSWORD || dev.password,
+            process.env.DB_NAME || cfg.database,
+            process.env.DB_USER || cfg.username,
+            process.env.DB_PASSWORD || cfg.password,
             {
-                host: process.env.DB_HOST || dev.host,
+                host: process.env.DB_HOST || cfg.host,
+                port: process.env.DB_PORT || cfg.port || 5432,
                 dialect: 'postgres',
                 logging: false,
-                pool: { max: 10, min: 0, acquire: 30000, idle: 10000 }
+                pool: cfg.pool || { max: 10, min: 0, acquire: 30000, idle: 10000 },
+                dialectOptions: cfg.dialectOptions || {}
             }
         );
 
