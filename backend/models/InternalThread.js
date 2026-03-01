@@ -10,7 +10,13 @@ module.exports = (sequelize) => {
         lastMessageAt: {
             type: DataTypes.DATE
         }
-    }, { timestamps: true, tableName: 'InternalThreads' });
+    }, {
+        timestamps: true,
+        tableName: 'InternalThreads',
+        indexes: [
+            { fields: ['lastMessageAt'] }
+        ]
+    });
 
     InternalThread.associate = (models) => {
         InternalThread.belongsToMany(models.User, {

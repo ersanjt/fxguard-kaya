@@ -15,7 +15,15 @@ module.exports = (sequelize) => {
             type: DataTypes.UUID,
             allowNull: false
         }
-    }, { timestamps: false, tableName: 'InternalThreadParticipants' });
+    }, {
+        timestamps: false,
+        tableName: 'InternalThreadParticipants',
+        indexes: [
+            { fields: ['threadId'] },
+            { fields: ['userId'] },
+            { unique: true, fields: ['threadId', 'userId'] }
+        ]
+    });
 
     InternalThreadParticipant.associate = (models) => {
         InternalThreadParticipant.belongsTo(models.InternalThread, { foreignKey: 'threadId', as: 'thread' });

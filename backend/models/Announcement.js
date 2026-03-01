@@ -35,7 +35,15 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'userId یا departmentId بر اساس targetType؛ برای all خالی'
         }
-    }, { timestamps: true, tableName: 'Announcements' });
+    }, {
+        timestamps: true,
+        tableName: 'Announcements',
+        indexes: [
+            { fields: ['fromUserId'] },
+            { fields: ['targetType', 'targetId'] },
+            { fields: ['createdAt'] }
+        ]
+    });
 
     Announcement.associate = (models) => {
         Announcement.belongsTo(models.User, { foreignKey: 'fromUserId', as: 'fromUser' });
