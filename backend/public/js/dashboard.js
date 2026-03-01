@@ -9159,6 +9159,18 @@
             var res = await apiFetch('/api/file-templates/' + id, { method: 'DELETE' });
             if (res.ok) { loadFileTemplates(); fileTemplatesCache = fileTemplatesCache.filter(function(x) { return x.id !== id; }); toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
+        window.openTemplateModal = openTemplateModal;
+        window.closeTemplateModal = closeTemplateModal;
+        window.saveTemplate = saveTemplate;
+        window.editTemplate = editTemplate;
+        window.deleteTemplate = deleteTemplate;
+        window.openFileTemplateModal = openFileTemplateModal;
+        window.closeFileTemplateModal = closeFileTemplateModal;
+        window.saveFileTemplate = saveFileTemplate;
+        window.editFileTemplate = editFileTemplate;
+        window.deleteFileTemplate = deleteFileTemplate;
+        window.loadMessageTemplates = loadMessageTemplates;
+        window.loadFileTemplates = loadFileTemplates;
         function escapeForDataAttr(str) {
             if (!str) return '';
             return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
