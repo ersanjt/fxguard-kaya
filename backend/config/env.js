@@ -15,6 +15,14 @@ function validateEnv() {
         console.error('❌ JWT_SECRET باید در .env تنظیم شود و حداقل ۳۲ کاراکتر باشد');
         process.exit(1);
     }
+    if (!process.env.ENCRYPT_SECRET || process.env.ENCRYPT_SECRET.length < 32) {
+        console.error('❌ ENCRYPT_SECRET باید در .env تنظیم شود و حداقل ۳۲ کاراکتر باشد (برای رمزنگاری رمز ایمیل‌های شرکتی)');
+        process.exit(1);
+    }
+    if (process.env.ENCRYPT_SECRET === process.env.JWT_SECRET) {
+        console.error('❌ ENCRYPT_SECRET نباید با JWT_SECRET یکسان باشد — از یک مقدار تصادفی جداگانه استفاده کنید');
+        process.exit(1);
+    }
     if (process.env.NODE_ENV === 'production' && (!process.env.WEBHOOK_SECRET || process.env.WEBHOOK_SECRET.length < 16)) {
         console.error('❌ در production، WEBHOOK_SECRET باید در .env تنظیم شود (حداقل ۱۶ کاراکتر)');
         process.exit(1);

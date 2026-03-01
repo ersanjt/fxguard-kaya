@@ -35,22 +35,32 @@ async function checkUnansweredConversations(io, logger) {
         const alertThreshold = new Date(now.getTime() - alertMin * 60000);
         const escalateThreshold = new Date(now.getTime() - escalateMin * 60000);
 
-        const unanswered = await Conversation.findAll({
-            where: {
-                status: { [Op.in]: ['open', 'pending'] },
-                lastIncomingMessageAt: { [Op.ne]: null, [Op.lte]: alertThreshold },
-                [Op.or]: [
-                    { lastOutgoingMessageAt: null },
-                    sequelize.where(sequelize.col('lastIncomingMessageAt'), Op.gt, sequelize.col('lastOutgoingMessageAt'))
-                ]
-            },
-            include: [
-                { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'] },
-                { model: User, as: 'assignee', attributes: ['id', 'name'] },
-                { model: Department, as: 'department', attributes: ['id', 'name'] }
-            ],
-            limit: 500
-        });
+        const BATCH_SIZE = 200;
+        let offset = 0;
+        let unanswered = [];
+        // Process in batches to avoid hard limit of 500 conversations
+        while (true) {
+            const batch = await Conversation.findAll({
+                where: {
+                    status: { [Op.in]: ['open', 'pending'] },
+                    lastIncomingMessageAt: { [Op.ne]: null, [Op.lte]: alertThreshold },
+                    [Op.or]: [
+                        { lastOutgoingMessageAt: null },
+                        sequelize.where(sequelize.col('lastIncomingMessageAt'), Op.gt, sequelize.col('lastOutgoingMessageAt'))
+                    ]
+                },
+                include: [
+                    { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'] },
+                    { model: User, as: 'assignee', attributes: ['id', 'name'] },
+                    { model: Department, as: 'department', attributes: ['id', 'name'] }
+                ],
+                limit: BATCH_SIZE,
+                offset
+            });
+            unanswered = unanswered.concat(batch);
+            if (batch.length < BATCH_SIZE) break;
+            offset += BATCH_SIZE;
+        }
 
         for (const conv of unanswered) {
             const lastIn = conv.lastIncomingMessageAt ? new Date(conv.lastIncomingMessageAt) : null;

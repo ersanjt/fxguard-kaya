@@ -48,14 +48,19 @@ async function connectRabbitMQ({ io, redisClient, logger }) {
                 logger.error('processIncomingMessage failed', { error: err?.message, retryCount });
                 if (retryCount >= MAX_RETRIES) {
                     logger.error('Message moved to dead-letter queue after max retries', { retryCount });
+                    // NACK without requeue — message goes to dead-letter queue via x-dead-letter-routing-key
                     rabbitChannel.nack(msg, false, false);
                 } else {
-                    rabbitChannel.nack(msg, false, false);
+                    // ACK the original message first, then re-queue with incremented retry count
+                    // This avoids the message appearing in both dead-letter AND main queue simultaneously
+                    rabbitChannel.ack(msg);
                     setTimeout(() => {
-                        rabbitChannel.sendToQueue('whatsapp_messages', msg.content, {
-                            persistent: true,
-                            headers: { 'x-retry-count': retryCount + 1 }
-                        });
+                        if (rabbitChannel) {
+                            rabbitChannel.sendToQueue('whatsapp_messages', msg.content, {
+                                persistent: true,
+                                headers: { 'x-retry-count': retryCount + 1 }
+                            });
+                        }
                     }, Math.min(1000 * Math.pow(2, retryCount), 30000));
                 }
             }

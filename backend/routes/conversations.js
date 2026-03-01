@@ -333,42 +333,68 @@ router.get('/:id/stats', async (req, res) => {
         if (conversation.status === 'archived' && !(req.canViewArchivedConversations && req.canViewArchivedConversations())) {
             return res.status(403).json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
         }
-        const messages = await Message.findAll({
-            where: { conversationId: req.params.id },
-            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username'], required: false }],
-            order: [['timestamp', 'ASC']]
-        });
+        // Use SQL aggregation instead of loading all messages into memory
+        const convId = req.params.id;
+        const [counts, firstIncoming, firstOutgoing, responderRows] = await Promise.all([
+            // Total and outgoing counts
+            Message.findAll({
+                where: { conversationId: convId },
+                attributes: [
+                    'direction',
+                    [sequelize.fn('COUNT', sequelize.col('id')), 'cnt']
+                ],
+                group: ['direction'],
+                raw: true
+            }),
+            // First incoming message timestamp
+            Message.findOne({
+                where: { conversationId: convId, direction: 'incoming', timestamp: { [Op.ne]: null } },
+                attributes: ['timestamp'],
+                order: [['timestamp', 'ASC']],
+                raw: true
+            }),
+            // First outgoing message timestamp (after first incoming)
+            Message.findOne({
+                where: { conversationId: convId, direction: 'outgoing', timestamp: { [Op.ne]: null } },
+                attributes: ['timestamp'],
+                order: [['timestamp', 'ASC']],
+                raw: true
+            }),
+            // Distinct responders (users who sent outgoing messages)
+            Message.findAll({
+                where: { conversationId: convId, direction: 'outgoing', userId: { [Op.ne]: null } },
+                attributes: ['userId', [sequelize.fn('MIN', sequelize.col('timestamp')), 'firstAt']],
+                include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username'], required: false }],
+                group: ['userId', 'user.id', 'user.name', 'user.username'],
+                order: [[sequelize.fn('MIN', sequelize.col('timestamp')), 'ASC']],
+                raw: false
+            })
+        ]);
+
+        const countMap = {};
+        for (const r of counts) countMap[r.direction] = parseInt(r.cnt, 10);
+        const messageCount = (countMap.incoming || 0) + (countMap.outgoing || 0);
+        const outgoingCount = countMap.outgoing || 0;
+
+        const firstIncomingAt = firstIncoming?.timestamp ? new Date(firstIncoming.timestamp) : null;
+        const firstOutgoingAt = firstOutgoing?.timestamp ? new Date(firstOutgoing.timestamp) : null;
         let firstResponseTimeMin = null;
-        let firstIncomingAt = null;
-        let firstOutgoingAfterIncoming = null;
-        const responders = [];
-        const responderIds = new Set();
-        for (const m of messages) {
-            const ts = m.timestamp ? new Date(m.timestamp) : null;
-            if (m.direction === 'incoming' && ts) {
-                if (!firstIncomingAt || ts < firstIncomingAt) firstIncomingAt = ts;
-            }
-            if (m.direction === 'outgoing' && ts) {
-                const name = (m.user && (m.user.name || m.user.username)) || null;
-                if (m.userId && !responderIds.has(m.userId)) {
-                    responderIds.add(m.userId);
-                    responders.push({ id: m.userId, name: name || '—' });
-                }
-                if (firstIncomingAt && ts >= firstIncomingAt && (!firstOutgoingAfterIncoming || ts < firstOutgoingAfterIncoming)) {
-                    firstOutgoingAfterIncoming = ts;
-                }
-            }
+        if (firstIncomingAt && firstOutgoingAt && firstOutgoingAt >= firstIncomingAt) {
+            firstResponseTimeMin = Math.round((firstOutgoingAt - firstIncomingAt) / 60000);
         }
-        if (firstIncomingAt && firstOutgoingAfterIncoming) {
-            firstResponseTimeMin = Math.round((firstOutgoingAfterIncoming - firstIncomingAt) / 60000);
-        }
+
+        const responders = responderRows.map(m => ({
+            id: m.userId,
+            name: (m.user && (m.user.name || m.user.username)) || '—'
+        }));
+
         res.json({
             firstResponseTimeMin,
             firstIncomingAt: firstIncomingAt ? firstIncomingAt.toISOString() : null,
-            firstOutgoingAt: firstOutgoingAfterIncoming ? firstOutgoingAfterIncoming.toISOString() : null,
+            firstOutgoingAt: firstOutgoingAt ? firstOutgoingAt.toISOString() : null,
             responders,
-            messageCount: messages.length,
-            outgoingCount: messages.filter(m => m.direction === 'outgoing').length,
+            messageCount,
+            outgoingCount,
             unreadCount: conversation.unreadCount || 0
         });
     } catch (err) {
@@ -575,6 +601,33 @@ router.post('/:id/send', async (req, res) => {
         if (!conversation.firstReplyAt) updateData.firstReplyAt = now;
         if (!conversation.branchId && req.user.branchId) updateData.branchId = req.user.branchId;
         await conversation.update(updateData);
+        // ذخیره خودکار فایل ارسالی در آرشیو مشتری
+        if (hasMedia && mediaData && conversation.customerId) {
+            try {
+                const { CustomerDocument } = require('../models');
+                if (CustomerDocument) {
+                    const mime = mediaData.mimetype || '';
+                    let fType = 'other';
+                    if (mime.startsWith('image/')) fType = 'image';
+                    else if (mime.startsWith('video/')) fType = 'video';
+                    else if (mime.startsWith('audio/')) fType = 'audio';
+                    else if (mime.includes('pdf') || mime.includes('word') || mime.includes('excel') || mime.includes('text') || mime.includes('spreadsheet') || mime.includes('presentation')) fType = 'document';
+                    await CustomerDocument.create({
+                        customerId: conversation.customerId,
+                        title: mediaData.filename || 'فایل ارسالی',
+                        category: 'media',
+                        filePath: mediaData.url || '',
+                        fileName: mediaData.filename || 'file',
+                        mimeType: mime,
+                        fileType: fType,
+                        source: 'conversation',
+                        messageId: msg.id,
+                        conversationId: conversation.id,
+                        uploadedBy: req.userId
+                    });
+                }
+            } catch (_) {}
+        }
         const { gatewayPost } = require('../lib/gatewayClient');
         const { getSendTarget } = require('../lib/phoneUtils');
         const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;

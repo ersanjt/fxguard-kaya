@@ -5,8 +5,8 @@ const { RateAdjustment, RateCurrency, TickerConfig } = require('../models');
 const defaultRateCurrencies = require('../lib/defaultRateCurrencies');
 const logger = require('../config/logger');
 
-const NAVASAN_API_KEY = process.env.NAVASAN_API_KEY || 'premVIlUQHLNK4IGQzHnZNZyHCbJrknc';
-const NAVASAN_LATEST = `https://api.navasan.tech/latest/?api_key=${NAVASAN_API_KEY}`;
+const NAVASAN_API_KEY = process.env.NAVASAN_API_KEY || '';
+const NAVASAN_LATEST = NAVASAN_API_KEY ? `https://api.navasan.tech/latest/?api_key=${NAVASAN_API_KEY}` : null;
 
 let lastRatesCache = null;
 
@@ -56,10 +56,15 @@ function applyAdjustment(rawNum, adj) {
 router.get('/', async (req, res) => {
     try {
         const RATES_KEYS = await getRatesKeys();
-        let raw = await axios.get(NAVASAN_LATEST, { timeout: 12000 }).then(r => r.data || {}).catch((e) => {
-            logger.warn('Navasan API error', { error: e.message || e.code });
-            return null;
-        });
+        let raw = null;
+        if (NAVASAN_LATEST) {
+            raw = await axios.get(NAVASAN_LATEST, { timeout: 12000 }).then(r => r.data || {}).catch((e) => {
+                logger.warn('Navasan API error', { error: e.message || e.code });
+                return null;
+            });
+        } else {
+            logger.warn('NAVASAN_API_KEY not set — using cached rates only');
+        }
         if (!raw || Object.keys(raw).length === 0) {
             raw = lastRatesCache || {};
         } else {

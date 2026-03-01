@@ -166,7 +166,7 @@ router.post('/test-email', authMiddleware, async (req, res) => {
                 from: (req.body.smtpFrom || '').toString().trim() || null,
                 fromName: (req.body.smtpFromName || '').toString().trim() || null,
                 secure: !!(req.body.smtpSecure === true || req.body.smtpSecure === 'true' || req.body.smtpSecure === '1'),
-                allowSelfSigned: normHost.includes('host.secureserver.net') || normHost === 'mail.fxguard.io'
+                allowSelfSigned: (process.env.SMTP_ALLOW_SELF_SIGNED_HOSTS || '').split(',').map(h => h.trim().toLowerCase()).filter(Boolean).some(h => normHost.includes(h) || normHost === h)
             };
             if (!emailConfig.from && emailConfig.user) emailConfig.from = emailConfig.user;
         }
@@ -183,10 +183,10 @@ router.post('/test-email', authMiddleware, async (req, res) => {
         if (emailConfig && emailConfig.host && emailConfig.port) {
             result = await emailService.sendMailWithConfigDetailed(emailConfig, mailOpts);
             // اگر با host فعلی شکست خورد، hostهای جایگزین را امتحان کن (fxguard.io روی GoDaddy)
-            if (!result.ok && emailConfig.user && emailConfig.pass && /fxguard\.io/i.test(emailConfig.user || '')) {
+            const smtpFallbackHosts = (process.env.SMTP_FALLBACK_HOSTS || '').split(',').map(h => h.trim()).filter(Boolean);
+            if (!result.ok && emailConfig.user && emailConfig.pass && smtpFallbackHosts.length > 0) {
                 const currentHost = (emailConfig.host || '').replace(/\.+$/, '').trim();
-                const fallbacks = ['mail.fxguard.io', '143.182.205.92.host.secureserver.net', 'smtpout.secureserver.net'];
-                for (const h of fallbacks) {
+                for (const h of smtpFallbackHosts) {
                     if (currentHost === h) continue;
                     const fb = { ...emailConfig, host: h };
                     const r = await emailService.sendMailWithConfigDetailed(fb, mailOpts);

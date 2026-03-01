@@ -11,6 +11,23 @@ const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
 const CALL_ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 ساعت
 const STATUS_DEBOUNCE_MS = 2000;
 
+// WebSocket rate limiting: max messages per window per user
+const WS_MSG_LIMIT = 30;
+const WS_MSG_WINDOW_MS = 10 * 1000; // 10 seconds
+const socketMsgCounters = new Map(); // userId -> { count, resetAt }
+
+function checkSocketRateLimit(userId) {
+    const now = Date.now();
+    const entry = socketMsgCounters.get(userId);
+    if (!entry || now > entry.resetAt) {
+        socketMsgCounters.set(userId, { count: 1, resetAt: now + WS_MSG_WINDOW_MS });
+        return true;
+    }
+    entry.count++;
+    if (entry.count > WS_MSG_LIMIT) return false;
+    return true;
+}
+
 const statusDebounceTimers = {};
 
 const callRooms = {};
@@ -35,6 +52,9 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
 
         socket.on('send_message', async (data) => {
             try {
+                if (!checkSocketRateLimit(socket.userId)) {
+                    return socket.emit('error', { message: 'تعداد پیام‌های ارسالی بیش از حد مجاز است. لطفاً کمی صبر کنید.' });
+                }
                 const { conversationId, content, type, media } = data;
                 if (!conversationId || typeof conversationId !== 'string') {
                     return socket.emit('error', { message: 'شناسه مکالمه الزامی است' });

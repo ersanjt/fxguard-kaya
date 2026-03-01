@@ -9,8 +9,11 @@ const IV_LEN = 16;
 const KEY_LEN = 32;
 
 function getKey() {
-    const secret = process.env.ENCRYPT_SECRET || process.env.JWT_SECRET;
-    if (!secret) throw new Error('ENCRYPT_SECRET یا JWT_SECRET باید در .env تنظیم شود');
+    const secret = process.env.ENCRYPT_SECRET;
+    if (!secret) throw new Error('ENCRYPT_SECRET باید در فایل .env تنظیم شود (جداگانه از JWT_SECRET)');
+    if (secret === process.env.JWT_SECRET) {
+        throw new Error('ENCRYPT_SECRET نباید با JWT_SECRET یکسان باشد — از یک مقدار تصادفی جداگانه استفاده کنید');
+    }
     return crypto.scryptSync(secret, 'company-email-salt-v2', KEY_LEN);
 }
 

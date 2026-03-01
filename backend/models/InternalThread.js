@@ -26,6 +26,7 @@ module.exports = (sequelize) => {
             as: 'participants'
         });
         InternalThread.hasMany(models.InternalMessage, { foreignKey: 'threadId', as: 'messages' });
+        InternalThread.hasMany(models.InternalThreadParticipant, { foreignKey: 'threadId', as: 'threadParticipants' });
     };
 
     return InternalThread;

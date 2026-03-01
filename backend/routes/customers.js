@@ -1,11 +1,38 @@
 const express = require('express');
 const router = express.Router();
-const { sequelize, Customer, Conversation, Message, CustomerNote, User, ActivityLog, Department, Transaction, CashBox, BankAccount, Tag } = require('../models');
+const path = require('path');
+const fs = require('fs');
+const multer = require('multer');
+const { sequelize, Customer, Conversation, Message, CustomerNote, CustomerDocument, User, ActivityLog, Department, Transaction, CashBox, BankAccount, Tag } = require('../models');
 const { logActivity } = require('../services/activityLog');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
 const { normalizePhone } = require('../lib/phoneUtils');
 const { isValidUUID, parsePagination } = require('../lib/validation');
+
+// آپلود اسناد مشتری
+const docStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        const dir = path.join(__dirname, '../uploads/customers', req.params.id || 'tmp');
+        fs.mkdirSync(dir, { recursive: true });
+        cb(null, dir);
+    },
+    filename: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        const safe = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
+        cb(null, Date.now() + '_' + safe);
+    }
+});
+const BLOCKED_EXTS = ['.php', '.asp', '.exe', '.bat', '.sh', '.js', '.html', '.htaccess'];
+const docUpload = multer({
+    storage: docStorage,
+    limits: { fileSize: 30 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (BLOCKED_EXTS.includes(ext)) return cb(new Error('نوع فایل مجاز نیست'));
+        cb(null, true);
+    }
+});
 
 router.get('/', async (req, res) => {
     try {
@@ -31,14 +58,15 @@ router.get('/', async (req, res) => {
         const [stats, { rows, count }] = await Promise.all([
             !search ? Customer.findAll({
                 where: statsWhere,
-                attributes: ['status'],
+                attributes: ['status', [sequelize.fn('COUNT', sequelize.col('status')), 'cnt']],
+                group: ['status'],
                 raw: true
-            }).then(all => ({
-                total: all.length,
-                active: all.filter(c => c.status === 'active').length,
-                inactive: all.filter(c => c.status === 'inactive').length,
-                blocked: all.filter(c => c.status === 'blocked').length
-            })) : Promise.resolve(null),
+            }).then(rows => {
+                const map = {};
+                let total = 0;
+                for (const r of rows) { map[r.status] = parseInt(r.cnt, 10); total += parseInt(r.cnt, 10); }
+                return { total, active: map.active || 0, inactive: map.inactive || 0, blocked: map.blocked || 0 };
+            }) : Promise.resolve(null),
             Customer.findAndCountAll({
                 where,
                 order: [['lastContactAt', 'DESC']],
@@ -210,7 +238,9 @@ router.get('/:id/timeline', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
-        const { name, phone, email, notes, status, customFields, source, profilePic, tagIds } = req.body;
+        const { name, phone, email, notes, status, customFields, source, profilePic, tagIds,
+            birthDate, nationalId, nationality, gender, occupation, companyName,
+            address, city, country, postalCode, instagram, telegram, website } = req.body;
         if (!name && !phone) return res.status(400).json({ error: 'نام یا شماره تلفن الزامی است' });
         const allowedStatuses = ['active', 'inactive', 'blocked'];
         const customerData = {
@@ -222,6 +252,19 @@ router.post('/', async (req, res) => {
             customFields: customFields && typeof customFields === 'object' ? customFields : {},
             source: source || 'manual',
             profilePic: profilePic ? String(profilePic).trim() : null,
+            birthDate: birthDate || null,
+            nationalId: nationalId || null,
+            nationality: nationality || null,
+            gender: ['male','female','other'].includes(gender) ? gender : null,
+            occupation: occupation || null,
+            companyName: companyName || null,
+            address: address || null,
+            city: city || null,
+            country: country || null,
+            postalCode: postalCode || null,
+            instagram: instagram || null,
+            telegram: telegram || null,
+            website: website || null,
         };
         const customer = await Customer.create(customerData);
         if (tagIds && Array.isArray(tagIds) && tagIds.length) {
@@ -252,6 +295,9 @@ router.put('/:id', async (req, res) => {
         if (notes !== undefined) updateData.notes = notes;
         if (customFields !== undefined) updateData.customFields = customFields;
         if (req.body.profilePic !== undefined) updateData.profilePic = req.body.profilePic;
+        // فیلدهای شخصی
+        const personalFields = ['birthDate', 'nationalId', 'nationality', 'gender', 'occupation', 'companyName', 'address', 'city', 'country', 'postalCode', 'instagram', 'telegram', 'website'];
+        personalFields.forEach(f => { if (req.body[f] !== undefined) updateData[f] = req.body[f] || null; });
         const role = req.user.role;
         const canEditStatus = ['owner', 'admin', 'manager'].indexOf(role) !== -1 || (req.user.permissions && req.user.permissions.manage_users);
         if (status !== undefined && canEditStatus) updateData.status = status;
@@ -418,6 +464,115 @@ router.put('/:id/tags', async (req, res) => {
             include: [{ model: Tag, as: 'tags', attributes: ['id', 'name', 'color'], through: { attributes: [] } }]
         });
         res.json({ data: updated.tags || [] });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// ——— اسناد و مدیا مشتری
+router.get('/:id/documents', async (req, res) => {
+    try {
+        if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        const allowed = await canAccessCustomer(req, req.params.id);
+        if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+        if (!CustomerDocument) return res.json({ data: [] });
+        const { category, fileType } = req.query;
+        const where = { customerId: req.params.id };
+        if (category) where.category = category;
+        if (fileType) where.fileType = fileType;
+        const docs = await CustomerDocument.findAll({
+            where,
+            include: [{ model: User, as: 'uploader', attributes: ['id', 'name'], required: false }],
+            order: [['createdAt', 'DESC']]
+        });
+        res.json({ data: docs });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/:id/documents', docUpload.single('file'), async (req, res) => {
+    try {
+        if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی ندارید' });
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        const customer = await Customer.findByPk(req.params.id);
+        if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
+        const allowed = await canAccessCustomer(req, customer.id);
+        if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+        if (!req.file) return res.status(400).json({ error: 'فایل ارسال نشده' });
+
+        const mime = req.file.mimetype || '';
+        let fileType = 'other';
+        if (mime.startsWith('image/')) fileType = 'image';
+        else if (mime.startsWith('video/')) fileType = 'video';
+        else if (mime.startsWith('audio/')) fileType = 'audio';
+        else if (mime.includes('pdf') || mime.includes('word') || mime.includes('excel') || mime.includes('text') || mime.includes('spreadsheet') || mime.includes('presentation')) fileType = 'document';
+
+        const filePath = '/uploads/customers/' + req.params.id + '/' + req.file.filename;
+        const doc = await CustomerDocument.create({
+            customerId: req.params.id,
+            title: req.body.title || req.file.originalname,
+            description: req.body.description || null,
+            category: req.body.category || 'other',
+            filePath,
+            fileName: req.file.originalname,
+            fileSize: req.file.size,
+            mimeType: req.file.mimetype,
+            fileType,
+            source: 'manual',
+            uploadedBy: req.userId,
+            expiresAt: req.body.expiresAt || null,
+            tags: req.body.tags ? JSON.parse(req.body.tags) : []
+        });
+        const withUser = await CustomerDocument.findByPk(doc.id, {
+            include: [{ model: User, as: 'uploader', attributes: ['id', 'name'], required: false }]
+        });
+        res.status(201).json(withUser);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.put('/:id/documents/:docId', async (req, res) => {
+    try {
+        if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی ندارید' });
+        if (!isValidUUID(req.params.id) || !isValidUUID(req.params.docId)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        const allowed = await canAccessCustomer(req, req.params.id);
+        if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+        const doc = await CustomerDocument.findOne({ where: { id: req.params.docId, customerId: req.params.id } });
+        if (!doc) return res.status(404).json({ error: 'سند یافت نشد' });
+        const { title, description, category, expiresAt, tags } = req.body;
+        const upd = {};
+        if (title !== undefined) upd.title = title;
+        if (description !== undefined) upd.description = description;
+        if (category !== undefined) upd.category = category;
+        if (expiresAt !== undefined) upd.expiresAt = expiresAt || null;
+        if (tags !== undefined) upd.tags = typeof tags === 'string' ? JSON.parse(tags) : tags;
+        await doc.update(upd);
+        res.json(doc);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.delete('/:id/documents/:docId', async (req, res) => {
+    try {
+        if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی ندارید' });
+        if (!isValidUUID(req.params.id) || !isValidUUID(req.params.docId)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        const allowed = await canAccessCustomer(req, req.params.id);
+        if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+        const doc = await CustomerDocument.findOne({ where: { id: req.params.docId, customerId: req.params.id } });
+        if (!doc) return res.status(404).json({ error: 'سند یافت نشد' });
+        // حذف فایل از دیسک
+        try {
+            const absPath = path.join(__dirname, '..', 'public', doc.filePath) ;
+            const absPath2 = path.join(__dirname, '..', doc.filePath.replace(/^\//, ''));
+            if (fs.existsSync(absPath2)) fs.unlinkSync(absPath2);
+            else if (fs.existsSync(absPath)) fs.unlinkSync(absPath);
+        } catch (_) {}
+        await doc.destroy();
+        res.json({ message: 'سند حذف شد' });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

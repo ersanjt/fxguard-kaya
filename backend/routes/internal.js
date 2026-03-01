@@ -43,16 +43,20 @@ router.post('/threads', async (req, res) => {
         const userIds = req.body.userIds || (req.body.userId ? [req.body.userId] : []);
         if (!userIds.length) return res.status(400).json({ error: 'حداقل یک کاربر لازم است' });
         const me = req.userId;
-        const sorted = [...new Set([me, ...userIds].map(String))].sort();
-        const participants = await InternalThreadParticipant.findAll({
+        const targetIds = [...new Set(userIds.map(String))].sort();
+        // Fetch all threads the current user participates in, with ALL their participants in one query (no N+1)
+        const myThreads = await InternalThreadParticipant.findAll({
             where: { userId: me },
-            include: [{ model: InternalThread, as: 'thread' }]
+            include: [{
+                model: InternalThread, as: 'thread',
+                include: [{ model: InternalThreadParticipant, as: 'threadParticipants', attributes: ['userId'] }]
+            }]
         });
-        for (const p of participants) {
+        for (const p of myThreads) {
             const thread = p.thread;
-            const otherParts = await InternalThreadParticipant.findAll({ where: { threadId: thread.id } });
-            const otherIds = otherParts.map(o => String(o.userId)).filter(id => id !== String(me)).sort();
-            const targetIds = [...new Set(userIds.map(String))].sort();
+            if (!thread) continue;
+            const allParts = (thread.threadParticipants || []).map(tp => String(tp.userId));
+            const otherIds = allParts.filter(id => id !== String(me)).sort();
             if (otherIds.length === targetIds.length && otherIds.every((id, i) => id === targetIds[i])) {
                 const withParticipants = await InternalThread.findByPk(thread.id, { include: [{ model: User, as: 'participants', attributes: ['id', 'name', 'email', 'avatar'], through: { attributes: [] } }] });
                 return res.status(201).json(withParticipants);

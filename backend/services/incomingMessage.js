@@ -67,8 +67,9 @@ async function resolveIncomingMedia(media, logger) {
         }
         if (!ext) ext = '.bin';
         const safeName = (Date.now() + '-' + suggestedName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)) + (ext.startsWith('.') ? ext : '.' + ext);
-        const filePath = path.join(uploadsDir, safeName);
-        if (!filePath.startsWith(uploadsDir + path.sep) && filePath !== path.join(uploadsDir, safeName)) {
+        const filePath = path.resolve(uploadsDir, safeName);
+        const normalizedUploadsDir = path.resolve(uploadsDir);
+        if (!filePath.startsWith(normalizedUploadsDir + path.sep) && filePath !== normalizedUploadsDir) {
             throw new Error('Path traversal detected in media filename');
         }
         await fsPromises.writeFile(filePath, buf);
@@ -99,8 +100,9 @@ async function resolveIncomingMediaFromBase64(media, logger) {
         }
         if (!ext) ext = '.bin';
         const safeName = (Date.now() + '-' + suggestedName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)) + (ext.startsWith('.') ? ext : '.' + ext);
-        const filePath = path.join(uploadsDir, safeName);
-        if (!filePath.startsWith(uploadsDir + path.sep) && filePath !== path.join(uploadsDir, safeName)) {
+        const filePath = path.resolve(uploadsDir, safeName);
+        const normalizedUploadsDir = path.resolve(uploadsDir);
+        if (!filePath.startsWith(normalizedUploadsDir + path.sep) && filePath !== normalizedUploadsDir) {
             throw new Error('Path traversal detected in media filename');
         }
         await fsPromises.writeFile(filePath, buf);
@@ -429,6 +431,33 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             timestamp: ts,
             metadata: Object.keys(msgMetadata).length ? msgMetadata : {}
         });
+
+        // ذخیره خودکار فایل دریافتی در آرشیو مشتری
+        if (hasMedia && resolvedMedia && customer.id) {
+            try {
+                const { CustomerDocument } = require('../models');
+                if (CustomerDocument) {
+                    const mime = resolvedMedia.mimetype || '';
+                    let fType = 'other';
+                    if (mime.startsWith('image/')) fType = 'image';
+                    else if (mime.startsWith('video/')) fType = 'video';
+                    else if (mime.startsWith('audio/')) fType = 'audio';
+                    else if (mime.includes('pdf') || mime.includes('word') || mime.includes('excel') || mime.includes('text') || mime.includes('spreadsheet') || mime.includes('presentation')) fType = 'document';
+                    await CustomerDocument.create({
+                        customerId: customer.id,
+                        title: resolvedMedia.filename || resolvedMedia.caption || 'فایل دریافتی',
+                        category: 'media',
+                        filePath: resolvedMedia.url || resolvedMedia.filename || '',
+                        fileName: resolvedMedia.filename || 'file',
+                        mimeType: mime,
+                        fileType: fType,
+                        source: 'conversation',
+                        messageId: newMessage.id,
+                        conversationId: conversation.id
+                    });
+                }
+            } catch (_) {}
+        }
 
         if (!isGroup && customerCreated) {
             await sendFirstMessageWelcome(conversation, customer, rabbitChannel, logger);

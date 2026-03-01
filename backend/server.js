@@ -174,6 +174,7 @@ app.use('/api/', (req, res, next) => {
 
 // ==================== Socket.IO ====================
 app.set('io', io);
+app.set('redisClient', redisClient);
 io.use(socketAuth);
 setupSocketHandlers(io, getRabbitChannel, logger);
 

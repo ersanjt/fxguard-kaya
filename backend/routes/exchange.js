@@ -6,6 +6,7 @@ const { literal } = require('sequelize');
 const { isValidUUID, parsePagination } = require('../lib/validation');
 const Decimal = require('decimal.js');
 const logger = require('../config/logger');
+const { logActivity } = require('../services/activityLog');
 
 function serverError(res, err, context) {
     logger.error(`exchange.js error [${context}]`, { error: err?.message });
@@ -318,6 +319,12 @@ router.post('/transactions', requireServices, async (req, res) => {
         if (!type || isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'نوع و مبلغ معتبر الزامی است' });
         if (!VALID_TRANSACTION_TYPES.has(type)) return res.status(400).json({ error: 'نوع تراکنش نامعتبر است' });
         if (amt > 1e15) return res.status(400).json({ error: 'مبلغ تراکنش بیش از حد مجاز است' });
+        if (fromCashBoxId && !isValidUUID(fromCashBoxId)) return res.status(400).json({ error: 'شناسه صندوق مبدا نامعتبر است' });
+        if (toCashBoxId && !isValidUUID(toCashBoxId)) return res.status(400).json({ error: 'شناسه صندوق مقصد نامعتبر است' });
+        if (fromBankAccountId && !isValidUUID(fromBankAccountId)) return res.status(400).json({ error: 'شناسه حساب بانکی مبدا نامعتبر است' });
+        if (toBankAccountId && !isValidUUID(toBankAccountId)) return res.status(400).json({ error: 'شناسه حساب بانکی مقصد نامعتبر است' });
+        if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
+        if (customerId && !isValidUUID(customerId)) return res.status(400).json({ error: 'شناسه مشتری نامعتبر است' });
 
         const tx = await Transaction.create({
             type,
@@ -335,6 +342,7 @@ router.post('/transactions', requireServices, async (req, res) => {
             customerId: customerId || null,
             status: 'pending'
         });
+        logActivity({ userId: req.user?.id, branchId: req.user?.branchId, action: 'transaction_created', entityType: 'transaction', entityId: tx.id, summary: `تراکنش جدید ثبت شد: ${type} — ${amt} ${currency || 'IRR'}`, metadata: { amount: amt, type, currency: currency || 'IRR' } }).catch(() => {});
         res.status(201).json(tx);
     } catch (e) {
         serverError(res, e, 'exchange');
@@ -399,6 +407,7 @@ router.post('/transactions/:id/approve', requireServices, async (req, res) => {
         tx.rejectedBy = null;
         tx.rejectedAt = null;
         await tx.save();
+        logActivity({ userId: req.user?.id, branchId: req.user?.branchId, action: 'transaction_approved', entityType: 'transaction', entityId: tx.id, summary: `تراکنش تایید شد: ${tx.type} — ${tx.amount} ${tx.currency || ''}`, metadata: { amount: tx.amount, type: tx.type, currency: tx.currency } }).catch(() => {});
         res.json(tx);
     } catch (e) {
         serverError(res, e, 'exchange');
@@ -420,6 +429,7 @@ router.post('/transactions/:id/reject', requireServices, async (req, res) => {
         tx.approvedBy = null;
         tx.approvedAt = null;
         await tx.save();
+        logActivity({ userId: req.user?.id, branchId: req.user?.branchId, action: 'transaction_rejected', entityType: 'transaction', entityId: tx.id, summary: `تراکنش رد شد: ${tx.type} — ${tx.amount} ${tx.currency || ''}`, metadata: { amount: tx.amount, type: tx.type, currency: tx.currency } }).catch(() => {});
         res.json(tx);
     } catch (e) {
         serverError(res, e, 'exchange');

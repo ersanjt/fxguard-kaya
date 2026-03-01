@@ -17,10 +17,41 @@ const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
 const TOTP_TEMP_EXPIRY = '5m';
 const TOTP_MAX_ATTEMPTS = 5;
+const TOTP_TTL_SECONDS = 5 * 60; // 5 minutes
 
-// In-memory TOTP attempt counter keyed by tempToken jti (JWT id)
-// Entries expire automatically after TOTP_TEMP_EXPIRY (5 min)
-const totpAttempts = new Map();
+// In-memory fallback for TOTP attempts (used when Redis is unavailable)
+const totpAttemptsLocal = new Map();
+
+async function getTotpAttempts(redisClient, jti) {
+    try {
+        if (redisClient && !redisClient.isStub) {
+            const val = await redisClient.get(`totp:${jti}`);
+            return val ? parseInt(val, 10) : 0;
+        }
+    } catch (_) {}
+    return totpAttemptsLocal.get(jti) || 0;
+}
+
+async function setTotpAttempts(redisClient, jti, count) {
+    try {
+        if (redisClient && !redisClient.isStub) {
+            await redisClient.set(`totp:${jti}`, String(count), { EX: TOTP_TTL_SECONDS });
+            return;
+        }
+    } catch (_) {}
+    totpAttemptsLocal.set(jti, count);
+    setTimeout(() => totpAttemptsLocal.delete(jti), TOTP_TTL_SECONDS * 1000);
+}
+
+async function clearTotpAttempts(redisClient, jti) {
+    try {
+        if (redisClient && !redisClient.isStub) {
+            await redisClient.del(`totp:${jti}`);
+            return;
+        }
+    } catch (_) {}
+    totpAttemptsLocal.delete(jti);
+}
 
 function issueToken(user) {
     return jwt.sign(
@@ -206,15 +237,14 @@ router.post('/totp/verify-login', async (req, res) => {
         const decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
         if (!decoded.totpStep || !decoded.id) return res.status(401).json({ error: 'لینک ورود منقضی شده. دوباره وارد شوید.' });
 
-        // Brute-force protection: max TOTP_MAX_ATTEMPTS per tempToken
+        // Brute-force protection: max TOTP_MAX_ATTEMPTS per tempToken (Redis-backed for multi-process safety)
         const jti = decoded.jti || decoded.id;
-        const attempts = (totpAttempts.get(jti) || 0) + 1;
+        const redisClient = req.app.get('redisClient');
+        const attempts = (await getTotpAttempts(redisClient, jti)) + 1;
         if (attempts > TOTP_MAX_ATTEMPTS) {
             return res.status(429).json({ error: 'تعداد تلاش‌های مجاز تمام شده. دوباره وارد شوید.' });
         }
-        totpAttempts.set(jti, attempts);
-        // Auto-cleanup after token expiry (5 min)
-        setTimeout(() => totpAttempts.delete(jti), 5 * 60 * 1000);
+        await setTotpAttempts(redisClient, jti, attempts);
 
         const user = await User.findByPk(decoded.id);
         if (!user || !user.isActive || !user.totpEnabled || !user.totpSecret) {
@@ -226,7 +256,7 @@ router.post('/totp/verify-login', async (req, res) => {
         if (!verified) return res.status(401).json({ error: 'کد احراز هویت اشتباه یا منقضی است' });
 
         // Clear attempt counter on success
-        totpAttempts.delete(jti);
+        await clearTotpAttempts(redisClient, jti);
         const now = new Date();
         await user.update({ lastLoginAt: now, status: 'online' });
         const clientIp = req.ip || req.connection?.remoteAddress || '';
