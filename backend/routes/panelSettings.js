@@ -73,6 +73,19 @@ router.put('/', authMiddleware, async (req, res) => {
         }
         const body = req.body || {};
         const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, hiddenSections, languageMode, defaultLanguage } = body;
+        if (logoUrl && !/^https?:\/\//i.test(String(logoUrl).trim()) && !String(logoUrl).trim().startsWith('/uploads/')) {
+            return res.status(400).json({ error: 'آدرس لوگو باید یک URL معتبر یا مسیر /uploads/ باشد' });
+        }
+        if (faviconUrl && !/^https?:\/\//i.test(String(faviconUrl).trim()) && !String(faviconUrl).trim().startsWith('/uploads/')) {
+            return res.status(400).json({ error: 'آدرس فاویکون باید یک URL معتبر یا مسیر /uploads/ باشد' });
+        }
+        if (smtpPort !== undefined && smtpPort !== '') {
+            const port = parseInt(smtpPort, 10);
+            if (isNaN(port) || port < 1 || port > 65535) return res.status(400).json({ error: 'پورت SMTP باید بین ۱ تا ۶۵۵۳۵ باشد' });
+        }
+        if (smtpFrom && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(smtpFrom).trim())) {
+            return res.status(400).json({ error: 'آدرس ایمیل فرستنده SMTP نامعتبر است' });
+        }
         const [row] = await PanelSetting.findOrCreate({
             where: { id: 'default' },
             defaults: {}

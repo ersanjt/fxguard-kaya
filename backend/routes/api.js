@@ -190,7 +190,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.use('/panel-settings', require('./panelSettings'));
     apiRouter.use('/company-emails', authMiddleware, require('./companyEmails'));
 
-    apiRouter.post('/webhook/incoming-message', webhookAuth, (req, res) => {
+    apiRouter.post('/webhook/incoming-message', webhookAuth, express.json({ limit: '20mb' }), (req, res) => {
         const body = req.body;
         if (!body || typeof body !== 'object') {
             return res.status(400).json({ error: 'Invalid payload' });

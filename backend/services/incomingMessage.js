@@ -20,6 +20,20 @@ if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true
 const AUTO_RESPONSE_CACHE_KEY = 'cache:autoresponse:active';
 const AUTO_RESPONSE_CACHE_TTL = 60;
 
+// WhatsappConfig in-memory cache (30 seconds TTL) to avoid N+1 on every AI-enabled message
+let _wcCache = null;
+let _wcCacheAt = 0;
+const WC_CACHE_TTL_MS = 30 * 1000;
+
+async function getCachedWhatsappConfig() {
+    const now = Date.now();
+    if (_wcCache && (now - _wcCacheAt) < WC_CACHE_TTL_MS) return _wcCache;
+    const [wc] = await WhatsappConfig.findOrCreate({ where: { id: 'default' }, defaults: { aiAnswerEnabled: true } });
+    _wcCache = wc;
+    _wcCacheAt = now;
+    return wc;
+}
+
 async function resolveIncomingMedia(media, logger) {
     if (!media || !media.url) return media;
     const url = (media.url || '').trim();
@@ -329,10 +343,18 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
 
         let customer;
         let customerCreated = false;
-        [customer, customerCreated] = await Customer.findOrCreate({
-            where: { phone },
-            defaults: { name: contactName, profilePic: profilePic, source: 'whatsapp' }
-        });
+        try {
+            [customer, customerCreated] = await Customer.findOrCreate({
+                where: { phone },
+                defaults: { name: contactName, profilePic: profilePic, source: 'whatsapp' }
+            });
+        } catch (e) {
+            if (e.name === 'SequelizeUniqueConstraintError') {
+                customer = await Customer.findOne({ where: { phone } });
+                customerCreated = false;
+                if (!customer) throw e;
+            } else throw e;
+        }
 
         if (customerCreated) {
             logger.info(isGroup ? `✨ New group conversation: ${groupNameFromChat || phone}` : `✨ New customer created: ${phone}`);
@@ -424,7 +446,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             let aiEnabled = isAIAnswerEnabled();
             if (!aiEnabled) logger.info('AI skipped: OPENAI_API_KEY not set or AI_ANSWER_ENABLED=false');
             try {
-                const [wc] = await WhatsappConfig.findOrCreate({ where: { id: 'default' }, defaults: { aiAnswerEnabled: true } });
+                const wc = await getCachedWhatsappConfig();
                 if (wc && wc.aiAnswerEnabled === false) {
                     aiEnabled = false;
                     logger.info('AI skipped: disabled in WhatsappConfig panel');
@@ -433,7 +455,8 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 logger.warn('WhatsappConfig aiAnswerEnabled check failed:', e?.message);
             }
             if (aiEnabled) {
-                const convWithDept = await Conversation.findByPk(conversation.id, {
+                // Reuse already-loaded conversation (with department) instead of re-querying
+                const convWithDept = conversation.department !== undefined ? conversation : await Conversation.findByPk(conversation.id, {
                     include: [{ model: Department, as: 'department', required: false }]
                 });
                 const history = await Message.findAll({

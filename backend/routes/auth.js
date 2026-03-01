@@ -369,10 +369,12 @@ router.post('/logout', authMiddleware, async (req, res) => {
 router.patch('/me/presence', authMiddleware, async (req, res) => {
     try {
         const status = req.body.status;
-        if (status && ['online', 'away', 'busy', 'offline'].indexOf(status) !== -1) {
-            await req.user.update({ status });
+        const validStatuses = ['online', 'away', 'busy', 'offline'];
+        if (!status || !validStatuses.includes(status)) {
+            return res.status(400).json({ error: 'وضعیت نامعتبر است. مقادیر مجاز: online, away, busy, offline' });
         }
-        res.json({ ok: true, status: req.user.status });
+        await req.user.update({ status });
+        res.json({ ok: true, status });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
