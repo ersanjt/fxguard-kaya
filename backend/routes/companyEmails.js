@@ -60,9 +60,16 @@ router.post('/', authMiddleware, async (req, res) => {
         const existing = await CompanyEmail.findOne({ where: { email } });
         if (existing) return res.status(400).json({ error: 'این ایمیل شرکتی قبلاً ثبت شده است.' });
         const label = (req.body.label || '').trim() || null;
+        if (label && label.length > 100) return res.status(400).json({ error: 'برچسب بیش از ۱۰۰ کاراکتر مجاز نیست' });
         const assignedUserId = req.body.assignedUserId || null;
+        if (assignedUserId) {
+            const { isValidUUID } = require('../lib/validation');
+            if (!isValidUUID(assignedUserId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
+        }
         const notes = (req.body.notes || '').trim() || null;
+        if (notes && notes.length > 500) return res.status(400).json({ error: 'یادداشت بیش از ۵۰۰ کاراکتر مجاز نیست' });
         const password = (req.body.password || '').toString();
+        if (password && password.length > 200) return res.status(400).json({ error: 'رمز عبور بیش از ۲۰۰ کاراکتر مجاز نیست' });
         const isActive = req.body.isActive !== false;
         const passwordEnc = password ? encrypt(password) : null;
         const row = await CompanyEmail.create({

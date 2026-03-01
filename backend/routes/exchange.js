@@ -8,6 +8,11 @@ const Decimal = require('decimal.js');
 
 Decimal.set({ precision: 28, rounding: Decimal.ROUND_HALF_UP });
 
+const VALID_TRANSACTION_TYPES = new Set([
+    'cash_in', 'cash_out', 'transfer_box', 'transfer_account',
+    'bank_deposit', 'bank_withdraw', 'buy', 'sell', 'expense', 'income'
+]);
+
 function requireServices(req, res, next) {
     if (!req.canAccess('services')) return res.status(403).json({ error: 'دسترسی به بخش خدمات صرافی ندارید' });
     next();
@@ -304,6 +309,8 @@ router.post('/transactions', requireServices, async (req, res) => {
         } = req.body;
         const amt = parseFloat(amount);
         if (!type || isNaN(amt) || amt <= 0) return res.status(400).json({ error: 'نوع و مبلغ معتبر الزامی است' });
+        if (!VALID_TRANSACTION_TYPES.has(type)) return res.status(400).json({ error: 'نوع تراکنش نامعتبر است' });
+        if (amt > 1e15) return res.status(400).json({ error: 'مبلغ تراکنش بیش از حد مجاز است' });
 
         const tx = await Transaction.create({
             type,
@@ -347,7 +354,10 @@ router.put('/transactions/:id', requireServices, async (req, res) => {
             if (reference !== undefined) tx.reference = reference;
             if (transactionDate !== undefined) tx.transactionDate = transactionDate;
             if (customerId !== undefined) tx.customerId = customerId || null;
-            if (type !== undefined) tx.type = type;
+            if (type !== undefined) {
+                if (!VALID_TRANSACTION_TYPES.has(type)) return res.status(400).json({ error: 'نوع تراکنش نامعتبر است' });
+                tx.type = type;
+            }
             if (amount !== undefined) {
                 const val = safeParseFloat(amount, null);
                 if (val === null || val <= 0) return res.status(400).json({ error: 'مبلغ تراکنش باید عدد مثبت باشد' });
