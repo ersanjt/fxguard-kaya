@@ -5087,7 +5087,32 @@
             var convId = el.getAttribute('data-convid');
             var name = el.getAttribute('data-customername') || '';
             var isGrp = el.getAttribute('data-is-group') === '1';
-            if (convId) { openChat(convId, name, '', '', isGrp); showPage('conversations'); }
+            if (!convId) return;
+            // نمایش صفحه مکالمات بدون reload لیست
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+            var convPage = document.getElementById('pageConversations');
+            if (convPage) { convPage.style.display = 'flex'; convPage.classList.add('show'); }
+            var content = document.querySelector('.content');
+            if (content) content.classList.add('page-conversations');
+            // آپدیت sidebar active link
+            document.querySelectorAll('.sidebar .nav-link[data-page]').forEach(function(l) { l.classList.remove('active'); });
+            var convLink = document.querySelector('.sidebar .nav-link[data-page="conversations"]');
+            if (convLink) convLink.classList.add('active');
+            // اگر لیست مکالمات هنوز بارگذاری نشده، بارگذاری کن
+            var convList = document.getElementById('conversationsList');
+            var needsLoad = !convList || convList.children.length === 0;
+            if (needsLoad) {
+                loadConvFiltersInit();
+                loadConversations();
+                setTimeout(function() {
+                    removeAllInlineHandlers();
+                    setupConversationEventHandlers();
+                    openChat(convId, name, '', '', isGrp);
+                }, 400);
+            } else {
+                setupConversationEventHandlers();
+                openChat(convId, name, '', '', isGrp);
+            }
         }
 
         var _loadMessagesController = null;
@@ -5672,6 +5697,8 @@
             if (btnRefreshTx && !btnRefreshTx._bound) { btnRefreshTx._bound = true; btnRefreshTx.onclick = function() { if (currentCustomerId) loadCustomerTransactions(currentCustomerId); }; }
             loadCustomerNotes(custId);
         }
+        window.showCustomerHistory = showCustomerHistory;
+        window.openChatFromHistory = openChatFromHistory;
         function openImagePreviewModal(imgSrc) {
             var modal = document.getElementById('imagePreviewModal');
             var img = document.getElementById('imagePreviewImg');

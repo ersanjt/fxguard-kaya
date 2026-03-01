@@ -11,6 +11,7 @@ const { logActivity } = require('../services/activityLog');
 const { canAccessCustomer } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
 const { isValidUUID, parsePagination } = require('../lib/validation');
+const logger = require('../config/logger');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
 function canArchiveOrDeleteConversation(req) {
@@ -102,37 +103,56 @@ router.post('/sync-groups', async (req, res) => {
             throw gwErr;
         }
         const groups = gwRes?.data?.groups || gwRes?.data?.data?.groups || [];
+        let synced = 0;
         for (const g of groups) {
             const groupId = (g.id || '').toString().trim();
             if (!groupId) continue;
             const groupName = (g.name || g.subject || g.formattedTitle || '').toString().trim();
-            let [customer] = await Customer.findOrCreate({
-                where: { phone: groupId },
-                defaults: { name: groupName || `گروه ${groupId}`, source: 'whatsapp' }
-            });
-            if (customer && groupName && String(customer.name || '').trim() !== groupName) {
-                await customer.update({ name: groupName });
-            }
-            let conv = await Conversation.findOne({
-                where: { customerId: customer.id, status: { [Op.ne]: 'closed' } }
-            });
-            if (!conv) {
-                await Conversation.create({
-                    customerId: customer.id,
-                    status: 'open',
-                    priority: 'normal',
-                    source: 'whatsapp',
-                    metadata: { isGroup: true, groupName: groupName || null }
-                });
-            } else {
-                const meta = conv.metadata || {};
-                const needsUpdate = !meta.isGroup || (groupName && meta.groupName !== groupName);
-                if (needsUpdate) {
-                    await conv.update({ metadata: { ...meta, isGroup: true, groupName: groupName || meta.groupName || null } });
+            const t = await sequelize.transaction();
+            try {
+                let customer;
+                try {
+                    [customer] = await Customer.findOrCreate({
+                        where: { phone: groupId },
+                        defaults: { name: groupName || `گروه ${groupId}`, source: 'whatsapp' },
+                        transaction: t
+                    });
+                } catch (e) {
+                    if (e.name === 'SequelizeUniqueConstraintError') {
+                        customer = await Customer.findOne({ where: { phone: groupId }, transaction: t });
+                    } else throw e;
                 }
+                if (!customer) { await t.rollback(); continue; }
+                if (groupName && String(customer.name || '').trim() !== groupName) {
+                    await customer.update({ name: groupName }, { transaction: t });
+                }
+                let conv = await Conversation.findOne({
+                    where: { customerId: customer.id, status: { [Op.ne]: 'closed' } },
+                    transaction: t
+                });
+                if (!conv) {
+                    await Conversation.create({
+                        customerId: customer.id,
+                        status: 'open',
+                        priority: 'normal',
+                        source: 'whatsapp',
+                        metadata: { isGroup: true, groupName: groupName || null }
+                    }, { transaction: t });
+                } else {
+                    const meta = conv.metadata || {};
+                    const needsUpdate = !meta.isGroup || (groupName && meta.groupName !== groupName);
+                    if (needsUpdate) {
+                        await conv.update({ metadata: { ...meta, isGroup: true, groupName: groupName || meta.groupName || null } }, { transaction: t });
+                    }
+                }
+                await t.commit();
+                synced++;
+            } catch (loopErr) {
+                await t.rollback();
+                logger.warn('sync-groups: failed for group', { groupId, error: loopErr.message });
             }
         }
-        res.json({ ok: true, groupsCount: groups.length, message: `${groups.length} گروه همگام شد` });
+        res.json({ ok: true, groupsCount: groups.length, synced, message: `${synced} گروه همگام شد` });
     } catch (err) {
         res.status(500).json({ error: err.message || 'خطا در همگام‌سازی گروه‌ها' });
     }

@@ -5,6 +5,13 @@ const { Op } = require('sequelize');
 const { literal } = require('sequelize');
 const { isValidUUID, parsePagination } = require('../lib/validation');
 const Decimal = require('decimal.js');
+const logger = require('../config/logger');
+
+function serverError(res, err, context) {
+    logger.error(`exchange.js error [${context}]`, { error: err?.message });
+    const isProd = process.env.NODE_ENV === 'production';
+    res.status(500).json({ error: isProd ? 'خطای سرور' : (err?.message || 'خطای سرور') });
+}
 
 Decimal.set({ precision: 28, rounding: Decimal.ROUND_HALF_UP });
 
@@ -43,7 +50,7 @@ router.get('/cash-boxes', requireServices, async (req, res) => {
         });
         res.json(list);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -60,7 +67,7 @@ router.post('/cash-boxes', requireServices, async (req, res) => {
         });
         res.status(201).json(item);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -83,7 +90,7 @@ router.put('/cash-boxes/:id', requireServices, async (req, res) => {
         await item.save();
         res.json(item);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -95,7 +102,7 @@ router.delete('/cash-boxes/:id', requireServices, async (req, res) => {
         await item.destroy();
         res.json({ ok: true });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -111,7 +118,7 @@ router.get('/bank-accounts', requireServices, async (req, res) => {
         });
         res.json(list);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -131,7 +138,7 @@ router.post('/bank-accounts', requireServices, async (req, res) => {
         });
         res.status(201).json(item);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -157,7 +164,7 @@ router.put('/bank-accounts/:id', requireServices, async (req, res) => {
         await item.save();
         res.json(item);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -169,7 +176,7 @@ router.delete('/bank-accounts/:id', requireServices, async (req, res) => {
         await item.destroy();
         res.json({ ok: true });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -216,7 +223,7 @@ router.get('/transactions', requireServices, async (req, res) => {
         });
         res.json({ ...list, page });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -237,7 +244,7 @@ router.get('/transactions/:id', requireServices, async (req, res) => {
         if (!tx) return res.status(404).json({ error: 'تراکنش یافت نشد' });
         res.json(tx);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -330,7 +337,7 @@ router.post('/transactions', requireServices, async (req, res) => {
         });
         res.status(201).json(tx);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -372,7 +379,7 @@ router.put('/transactions/:id', requireServices, async (req, res) => {
         await tx.save();
         res.json(tx);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -394,7 +401,7 @@ router.post('/transactions/:id/approve', requireServices, async (req, res) => {
         await tx.save();
         res.json(tx);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -415,7 +422,7 @@ router.post('/transactions/:id/reject', requireServices, async (req, res) => {
         await tx.save();
         res.json(tx);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -436,7 +443,7 @@ router.get('/summary', requireServices, async (req, res) => {
             total: new Decimal(totalCash).plus(totalBank).toNumber()
         });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -605,7 +612,7 @@ router.get('/statement', requireServices, async (req, res) => {
             statement
         });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -694,7 +701,7 @@ router.get('/currency-position', requireServices, async (req, res) => {
             }))
         });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -740,7 +747,7 @@ router.get('/account-balance', requireServices, async (req, res) => {
 
         res.json(balanceByCurrency);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -805,7 +812,7 @@ router.get('/account-turnover', requireServices, async (req, res) => {
 
         res.json(result);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -858,7 +865,7 @@ router.get('/profit-loss', requireServices, async (req, res) => {
             byCurrency
         });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -903,7 +910,7 @@ router.get('/expense-journal', requireServices, async (req, res) => {
             count: rows.length
         });
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
@@ -951,7 +958,7 @@ router.get('/cash-bank-status', requireServices, async (req, res) => {
 
         res.json(byCurrency);
     } catch (e) {
-        res.status(500).json({ error: e.message });
+        serverError(res, e, 'exchange');
     }
 });
 
