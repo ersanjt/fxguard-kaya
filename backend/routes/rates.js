@@ -52,6 +52,11 @@ function applyAdjustment(rawNum, adj) {
     return rawNum;
 }
 
+// GET /api/rates/config-status — وضعیت تنظیمات (آیا API key دارد؟)
+router.get('/config-status', async (req, res) => {
+    res.json({ hasApiKey: !!NAVASAN_API_KEY });
+});
+
 // GET /api/rates — نرخ‌ها از API + اعمال تعدیلات؛ برای همه کاربران لاگین‌شده
 router.get('/', async (req, res) => {
     try {

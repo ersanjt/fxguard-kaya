@@ -1398,6 +1398,25 @@
                 return '<div class="rates-currency-row" data-key="' + escapeHtml(c.key) + '" data-label="' + labelAttr + '" data-apikeys="' + apiDataAttr + '"><span class="currency-key">' + escapeHtml(c.key) + '</span><span class="currency-label">' + escapeHtml(c.label || c.key) + '</span><span class="currency-apikeys">' + escapeHtml(apiStr) + '</span><div class="currency-actions"><button type="button" class="edit" onclick="openCurrencyModal(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_edit') || t('edit') || 'ویرایش') + '</button><button type="button" class="delete" onclick="deleteCurrency(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_delete') || 'حذف') + '</button></div></div>';
             }).join('');
         }
+        async function checkRatesApiKeyStatus() {
+            var header = document.querySelector('#pageRates .rates-page-header');
+            if (!header) return;
+            var existingAlert = document.getElementById('ratesApiKeyAlert');
+            if (existingAlert) existingAlert.remove();
+            var res = await apiFetch('/api/rates/config-status');
+            if (res.needLogin || !res.ok) return;
+            if (res.data && res.data.hasApiKey === false) {
+                var alert = document.createElement('div');
+                alert.id = 'ratesApiKeyAlert';
+                alert.className = 'rates-apikey-alert';
+                alert.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+                    + ' <span>کلید API ناواسان (<code>NAVASAN_API_KEY</code>) در فایل <code>.env</code> سرور تنظیم نشده. نرخ‌های لحظه‌ای دریافت نمی‌شوند.'
+                    + ' برای دریافت کلید رایگان به <a href="https://navasan.tech" target="_blank" rel="noopener">navasan.tech</a> مراجعه کنید.'
+                    + ' تا آن زمان می‌توانید نرخ <strong>ثابت (fixed)</strong> دستی برای هر ارز تنظیم کنید.</span>';
+                header.appendChild(alert);
+            }
+        }
+
         function openCurrencyModal(existingKey) {
             var modal = document.getElementById('currencyModal');
             var titleEl = document.getElementById('currencyModalTitle');
@@ -7021,7 +7040,7 @@
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
             if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); loadWhatsappStats(); }
             if (page === 'message-templates') { initMessageTemplatesTabs(); loadMessageTemplates(); }
-            if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); }
+            if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); }
             if (page === 'rates-charts') loadRatesCharts();
             if (page === 'services') { initServicesTabs(); loadServicesPage(); }
             if (page === 'branches') { loadBranches(); }
