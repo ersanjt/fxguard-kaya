@@ -69,6 +69,9 @@ router.post('/import', async (req, res) => {
         if (!rows || !Array.isArray(rows) || rows.length === 0) {
             return res.status(400).json({ error: 'داده‌ای برای ورود وجود ندارد' });
         }
+        if (rows.length > 2000) {
+            return res.status(400).json({ error: 'حداکثر ۲۰۰۰ ردیف در هر بار ورود مجاز است' });
+        }
         const accessibleIds = await getAccessibleCustomerIds(req);
         let created = 0, updated = 0, skipped = 0;
         for (const r of rows) {

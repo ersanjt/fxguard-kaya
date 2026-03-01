@@ -24,7 +24,14 @@ module.exports = (sequelize) => {
             defaultValue: [],
             comment: 'آرایه { name, url, size } برای فایل‌های پیوست'
         }
-    }, { timestamps: true, tableName: 'TicketReplies' });
+    }, {
+        timestamps: true,
+        tableName: 'TicketReplies',
+        indexes: [
+            { fields: ['ticketId'] },
+            { fields: ['userId'] }
+        ]
+    });
 
     TicketReply.associate = (models) => {
         TicketReply.belongsTo(models.Ticket, { foreignKey: 'ticketId', as: 'ticket' });

@@ -63,6 +63,7 @@ router.post('/send', async (req, res) => {
 
         let content = (message || '').trim();
         if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
+        if (content.length > 4096) return res.status(400).json({ error: 'متن پیام بیش از ۴۰۹۶ کاراکتر مجاز نیست' });
 
         const accessibleIds = await getAccessibleCustomerIds(req);
         const customers = await Customer.findAll({

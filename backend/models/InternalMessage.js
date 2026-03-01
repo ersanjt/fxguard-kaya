@@ -24,7 +24,15 @@ module.exports = (sequelize) => {
             defaultValue: [],
             comment: 'آرایه { name, url, size } برای فایل‌های پیوست'
         }
-    }, { timestamps: true, tableName: 'InternalMessages' });
+    }, {
+        timestamps: true,
+        tableName: 'InternalMessages',
+        indexes: [
+            { fields: ['threadId'] },
+            { fields: ['fromUserId'] },
+            { fields: ['threadId', 'createdAt'] }
+        ]
+    });
 
     InternalMessage.associate = (models) => {
         InternalMessage.belongsTo(models.InternalThread, { foreignKey: 'threadId', as: 'thread' });

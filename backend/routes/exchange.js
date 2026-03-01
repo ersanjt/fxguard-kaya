@@ -3,7 +3,7 @@ const router = express.Router();
 const { CashBox, BankAccount, Transaction, Branch, User, Customer, sequelize } = require('../models');
 const { Op } = require('sequelize');
 const { literal } = require('sequelize');
-const { isValidUUID } = require('../lib/validation');
+const { isValidUUID, parsePagination } = require('../lib/validation');
 const Decimal = require('decimal.js');
 
 Decimal.set({ precision: 28, rounding: Decimal.ROUND_HALF_UP });
@@ -193,8 +193,7 @@ router.get('/transactions', requireServices, async (req, res) => {
         }
         if (req.query.customerId) where.customerId = req.query.customerId;
         if (req.query.status && ['pending', 'approved', 'rejected'].includes(req.query.status)) where.status = req.query.status;
-        const limit = Math.min(parseInt(req.query.limit) || 100, 500);
-        const offset = parseInt(req.query.offset) || 0;
+        const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 500);
         const list = await Transaction.findAndCountAll({
             where,
             include: [
@@ -210,7 +209,7 @@ router.get('/transactions', requireServices, async (req, res) => {
             limit,
             offset
         });
-        res.json(list);
+        res.json({ ...list, page });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

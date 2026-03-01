@@ -33,6 +33,16 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
         socket.on('send_message', async (data) => {
             try {
                 const { conversationId, content, type, media } = data;
+                if (!conversationId || typeof conversationId !== 'string') {
+                    return socket.emit('error', { message: 'شناسه مکالمه الزامی است' });
+                }
+                const trimmedContent = (content || '').trim();
+                if (!trimmedContent && !media) {
+                    return socket.emit('error', { message: 'متن پیام یا فایل الزامی است' });
+                }
+                if (trimmedContent.length > 10000) {
+                    return socket.emit('error', { message: 'متن پیام بیش از حد مجاز است' });
+                }
                 const conversation = await Conversation.findByPk(conversationId, {
                     include: ['customer', { model: Department, as: 'department', required: false }]
                 });

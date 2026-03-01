@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
         const customerIds = await getAccessibleCustomerIds(req);
         const where = {};
         if (customerIds && customerIds.length === 0) {
-            return res.json({ data: [], total: 0, page: parseInt(page), stats: { total: 0, active: 0, inactive: 0, blocked: 0 } });
+            return res.json({ data: [], total: 0, page: p, stats: { total: 0, active: 0, inactive: 0, blocked: 0 } });
         }
         if (customerIds) where.id = { [Op.in]: customerIds };
         if (status && ['active', 'inactive', 'blocked'].includes(status)) where.status = status;

@@ -3,7 +3,7 @@ const router = express.Router();
 const { Sequelize, Conversation, Message, User, Branch, Department, Customer, ActivityLog, Ticket, TicketReply, Task, InternalThread, InternalMessage, InternalThreadParticipant } = require('../models');
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
-const { isValidUUID } = require('../lib/validation');
+const { isValidUUID, parsePagination } = require('../lib/validation');
 
 function ownerOnly(req, res, next) {
     if (!req.canAccess('supervision')) return res.status(403).json({ error: 'دسترسی به بخش نظارت ندارید' });
@@ -21,7 +21,7 @@ function canViewStaffActivity(req, res, next) {
 // لاگ ورود کارکنان — برای مدیر و بالاتر (شامل IP و کشور)
 router.get('/logins', canViewStaffActivity, async (req, res) => {
     try {
-        const { limit = 50, page = 1 } = req.query;
+        const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
         const { rows, count } = await ActivityLog.findAndCountAll({
             where: { action: 'user_login' },
             include: [
@@ -29,8 +29,8 @@ router.get('/logins', canViewStaffActivity, async (req, res) => {
                 { model: Branch, as: 'branch', attributes: ['id', 'name', 'city', 'country'], required: false }
             ],
             order: [['createdAt', 'DESC']],
-            limit: Math.min(parseInt(limit) || 50, 100),
-            offset: (parseInt(page) - 1) * (parseInt(limit) || 50)
+            limit,
+            offset
         });
         const data = rows.map(r => {
             const m = r.metadata || {};
@@ -40,7 +40,7 @@ router.get('/logins', canViewStaffActivity, async (req, res) => {
                 country: m.country || null
             };
         });
-        res.json({ data, total: count, page: parseInt(page) });
+        res.json({ data, total: count, page });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -174,7 +174,8 @@ router.use(ownerOnly);
 // همه مکالمات با جزئیات شعبه، دپارتمان، کارمند — برای نظارت مالک
 router.get('/conversations', async (req, res) => {
     try {
-        const { branchId, departmentId, userId, status, unassigned, limit = 50, page = 1 } = req.query;
+        const { branchId, departmentId, userId, status, unassigned } = req.query;
+        const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
         if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
         if (departmentId && !isValidUUID(departmentId)) return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
         if (userId && !isValidUUID(userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
@@ -195,10 +196,10 @@ router.get('/conversations', async (req, res) => {
                 { model: Branch, as: 'branch', attributes: ['id', 'name', 'city', 'country'], required: false }
             ],
             order: [['lastMessageAt', 'DESC']],
-            limit: Math.min(parseInt(limit) || 50, 100),
-            offset: (parseInt(page) - 1) * (parseInt(limit) || 50)
+            limit,
+            offset
         });
-        res.json({ data: rows, total: count, page: parseInt(page) });
+        res.json({ data: rows, total: count, page });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -207,7 +208,8 @@ router.get('/conversations', async (req, res) => {
 // لاگ فعالیت‌ها — چه کسی چه عملی انجام داده
 router.get('/activity', async (req, res) => {
     try {
-        const { branchId, userId, action, limit = 100, page = 1 } = req.query;
+        const { branchId, userId, action } = req.query;
+        const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 200);
         if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
         if (userId && !isValidUUID(userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
         const where = {};
@@ -222,10 +224,10 @@ router.get('/activity', async (req, res) => {
                 { model: Department, as: 'department', attributes: ['id', 'name'], required: false }
             ],
             order: [['createdAt', 'DESC']],
-            limit: Math.min(parseInt(limit) || 100, 200),
-            offset: (parseInt(page) - 1) * (parseInt(limit) || 100)
+            limit,
+            offset
         });
-        res.json({ data: rows, total: count, page: parseInt(page) });
+        res.json({ data: rows, total: count, page });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -234,23 +236,22 @@ router.get('/activity', async (req, res) => {
 // لیست چت‌های داخلی — برای مالک/ادمین (مشاهده کی با کی صحبت کرده)
 router.get('/internal-chats', async (req, res) => {
     try {
-        const { limit = 50, page = 1, userId } = req.query;
+        const { userId } = req.query;
+        const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
         if (userId && !isValidUUID(userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
-        const lim = Math.min(parseInt(limit) || 50, 100);
-        const off = (parseInt(page) - 1) * lim;
         let participantThreadIds = null;
         if (userId) {
             const parts = await InternalThreadParticipant.findAll({ where: { userId }, attributes: ['threadId'] });
             participantThreadIds = parts.map(p => p.threadId);
-            if (participantThreadIds.length === 0) return res.json({ data: [], total: 0, page: parseInt(page) });
+            if (participantThreadIds.length === 0) return res.json({ data: [], total: 0, page });
         }
         const where = participantThreadIds ? { id: { [Op.in]: participantThreadIds } } : {};
         const { rows, count } = await InternalThread.findAndCountAll({
             where,
             include: [{ model: User, as: 'participants', attributes: ['id', 'name', 'email', 'role'], through: { attributes: [] } }],
             order: [['lastMessageAt', 'DESC']],
-            limit: lim,
-            offset: off
+            limit,
+            offset
         });
         // batch load: آخرین پیام هر thread — یک query با limit به‌جای N query
         const rowThreadIds = rows.map(t => t.id);
@@ -276,7 +277,7 @@ router.get('/internal-chats', async (req, res) => {
                 participants: parts
             };
         });
-        res.json({ data: list, total: count, page: parseInt(page) });
+        res.json({ data: list, total: count, page });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
