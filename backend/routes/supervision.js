@@ -175,6 +175,11 @@ router.use(ownerOnly);
 router.get('/conversations', async (req, res) => {
     try {
         const { branchId, departmentId, userId, status, unassigned, limit = 50, page = 1 } = req.query;
+        if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
+        if (departmentId && !isValidUUID(departmentId)) return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
+        if (userId && !isValidUUID(userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
+        const VALID_STATUSES = ['open', 'pending', 'closed', 'resolved'];
+        if (status && !VALID_STATUSES.includes(status)) return res.status(400).json({ error: 'وضعیت نامعتبر است' });
         const where = {};
         if (branchId) where.branchId = branchId;
         if (departmentId) where.departmentId = departmentId;
@@ -203,6 +208,8 @@ router.get('/conversations', async (req, res) => {
 router.get('/activity', async (req, res) => {
     try {
         const { branchId, userId, action, limit = 100, page = 1 } = req.query;
+        if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
+        if (userId && !isValidUUID(userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
         const where = {};
         if (branchId) where.branchId = branchId;
         if (userId) where.userId = userId;
@@ -228,15 +235,16 @@ router.get('/activity', async (req, res) => {
 router.get('/internal-chats', async (req, res) => {
     try {
         const { limit = 50, page = 1, userId } = req.query;
+        if (userId && !isValidUUID(userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
         const lim = Math.min(parseInt(limit) || 50, 100);
         const off = (parseInt(page) - 1) * lim;
-        let threadIds = null;
+        let participantThreadIds = null;
         if (userId) {
             const parts = await InternalThreadParticipant.findAll({ where: { userId }, attributes: ['threadId'] });
-            threadIds = parts.map(p => p.threadId);
-            if (threadIds.length === 0) return res.json({ data: [], total: 0, page: parseInt(page) });
+            participantThreadIds = parts.map(p => p.threadId);
+            if (participantThreadIds.length === 0) return res.json({ data: [], total: 0, page: parseInt(page) });
         }
-        const where = threadIds ? { id: { [Op.in]: threadIds } } : {};
+        const where = participantThreadIds ? { id: { [Op.in]: participantThreadIds } } : {};
         const { rows, count } = await InternalThread.findAndCountAll({
             where,
             include: [{ model: User, as: 'participants', attributes: ['id', 'name', 'email', 'role'], through: { attributes: [] } }],
@@ -244,12 +252,13 @@ router.get('/internal-chats', async (req, res) => {
             limit: lim,
             offset: off
         });
-        // batch load last messages for all threads
-        const threadIds = rows.map(t => t.id);
-        const lastMsgs = threadIds.length ? await InternalMessage.findAll({
-            where: { threadId: { [Op.in]: threadIds } },
+        // batch load: آخرین پیام هر thread — یک query با limit به‌جای N query
+        const rowThreadIds = rows.map(t => t.id);
+        const lastMsgs = rowThreadIds.length ? await InternalMessage.findAll({
+            where: { threadId: { [Op.in]: rowThreadIds } },
             include: [{ model: User, as: 'fromUser', attributes: ['id', 'name'] }],
             order: [['createdAt', 'DESC']],
+            limit: rowThreadIds.length * 5,
             raw: false
         }) : [];
         const lastMsgByThread = {};
@@ -484,6 +493,8 @@ router.get('/performance', async (req, res) => {
 router.get('/attendance-report', canViewStaffActivity, async (req, res) => {
     try {
         const { branchId, userId, from, to } = req.query;
+        if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
+        if (userId && !isValidUUID(userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
         const fromDate = from ? new Date(from) : new Date(new Date().setDate(1));
         const toDate = to ? new Date(to) : new Date();
         fromDate.setHours(0, 0, 0, 0);
