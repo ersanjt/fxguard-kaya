@@ -3902,6 +3902,8 @@
                 if (target.closest('#closeTotpDisableModalBtn') && typeof closeTotpDisableModal === 'function') { e.preventDefault(); e.stopPropagation(); closeTotpDisableModal(); return; }
                 if (target.closest('#confirmTotpSetupBtn') && typeof confirmTotpSetup === 'function') { e.preventDefault(); e.stopPropagation(); confirmTotpSetup(); return; }
                 if (target.closest('#disableTotpSubmitBtn') && typeof disableTotpSubmit === 'function') { e.preventDefault(); e.stopPropagation(); disableTotpSubmit(); return; }
+                // دکمه تنظیمات مکالمه (chat detail toggle)
+                if (target.closest('#chatDetailToggle') && typeof toggleChatDetailBar === 'function') { e.preventDefault(); e.stopPropagation(); toggleChatDetailBar(); return; }
                 // دکمه تمپلیت پیام در چت مکالمات
                 if (target.closest('#msgTemplateBtn') && typeof toggleTemplateDropdown === 'function') { e.preventDefault(); e.stopPropagation(); toggleTemplateDropdown(); return; }
                 // آیتم‌های دراپ‌داون تمپلیت — کلیک برای درج در چت
@@ -4870,8 +4872,15 @@
             var bar = document.getElementById('convDetailBar');
             var btn = document.getElementById('chatDetailToggle');
             if (bar && btn) {
-                bar.classList.toggle('collapsed');
-                btn.classList.toggle('active', !bar.classList.contains('collapsed'));
+                var isCollapsed = bar.classList.contains('collapsed');
+                if (isCollapsed) {
+                    bar.style.display = '';
+                    bar.classList.remove('collapsed');
+                    btn.classList.add('active');
+                } else {
+                    bar.classList.add('collapsed');
+                    btn.classList.remove('active');
+                }
             }
         }
         function closeChatMobile() {
