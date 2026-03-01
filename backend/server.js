@@ -28,6 +28,7 @@ const { setupSocketHandlers } = require('./socket/handlers');
 const socketAuth = require('./middleware/socketAuth');
 const models = require('./models');
 const { sequelize } = models;
+const errorHandler = require('./middleware/errorHandler');
 
 // ==================== Express Setup ====================
 const app = express();
@@ -151,6 +152,7 @@ const passwordResetLimiter = rateLimit({
     store: buildRedisStore('rl:pwreset:')
 });
 app.use('/api/', (req, res, next) => {
+    if (process.env.DISABLE_RATE_LIMIT === 'true') return next();
     const p = req.path || '';
     if (p.endsWith('/ping')) return next();
     if (p.endsWith('/auth/login') || p.endsWith('/auth/totp/verify-login')) return loginLimiter(req, res, next);
@@ -167,8 +169,42 @@ setupSocketHandlers(io, getRabbitChannel, logger);
 app.use('/api', createApiRouter(io, getRabbitChannel, redisClient, logger));
 
 // ==================== Static & Pages ====================
-app.get('/health', (req, res) => {
-    res.json({ status: 'ok', timestamp: new Date(), uptime: process.uptime() });
+app.get('/health', async (req, res) => {
+    const checks = {};
+    let overallOk = true;
+
+    // DB check
+    try {
+        await sequelize.authenticate();
+        checks.database = { status: 'ok' };
+    } catch (e) {
+        checks.database = { status: 'error', error: 'DB unreachable' };
+        overallOk = false;
+    }
+
+    // Redis check
+    try {
+        if (redisClient && !redisClient.isStub) {
+            await redisClient.ping();
+            checks.redis = { status: 'ok' };
+        } else {
+            checks.redis = { status: 'disabled' };
+        }
+    } catch (e) {
+        checks.redis = { status: 'error', error: 'Redis unreachable' };
+    }
+
+    // RabbitMQ check (channel presence)
+    const rabbitOk = !!getRabbitChannel();
+    checks.rabbitmq = { status: rabbitOk ? 'ok' : 'disconnected' };
+
+    const statusCode = overallOk ? 200 : 503;
+    res.status(statusCode).json({
+        status: overallOk ? 'ok' : 'degraded',
+        timestamp: new Date().toISOString(),
+        uptime: Math.floor(process.uptime()),
+        checks
+    });
 });
 
 const REDIRECT_ROOT_TO_DASHBOARD_HOSTS = (process.env.REDIRECT_ROOT_TO_DASHBOARD_HOSTS || 'kaya.fxguard.io').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
@@ -199,18 +235,13 @@ app.use('/uploads', (req, res, next) => {
     next();
 }, express.static(path.join(__dirname, 'uploads')));
 
-// Error handling — در production جزئیات خطا لو نمی‌رود
-app.use((err, req, res, next) => {
-    const isDev = process.env.NODE_ENV === 'development';
-    logger.error('Unhandled error', { error: err.message, stack: isDev ? err.stack : undefined });
-    if (res.headersSent) return next(err);
-    res.status(500).json({
-        error: 'خطای داخلی سرور',
-        ...(isDev && { message: err.message })
-    });
-});
+// Centralized error handler — handles Sequelize, JWT, Multer, and generic errors
+app.use(errorHandler);
 
 // ==================== Startup ====================
+let unansweredInterval = null;
+let isShuttingDown = false;
+
 async function startServer() {
     try {
         await connectDatabases(logger);
@@ -219,7 +250,7 @@ async function startServer() {
         await ensureAdminUser(MAIN_ADMIN_EMAIL, MAIN_ADMIN_PASSWORD, logger);
         await connectRabbitMQ({ io, redisClient, logger });
 
-        const unansweredInterval = setInterval(() => checkUnansweredConversations(io, logger), 60000);
+        unansweredInterval = setInterval(() => checkUnansweredConversations(io, logger), 60000);
 
         const PORT = process.env.PORT || 3002;
         server.listen(PORT, () => {
@@ -243,27 +274,44 @@ async function startServer() {
 
 startServer();
 
-// Graceful shutdown
+// Graceful shutdown — stop accepting new requests, finish in-flight, close connections
 async function gracefulShutdown(signal) {
+    if (isShuttingDown) return;
+    isShuttingDown = true;
     logger.info(`${signal} received — shutting down gracefully...`);
-    clearInterval(unansweredInterval);
+
+    if (unansweredInterval) {
+        clearInterval(unansweredInterval);
+        unansweredInterval = null;
+    }
+
+    const forceExitTimer = setTimeout(() => {
+        logger.warn('Graceful shutdown timed out — forcing exit');
+        process.exit(1);
+    }, 15000);
+    forceExitTimer.unref();
+
     server.close(async () => {
         try {
             await sequelize.close();
             if (mongoose.connection.readyState === 1) await mongoose.connection.close().catch(() => {});
-            redisClient.quit().catch(() => {});
+            if (redisClient && !redisClient.isStub) redisClient.quit().catch(() => {});
             logger.info('All connections closed. Exiting.');
         } catch (e) {
             logger.error('Error during shutdown:', e);
         }
+        clearTimeout(forceExitTimer);
         process.exit(0);
     });
-    setTimeout(() => {
-        logger.warn('Graceful shutdown timed out — forcing exit');
-        process.exit(1);
-    }, 10000);
 }
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('uncaughtException', (err) => {
+    logger.error('Uncaught exception', { error: err.message, stack: err.stack });
+    gracefulShutdown('uncaughtException');
+});
+process.on('unhandledRejection', (reason) => {
+    logger.error('Unhandled promise rejection', { reason: String(reason) });
+});
 
 module.exports = { io, getRabbitChannel };

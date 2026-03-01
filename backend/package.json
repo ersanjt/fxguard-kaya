@@ -8,9 +8,11 @@
     "dev": "nodemon server.js",
     "migrate": "sequelize-cli db:migrate",
     "seed": "node seed-admin.js",
-    "test": "node tests/api-customers-notes.test.js",
+    "test": "node tests/suite.test.js",
+    "test:suite": "node tests/suite.test.js",
     "test:integration": "node tests/integration.test.js",
-    "test:all": "node tests/api-customers-notes.test.js && node tests/integration.test.js"
+    "test:unit": "node tests/api-customers-notes.test.js",
+    "test:all": "node tests/suite.test.js && node tests/integration.test.js"
   },
   "dependencies": {
     "amqplib": "^0.10.3",

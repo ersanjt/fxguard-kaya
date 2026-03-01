@@ -13,6 +13,7 @@ function createRedisClient(logger) {
         isStub: true,
         quit: () => Promise.resolve(),
         connect: () => Promise.resolve(),
+        ping: () => Promise.resolve('PONG'),
         get: () => Promise.resolve(null),
         set: () => Promise.resolve(),
         setEx: () => Promise.resolve(),
