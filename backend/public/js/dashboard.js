@@ -8886,11 +8886,12 @@
         }
 
         var chatTemplatesCache = [];
+        var _tplActiveCat = 'all';
         function initMessageTemplatesTabs() {
-            document.querySelectorAll('.templates-tab').forEach(function(btn) {
+            document.querySelectorAll('.tpl-tab').forEach(function(btn) {
                 btn.onclick = function() {
                     var tab = btn.getAttribute('data-tab');
-                    document.querySelectorAll('.templates-tab').forEach(function(b) { b.classList.remove('active'); });
+                    document.querySelectorAll('.tpl-tab').forEach(function(b) { b.classList.remove('active'); });
                     btn.classList.add('active');
                     var textContent = document.getElementById('textTemplatesContent');
                     var fileContent = document.getElementById('fileTemplatesContent');
@@ -8907,6 +8908,67 @@
                     window._fileTplSearchT = setTimeout(function() { loadFileTemplates(); }, 350);
                 });
             }
+            var textSearch = document.getElementById('textTemplatesSearch');
+            if (textSearch && !textSearch._bound) {
+                textSearch._bound = true;
+                textSearch.addEventListener('input', function() {
+                    clearTimeout(window._textTplSearchT);
+                    window._textTplSearchT = setTimeout(function() { renderMessageTemplates(); }, 250);
+                });
+            }
+        }
+        function renderMessageTemplates() {
+            var list = document.getElementById('messageTemplatesList');
+            if (!list) return;
+            var search = ((document.getElementById('textTemplatesSearch') && document.getElementById('textTemplatesSearch').value) || '').trim().toLowerCase();
+            var data = chatTemplatesCache || [];
+            var filtered = data.filter(function(tpl) {
+                var catMatch = _tplActiveCat === 'all' || (tpl.category || '') === _tplActiveCat;
+                var searchMatch = !search || (tpl.name || '').toLowerCase().indexOf(search) !== -1 || (tpl.content || '').toLowerCase().indexOf(search) !== -1 || (tpl.category || '').toLowerCase().indexOf(search) !== -1;
+                return catMatch && searchMatch;
+            });
+            if (filtered.length === 0) {
+                list.innerHTML = '<div class="tpl-empty"><div class="tpl-empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div><h4>' + (LANG === 'fa' ? 'تمپلیتی وجود ندارد' : 'No templates found') + '</h4><p>' + (search || _tplActiveCat !== 'all' ? (LANG === 'fa' ? 'فیلتر را تغییر دهید یا جستجوی دیگری امتحان کنید.' : 'Try a different filter or search.') : (LANG === 'fa' ? 'افزودن تمپلیت را بزنید تا اولین تمپلیت را بسازید.' : 'Click Add template to create your first one.')) + '</p></div>';
+                return;
+            }
+            list.innerHTML = filtered.map(function(tpl) {
+                var preview = (tpl.content || '').slice(0, 120);
+                if ((tpl.content || '').length > 120) preview += '…';
+                var usage = (tpl.usageCount || 0) > 0 ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' + tpl.usageCount + (LANG === 'fa' ? ' بار' : ' uses') : '';
+                var catBadge = tpl.category ? '<span class="tpl-card-cat">' + escapeHtml(tpl.category) + '</span>' : '';
+                var inactiveBadge = tpl.isActive === false ? '<span class="tpl-card-inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>' : '';
+                return '<div class="tpl-card" data-id="' + tpl.id + '">' +
+                    '<div class="tpl-card-top"><div class="tpl-card-title-row"><span class="tpl-card-name" title="' + escapeHtml(tpl.name || '') + '">' + escapeHtml(tpl.name || '') + '</span>' + catBadge + inactiveBadge + '</div></div>' +
+                    '<div class="tpl-card-body">' + escapeHtml(preview) + '</div>' +
+                    '<div class="tpl-card-footer"><div class="tpl-card-meta">' + usage + '</div><div class="tpl-card-actions">' +
+                    '<button type="button" class="tpl-btn-copy" data-content="' + escapeForDataAttr(tpl.content || '') + '" title="' + (LANG === 'fa' ? 'کپی' : 'Copy') + '"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' + (LANG === 'fa' ? 'کپی' : 'Copy') + '</button>' +
+                    '<button type="button" class="btn-secondary btn-sm btn-tpl-edit" data-id="' + tpl.id + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>' +
+                    '<button type="button" class="btn-danger btn-sm btn-tpl-delete" data-id="' + tpl.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button>' +
+                    '</div></div></div>';
+            }).join('');
+            list.querySelectorAll('.tpl-btn-copy').forEach(function(btn) {
+                btn.onclick = function() {
+                    var content = unescapeFromDataAttr(btn.getAttribute('data-content') || '');
+                    if (navigator.clipboard) { navigator.clipboard.writeText(content).then(function() { btn.classList.add('copied'); btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' + (LANG === 'fa' ? 'کپی شد' : 'Copied'); setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' + (LANG === 'fa' ? 'کپی' : 'Copy'); }, 1800); }); }
+                };
+            });
+        }
+        function renderTextTemplatesCategoryFilter(data) {
+            var bar = document.getElementById('textTemplatesCategoryFilter');
+            if (!bar) return;
+            var cats = [];
+            data.forEach(function(tpl) { if (tpl.category && cats.indexOf(tpl.category) === -1) cats.push(tpl.category); });
+            if (cats.length === 0) { bar.innerHTML = ''; return; }
+            bar.innerHTML = '<button type="button" class="tpl-cat-chip' + (_tplActiveCat === 'all' ? ' active' : '') + '" data-cat="all">' + (LANG === 'fa' ? 'همه' : 'All') + '</button>' +
+                cats.map(function(c) { return '<button type="button" class="tpl-cat-chip' + (_tplActiveCat === c ? ' active' : '') + '" data-cat="' + escapeHtml(c) + '">' + escapeHtml(c) + '</button>'; }).join('');
+            bar.querySelectorAll('.tpl-cat-chip').forEach(function(chip) {
+                chip.onclick = function() {
+                    _tplActiveCat = chip.getAttribute('data-cat');
+                    bar.querySelectorAll('.tpl-cat-chip').forEach(function(c) { c.classList.remove('active'); });
+                    chip.classList.add('active');
+                    renderMessageTemplates();
+                };
+            });
         }
         async function loadMessageTemplates() {
             var list = document.getElementById('messageTemplatesList');
@@ -8915,13 +8977,10 @@
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             var data = (res.data && res.data.data) || [];
             chatTemplatesCache = data;
-            if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCDD</span><p>' + (LANG === 'fa' ? 'تمپلیتی وجود ندارد. افزودن تمپلیت را بزنید.' : 'No templates. Click Add template.') + '</p></div>'; return; }
-            list.innerHTML = data.map(function(t) {
-                var preview = (t.content || '').slice(0, 80);
-                if ((t.content || '').length > 80) preview += '…';
-                var usage = (t.usageCount || 0) > 0 ? (LANG === 'fa' ? t.usageCount + ' بار استفاده' : t.usageCount + ' uses') : '';
-                return '<div class="message-template-card" data-id="' + t.id + '"><div class="tpl-info"><div class="tpl-name">' + escapeHtml(t.name || '') + '</div>' + (t.category ? '<div class="tpl-category">' + escapeHtml(t.category) + '</div>' : '') + '<div class="tpl-content">' + escapeHtml(preview) + '</div><div class="tpl-meta">' + usage + '</div></div><div class="tpl-actions"><button type="button" class="btn-secondary btn-sm btn-tpl-edit" data-id="' + t.id + '">' + t('edit') + '</button><button type="button" class="btn-danger btn-sm btn-tpl-delete" data-id="' + t.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
-            }).join('');
+            var countEl = document.getElementById('textTemplatesCount');
+            if (countEl) countEl.textContent = data.length || '';
+            renderTextTemplatesCategoryFilter(data);
+            renderMessageTemplates();
         }
         async function openTemplateModal(id) {
             document.getElementById('templateModalId').value = id || '';
@@ -8946,6 +9005,15 @@
             document.getElementById('templateModal').style.display = 'flex';
         }
         function closeTemplateModal() { document.getElementById('templateModal').style.display = 'none'; }
+        function insertVar(v) {
+            var ta = document.getElementById('templateModalContent');
+            if (!ta) return;
+            var start = ta.selectionStart, end = ta.selectionEnd;
+            ta.value = ta.value.slice(0, start) + v + ta.value.slice(end);
+            ta.selectionStart = ta.selectionEnd = start + v.length;
+            ta.focus();
+        }
+        window.insertVar = insertVar;
         async function saveTemplate() {
             var id = document.getElementById('templateModalId').value.trim();
             var name = (document.getElementById('templateModalName').value || '').trim();
@@ -8967,6 +9035,15 @@
             if (res.ok) { loadMessageTemplates(); chatTemplatesCache = chatTemplatesCache.filter(function(x) { return x.id !== id; }); toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         var fileTemplatesCache = [];
+        function getFileIcon(mimetype) {
+            if (!mimetype) return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
+            if (mimetype.indexOf('image') !== -1) return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
+            if (mimetype.indexOf('pdf') !== -1) return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
+            if (mimetype.indexOf('spreadsheet') !== -1 || mimetype.indexOf('excel') !== -1 || mimetype.indexOf('csv') !== -1) return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>';
+            if (mimetype.indexOf('video') !== -1) return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>';
+            if (mimetype.indexOf('audio') !== -1) return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>';
+            return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
+        }
         async function loadFileTemplates() {
             var list = document.getElementById('fileTemplatesList');
             if (!list) return;
@@ -8976,12 +9053,29 @@
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             var data = (res.data && res.data.data) || [];
             fileTemplatesCache = data;
-            if (data.length === 0) { list.innerHTML = '<div class="empty file-templates-empty"><span class="empty-icon">📁</span><p>' + (LANG === 'fa' ? 'فایلی وجود ندارد. بارگذاری فایل را بزنید.' : 'No files. Click Upload file.') + '</p></div>'; return; }
+            var countEl = document.getElementById('fileTemplatesCount');
+            if (countEl) countEl.textContent = data.length || '';
+            if (data.length === 0) {
+                list.innerHTML = '<div class="tpl-empty"><div class="tpl-empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div><h4>' + (LANG === 'fa' ? 'فایلی وجود ندارد' : 'No files yet') + '</h4><p>' + (search ? (LANG === 'fa' ? 'جستجوی دیگری امتحان کنید.' : 'Try a different search.') : (LANG === 'fa' ? 'بارگذاری فایل را بزنید تا اولین فایل را اضافه کنید.' : 'Click Upload file to add your first file.')) + '</p></div>';
+                return;
+            }
             list.innerHTML = data.map(function(ft) {
-                var tags = (ft.tags || []).length ? (ft.tags || []).slice(0, 3).map(function(t){ return escapeHtml(t); }).join(', ') : '';
+                var tags = (ft.tags || []).slice(0, 4).map(function(tg){ return '<span class="ft-card-tag">' + escapeHtml(tg) + '</span>'; }).join('');
                 var usage = (ft.usageCount || 0) > 0 ? (LANG === 'fa' ? ft.usageCount + ' بار استفاده' : ft.usageCount + ' uses') : '';
                 var size = ft.filesize ? (ft.filesize < 1024 ? ft.filesize + ' B' : (ft.filesize < 1024*1024 ? Math.round(ft.filesize/1024) + ' KB' : (ft.filesize/1024/1024).toFixed(1) + ' MB')) : '';
-                return '<div class="file-template-card" data-id="' + ft.id + '"><div class="ft-info"><div class="ft-name">' + escapeHtml(ft.name || ft.filename || '') + '</div>' + (ft.category ? '<div class="ft-category">' + escapeHtml(ft.category) + '</div>' : '') + (ft.description ? '<div class="ft-desc">' + escapeHtml((ft.description || '').slice(0, 80)) + ((ft.description || '').length > 80 ? '…' : '') + '</div>' : '') + '<div class="ft-meta">' + (size ? size + ' · ' : '') + usage + (tags ? ' · ' + tags : '') + '</div></div><div class="ft-actions"><button type="button" class="btn-secondary btn-sm btn-ft-edit" data-id="' + ft.id + '">' + t('edit') + '</button><button type="button" class="btn-danger btn-sm btn-ft-delete" data-id="' + ft.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+                var catBadge = ft.category ? '<span class="ft-card-cat">' + escapeHtml(ft.category) + '</span>' : '';
+                var inactiveBadge = ft.isActive === false ? '<span class="tpl-card-inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>' : '';
+                var metaParts = [size, usage].filter(Boolean);
+                return '<div class="ft-card" data-id="' + ft.id + '">' +
+                    '<div class="ft-card-icon">' + getFileIcon(ft.mimetype) + '</div>' +
+                    '<div class="ft-card-body">' +
+                    '<div class="ft-card-top"><span class="ft-card-name" title="' + escapeHtml(ft.name || ft.filename || '') + '">' + escapeHtml(ft.name || ft.filename || '') + '</span>' +
+                    '<div class="ft-card-actions"><button type="button" class="btn-secondary btn-sm btn-ft-edit" data-id="' + ft.id + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button><button type="button" class="btn-danger btn-sm btn-ft-delete" data-id="' + ft.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div>' +
+                    '</div>' +
+                    '<div class="ft-card-badges">' + catBadge + inactiveBadge + tags + '</div>' +
+                    (ft.description ? '<div class="ft-card-desc">' + escapeHtml((ft.description || '').slice(0, 100)) + ((ft.description || '').length > 100 ? '…' : '') + '</div>' : '') +
+                    (metaParts.length ? '<div class="ft-card-meta">' + metaParts.join('<span class="ft-card-meta-dot">·</span>') + '</div>' : '') +
+                    '</div></div>';
             }).join('');
         }
         async function openFileTemplateModal(id) {
@@ -9016,7 +9110,22 @@
                 fileInput._bound = true;
                 fileInput.addEventListener('change', function() {
                     var fn = document.getElementById('fileTemplateFileName');
-                    if (fn) { fn.style.display = this.files && this.files[0] ? 'block' : 'none'; fn.textContent = this.files && this.files[0] ? this.files[0].name : ''; }
+                    if (fn) { fn.style.display = this.files && this.files[0] ? 'block' : 'none'; fn.textContent = this.files && this.files[0] ? '📎 ' + this.files[0].name : ''; }
+                });
+            }
+            var uploadBox = document.getElementById('tplUploadBox');
+            if (uploadBox && !uploadBox._ddBound) {
+                uploadBox._ddBound = true;
+                uploadBox.addEventListener('dragover', function(e) { e.preventDefault(); uploadBox.style.borderColor = 'var(--accent)'; uploadBox.style.background = 'var(--accent-soft)'; });
+                uploadBox.addEventListener('dragleave', function() { uploadBox.style.borderColor = ''; uploadBox.style.background = ''; });
+                uploadBox.addEventListener('drop', function(e) {
+                    e.preventDefault(); uploadBox.style.borderColor = ''; uploadBox.style.background = '';
+                    var files = e.dataTransfer && e.dataTransfer.files;
+                    if (files && files[0] && fileInput) {
+                        var dt = new DataTransfer(); dt.items.add(files[0]); fileInput.files = dt.files;
+                        var fn = document.getElementById('fileTemplateFileName');
+                        if (fn) { fn.style.display = 'block'; fn.textContent = '📎 ' + files[0].name; }
+                    }
                 });
             }
         }

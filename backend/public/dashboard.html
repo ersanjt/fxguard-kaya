@@ -1354,60 +1354,73 @@
                     </div>
                 </div>
                 <div id="pageMessageTemplates" class="page message-templates-page">
-                    <div class="message-templates-header">
-                        <h2 data-i18n="page_message_templates">تمپلیت‌های پیام و فایل</h2>
-                        <p class="text-muted" data-i18n="message_templates_intro">پیام‌های پرکاربرد و فایل‌های آماده برای ارسال سریع‌تر در مکالمات.</p>
+                    <!-- هدر صفحه -->
+                    <div class="tpl-page-header">
+                        <div class="tpl-page-header-text">
+                            <h2 data-i18n="page_message_templates">تمپلیت‌های پیام و فایل</h2>
+                            <p data-i18n="message_templates_intro">پیام‌های پرکاربرد با متغیرهای داینامیک <code>{name}</code>، <code>{date}</code> برای ارسال سریع‌تر.</p>
+                        </div>
                     </div>
-                    
-                    <!-- تب‌های انتخاب نوع تمپلیت -->
-                    <div class="templates-tabs">
-                        <button type="button" class="templates-tab active" data-tab="text" id="templatesTabText">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+
+                    <!-- تب‌بار -->
+                    <div class="tpl-tabbar">
+                        <button type="button" class="tpl-tab active" data-tab="text" id="templatesTabText">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
                                 <polyline points="14 2 14 8 20 8"/>
                                 <line x1="16" y1="13" x2="8" y2="13"/>
                                 <line x1="16" y1="17" x2="8" y2="17"/>
-                                <polyline points="10 9 9 9 8 9"/>
                             </svg>
                             <span data-i18n="text_templates">تمپلیت‌های متنی</span>
+                            <span class="tpl-tab-count" id="textTemplatesCount"></span>
                         </button>
-                        <button type="button" class="templates-tab" data-tab="file" id="templatesTabFile">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <button type="button" class="tpl-tab" data-tab="file" id="templatesTabFile">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                                 <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
                                 <polyline points="13 2 13 9 20 9"/>
                             </svg>
                             <span data-i18n="file_templates">فایل‌های پرکاربرد</span>
+                            <span class="tpl-tab-count" id="fileTemplatesCount"></span>
                         </button>
                     </div>
 
                     <!-- محتوای تمپلیت‌های متنی -->
-                    <div id="textTemplatesContent" class="templates-content active">
-                        <div class="templates-toolbar">
-                            <button type="button" class="btn-primary" id="btnAddTextTemplate">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <line x1="12" y1="5" x2="12" y2="19"/>
-                                    <line x1="5" y1="12" x2="19" y2="12"/>
-                                </svg>
-                                <span data-i18n="template_add">افزودن تمپلیت متنی</span>
-                            </button>
+                    <div id="textTemplatesContent" class="tpl-content active">
+                        <div class="tpl-toolbar">
+                            <div class="tpl-toolbar-right">
+                                <button type="button" class="btn-primary" id="btnAddTextTemplate">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    <span data-i18n="template_add">افزودن تمپلیت</span>
+                                </button>
+                            </div>
+                            <div class="tpl-toolbar-left">
+                                <div class="tpl-search-wrap">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="text" id="textTemplatesSearch" class="tpl-search" placeholder="جستجو در تمپلیت‌ها...">
+                                </div>
+                            </div>
                         </div>
-                        <div id="messageTemplatesList" class="message-templates-list"></div>
+                        <div id="textTemplatesCategoryFilter" class="tpl-category-filter"></div>
+                        <div id="messageTemplatesList" class="tpl-grid"></div>
                     </div>
 
                     <!-- محتوای فایل‌های پرکاربرد -->
-                    <div id="fileTemplatesContent" class="templates-content" style="display:none;">
-                        <div class="templates-toolbar">
-                            <button type="button" class="btn-primary" id="btnAddFileTemplate">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                    <polyline points="17 8 12 3 7 8"/>
-                                    <line x1="12" y1="3" x2="12" y2="15"/>
-                                </svg>
-                                <span data-i18n="upload_file">بارگذاری فایل</span>
-                            </button>
-                            <input type="text" id="fileTemplatesSearch" class="templates-search" placeholder="جستجو در فایل‌ها..." data-i18n-ph="search_files">
+                    <div id="fileTemplatesContent" class="tpl-content" style="display:none;">
+                        <div class="tpl-toolbar">
+                            <div class="tpl-toolbar-right">
+                                <button type="button" class="btn-primary" id="btnAddFileTemplate">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                    <span data-i18n="upload_file">بارگذاری فایل</span>
+                                </button>
+                            </div>
+                            <div class="tpl-toolbar-left">
+                                <div class="tpl-search-wrap">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    <input type="text" id="fileTemplatesSearch" class="tpl-search" placeholder="جستجو در فایل‌ها..." data-i18n-ph="search_files">
+                                </div>
+                            </div>
                         </div>
-                        <div id="fileTemplatesList" class="file-templates-list"></div>
+                        <div id="fileTemplatesList" class="tpl-grid"></div>
                     </div>
                 </div>
                 <div id="pageRates" class="page rates-page">
@@ -2696,18 +2709,48 @@
         </div>
     </div>
     <div id="templateModal" class="modal-overlay" style="display:none;">
-        <div class="modal-box" style="max-width:520px;">
-            <div class="modal-header"><h3 id="templateModalTitle" data-i18n="template_add">افزودن تمپلیت</h3><button type="button" class="modal-close" id="closeTemplateModalBtn">&times;</button></div>
-            <div class="modal-body">
+        <div class="modal-box tpl-modal-box">
+            <div class="tpl-modal-header">
+                <div class="tpl-modal-header-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <div class="tpl-modal-header-text">
+                    <h3 id="templateModalTitle" data-i18n="template_add">افزودن تمپلیت</h3>
+                    <p>تمپلیت متنی برای ارسال سریع در مکالمات</p>
+                </div>
+                <button type="button" class="modal-close" id="closeTemplateModalBtn">&times;</button>
+            </div>
+            <div class="modal-body tpl-modal-body">
                 <input type="hidden" id="templateModalId">
-                <label data-i18n="template_name">نام تمپلیت</label>
-                <input type="text" id="templateModalName" placeholder="مثال: سلام و خوش‌آمدگویی">
-                <label data-i18n="template_category">دسته‌بندی</label>
-                <input type="text" id="templateModalCategory" placeholder="اختیاری">
-                <label data-i18n="template_content">محتوا</label>
-                <small class="template-vars-hint">متغیرها: {name} نام مشتری، {phone} تلفن، {email} ایمیل، {date} تاریخ، {time} ساعت</small>
-                <textarea id="templateModalContent" rows="4" placeholder="سلام {name} عزیز، امروز {date}"></textarea>
-                <label><input type="checkbox" id="templateModalActive" checked> <span data-i18n="template_active">فعال</span></label>
+                <div class="tpl-modal-grid">
+                    <div class="tpl-modal-field">
+                        <label data-i18n="template_name">نام تمپلیت</label>
+                        <input type="text" id="templateModalName" placeholder="مثال: سلام و خوش‌آمدگویی">
+                    </div>
+                    <div class="tpl-modal-field">
+                        <label data-i18n="template_category">دسته‌بندی <span class="tpl-optional">(اختیاری)</span></label>
+                        <input type="text" id="templateModalCategory" placeholder="مثال: خوش‌آمدگویی، پشتیبانی">
+                    </div>
+                </div>
+                <div class="tpl-modal-field tpl-modal-field-full">
+                    <label data-i18n="template_content">محتوای پیام</label>
+                    <div class="tpl-vars-bar">
+                        <span class="tpl-vars-label">متغیرها:</span>
+                        <button type="button" class="tpl-var-chip" onclick="insertVar('{name}')"><code>{name}</code> نام</button>
+                        <button type="button" class="tpl-var-chip" onclick="insertVar('{phone}')"><code>{phone}</code> تلفن</button>
+                        <button type="button" class="tpl-var-chip" onclick="insertVar('{date}')"><code>{date}</code> تاریخ</button>
+                        <button type="button" class="tpl-var-chip" onclick="insertVar('{time}')"><code>{time}</code> ساعت</button>
+                        <button type="button" class="tpl-var-chip" onclick="insertVar('{email}')"><code>{email}</code> ایمیل</button>
+                    </div>
+                    <textarea id="templateModalContent" rows="5" placeholder="سلام {name} عزیز،&#10;امروز {date} در خدمت شما هستیم."></textarea>
+                </div>
+                <div class="tpl-modal-toggle">
+                    <label class="tpl-toggle-label">
+                        <input type="checkbox" id="templateModalActive" checked class="tpl-toggle-input">
+                        <span class="tpl-toggle-track"></span>
+                        <span data-i18n="template_active">تمپلیت فعال باشد</span>
+                    </label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" id="cancelTemplateModalBtn" data-i18n="btn_cancel">انصراف</button>
@@ -2717,49 +2760,67 @@
     </div>
     
     <div id="fileTemplateModal" class="modal-overlay" style="display:none;">
-        <div class="modal-box" style="max-width:560px;">
-            <div class="modal-header">
-                <h3 id="fileTemplateModalTitle">بارگذاری فایل پرکاربرد</h3>
+        <div class="modal-box tpl-modal-box">
+            <div class="tpl-modal-header">
+                <div class="tpl-modal-header-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                </div>
+                <div class="tpl-modal-header-text">
+                    <h3 id="fileTemplateModalTitle">بارگذاری فایل پرکاربرد</h3>
+                    <p>فایل‌های آماده برای ارسال سریع در مکالمات</p>
+                </div>
                 <button type="button" class="modal-close" id="closeFileTemplateModalBtn">&times;</button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body tpl-modal-body">
                 <input type="hidden" id="fileTemplateModalId">
-                <label>نام فایل برای نمایش</label>
-                <input type="text" id="fileTemplateModalName" placeholder="مثال: فرم درخواست حساب">
-                
-                <label>دسته‌بندی</label>
-                <input type="text" id="fileTemplateModalCategory" placeholder="مثال: فرم‌ها، قراردادها، راهنماها">
-                
-                <label>توضیحات (اختیاری)</label>
-                <textarea id="fileTemplateModalDescription" rows="2" placeholder="توضیحات کوتاه درباره فایل"></textarea>
-                
-                <label>برچسب‌ها (با کاما جدا کنید)</label>
-                <input type="text" id="fileTemplateModalTags" placeholder="مثال: فرم, اکانت, مشتری">
-                
-                <div id="fileTemplateUploadArea" style="margin-top:12px;">
-                    <label class="file-upload-label">
-                        <input type="file" id="fileTemplateFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp,.ppt,.pptx,.mp4,.mp3" style="display:none;">
-                        <div class="file-upload-box">
-                            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="opacity:0.3;">
-                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                                <polyline points="17 8 12 3 7 8"/>
-                                <line x1="12" y1="3" x2="12" y2="15"/>
-                            </svg>
-                            <p><strong>کلیک کنید</strong> یا فایل را بکشید</p>
-                            <small>حداکثر 50MB - PDF, Word, Excel, تصاویر، ویدیو، صوت و...</small>
-                        </div>
-                    </label>
-                    <div id="fileTemplateFileName" style="margin-top:8px; display:none; padding:8px; background:var(--bg-secondary); border-radius:6px;"></div>
+                <div class="tpl-modal-grid">
+                    <div class="tpl-modal-field">
+                        <label>نام فایل برای نمایش</label>
+                        <input type="text" id="fileTemplateModalName" placeholder="مثال: فرم درخواست حساب">
+                    </div>
+                    <div class="tpl-modal-field">
+                        <label>دسته‌بندی <span class="tpl-optional">(اختیاری)</span></label>
+                        <input type="text" id="fileTemplateModalCategory" placeholder="مثال: فرم‌ها، قراردادها">
+                    </div>
+                </div>
+                <div class="tpl-modal-field tpl-modal-field-full">
+                    <label>توضیحات <span class="tpl-optional">(اختیاری)</span></label>
+                    <textarea id="fileTemplateModalDescription" rows="2" placeholder="توضیحات کوتاه درباره فایل"></textarea>
+                </div>
+                <div class="tpl-modal-field tpl-modal-field-full">
+                    <label>برچسب‌ها <span class="tpl-optional">(با کاما جدا کنید)</span></label>
+                    <input type="text" id="fileTemplateModalTags" placeholder="مثال: فرم, اکانت, مشتری">
                 </div>
                 
-                <div id="fileTemplateEditArea" style="display:none; margin-top:12px;">
-                    <div style="padding:12px; background:var(--bg-secondary); border-radius:6px;">
-                        <strong>فایل فعلی:</strong>
-                        <p id="fileTemplateCurrentFile" style="margin:4px 0 0 0; color:var(--text-muted);"></p>
+                <div id="fileTemplateUploadArea" class="tpl-upload-area-wrap">
+                    <label class="tpl-upload-label">
+                        <input type="file" id="fileTemplateFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp,.ppt,.pptx,.mp4,.mp3" style="display:none;">
+                        <div class="tpl-upload-box" id="tplUploadBox">
+                            <div class="tpl-upload-icon">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </div>
+                            <p class="tpl-upload-title"><strong>کلیک کنید</strong> یا فایل را اینجا بکشید</p>
+                            <p class="tpl-upload-hint">PDF, Word, Excel, تصاویر، ویدیو، صوت — حداکثر ۵۰ مگابایت</p>
+                        </div>
+                    </label>
+                    <div id="fileTemplateFileName" class="tpl-selected-file" style="display:none;"></div>
+                </div>
+                
+                <div id="fileTemplateEditArea" class="tpl-current-file-box" style="display:none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                    <div>
+                        <span class="tpl-current-file-label">فایل فعلی:</span>
+                        <span id="fileTemplateCurrentFile" class="tpl-current-file-name"></span>
                     </div>
                 </div>
                 
-                <label style="margin-top:12px;"><input type="checkbox" id="fileTemplateModalActive" checked> <span>فعال</span></label>
+                <div class="tpl-modal-toggle">
+                    <label class="tpl-toggle-label">
+                        <input type="checkbox" id="fileTemplateModalActive" checked class="tpl-toggle-input">
+                        <span class="tpl-toggle-track"></span>
+                        <span>فایل فعال باشد</span>
+                    </label>
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn-secondary" id="cancelFileTemplateModalBtn">انصراف</button>
