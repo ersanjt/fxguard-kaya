@@ -160,7 +160,11 @@ router.post('/', async (req, res) => {
     try {
         const { title, description, assignedTo, assignedToDepartmentId, dueDate, priority, branchId } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'عنوان تسک الزامی است' });
+        if (String(title).trim().length > 300) return res.status(400).json({ error: 'عنوان تسک بیش از ۳۰۰ کاراکتر مجاز نیست' });
         if (!assignedTo && !assignedToDepartmentId) return res.status(400).json({ error: 'تسک باید به یک کارمند یا یک دپارتمان اختصاص داده شود' });
+        if (assignedTo && !isValidUUID(assignedTo)) return res.status(400).json({ error: 'شناسه کارمند نامعتبر است' });
+        if (assignedToDepartmentId && !isValidUUID(assignedToDepartmentId)) return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
+        if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
         const resolvedPriority = priority || 'normal';
         if (!VALID_TASK_PRIORITIES.has(resolvedPriority)) return res.status(400).json({ error: 'اولویت تسک نامعتبر است' });
 

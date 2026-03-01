@@ -159,6 +159,9 @@ router.post('/', async (req, res) => {
     try {
         const { title, description, assignedTo, departmentId, priority, dueDate } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'عنوان الزامی است' });
+        if (String(title).trim().length > 300) return res.status(400).json({ error: 'عنوان تیکت بیش از ۳۰۰ کاراکتر مجاز نیست' });
+        if (assignedTo && !isValidUUID(assignedTo)) return res.status(400).json({ error: 'شناسه کارمند نامعتبر است' });
+        if (departmentId && !isValidUUID(departmentId)) return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
         const resolvedPriority = priority || 'normal';
         if (!VALID_TICKET_PRIORITIES.has(resolvedPriority)) return res.status(400).json({ error: 'اولویت تیکت نامعتبر است' });
         const ticket = await Ticket.create({
