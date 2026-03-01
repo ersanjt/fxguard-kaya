@@ -243,7 +243,10 @@ app.get('/contact', (req, res) => {
 });
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', (req, res, next) => {
-    res.setHeader('Content-Disposition', 'attachment');
+    const ext = path.extname(req.path).toLowerCase();
+    const inlineExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.mp4', '.webm', '.ogg', '.mp3', '.wav', '.aac', '.pdf'];
+    const isInline = inlineExts.includes(ext);
+    res.setHeader('Content-Disposition', isInline ? 'inline' : 'attachment');
     res.setHeader('X-Content-Type-Options', 'nosniff');
     next();
 }, express.static(path.join(__dirname, 'uploads')));

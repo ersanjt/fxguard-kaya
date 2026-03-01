@@ -3905,6 +3905,22 @@
                 // دکمه تمپلیت پیام در چت مکالمات
                 if (target.closest('#msgTemplateBtn') && typeof toggleTemplateDropdown === 'function') { e.preventDefault(); e.stopPropagation(); toggleTemplateDropdown(); return; }
                 // آیتم‌های دراپ‌داون تمپلیت — کلیک برای درج در چت
+                // آیتم فایل template در dropdown
+                var fileTplItem = target.closest('.chat-file-tpl-item[data-file-id]');
+                if (fileTplItem) {
+                    var fid = fileTplItem.getAttribute('data-file-id');
+                    var fname = fileTplItem.getAttribute('data-filename') || fileTplItem.getAttribute('data-file-name') || '';
+                    var fmime = fileTplItem.getAttribute('data-mimetype') || '';
+                    var furl = fileTplItem.getAttribute('data-file-url') || '';
+                    if (fid && typeof sendMsg === 'function') {
+                        e.preventDefault(); e.stopPropagation();
+                        var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('msgTemplateBtn');
+                        if (dd) dd.style.display = 'none'; if (btn) btn.setAttribute('aria-expanded', 'false');
+                        apiFetch('/api/file-templates/' + fid + '/use', { method: 'POST' }).catch(function(){});
+                        apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: { url: furl, filename: fname, mimetype: fmime } }) }).then(function(r) { if (!r.ok) toast((r.data && r.data.error) || t('err_generic'), true); });
+                    }
+                    return;
+                }
                 var tplItem = target.closest('.chat-template-dropdown-item[data-id]');
                 if (tplItem && tplItem.hasAttribute('data-content')) {
                     var tid = tplItem.getAttribute('data-id');
@@ -4089,7 +4105,12 @@
             
             // Back to login button (from TOTP)
             var btnBackToLogin1 = document.querySelector('[onclick="backToLoginStep1()"]');
-            if (!btnBackToLogin1) btnBackToLogin1 = document.evaluateXPath("//button[contains(text(), 'بازگشت')]", null, XPathResult.FIRST_ORDERED_NODE_TYPE).singleNodeValue;
+            if (!btnBackToLogin1) {
+                try {
+                    var xpathResult = document.evaluate("//button[contains(text(), 'بازگشت')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+                    btnBackToLogin1 = xpathResult.singleNodeValue;
+                } catch(xe) { btnBackToLogin1 = null; }
+            }
             if (btnBackToLogin1) {
                 btnBackToLogin1.removeEventListener('click', window.backToLoginStep1);
                 btnBackToLogin1.addEventListener('click', window.backToLoginStep1);
@@ -9384,13 +9405,31 @@
                 var res = await apiFetch('/api/message-templates');
                 if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data;
             }
+            var fileTplRes = await apiFetch('/api/file-templates');
+            var activeFileTpl = (fileTplRes.ok && fileTplRes.data && fileTplRes.data.data) ? fileTplRes.data.data.filter(function(f) { return f.isActive !== false; }) : [];
             var activeTpl = chatTemplatesCache.filter(function(t) { return t.isActive !== false; });
-            dd.innerHTML = activeTpl.length === 0 ? '<div class="chat-template-dropdown-empty">' + (LANG === 'fa' ? 'تمپلیتی وجود ندارد. از بخش تمپلیت‌های پیام اضافه کنید.' : 'No templates. Add from Message Templates.') + '</div>' : activeTpl.map(function(t) {
-                var preview = (t.content || '').slice(0, 55);
-                if ((t.content || '').length > 55) preview += '…';
-                var contentEsc = escapeForDataAttr(t.content || '');
-                return '<div class="chat-template-dropdown-item" data-id="' + escapeHtml(t.id) + '" data-content="' + contentEsc + '" role="button" tabindex="0"><div class="tpl-name">' + escapeHtml(t.name || (LANG === 'fa' ? 'بدون نام' : 'Untitled')) + '</div><div class="tpl-preview">' + escapeHtml(preview) + '</div></div>';
-            }).join('');
+            var html = '';
+            if (activeTpl.length > 0) {
+                html += '<div class="chat-tpl-dd-section-title">' + (LANG === 'fa' ? 'تمپلیت‌های متنی' : 'Text Templates') + '</div>';
+                html += activeTpl.map(function(t) {
+                    var preview = (t.content || '').slice(0, 55);
+                    if ((t.content || '').length > 55) preview += '…';
+                    var contentEsc = escapeForDataAttr(t.content || '');
+                    return '<div class="chat-template-dropdown-item" data-id="' + escapeHtml(t.id) + '" data-content="' + contentEsc + '" role="button" tabindex="0"><div class="tpl-name">' + escapeHtml(t.name || (LANG === 'fa' ? 'بدون نام' : 'Untitled')) + '</div><div class="tpl-preview">' + escapeHtml(preview) + '</div></div>';
+                }).join('');
+            }
+            if (activeFileTpl.length > 0) {
+                html += '<div class="chat-tpl-dd-section-title">' + (LANG === 'fa' ? 'فایل‌های پرکاربرد' : 'File Templates') + '</div>';
+                html += activeFileTpl.map(function(f) {
+                    var ext = (f.filename || '').split('.').pop().toLowerCase();
+                    var icon = f.mimetype && f.mimetype.indexOf('image') !== -1 ? '🖼' : f.mimetype && f.mimetype.indexOf('pdf') !== -1 ? '📄' : f.mimetype && f.mimetype.indexOf('audio') !== -1 ? '🎵' : f.mimetype && f.mimetype.indexOf('video') !== -1 ? '🎬' : '📎';
+                    var size = f.filesize ? (f.filesize < 1024*1024 ? Math.round(f.filesize/1024) + ' KB' : (f.filesize/1024/1024).toFixed(1) + ' MB') : '';
+                    var fUrl = f.url || (f.filepath ? '/uploads/file-templates/' + (f.filepath.split(/[\\/]/).pop()) : '');
+                    return '<div class="chat-template-dropdown-item chat-file-tpl-item" data-file-id="' + escapeHtml(f.id) + '" data-file-name="' + escapeHtml(f.name || f.filename || '') + '" data-file-url="' + escapeHtml(fUrl) + '" data-mimetype="' + escapeHtml(f.mimetype || '') + '" data-filename="' + escapeHtml(f.filename || '') + '" role="button" tabindex="0"><div class="tpl-name">' + icon + ' ' + escapeHtml(f.name || f.filename || '') + '</div>' + (size ? '<div class="tpl-preview">' + size + (f.category ? ' · ' + escapeHtml(f.category) : '') + '</div>' : '') + '</div>';
+                }).join('');
+            }
+            if (!html) html = '<div class="chat-template-dropdown-empty">' + (LANG === 'fa' ? 'تمپلیتی وجود ندارد. از بخش تمپلیت‌های پیام اضافه کنید.' : 'No templates. Add from Message Templates.') + '</div>';
+            dd.innerHTML = html;
             document.addEventListener('click', function closeTemplateDd(e) {
                 if (!dd.contains(e.target) && e.target !== btn && !btn.contains(e.target)) { dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', closeTemplateDd); }
             });

@@ -97,6 +97,34 @@ async function connectDatabases(logger) {
             }
         }
 
+        // Auto-migrate Conversations: new columns (lastOutgoingMessageAt, firstReplyAt, lastMessagePreview, unansweredAlertSentAt, escalatedAt)
+        try {
+            const { DataTypes } = require('sequelize');
+            const qi = sequelize.getQueryInterface();
+            let convDesc;
+            try { convDesc = await qi.describeTable('Conversations'); } catch (_) { convDesc = null; }
+            if (convDesc) {
+                const convCols = [
+                    ['lastOutgoingMessageAt', { type: DataTypes.DATE, allowNull: true }],
+                    ['firstReplyAt',          { type: DataTypes.DATE, allowNull: true }],
+                    ['lastMessagePreview',    { type: DataTypes.STRING(500), allowNull: true }],
+                    ['unansweredAlertSentAt', { type: DataTypes.DATE, allowNull: true }],
+                    ['escalatedAt',           { type: DataTypes.DATE, allowNull: true }],
+                    ['lastIncomingMessageAt', { type: DataTypes.DATE, allowNull: true }],
+                ];
+                for (const [col, def] of convCols) {
+                    if (!convDesc[col]) {
+                        await qi.addColumn('Conversations', col, def).catch(e => {
+                            if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn(`Conversations.${col} migration:`, e.message);
+                        });
+                        logger.info(`✅ Conversations.${col} column added (auto-migration)`);
+                    }
+                }
+            }
+        } catch (e) {
+            logger.warn('Conversations new columns migration:', e.message);
+        }
+
         // Auto-migrate Customers: new profile fields (v2.0) — must run BEFORE sequelize.sync()
         // so that sync() can create indexes on the already-existing columns
         try {

@@ -100,7 +100,13 @@ router.get('/', async (req, res) => {
             });
         }
 
-        res.json({ data: filtered });
+        const result = filtered.map(ft => {
+            const plain = ft.toJSON ? ft.toJSON() : ft;
+            const fname = path.basename(plain.filepath || plain.filename || '');
+            plain.url = fname ? '/uploads/file-templates/' + fname : null;
+            return plain;
+        });
+        res.json({ data: result });
     } catch (err) {
         logger.error('Error loading file templates', { error: err.message });
         res.status(500).json({ error: err.message });
@@ -149,7 +155,10 @@ router.post('/', upload.single('file'), async (req, res) => {
             }]
         });
 
-        res.status(201).json(result);
+        const plain = result.toJSON ? result.toJSON() : result;
+        const fname = path.basename(plain.filepath || plain.filename || '');
+        plain.url = fname ? '/uploads/file-templates/' + fname : null;
+        res.status(201).json(plain);
     } catch (err) {
         logger.error('Error uploading file template', { error: err.message });
         // حذف فایل در صورت خطا
@@ -180,7 +189,10 @@ router.get('/:id', async (req, res) => {
             return res.status(404).json({ error: 'فایل یافت نشد' });
         }
 
-        res.json(fileTemplate);
+        const plain = fileTemplate.toJSON ? fileTemplate.toJSON() : fileTemplate;
+        const fname = path.basename(plain.filepath || plain.filename || '');
+        plain.url = fname ? '/uploads/file-templates/' + fname : null;
+        res.json(plain);
     } catch (err) {
         logger.error('Error getting file template', { error: err.message });
         res.status(500).json({ error: err.message });
@@ -257,7 +269,10 @@ router.put('/:id', async (req, res) => {
             }]
         });
 
-        res.json(result);
+        const plain2 = result.toJSON ? result.toJSON() : result;
+        const fname2 = path.basename(plain2.filepath || plain2.filename || '');
+        plain2.url = fname2 ? '/uploads/file-templates/' + fname2 : null;
+        res.json(plain2);
     } catch (err) {
         logger.error('Error updating file template', { error: err.message });
         res.status(500).json({ error: err.message });

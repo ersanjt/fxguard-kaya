@@ -2236,6 +2236,9 @@
         .chat-template-dropdown-item:focus { outline: none; background: var(--bg-hover); }
         .chat-template-dropdown-item .tpl-name { font-weight: 600; color: var(--text-primary); }
         .chat-template-dropdown-item .tpl-preview { font-size: 0.8rem; color: var(--text-muted); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chat-tpl-dd-section-title { padding: 6px 14px 4px; font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; background: var(--bg-sidebar); border-bottom: 1px solid var(--border); }
+        .chat-file-tpl-item { background: var(--bg-card); }
+        .chat-file-tpl-item:hover { background: var(--bg-hover); }
         /* ========== تمپلیت‌های پیام — طراحی جدید ========== */
         .message-templates-page { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 
