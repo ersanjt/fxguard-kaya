@@ -23,12 +23,23 @@ async function getOrCreatePreference(userId) {
  */
 async function notifyAnnouncement(announcement, recipientIds, io) {
     const results = [];
+    if (!recipientIds || recipientIds.length === 0) return results;
+
+    // batch load users and preferences
+    const [users, prefs, settings] = await Promise.all([
+        User.findAll({ where: { id: recipientIds }, attributes: ['id', 'email', 'name'] }),
+        NotificationPreference.findAll({ where: { userId: recipientIds } }),
+        PanelSetting.findByPk('default')
+    ]);
+    const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+    const prefMap = Object.fromEntries(prefs.map(p => [p.userId, p]));
+    const emailConfig = getPanelEmailConfig(settings);
 
     for (const userId of recipientIds) {
         try {
-            const pref = await getOrCreatePreference(userId);
-            const user = await User.findByPk(userId, { attributes: ['id', 'email', 'name'] });
+            const user = userMap[userId];
             if (!user) continue;
+            const pref = prefMap[userId] || (await getOrCreatePreference(userId));
 
             // Socket.IO
             if (io && pref.announceSocketEnabled) {
@@ -48,9 +59,6 @@ async function notifyAnnouncement(announcement, recipientIds, io) {
             // ایمیل
             if (pref.announceEmailEnabled && user.email) {
                 try {
-                    const settings = await PanelSetting.findByPk('default');
-                    const emailConfig = getPanelEmailConfig(settings);
-                    
                     const title = `اعلان مهم: ${announcement.title}`;
                     const from = announcement.fromUser ? announcement.fromUser.name : 'سیستم';
                     const body = `
@@ -236,12 +244,23 @@ async function notifyTicketReply(ticket, reply, io) {
     ].filter(Boolean).filter((id, i, arr) => i === arr.indexOf(id)); // unique
 
     const results = [];
+    if (!recipientIds || recipientIds.length === 0) return results;
+
+    // batch load
+    const [users, prefs, settings] = await Promise.all([
+        User.findAll({ where: { id: recipientIds }, attributes: ['id', 'email', 'name'] }),
+        NotificationPreference.findAll({ where: { userId: recipientIds } }),
+        PanelSetting.findByPk('default')
+    ]);
+    const userMap = Object.fromEntries(users.map(u => [u.id, u]));
+    const prefMap = Object.fromEntries(prefs.map(p => [p.userId, p]));
+    const emailConfig = getPanelEmailConfig(settings);
 
     for (const userId of recipientIds) {
         try {
-            const pref = await getOrCreatePreference(userId);
-            const user = await User.findByPk(userId, { attributes: ['id', 'email', 'name'] });
+            const user = userMap[userId];
             if (!user) continue;
+            const pref = prefMap[userId] || (await getOrCreatePreference(userId));
 
             // Socket.IO
             if (io && pref) {
@@ -261,8 +280,6 @@ async function notifyTicketReply(ticket, reply, io) {
             // ایمیل
             if (pref && pref.ticketReplyEmailEnabled && user.email) {
                 try {
-                    const settings = await PanelSetting.findByPk('default');
-                    const emailConfig = getPanelEmailConfig(settings);
                     const title = `پاسخ برای تیکت: ${ticket.title}`;
                     const replyFrom = reply.user ? reply.user.name : 'پاسخگو';
                     const body = `
