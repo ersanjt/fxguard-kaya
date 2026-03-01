@@ -118,8 +118,10 @@ module.exports = (sequelize) => {
         tableName: 'Transactions',
         indexes: [
             { fields: ['type'] },
+            { fields: ['status'] },
             { fields: ['transactionDate'] },
             { fields: ['branchId'] },
+            { fields: ['userId'] },
             { fields: ['fromCashBoxId', 'toCashBoxId'] },
             { fields: ['fromBankAccountId', 'toBankAccountId'] },
             { fields: ['customerId'] }

@@ -243,14 +243,19 @@ router.put('/adjustments', async (req, res) => {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const RATES_KEYS = await getRatesKeys();
         const list = req.body.adjustments || req.body.data || [];
+        if (!Array.isArray(list)) return res.status(400).json({ error: 'adjustments باید آرایه باشد' });
+        if (list.length > 100) return res.status(400).json({ error: 'حداکثر ۱۰۰ تعدیل در هر درخواست مجاز است' });
+        const VALID_ADJUSTMENT_TYPES = new Set(['none', 'fixed', 'delta_toman', 'percent']);
         const allowedKeys = RATES_KEYS.map(r => r.key);
         for (const item of list) {
             const key = (item.currencyKey || item.key || '').toLowerCase();
             if (!allowedKeys.includes(key)) continue;
             const type = item.adjustmentType || 'none';
-            const value = item.value != null && type !== 'none' ? item.value : null;
+            if (!VALID_ADJUSTMENT_TYPES.has(type)) continue;
+            const rawValue = item.value != null && type !== 'none' ? Number(item.value) : null;
+            if (rawValue !== null && (isNaN(rawValue) || Math.abs(rawValue) > 1e12)) continue;
             const [rec] = await RateAdjustment.findOrCreate({ where: { currencyKey: key }, defaults: { adjustmentType: 'none', value: null } });
-            await rec.update({ adjustmentType: type, value });
+            await rec.update({ adjustmentType: type, value: rawValue });
         }
         const rows = await RateAdjustment.findAll({ order: [['currencyKey', 'ASC']] });
         const map = {};
