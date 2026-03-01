@@ -215,7 +215,9 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             );
             if (updated > 0) {
                 const msg = await Message.findOne({ where: { whatsappId: messageId }, attributes: ['id', 'conversationId', 'status'] });
-                if (msg) io.emit('message_status_updated', { messageId: msg.id, conversationId: msg.conversationId, status: msg.status });
+                if (msg) {
+                    io.to(`conversation_${msg.conversationId}`).emit('message_status_updated', { messageId: msg.id, conversationId: msg.conversationId, status: msg.status });
+                }
             }
             res.json({ ok: true });
         } catch (err) {

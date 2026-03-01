@@ -26,7 +26,16 @@ module.exports = {
         password: process.env.DB_PASSWORD,
         host: process.env.DB_HOST,
         port: process.env.DB_PORT || 5432,
-        dialect: 'postgres'
+        dialect: 'postgres',
+        pool: {
+            max: parseInt(process.env.DB_POOL_MAX) || 10,
+            min: parseInt(process.env.DB_POOL_MIN) || 2,
+            acquire: 30000,
+            idle: 10000
+        },
+        dialectOptions: process.env.DB_SSL === 'false' ? {} : {
+            ssl: { require: true, rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
+        }
       },
   test: { storage: ':memory:', dialect: 'sqlite', logging: false }
 };

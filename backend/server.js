@@ -219,7 +219,7 @@ async function startServer() {
         await ensureAdminUser(MAIN_ADMIN_EMAIL, MAIN_ADMIN_PASSWORD, logger);
         await connectRabbitMQ({ io, redisClient, logger });
 
-        setInterval(() => checkUnansweredConversations(io, logger), 60000);
+        const unansweredInterval = setInterval(() => checkUnansweredConversations(io, logger), 60000);
 
         const PORT = process.env.PORT || 3002;
         server.listen(PORT, () => {
@@ -246,6 +246,7 @@ startServer();
 // Graceful shutdown
 async function gracefulShutdown(signal) {
     logger.info(`${signal} received — shutting down gracefully...`);
+    clearInterval(unansweredInterval);
     server.close(async () => {
         try {
             await sequelize.close();

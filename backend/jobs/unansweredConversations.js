@@ -5,12 +5,22 @@ const models = require('../models');
 const { sequelize, Conversation, Customer, User, Department, WhatsappConfig } = models;
 const { Op } = require('sequelize');
 
+let _cfgCache = null;
+let _cfgCacheAt = 0;
+const CFG_CACHE_TTL_MS = 5 * 60 * 1000; // 5 دقیقه
+
 async function checkUnansweredConversations(io, logger) {
     try {
-        const [cfg] = await WhatsappConfig.findOrCreate({
-            where: { id: 'default' },
-            defaults: { alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15 }
-        });
+        const nowMs = Date.now();
+        if (!_cfgCache || (nowMs - _cfgCacheAt) > CFG_CACHE_TTL_MS) {
+            const [cfg] = await WhatsappConfig.findOrCreate({
+                where: { id: 'default' },
+                defaults: { alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15 }
+            });
+            _cfgCache = cfg;
+            _cfgCacheAt = nowMs;
+        }
+        const cfg = _cfgCache;
         const alertMin = cfg.alertUnansweredAfterMinutes ?? 5;
         const escalateMin = cfg.escalateUnansweredAfterMinutes ?? 15;
         const escalationDeptId = cfg.escalationDepartmentId;

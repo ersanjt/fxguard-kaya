@@ -68,7 +68,9 @@ router.post('/login', async (req, res) => {
                 }
             });
         }
-        if (!user || !(await user.comparePassword(password))) {
+        // Always run bcrypt to prevent timing-based username enumeration
+        const passwordMatch = user ? await user.comparePassword(password) : await User.dummyCompare(password);
+        if (!user || !passwordMatch) {
             const clientIp = req.ip || req.connection?.remoteAddress || '';
             await logActivity({
                 userId: user ? user.id : null,
@@ -153,8 +155,10 @@ router.post('/forgot-password', async (req, res) => {
         }
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000);
-        await PasswordResetToken.destroy({ where: { userId: user.id } });
-        await PasswordResetToken.create({ userId: user.id, token, expiresAt });
+        await sequelize.transaction(async (t) => {
+            await PasswordResetToken.destroy({ where: { userId: user.id }, transaction: t });
+            await PasswordResetToken.create({ userId: user.id, token, expiresAt }, { transaction: t });
+        });
         const settings = await getPanelSettings();
         const emailConfig = getPanelEmailConfig(settings);
         await emailService.sendPasswordReset(user, token, RESET_TOKEN_EXPIRY_MINUTES, emailConfig);

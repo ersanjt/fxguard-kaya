@@ -132,6 +132,13 @@ module.exports = (sequelize) => {
         return bcrypt.compare(password, this.password);
     };
 
+    // Dummy compare — runs bcrypt to prevent timing-based username enumeration
+    User.dummyCompare = async function(password) {
+        const dummy = '$2b$12$invalidhashfortimingnormalization000000000000000000000000';
+        await bcrypt.compare(String(password || ''), dummy).catch(() => {});
+        return false;
+    };
+
     User.associate = (models) => {
         if (models.Branch) {
             User.belongsTo(models.Branch, { foreignKey: 'branchId', as: 'branch' });

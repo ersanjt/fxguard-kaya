@@ -267,16 +267,22 @@ router.post('/:id/delete-with-transfer', async (req, res) => {
         const transferTo = await User.findByPk(transferToUserId);
         if (!transferTo || !transferTo.isActive) return res.status(400).json({ error: 'کاربر مقصد معتبر نیست' });
         if (transferTo.id === userId) return res.status(400).json({ error: 'کاربر مقصد نمی‌تواند خود کاربر حذفشونده باشد' });
-        await Conversation.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
-        await Task.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
-        await Task.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
-        await Ticket.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
-        await Ticket.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
-        await ProcessInstance.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
-        await ProcessInstance.update({ createdBy: transferToUserId }, { where: { createdBy: userId } });
-        await ProcessInstanceStep.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId } });
-        user.isActive = false;
-        await user.save();
+        const t = await sequelize.transaction();
+        try {
+            await Conversation.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId }, transaction: t });
+            await Task.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId }, transaction: t });
+            await Task.update({ createdBy: transferToUserId }, { where: { createdBy: userId }, transaction: t });
+            await Ticket.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId }, transaction: t });
+            await Ticket.update({ createdBy: transferToUserId }, { where: { createdBy: userId }, transaction: t });
+            await ProcessInstance.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId }, transaction: t });
+            await ProcessInstance.update({ createdBy: transferToUserId }, { where: { createdBy: userId }, transaction: t });
+            await ProcessInstanceStep.update({ assignedTo: transferToUserId }, { where: { assignedTo: userId }, transaction: t });
+            await user.update({ isActive: false }, { transaction: t });
+            await t.commit();
+        } catch (txErr) {
+            await t.rollback();
+            throw txErr;
+        }
         const u = user.toJSON();
         delete u.password;
         res.json({ message: 'کاربر غیرفعال شد و داده‌ها منتقل شد', user: u });

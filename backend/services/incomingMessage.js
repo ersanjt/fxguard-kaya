@@ -54,6 +54,9 @@ async function resolveIncomingMedia(media, logger) {
         if (!ext) ext = '.bin';
         const safeName = (Date.now() + '-' + suggestedName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)) + (ext.startsWith('.') ? ext : '.' + ext);
         const filePath = path.join(uploadsDir, safeName);
+        if (!filePath.startsWith(uploadsDir + path.sep) && filePath !== path.join(uploadsDir, safeName)) {
+            throw new Error('Path traversal detected in media filename');
+        }
         await fsPromises.writeFile(filePath, buf);
         return { url: '/uploads/' + safeName, filename: media.filename || suggestedName, mimetype: media.mimetype || ct || null };
     } catch (err) {
@@ -83,6 +86,9 @@ async function resolveIncomingMediaFromBase64(media, logger) {
         if (!ext) ext = '.bin';
         const safeName = (Date.now() + '-' + suggestedName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)) + (ext.startsWith('.') ? ext : '.' + ext);
         const filePath = path.join(uploadsDir, safeName);
+        if (!filePath.startsWith(uploadsDir + path.sep) && filePath !== path.join(uploadsDir, safeName)) {
+            throw new Error('Path traversal detected in media filename');
+        }
         await fsPromises.writeFile(filePath, buf);
         return { url: '/uploads/' + safeName, filename: media.filename || suggestedName, mimetype: media.mimetype || ct || null };
     } catch (err) {
@@ -383,7 +389,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             lastMessageAt: ts,
             lastIncomingMessageAt: ts,
             lastMessagePreview: preview,
-            unreadCount: (conversation.unreadCount || 0) + 1
+            unreadCount: sequelize.literal('COALESCE("unreadCount", 0) + 1')
         });
 
         const msgMetadata = isGroup && (messageData.author || messageData.authorName)

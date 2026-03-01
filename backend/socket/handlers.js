@@ -9,6 +9,9 @@ const { logActivity } = require('../services/activityLog');
 
 const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
 const CALL_ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 ساعت
+const STATUS_DEBOUNCE_MS = 2000;
+
+const statusDebounceTimers = {};
 
 const callRooms = {};
 
@@ -58,6 +61,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 }) : null;
 
                 if (!user) return socket.emit('error', { message: 'Unauthorized' });
+                if (!user.isActive) return socket.emit('error', { message: 'حساب کاربری غیرفعال است' });
 
                 const isPrivileged = ['owner', 'admin', 'manager', 'supervisor'].includes(user.role);
                 const isAssigned = conversation.assignedTo === socket.userId;
@@ -96,7 +100,11 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 if (!conversation.firstReplyAt) upd.firstReplyAt = now;
                 await conversation.update(upd);
 
-                io.emit('message_sent', { conversationId: conversation.id, message: newMessage });
+                // Emit only to users in this conversation's room, not all clients
+                io.to(`conversation_${conversation.id}`).emit('message_sent', { conversationId: conversation.id, message: newMessage });
+                if (conversation.departmentId) {
+                    io.to(`department_${conversation.departmentId}`).emit('message_sent', { conversationId: conversation.id, message: newMessage });
+                }
                 logger.info(`📤 Message sent by user ${socket.userId}`);
             } catch (error) {
                 logger.error('Send message error:', error);
@@ -164,10 +172,19 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
             io.to('user_' + String(fromUserId)).emit('call_invite_reject', { userId: socket.userId, userName, threadId });
         });
 
-        socket.on('status_change', async (status) => {
-            if (!VALID_STATUSES.includes(status)) return;
-            await User.update({ status }, { where: { id: socket.userId } });
-            io.emit('user_status', { userId: socket.userId, status });
+        socket.on('status_change', (status) => {
+            if (!VALID_STATUSES.includes(status) || !socket.userId) return;
+            const uid = socket.userId;
+            if (statusDebounceTimers[uid]) clearTimeout(statusDebounceTimers[uid]);
+            statusDebounceTimers[uid] = setTimeout(async () => {
+                delete statusDebounceTimers[uid];
+                try {
+                    await User.update({ status }, { where: { id: uid } });
+                    io.emit('user_status', { userId: uid, status });
+                } catch (e) {
+                    logger.warn('status_change update error:', e.message);
+                }
+            }, STATUS_DEBOUNCE_MS);
         });
 
         socket.on('disconnect', async () => {
@@ -181,21 +198,23 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 }
             });
             if (socket.userId) {
+                // Cancel any pending debounced status change
+                if (statusDebounceTimers[socket.userId]) {
+                    clearTimeout(statusDebounceTimers[socket.userId]);
+                    delete statusDebounceTimers[socket.userId];
+                }
                 try {
-                    const user = await User.findByPk(socket.userId);
-                    if (user) {
-                        await user.update({ status: 'offline' });
-                        await logActivity({
-                            userId: user.id,
-                            branchId: user.branchId || null,
-                            departmentId: user.departmentId || null,
-                            action: 'user_logout',
-                            entityType: 'user',
-                            entityId: user.id,
-                            summary: 'خروج از پورتال (قطع اتصال)',
-                            metadata: { email: user.email }
-                        });
-                    }
+                    await User.update({ status: 'offline' }, { where: { id: socket.userId } });
+                    await logActivity({
+                        userId: socket.userId,
+                        branchId: socket.branchId || null,
+                        departmentId: socket.departmentId || null,
+                        action: 'user_logout',
+                        entityType: 'user',
+                        entityId: socket.userId,
+                        summary: 'خروج از پورتال (قطع اتصال)',
+                        metadata: {}
+                    });
                     io.emit('user_status', { userId: socket.userId, status: 'offline' });
                 } catch (e) {
                     logger.warn('Disconnect status update:', e.message);
