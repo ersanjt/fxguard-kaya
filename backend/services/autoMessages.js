@@ -25,9 +25,13 @@ async function sendOutgoingAutoMessage(conversation, text) {
         }
         const toPhone = getSendTarget(customer.phone) || customer.phone;
         if (rabbitChannel) {
-            rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
+            const sent = rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
                 to: toPhone, message: text, conversationId: conversation.id
             })), { persistent: true });
+            if (sent === false) {
+                logger.warn('autoMessages: RabbitMQ queue full (backpressure), falling back to gateway', { conversationId: conversation.id });
+                await gatewayPost('/api/send-message', { to: toPhone, message: text }, { timeout: 10000 });
+            }
         } else {
             await gatewayPost('/api/send-message', { to: toPhone, message: text }, { timeout: 10000 });
         }

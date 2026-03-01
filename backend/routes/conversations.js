@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const fs = require('fs');
+const fsPromises = require('fs').promises;
 const path = require('path');
 const { sequelize, Conversation, Customer, Message, User, Branch, Department } = require('../models');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('../services/autoMessages');
@@ -253,7 +254,11 @@ router.get('/:id/messages', async (req, res) => {
         const pageLimit = Math.min(parseInt(req.query.limit) || 100, 200);
         const beforeId = req.query.before || null;
         const msgWhere = { conversationId: req.params.id };
-        if (beforeId) msgWhere.id = { [Op.lt]: beforeId };
+        if (beforeId) {
+            const { isValidUUID } = require('../lib/validation');
+            if (!isValidUUID(beforeId)) return res.status(400).json({ error: 'شناسه پیام (before) نامعتبر است' });
+            msgWhere.id = { [Op.lt]: beforeId };
+        }
         const total = await Message.count({ where: { conversationId: req.params.id } });
         const messages = await Message.findAll({
             where: msgWhere,
@@ -389,7 +394,11 @@ router.patch('/:id', async (req, res) => {
         }
         if (canManage && departmentId !== undefined) updateData.departmentId = departmentId || null;
         if (canManage && branchId !== undefined && (isMainAdmin(req.user) || req.user.role === 'owner' || req.user.role === 'admin' || req.user.role === 'manager')) updateData.branchId = branchId || null;
+        const VALID_CONV_STATUSES = ['open', 'pending', 'closed', 'resolved', 'archived'];
         if (canManage && status !== undefined) {
+            if (!VALID_CONV_STATUSES.includes(status)) {
+                return res.status(400).json({ error: 'وضعیت مکالمه نامعتبر است' });
+            }
             if (status === 'archived' && !canArchiveOrDeleteConversation(req)) {
                 return res.status(403).json({ error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند مکالمه را آرشیو کند' });
             }
@@ -558,7 +567,7 @@ router.post('/:id/send', async (req, res) => {
             const filePath = path.join(uploadsDir, fileName);
             if (!relPath.startsWith('http') && fs.existsSync(filePath)) {
                 try {
-                    const fileBuf = fs.readFileSync(filePath);
+                    const fileBuf = await fsPromises.readFile(filePath);
                     const base64 = fileBuf.toString('base64');
                     payload.media = { data: base64, mimetype: media.mimetype || 'application/octet-stream', filename: media.filename || media.name || fileName };
                     if (msgType === 'audio') payload.media.sendAsVoice = true;

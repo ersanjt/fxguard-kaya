@@ -82,8 +82,8 @@ router.post('/', async (req, res) => {
         let finalTargetId = targetId || null;
 
         if (me.role === 'manager') {
-            if (targetType !== 'department' || targetId !== me.departmentId) return res.status(403).json({ error: 'مدیر فقط می‌تواند به دپارتمان خود پیام بفرستد' });
             if (!me.departmentId) return res.status(403).json({ error: 'شما به هیچ دپارتمانی تخصیص ندارید' });
+            if (targetType !== 'department' || targetId !== me.departmentId) return res.status(403).json({ error: 'مدیر فقط می‌تواند به دپارتمان خود پیام بفرستد' });
             finalTargetId = me.departmentId;
             allowed = true;
         } else if (isMainAdmin(me) || me.role === 'owner' || me.role === 'admin') {

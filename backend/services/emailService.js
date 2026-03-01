@@ -381,14 +381,15 @@ async function sendContactForm({ purpose, name, email, phone, message }) {
         'Message:',
         message || '—'
     ].join('\n');
+    const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
     const html = baseHtml(subject, `
-      <p><strong>Purpose:</strong> ${purposeLabels[purpose] || purpose}</p>
-      <p><strong>Name:</strong> ${name || '—'}</p>
-      <p><strong>Email:</strong> <a href="mailto:${email || ''}">${email || '—'}</a></p>
-      <p><strong>Phone:</strong> ${phone || '—'}</p>
+      <p><strong>Purpose:</strong> ${esc(purposeLabels[purpose] || purpose)}</p>
+      <p><strong>Name:</strong> ${esc(name) || '—'}</p>
+      <p><strong>Email:</strong> <a href="mailto:${esc(email || '')}">${esc(email) || '—'}</a></p>
+      <p><strong>Phone:</strong> ${esc(phone) || '—'}</p>
       <p><strong>Message:</strong></p>
-      <p>${(message || '—').replace(/\n/g, '<br>')}</p>
-      <p class="muted">Reply directly to ${email || 'the sender'}.</p>
+      <p>${esc(message || '—').replace(/\n/g, '<br>')}</p>
+      <p class="muted">Reply directly to ${esc(email) || 'the sender'}.</p>
     `);
     
     const result = await sendMailWithRetry({ to: toEmail, subject, text, html });

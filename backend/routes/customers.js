@@ -20,7 +20,7 @@ router.get('/', async (req, res) => {
         if (customerIds) where.id = { [Op.in]: customerIds };
         if (status && ['active', 'inactive', 'blocked'].includes(status)) where.status = status;
         if (search && String(search).trim()) {
-            const term = '%' + String(search).trim().replace(/%/g, '\\%') + '%';
+            const term = '%' + String(search).trim().replace(/[%_\\]/g, '\\$&') + '%';
             where[Op.or] = [
                 { name: { [Op.like]: term } },
                 { phone: { [Op.like]: term } },
@@ -210,12 +210,22 @@ router.get('/:id/timeline', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
-        const body = { ...req.body };
-        if (body.phone) body.phone = normalizePhone(body.phone) || body.phone;
-        body.source = body.source || 'manual';
-        const customer = await Customer.create(body);
-        if (body.tagIds && Array.isArray(body.tagIds) && body.tagIds.length) {
-            await customer.setTags(body.tagIds);
+        const { name, phone, email, notes, status, customFields, source, profilePic, tagIds } = req.body;
+        if (!name && !phone) return res.status(400).json({ error: 'نام یا شماره تلفن الزامی است' });
+        const allowedStatuses = ['active', 'inactive', 'blocked'];
+        const customerData = {
+            name: name ? String(name).trim() : null,
+            phone: phone ? (normalizePhone(phone) || String(phone).trim()) : null,
+            email: email ? String(email).trim().toLowerCase() : null,
+            notes: notes ? String(notes).trim() : null,
+            status: status && allowedStatuses.includes(status) ? status : 'active',
+            customFields: customFields && typeof customFields === 'object' ? customFields : {},
+            source: source || 'manual',
+            profilePic: profilePic ? String(profilePic).trim() : null,
+        };
+        const customer = await Customer.create(customerData);
+        if (tagIds && Array.isArray(tagIds) && tagIds.length) {
+            await customer.setTags(tagIds);
         }
         const created = await Customer.findByPk(customer.id, {
             include: [{ model: Tag, as: 'tags', attributes: ['id', 'name', 'color'], through: { attributes: [] } }]
@@ -264,16 +274,23 @@ router.delete('/:id', async (req, res) => {
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
 
         const customerId = customer.id;
-        const convs = await Conversation.findAll({ where: { customerId }, attributes: ['id'] });
-        const convIds = convs.map(c => c.id);
-        if (convIds.length > 0) {
-            await Message.destroy({ where: { conversationId: { [Op.in]: convIds } } });
+        const t = await sequelize.transaction();
+        try {
+            const convs = await Conversation.findAll({ where: { customerId }, attributes: ['id'], transaction: t });
+            const convIds = convs.map(c => c.id);
+            if (convIds.length > 0) {
+                await Message.destroy({ where: { conversationId: { [Op.in]: convIds } }, transaction: t });
+            }
+            await Conversation.destroy({ where: { customerId }, transaction: t });
+            await CustomerNote.destroy({ where: { customerId }, transaction: t });
+            await ActivityLog.destroy({ where: { customerId }, transaction: t });
+            await Transaction.update({ customerId: null }, { where: { customerId }, transaction: t });
+            await customer.destroy({ transaction: t });
+            await t.commit();
+        } catch (txErr) {
+            await t.rollback();
+            throw txErr;
         }
-        await Conversation.destroy({ where: { customerId } });
-        await CustomerNote.destroy({ where: { customerId } });
-        await ActivityLog.destroy({ where: { customerId } });
-        await Transaction.update({ customerId: null }, { where: { customerId } });
-        await customer.destroy();
 
         await logActivity({
             userId: req.userId,

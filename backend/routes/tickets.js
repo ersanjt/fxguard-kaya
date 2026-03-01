@@ -157,6 +157,7 @@ router.post('/:id/replies', async (req, res) => {
 });
 router.post('/', async (req, res) => {
     try {
+        if (!req.canAccess('tickets')) return res.status(403).json({ error: 'دسترسی به بخش تیکت‌ها ندارید' });
         const { title, description, assignedTo, departmentId, priority, dueDate } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'عنوان الزامی است' });
         if (String(title).trim().length > 300) return res.status(400).json({ error: 'عنوان تیکت بیش از ۳۰۰ کاراکتر مجاز نیست' });
