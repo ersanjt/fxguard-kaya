@@ -16,6 +16,11 @@ const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
 
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
 const TOTP_TEMP_EXPIRY = '5m';
+const TOTP_MAX_ATTEMPTS = 5;
+
+// In-memory TOTP attempt counter keyed by tempToken jti (JWT id)
+// Entries expire automatically after TOTP_TEMP_EXPIRY (5 min)
+const totpAttempts = new Map();
 
 function issueToken(user) {
     return jwt.sign(
@@ -82,8 +87,9 @@ router.post('/login', async (req, res) => {
             return sendJson(401, { error: 'ایمیل/نام کاربری یا رمز عبور اشتباه است' });
         }
         if (user.totpEnabled) {
+            const jti = crypto.randomBytes(16).toString('hex');
             const tempToken = jwt.sign(
-                { id: user.id, totpStep: true },
+                { id: user.id, totpStep: true, jti },
                 process.env.JWT_SECRET,
                 { expiresIn: TOTP_TEMP_EXPIRY }
             );
@@ -199,6 +205,17 @@ router.post('/totp/verify-login', async (req, res) => {
         if (!tempToken || !code) return res.status(400).json({ error: 'کد احراز هویت الزامی است' });
         const decoded = jwt.verify(tempToken, process.env.JWT_SECRET);
         if (!decoded.totpStep || !decoded.id) return res.status(401).json({ error: 'لینک ورود منقضی شده. دوباره وارد شوید.' });
+
+        // Brute-force protection: max TOTP_MAX_ATTEMPTS per tempToken
+        const jti = decoded.jti || decoded.id;
+        const attempts = (totpAttempts.get(jti) || 0) + 1;
+        if (attempts > TOTP_MAX_ATTEMPTS) {
+            return res.status(429).json({ error: 'تعداد تلاش‌های مجاز تمام شده. دوباره وارد شوید.' });
+        }
+        totpAttempts.set(jti, attempts);
+        // Auto-cleanup after token expiry (5 min)
+        setTimeout(() => totpAttempts.delete(jti), 5 * 60 * 1000);
+
         const user = await User.findByPk(decoded.id);
         if (!user || !user.isActive || !user.totpEnabled || !user.totpSecret) {
             return res.status(401).json({ error: 'کاربر نامعتبر است' });
@@ -207,6 +224,9 @@ router.post('/totp/verify-login', async (req, res) => {
         totpVerifier.options = { window: 1 };
         const verified = totpVerifier.verify({ token: String(code).replace(/\s/g, ''), secret: user.totpSecret });
         if (!verified) return res.status(401).json({ error: 'کد احراز هویت اشتباه یا منقضی است' });
+
+        // Clear attempt counter on success
+        totpAttempts.delete(jti);
         const now = new Date();
         await user.update({ lastLoginAt: now, status: 'online' });
         const clientIp = req.ip || req.connection?.remoteAddress || '';
