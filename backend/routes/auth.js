@@ -19,6 +19,20 @@ const TOTP_TEMP_EXPIRY = '5m';
 const TOTP_MAX_ATTEMPTS = 5;
 const TOTP_TTL_SECONDS = 5 * 60; // 5 minutes
 
+// استخراج IP واقعی کاربر — از X-Forwarded-For یا X-Real-IP (پشت Nginx)
+function getRealIp(req) {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) {
+        const firstIp = String(forwarded).split(',')[0].trim();
+        if (firstIp) return firstIp;
+    }
+    const realIp = req.headers['x-real-ip'];
+    if (realIp) return String(realIp).trim();
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    // حذف پیشوند IPv6 mapped IPv4
+    return ip.replace(/^::ffff:/, '');
+}
+
 // In-memory fallback for TOTP attempts (used when Redis is unavailable)
 const totpAttemptsLocal = new Map();
 
@@ -107,7 +121,7 @@ router.post('/login', async (req, res) => {
         // Always run bcrypt to prevent timing-based username enumeration
         const passwordMatch = user ? await user.comparePassword(password) : await User.dummyCompare(password);
         if (!user || !passwordMatch) {
-            const clientIp = req.ip || req.connection?.remoteAddress || '';
+            const clientIp = getRealIp(req);
             await logActivity({
                 userId: user ? user.id : null,
                 action: 'login_failed',
@@ -128,7 +142,7 @@ router.post('/login', async (req, res) => {
         }
         const now = new Date();
         await user.update({ lastLoginAt: now, status: 'online' });
-        const clientIp = req.ip || req.connection?.remoteAddress || '';
+        const clientIp = getRealIp(req);
         await logActivity({
             userId: user.id,
             branchId: user.branchId || null,
@@ -152,7 +166,7 @@ router.post('/login', async (req, res) => {
             try {
                 const settings = await getPanelSettings();
                 const emailConfig = getPanelEmailConfig(settings);
-                await emailService.sendLoginNotification(user, req.ip || '', (req.get && req.get('user-agent')) || '', { emailConfig, loginNotificationEnabled: settings.emailLoginNotification });
+                await emailService.sendLoginNotification(user, clientIp, (req.get && req.get('user-agent')) || '', { emailConfig, loginNotificationEnabled: settings.emailLoginNotification });
             } catch (_) {}
         });
         sendJson(200, {
@@ -259,7 +273,7 @@ router.post('/totp/verify-login', async (req, res) => {
         await clearTotpAttempts(redisClient, jti);
         const now = new Date();
         await user.update({ lastLoginAt: now, status: 'online' });
-        const clientIp = req.ip || req.connection?.remoteAddress || '';
+        const clientIp2fa = getRealIp(req);
         await logActivity({
             userId: user.id,
             branchId: user.branchId || null,
@@ -269,8 +283,8 @@ router.post('/totp/verify-login', async (req, res) => {
             entityId: user.id,
             summary: 'ورود به پورتال کارکنان کایا (۲FA)',
             metadata: {
-                ip: clientIp,
-                country: getCountryFromIp(clientIp),
+                ip: clientIp2fa,
+                country: getCountryFromIp(clientIp2fa),
                 userAgent: (req.get && req.get('user-agent')) || null,
                 email: user.email
             }
@@ -283,7 +297,7 @@ router.post('/totp/verify-login', async (req, res) => {
             try {
                 const settings = await getPanelSettings();
                 const emailConfig = getPanelEmailConfig(settings);
-                await emailService.sendLoginNotification(user, req.ip || '', (req.get && req.get('user-agent')) || '', { emailConfig, loginNotificationEnabled: settings.emailLoginNotification });
+                await emailService.sendLoginNotification(user, clientIp2fa, (req.get && req.get('user-agent')) || '', { emailConfig, loginNotificationEnabled: settings.emailLoginNotification });
             } catch (_) {}
         });
         res.json({
