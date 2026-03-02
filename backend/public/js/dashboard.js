@@ -3562,6 +3562,19 @@
             if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             announcementsData = (res.data && res.data.data) || [];
             renderAnnouncementsList();
+            // mark همه اعلان‌های خوانده‌نشده به عنوان خوانده‌شده
+            var unread = announcementsData.filter(function(a) { return !a.read; });
+            if (unread.length > 0) {
+                Promise.all(unread.map(function(a) {
+                    return apiFetch('/api/announcements/' + a.id + '/read', { method: 'POST' }).catch(function(){});
+                })).then(function() {
+                    unread.forEach(function(a) { a.read = true; });
+                    renderAnnouncementsList();
+                    apiFetch('/api/analytics/dashboard').then(function(r) {
+                        if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data);
+                    }).catch(function(){});
+                });
+            }
         }
         function renderAnnouncementsList() {
             var list = document.getElementById('announcementList');
