@@ -464,6 +464,66 @@ function attachClientEvents(c) {
       validateStatus: () => true,
     }).catch(() => {});
   });
+
+  // پیام‌هایی که از موبایل یا دستگاه دیگر ارسال می‌شوند (fromMe)
+  c.on('message_create', async (msg) => {
+    try {
+      if (!msg.fromMe) return; // فقط پیام‌های ارسالی خودمان
+      const chat = await msg.getChat();
+      if (chat?.isGroup) return; // گروه‌ها را نادیده بگیر
+      const contact = await chat.getContact();
+
+      const messageData = {
+        id: msg?.id?.id,
+        from: msg.from,
+        to: msg.to,
+        body: msg.body,
+        timestamp: msg.timestamp,
+        hasMedia: msg.hasMedia,
+        type: msg.type,
+        isForwarded: msg.isForwarded,
+        isStatus: msg.isStatus,
+        fromMe: true,
+        contact: {
+          number: contact?.number,
+          name: contact?.name || contact?.pushname || null,
+          isMyContact: contact?.isMyContact,
+          profilePicUrl: await contact.getProfilePicUrl().catch(() => null),
+        },
+        chat: {
+          id: chat?.id?._serialized,
+          name: chat?.name || null,
+          isGroup: false,
+        },
+      };
+
+      if (msg.hasMedia) {
+        try {
+          const media = await msg.downloadMedia();
+          if (media) {
+            messageData.media = {
+              mimetype: media.mimetype,
+              filename: media.filename || null,
+              data: media.data,
+            };
+          }
+        } catch (error) {
+          logger.error('message_create media download error', { error: error?.message });
+        }
+      }
+
+      if (rabbitChannel) {
+        rabbitChannel.sendToQueue(INCOMING_QUEUE, Buffer.from(JSON.stringify(messageData)), { persistent: true });
+      } else {
+        await sendToBackendWithRetry(messageData);
+      }
+
+      io.emit('new_message', messageData);
+      logger.info('📤 Outgoing message from mobile captured', { to: contact?.number });
+    } catch (error) {
+      logger.error('Error processing message_create', { error: error?.message });
+    }
+  });
 }
 
 // ==================== Helpers ====================

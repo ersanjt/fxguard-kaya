@@ -314,11 +314,19 @@ async function autoAssignment(conversation, messageContent, customerId, logger) 
 async function processIncomingMessage(messageData, { io, rabbitChannel, redisClient, logger }) {
     try {
         if (messageData.isStatus) return;
-        const { body, contact, from, timestamp, hasMedia, media, chat } = messageData;
+        const { body, contact, from, to, timestamp, hasMedia, media, chat } = messageData;
+        const isFromMe = !!messageData.fromMe;
         const isGroup = !!(chat && chat.isGroup);
-        const rawPhone = isGroup ? (chat?.id || from) : ((contact && contact.number != null) ? contact.number : from);
+
+        // برای پیام‌های ارسالی از موبایل: شماره مشتری در to است نه from
+        let rawPhone;
+        if (isFromMe) {
+            rawPhone = (contact && contact.number != null) ? contact.number : to;
+        } else {
+            rawPhone = isGroup ? (chat?.id || from) : ((contact && contact.number != null) ? contact.number : from);
+        }
         if (rawPhone == null || rawPhone === '') return;
-        const phone = isGroup ? String(rawPhone).trim() : (normalizePhone(rawPhone) || normalizePhone(from));
+        const phone = isGroup ? String(rawPhone).trim() : (normalizePhone(rawPhone) || normalizePhone(isFromMe ? to : from));
         if (!phone) return;
         const rawType = (messageData.type || '').toLowerCase();
         if (rawType === 'reaction' || rawType === 'read_receipt' || rawType === 'delivery' || rawType === 'update') return;
@@ -409,12 +417,16 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         const previewText = body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '';
         let preview = previewText.slice(0, 120);
         if (previewText.length > 120) preview += '…';
-        await conversation.update({
-            lastMessageAt: ts,
-            lastIncomingMessageAt: ts,
-            lastMessagePreview: preview,
-            unreadCount: sequelize.literal('COALESCE("unreadCount", 0) + 1')
-        });
+
+        const convUpdate = { lastMessageAt: ts, lastMessagePreview: preview };
+        if (isFromMe) {
+            convUpdate.lastOutgoingMessageAt = ts;
+            if (!conversation.firstReplyAt) convUpdate.firstReplyAt = ts;
+        } else {
+            convUpdate.lastIncomingMessageAt = ts;
+            convUpdate.unreadCount = sequelize.literal('COALESCE("unreadCount", 0) + 1');
+        }
+        await conversation.update(convUpdate);
 
         const msgMetadata = isGroup && (messageData.author || messageData.authorName)
             ? { senderId: messageData.author || null, senderName: messageData.authorName || (messageData.author && contact && (contact.name || contact.pushname)) || null }
@@ -423,7 +435,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             conversationId: conversation.id,
             customerId: customer.id,
             whatsappId: messageData.id || null,
-            direction: 'incoming',
+            direction: isFromMe ? 'outgoing' : 'incoming',
             content: body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '',
             type: msgType,
             hasMedia: !!(hasMedia && resolvedMedia),
@@ -459,18 +471,18 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             } catch (_) {}
         }
 
-        if (!isGroup && customerCreated) {
+        if (!isGroup && !isFromMe && customerCreated) {
             await sendFirstMessageWelcome(conversation, customer, rabbitChannel, logger);
         }
 
-        if (!isGroup && !conversation.assignedTo) {
+        if (!isGroup && !isFromMe && !conversation.assignedTo) {
             await autoAssignment(conversation, body || '', customer.id, logger);
             await conversation.reload({ include: [{ model: Department, as: 'department', required: false }] });
         }
 
-        const autoResponseSent = isGroup ? false : await checkAutoResponse(conversation, newMessage, redisClient, rabbitChannel, logger);
+        const autoResponseSent = (isGroup || isFromMe) ? false : await checkAutoResponse(conversation, newMessage, redisClient, rabbitChannel, logger);
 
-        if (!isGroup && !autoResponseSent && hasText) {
+        if (!isGroup && !isFromMe && !autoResponseSent && hasText) {
             const { generateAIResponse, isAIAnswerEnabled } = require('./aiResponseService');
             let aiEnabled = isAIAnswerEnabled();
             if (!aiEnabled) logger.info('AI skipped: OPENAI_API_KEY not set or AI_ANSWER_ENABLED=false');
