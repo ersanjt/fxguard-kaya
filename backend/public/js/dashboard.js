@@ -3739,6 +3739,19 @@
             // Global document-level click handler to catch dynamically generated buttons with onclick
             document.addEventListener('click', function(e) {
                 var target = e.target;
+                // کلیک روی اسم فرستنده در گروه → باز کردن مکالمه خصوصی
+                var senderEl = target.closest('.msg-sender-clickable');
+                if (senderEl) {
+                    e.preventDefault(); e.stopPropagation();
+                    var sPhone = senderEl.getAttribute('data-sender-phone');
+                    var sName = senderEl.getAttribute('data-sender-name');
+                    if (sPhone && typeof openPrivateChatFromGroup === 'function') {
+                        openPrivateChatFromGroup(sPhone, sName);
+                    } else {
+                        toast(LANG === 'fa' ? 'شماره این عضو در دسترس نیست' : 'Phone number not available', true);
+                    }
+                    return;
+                }
                 // Conversation quick tab buttons (همه، خوانده‌نشده، بدون پاسخ، ...)
                 var convTabBtn = target.closest('.conv-quick-tabs .conv-tab');
                 if (convTabBtn && typeof setConvQuickTab === 'function') {
@@ -5121,6 +5134,39 @@
             openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone, pic);
             loadConversations();
         }
+
+        // باز کردن مکالمه خصوصی با عضو گروه از طریق شماره تلفن
+        window.openPrivateChatFromGroup = async function(phone, name) {
+            if (!phone) return;
+            // نرمال‌سازی شماره: اگر با 0 شروع شد → 98 اضافه کن
+            var normalized = String(phone).replace(/\D/g, '');
+            if (normalized.startsWith('0')) normalized = '98' + normalized.slice(1);
+            // جستجوی مشتری با این شماره
+            var searchRes = await apiFetch('/api/customers?search=' + encodeURIComponent(normalized) + '&limit=5');
+            var customer = null;
+            if (searchRes.ok && searchRes.data) {
+                var rows = searchRes.data.data || searchRes.data.rows || [];
+                customer = rows.find(function(c) {
+                    var cp = String(c.phone || '').replace(/\D/g, '');
+                    return cp === normalized || cp === phone.replace(/\D/g, '');
+                }) || null;
+            }
+            if (!customer) {
+                // ساخت مشتری جدید
+                var createRes = await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify({ name: name || phone, phone: normalized }) });
+                if (!createRes.ok) { toast((createRes.data && createRes.data.error) || t('err_generic'), true); return; }
+                customer = createRes.data;
+            }
+            // باز کردن مکالمه
+            var convRes = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customer.id }) });
+            if (!convRes.ok) { toast((convRes.data && convRes.data.error) || t('err_generic'), true); return; }
+            var conv = convRes.data;
+            var cPhone = (conv.customer && conv.customer.phone) || normalized;
+            var cPic = (conv.customer && conv.customer.profilePic) || '';
+            openChat(conv.id, name || (conv.customer && conv.customer.name) || cPhone, cPhone, cPic, false);
+            loadConversations();
+            toast(LANG === 'fa' ? 'مکالمه خصوصی باز شد' : 'Private chat opened');
+        };
         async function assignConvToMe() {
             if (!currentConvId || !currentUser) return;
             var assigneeSel = document.getElementById('convDetailAssignee');
@@ -5253,12 +5299,17 @@
                     var sn = (m.metadata && m.metadata.senderName) || null;
                     var sid = (m.metadata && m.metadata.senderId) || null;
                     var displayName = sn;
-                    if (!displayName && sid) {
-                        var raw = String(sid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, '');
-                        displayName = raw ? (raw.replace(/^98/, '0') || raw) : null;
+                    // استخراج شماره تلفن از senderId (مثلاً 989123456789@c.us)
+                    var senderPhone = null;
+                    if (sid) {
+                        var rawPhone = String(sid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, '');
+                        if (rawPhone) senderPhone = rawPhone;
+                        if (!displayName) displayName = rawPhone ? (rawPhone.replace(/^98/, '0') || rawPhone) : null;
                     }
                     if (!displayName) displayName = LANG === 'fa' ? 'عضو گروه' : 'Group member';
-                    senderLabel = '<div class="msg-sender msg-sender-group">' + escapeHtml(displayName) + '</div>';
+                    var senderPhoneAttr = senderPhone ? ' data-sender-phone="' + escapeHtml(senderPhone) + '"' : '';
+                    var senderNameAttr = ' data-sender-name="' + escapeHtml(displayName) + '"';
+                    senderLabel = '<div class="msg-sender msg-sender-group msg-sender-clickable"' + senderPhoneAttr + senderNameAttr + ' title="' + (LANG === 'fa' ? 'کلیک برای پیام خصوصی' : 'Click to send private message') + '">' + escapeHtml(displayName) + '</div>';
                 }
                 var mediaHtml = '';
                 var baseUrl = (API && String(API).length) ? String(API).replace(/\/$/, '') : (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : '');
@@ -5314,7 +5365,15 @@
                 else if (m.content && !(m.hasMedia && !(m.mediaData && m.mediaData.url))) contentHtml = '<div>' + escapeHtml(m.content) + '</div>';
                 var preview = (m.content || '').slice(0, 50) || (m.hasMedia ? '📎' : '');
                 if ((m.content || '').length > 50) preview += '…';
-                var replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeHtml(m.whatsappId) + '" data-preview="' + escapeHtml(preview) + '" onclick="event.stopPropagation();var b=this;setReplyTo(b.getAttribute(\'data-wa-id\'), b.getAttribute(\'data-preview\'))" title="' + (LANG === 'fa' ? 'پاسخ' : 'Reply') + '">↩</button>' : '';
+                // اضافه کردن اسم فرستنده به preview برای گروه
+                var replyPreviewSender = '';
+                if (!isOut && currentConvIsGroup) {
+                    var rSn = (m.metadata && m.metadata.senderName) || null;
+                    var rSid = (m.metadata && m.metadata.senderId) || null;
+                    if (!rSn && rSid) { var rRaw = String(rSid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, ''); rSn = rRaw ? rRaw.replace(/^98/, '0') : null; }
+                    if (rSn) replyPreviewSender = rSn + ': ';
+                }
+                var replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeHtml(m.whatsappId) + '" data-preview="' + escapeHtml(replyPreviewSender + preview) + '" onclick="event.stopPropagation();var b=this;setReplyTo(b.getAttribute(\'data-wa-id\'), b.getAttribute(\'data-preview\'))" title="' + (LANG === 'fa' ? 'پاسخ' : 'Reply') + '">↩</button>' : '';
                 var statusHtml = (isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + (m.status === 'read' ? '✓✓' : m.status === 'delivered' || m.status === 'sent' ? '✓' : m.status === 'failed' ? '!' : '') + '</span>' : '';
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');

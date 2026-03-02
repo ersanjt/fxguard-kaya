@@ -1349,6 +1349,8 @@
         .msg.out .msg-sender { color: rgba(255,255,255,0.95); }
         .msg-sender-group { color: var(--accent); font-size: 0.85rem; font-weight: 600; }
         .msg.in .msg-sender-group { color: var(--accent); margin-bottom: 6px; }
+        .msg-sender-clickable { cursor: pointer; display: inline-block; }
+        .msg-sender-clickable:hover { text-decoration: underline; opacity: 0.85; }
         .chat-header-group-badge { margin-left: 4px; font-size: 1rem; vertical-align: middle; }
         body.ltr .chat-header-group-badge { margin-left: 0; margin-right: 4px; }
         .conv-detail-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
