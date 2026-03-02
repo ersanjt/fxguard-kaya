@@ -810,10 +810,11 @@
         .chat-detail-toggle { width: 36px; height: 36px; padding: 0; border: none; border-radius: var(--radius-sm); background: var(--bg-hover); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
         .chat-detail-toggle:hover { background: var(--accent-soft); color: var(--accent); }
         .chat-detail-toggle.active { background: var(--accent-soft); color: var(--accent); }
-        .chat-messages { flex: 1; min-height: 120px; overflow-y: auto; overflow-x: hidden; padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(16,185,129,0.03) 0%, transparent 100%); -webkit-overflow-scrolling: touch; overscroll-behavior: contain; }
-        .chat-messages .empty { padding: 40px 20px; color: var(--text-muted); }
+        .chat-messages { flex: 1; min-height: 120px; overflow-y: auto; overflow-x: hidden; padding: 20px; padding-bottom: max(20px, env(safe-area-inset-bottom)); background: linear-gradient(180deg, rgba(16,185,129,0.03) 0%, transparent 100%); -webkit-overflow-scrolling: touch; overscroll-behavior: contain; display: flex; flex-direction: column; }
+        .chat-messages .empty { padding: 40px 20px; color: var(--text-muted); align-self: center; text-align: center; }
+        .chat-messages .load-older-btn { align-self: center; width: 100%; }
         .chat-messages .empty .empty-icon { font-size: 3rem; opacity: 0.4; }
-        .msg { max-width: 75%; min-width: 0; padding: 10px 14px; margin: 6px 0; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); line-height: 1.5; word-wrap: break-word; overflow-wrap: break-word; }
+        .msg { max-width: 75%; min-width: 60px; width: fit-content; padding: 10px 14px; margin: 6px 0; border-radius: 16px; box-shadow: 0 1px 2px rgba(0,0,0,0.08); line-height: 1.5; word-wrap: break-word; overflow-wrap: break-word; }
         .msg.in { background: var(--bg-card); border: 1px solid var(--border); margin-right: auto; margin-left: 0; border-bottom-right-radius: 4px; }
         .msg.out { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); border: none; color: #fff; margin-left: auto; margin-right: 0; border-bottom-left-radius: 4px; }
         .msg.out .time { color: rgba(255,255,255,0.85); }
