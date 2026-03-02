@@ -881,7 +881,7 @@
             if (window.hasNewInternalChat) window.navBadgeCounts['internal-chat'] = 1;
             var notifyBadge = document.getElementById('headerNotifyBadge');
             var notifyBadgeMobile = document.getElementById('headerNotifyBadgeMobile');
-            var n = (window.navBadgeCounts.announcements || 0) + (window.navBadgeCounts.tickets || 0);
+            var n = (window.navBadgeCounts.announcements || 0);
             if (notifyBadge) { notifyBadge.style.display = n > 0 ? '' : 'none'; notifyBadge.textContent = n > 99 ? '99+' : String(n); }
             if (notifyBadgeMobile) { notifyBadgeMobile.style.display = n > 0 ? '' : 'none'; notifyBadgeMobile.textContent = n > 99 ? '99+' : String(n); }
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
@@ -10233,6 +10233,11 @@
                             closeNotifyDropdown();
                             if (typeof markAnnouncementReadAndShow === 'function') markAnnouncementReadAndShow(id);
                             showPage('announcements');
+                            // کاهش فوری badge
+                            if (window.navBadgeCounts.announcements > 0) {
+                                window.navBadgeCounts.announcements = Math.max(0, (window.navBadgeCounts.announcements || 1) - 1);
+                                if (typeof updateNavBadges === 'function') updateNavBadges();
+                            }
                         } else if (action === 'open-ticket' && id) {
                             closeNotifyDropdown();
                             showPage('tickets');
