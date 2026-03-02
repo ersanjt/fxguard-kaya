@@ -2324,8 +2324,8 @@
         .tpl-empty p { margin: 0; font-size: 0.88rem; color: var(--text-muted); max-width: 280px; line-height: 1.6; }
 
         /* مودال تمپلیت */
-        #fileTemplateModal.modal-overlay, #templateModal.modal-overlay { align-items: flex-start; overflow-y: auto; padding: 24px; }
-        .tpl-modal-box { max-width: min(600px, calc(100vw - 32px)) !important; width: 100%; padding: 0; overflow: hidden; max-height: none; display: flex; flex-direction: column; margin: auto; }
+        #fileTemplateModal.modal-overlay, #templateModal.modal-overlay { align-items: center; overflow-y: auto; padding: 24px; }
+        .tpl-modal-box { max-width: min(560px, calc(100vw - 32px)) !important; width: 100%; padding: 0; overflow: hidden; max-height: min(90vh, 700px); display: flex; flex-direction: column; margin: auto; }
         .tpl-modal-header { display: flex; align-items: flex-start; gap: 14px; padding: 20px 24px; background: linear-gradient(135deg, var(--accent-soft) 0%, rgba(16,185,129,0.04) 100%); border-bottom: 1px solid var(--border); flex-shrink: 0; }
         .tpl-modal-header-icon { width: 46px; height: 46px; min-width: 46px; border-radius: 12px; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
         .tpl-modal-header-text { flex: 1; min-width: 0; }

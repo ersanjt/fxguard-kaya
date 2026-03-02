@@ -9311,16 +9311,16 @@
             document.getElementById('templateModalContent').value = '';
             document.getElementById('templateModalActive').checked = true;
             if (id) {
-                var t = chatTemplatesCache.find(function(x) { return x.id === id; });
-                if (!t) {
+                var tplData = chatTemplatesCache.find(function(x) { return x.id === id; });
+                if (!tplData) {
                     var res = await apiFetch('/api/message-templates/' + id);
-                    if (res.ok && res.data) t = res.data;
+                    if (res.ok && res.data) tplData = res.data;
                 }
-                if (t) {
-                    document.getElementById('templateModalName').value = t.name || '';
-                    document.getElementById('templateModalCategory').value = t.category || '';
-                    document.getElementById('templateModalContent').value = t.content || '';
-                    document.getElementById('templateModalActive').checked = t.isActive !== false;
+                if (tplData) {
+                    document.getElementById('templateModalName').value = tplData.name || '';
+                    document.getElementById('templateModalCategory').value = tplData.category || '';
+                    document.getElementById('templateModalContent').value = tplData.content || '';
+                    document.getElementById('templateModalActive').checked = tplData.isActive !== false;
                 }
             }
             document.getElementById('templateModal').style.display = 'flex';
@@ -9492,6 +9492,13 @@
         window.deleteFileTemplate = deleteFileTemplate;
         window.loadMessageTemplates = loadMessageTemplates;
         window.loadFileTemplates = loadFileTemplates;
+        // بستن مودال با کلیک روی overlay
+        (function() {
+            var tm = document.getElementById('templateModal');
+            var fm = document.getElementById('fileTemplateModal');
+            if (tm) tm.addEventListener('click', function(e) { if (e.target === tm) closeTemplateModal(); });
+            if (fm) fm.addEventListener('click', function(e) { if (e.target === fm) closeFileTemplateModal(); });
+        })();
         function escapeForDataAttr(str) {
             if (!str) return '';
             return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
