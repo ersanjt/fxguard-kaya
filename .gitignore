@@ -44,3 +44,15 @@ ios-app/build/
 ios-app/DerivedData/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
+
+# local backups / temp
+*.bak.*
+*.prebind.*
+*.trace
+
+# env backups
+*.env.bak.*
+
+# runtime uploads
+gateway/src/uploads/
+

@@ -20,7 +20,13 @@ function run() {
     if (!fs.existsSync(backupDir)) fs.mkdirSync(backupDir, { recursive: true });
     const name = `db_${new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)}.sqlite`;
     const dest = path.join(backupDir, name);
-    fs.copyFileSync(dbPath, dest);
+    const { execSync } = require("child_process");
+    execSync(`sqlite3 "${dbPath}" "PRAGMA wal_checkpoint(FULL); VACUUM INTO '${dest}';"`, { stdio: 'inherit' });
+
+    // verify backup created
+    if (!fs.existsSync(dest)) throw new Error("Backup file not created: " + dest);
+    const st = fs.statSync(dest);
+    if (st.size < 1024 * 1024) throw new Error("Backup file too small: " + st.size);
     console.log('Backup saved:', dest);
 
     const files = fs.readdirSync(backupDir)
