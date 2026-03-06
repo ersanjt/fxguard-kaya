@@ -72,8 +72,9 @@ const SYNONYMS = {
     'رسید': ['رسید', 'receipt', 'رسید حواله', 'receipt number'],
 
     // اصطلاحات عام
-    'سلام': ['سلام', 'درود', 'hi', 'hello'],
-    'نیاز': ['نیاز', 'نیاز دارم', 'میخوام', 'می‌خوام', 'خواستم', 'میخواستم']
+    'سلام': ['سلام', 'درود', 'hi', 'hello', 'merhaba'],
+    'نیاز': ['نیاز', 'نیاز دارم', 'میخوام', 'می‌خوام', 'خواستم', 'میخواستم', 'ihtiyacim', 'ihtiyacım', 'istiyorum', 'almak', 'göndermek', 'havale', 'havale yapmak'],
+    'خرید': ['خرید', 'buy', 'almak', 'alacağım', 'almak istiyorum']
 };
 
 /**

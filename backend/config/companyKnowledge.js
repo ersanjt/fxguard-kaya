@@ -34,6 +34,13 @@ const defaultKnowledge = {
     ],
     procedures: {
         idForReceive: 'برای دریافت پول (نقدی یا حواله) در دبی یا ترکیه، حتماً باید کارت شناسایی (ID) شخصی که از او پول درخواست می‌شود ارسال گردد.'
+    },
+    commonScenarios: {
+        usdTurkey: 'دلار در ترکیه: دفاتر استانبول، مجدی‌کوی. تحویل نقدی یا حواله. ID لازم.',
+        usdDubai: 'دلار در دبی: چند دفتر. تحویل نقدی یا حواله. ID لازم.',
+        transfer: 'حواله: وایر، سوئیفت. نرخ و کارمزد متغیر. کارشناس جزئیات می‌دهد.',
+        addressIstanbul: 'آدرس استانبول: لینک نقشه در اطلاعات دفاتر. دفتر اصلی صرافی.',
+        documents: 'مدارک: کارت شناسایی (ID) یا پاسپورت شخص گیرنده/فرستنده.'
     }
 };
 
@@ -66,6 +73,12 @@ function formatKnowledgeForPrompt(knowledge) {
     if (knowledge.offices.other?.length) parts.push(`  - سایر: ${knowledge.offices.other.join('، ')}`);
     if (knowledge.rules?.length) parts.push('قوانین: ' + knowledge.rules.join('؛ '));
     if (knowledge.procedures?.idForReceive) parts.push('پروسه مهم: ' + knowledge.procedures.idForReceive);
+    if (knowledge.commonScenarios && typeof knowledge.commonScenarios === 'object') {
+        parts.push('سناریوهای رایج (برای راهنمایی):');
+        for (const [key, val] of Object.entries(knowledge.commonScenarios)) {
+            if (val) parts.push(`  - ${key}: ${val}`);
+        }
+    }
     return parts.join('\n');
 }
 

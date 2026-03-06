@@ -14,7 +14,7 @@ const AI_TEMPERATURE = parseFloat(process.env.AI_TEMPERATURE) || 0.2;
 const MAX_RESPONSE_CHARS = 1200;
 
 // پیام‌های کوتاه که نیاز به پاسخ AI ندارند
-const ACK_PATTERNS = /^(مرسی|ممنون|ممنونم|متشکرم|متشکر|دستتون درد نکنه|مچکرم|اوکی|ok|okay|عالیه|عالی|باشه|باشه ممنون|خوبه|خوب است|ممنون از شما|سپاسگزارم|مرحبا|چشم|ارادت|teşekkürler|teşekkür|sağol|thanks|thank you|thx|got it|okey|tamam|evet|hayır|yes|no)$/i;
+const ACK_PATTERNS = /^(مرسی|ممنون|ممنونم|متشکرم|متشکر|دستتون درد نکنه|مچکرم|اوکی|ok|okay|عالیه|عالی|باشه|باشه ممنون|خوبه|خوب است|ممنون از شما|سپاسگزارم|مرحبا|چشم|ارادت|اعم|درسته|درست|teşekkürler|teşekkür|sağol|thanks|thank you|thx|got it|okey|tamam|evet|hayır|yes|no|شکرا|شكراً|ماشاءالله)$/i;
 
 // حداکثر طول ورودی برای جلوگیری از اسپم/کپی‌پیست
 const MAX_INPUT_CHARS = 800;
@@ -69,13 +69,26 @@ const FEW_SHOT_EXAMPLES = `
 مشتری: سلام، میخوام ۲۰۰۰ دلار بفرستم ترکیه
 پاسخ: برای حواله ۲۰۰۰ دلار به ترکیه، کارشناس ما نرخ، کارمزد و زمان واریز را در همین چت ارسال می‌کند. لطفاً کمی صبر کنید.
 
+مشتری: چطور میتونم دلار بگیرم؟
+پاسخ: برای خرید دلار می‌توانید نقدی یا حواله در ترکیه و دبی استفاده کنید. کارشناس ما مبلغ، محل تحویل و مدارک لازم را در همین چت می‌دهد.
+
+مشتری: I need to send money to Turkey
+پاسخ: For transfers to Turkey, our specialist will send you the rate, fees and process in this chat. Where will you send from — UAE, Iran, or elsewhere?
+
+مشتری: عايز اعرف سعر الدولار
+پاسخ: السعر يتغير. خبيرنا سيرسل لك السعر الحالي في هذه المحادثة قريباً.
+
+مشتری: فقط دلار
+پاسخ: برای خرید دلار، بفرمایید ترکیه یا امارات؟ نقدی یا حواله؟ کارشناس جزئیات را در همین چت ارسال می‌کند.
+
 نمونه‌های غلط (هرگز این‌طور ننویس):
 - «تماس بگیرید» یا «زنگ بزنید» یا «call us» — ممنوع. همیشه بگو: کارشناس در همین چت پاسخ می‌دهد.
 - [شماره تماس] یا [لینک] یا هر placeholder — ممنوع. فقط متن نهایی و واقعی بنویس.
 - پاسخ خیلی کلی و بی‌محتوا (فقط «کارشناس به زودی پاسخ می‌دهد» بدون هیچ راهنمایی) — ممنوع. حتماً نکته‌ای مفید بده.`;
 
-function buildSystemPrompt(deptInfo, companyKnowledgeText) {
-    const langRule = `- زبان پاسخ: همیشه با زبان مشتری پاسخ بده. فارسی→فارسی، ترکی→ترکی، انگلیسی→انگلیسی، عربی→عربی. تشخیص زبان از کلمات: ihtiyacim/istiyorum/almak/var → ترکی؛ need/want/USD → انگلیسی؛ میخوام/نیاز/دارم → فارسی. هرگز زبان را عوض نکن.`;
+function buildSystemPrompt(deptInfo, companyKnowledgeText, options = {}) {
+    const { customerName } = options;
+    const langRule = `- زبان پاسخ: همیشه با زبان مشتری پاسخ بده. فارسی→فارسی، ترکی→ترکی، انگلیسی→انگلیسی، عربی→عربی. تشخیص: ihtiyacim/istiyorum/almak/göndermek → ترکی؛ need/want/send → انگلیسی؛ میخوام/نیاز/دارم → فارسی؛ عايز/سعر/درهم → عربی. اگر پیام کوتاه (سلام، hi) ولی تاریخچه قبلی مشخص است، به زبان همان تاریخچه پاسخ بده.`;
     const inSystemRule = `- مهم: همه چیز در همین چت است. هرگز نگو «تماس بگیرید» یا «زنگ بزنید». بگو: «یک کارشناس به زودی در همین چت پاسخ خواهد داد».`;
 
     const base = `شما دستیار حرفه‌ای صرافی کایا هستید. نقش شما: راهنمایی و کمک به مشتری، نه فقط گفتن «کارشناس پاسخ می‌دهد».
@@ -97,9 +110,14 @@ ${inSystemRule}
 5. در پاسخ هیچ برچسب ([پشتیبانی] و غیره) و هیچ placeholder ([شماره تماس]، [لینک]) ننویس. فقط متن نهایی و خالص.
 6. اگر سوال درباره آدرس، ID، یا رویه است، از اطلاعات شرکت پاسخ بده.
 7. خروجی: فقط متن پاسخ. بدون عنوان، بدون شماره‌گذاری، بدون markdown.
+8. اگر مشتری پیام کوتاه فرستاد (سلام، hi، merhaba) ولی در تاریخچه درخواست مشخص داشت، همان درخواست را خلاصه کن و راهنمایی بده.
+9. درخواست مبهم (فقط «دلار»، «پول»): بپرس ترکیه یا امارات؟ نقدی یا حواله؟ سپس بگو کارشناس جزئیات می‌دهد.
 ${FEW_SHOT_EXAMPLES}`;
 
     let full = base;
+    if (customerName && String(customerName).trim() && customerName !== 'مشتری') {
+        full += `\n\n[اختیاری: نام مشتری در چت: ${String(customerName).trim()}. در صورت مناسب بودن می‌توانی با نام خطاب کنی.]`;
+    }
     if (companyKnowledgeText) full += `\n\nاطلاعات رسمی شرکت (فقط از این استفاده کن):\n${companyKnowledgeText}`;
     if (deptInfo) full += `\n\n${deptInfo}`;
     return full;
@@ -136,10 +154,13 @@ function getSafeFallback(langHint) {
     const fallbacks = {
         fa: 'متوجه شدم. یک کارشناس به زودی در همین چت پاسخ خواهد داد.',
         en: 'Understood. A specialist will respond shortly in this chat.',
-        tr: 'Anlaşıldı. Uzmanımız kısa süre içinde bu sohbette yanıt verecektir.'
+        tr: 'Anlaşıldı. Uzmanımız kısa süre içinde bu sohbette yanıt verecektir.',
+        ar: 'فهمت. سيررد عليك خبيرنا قريباً في هذه المحادثة.'
     };
-    if (/[\u0600-\u06FF]/.test(langHint || '')) return fallbacks.fa;
-    if (/[a-zA-Z]/.test(langHint || '') && /[ğüşıöçĞÜŞİÖÇ]/.test(langHint || '')) return fallbacks.tr;
+    const h = langHint || '';
+    if (/عايز|سعر|درهم|شكراً|محادثة/i.test(h)) return fallbacks.ar;
+    if (/[ğüşıöçĞÜŞİÖÇ]/.test(h) || /ihtiyacim|istiyorum|almak|göndermek/.test(h)) return fallbacks.tr;
+    if (/[\u0600-\u06FF]/.test(h)) return fallbacks.fa;
     return fallbacks.en;
 }
 
@@ -187,7 +208,8 @@ async function generateAIResponse({ conversation, customer, incomingMessage, mes
     const companyKnowledge = getCompanyKnowledge();
     const companyText = formatKnowledgeForPrompt(companyKnowledge);
     const deptInfo = department ? `دپارتمان فعلی: ${department.name}. ${(department.description || '').slice(0, 150)}` : '';
-    const systemPrompt = buildSystemPrompt(deptInfo, companyText);
+    const customerName = (customer && customer.name && String(customer.name).trim()) ? customer.name : null;
+    const systemPrompt = buildSystemPrompt(deptInfo, companyText, { customerName });
     const chatMessages = buildMessages((customer && customer.name) || 'مشتری', messageHistory, text);
 
     const payload = {
