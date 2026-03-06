@@ -31,6 +31,7 @@
             form_title: 'Contact Us', form_sub: 'Questions, custom quote, or demo request? Fill the form or WhatsApp us.',
             form_name: 'Name *', form_email: 'Email *', form_phone: 'Phone / WhatsApp', form_message: 'Message *', form_submit: 'Send Message', form_success: 'Thank you! We will contact you soon.', form_wa: 'Or contact via WhatsApp +90 501 067 6486',
             cta_title: 'Ready to Get Started?', cta_desc: 'Choose a plan, request a demo, or ask for a custom quote. We\'re here to help.', cta_plans: 'View Plans', cta_wa: 'WhatsApp', cta_form: 'Contact Form',
+            trust_demo: 'Free demo', trust_24h: '24h response', trust_secure: 'Secure & reliable',
             footer_contact: 'Contact', footer_support: 'Support'
         },
         fa: {
@@ -63,6 +64,7 @@
             form_title: 'تماس با ما', form_sub: 'سؤال، پیشنهاد سفارشی یا درخواست دمو؟ فرم را پر کنید یا واتساپ بزنید.',
             form_name: 'نام *', form_email: 'ایمیل *', form_phone: 'تلفن / واتساپ', form_message: 'پیام *', form_submit: 'ارسال', form_success: 'متشکریم! به زودی با شما تماس می‌گیریم.', form_wa: 'یا واتساپ: ۰۰۹۰۵۰۱۰۶۷۶۴۸۶',
             cta_title: 'آماده شروع هستید؟', cta_desc: 'پلن انتخاب کنید، دمو بخواهید یا پیشنهاد سفارشی. ما اینجا هستیم.', cta_plans: 'پلن‌ها', cta_wa: 'واتساپ', cta_form: 'فرم تماس',
+            trust_demo: 'دمو رایگان', trust_24h: 'پاسخ ۲۴ ساعته', trust_secure: 'امن و قابل اعتماد',
             footer_contact: 'تماس', footer_support: 'پشتیبانی'
         },
         tr: {
@@ -95,6 +97,7 @@
             form_title: 'Bize Ulaşın', form_sub: 'Sorular, özel teklif veya demo isteği? Formu doldurun veya WhatsApp yazın.',
             form_name: 'Ad *', form_email: 'E-posta *', form_phone: 'Telefon / WhatsApp', form_message: 'Mesaj *', form_submit: 'Gönder', form_success: 'Teşekkürler! Yakında sizinle iletişime geçeceğiz.', form_wa: 'Veya WhatsApp: +90 501 067 6486',
             cta_title: 'Başlamaya Hazır mısınız?', cta_desc: 'Plan seçin, demo isteyin veya özel teklif alın. Yardımcı olmaya hazırız.', cta_plans: 'Planlar', cta_wa: 'WhatsApp', cta_form: 'İletişim Formu',
+            trust_demo: 'Ücretsiz demo', trust_24h: '24 saat yanıt', trust_secure: 'Güvenli ve güvenilir',
             footer_contact: 'İletişim', footer_support: 'Destek'
         }
     };
@@ -133,6 +136,19 @@
     });
 
     detectAndSetLang();
+
+    /* Scroll reveal */
+    var revealEls = document.querySelectorAll('.reveal');
+    if (revealEls.length && 'IntersectionObserver' in window) {
+        var revealObs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) entry.target.classList.add('visible');
+            });
+        }, { rootMargin: '0px 0px -60px 0px', threshold: 0.1 });
+        revealEls.forEach(function(el) { revealObs.observe(el); });
+    } else {
+        revealEls.forEach(function(el) { el.classList.add('visible'); });
+    }
 
     var url = (typeof PANEL_URL !== 'undefined') ? PANEL_URL : 'https://app.fxguard.io';
     document.querySelectorAll('#btnPanel, #btnPanelMob').forEach(function(btn){ if(btn) btn.href = url; });
