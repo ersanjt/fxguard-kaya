@@ -111,6 +111,7 @@ async function connectDatabases(logger) {
                     ['unansweredAlertSentAt', { type: DataTypes.DATE, allowNull: true }],
                     ['escalatedAt',           { type: DataTypes.DATE, allowNull: true }],
                     ['lastIncomingMessageAt', { type: DataTypes.DATE, allowNull: true }],
+                    ['lastOutgoingIsAutoReply', { type: DataTypes.BOOLEAN, allowNull: true }],
                 ];
                 for (const [col, def] of convCols) {
                     if (!convDesc[col]) {

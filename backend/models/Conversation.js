@@ -91,6 +91,12 @@ const ConversationModel = (sequelize) => {
         escalatedAt: {
             type: DataTypes.DATE,
             comment: 'زمان آخرین escalation به پشتیبانی'
+        },
+        lastOutgoingIsAutoReply: {
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+            defaultValue: null,
+            comment: 'آیا آخرین پیام خروجی از AI/خودکار بوده — برای نمایش AI assistant در پنل'
         }
     }, {
         timestamps: true,

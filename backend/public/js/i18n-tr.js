@@ -625,6 +625,7 @@ window.__I18N_TR = {
     whatsapp_welcome_title: 'İlk mesaja otomatik yanıt',
     whatsapp_welcome_hint: 'İlk kez yazanlara bu metin otomatik gider. Boş = kapalı',
     whatsapp_welcome_enabled: 'Açık',
+    ai_assistant: 'AI asistans',
     whatsapp_ai_title: 'Yapay Zeka Otomatik Yanıt (OpenAI)',
     whatsapp_ai_hint: 'Anahtar kelime kuralı eşleşmezse AI otomatik yanıt verir. Departman yönlendirmesi de AI kullanır. .env dosyasında OPENAI_API_KEY gerekir',
     whatsapp_ai_enabled: 'Açık',

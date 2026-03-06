@@ -116,7 +116,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 }
 
                 const now = new Date();
-                const upd = { lastMessageAt: now, lastOutgoingMessageAt: now, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };
+                const upd = { lastMessageAt: now, lastOutgoingMessageAt: now, lastOutgoingIsAutoReply: false, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };
                 if (!conversation.firstReplyAt) upd.firstReplyAt = now;
                 await conversation.update(upd);
 

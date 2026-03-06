@@ -650,6 +650,7 @@ window.__I18N_EN = {
     whatsapp_welcome_title: 'Auto-reply to first message',
     whatsapp_welcome_hint: 'When someone messages you for the first time, this text is sent automatically. Empty = disabled',
     whatsapp_welcome_enabled: 'Enabled',
+    ai_assistant: 'AI assistant',
     whatsapp_ai_title: 'AI Auto-Reply (OpenAI)',
     whatsapp_ai_hint: 'When no keyword rule matches, AI replies to customer messages. Department routing also uses AI. Requires OPENAI_API_KEY in .env',
     whatsapp_ai_enabled: 'Enabled',

@@ -670,6 +670,7 @@ window.__I18N_FA = {
     whatsapp_connection_result: 'اتصال',
     whatsapp_welcome_title: 'پاسخ خودکار به اولین پیام',
     whatsapp_welcome_hint: 'هر کسی که برای اولین بار به شما پیام می‌دهد، این متن به‌صورت خودکار برایش ارسال می‌شود. خالی = غیرفعال',
+    ai_assistant: 'دستیار هوش مصنوعی',
     whatsapp_ai_title: 'پاسخ خودکار هوش مصنوعی (OpenAI)',
     whatsapp_ai_hint: 'وقتی هیچ قانون پاسخ خودکار (کلمات کلیدی) جواب ندهد، هوش مصنوعی به پیام مشتری پاسخ می‌دهد. مسیریابی به دپارتمان مناسب هم با AI انجام می‌شود. نیاز به OPENAI_API_KEY در .env',
     whatsapp_ai_enabled: 'فعال',

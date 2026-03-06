@@ -39,7 +39,9 @@ ${inSystemRule}
 - هرگز اطلاعات حساس (رمز، شماره کارت، احراز هویت) ندهید.
 - نرخ ارز/زمان واریز: پاسخ کلی؛ برای جزئیات بگو کارشناس در همین چت پاسخ خواهد داد.
 - فقط از اطلاعات رسمی شرکت استفاده کن؛ حدس نزن.
-- لحن گرم و حرفه‌ای. از ایموجی به‌اندازه استفاده کنید.`;
+- لحن گرم و حرفه‌ای. از ایموجی به‌اندازه استفاده کنید.
+- هرگز در پاسخ [پشتیبانی]، [مشتری]، [Support] یا برچسب مشابه ننویس. فقط متن پاسخ را بفرست.
+- هرگز [شماره تماس] یا +98 [شماره تماس] یا placeholder ننویس.`;
 
     let full = base;
     if (companyKnowledgeText) full += `\n\nاطلاعات رسمی شرکت:\n${companyKnowledgeText}`;
@@ -122,7 +124,9 @@ async function generateAIResponse({ conversation, customer, incomingMessage, mes
         const content = response.data?.choices?.[0]?.message?.content?.trim();
         if (!content) return null;
 
-        const cleaned = content.replace(/^["']|["']$/g, '').trim();
+        let cleaned = content.replace(/^["']|["']$/g, '').trim();
+        cleaned = cleaned.replace(/^\[پشتیبانی\]\s*/i, '').replace(/^\[Support\]\s*/i, '').replace(/^\[مشتری\]\s*/i, '');
+        cleaned = cleaned.replace(/\[شماره تماس\]/g, '').replace(/\+\s*98\s*\[شماره تماس\]/g, '').trim();
         return cleaned.slice(0, MAX_RESPONSE_CHARS) || null;
     } catch (err) {
         if (process.env.NODE_ENV !== 'test') {

@@ -204,7 +204,7 @@ async function checkAutoResponse(conversation, message, redisClient, rabbitChann
     }
 }
 
-async function sendAutoReply(conversation, responseText, rabbitChannel, logger) {
+async function sendAutoReply(conversation, responseText, rabbitChannel, logger, options = {}) {
     try {
         const customer = await Customer.findByPk(conversation.customerId);
         if (!customer) {
@@ -212,6 +212,8 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger) 
             return;
         }
         const toPhone = getSendTarget(customer.phone) || customer.phone;
+        const isAI = !!options.isAI;
+        const customerMessage = isAI ? 'AI KAYA: ' + responseText : responseText;
         const autoMsg = await Message.create({
             conversationId: conversation.id,
             customerId: customer.id,
@@ -224,11 +226,11 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger) 
         });
         if (rabbitChannel) {
             rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
-                to: toPhone, message: responseText, conversationId: conversation.id, messageId: autoMsg.id
+                to: toPhone, message: customerMessage, conversationId: conversation.id, messageId: autoMsg.id
             })), { persistent: true });
         } else {
             try {
-                await gatewayPost('/api/send-message', { to: toPhone, message: responseText }, { timeout: 10000 });
+                await gatewayPost('/api/send-message', { to: toPhone, message: customerMessage }, { timeout: 10000 });
                 await autoMsg.update({ status: 'sent' });
             } catch (err) {
                 logger.error('Gateway send error', { error: err.message });
@@ -237,7 +239,7 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger) 
         }
         const preview = (responseText || '').slice(0, 120);
         const now = new Date();
-        const upd = { lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview + ((responseText || '').length > 120 ? '…' : ''), unansweredAlertSentAt: null, escalatedAt: null };
+        const upd = { lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview + ((responseText || '').length > 120 ? '…' : ''), unansweredAlertSentAt: null, escalatedAt: null, lastOutgoingIsAutoReply: true };
         if (!conversation.firstReplyAt) upd.firstReplyAt = now;
         await conversation.update(upd);
         logger.info(`🤖 Auto-reply sent to ${customer.phone}`);
@@ -513,7 +515,21 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 logger.warn('WhatsappConfig aiAnswerEnabled check failed:', e?.message);
             }
             if (aiEnabled) {
-                // Reuse already-loaded conversation (with department) instead of re-querying
+                const lastAutoReply = await Message.findOne({
+                    where: { conversationId: conversation.id, direction: 'outgoing', isAutoReply: true },
+                    order: [['timestamp', 'DESC']],
+                    attributes: ['timestamp']
+                });
+                const AI_THROTTLE_MIN = 2;
+                if (lastAutoReply && lastAutoReply.timestamp) {
+                    const minsSince = (Date.now() - new Date(lastAutoReply.timestamp).getTime()) / 60000;
+                    if (minsSince < AI_THROTTLE_MIN) {
+                        aiEnabled = false;
+                        logger.info('AI skipped: throttle — auto-reply sent ' + minsSince.toFixed(1) + ' min ago');
+                    }
+                }
+            }
+            if (aiEnabled) {
                 const convWithDept = conversation.department !== undefined ? conversation : await Conversation.findByPk(conversation.id, {
                     include: [{ model: Department, as: 'department', required: false }]
                 });
@@ -531,7 +547,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                     department: convWithDept?.department || null
                 });
                 if (aiReply) {
-                    await sendAutoReply(conversation, aiReply, rabbitChannel, logger);
+                    await sendAutoReply(conversation, aiReply, rabbitChannel, logger, { isAI: true });
                     logger.info(`🤖 AI reply sent to ${customer.phone}`);
                 } else {
                     logger.warn('AI returned no reply', { phone: customer.phone, incomingPreview: (body || '').slice(0, 50) });

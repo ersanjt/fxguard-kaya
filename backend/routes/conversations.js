@@ -597,7 +597,7 @@ router.post('/:id/send', async (req, res) => {
         var preview = (content || '').slice(0, 120) || (hasMedia ? '📎 فایل' : '');
         if ((content || '').length > 120) preview += '…';
         const now = new Date();
-        const updateData = { lastMessageAt: now, lastOutgoingMessageAt: now, lastMessagePreview: preview, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };
+        const updateData = { lastMessageAt: now, lastOutgoingMessageAt: now, lastOutgoingIsAutoReply: false, lastMessagePreview: preview, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };
         if (!conversation.firstReplyAt) updateData.firstReplyAt = now;
         if (!conversation.branchId && req.user.branchId) updateData.branchId = req.user.branchId;
         await conversation.update(updateData);
