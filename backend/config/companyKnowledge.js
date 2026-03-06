@@ -26,12 +26,15 @@ const defaultKnowledge = {
         dubai: ['چند دفتر'],
         other: ['نخجوان', 'آذربایجان', 'چین']
     },
-    inSystemOnly: true, // همه تعاملات داخل همین چت/سیستم انجام می‌شود؛ مشتری نیازی به تماس تلفنی ندارد
+    inSystemOnly: true,
     rules: [
         'هرگز به مشتری نگو که تماس بگیرد یا زنگ بزند',
         'همه چیز داخل همین چت انجام می‌شود؛ کارشناس در همین مکالمه پاسخ خواهد داد',
         'فقط اطلاعات دقیق این بانک را بده؛ حدس نزن'
-    ]
+    ],
+    procedures: {
+        idForReceive: 'برای دریافت پول (نقدی یا حواله) در دبی یا ترکیه، حتماً باید کارت شناسایی (ID) شخصی که از او پول درخواست می‌شود ارسال گردد.'
+    }
 };
 
 function getCompanyKnowledge() {
@@ -62,6 +65,7 @@ function formatKnowledgeForPrompt(knowledge) {
     if (knowledge.offices.dubai?.length) parts.push(`  - دبی: ${Array.isArray(knowledge.offices.dubai) ? knowledge.offices.dubai.join('، ') : knowledge.offices.dubai}`);
     if (knowledge.offices.other?.length) parts.push(`  - سایر: ${knowledge.offices.other.join('، ')}`);
     if (knowledge.rules?.length) parts.push('قوانین: ' + knowledge.rules.join('؛ '));
+    if (knowledge.procedures?.idForReceive) parts.push('پروسه مهم: ' + knowledge.procedures.idForReceive);
     return parts.join('\n');
 }
 

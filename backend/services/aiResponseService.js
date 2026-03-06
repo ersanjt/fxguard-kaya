@@ -8,9 +8,9 @@ const { getCompanyKnowledge, formatKnowledgeForPrompt } = require('../config/com
  */
 
 const MAX_HISTORY_MESSAGES = 12;
-const MAX_RESPONSE_TOKENS = parseInt(process.env.AI_MAX_RESPONSE_TOKENS, 10) || 500;
+const MAX_RESPONSE_TOKENS = parseInt(process.env.AI_MAX_RESPONSE_TOKENS, 10) || 600;
 const REQUEST_TIMEOUT_MS = parseInt(process.env.AI_REQUEST_TIMEOUT_MS, 10) || 20000;
-const AI_TEMPERATURE = parseFloat(process.env.AI_TEMPERATURE) || 0.4;
+const AI_TEMPERATURE = parseFloat(process.env.AI_TEMPERATURE) || 0.3;
 const MAX_RESPONSE_CHARS = 1200;
 
 // پیام‌های کوتاه که نیاز به پاسخ AI ندارند
@@ -25,26 +25,40 @@ function shouldSkipAIResponse(text) {
     return ACK_PATTERNS.test(t.replace(/\s+/g, ' '));
 }
 
-function buildSystemPrompt(deptInfo, companyKnowledgeText) {
-    const langRule = `- **زبان پاسخ:** همیشه با همان زبانی که مشتری پیام داده پاسخ بده: فارسی → فارسی، ترکی → ترکی، انگلیسی → انگلیسی، عربی → عربی. هرگز زبان را تغییر نده.`;
-    const inSystemRule = `- **مهم:** همه تعاملات داخل همین چت انجام می‌شود. هرگز به مشتری نگو تماس بگیرد یا زنگ بزند. بگو: «یک کارشناس به زودی در همین چت پاسخ خواهد داد» یا «لطفاً در همین مکالمه منتظر بمانید».`;
+const FEW_SHOT_EXAMPLES = `
+نمونه‌های پاسخ درست:
+مشتری: آدرس دفتر ترکیه؟
+پاسخ: آدرس دفتر استانبول: [لینک از اطلاعات شرکت]. برای جزئیات بیشتر یک کارشناس به زودی در همین چت پاسخ خواهد داد.
 
-    const base = `شما دستیار پشتیبانی حرفه‌ای یک صرافی/شرکت حواله هستید. وظیفه شما: فهمیدن نیاز مشتری، پاسخ کوتاه و مفید، و هدایت صحیح به دپارتمان/کارشناس مناسب در همین سیستم.
+مشتری: برای دریافت دلار در دبی چه مدارکی لازمه؟
+پاسخ: برای دریافت پول (نقدی یا حواله) در دبی یا ترکیه، حتماً کارت شناسایی (ID) شخصی که از او پول درخواست می‌شود را ارسال کنید. یک کارشناس به زودی جزئیات بیشتر را در همین چت می‌دهد.
+
+مشتری: نرخ دلار چنده؟
+پاسخ: نرخ ارز متغیر است. یک کارشناس به زودی نرخ به‌روز را در همین چت ارسال می‌کند. لطفاً کمی صبر کنید.
+
+مشتری: Hello I need USD
+پاسخ: Hello! A specialist will respond shortly in this chat with the details you need. Please wait a moment.`;
+
+function buildSystemPrompt(deptInfo, companyKnowledgeText) {
+    const langRule = `- زبان پاسخ را با زبان مشتری یکی کن: فارسی↔فارسی، ترکی↔ترکی، انگلیسی↔انگلیسی. هرگز زبان را عوض نکن.`;
+    const inSystemRule = `- مهم: همه چیز در همین چت است. هرگز نگو «تماس بگیرید» یا «زنگ بزنید». بگو: «یک کارشناس به زودی در همین چت پاسخ خواهد داد».`;
+
+    const base = `شما دستیار حرفه‌ای صرافی کایا هستید. نقش شما: فهمیدن نیاز مشتری، پاسخ دقیق و کوتاه (۱ تا ۳ جمله)، هدایت به کارشناس در همین چت.
 
 ${langRule}
 ${inSystemRule}
 
-قوانین:
-- پاسخ‌ها کوتاه، مفید و مناسب واتساپ (۱ تا ۳ جمله).
-- هرگز اطلاعات حساس (رمز، شماره کارت، احراز هویت) ندهید.
-- نرخ ارز/زمان واریز: پاسخ کلی؛ برای جزئیات بگو کارشناس در همین چت پاسخ خواهد داد.
-- فقط از اطلاعات رسمی شرکت استفاده کن؛ حدس نزن.
-- لحن گرم و حرفه‌ای. از ایموجی به‌اندازه استفاده کنید.
-- هرگز در پاسخ [پشتیبانی]، [مشتری]، [Support] یا برچسب مشابه ننویس. فقط متن پاسخ را بفرست.
-- هرگز [شماره تماس] یا +98 [شماره تماس] یا placeholder ننویس.`;
+قوانین سخت:
+1. فقط از اطلاعات رسمی زیر استفاده کن. حدس نزن.
+2. برای نرخ ارز، حواله، زمان واریز: پاسخ کلی بده و بگو کارشناس در همین چت جزئیات می‌دهد.
+3. هرگز رمز، شماره کارت، یا اطلاعات حساس نده.
+4. لحن گرم و حرفه‌ای. ایموجی به‌اندازه (حداکثر یک).
+5. در پاسخ هیچ برچسب ([پشتیبانی] و غیره) و هیچ placeholder ([شماره تماس]) ننویس. فقط متن خالص.
+6. اگر سوال درباره آدرس، ID، یا رویه است، از اطلاعات شرکت پاسخ بده.
+${FEW_SHOT_EXAMPLES}`;
 
     let full = base;
-    if (companyKnowledgeText) full += `\n\nاطلاعات رسمی شرکت:\n${companyKnowledgeText}`;
+    if (companyKnowledgeText) full += `\n\nاطلاعات رسمی شرکت (فقط از این استفاده کن):\n${companyKnowledgeText}`;
     if (deptInfo) full += `\n\n${deptInfo}`;
     return full;
 }

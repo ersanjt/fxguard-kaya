@@ -439,8 +439,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
 
         if (isFromMe && body) {
             const bodyStr = String(body).trim();
-            let contentToMatch = bodyStr;
-            if (bodyStr.startsWith('AI KAYA: ')) contentToMatch = bodyStr.slice(9).trim();
+            const contentToMatch = bodyStr.startsWith('AI KAYA: ') ? bodyStr.slice(9).trim() : bodyStr;
             const recent = await Message.findOne({
                 where: {
                     conversationId: conversation.id,
@@ -449,9 +448,11 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 },
                 order: [['createdAt', 'DESC']]
             });
-            if (recent && (Date.now() - new Date(recent.createdAt).getTime()) < 60000) {
-                const storedContent = (recent.content || '').trim();
-                if (storedContent === contentToMatch || bodyStr === storedContent) {
+            const ageMs = recent ? (Date.now() - new Date(recent.createdAt).getTime()) : Infinity;
+            if (recent && ageMs < 120000) {
+                const storedContent = String(recent.content || '').trim();
+                const match = storedContent === contentToMatch || bodyStr === storedContent || (bodyStr.startsWith('AI KAYA: ') && storedContent === contentToMatch);
+                if (match) {
                     await recent.update({ whatsappId: messageData.id || null, status: 'sent' });
                     return;
                 }
