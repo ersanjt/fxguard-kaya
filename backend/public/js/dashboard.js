@@ -5364,7 +5364,8 @@
                 }
                 var contentHtml = '';
                 var displayContent = (m.content || '').trim();
-                if (isOut && displayContent.indexOf('AI KAYA: ') === 0) displayContent = displayContent.slice(9).trim();
+                if (isOut && (displayContent.indexOf('🤖 ') === 0)) displayContent = displayContent.slice(2).trim();
+                else if (isOut && displayContent.indexOf('AI KAYA: ') === 0) displayContent = displayContent.slice(9).trim();
                 if (m.hasMedia && m.mediaData && m.mediaData.url && m.content) contentHtml = '<div class="msg-caption">' + escapeHtml(displayContent || m.content) + '</div>';
                 else if ((displayContent || m.content) && !(m.hasMedia && !(m.mediaData && m.mediaData.url))) contentHtml = '<div>' + escapeHtml(displayContent || m.content) + '</div>';
                 var preview = (m.content || '').slice(0, 50) || (m.hasMedia ? '📎' : '');

@@ -42,8 +42,8 @@ node scripts/add-ai-columns.js
 | متغیر | پیش‌فرض | توضیح |
 |-------|---------|-------|
 | `OPENAI_MODEL` | gpt-4o-mini | مدل OpenAI |
-| `AI_MAX_RESPONSE_TOKENS` | 500 | حداکثر طول پاسخ |
-| `AI_TEMPERATURE` | 0.3 | خلاقیت (پایین‌تر = پایدارتر و دقیق‌تر) |
+| `AI_MAX_RESPONSE_TOKENS` | 600 | حداکثر طول پاسخ |
+| `AI_TEMPERATURE` | 0.2 | خلاقیت (پایین‌تر = پایدارتر و خطای کمتر) |
 | `AI_REQUEST_TIMEOUT_MS` | 20000 | تایم‌اوت درخواست |
 
 ## ترتیب پردازش پیام ورودی

@@ -20,6 +20,9 @@ if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true
 const AUTO_RESPONSE_CACHE_KEY = 'cache:autoresponse:active';
 const AUTO_RESPONSE_CACHE_TTL = 60;
 
+// پیشوند پیام AI به مشتری در واتساپ (ایموجی ربات به‌جای متن)
+const AI_MESSAGE_PREFIX = '🤖 ';
+
 // WhatsappConfig in-memory cache (30 seconds TTL) to avoid N+1 on every AI-enabled message
 let _wcCache = null;
 let _wcCacheAt = 0;
@@ -213,7 +216,7 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger, 
         }
         const toPhone = getSendTarget(customer.phone) || customer.phone;
         const isAI = !!options.isAI;
-        const customerMessage = isAI ? 'AI KAYA: ' + responseText : responseText;
+        const customerMessage = isAI ? AI_MESSAGE_PREFIX + responseText : responseText;
         const autoMsg = await Message.create({
             conversationId: conversation.id,
             customerId: customer.id,
@@ -439,7 +442,9 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
 
         if (isFromMe && body) {
             const bodyStr = String(body).trim();
-            const contentToMatch = bodyStr.startsWith('AI KAYA: ') ? bodyStr.slice(9).trim() : bodyStr;
+            const contentToMatch = bodyStr.startsWith(AI_MESSAGE_PREFIX)
+                ? bodyStr.slice(AI_MESSAGE_PREFIX.length).trim()
+                : (bodyStr.startsWith('AI KAYA: ') ? bodyStr.slice(9).trim() : bodyStr);
             const recent = await Message.findOne({
                 where: {
                     conversationId: conversation.id,
@@ -451,7 +456,9 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             const ageMs = recent ? (Date.now() - new Date(recent.createdAt).getTime()) : Infinity;
             if (recent && ageMs < 120000) {
                 const storedContent = String(recent.content || '').trim();
-                const match = storedContent === contentToMatch || bodyStr === storedContent || (bodyStr.startsWith('AI KAYA: ') && storedContent === contentToMatch);
+                const match = storedContent === contentToMatch || bodyStr === storedContent
+                    || (bodyStr.startsWith(AI_MESSAGE_PREFIX) && storedContent === contentToMatch)
+                    || (bodyStr.startsWith('AI KAYA: ') && storedContent === contentToMatch);
                 if (match) {
                     await recent.update({ whatsappId: messageData.id || null, status: 'sent' });
                     return;

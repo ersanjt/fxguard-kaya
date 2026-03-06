@@ -10,11 +10,22 @@ const { getCompanyKnowledge, formatKnowledgeForPrompt } = require('../config/com
 const MAX_HISTORY_MESSAGES = 12;
 const MAX_RESPONSE_TOKENS = parseInt(process.env.AI_MAX_RESPONSE_TOKENS, 10) || 600;
 const REQUEST_TIMEOUT_MS = parseInt(process.env.AI_REQUEST_TIMEOUT_MS, 10) || 20000;
-const AI_TEMPERATURE = parseFloat(process.env.AI_TEMPERATURE) || 0.3;
+const AI_TEMPERATURE = parseFloat(process.env.AI_TEMPERATURE) || 0.2;
 const MAX_RESPONSE_CHARS = 1200;
 
 // پیام‌های کوتاه که نیاز به پاسخ AI ندارند
-const ACK_PATTERNS = /^(مرسی|ممنون|ممنونم|متشکرم|متشکر|دستتون درد نکنه|مچکرم|اوکی|ok|okay|عالیه|عالی|باشه|باشه ممنون|خوبه|خوب است|ممنون از شما|سپاسگزارم|مرحبا|چشم|ارادت|teşekkürler|teşekkür|sağol|thanks|thank you|thx|got it|okey|tamam)$/i;
+const ACK_PATTERNS = /^(مرسی|ممنون|ممنونم|متشکرم|متشکر|دستتون درد نکنه|مچکرم|اوکی|ok|okay|عالیه|عالی|باشه|باشه ممنون|خوبه|خوب است|ممنون از شما|سپاسگزارم|مرحبا|چشم|ارادت|teşekkürler|teşekkür|sağol|thanks|thank you|thx|got it|okey|tamam|evet|hayır|yes|no)$/i;
+
+// حداکثر طول ورودی برای جلوگیری از اسپم/کپی‌پیست
+const MAX_INPUT_CHARS = 800;
+
+// عبارات ممنوع در پاسخ — اگر باشد پاسخ رد می‌شود
+const FORBIDDEN_PHRASES = [
+    /تماس\s*بگیرید?/i, /زنگ\s*بزنید?/i, /تلفن\s*بزنید?/i,
+    /call\s+us/i, /contact\s+us/i, /call\s+me/i, /phone\s+number/i,
+    /ara(yın|yıp)/i, /telefon\s*(ed|aç)/i,
+    /\+\s*98\s*\d{9,}/i
+];
 
 /**
  * بررسی نیاز به پاسخ AI — پیام‌های تأییدی/تشکری کوتاه نیاز به پاسخ ندارند
@@ -25,10 +36,20 @@ function shouldSkipAIResponse(text) {
     return ACK_PATTERNS.test(t.replace(/\s+/g, ' '));
 }
 
+/**
+ * بررسی اینکه ورودی قابل پردازش است (نه اسپم/کد)
+ */
+function isValidInput(text) {
+    const t = (text || '').trim();
+    if (t.length > MAX_INPUT_CHARS) return false;
+    if (/^[\d\s\+\-\*\/\.\=\{\}\(\)\[\]]+$/.test(t) && t.length > 20) return false;
+    return true;
+}
+
 const FEW_SHOT_EXAMPLES = `
 نمونه‌های پاسخ درست:
 مشتری: آدرس دفتر ترکیه؟
-پاسخ: آدرس دفتر استانبول: [لینک از اطلاعات شرکت]. برای جزئیات بیشتر یک کارشناس به زودی در همین چت پاسخ خواهد داد.
+پاسخ: آدرس دفتر استانبول در اطلاعات شرکت ثبت شده. یک کارشناس به زودی لینک و جزئیات کامل را در همین چت ارسال می‌کند.
 
 مشتری: برای دریافت دلار در دبی چه مدارکی لازمه؟
 پاسخ: برای دریافت پول (نقدی یا حواله) در دبی یا ترکیه، حتماً کارت شناسایی (ID) شخصی که از او پول درخواست می‌شود را ارسال کنید. یک کارشناس به زودی جزئیات بیشتر را در همین چت می‌دهد.
@@ -37,10 +58,18 @@ const FEW_SHOT_EXAMPLES = `
 پاسخ: نرخ ارز متغیر است. یک کارشناس به زودی نرخ به‌روز را در همین چت ارسال می‌کند. لطفاً کمی صبر کنید.
 
 مشتری: Hello I need USD
-پاسخ: Hello! A specialist will respond shortly in this chat with the details you need. Please wait a moment.`;
+پاسخ: Hello! A specialist will respond shortly in this chat with the details you need. Please wait a moment.
+
+مشتری: Merhaba, Türkiye'de dolar almak istiyorum
+پاسخ: Merhaba! Uzmanımız kısa süre içinde bu sohbette size gerekli detayları iletecektir. Lütfen biraz bekleyin.
+
+نمونه‌های غلط (هرگز این‌طور ننویس):
+- «تماس بگیرید» یا «زنگ بزنید» یا «call us» — ممنوع. همیشه بگو: کارشناس در همین چت پاسخ می‌دهد.
+- [شماره تماس] یا [لینک] یا هر placeholder — ممنوع. فقط متن نهایی و واقعی بنویس.
+- پاسخ بیش از ۳ جمله — زیاد است. کوتاه و مفید باش.`;
 
 function buildSystemPrompt(deptInfo, companyKnowledgeText) {
-    const langRule = `- زبان پاسخ را با زبان مشتری یکی کن: فارسی↔فارسی، ترکی↔ترکی، انگلیسی↔انگلیسی. هرگز زبان را عوض نکن.`;
+    const langRule = `- زبان پاسخ: همیشه با زبان مشتری پاسخ بده. فارسی→فارسی، ترکی→ترکی، انگلیسی→انگلیسی، عربی→عربی و غیره. هرگز زبان را عوض نکن؛ اگر مشتری انگلیسی نوشت، انگلیسی جواب بده.`;
     const inSystemRule = `- مهم: همه چیز در همین چت است. هرگز نگو «تماس بگیرید» یا «زنگ بزنید». بگو: «یک کارشناس به زودی در همین چت پاسخ خواهد داد».`;
 
     const base = `شما دستیار حرفه‌ای صرافی کایا هستید. نقش شما: فهمیدن نیاز مشتری، پاسخ دقیق و کوتاه (۱ تا ۳ جمله)، هدایت به کارشناس در همین چت.
@@ -53,8 +82,9 @@ ${inSystemRule}
 2. برای نرخ ارز، حواله، زمان واریز: پاسخ کلی بده و بگو کارشناس در همین چت جزئیات می‌دهد.
 3. هرگز رمز، شماره کارت، یا اطلاعات حساس نده.
 4. لحن گرم و حرفه‌ای. ایموجی به‌اندازه (حداکثر یک).
-5. در پاسخ هیچ برچسب ([پشتیبانی] و غیره) و هیچ placeholder ([شماره تماس]) ننویس. فقط متن خالص.
+5. در پاسخ هیچ برچسب ([پشتیبانی] و غیره) و هیچ placeholder ([شماره تماس]، [لینک]) ننویس. فقط متن نهایی و خالص.
 6. اگر سوال درباره آدرس، ID، یا رویه است، از اطلاعات شرکت پاسخ بده.
+7. خروجی: فقط متن پاسخ. بدون عنوان، بدون شماره‌گذاری، بدون markdown.
 ${FEW_SHOT_EXAMPLES}`;
 
     let full = base;
@@ -64,13 +94,52 @@ ${FEW_SHOT_EXAMPLES}`;
 }
 
 /**
+ * پاک‌سازی و اعتبارسنجی پاسخ مدل
+ */
+function sanitizeResponse(content) {
+    if (!content || typeof content !== 'string') return '';
+    let s = content.trim();
+    s = s.replace(/^["'`]|["'`]$/g, '');
+    s = s.replace(/^\[پشتیبانی\]\s*/i, '').replace(/^\[Support\]\s*/i, '').replace(/^\[مشتری\]\s*/i, '');
+    s = s.replace(/\[شماره تماس\]/g, '').replace(/\+\s*98\s*\[شماره تماس\]/g, '');
+    s = s.replace(/\[[\w\s\u0600-\u06FF]+\]/g, ''); // حذف [placeholder]
+    s = s.replace(/\*\*([^*]+)\*\*/g, '$1').replace(/__([^_]+)__/g, '$1'); // مارک‌داون bold
+    s = s.replace(/^#+\s*/gm, '').replace(/^\s*[-*]\s+/gm, ' '); // لیست مارک‌داون
+    s = s.replace(/\s+/g, ' ').trim();
+    return s.slice(0, MAX_RESPONSE_CHARS);
+}
+
+/**
+ * بررسی اینکه پاسخ شامل عبارت ممنوع نباشد
+ */
+function hasForbiddenContent(text) {
+    if (!text) return true;
+    return FORBIDDEN_PHRASES.some(p => p.test(text));
+}
+
+/**
+ * پاسخ امن پیش‌فرض وقتی اعتبارسنجی رد شود
+ */
+function getSafeFallback(langHint) {
+    const fallbacks = {
+        fa: 'متوجه شدم. یک کارشناس به زودی در همین چت پاسخ خواهد داد.',
+        en: 'Understood. A specialist will respond shortly in this chat.',
+        tr: 'Anlaşıldı. Uzmanımız kısa süre içinde bu sohbette yanıt verecektir.'
+    };
+    if (/[\u0600-\u06FF]/.test(langHint || '')) return fallbacks.fa;
+    if (/[a-zA-Z]/.test(langHint || '') && /[ğüşıöçĞÜŞİÖÇ]/.test(langHint || '')) return fallbacks.tr;
+    return fallbacks.en;
+}
+
+/**
  * تبدیل تاریخچه به آرایه پیام‌های chat برای مدل
  */
 function buildMessages(customerName, messageHistory, incomingMessage) {
     const messages = [];
     const history = messageHistory.slice(-MAX_HISTORY_MESSAGES);
     for (const m of history) {
-        const content = (m.content || '').slice(0, 350).trim();
+        let content = (m.content || '').slice(0, 350).trim();
+        content = content.replace(/^🤖\s*/, '').replace(/^AI KAYA:\s*/, '');
         if (!content) continue;
         const role = m.direction === 'incoming' ? 'user' : 'assistant';
         const prefix = role === 'user' ? `[مشتری] ` : `[پشتیبانی] `;
@@ -101,6 +170,7 @@ async function generateAIResponse({ conversation, customer, incomingMessage, mes
     if (!text) return null;
 
     if (shouldSkipAIResponse(text)) return null;
+    if (!isValidInput(text)) return null;
 
     const companyKnowledge = getCompanyKnowledge();
     const companyText = formatKnowledgeForPrompt(companyKnowledge);
@@ -135,13 +205,23 @@ async function generateAIResponse({ conversation, customer, incomingMessage, mes
             } else throw err;
         }
 
-        const content = response.data?.choices?.[0]?.message?.content?.trim();
-        if (!content) return null;
+        const choice = response.data?.choices?.[0];
+        const content = choice?.message?.content?.trim();
+        if (!content) {
+            if (choice?.finish_reason === 'content_filter' && process.env.NODE_ENV !== 'test') {
+                logger.info('AI response filtered by OpenAI');
+            }
+            return null;
+        }
 
-        let cleaned = content.replace(/^["']|["']$/g, '').trim();
-        cleaned = cleaned.replace(/^\[پشتیبانی\]\s*/i, '').replace(/^\[Support\]\s*/i, '').replace(/^\[مشتری\]\s*/i, '');
-        cleaned = cleaned.replace(/\[شماره تماس\]/g, '').replace(/\+\s*98\s*\[شماره تماس\]/g, '').trim();
-        return cleaned.slice(0, MAX_RESPONSE_CHARS) || null;
+        let cleaned = sanitizeResponse(content);
+        if (!cleaned || cleaned.length < 5) return null;
+
+        if (hasForbiddenContent(cleaned)) {
+            if (process.env.NODE_ENV !== 'test') logger.info('AI response rejected: forbidden content', { preview: cleaned.slice(0, 80) });
+            return getSafeFallback(text);
+        }
+        return cleaned;
     } catch (err) {
         if (process.env.NODE_ENV !== 'test') {
             const errMsg = err?.response?.data?.error?.message || err?.message;
