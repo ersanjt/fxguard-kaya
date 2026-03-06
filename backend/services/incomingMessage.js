@@ -209,7 +209,7 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger, 
         const customer = await Customer.findByPk(conversation.customerId);
         if (!customer) {
             logger.warn('sendAutoReply: customer not found', { conversationId: conversation.id });
-            return;
+            return null;
         }
         const toPhone = getSendTarget(customer.phone) || customer.phone;
         const isAI = !!options.isAI;
@@ -243,8 +243,10 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger, 
         if (!conversation.firstReplyAt) upd.firstReplyAt = now;
         await conversation.update(upd);
         logger.info(`🤖 Auto-reply sent to ${customer.phone}`);
+        return autoMsg;
     } catch (error) {
         logger.error('Send auto-reply error', { error: error.message });
+        return null;
     }
 }
 
@@ -434,6 +436,28 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         const msgMetadata = isGroup && (messageData.author || messageData.authorName)
             ? { senderId: messageData.author || null, senderName: messageData.authorName || (messageData.author && contact && (contact.name || contact.pushname)) || null }
             : {};
+
+        if (isFromMe && body) {
+            const bodyStr = String(body).trim();
+            let contentToMatch = bodyStr;
+            if (bodyStr.startsWith('AI KAYA: ')) contentToMatch = bodyStr.slice(9).trim();
+            const recent = await Message.findOne({
+                where: {
+                    conversationId: conversation.id,
+                    direction: 'outgoing',
+                    isAutoReply: true
+                },
+                order: [['createdAt', 'DESC']]
+            });
+            if (recent && (Date.now() - new Date(recent.createdAt).getTime()) < 60000) {
+                const storedContent = (recent.content || '').trim();
+                if (storedContent === contentToMatch || bodyStr === storedContent) {
+                    await recent.update({ whatsappId: messageData.id || null, status: 'sent' });
+                    return;
+                }
+            }
+        }
+
         const newMessage = await Message.create({
             conversationId: conversation.id,
             customerId: customer.id,
@@ -547,7 +571,15 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                     department: convWithDept?.department || null
                 });
                 if (aiReply) {
-                    await sendAutoReply(conversation, aiReply, rabbitChannel, logger, { isAI: true });
+                    const autoMsg = await sendAutoReply(conversation, aiReply, rabbitChannel, logger, { isAI: true });
+                    if (autoMsg) {
+                        io.emit('new_message', {
+                            conversationId: conversation.id,
+                            customerId: customer.id,
+                            message: autoMsg,
+                            customer: { id: customer.id, name: customer.name, phone: customer.phone, profilePic: customer.profilePic }
+                        });
+                    }
                     logger.info(`🤖 AI reply sent to ${customer.phone}`);
                 } else {
                     logger.warn('AI returned no reply', { phone: customer.phone, incomingPreview: (body || '').slice(0, 50) });

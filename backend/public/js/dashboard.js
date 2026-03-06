@@ -6554,7 +6554,7 @@
             var defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
             if (s.pageTitle) document.title = s.pageTitle; else document.title = defTitle;
             var fav = document.getElementById('favicon');
-            if (fav) fav.href = (s.faviconUrl && s.faviconUrl.trim()) ? s.faviconUrl : ('data:image/svg+xml,<svg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 32 32\'><rect width=\'32\' height=\'32\' rx=\'8\' fill=\'%23059669\'/><path fill=\'%23fff\' d=\'M10 8h4l2 4 2-4h4v12h-3v-6l-1.5 3L16 11v9h-3V8zm8 6h2v4h-2v-4z\'/></svg>');
+            if (fav) fav.href = (s.faviconUrl && s.faviconUrl.trim()) ? s.faviconUrl : '/favicon-kaya.svg';
             var logoText = s.siteName || defSite;
             var headerIcon = document.getElementById('headerLogoIcon');
             if (headerIcon) {

@@ -125,8 +125,9 @@ const redisClient = createRedisClient(logger);
 
 // Rate Limiting — اگر Redis در دسترس باشد از Redis store استفاده می‌شود (multi-process safe)
 // در غیر این صورت به in-memory fallback می‌رود
+// لوکال بدون Redis: از حافظه استفاده کن تا timeout نشود
 function buildRedisStore(prefix) {
-    if (redisClient.isStub) return undefined;
+    if (redisClient.isStub || process.env.USE_SQLITE === 'true') return undefined;
     try {
         const { RedisStore } = require('rate-limit-redis');
         return new RedisStore({
