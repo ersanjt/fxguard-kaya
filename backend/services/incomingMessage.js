@@ -418,6 +418,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         let preview = previewText.slice(0, 120);
         if (previewText.length > 120) preview += '…';
 
+        const prevLastIncoming = !isFromMe && conversation.lastIncomingMessageAt ? new Date(conversation.lastIncomingMessageAt) : null;
         const convUpdate = { lastMessageAt: ts, lastMessagePreview: preview };
         if (isFromMe) {
             convUpdate.lastOutgoingMessageAt = ts;
@@ -491,6 +492,22 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 if (wc && wc.aiAnswerEnabled === false) {
                     aiEnabled = false;
                     logger.info('AI skipped: disabled in WhatsappConfig panel');
+                }
+                if (aiEnabled && conversation.assignedTo) {
+                    const lastHuman = await Message.findOne({
+                        where: { conversationId: conversation.id, direction: 'outgoing', userId: { [Op.ne]: null } },
+                        order: [['timestamp', 'DESC']],
+                        attributes: ['timestamp']
+                    });
+                    const alertMin = (wc && (wc.alertUnansweredAfterMinutes ?? 5)) || 5;
+                    const now = new Date();
+                    if (lastHuman && prevLastIncoming && lastHuman.timestamp >= prevLastIncoming) {
+                        aiEnabled = false;
+                        logger.info('AI skipped: human already replied to customer, assigned conversation');
+                    } else if (prevLastIncoming && (now - prevLastIncoming) < alertMin * 60000) {
+                        aiEnabled = false;
+                        logger.info('AI skipped: assigned, waiting for human (re-enter after ' + alertMin + ' min)');
+                    }
                 }
             } catch (e) {
                 logger.warn('WhatsappConfig aiAnswerEnabled check failed:', e?.message);

@@ -169,46 +169,53 @@ async function detectDepartmentWithAI(messageText, departments) {
         description: (d.description || '').slice(0, 200)
     }));
 
+    const timeout = parseInt(process.env.AI_REQUEST_TIMEOUT_MS, 10) || 12000;
+    const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const systemPrompt = `شما دستیار مسیریابی CRM صرافی هستید. بر اساس پیام مشتری، فقط ID دپارتمان مناسب را برگردانید.
+دپارتمان‌ها:
+${JSON.stringify(deptList, null, 2)}
+
+فقط یک JSON برگردانید. مثال: {"departmentId": "uuid"} یا {"departmentId": null} اگر هیچکدام مناسب نبود. هیچ متن دیگری ننویسید.`;
+
     try {
         const response = await axios.post(
             'https://api.openai.com/v1/chat/completions',
             {
-                model: 'gpt-4o-mini',
+                model,
                 messages: [
-                    {
-                        role: 'system',
-                        content: `شما یک دستیار مسیریابی برای CRM صرافی هستید. بر اساس پیام مشتری، فقط ID دپارتمان مناسب را برگردانید.
-دپارتمان‌ها:
-${JSON.stringify(deptList, null, 2)}
-
-فقط یک JSON برگردان: {"departmentId": "uuid"} یا {"departmentId": null} اگر هیچکدام مناسب نبود.`
-                    },
-                    {
-                        role: 'user',
-                        content: messageText
-                    }
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: messageText }
                 ],
                 temperature: 0.1,
-                max_tokens: 100
+                max_tokens: 120
             },
             {
                 headers: {
                     'Authorization': `Bearer ${apiKey}`,
                     'Content-Type': 'application/json'
                 },
-                timeout: 8000
+                timeout
             }
         );
 
         const content = response.data?.choices?.[0]?.message?.content?.trim();
         if (!content) return null;
 
-        const match = content.match(/\{"departmentId"\s*:\s*"([^"]+)"\}/) ||
-            content.match(/departmentId["\s:]+([a-f0-9-]{36})/i);
-        if (match) {
-            const id = match[1];
-            return departments.find(d => d.id === id) || null;
+        // پارس departmentId از خروجی مدل
+        let id = null;
+        const uuidRegex = /[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i;
+        const jsonBlock = content.match(/\{[\s\S]*\}/);
+        if (jsonBlock) {
+            try {
+                const parsed = JSON.parse(jsonBlock[0]);
+                id = (parsed?.departmentId && typeof parsed.departmentId === 'string') ? parsed.departmentId : null;
+            } catch (_) { /* fallback to regex */ }
         }
+        if (!id) {
+            const m = content.match(/departmentId["\s:]+["']?([a-f0-9-]{36})["']?/i) || content.match(uuidRegex);
+            id = m ? (m[1] || m[0]) : null;
+        }
+        if (id) return departments.find(d => d.id === id) || null;
         return null;
     } catch (err) {
         if (process.env.NODE_ENV !== 'test') logger.warn('AI department detection failed', { error: err?.message });
