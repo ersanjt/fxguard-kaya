@@ -928,6 +928,22 @@
             if (token) h['Authorization'] = 'Bearer ' + token;
             return h;
         }
+        if (window.CRM && window.CRM.Api) {
+            window.CRM_API_BASE = API || '';
+            window.CRM.Api.init({
+                getHeaders: headers,
+                getLang: function () { return LANG; },
+                on401: function () {
+                    token = null;
+                    localStorage.removeItem('crm_token');
+                    document.documentElement.classList.remove('auth-has-token');
+                    document.getElementById('loginBox').style.display = 'flex';
+                    document.getElementById('app').classList.remove('show');
+                    var errEl = document.getElementById('loginErr');
+                    if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
+                }
+            });
+        }
         function timeAgo(d) {
             if (!d) return '';
             var date = d instanceof Date ? d : new Date(d);
@@ -960,6 +976,7 @@
         }
 
         function formatPrice(val) {
+            if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatPrice === 'function') return window.CRM.Utils.formatPrice(val);
             if (val == null || val === '' || val === '\u2014' || (typeof val === 'string' && val.trim() === '')) return '\u2014';
             var num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
             if (isNaN(num)) return '\u2014';
@@ -983,6 +1000,7 @@
             return h >= 6 && h < 20;
         }
         function formatChange(ch) {
+            if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatChange === 'function') return window.CRM.Utils.formatChange(ch);
             if (ch == null || ch === '') return '';
             var num = typeof ch === 'number' ? ch : parseFloat(String(ch));
             if (isNaN(num) || num === 0) return '';
@@ -2767,6 +2785,9 @@
         }
 
         async function apiFetch(url, opts) {
+            if (window.CRM && window.CRM.Api && typeof window.CRM.Api.fetch === 'function') {
+                return window.CRM.Api.fetch(url, opts);
+            }
             var opt = opts || {};
             var h = opt.auth === false ? { 'Content-Type': 'application/json' } : headers();
             if (opt.body instanceof FormData) { delete h['Content-Type']; }
@@ -2799,8 +2820,11 @@
             return { ok: r.ok, status: r.status, data: data };
         }
         function getApiError(res) {
-            if (res.error) return res.error;
-            if (res.data && (res.data.error || res.data.message)) return res.data.error || res.data.message;
+            if (window.CRM && window.CRM.Api && typeof window.CRM.Api.getError === 'function') {
+                return window.CRM.Api.getError(res);
+            }
+            if (res && res.error) return res.error;
+            if (res && res.data && (res.data.error || res.data.message)) return res.data.error || res.data.message;
             return LANG === 'fa' ? 'خطا در ارتباط با سرور' : 'Server error';
         }
 
@@ -3234,7 +3258,7 @@
             if (appEl) { appEl.classList.remove('show', 'app-loading', 'app-ready'); }
         }
 
-        function escapeHtml(s) { if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
         function resolveAvatarUrl(avatar) { if (!avatar || typeof avatar !== 'string') return ''; var s = avatar.trim(); if (!s) return ''; if (s.indexOf('http') === 0) return ensureHttpsUrl(s); var origin = window.location.origin || ''; if (s.indexOf('/') === 0) return origin + s; return origin + '/' + s; }
         function internalMsgAvatarHtml(fromUser) { var u = fromUser || {}; var name = (u.name || u.email || '').trim(); var initial = name[0] ? name[0].toUpperCase() : '?'; var pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'"></span>'; return '<span class="msg-avatar">' + escapeHtml(initial) + '</span>'; }
@@ -6826,7 +6850,7 @@
                 return;
             }
             if (emptyEl) emptyEl.style.display = 'none';
-            function escapeHtml(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+            function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
             tbody.innerHTML = list.map(function(item) {
                 var assigned = (item.assignedUser && (item.assignedUser.name || item.assignedUser.email)) || '—';
                 var passBadge = item.hasPassword ? '<span class="badge badge-success">✓</span>' : '<span class="badge badge-muted">—</span>';
@@ -7060,7 +7084,7 @@
             }
             if (btn) { btn.disabled = false; btn.textContent = t('panel_test_email_btn'); }
         }
-        var VALID_PAGES = ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
+        var VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
         function applyHashRoute() {
             initSidebarCollapsedState();
             var hash = (location.hash || '').replace(/^#/, '');
@@ -7073,7 +7097,7 @@
         function initSidebarCollapsedState() { var s = document.getElementById('sidebar'); var btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; var collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
         function showPage(page) {
             var perms = (currentUser && currentUser.permissions) || {};
-            var pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
+            var pageToSection = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TO_SECTION : {};
             var section = pageToSection[page];
             if (section && page !== 'profile' && page !== 'dashboard' && perms[section] !== true) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
@@ -7086,7 +7110,7 @@
             navLinks.forEach(function(l) { l.classList.remove('active'); });
             navLinks.forEach(function(l) { if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             updateMobileTabBar(page);
-            var pageTitles = { dashboard: 'nav_dashboard', conversations: 'nav_conversations', customers: 'nav_customers', tickets: 'nav_tickets', tasks: 'nav_tasks', processes: 'nav_processes', departments: 'nav_departments', users: 'nav_users', branches: 'nav_branches', supervision: 'nav_supervision', 'staff-activity': 'nav_staff_activity', profile: 'nav_profile', announcements: 'nav_announcements', 'internal-chat': 'nav_internal_chat', whatsapp: 'nav_whatsapp', 'message-templates': 'nav_message_templates', rates: 'nav_rates', 'rates-charts': 'nav_rates_charts', services: 'nav_services', 'panel-settings': 'nav_panel_settings' };
+            var pageTitles = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TITLES : {};
             var titleKey = pageTitles[page] || 'nav_dashboard';
             var titleText = t(titleKey);
             var pt = document.getElementById('headerPageTitle');
@@ -7096,7 +7120,7 @@
             if (pb) pb.textContent = titleText;
             if (pm) pm.textContent = titleText;
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
-            var ids = { dashboard: 'pageDashboard', conversations: 'pageConversations', customers: 'pageCustomers', departments: 'pageDepartments', users: 'pageUsers', tickets: 'pageTickets', tasks: 'pageTasks', processes: 'pageProcesses', whatsapp: 'pageWhatsapp', 'message-templates': 'pageMessageTemplates', branches: 'pageBranches', supervision: 'pageSupervision', 'staff-activity': 'pageStaffActivity', profile: 'pageProfile', announcements: 'pageAnnouncements', 'internal-chat': 'pageInternalChat', rates: 'pageRates', 'rates-charts': 'pageRatesCharts', services: 'pageServices', 'panel-settings': 'pagePanelSettings' };
+            var ids = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_IDS : {};
             if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations' || page === 'internal-chat') ? 'flex' : 'block'; el.classList.add('show'); } }
             var content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }

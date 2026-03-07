@@ -1,17 +1,14 @@
 /**
- * مسیریابی API — همه endpointهای /api
+ * API Router — aggregates all /api endpoints
  */
 const express = require('express');
-const path = require('path');
-const fs = require('fs');
-const { spawn } = require('child_process');
-const rateLimit = require('express-rate-limit');
-const { gatewayGet, gatewayPost } = require('../lib/gatewayClient');
 const { authMiddleware, requireSection } = require('../middleware/auth');
 const { createWebhookAuth } = require('../middleware/webhookAuth');
 const { processIncomingMessage } = require('../services/incomingMessage');
 const models = require('../models');
 const { Message } = models;
+const { createContactRouter } = require('./contact');
+const { createGatewayRouter } = require('./gateway');
 
 const authRoutes = require('./auth');
 const userRoutes = require('./users');
@@ -24,17 +21,10 @@ const supervisionRoutes = require('./supervision');
 const taskRoutes = require('./tasks');
 const processRoutes = require('./processes');
 
-const contactLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: 5,
-    message: { error: 'تعداد ارسال فرم زیاد است. چند دقیقه صبر کنید.' },
-    standardHeaders: true,
-    legacyHeaders: false
-});
-
 function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     const apiRouter = express.Router();
     const webhookAuth = createWebhookAuth(logger);
+    const { router: gatewayRouter } = createGatewayRouter(logger);
 
     apiRouter.use((req, res, next) => {
         res.setHeader('Content-Type', 'application/json');
@@ -51,118 +41,12 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : null);
         res.json({
             timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
-            supportUrl: supportLink
+            supportUrl: supportLink,
         });
     });
 
-    apiRouter.post('/contact', contactLimiter, async (req, res) => {
-        const { purpose, name, email, phone, message } = req.body || {};
-        if (!email || !name || !message) {
-            return res.status(400).json({ error: 'نام، ایمیل و پیام الزامی است.' });
-        }
-        const nameStr = String(name).trim();
-        const emailStr = String(email).trim();
-        const messageStr = String(message).trim();
-        if (nameStr.length > 200) return res.status(400).json({ error: 'نام بیش از حد مجاز است.' });
-        if (emailStr.length > 255) return res.status(400).json({ error: 'ایمیل نامعتبر است.' });
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailStr)) return res.status(400).json({ error: 'فرمت ایمیل نامعتبر است.' });
-        if (messageStr.length > 5000) return res.status(400).json({ error: 'پیام بیش از حد مجاز است.' });
-        const purposeVal = ['demo', 'purchase', 'quote', 'support', 'other'].includes(purpose) ? purpose : 'other';
-        try {
-            const emailService = require('../services/emailService');
-            if (!emailService.isEnabled()) {
-                logger.warn('Contact form: email disabled, skipping send');
-                return res.json({ ok: true, message: 'پیام دریافت شد. به زودی با شما تماس می‌گیریم.' });
-            }
-            await emailService.sendContactForm({
-                purpose: purposeVal,
-                name: nameStr,
-                email: emailStr,
-                phone: phone ? String(phone).trim().slice(0, 50) : '',
-                message: messageStr
-            });
-            res.json({ ok: true, message: 'پیام ارسال شد. به زودی با شما تماس می‌گیریم.' });
-        } catch (err) {
-            logger.error('Contact form send error:', err);
-            res.status(500).json({ error: 'خطا در ارسال پیام. لطفاً دوباره تلاش کنید یا از واتساپ استفاده کنید.' });
-        }
-    });
-
-    let gatewayStarting = false;
-    let gatewayStartedAt = null;
-    const GATEWAY_START_COOLDOWN_MS = 15000;
-
-    apiRouter.get('/gateway/status', authMiddleware, requireSection('whatsapp'), (req, res) => {
-        gatewayGet('/api/status', { timeout: 5000 })
-            .then(r => res.json(r.data))
-            .catch((e) => {
-                const status = e.response?.status;
-                const msg = e.response?.data?.error || e.message || 'Gateway در دسترس نیست';
-                if (status === 401) logger.warn('Gateway returned 401 – check GATEWAY_API_SECRET matches gateway/.env');
-                else if (e.code) logger.warn('Gateway request failed', { code: e.code, status, url: process.env.GATEWAY_URL || 'http://localhost:3001' });
-                return res.status(503).json({ whatsapp: false, status: 'disconnected', error: 'Gateway در دسترس نیست' });
-            });
-    });
-
-    apiRouter.get('/gateway/qr', authMiddleware, requireSection('whatsapp'), (req, res) => {
-        gatewayGet('/api/qr', { timeout: 5000 })
-            .then(r => res.json(r.data))
-            .catch((e) => {
-                if (e.response?.status === 401) logger.warn('Gateway QR returned 401 – check GATEWAY_API_SECRET matches gateway/.env');
-                return res.status(503).json({ error: 'Gateway در دسترس نیست' });
-            });
-    });
-
-    apiRouter.post('/gateway/start', authMiddleware, requireSection('whatsapp'), (req, res) => {
-        if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
-        gatewayPost('/api/start', {}, { timeout: 10000 })
-            .then(r => res.json(r.data))
-            .catch(e => res.status(503).json({ error: e.response?.data?.error || 'Gateway در دسترس نیست' }));
-    });
-
-    apiRouter.post('/gateway/stop', authMiddleware, requireSection('whatsapp'), (req, res) => {
-        if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
-        gatewayPost('/api/stop', {}, { timeout: 10000 })
-            .then(r => res.json(r.data))
-            .catch(e => res.status(503).json({ error: e.response?.data?.error || 'Gateway در دسترس نیست' }));
-    });
-
-    apiRouter.post('/gateway/logout', authMiddleware, requireSection('whatsapp'), (req, res) => {
-        if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
-        gatewayPost('/api/logout', {}, { timeout: 20000 })
-            .then(r => res.json(r.data))
-            .catch(e => res.status(503).json({ error: e.response?.data?.error || 'Gateway در دسترس نیست' }));
-    });
-
-    apiRouter.post('/admin/start-gateway', authMiddleware, requireSection('whatsapp'), async (req, res) => {
-        if (req.user.role !== 'admin' && req.user.role !== 'owner') return res.status(403).json({ error: 'فقط ادمین یا مالک' });
-        const now = Date.now();
-        if (gatewayStarting && gatewayStartedAt && (now - gatewayStartedAt) < GATEWAY_START_COOLDOWN_MS) {
-            return res.json({ message: 'Gateway در حال بالا آمدن است. چند ثانیه صبر کنید.' });
-        }
-        try {
-            const GATEWAY_URL = (process.env.GATEWAY_URL || 'http://localhost:3001').replace(/\/$/, '');
-            const axios = require('axios');
-            const testRes = await axios.get(GATEWAY_URL + '/api/status', { timeout: 3000 }).catch(() => null);
-            if (testRes && testRes.status === 200) {
-                return res.json({ message: 'Gateway از قبل در حال اجراست' });
-            }
-            const gatewayPath = path.join(__dirname, '..', '..', 'gateway');
-            const entryPoint = path.join(gatewayPath, 'src', 'index.js');
-            if (!fs.existsSync(entryPoint)) {
-                return res.status(500).json({ error: 'فایل gateway/src/index.js یافت نشد. Gateway را نصب کنید.' });
-            }
-            const proc = spawn('node', ['src/index.js'], { cwd: gatewayPath, stdio: 'ignore', detached: true });
-            proc.unref();
-            gatewayStarting = true;
-            gatewayStartedAt = now;
-            setTimeout(() => { gatewayStarting = false; gatewayStartedAt = null; }, GATEWAY_START_COOLDOWN_MS);
-            res.json({ message: 'Gateway در حال بالا آمدن است. چند ثانیه صبر کنید و QR را در تنظیمات واتساپ ببینید.' });
-        } catch (e) {
-            gatewayStarting = false;
-            res.status(500).json({ error: e.message });
-        }
-    });
+    apiRouter.use('/', createContactRouter(logger));
+    apiRouter.use('/', gatewayRouter);
 
     apiRouter.use('/auth', authRoutes);
     apiRouter.use('/users', authMiddleware, userRoutes);

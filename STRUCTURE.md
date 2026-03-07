@@ -10,7 +10,11 @@
 whatsapp-enterprise-crm/
 ├── backend/                 # سرور Node.js + Express
 │   ├── server.js           # نقطه ورود، API، Socket.IO
+│   ├── controllers/        # لایه کنترلر (منطق جدا از routeها)
+│   │   └── branches.controller.js
 │   ├── routes/             # مسیرهای API
+│   │   ├── contact.js      # فرم تماس
+│   │   ├── gateway.js      # Gateway واتساپ
 │   ├── models/             # مدل‌های Sequelize
 │   ├── middleware/         # احراز هویت و ...
 │   ├── services/           # سرویس‌ها (ایمیل، تنظیمات، ...)
@@ -19,7 +23,14 @@ whatsapp-enterprise-crm/
 │   └── public/             # فایل‌های استاتیک فرانت
 │       ├── dashboard.html  # صفحه اصلی SPA
 │       ├── css/dashboard.css
-│       └── js/dashboard.js
+│       ├── js/
+│       │   ├── dashboard.js
+│       │   ├── modules/       # ماژول‌های تفکیک‌شده
+│       │   │   ├── api-client.js
+│       │   │   └── README.md
+│       │   ├── i18n-fa.js
+│       │   ├── i18n-en.js
+│       │   └── i18n-tr.js
 ├── gateway/                # سرویس واتساپ وِب
 └── STRUCTURE.md            # این فایل
 ```
@@ -116,6 +127,8 @@ whatsapp-enterprise-crm/
 
 | مسیر | فایل | توضیح |
 |------|------|-------|
+| `/api/contact` | `routes/contact.js` | فرم تماس (عمومی) |
+| `/api/gateway/*` | `routes/gateway.js` | پراکسی Gateway واتساپ |
 | `/api/auth` | `routes/auth.js` | ورود، خروج، TOTP، فراموشی رمز |
 | `/api/users` | `routes/users.js` | CRUD کاربران |
 | `/api/conversations` | `routes/conversations.js` | مکالمات (شامل ارسال پیام) |
