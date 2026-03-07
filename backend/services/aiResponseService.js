@@ -36,6 +36,27 @@ function shouldSkipAIResponse(text) {
     return ACK_PATTERNS.test(t.replace(/\s+/g, ' '));
 }
 
+// سوالات ساده‌ای که AI می‌تواند حتی با مکالمه assign‌شده پاسخ دهد
+const SIMPLE_FACTUAL_PATTERNS = [
+    /\b(قیمت|نرخ|چنده|چند|نرخ لحظه|قیمت لحظه|کارمزد|هزینه)\b/i,
+    /\b(آدرس|ادرس|دفتر|کجاست)\b/i,
+    /\b(مدرک|مدارک|چی لازمه|چی بفرستم|id|پاسپورت)\b/i,
+    /\b(price|rate|how much|what.?s the rate|commission|fee)\b/i,
+    /\b(address|where is|location)\b/i,
+    /\b(documents?|what do i need|id required)\b/i,
+    /\b(fiyat|kur|nerede|adres|komisyon)\b/i,
+    /\b(سعر|عنوان|عنواني|الوثائق)\b/i
+];
+
+/**
+ * آیا پیام یک سوال ساده و واقعی است که AI می‌تواند پاسخ دهد؟
+ */
+function isSimpleFactualQuestion(text) {
+    const t = (text || '').trim();
+    if (t.length < 3 || t.length > 120) return false;
+    return SIMPLE_FACTUAL_PATTERNS.some(p => p.test(t));
+}
+
 /**
  * بررسی اینکه ورودی قابل پردازش است (نه اسپم/کد)
  */
@@ -80,6 +101,12 @@ const FEW_SHOT_EXAMPLES = `
 
 مشتری: فقط دلار
 پاسخ: برای خرید دلار، بفرمایید ترکیه یا امارات؟ نقدی یا حواله؟ کارشناس جزئیات را در همین چت ارسال می‌کند.
+
+مشتری: قیمت چنده؟
+پاسخ: نرخ ارز لحظه‌ای است. کارشناس ما نرخ به‌روز را در همین چت ارسال می‌کند. لطفاً کمی صبر کنید.
+
+مشتری: آدرس دفتر کجاست؟
+پاسخ: دفاتر ما در استانبول، مجدی‌کوی، دبی و چند شهر دیگر است. کارشناس لینک نقشه و آدرس دقیق را در همین چت می‌دهد.
 
 نمونه‌های غلط (هرگز این‌طور ننویس):
 - «تماس بگیرید» یا «زنگ بزنید» یا «call us» — ممنوع. همیشه بگو: کارشناس در همین چت پاسخ می‌دهد.
@@ -280,5 +307,6 @@ function isAIAnswerEnabled() {
 
 module.exports = {
     generateAIResponse,
-    isAIAnswerEnabled
+    isAIAnswerEnabled,
+    isSimpleFactualQuestion
 };

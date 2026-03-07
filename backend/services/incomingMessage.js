@@ -253,6 +253,53 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger, 
     }
 }
 
+/**
+ * اگر موضوع مکالمه عوض شده، به دپارتمان مناسب‌تر re-route کن
+ */
+async function tryRerouteIfTopicChanged(conversation, messageContent, customerId, logger) {
+    try {
+        const text = (messageContent || '').trim();
+        if (text.length < 10) return;
+        const departments = await Department.findAll({ where: { isActive: true } });
+        const { department: smartDept, method, confidence } = await selectBestDepartment(
+            departments,
+            messageContent || '',
+            { useAI: !!process.env.OPENAI_API_KEY }
+        );
+        if (!smartDept || confidence < 75) return;
+        const currentDeptId = conversation.departmentId ? String(conversation.departmentId) : null;
+        const newDeptId = String(smartDept.id);
+        if (currentDeptId && currentDeptId === newDeptId) return;
+
+        let previousAssigneeId = null;
+        if (customerId) {
+            const prevConv = await Conversation.findOne({
+                where: { customerId, id: { [Op.ne]: conversation.id }, assignedTo: { [Op.ne]: null } },
+                order: [['assignedAt', 'DESC']],
+                attributes: ['assignedTo']
+            });
+            if (prevConv) previousAssigneeId = prevConv.assignedTo;
+        }
+        const users = await User.findAll({
+            where: { departmentId: smartDept.id, isActive: true, role: { [Op.in]: ['agent', 'supervisor'] } },
+            attributes: { include: ['status', 'settings'] },
+            include: [{ model: Conversation, as: 'conversations', where: { status: { [Op.ne]: 'closed' } }, required: false }]
+        });
+        const selectedUser = selectBestUser(users, messageContent || '', { customerId, previousAssigneeId });
+        if (selectedUser) {
+            await conversation.update({
+                departmentId: smartDept.id,
+                assignedTo: selectedUser.id,
+                assignedAt: new Date()
+            });
+            logger.info(`🔄 Re-routed to ${selectedUser.name} (${smartDept.name}) — topic change, confidence: ${confidence}%`);
+            await sendDeptAssignedMessage(conversation, smartDept);
+        }
+    } catch (error) {
+        logger.error('Re-route error', { error: error.message });
+    }
+}
+
 async function autoAssignment(conversation, messageContent, customerId, logger) {
     try {
         const departments = await Department.findAll({ where: { isActive: true } });
@@ -510,15 +557,19 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             await sendFirstMessageWelcome(conversation, customer, rabbitChannel, logger);
         }
 
-        if (!isGroup && !isFromMe && !conversation.assignedTo) {
-            await autoAssignment(conversation, body || '', customer.id, logger);
+        if (!isGroup && !isFromMe) {
+            if (!conversation.assignedTo) {
+                await autoAssignment(conversation, body || '', customer.id, logger);
+            } else {
+                await tryRerouteIfTopicChanged(conversation, body || '', customer.id, logger);
+            }
             await conversation.reload({ include: [{ model: Department, as: 'department', required: false }] });
         }
 
         const autoResponseSent = (isGroup || isFromMe) ? false : await checkAutoResponse(conversation, newMessage, redisClient, rabbitChannel, logger);
 
         if (!isGroup && !isFromMe && !autoResponseSent && hasText) {
-            const { generateAIResponse, isAIAnswerEnabled } = require('./aiResponseService');
+            const { generateAIResponse, isAIAnswerEnabled, isSimpleFactualQuestion } = require('./aiResponseService');
             let aiEnabled = isAIAnswerEnabled();
             if (!aiEnabled) logger.info('AI skipped: OPENAI_API_KEY not set or AI_ANSWER_ENABLED=false');
             try {
@@ -535,12 +586,18 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                     });
                     const alertMin = (wc && (wc.alertUnansweredAfterMinutes ?? 5)) || 5;
                     const now = new Date();
-                    if (lastHuman && prevLastIncoming && lastHuman.timestamp >= prevLastIncoming) {
+                    const humanRepliedAfterLastIncoming = lastHuman && prevLastIncoming && lastHuman.timestamp >= prevLastIncoming;
+                    const withinWaitWindow = prevLastIncoming && (now - prevLastIncoming) < alertMin * 60000;
+                    const isSimpleQuestion = isSimpleFactualQuestion(body || '');
+
+                    if (humanRepliedAfterLastIncoming) {
                         aiEnabled = false;
                         logger.info('AI skipped: human already replied to customer, assigned conversation');
-                    } else if (prevLastIncoming && (now - prevLastIncoming) < alertMin * 60000) {
+                    } else if (withinWaitWindow && !isSimpleQuestion) {
                         aiEnabled = false;
                         logger.info('AI skipped: assigned, waiting for human (re-enter after ' + alertMin + ' min)');
+                    } else if (withinWaitWindow && isSimpleQuestion) {
+                        logger.info('AI allowed: simple factual question (price/address/docs) while assigned');
                     }
                 }
             } catch (e) {
