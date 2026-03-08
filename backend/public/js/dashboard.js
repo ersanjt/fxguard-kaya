@@ -6838,6 +6838,7 @@
             }
             previewPanelLogo(d.logoUrl || '');
             previewPanelFavicon(d.faviconUrl || '');
+            updatePanelSettingsHeaderBranding(d.logoUrl || '', d.faviconUrl || '');
             updatePanelLivePreview();
             loadCompanyEmails();
             loadCompanyEmailUserSelect();
@@ -7134,6 +7135,33 @@
             if (footerEl) footerEl.classList.toggle('hidden', !!hideFooter);
             if (logoEl) { if (logoUrl) { logoEl.src = logoUrl; logoEl.style.display = ''; if (logoPlaceholder) logoPlaceholder.style.display = 'none'; } else { logoEl.removeAttribute('src'); logoEl.style.display = 'none'; if (logoPlaceholder) logoPlaceholder.style.display = ''; } }
             if (faviconEl) { if (faviconUrl) { faviconEl.src = faviconUrl; faviconEl.style.display = ''; } else { faviconEl.removeAttribute('src'); faviconEl.style.display = 'none'; } }
+            updatePanelSettingsHeaderBranding(logoUrl, faviconUrl);
+        }
+        function updatePanelSettingsHeaderBranding(logoUrl, faviconUrl) {
+            var logoEl = document.getElementById('panelSettingsHeaderLogo');
+            var faviconEl = document.getElementById('panelSettingsHeaderFavicon');
+            var fallbackEl = document.getElementById('panelSettingsHeaderIconFallback');
+            if (!logoEl || !faviconEl || !fallbackEl) return;
+            logoUrl = (logoUrl || '').trim();
+            faviconUrl = (faviconUrl || '').trim();
+            if (logoUrl) {
+                logoEl.src = logoUrl;
+                logoEl.style.display = '';
+                logoEl.onerror = function() { logoEl.style.display = 'none'; if (faviconUrl) { faviconEl.src = faviconUrl; faviconEl.style.display = ''; faviconEl.classList.add('favicon-only'); fallbackEl.style.display = 'none'; } else fallbackEl.style.display = 'block'; };
+                fallbackEl.style.display = 'none';
+                if (faviconUrl) { faviconEl.src = faviconUrl; faviconEl.style.display = ''; } else faviconEl.style.display = 'none';
+            } else if (faviconUrl) {
+                logoEl.style.display = 'none';
+                fallbackEl.style.display = 'none';
+                faviconEl.src = faviconUrl;
+                faviconEl.style.display = '';
+                faviconEl.classList.add('favicon-only');
+            } else {
+                logoEl.style.display = 'none';
+                faviconEl.style.display = 'none';
+                faviconEl.classList.remove('favicon-only');
+                fallbackEl.style.display = 'block';
+            }
         }
         function updatePanelLanguageHint() {
             var sel = document.getElementById('panelSettingLanguageMode');
