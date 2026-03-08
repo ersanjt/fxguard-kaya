@@ -64,7 +64,7 @@ function isSimpleFactualQuestion(text) {
 function isValidInput(text) {
     const t = (text || '').trim();
     if (t.length > MAX_INPUT_CHARS) return false;
-    if (/^[\d\s\+\-\*\/\.\=\{\}\(\)\[\]]+$/.test(t) && t.length > 20) return false;
+    if (new RegExp('^[\\d\\s+\\-*/.=(){}\\[\\]]+$').test(t) && t.length > 20) return false;
     return true;
 }
 
@@ -221,7 +221,7 @@ function buildMessages(customerName, messageHistory, incomingMessage) {
  * @param {Object} options.department - دپارتمان تخصیص‌یافته (اختیاری)
  * @returns {Promise<string|null>} متن پاسخ یا null در صورت خطا
  */
-async function generateAIResponse({ conversation, customer, incomingMessage, messageHistory = [], department = null }) {
+async function generateAIResponse({ conversation: _conversation, customer, incomingMessage, messageHistory = [], department = null }) {
     const apiKey = await getOpenAIApiKey();
     if (!apiKey) {
         if (process.env.NODE_ENV !== 'test') logger.warn('AI: کلید OpenAI تنظیم نشده. از پنل واتساپ یا OPENAI_API_KEY در .env استفاده کنید.');
