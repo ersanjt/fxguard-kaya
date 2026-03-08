@@ -37,7 +37,12 @@ module.exports = (sequelize) => {
             type: DataTypes.BOOLEAN,
             defaultValue: true,
             allowNull: true,
-            comment: 'فعال بودن پاسخ خودکار هوش مصنوعی (نیاز به OPENAI_API_KEY در .env)'
+            comment: 'فعال بودن پاسخ خودکار هوش مصنوعی'
+        },
+        openaiApiKey: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'کلید API اوپن‌ای‌آی — از پنل وارد می‌شود یا از OPENAI_API_KEY در .env'
         },
         deptAssignedMessage: {
             type: DataTypes.TEXT,

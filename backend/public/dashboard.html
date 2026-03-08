@@ -1345,7 +1345,15 @@
                             </div>
                             <div id="whatsappAIBox" class="whatsapp-card form-box">
                                 <h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی (OpenAI)</h3>
-                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون پاسخ خودکار (کلمات کلیدی) جواب ندهد، هوش مصنوعی به پیام مشتری پاسخ می‌دهد. همچنین مسیریابی به دپارتمان مناسب با AI انجام می‌شود. نیاز به OPENAI_API_KEY در .env</p>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون پاسخ خودکار (کلمات کلیدی) جواب ندهد، هوش مصنوعی به پیام مشتری پاسخ می‌دهد. مسیریابی به دپارتمان مناسب هم با AI انجام می‌شود.</p>
+                                <div class="whatsapp-openai-key-row">
+                                    <label for="whatsappOpenAIApiKey" data-i18n="whatsapp_openai_key_label">کلید API اوپن‌ای‌آی</label>
+                                    <div class="whatsapp-openai-key-wrap">
+                                        <input type="password" id="whatsappOpenAIApiKey" class="whatsapp-input" data-i18n-ph="whatsapp_openai_key_ph" placeholder="sk-... از platform.openai.com" autocomplete="off">
+                                        <a href="#" id="whatsappOpenAIClearKey" class="whatsapp-clear-key" style="display:none" data-i18n="whatsapp_openai_clear_key">پاک کردن کلید</a>
+                                    </div>
+                                    <span id="whatsappOpenAIKeyStatus" class="whatsapp-key-status"></span>
+                                </div>
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAIEnabled" checked> <span data-i18n="whatsapp_ai_enabled">فعال</span></label>
                                 <button type="button" class="btn-primary" id="btnSaveWhatsappAI" data-i18n="btn_save">ذخیره</button>
                             </div>

@@ -12,9 +12,10 @@ async function main() {
     const testMessage = process.argv[2] || 'سلام، چطور می‌تونم حواله بفرستم؟';
     
     console.log('🔧 Testing AI Response Service...\n');
-    console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? '✅ Set (' + process.env.OPENAI_API_KEY.slice(0, 10) + '...)' : '❌ NOT SET');
+    const apiKey = (await require('../lib/getOpenAIApiKey').getOpenAIApiKey()) || process.env.OPENAI_API_KEY;
+    console.log('OpenAI API Key:', apiKey ? '✅ Set (' + apiKey.slice(0, 10) + '...)' : '❌ NOT SET (set in panel or OPENAI_API_KEY in .env)');
     console.log('AI_ANSWER_ENABLED:', process.env.AI_ANSWER_ENABLED ?? '(default: true)');
-    console.log('isAIAnswerEnabled():', isAIAnswerEnabled());
+    console.log('isAIAnswerEnabled():', await isAIAnswerEnabled());
     console.log('\n📩 Test message:', testMessage);
     console.log('---\n');
 

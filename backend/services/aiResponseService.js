@@ -1,6 +1,7 @@
 const axios = require('axios');
 const logger = require('../config/logger');
 const { getCompanyKnowledge, formatKnowledgeForPrompt } = require('../config/companyKnowledge');
+const { getOpenAIApiKey } = require('../lib/getOpenAIApiKey');
 
 /**
  * سرویس پاسخ‌دهی هوش مصنوعی با OpenAI
@@ -221,9 +222,9 @@ function buildMessages(customerName, messageHistory, incomingMessage) {
  * @returns {Promise<string|null>} متن پاسخ یا null در صورت خطا
  */
 async function generateAIResponse({ conversation, customer, incomingMessage, messageHistory = [], department = null }) {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = await getOpenAIApiKey();
     if (!apiKey) {
-        if (process.env.NODE_ENV !== 'test') logger.warn('AI: OPENAI_API_KEY not set in .env');
+        if (process.env.NODE_ENV !== 'test') logger.warn('AI: کلید OpenAI تنظیم نشده. از پنل واتساپ یا OPENAI_API_KEY در .env استفاده کنید.');
         return null;
     }
     const text = (incomingMessage || '').trim();
@@ -297,9 +298,10 @@ async function generateAIResponse({ conversation, customer, incomingMessage, mes
 
 /**
  * بررسی فعال بودن پاسخ AI
+ * @returns {Promise<boolean>}
  */
-function isAIAnswerEnabled() {
-    const apiKey = process.env.OPENAI_API_KEY;
+async function isAIAnswerEnabled() {
+    const apiKey = await getOpenAIApiKey();
     if (!apiKey) return false;
     const enabled = process.env.AI_ANSWER_ENABLED;
     return enabled === undefined || enabled === '' || enabled === 'true' || enabled === '1';

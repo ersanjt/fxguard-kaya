@@ -1,5 +1,6 @@
 const axios = require('axios');
 const logger = require('../config/logger');
+const { getOpenAIApiKey } = require('../lib/getOpenAIApiKey');
 
 /**
  * سرویس هوشمند مسیریابی به دپارتمان
@@ -160,7 +161,7 @@ function scoreDepartment(dept, messageText) {
  * با استفاده از OpenAI (در صورت وجود کلید) فهم معنایی انجام می‌دهد
  */
 async function detectDepartmentWithAI(messageText, departments) {
-    const apiKey = process.env.OPENAI_API_KEY;
+    const apiKey = await getOpenAIApiKey();
     if (!apiKey || !messageText || !departments?.length) return null;
 
     const deptList = departments.map(d => ({
@@ -232,7 +233,8 @@ ${JSON.stringify(deptList, null, 2)}
  * @returns {Promise<{ department: Object|null, method: string, confidence: number }>}
  */
 async function selectBestDepartment(departments, messageContent, options = {}) {
-    const useAI = options.useAI !== false && !!process.env.OPENAI_API_KEY;
+    const apiKey = await getOpenAIApiKey();
+    const useAI = options.useAI !== false && !!apiKey;
     const text = (messageContent || '').trim();
     if (!text) {
         return { department: null, method: 'empty', confidence: 0 };

@@ -10,7 +10,7 @@ const models = require('../models');
 const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse, WhatsappConfig } = models;
 const { Op } = require('sequelize');
 const { normalizePhone, getSendTarget } = require('../lib/phoneUtils');
-const { gatewayPost } = require('../lib/gatewayClient');
+const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessages');
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
 
@@ -227,13 +227,13 @@ async function sendAutoReply(conversation, responseText, rabbitChannel, logger, 
             status: 'pending',
             timestamp: new Date()
         });
-        if (rabbitChannel) {
+        if (rabbitChannel && !isCloudApiConfigured()) {
             rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
                 to: toPhone, message: customerMessage, conversationId: conversation.id, messageId: autoMsg.id
             })), { persistent: true });
         } else {
             try {
-                await gatewayPost('/api/send-message', { to: toPhone, message: customerMessage }, { timeout: 10000 });
+                await sendWhatsAppMessage({ to: toPhone, message: customerMessage }, { timeout: 10000 });
                 await autoMsg.update({ status: 'sent' });
             } catch (err) {
                 logger.error('Gateway send error', { error: err.message });
@@ -264,7 +264,7 @@ async function tryRerouteIfTopicChanged(conversation, messageContent, customerId
         const { department: smartDept, method, confidence } = await selectBestDepartment(
             departments,
             messageContent || '',
-            { useAI: !!process.env.OPENAI_API_KEY }
+            { useAI: true }
         );
         if (!smartDept || confidence < 75) return;
         const currentDeptId = conversation.departmentId ? String(conversation.departmentId) : null;
@@ -306,7 +306,7 @@ async function autoAssignment(conversation, messageContent, customerId, logger) 
         const { department: smartDept, method, confidence } = await selectBestDepartment(
             departments,
             messageContent || '',
-            { useAI: !!process.env.OPENAI_API_KEY }
+            { useAI: true }
         );
         let assignedDepartment = smartDept;
         if (!assignedDepartment) {
@@ -570,8 +570,8 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
 
         if (!isGroup && !isFromMe && !autoResponseSent && hasText) {
             const { generateAIResponse, isAIAnswerEnabled, isSimpleFactualQuestion } = require('./aiResponseService');
-            let aiEnabled = isAIAnswerEnabled();
-            if (!aiEnabled) logger.info('AI skipped: OPENAI_API_KEY not set or AI_ANSWER_ENABLED=false');
+            let aiEnabled = await isAIAnswerEnabled();
+            if (!aiEnabled) logger.info('AI skipped: کلید OpenAI تنظیم نشده یا AI_ANSWER_ENABLED=false');
             try {
                 const wc = await getCachedWhatsappConfig();
                 if (wc && wc.aiAnswerEnabled === false) {

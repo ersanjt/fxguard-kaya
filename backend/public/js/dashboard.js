@@ -696,7 +696,7 @@
                     whatsapp_intro: 'WhatsApp messages are automatically saved in conversations. Auto-assignment to departments is based on keywords.',
                     whatsapp_open_web: 'Open WhatsApp Web', whatsapp_manage_convs: 'Manage conversations', whatsapp_disconnect_btn: 'Disconnect WhatsApp',
                     whatsapp_connection_title: 'Connection status', whatsapp_qr_expiry: 'Code valid ~60s. After scanning, wait 10–60 seconds; page will update automatically.', whatsapp_scan_waiting: 'Checking connection... Please wait.', whatsapp_syncing: 'Scanned. Syncing with WhatsApp… wait a few seconds.', whatsapp_after_scan_trouble: 'If nothing happens after scan: check server internet/WhatsApp access; check Gateway logs (error.log) on server.', whatsapp_qr_not_ready: 'QR not ready yet. Click "Start WhatsApp" and wait a few seconds.', whatsapp_phone_cannot_connect_title: 'If your phone shows "New device cannot be connected" or "Try again later":', whatsapp_phone_cannot_connect_hint: 'This is a WhatsApp limit, not the panel. After each disconnect, WhatsApp often blocks new device links for 1–5 minutes. Wait, check internet and VPN; in WhatsApp mobile see Linked devices (max 4) and remove one if needed. Then refresh the QR and scan again.', whatsapp_refresh_status: 'Refresh status', whatsapp_last_connection: 'Last connection info', whatsapp_status_label: 'Status', whatsapp_number_label: 'Number', whatsapp_connection_result: 'Connection',
-                    whatsapp_welcome_title: 'Auto-reply to first message', whatsapp_welcome_hint: 'When someone messages you for the first time, this text is sent automatically. Empty = disabled', whatsapp_welcome_enabled: 'Enabled', whatsapp_welcome_ph: 'Hello! Welcome to Kaya Exchange. How can we help you?', ai_assistant: 'AI assistant', whatsapp_ai_title: 'AI Auto-Reply (OpenAI)', whatsapp_ai_hint: 'When no keyword rule matches, AI replies. Department routing uses AI. Requires OPENAI_API_KEY in .env', whatsapp_ai_enabled: 'Enabled',
+                    whatsapp_welcome_title: 'Auto-reply to first message', whatsapp_welcome_hint: 'When someone messages you for the first time, this text is sent automatically. Empty = disabled', whatsapp_welcome_enabled: 'Enabled', whatsapp_welcome_ph: 'Hello! Welcome to Kaya Exchange. How can we help you?', ai_assistant: 'AI assistant', whatsapp_ai_title: 'AI Auto-Reply (OpenAI)', whatsapp_ai_hint: 'When no keyword rule matches, AI replies. Department routing uses AI.', whatsapp_ai_enabled: 'Enabled',
                     whatsapp_dept_routing: 'Auto-assign to department', whatsapp_dept_routing_hint: 'Based on keywords in the message, the conversation is routed to the relevant department.', whatsapp_unassigned: 'Unassigned conversations', whatsapp_unassigned_hint: 'These conversations need department or assignee assignment.',
                     rates_intro: 'Prices are fetched from API and shown in the bottom bar for everyone.', rates_adjust_type: 'Adjustment type',
                     rates_none: 'No change', rates_none_desc: 'API rate is shown without change.', rates_fixed: 'Fixed', rates_fixed_desc: 'Your fixed rate replaces the API rate.', rates_delta: '± Amount', rates_delta_desc: 'An amount is added to or subtracted from the API rate.', rates_percent: '± Percent', rates_percent_desc: 'A percentage is added to or subtracted from the API rate.', rates_adjustments: 'Rate adjustments', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value', rates_ph_percent: 'e.g. 2 or -1', rates_ph_delta: 'e.g. 500 or -200', rates_ph_fixed: 'Fixed price', rates_no_access: 'You do not have access to this section.', rates_manage_currencies: 'Manage currencies', rates_manage_currencies_hint: 'Add, edit or remove currencies shown in rates and ticker. Only for users with rates permission.', rates_add_currency: 'Add currency', rates_edit_currency: 'Edit currency', rates_currency_key: 'Currency key (e.g. usd)', rates_currency_key_hint: 'Lowercase letters and numbers only; read-only when editing.', rates_currency_label: 'Display name', rates_currency_apikeys: 'API keys (comma-separated)', rates_currency_apikeys_ph: 'e.g. usd_sell, usd_buy', rates_currency_apikeys_hint: 'Field names from Navasan API response.', rates_currency_key_required: 'Currency key is required', rates_no_currencies: 'No currencies defined. Add one with «Add currency».', rates_delete_currency_confirm: 'Delete this currency? Its adjustments and ticker visibility will be removed too.',
@@ -3967,6 +3967,7 @@
                 // ذخیره تنظیمات واتساپ
                 if (target.closest('#btnSaveWhatsappWelcome') && typeof saveWhatsappWelcomeConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappWelcomeConfig(); return; }
                 if (target.closest('#btnSaveWhatsappAI') && typeof saveWhatsappAIConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAIConfig(); return; }
+                if (target.closest('#whatsappOpenAIClearKey') && typeof clearWhatsappOpenAIKey === 'function') { e.preventDefault(); e.stopPropagation(); clearWhatsappOpenAIKey(); return; }
                 if (target.closest('#btnSaveWhatsappAutoMessages') && typeof saveWhatsappAutoMessagesConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAutoMessagesConfig(); return; }
                 if (target.closest('#btnSaveWhatsappUnanswered') && typeof saveWhatsappUnansweredConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappUnansweredConfig(); return; }
                 // ویرایش و حذف فایل تمپلیت
@@ -9402,6 +9403,11 @@
                 if (ta) ta.value = res.data.welcomeMessage || '';
                 if (cb) cb.checked = res.data.welcomeEnabled !== false;
                 if (aiCb) aiCb.checked = res.data.aiAnswerEnabled !== false;
+                var openaiInput = document.getElementById('whatsappOpenAIApiKey');
+                var openaiStatus = document.getElementById('whatsappOpenAIKeyStatus');
+                if (openaiInput) { openaiInput.value = ''; openaiInput.placeholder = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید ذخیره شده ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change') : (LANG === 'fa' ? 'کلید API را از platform.openai.com وارد کنید' : 'Enter API key from platform.openai.com'); }
+                if (openaiStatus) openaiStatus.textContent = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set') : ''; if (openaiStatus && res.data.openaiApiKeySet) openaiStatus.classList.add('set'); else if (openaiStatus) openaiStatus.classList.remove('set');
+                var clearLink = document.getElementById('whatsappOpenAIClearKey'); if (clearLink) clearLink.style.display = res.data.openaiApiKeySet ? 'inline' : 'none';
                 if (alertIn) alertIn.value = res.data.alertUnansweredAfterMinutes ?? 5;
                 if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
                 var deptMsg = document.getElementById('whatsappDeptAssignedMessage');
@@ -9445,14 +9451,23 @@
             if (res.needLogin) return;
             toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
         }
+        async function clearWhatsappOpenAIKey() {
+            var res = await apiFetch('/api/whatsapp/config', { method: 'PUT', body: JSON.stringify({ openaiApiKey: '' }) });
+            if (res.needLogin) return;
+            if (res.ok) { loadWhatsappWelcomeConfig(); toast(t('done_msg')); } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
         async function saveWhatsappAIConfig() {
             var aiCb = document.getElementById('whatsappAIEnabled');
+            var openaiInput = document.getElementById('whatsappOpenAIApiKey');
             if (!aiCb) return;
+            var body = { aiAnswerEnabled: aiCb.checked };
+            if (openaiInput && openaiInput.value.trim()) body.openaiApiKey = openaiInput.value.trim();
             var res = await apiFetch('/api/whatsapp/config', {
                 method: 'PUT',
-                body: JSON.stringify({ aiAnswerEnabled: aiCb.checked })
+                body: JSON.stringify(body)
             });
             if (res.needLogin) return;
+            if (res.ok && openaiInput && openaiInput.value.trim()) { openaiInput.value = ''; openaiInput.placeholder = LANG === 'fa' ? 'کلید ذخیره شد ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change'; var st = document.getElementById('whatsappOpenAIKeyStatus'); if (st) { st.textContent = LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set'; st.classList.add('set'); } }
             toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
         }
         async function saveWhatsappAutoMessagesConfig() {

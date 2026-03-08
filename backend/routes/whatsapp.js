@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { WhatsappConfig } = require('../models');
 const { isValidUUID } = require('../lib/validation');
+const { clearOpenAIApiKeyCache } = require('../lib/getOpenAIApiKey');
 
 router.get('/config', async (req, res) => {
     try {
@@ -17,6 +18,7 @@ router.get('/config', async (req, res) => {
             escalateUnansweredAfterMinutes: cfg.escalateUnansweredAfterMinutes ?? 15,
             escalationDepartmentId: cfg.escalationDepartmentId || null,
             aiAnswerEnabled: cfg.aiAnswerEnabled !== false,
+            openaiApiKeySet: !!(cfg.openaiApiKey && String(cfg.openaiApiKey).trim().length > 10),
             deptAssignedMessage: cfg.deptAssignedMessage ?? '',
             employeeIntroMessage: cfg.employeeIntroMessage ?? ''
         });
@@ -29,6 +31,7 @@ router.get('/config', async (req, res) => {
                 escalateUnansweredAfterMinutes: 15,
                 escalationDepartmentId: null,
                 aiAnswerEnabled: true,
+                openaiApiKeySet: false,
                 deptAssignedMessage: '',
                 employeeIntroMessage: ''
             });
@@ -40,7 +43,7 @@ router.get('/config', async (req, res) => {
 router.put('/config', async (req, res) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
-        const { welcomeMessage, welcomeEnabled, alertUnansweredAfterMinutes, escalateUnansweredAfterMinutes, escalationDepartmentId, aiAnswerEnabled, deptAssignedMessage, employeeIntroMessage } = req.body || {};
+        const { welcomeMessage, welcomeEnabled, alertUnansweredAfterMinutes, escalateUnansweredAfterMinutes, escalationDepartmentId, aiAnswerEnabled, openaiApiKey, deptAssignedMessage, employeeIntroMessage } = req.body || {};
         const [cfg] = await WhatsappConfig.findOrCreate({
             where: { id: 'default' },
             defaults: { welcomeMessage: null, welcomeEnabled: true, alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15, aiAnswerEnabled: true }
@@ -58,6 +61,15 @@ router.put('/config', async (req, res) => {
             cfg.escalationDepartmentId = escalationDepartmentId || null;
         }
         if (aiAnswerEnabled !== undefined) cfg.aiAnswerEnabled = !!aiAnswerEnabled;
+        if (openaiApiKey !== undefined) {
+            const key = String(openaiApiKey || '').trim();
+            if (key === '') {
+                cfg.openaiApiKey = null;
+            } else if (key.length >= 20 && (key.startsWith('sk-') || key.startsWith('sk_proj-'))) {
+                cfg.openaiApiKey = key;
+            }
+            clearOpenAIApiKeyCache();
+        }
         if (deptAssignedMessage !== undefined) {
             const msg = String(deptAssignedMessage || '').trim();
             if (msg.length > 500) return res.status(400).json({ error: 'پیام تخصیص دپارتمان بیش از ۵۰۰ کاراکتر مجاز نیست' });
@@ -76,6 +88,7 @@ router.put('/config', async (req, res) => {
             escalateUnansweredAfterMinutes: cfg.escalateUnansweredAfterMinutes,
             escalationDepartmentId: cfg.escalationDepartmentId,
             aiAnswerEnabled: cfg.aiAnswerEnabled !== false,
+            openaiApiKeySet: !!(cfg.openaiApiKey && String(cfg.openaiApiKey).trim().length > 10),
             deptAssignedMessage: cfg.deptAssignedMessage ?? '',
             employeeIntroMessage: cfg.employeeIntroMessage ?? ''
         });
