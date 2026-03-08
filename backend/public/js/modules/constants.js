@@ -4,14 +4,14 @@
 (function () {
     'use strict';
 
-    var VALID_PAGES = [
+    const VALID_PAGES = [
         'dashboard', 'conversations', 'customers', 'departments', 'users',
         'tickets', 'tasks', 'processes', 'whatsapp', 'message-templates',
         'branches', 'supervision', 'staff-activity', 'profile', 'announcements',
         'internal-chat', 'rates', 'rates-charts', 'services', 'panel-settings'
     ];
 
-    var PAGE_TO_SECTION = {
+    const PAGE_TO_SECTION = {
         'panel-settings': 'panel_settings',
         whatsapp: 'whatsapp',
         tickets: 'tickets',
@@ -32,7 +32,7 @@
         'message-templates': 'conversations'
     };
 
-    var PAGE_IDS = {
+    const PAGE_IDS = {
         dashboard: 'pageDashboard',
         conversations: 'pageConversations',
         customers: 'pageCustomers',
@@ -55,7 +55,7 @@
         'panel-settings': 'pagePanelSettings'
     };
 
-    var PAGE_TITLES = {
+    const PAGE_TITLES = {
         dashboard: 'nav_dashboard',
         conversations: 'nav_conversations',
         customers: 'nav_customers',

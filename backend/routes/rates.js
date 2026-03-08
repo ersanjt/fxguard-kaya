@@ -75,7 +75,7 @@ router.get('/', async (req, res) => {
         } else {
             lastRatesCache = raw;
         }
-        let adjustments = {};
+        const adjustments = {};
         try {
             const rows = await RateAdjustment.findAll();
             rows.forEach(r => { adjustments[r.currencyKey] = r; });

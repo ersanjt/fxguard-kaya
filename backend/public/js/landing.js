@@ -1,6 +1,6 @@
 (function() {
-    var LANG = 'en';
-    var TRANSLATIONS = {
+    let LANG = 'en';
+    const TRANSLATIONS = {
         en: {
             logo: 'WhatsApp CRM',
             nav_why: 'Why CRM?', nav_features: 'Features', nav_panel: 'Panel', nav_pricing: 'Pricing', nav_contact: 'Contact', nav_panel_btn: 'Get Started',
@@ -106,9 +106,9 @@
         LANG = lang;
         document.documentElement.lang = lang === 'fa' ? 'fa' : (lang === 'tr' ? 'tr' : 'en');
         document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
-        var t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+        const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
         document.querySelectorAll('[data-i18n]').forEach(function(el) {
-            var key = el.getAttribute('data-i18n');
+            const key = el.getAttribute('data-i18n');
             if (t[key]) el.innerHTML = t[key];
         });
         document.querySelectorAll('.lang-switch button').forEach(function(btn) {
@@ -117,12 +117,12 @@
     }
 
     function detectAndSetLang() {
-        var params = new URLSearchParams(window.location.search);
-        var urlLang = params.get('lang');
+        const params = new URLSearchParams(window.location.search);
+        const urlLang = params.get('lang');
         if (urlLang && TRANSLATIONS[urlLang]) { applyLang(urlLang); return; }
-        var saved = localStorage.getItem('landing_lang');
+        const saved = localStorage.getItem('landing_lang');
         if (saved && TRANSLATIONS[saved]) { applyLang(saved); return; }
-        var browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase().split('-')[0];
+        const browserLang = (navigator.language || navigator.userLanguage || 'en').toLowerCase().split('-')[0];
         if (browserLang === 'fa') applyLang('fa');
         else if (browserLang === 'tr') applyLang('tr');
         else applyLang('en');
@@ -138,9 +138,9 @@
     detectAndSetLang();
 
     /* Scroll reveal */
-    var revealEls = document.querySelectorAll('.reveal');
+    const revealEls = document.querySelectorAll('.reveal');
     if (revealEls.length && 'IntersectionObserver' in window) {
-        var revealObs = new IntersectionObserver(function(entries) {
+        const revealObs = new IntersectionObserver(function(entries) {
             entries.forEach(function(entry) {
                 if (entry.isIntersecting) entry.target.classList.add('visible');
             });
@@ -150,25 +150,25 @@
         revealEls.forEach(function(el) { el.classList.add('visible'); });
     }
 
-    var url = (typeof PANEL_URL !== 'undefined') ? PANEL_URL : 'https://app.fxguard.io';
+    const url = (typeof PANEL_URL !== 'undefined') ? PANEL_URL : 'https://app.fxguard.io';
     document.querySelectorAll('#btnPanel, #btnPanelMob').forEach(function(btn){ if(btn) btn.href = url; });
 
     window.addEventListener('scroll', function() {
-        var h = document.getElementById('header');
+        const h = document.getElementById('header');
         if (h) h.classList.toggle('scrolled', window.scrollY > 50);
     });
 
-    var navToggle = document.getElementById('navToggle');
-    var navMobile = document.getElementById('navMobile');
-    var navClose = document.getElementById('navClose');
+    const navToggle = document.getElementById('navToggle');
+    const navMobile = document.getElementById('navMobile');
+    const navClose = document.getElementById('navClose');
     if (navToggle && navMobile) navToggle.addEventListener('click', function() { navMobile.classList.add('open'); });
     if (navClose && navMobile) navClose.addEventListener('click', function() { navMobile.classList.remove('open'); });
     navMobile && navMobile.querySelectorAll('a').forEach(function(a) {
         a.addEventListener('click', function() { navMobile.classList.remove('open'); });
     });
 
-    var form = document.getElementById('contactForm');
-    var formSuccess = document.getElementById('formSuccess');
+    const form = document.getElementById('contactForm');
+    const formSuccess = document.getElementById('formSuccess');
     if (form && formSuccess) {
         form.addEventListener('submit', function(e) {
             if (form.getAttribute('action').indexOf('YOUR_FORM_ID') >= 0) {

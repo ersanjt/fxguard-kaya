@@ -48,7 +48,7 @@ const SYNONYMS = {
 
     // عملیات و خدمات
     'قیمت': ['قیمت', 'نرخ', 'rate', 'نرخ لحظه', 'قیمت لحظه', 'نرخ امروز', 'قیمت امروز', 'چند', 'چقدر', 'مبلغ', 'هزینه'],
-    'خرید': ['خرید', 'buy', 'خریداری', 'خریدن', 'میخوام بخرم', 'میخوام خرید'],
+    'خرید': ['خرید', 'buy', 'خریداری', 'خریدن', 'میخوام بخرم', 'میخوام خرید', 'almak', 'alacağım', 'almak istiyorum'],
     'فروش': ['فروش', 'sell', 'فروشندگی', 'فروختن', 'میخوام بفروشم'],
     'تبدیل': ['تبدیل', 'convert', 'تعویض', 'مبادله', 'تعویض ارز', 'تبدیل ارز'],
     'مبلغ': ['مبلغ', 'مقدار', 'تعداد', 'amount', '100 هزار', 'هزار دلار', 'میلیون', 'میلیارد', 'تومان', 'مبلغ مورد نیاز', 'نیاز دارم', 'چند تا'],
@@ -74,8 +74,7 @@ const SYNONYMS = {
 
     // اصطلاحات عام
     'سلام': ['سلام', 'درود', 'hi', 'hello', 'merhaba'],
-    'نیاز': ['نیاز', 'نیاز دارم', 'میخوام', 'می‌خوام', 'خواستم', 'میخواستم', 'ihtiyacim', 'ihtiyacım', 'istiyorum', 'almak', 'göndermek', 'havale', 'havale yapmak'],
-    'خرید': ['خرید', 'buy', 'almak', 'alacağım', 'almak istiyorum']
+    'نیاز': ['نیاز', 'نیاز دارم', 'میخوام', 'می‌خوام', 'خواستم', 'میخواستم', 'ihtiyacim', 'ihtiyacım', 'istiyorum', 'almak', 'göndermek', 'havale', 'havale yapmak']
 };
 
 /**
@@ -88,7 +87,7 @@ function normalizeAndExpand(text) {
     const expanded = new Set(words);
 
     for (const word of words) {
-        for (const [key, synonyms] of Object.entries(SYNONYMS)) {
+        for (const [, synonyms] of Object.entries(SYNONYMS)) {
             if (synonyms.some(s => word.includes(s) || s.includes(word))) {
                 synonyms.forEach(s => expanded.add(s));
             }
@@ -105,7 +104,6 @@ function normalizeAndExpand(text) {
  */
 function scoreDepartment(dept, messageText) {
     const msgLower = messageText.toLowerCase().trim();
-    const msgWords = normalizeAndExpand(messageText);
     const matchedKeywords = [];
 
     if (!dept.keywords || !dept.keywords.trim()) {
@@ -326,7 +324,7 @@ function selectBestUser(users, messageContent, options = {}) {
     if (users.length === 1) return users[0];
 
     const text = (messageContent || '').trim();
-    const { customerId, previousAssigneeId } = options;
+    const { previousAssigneeId } = options;
 
     const scored = users.map(user => {
         let score = 0;

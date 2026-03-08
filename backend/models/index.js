@@ -60,6 +60,7 @@ const models = {
     RateCurrency: require('./RateCurrency')(sequelize),
     TickerConfig: require('./TickerConfig')(sequelize),
     WhatsappConfig: require('./WhatsappConfig')(sequelize),
+    WhatsappConnection: require('./WhatsappConnection')(sequelize),
     ProcessTemplate: require('./ProcessTemplate')(sequelize),
     ProcessInstance: require('./ProcessInstance')(sequelize),
     ProcessInstanceStep: require('./ProcessInstanceStep')(sequelize),

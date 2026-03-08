@@ -5,7 +5,7 @@
 (function () {
     'use strict';
 
-    var config = { getHeaders: null, getLang: null, on401: null };
+    const config = { getHeaders: null, getLang: null, on401: null };
 
     function init(cfg) {
         config.getHeaders = cfg && cfg.getHeaders;
@@ -14,8 +14,8 @@
     }
 
     async function apiFetch(url, opts) {
-        var opt = opts || {};
-        var h =
+        const opt = opts || {};
+        const h =
             opt.auth === false
                 ? { 'Content-Type': 'application/json' }
                 : config.getHeaders
@@ -24,8 +24,8 @@
         if (opt.body instanceof FormData) {
             delete h['Content-Type'];
         }
-        var apiBase = window.CRM_API_BASE != null ? window.CRM_API_BASE : '';
-        var r, text;
+        const apiBase = window.CRM_API_BASE != null ? window.CRM_API_BASE : '';
+        let r, text;
         try {
             r = await fetch(apiBase + url, {
                 ...opt,
@@ -35,7 +35,7 @@
             });
             text = await r.text();
         } catch (e) {
-            var lang = config.getLang ? config.getLang() : 'fa';
+            const lang = config.getLang ? config.getLang() : 'fa';
             return {
                 ok: false,
                 needLogin: false,
@@ -46,7 +46,7 @@
             };
         }
         if ((text || '').trim().startsWith('<')) {
-            var lang2 = config.getLang ? config.getLang() : 'fa';
+            const lang2 = config.getLang ? config.getLang() : 'fa';
             return {
                 ok: false,
                 needLogin: false,
@@ -56,11 +56,11 @@
                         : 'Server returned non-JSON. Ensure backend is running.',
             };
         }
-        var data;
+        let data;
         try {
             data = JSON.parse(text);
         } catch (_) {
-            var lang3 = config.getLang ? config.getLang() : 'fa';
+            const lang3 = config.getLang ? config.getLang() : 'fa';
             return {
                 ok: false,
                 needLogin: false,
@@ -70,7 +70,7 @@
         }
         if (r.status === 401) {
             if (typeof config.on401 === 'function') config.on401(data);
-            var lang4 = config.getLang ? config.getLang() : 'fa';
+            const lang4 = config.getLang ? config.getLang() : 'fa';
             return {
                 ok: false,
                 needLogin: true,
@@ -83,7 +83,7 @@
             };
         }
         if (r.status === 429) {
-            var lang5 = config.getLang ? config.getLang() : 'fa';
+            const lang5 = config.getLang ? config.getLang() : 'fa';
             return {
                 ok: false,
                 needLogin: false,
@@ -110,7 +110,7 @@
         if (res && res.error) return res.error;
         if (res && res.data && (res.data.error || res.data.message))
             return res.data.error || res.data.message;
-        var lang = config.getLang ? config.getLang() : 'fa';
+        const lang = config.getLang ? config.getLang() : 'fa';
         return lang === 'fa' ? 'خطا در ارتباط با سرور' : 'Server error';
     }
 

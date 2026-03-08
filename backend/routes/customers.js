@@ -131,8 +131,8 @@ router.get('/:id/conversations', async (req, res) => {
             order: [['lastMessageAt', 'DESC']]
         });
         const convIds = conversations.map(c => c.id);
-        let countMap = {};
-        let lastOutgoingMap = {};
+        const countMap = {};
+        const lastOutgoingMap = {};
         if (convIds.length > 0) {
             const [countRows, lastOutgoings] = await Promise.all([
                 Message.findAll({
@@ -201,7 +201,7 @@ router.get('/:id/timeline', async (req, res) => {
         ]);
         transactions = Array.isArray(txList) ? txList : [];
         const convIds = conversationsRaw.map(c => c.id);
-        let convCountMap = {};
+        const convCountMap = {};
         if (convIds.length > 0) {
             const countRows = await Message.findAll({
                 where: { conversationId: { [Op.in]: convIds } },

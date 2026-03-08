@@ -28,7 +28,13 @@ function createGatewayRouter(logger) {
 
     router.get('/gateway/status', authMiddleware, requireSection('whatsapp'), (req, res) => {
         if (isCloudApiConfigured()) {
-            return res.json({ whatsapp: true, status: 'ready', cloudApi: true });
+            const { PHONE_NUMBER_ID } = require('../lib/whatsappCloudApi');
+            return res.json({
+                whatsapp: true,
+                status: 'ready',
+                cloudApi: true,
+                number: PHONE_NUMBER_ID ? ('••••' + PHONE_NUMBER_ID.slice(-8) + ' (Cloud API)') : null,
+            });
         }
         gatewayGet('/api/status', { timeout: 5000 })
             .then((r) => res.json(r.data))

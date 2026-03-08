@@ -113,7 +113,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             const entries = body.entry || [];
             for (const entry of entries) {
                 const internalMessages = transformCloudWebhookToInternal(entry);
-                for (let msgData of internalMessages) {
+                for (const msgData of internalMessages) {
                     if (msgData._cloudMediaId) {
                         try {
                             const downloaded = await downloadMedia(msgData._cloudMediaId);

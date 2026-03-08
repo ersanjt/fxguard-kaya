@@ -126,7 +126,7 @@ router.post('/sync-groups', async (req, res) => {
                 if (groupName && String(customer.name || '').trim() !== groupName) {
                     await customer.update({ name: groupName }, { transaction: t });
                 }
-                let conv = await Conversation.findOne({
+                const conv = await Conversation.findOne({
                     where: { customerId: customer.id, status: { [Op.ne]: 'closed' } },
                     transaction: t
                 });
@@ -594,7 +594,7 @@ router.post('/:id/send', async (req, res) => {
             mediaData,
             timestamp: new Date()
         });
-        var preview = (content || '').slice(0, 120) || (hasMedia ? '📎 فایل' : '');
+        let preview = (content || '').slice(0, 120) || (hasMedia ? '📎 فایل' : '');
         if ((content || '').length > 120) preview += '…';
         const now = new Date();
         const updateData = { lastMessageAt: now, lastOutgoingMessageAt: now, lastOutgoingIsAutoReply: false, lastMessagePreview: preview, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };

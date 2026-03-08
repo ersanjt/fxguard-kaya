@@ -61,7 +61,7 @@ router.post('/send', async (req, res) => {
             return res.status(400).json({ error: `حداکثر ${BULK_MAX_RECIPIENTS} مشتری در هر ارسال انبوه مجاز است` });
         }
 
-        let content = (message || '').trim();
+        const content = (message || '').trim();
         if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
         if (content.length > 4096) return res.status(400).json({ error: 'متن پیام بیش از ۴۰۹۶ کاراکتر مجاز نیست' });
 

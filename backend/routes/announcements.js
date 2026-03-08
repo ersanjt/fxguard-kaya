@@ -78,7 +78,7 @@ router.post('/', async (req, res) => {
         if (String(body).trim().length > 5000) return res.status(400).json({ error: 'متن اعلان بیش از ۵,۰۰۰ کاراکتر مجاز نیست' });
         const me = req.user;
         let allowed = false;
-        let finalTargetType = targetType;
+        const finalTargetType = targetType;
         let finalTargetId = targetId || null;
 
         if (me.role === 'manager') {

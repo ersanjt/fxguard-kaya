@@ -1,6 +1,6 @@
 (function() {
-            var LANG = localStorage.getItem('crm_lang') || 'fa';
-            var I18N = {
+            let LANG = localStorage.getItem('crm_lang') || 'fa';
+            const I18N = {
                 fa: {
                     page_title: 'پ��رتا� کارک� ا�  کا�Rا | صراف�R کا�Rا',
                     login_title: 'پ��رتا� کارک� ا�  کا�Rا',
@@ -799,7 +799,7 @@
                 return (I18N[LANG] && I18N[LANG][k]) || (I18N.fa && I18N.fa[k]) || (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || k;
             };
             window.setLang = function(l) {
-                var supported = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
+                const supported = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
                 if (supported.indexOf(l) < 0) l = supported[0] || 'fa';
                 LANG = l;
                 localStorage.setItem('crm_lang', l);
@@ -807,47 +807,47 @@
                 document.documentElement.dir = (l === 'fa' ? 'rtl' : 'ltr');
                 document.body.classList.toggle('ltr', l !== 'fa');
                 document.querySelectorAll('.lang-switch button[data-lang], .lang-switch button[onclick*="setLang"]').forEach(function(btn) {
-                    var dataLang = btn.getAttribute('data-lang');
-                    var onclick = btn.getAttribute('onclick') || '';
+                    let dataLang = btn.getAttribute('data-lang');
+                    const onclick = btn.getAttribute('onclick') || '';
                     if (!dataLang && onclick.indexOf("setLang(") >= 0) {
-                        var m = onclick.match(/setLang\s*\(\s*['"]([a-z]+)['"]/);
+                        const m = onclick.match(/setLang\s*\(\s*['"]([a-z]+)['"]/);
                         dataLang = m ? m[1] : null;
                     }
-                    var active = (dataLang && dataLang === l);
+                    const active = (dataLang && dataLang === l);
                     btn.classList.toggle('active', active);
                     btn.setAttribute('aria-pressed', active ? 'true' : 'false');
                     btn.style.display = (dataLang && supported.indexOf(dataLang) < 0) ? 'none' : '';
                 });
-                var lbl = document.getElementById('langDropdownLabel');
+                const lbl = document.getElementById('langDropdownLabel');
                 if (lbl) lbl.textContent = (l === 'fa' ? 'FA' : l === 'tr' ? 'TR' : 'EN');
                 if (typeof applyTranslations === 'function') applyTranslations();
                 try { document.title = t('page_title'); } catch (_) {}
             };
             window.applyTranslations = function() {
                 document.querySelectorAll('[data-i18n]').forEach(function(el) {
-                    var k = el.getAttribute('data-i18n');
+                    const k = el.getAttribute('data-i18n');
                     if (k && t(k)) el.textContent = t(k);
                 });
                 document.querySelectorAll('[data-i18n-ph]').forEach(function(el) {
-                    var k = el.getAttribute('data-i18n-ph');
+                    const k = el.getAttribute('data-i18n-ph');
                     if (k && t(k)) el.placeholder = t(k);
                 });
                 document.querySelectorAll('[data-i18n-title]').forEach(function(el) {
-                    var k = el.getAttribute('data-i18n-title');
+                    const k = el.getAttribute('data-i18n-title');
                     if (k && t(k)) {
                         el.title = t(k);
                         if (el.classList.contains('nav-link') && el.closest('.sidebar')) el.setAttribute('data-tooltip', t(k));
                     }
                 });
                 document.querySelectorAll('[data-i18n-aria-label]').forEach(function(el) {
-                    var k = el.getAttribute('data-i18n-aria-label');
+                    const k = el.getAttribute('data-i18n-aria-label');
                     if (k && t(k)) el.setAttribute('aria-label', t(k));
                 });
                 if (typeof initSidebarCollapsedState === 'function') initSidebarCollapsedState();
             };
             window.SUPPORTED_LANGUAGES = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
             (function applyInitialLang() {
-                var l = localStorage.getItem('crm_lang') || 'fa';
+                const l = localStorage.getItem('crm_lang') || 'fa';
                 if (['fa','en','tr'].indexOf(l) >= 0) {
                     LANG = l;
                     document.documentElement.lang = (l === 'en' ? 'en' : l === 'tr' ? 'tr' : 'fa');
@@ -859,7 +859,7 @@
             })();
             window.applySupportedLanguages = function(supported, defaultLanguage) {
                 window.SUPPORTED_LANGUAGES = Array.isArray(supported) && supported.length ? supported : ['fa', 'en', 'tr'];
-                var cur = localStorage.getItem('crm_lang') || 'fa';
+                let cur = localStorage.getItem('crm_lang') || 'fa';
                 if (window.SUPPORTED_LANGUAGES.indexOf(cur) < 0) {
                     cur = (defaultLanguage && window.SUPPORTED_LANGUAGES.indexOf(defaultLanguage) >= 0) ? defaultLanguage : (window.SUPPORTED_LANGUAGES[0] || 'fa');
                     localStorage.setItem('crm_lang', cur);
@@ -902,9 +902,9 @@
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
             if (c && c.supportUrl) {
                 window.SUPPORT_URL = c.supportUrl;
-                var setSupportLink = function(wrapId, linkId) {
-                    var wrap = document.getElementById(wrapId);
-                    var link = document.getElementById(linkId);
+                const setSupportLink = function(wrapId, linkId) {
+                    const wrap = document.getElementById(wrapId);
+                    const link = document.getElementById(linkId);
                     if (wrap && link) {
                         link.href = c.supportUrl;
                         link.target = c.supportUrl.startsWith('mailto:') ? '_self' : '_blank';
@@ -923,52 +923,52 @@
                 window.navBadgeCounts.announcements = (stats.unreadAnnouncements || 0);
             }
             if (window.hasNewInternalChat) window.navBadgeCounts['internal-chat'] = 1;
-            var notifyBadge = document.getElementById('headerNotifyBadge');
-            var notifyBadgeMobile = document.getElementById('headerNotifyBadgeMobile');
-            var n = (window.navBadgeCounts.announcements || 0);
+            const notifyBadge = document.getElementById('headerNotifyBadge');
+            const notifyBadgeMobile = document.getElementById('headerNotifyBadgeMobile');
+            const n = (window.navBadgeCounts.announcements || 0);
             if (notifyBadge) { notifyBadge.style.display = n > 0 ? '' : 'none'; notifyBadge.textContent = n > 99 ? '99+' : String(n); }
             if (notifyBadgeMobile) { notifyBadgeMobile.style.display = n > 0 ? '' : 'none'; notifyBadgeMobile.textContent = n > 99 ? '99+' : String(n); }
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
-                var page = link.getAttribute('data-page');
-                var oldBadge = link.querySelector('.nav-badge, .nav-badge-dot');
+                const page = link.getAttribute('data-page');
+                const oldBadge = link.querySelector('.nav-badge, .nav-badge-dot');
                 if (oldBadge) oldBadge.remove();
-                var n = window.navBadgeCounts[page] || 0;
+                const n = window.navBadgeCounts[page] || 0;
                 if (n > 0) {
-                    var badge = document.createElement('span');
+                    const badge = document.createElement('span');
                     badge.className = n > 99 ? 'nav-badge-dot' : 'nav-badge';
                     badge.textContent = n > 99 ? '' : n;
                     link.appendChild(badge);
                 }
             });
-            var convBadge = document.getElementById('mobileTabConvBadge');
-            if (convBadge) { var nc = window.navBadgeCounts.conversations || 0; convBadge.style.display = nc > 0 ? '' : 'none'; convBadge.textContent = nc > 99 ? '99+' : String(nc); }
-            var annBadge = document.getElementById('mobileTabAnnBadge');
-            if (annBadge) { var na = window.navBadgeCounts.announcements || 0; annBadge.style.display = na > 0 ? '' : 'none'; annBadge.textContent = na > 99 ? '99+' : String(na); }
+            const convBadge = document.getElementById('mobileTabConvBadge');
+            if (convBadge) { const nc = window.navBadgeCounts.conversations || 0; convBadge.style.display = nc > 0 ? '' : 'none'; convBadge.textContent = nc > 99 ? '99+' : String(nc); }
+            const annBadge = document.getElementById('mobileTabAnnBadge');
+            if (annBadge) { const na = window.navBadgeCounts.announcements || 0; annBadge.style.display = na > 0 ? '' : 'none'; annBadge.textContent = na > 99 ? '99+' : String(na); }
         }
         function updateMobileTabBar(page) {
-            var tabBar = document.getElementById('mobileTabBar');
-            var bottomBar = document.getElementById('bottomBar');
+            const tabBar = document.getElementById('mobileTabBar');
+            const bottomBar = document.getElementById('bottomBar');
             if (!tabBar || !bottomBar) return;
-            var isMobile = window.innerWidth <= 900;
+            const isMobile = window.innerWidth <= 900;
             bottomBar.classList.toggle('has-mobile-tab', isMobile);
             if (!isMobile) return;
             document.querySelectorAll('.mobile-tab-bar .mobile-tab-item').forEach(function(item) {
-                var p = item.getAttribute('data-page');
-                var active = (p === page) || (p === 'more' && ['profile','tickets','tasks','processes','departments','users','branches','whatsapp','rates','services','internal-chat','panel-settings','supervision','staff-activity'].indexOf(page) >= 0);
+                const p = item.getAttribute('data-page');
+                const active = (p === page) || (p === 'more' && ['profile','tickets','tasks','processes','departments','users','branches','whatsapp','rates','services','internal-chat','panel-settings','supervision','staff-activity'].indexOf(page) >= 0);
                 item.classList.toggle('active', active);
                 item.setAttribute('aria-selected', active ? 'true' : 'false');
             });
-            var perms = (currentUser && currentUser.permissions) || {};
-            var hidden = HIDDEN_SECTIONS || [];
+            const perms = (currentUser && currentUser.permissions) || {};
+            const hidden = HIDDEN_SECTIONS || [];
             document.querySelectorAll('.mobile-tab-bar .mobile-tab-item[data-section]').forEach(function(item) {
-                var sec = item.getAttribute('data-section');
-                var visible = (sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] === true && hidden.indexOf(sec) < 0);
+                const sec = item.getAttribute('data-section');
+                const visible = (sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] === true && hidden.indexOf(sec) < 0);
                 item.style.display = visible ? '' : 'none';
             });
         }
 
         function headers() {
-            var h = { 'Content-Type': 'application/json' };
+            const h = { 'Content-Type': 'application/json' };
             if (token) h['Authorization'] = 'Bearer ' + token;
             return h;
         }
@@ -983,34 +983,34 @@
                     document.documentElement.classList.remove('auth-has-token');
                     document.getElementById('loginBox').style.display = 'flex';
                     document.getElementById('app').classList.remove('show');
-                    var errEl = document.getElementById('loginErr');
+                    const errEl = document.getElementById('loginErr');
                     if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 }
             });
         }
         function timeAgo(d) {
             if (!d) return '';
-            var date = d instanceof Date ? d : new Date(d);
+            const date = d instanceof Date ? d : new Date(d);
             if (isNaN(date.getTime())) return '';
-            var now = new Date();
-            var sec = Math.floor((now - date) / 1000);
+            const now = new Date();
+            const sec = Math.floor((now - date) / 1000);
             if (sec < 60) return (LANG === 'fa' ? 'همین الان' : LANG === 'tr' ? 'Az önce' : 'Just now');
-            var min = Math.floor(sec / 60);
+            const min = Math.floor(sec / 60);
             if (min < 60) return min + ' ' + (LANG === 'fa' ? 'دقیقه پیش' : LANG === 'tr' ? 'dk önce' : 'min ago');
-            var hr = Math.floor(min / 60);
+            const hr = Math.floor(min / 60);
             if (hr < 24) return hr + ' ' + (LANG === 'fa' ? 'ساعت پیش' : LANG === 'tr' ? 'saat önce' : 'hr ago');
-            var day = Math.floor(hr / 24);
+            const day = Math.floor(hr / 24);
             if (day < 7) return day + ' ' + (LANG === 'fa' ? 'روز پیش' : LANG === 'tr' ? 'gün önce' : 'days ago');
             return fmtTZ(d, 'date');
         }
         // فارسی: وقت تهران ایران و تاریخ شمسی. انگلیسی: وقت امارات و تقویم میلادی. ترکی: وقت استانبول ترکیه و تقویم میلادی.
         function fmtTZ(d, opts) {
             if (!d) return '';
-            var date = d instanceof Date ? d : new Date(d);
+            const date = d instanceof Date ? d : new Date(d);
             if (isNaN(date.getTime())) return '';
-            var tz = (LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai');
-            var locale = (LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB');
-            var base = { timeZone: tz };
+            const tz = (LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai');
+            const locale = (LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB');
+            const base = { timeZone: tz };
             if (typeof opts === 'string') {
                 if (opts === 'time') return new Intl.DateTimeFormat(locale, Object.assign({}, base, { hour: '2-digit', minute: '2-digit' })).format(date);
                 if (opts === 'date') return new Intl.DateTimeFormat(locale, Object.assign({}, base, { dateStyle: 'short' })).format(date);
@@ -1022,11 +1022,11 @@
         function formatPrice(val) {
             if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatPrice === 'function') return window.CRM.Utils.formatPrice(val);
             if (val == null || val === '' || val === '\u2014' || (typeof val === 'string' && val.trim() === '')) return '\u2014';
-            var num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
+            const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
             if (isNaN(num)) return '\u2014';
-            var n = String(Math.round(num)).replace(/[^\d]/g, '');
+            const n = String(Math.round(num)).replace(/[^\d]/g, '');
             if (n.length > 3) {
-                var out = ''; for (var i = n.length - 1, c = 0; i >= 0; i--, c++) { if (c && c % 3 === 0) out = ',' + out; out = n[i] + out; }
+                let out = ''; for (let i = n.length - 1, c = 0; i >= 0; i--, c++) { if (c && c % 3 === 0) out = ',' + out; out = n[i] + out; }
                 return out.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
             }
             return n.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
@@ -1034,63 +1034,63 @@
 
         function getLocalHour() {
             try {
-                var tz = window.APP_TIMEZONE || 'Europe/Istanbul';
-                var h = new Intl.DateTimeFormat('en', { timeZone: tz, hour: 'numeric', hour12: false }).format(new Date());
+                const tz = window.APP_TIMEZONE || 'Europe/Istanbul';
+                const h = new Intl.DateTimeFormat('en', { timeZone: tz, hour: 'numeric', hour12: false }).format(new Date());
                 return parseInt(h, 10);
             } catch (e) { return 12; }
         }
         function isRatesWindow() {
-            var h = getLocalHour();
+            const h = getLocalHour();
             return h >= 6 && h < 20;
         }
         function formatChange(ch) {
             if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatChange === 'function') return window.CRM.Utils.formatChange(ch);
             if (ch == null || ch === '') return '';
-            var num = typeof ch === 'number' ? ch : parseFloat(String(ch));
+            const num = typeof ch === 'number' ? ch : parseFloat(String(ch));
             if (isNaN(num) || num === 0) return '';
-            var s = Math.abs(num) >= 1000 ? Math.abs(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : String(Math.abs(num));
-            var fa = '۰۱۲۳۴۵۶۷۸۹';
-            var out = s.replace(/\d/g, function(d) { return fa[d]; });
+            const s = Math.abs(num) >= 1000 ? Math.abs(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : String(Math.abs(num));
+            const fa = '۰۱۲۳۴۵۶۷۸۹';
+            const out = s.replace(/\d/g, function(d) { return fa[d]; });
             return (num > 0 ? '+' : '−') + out;
         }
         function formatTickerDateTime(updatedAtStr, timestampSec) {
-            var d = new Date();
-            var opts = { hour: '2-digit', minute: '2-digit', hour12: false };
-            var iran = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Asia/Tehran' })).format(d);
-            var turkey = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Europe/Istanbul' })).format(d);
-            var uae = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Asia/Dubai' })).format(d);
-            var shamsi = '';
+            const d = new Date();
+            const opts = { hour: '2-digit', minute: '2-digit', hour12: false };
+            const iran = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Asia/Tehran' })).format(d);
+            const turkey = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Europe/Istanbul' })).format(d);
+            const uae = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Asia/Dubai' })).format(d);
+            let shamsi = '';
             try {
-                var pf = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' });
-                var parts = pf.formatToParts(d);
-                var y = (parts.find(function(p){ return p.type === 'year'; }) || {}).value || '';
-                var m = (parts.find(function(p){ return p.type === 'month'; }) || {}).value || '';
-                var day = (parts.find(function(p){ return p.type === 'day'; }) || {}).value || '';
-                var yearNum = parseInt(y, 10);
+                const pf = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' });
+                const parts = pf.formatToParts(d);
+                const y = (parts.find(function(p){ return p.type === 'year'; }) || {}).value || '';
+                const m = (parts.find(function(p){ return p.type === 'month'; }) || {}).value || '';
+                const day = (parts.find(function(p){ return p.type === 'day'; }) || {}).value || '';
+                const yearNum = parseInt(y, 10);
                 if (yearNum >= 1300 && yearNum <= 1500) shamsi = y + '/' + m + '/' + day;
                 else shamsi = pf.format(d);
             } catch (e) {
                 shamsi = new Intl.DateTimeFormat('fa-IR', { timeZone: 'Asia/Tehran', calendar: 'persian', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             }
-            var miladi = '';
+            let miladi = '';
             try {
                 miladi = new Intl.DateTimeFormat('tr-TR', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             } catch (e) {
                 miladi = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit', day: '2-digit' }).format(d);
             }
-            var hijri = '';
+            let hijri = '';
             try {
-                var hf = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit' });
-                var hParts = hf.formatToParts(d);
-                var hy = (hParts.find(function(p){ return p.type === 'year'; }) || {}).value || '';
-                var hm = (hParts.find(function(p){ return p.type === 'month'; }) || {}).value || '';
-                var hd = (hParts.find(function(p){ return p.type === 'day'; }) || {}).value || '';
-                var hYearNum = parseInt(hy, 10);
+                const hf = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit' });
+                const hParts = hf.formatToParts(d);
+                const hy = (hParts.find(function(p){ return p.type === 'year'; }) || {}).value || '';
+                const hm = (hParts.find(function(p){ return p.type === 'month'; }) || {}).value || '';
+                const hd = (hParts.find(function(p){ return p.type === 'day'; }) || {}).value || '';
+                const hYearNum = parseInt(hy, 10);
                 if (hYearNum >= 1400 && hYearNum <= 1500) hijri = hm + '/' + hd + '/' + hy + ' AH';
                 else hijri = hf.format(d) + ' AH';
             } catch (e) {
                 try {
-                    var hf2 = new Intl.DateTimeFormat('en-u-ca-islamic', { timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit' });
+                    const hf2 = new Intl.DateTimeFormat('en-u-ca-islamic', { timeZone: 'Asia/Dubai', year: 'numeric', month: '2-digit', day: '2-digit' });
                     hijri = hf2.format(d) + ' AH';
                 } catch (e2) { hijri = '—'; }
             }
@@ -1108,46 +1108,46 @@
             };
         }
         function formatRatesLastUpdated(updatedAtStr, timestampSec) {
-            var d = updatedAtStr ? new Date(updatedAtStr) : (timestampSec ? new Date(timestampSec * 1000) : new Date());
+            const d = updatedAtStr ? new Date(updatedAtStr) : (timestampSec ? new Date(timestampSec * 1000) : new Date());
             if (isNaN(d.getTime())) return '';
-            var locale = LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB';
-            var tz = LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai';
+            const locale = LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB';
+            const tz = LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai';
             return new Intl.DateTimeFormat(locale, { timeZone: tz, dateStyle: 'short', timeStyle: 'short' }).format(d);
         }
         async function fetchRates(showRefreshSpinner) {
             if (!token) return;
-            var tickerEl = document.getElementById('priceTicker');
+            const tickerEl = document.getElementById('priceTicker');
             if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf('rates') >= 0) {
                 if (tickerEl) tickerEl.style.display = 'none';
                 return;
             }
-            var innerEl = document.getElementById('ratesMarqueeInner');
-            var trackEl = document.getElementById('ratesMarqueeTrack');
-            var trackWrap = document.getElementById('ratesMarqueeTrackWrap');
-            var refreshBtn = document.getElementById('ratesMarqueeRefresh');
+            const innerEl = document.getElementById('ratesMarqueeInner');
+            const trackEl = document.getElementById('ratesMarqueeTrack');
+            const trackWrap = document.getElementById('ratesMarqueeTrackWrap');
+            const refreshBtn = document.getElementById('ratesMarqueeRefresh');
             if (showRefreshSpinner && refreshBtn) refreshBtn.classList.add('loading');
-            var res = await apiFetch('/api/rates');
+            const res = await apiFetch('/api/rates');
             if (showRefreshSpinner && refreshBtn) refreshBtn.classList.remove('loading');
             if (res.needLogin || !res.ok) return;
-            var data = res.data;
-            var items = (data && data.items) || [];
-            var lastUpdated = formatRatesLastUpdated(data.updatedAt, data.updatedAtTimestamp);
+            const data = res.data;
+            const items = (data && data.items) || [];
+            const lastUpdated = formatRatesLastUpdated(data.updatedAt, data.updatedAtTimestamp);
             if (trackWrap) {
                 trackWrap.title = lastUpdated ? ((t('ticker_last_updated') || 'آخرین بروزرسانی') + ': ' + lastUpdated) : '';
             }
             if (tickerEl) tickerEl.style.display = '';
             if (innerEl) {
-                var wasEmpty = innerEl.querySelector('.ticker-empty') || innerEl.querySelector('.ticker-item') === null;
-                var isEmpty = items.length === 0;
-                var emptyMsg = isEmpty && res.ok ? (t('ticker_empty') || 'هنوز نرخ ارزی تنظیم نشده') : (t('ticker_loading') || 'در حال بارگذاری قیمت‌ها...');
-                var itemsHtml = isEmpty
+                const wasEmpty = innerEl.querySelector('.ticker-empty') || innerEl.querySelector('.ticker-item') === null;
+                const isEmpty = items.length === 0;
+                const emptyMsg = isEmpty && res.ok ? (t('ticker_empty') || 'هنوز نرخ ارزی تنظیم نشده') : (t('ticker_loading') || 'در حال بارگذاری قیمت‌ها...');
+                const itemsHtml = isEmpty
                     ? '<span class="ticker-item ticker-empty">' + escapeHtml(emptyMsg) + '</span>'
                     : items.map(function(it) {
-                    var ch = it.change;
-                    var chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
-                    var chText = formatChange(ch);
-                    var valStr = formatPrice(it.value);
-                    var changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="تغییر">(' + escapeHtml(chText) + ')</span>' : '';
+                    const ch = it.change;
+                    const chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
+                    const chText = formatChange(ch);
+                    const valStr = formatPrice(it.value);
+                    const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="تغییر">(' + escapeHtml(chText) + ')</span>' : '';
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
                 }).join('');
                 innerEl.innerHTML = itemsHtml;
@@ -1160,7 +1160,7 @@
                 innerEl.classList.remove('centered', 'scrolling');
                 function updateRatesMarqueeMode() {
                     if (!trackEl || !innerEl) return;
-                    var fits = innerEl.scrollWidth <= trackEl.clientWidth;
+                    const fits = innerEl.scrollWidth <= trackEl.clientWidth;
                     if (!fits && !innerEl.dataset.marqueeDuplicated && !innerEl.querySelector('.ticker-empty')) {
                         innerEl.innerHTML = innerEl.innerHTML + innerEl.innerHTML;
                         innerEl.dataset.marqueeDuplicated = '1';
@@ -1189,43 +1189,43 @@
         function refreshRatesTicker() {
             fetchRates(true);
         }
-        var ratesChartInstance = null;
-        var ratesChartCurrentCurrency = 'usd';
+        let ratesChartInstance = null;
+        let ratesChartCurrentCurrency = 'usd';
         function setRatesChartCurrency(key) {
             ratesChartCurrentCurrency = key;
             document.querySelectorAll('.rates-chart-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-currency') === key) b.classList.add('active'); });
             loadRatesCharts();
         }
         async function loadRatesCharts() {
-            var canvas = document.getElementById('ratesChartCanvas');
-            var summaryEl = document.getElementById('ratesChartsSummary');
-            var statsRow = document.getElementById('ratesChartsStatsRow');
-            var loadingOverlay = document.getElementById('ratesChartsLoadingOverlay');
-            var refreshBtn = document.querySelector('.rates-charts-refresh-btn');
+            const canvas = document.getElementById('ratesChartCanvas');
+            const summaryEl = document.getElementById('ratesChartsSummary');
+            const statsRow = document.getElementById('ratesChartsStatsRow');
+            const loadingOverlay = document.getElementById('ratesChartsLoadingOverlay');
+            const refreshBtn = document.querySelector('.rates-charts-refresh-btn');
             if (!canvas) return;
-            var periodSel = document.getElementById('ratesChartPeriod');
-            var days = periodSel ? parseInt(periodSel.value, 10) || 30 : 30;
+            const periodSel = document.getElementById('ratesChartPeriod');
+            const days = periodSel ? parseInt(periodSel.value, 10) || 30 : 30;
             if (loadingOverlay) loadingOverlay.classList.add('visible');
             if (refreshBtn) refreshBtn.classList.add('loading');
             if (statsRow) statsRow.innerHTML = '';
             if (summaryEl) summaryEl.innerHTML = '';
             try {
-            var res = await apiFetch('/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days);
+            const res = await apiFetch('/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days);
             if (loadingOverlay) loadingOverlay.classList.remove('visible');
             if (refreshBtn) refreshBtn.classList.remove('loading');
             if (res.needLogin) return;
-            var labels = [];
-            var values = [];
+            const labels = [];
+            const values = [];
             if (res.ok && res.data && res.data.points && res.data.points.length > 0) {
                 res.data.points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
             }
-            var currencyLabels = { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
-            var label = currencyLabels[ratesChartCurrentCurrency] || rateLabel(ratesChartCurrentCurrency);
-            var unitLabel = t('currency_unit_toman') || 'تومان';
+            const currencyLabels = { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
+            const label = currencyLabels[ratesChartCurrentCurrency] || rateLabel(ratesChartCurrentCurrency);
+            const unitLabel = t('currency_unit_toman') || 'تومان';
             if (ratesChartInstance) { ratesChartInstance.destroy(); ratesChartInstance = null; }
             if (values.length > 0) {
-                var ctx = canvas.getContext('2d');
-                var gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                const ctx = canvas.getContext('2d');
+                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
                 gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
                 gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.12)');
                 gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
@@ -1292,13 +1292,13 @@
                         }
                     }
                 });
-                var lastVal = values[values.length - 1];
-                var firstVal = values[0];
-                var minVal = Math.min.apply(null, values);
-                var maxVal = Math.max.apply(null, values);
-                var changeNum = firstVal && lastVal ? (lastVal - firstVal) / firstVal * 100 : null;
-                var changeStr = changeNum != null ? changeNum.toFixed(1) : null;
-                var changeClass = changeNum > 0 ? 'up' : changeNum < 0 ? 'down' : 'neutral';
+                const lastVal = values[values.length - 1];
+                const firstVal = values[0];
+                const minVal = Math.min.apply(null, values);
+                const maxVal = Math.max.apply(null, values);
+                const changeNum = firstVal && lastVal ? (lastVal - firstVal) / firstVal * 100 : null;
+                const changeStr = changeNum != null ? changeNum.toFixed(1) : null;
+                const changeClass = changeNum > 0 ? 'up' : changeNum < 0 ? 'down' : 'neutral';
                 if (statsRow) {
                     statsRow.innerHTML =
                         '<div class="rates-charts-stat-card stat-current"><span class="stat-label">' + t('rates_charts_stat_current') + '</span><span class="stat-value">' + formatPrice(lastVal) + ' <span class="rates-charts-unit">' + unitLabel + '</span></span></div>' +
@@ -1320,9 +1320,9 @@
         }
 
         function updateTickerTimeOnly() {
-            var timesEl = document.getElementById('tickerTimes');
+            const timesEl = document.getElementById('tickerTimes');
             if (!timesEl || timesEl.style.display === 'none') return;
-            var fmt = formatTickerDateTime();
+            const fmt = formatTickerDateTime();
             timesEl.innerHTML = '<span class="ticker-dt-label">' + escapeHtml(fmt.label) + '</span>' +
                 '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.iranLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.iran) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.shamsi) + '</span></span>' +
                 '<span class="ticker-sep">·</span>' +
@@ -1341,29 +1341,29 @@
         }
         function rateLabel(key) { return t(key) || key; }
         async function loadRatesAdjustments() {
-            var el = document.getElementById('ratesAdjustmentsTable');
+            const el = document.getElementById('ratesAdjustmentsTable');
             if (!el) return;
             el.innerHTML = t('loading');
-            var canAccess = (currentUser && currentUser.permissions && currentUser.permissions.rates);
+            const canAccess = (currentUser && currentUser.permissions && currentUser.permissions.rates);
             if (!canAccess) { el.innerHTML = '<div class="empty">' + t('rates_no_access') + '</div>'; return; }
-            var ratesRes = await apiFetch('/api/rates');
-            var adjRes = await apiFetch('/api/rates/adjustments');
+            const ratesRes = await apiFetch('/api/rates');
+            const adjRes = await apiFetch('/api/rates/adjustments');
             if (ratesRes.needLogin || adjRes.needLogin) return;
             if (!adjRes.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (adjRes.data && adjRes.data.error ? adjRes.data.error : '') + '</div>'; return; }
-            var items = (ratesRes.ok && ratesRes.data && (ratesRes.data.allItems || ratesRes.data.items)) ? (ratesRes.data.allItems || ratesRes.data.items) : [];
-            var adjList = (adjRes.data && adjRes.data.data) || [];
-            var adjMap = {};
+            const items = (ratesRes.ok && ratesRes.data && (ratesRes.data.allItems || ratesRes.data.items)) ? (ratesRes.data.allItems || ratesRes.data.items) : [];
+            const adjList = (adjRes.data && adjRes.data.data) || [];
+            const adjMap = {};
             adjList.forEach(function(a) { adjMap[a.currencyKey] = a; });
             function getRatePlaceholder(type) { return type === 'percent' ? t('rates_ph_percent') : type === 'delta_toman' ? t('rates_ph_delta') : t('rates_ph_fixed'); }
-            var tableHtml = '<table class="sup-table" style="margin-top:0;"><thead><tr><th>' + t('rates_currency') + '</th><th>' + t('rates_current') + '</th><th>' + t('rates_adjust_type') + '</th><th>' + t('rates_value') + '</th></tr></thead><tbody>';
-            var cardsHtml = '';
+            let tableHtml = '<table class="sup-table" style="margin-top:0;"><thead><tr><th>' + t('rates_currency') + '</th><th>' + t('rates_current') + '</th><th>' + t('rates_adjust_type') + '</th><th>' + t('rates_value') + '</th></tr></thead><tbody>';
+            let cardsHtml = '';
             items.forEach(function(it) {
-                var adj = adjMap[it.key] || { adjustmentType: 'none', value: null };
-                var type = adj.adjustmentType || 'none';
-                var val = adj.value != null ? adj.value : '';
-                var typeOpts = '<option value="none"' + (type === 'none' ? ' selected' : '') + '>' + t('rates_none') + '</option><option value="fixed"' + (type === 'fixed' ? ' selected' : '') + '>' + t('rates_fixed') + '</option><option value="delta_toman"' + (type === 'delta_toman' ? ' selected' : '') + '>' + t('rates_delta') + '</option><option value="percent"' + (type === 'percent' ? ' selected' : '') + '>' + t('rates_percent') + '</option>';
-                var disp = (it.value != null && it.value !== '' && !isNaN(parseFloat(it.value))) ? formatPrice(it.value) : '—';
-                var ph = getRatePlaceholder(type);
+                const adj = adjMap[it.key] || { adjustmentType: 'none', value: null };
+                const type = adj.adjustmentType || 'none';
+                const val = adj.value != null ? adj.value : '';
+                const typeOpts = '<option value="none"' + (type === 'none' ? ' selected' : '') + '>' + t('rates_none') + '</option><option value="fixed"' + (type === 'fixed' ? ' selected' : '') + '>' + t('rates_fixed') + '</option><option value="delta_toman"' + (type === 'delta_toman' ? ' selected' : '') + '>' + t('rates_delta') + '</option><option value="percent"' + (type === 'percent' ? ' selected' : '') + '>' + t('rates_percent') + '</option>';
+                const disp = (it.value != null && it.value !== '' && !isNaN(parseFloat(it.value))) ? formatPrice(it.value) : '—';
+                const ph = getRatePlaceholder(type);
                 tableHtml += '<tr><td>' + escapeHtml(rateLabel(it.key)) + '</td><td><strong>' + disp + '</strong></td><td><select data-rate-key="' + escapeHtml(it.key) + '" data-rate-type="type">' + typeOpts + '</select></td><td><input type="number" step="any" data-rate-key="' + escapeHtml(it.key) + '" data-rate-value="value" value="' + (val !== '' ? escapeHtml(String(val)) : '') + '" placeholder="' + escapeHtml(ph) + '"></td></tr>';
                 cardsHtml += '<div class="rate-card" data-rate-key="' + escapeHtml(it.key) + '"><div class="rate-card-currency">' + escapeHtml(rateLabel(it.key)) + '</div><div class="rate-card-price">' + disp + '</div><div class="rate-card-type"><label>' + t('rates_adjust_type') + '</label><select data-rate-key="' + escapeHtml(it.key) + '" data-rate-type="type">' + typeOpts + '</select></div><div class="rate-card-value"><label>' + t('rates_value') + '</label><input type="number" step="any" data-rate-key="' + escapeHtml(it.key) + '" data-rate-value="value" value="' + (val !== '' ? escapeHtml(String(val)) : '') + '" placeholder="' + escapeHtml(ph) + '"></div></div>';
             });
@@ -1371,54 +1371,54 @@
             el.innerHTML = '<div class="rates-table-wrap">' + tableHtml + '</div><div class="rates-cards-wrap">' + cardsHtml + '</div>';
             el.querySelectorAll('select[data-rate-key]').forEach(function(sel) {
                 sel.addEventListener('change', function() {
-                    var key = this.getAttribute('data-rate-key');
-                    var inps = document.querySelectorAll('input[data-rate-key="' + key.replace(/"/g, '\\"') + '"]');
-                    var ph = getRatePlaceholder(this.value);
+                    const key = this.getAttribute('data-rate-key');
+                    const inps = document.querySelectorAll('input[data-rate-key="' + key.replace(/"/g, '\\"') + '"]');
+                    const ph = getRatePlaceholder(this.value);
                     inps.forEach(function(inp) { inp.placeholder = ph; });
                 });
             });
         }
         async function saveRatesAdjustments() {
-            var container = document.getElementById('ratesAdjustmentsTable');
+            const container = document.getElementById('ratesAdjustmentsTable');
             if (!container) return;
-            var isMobile = window.matchMedia('(max-width: 900px)').matches;
-            var items = isMobile ? container.querySelectorAll('.rate-card') : container.querySelectorAll('tbody tr');
-            var adjustments = [];
+            const isMobile = window.matchMedia('(max-width: 900px)').matches;
+            const items = isMobile ? container.querySelectorAll('.rate-card') : container.querySelectorAll('tbody tr');
+            const adjustments = [];
             items.forEach(function(el) {
-                var typeSel = el.querySelector('select[data-rate-key]');
-                var valInp = el.querySelector('input[data-rate-key]');
+                const typeSel = el.querySelector('select[data-rate-key]');
+                const valInp = el.querySelector('input[data-rate-key]');
                 if (!typeSel || !valInp) return;
-                var key = typeSel.getAttribute('data-rate-key');
-                var type = typeSel.value || 'none';
-                var val = valInp.value.trim();
+                const key = typeSel.getAttribute('data-rate-key');
+                const type = typeSel.value || 'none';
+                const val = valInp.value.trim();
                 adjustments.push({ currencyKey: key, adjustmentType: type, value: (type !== 'none' && val !== '') ? parseFloat(val) : null });
             });
-            var res = await apiFetch('/api/rates/adjustments', { method: 'PUT', body: JSON.stringify({ adjustments: adjustments }) });
+            const res = await apiFetch('/api/rates/adjustments', { method: 'PUT', body: JSON.stringify({ adjustments: adjustments }) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_rates_saved')); fetchRates(); loadRatesAdjustments(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
-        var tickerConfigVisibleKeys = [];
+        let tickerConfigVisibleKeys = [];
         async function loadTickerConfig() {
-            var box = document.getElementById('ratesTickerConfigBox');
-            var listEl = document.getElementById('ratesTickerConfigList');
-            var availEl = document.getElementById('ratesTickerConfigAvailable');
+            const box = document.getElementById('ratesTickerConfigBox');
+            const listEl = document.getElementById('ratesTickerConfigList');
+            const availEl = document.getElementById('ratesTickerConfigAvailable');
             if (!box || !listEl || !availEl) return;
-            var canAccess = (currentUser && currentUser.permissions && currentUser.permissions.rates);
+            const canAccess = (currentUser && currentUser.permissions && currentUser.permissions.rates);
             if (!canAccess) { box.style.display = 'none'; return; }
             box.style.display = 'block';
-            var res = await apiFetch('/api/rates/ticker-config');
+            const res = await apiFetch('/api/rates/ticker-config');
             if (res.needLogin || !res.ok) return;
-            var visibleKeys = (res.data && res.data.visibleKeys) || [];
-            var available = (res.data && res.data.availableKeys) || [];
+            const visibleKeys = (res.data && res.data.visibleKeys) || [];
+            const available = (res.data && res.data.availableKeys) || [];
             tickerConfigVisibleKeys = visibleKeys.slice();
             listEl.innerHTML = tickerConfigVisibleKeys.map(function(k) {
-                var lab = (available.find(function(a) { return a.key === k; }) || {}).label || rateLabel(k);
+                const lab = (available.find(function(a) { return a.key === k; }) || {}).label || rateLabel(k);
                 return '<span class="ticker-config-chip" data-key="' + escapeHtml(k) + '">' + escapeHtml(lab) + ' <span class="chip-remove" data-remove-key="' + escapeHtml(k) + '">×</span></span>';
             }).join('');
             listEl.querySelectorAll('.chip-remove').forEach(function(btn) {
                 btn.onclick = function() { removeTickerCurrency(this.getAttribute('data-remove-key')); };
             });
-            var remaining = available.filter(function(a) { return tickerConfigVisibleKeys.indexOf(a.key) === -1; });
+            const remaining = available.filter(function(a) { return tickerConfigVisibleKeys.indexOf(a.key) === -1; });
             availEl.innerHTML = remaining.length ? remaining.map(function(a) {
                 return '<span class="ticker-config-add" data-add-key="' + escapeHtml(a.key) + '">+ ' + escapeHtml(a.label) + '</span>';
             }).join('') : '';
@@ -1434,41 +1434,41 @@
             loadTickerConfig();
         }
         async function saveTickerConfig() {
-            var res = await apiFetch('/api/rates/ticker-config', { method: 'PUT', body: JSON.stringify({ visibleKeys: tickerConfigVisibleKeys }) });
+            const res = await apiFetch('/api/rates/ticker-config', { method: 'PUT', body: JSON.stringify({ visibleKeys: tickerConfigVisibleKeys }) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_rates_saved')); fetchRates(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function loadCurrencies() {
-            var box = document.getElementById('ratesCurrenciesBox');
-            var listEl = document.getElementById('ratesCurrenciesList');
+            const box = document.getElementById('ratesCurrenciesBox');
+            const listEl = document.getElementById('ratesCurrenciesList');
             if (!box || !listEl) return;
-            var canAccess = (currentUser && currentUser.permissions && currentUser.permissions.rates);
+            const canAccess = (currentUser && currentUser.permissions && currentUser.permissions.rates);
             if (!canAccess) { box.style.display = 'none'; return; }
             box.style.display = 'block';
             listEl.innerHTML = t('loading');
             listEl.classList.add('empty');
-            var res = await apiFetch('/api/rates/currencies');
+            const res = await apiFetch('/api/rates/currencies');
             if (res.needLogin) return;
             if (!res.ok) { listEl.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
-            var data = (res.data && res.data.data) || [];
+            const data = (res.data && res.data.data) || [];
             if (data.length === 0) { listEl.innerHTML = '<div class="empty">' + (t('rates_no_currencies') || 'هنوز ارزی تعریف نشده. با «افزودن ارز» یکی اضافه کنید.') + '</div>'; return; }
             listEl.classList.remove('empty');
             listEl.innerHTML = data.map(function(c) {
-                var apiStr = (c.apiKeys && c.apiKeys.length) ? c.apiKeys.join(', ') : '—';
-                var apiDataAttr = (c.apiKeys && c.apiKeys.length) ? escapeHtml(apiStr.replace(/"/g, '&quot;')) : '';
-                var labelAttr = escapeHtml((c.label || c.key).replace(/"/g, '&quot;'));
+                const apiStr = (c.apiKeys && c.apiKeys.length) ? c.apiKeys.join(', ') : '—';
+                const apiDataAttr = (c.apiKeys && c.apiKeys.length) ? escapeHtml(apiStr.replace(/"/g, '&quot;')) : '';
+                const labelAttr = escapeHtml((c.label || c.key).replace(/"/g, '&quot;'));
                 return '<div class="rates-currency-row" data-key="' + escapeHtml(c.key) + '" data-label="' + labelAttr + '" data-apikeys="' + apiDataAttr + '"><span class="currency-key">' + escapeHtml(c.key) + '</span><span class="currency-label">' + escapeHtml(c.label || c.key) + '</span><span class="currency-apikeys">' + escapeHtml(apiStr) + '</span><div class="currency-actions"><button type="button" class="edit" onclick="openCurrencyModal(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_edit') || t('edit') || 'ویرایش') + '</button><button type="button" class="delete" onclick="deleteCurrency(\'' + escapeHtml(c.key).replace(/'/g, "\\'") + '\')">' + (t('btn_delete') || 'حذف') + '</button></div></div>';
             }).join('');
         }
         async function checkRatesApiKeyStatus() {
-            var header = document.querySelector('#pageRates .rates-page-header');
+            const header = document.querySelector('#pageRates .rates-page-header');
             if (!header) return;
-            var existingAlert = document.getElementById('ratesApiKeyAlert');
+            const existingAlert = document.getElementById('ratesApiKeyAlert');
             if (existingAlert) existingAlert.remove();
-            var res = await apiFetch('/api/rates/config-status');
+            const res = await apiFetch('/api/rates/config-status');
             if (res.needLogin || !res.ok) return;
             if (res.data && res.data.hasApiKey === false) {
-                var alert = document.createElement('div');
+                const alert = document.createElement('div');
                 alert.id = 'ratesApiKeyAlert';
                 alert.className = 'rates-apikey-alert';
                 alert.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
@@ -1480,12 +1480,12 @@
         }
 
         function openCurrencyModal(existingKey) {
-            var modal = document.getElementById('currencyModal');
-            var titleEl = document.getElementById('currencyModalTitle');
-            var keyInp = document.getElementById('currencyModalKey');
-            var keyOriginal = document.getElementById('currencyModalKeyOriginal');
-            var labelInp = document.getElementById('currencyModalLabel');
-            var apiKeysInp = document.getElementById('currencyModalApiKeys');
+            const modal = document.getElementById('currencyModal');
+            const titleEl = document.getElementById('currencyModalTitle');
+            const keyInp = document.getElementById('currencyModalKey');
+            const keyOriginal = document.getElementById('currencyModalKeyOriginal');
+            const labelInp = document.getElementById('currencyModalLabel');
+            const apiKeysInp = document.getElementById('currencyModalApiKeys');
             if (!modal || !keyInp) return;
             keyOriginal.value = existingKey || '';
             if (existingKey) {
@@ -1493,7 +1493,7 @@
                 keyInp.value = existingKey;
                 keyInp.readOnly = true;
                 keyInp.style.opacity = '0.8';
-                var row = document.querySelector('.rates-currency-row[data-key="' + existingKey.replace(/"/g, '\\"') + '"]');
+                const row = document.querySelector('.rates-currency-row[data-key="' + existingKey.replace(/"/g, '\\"') + '"]');
                 if (row) {
                     labelInp.value = row.getAttribute('data-label') || existingKey;
                     apiKeysInp.value = row.getAttribute('data-apikeys') || '';
@@ -1509,17 +1509,17 @@
             modal.style.display = 'flex';
         }
         function closeCurrencyModal() {
-            var modal = document.getElementById('currencyModal');
+            const modal = document.getElementById('currencyModal');
             if (modal) modal.style.display = 'none';
         }
         async function saveCurrencyFromModal() {
-            var keyOriginal = (document.getElementById('currencyModalKeyOriginal') || {}).value;
-            var key = (document.getElementById('currencyModalKey') || {}).value.trim().toLowerCase();
-            var label = (document.getElementById('currencyModalLabel') || {}).value.trim() || key;
-            var apiKeysStr = (document.getElementById('currencyModalApiKeys') || {}).value.trim();
+            const keyOriginal = (document.getElementById('currencyModalKeyOriginal') || {}).value;
+            const key = (document.getElementById('currencyModalKey') || {}).value.trim().toLowerCase();
+            const label = (document.getElementById('currencyModalLabel') || {}).value.trim() || key;
+            const apiKeysStr = (document.getElementById('currencyModalApiKeys') || {}).value.trim();
             if (!key) { toast(t('rates_currency_key_required') || 'کلید ارز الزامی است', true); return; }
-            var apiKeys = apiKeysStr ? apiKeysStr.split(/[\s,،]+/).map(function(s) { return s.trim(); }).filter(Boolean) : [];
-            var res;
+            const apiKeys = apiKeysStr ? apiKeysStr.split(/[\s,،]+/).map(function(s) { return s.trim(); }).filter(Boolean) : [];
+            let res;
             if (keyOriginal) {
                 res = await apiFetch('/api/rates/currencies/' + encodeURIComponent(keyOriginal), { method: 'PUT', body: JSON.stringify({ label: label, apiKeys: apiKeys }) });
             } else {
@@ -1530,23 +1530,23 @@
         }
         async function deleteCurrency(key) {
             if (!confirm((t('rates_delete_currency_confirm') || 'حذف این ارز؟ تعدیلات و نمایش در نوار قیمت آن هم حذف می‌شود.'))) return;
-            var res = await apiFetch('/api/rates/currencies/' + encodeURIComponent(key), { method: 'DELETE' });
+            const res = await apiFetch('/api/rates/currencies/' + encodeURIComponent(key), { method: 'DELETE' });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_rates_saved') || 'ذخیره شد'); loadCurrencies(); loadRatesAdjustments(); loadTickerConfig(); fetchRates(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         function initServicesTabs() {
-            var tabs = document.querySelectorAll('.services-tab');
-            var panels = document.querySelectorAll('.services-panel');
-            var tabMap = { summary: 'Summary', statement: 'Statement', services: 'Services', cashboxes: 'Cashboxes', bankaccounts: 'Bankaccounts', transactions: 'Transactions', reports: 'Reports' };
+            const tabs = document.querySelectorAll('.services-tab');
+            const panels = document.querySelectorAll('.services-panel');
+            const tabMap = { summary: 'Summary', statement: 'Statement', services: 'Services', cashboxes: 'Cashboxes', bankaccounts: 'Bankaccounts', transactions: 'Transactions', reports: 'Reports' };
             tabs.forEach(function(tab) {
                 tab.onclick = function() {
-                    var t = tab.getAttribute('data-tab');
+                    const t = tab.getAttribute('data-tab');
                     tabs.forEach(function(x) { x.classList.remove('active'); x.setAttribute('aria-selected', 'false'); });
                     panels.forEach(function(p) { p.classList.remove('show'); });
                     tab.classList.add('active');
                     tab.setAttribute('aria-selected', 'true');
-                    var panel = document.getElementById('services' + (tabMap[t] || 'Summary') + 'Panel');
+                    const panel = document.getElementById('services' + (tabMap[t] || 'Summary') + 'Panel');
                     if (panel) { panel.classList.add('show'); }
                     if (t === 'summary') loadServicesSummary();
                     else if (t === 'statement') loadStatement();
@@ -1559,17 +1559,17 @@
             });
         }
         async function loadCustomerFilterForTransactions() {
-            var sel = document.getElementById('txCustomerFilter');
+            const sel = document.getElementById('txCustomerFilter');
             if (!sel) return;
-            var res = await apiFetch('/api/customers?limit=500');
-            var list = (res.data && res.data.data) || [];
-            var curVal = sel.value;
+            const res = await apiFetch('/api/customers?limit=500');
+            const list = (res.data && res.data.data) || [];
+            const curVal = sel.value;
             sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه مشتریان' : 'All customers') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name || c.phone || '') + '</option>'; }).join('');
             if (curVal) sel.value = curVal;
         }
         function loadServicesPage() {
-            var active = document.querySelector('.services-tab.active');
-            var t = active ? active.getAttribute('data-tab') : 'summary';
+            const active = document.querySelector('.services-tab.active');
+            const t = active ? active.getAttribute('data-tab') : 'summary';
             if (t === 'summary') loadServicesSummary();
             else if (t === 'statement') loadStatement();
             else if (t === 'services') loadServices();
@@ -1578,51 +1578,51 @@
             else if (t === 'transactions') { loadCustomerFilterForTransactions(); loadTransactions(); }
             else if (t === 'reports') { loadCurrentReport(); }
         }
-        var currencySymbols = { USD: '$', EUR: '€', GBP: '£', DHS: 'د.إ', TRY: '₺', RUB: '₽', USDT: '₮', IRR: 'تومان', TMN: 'تومان' };
-        function formatMoney(n, curr) { var x = parseFloat(n) || 0; var sym = currencySymbols[curr] || curr || 'تومان'; return x.toLocaleString('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym; }
-        function formatMoneyEn(n) { var x = parseFloat(n) || 0; return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        const currencySymbols = { USD: '$', EUR: '€', GBP: '£', DHS: 'د.إ', TRY: '₺', RUB: '₽', USDT: '₮', IRR: 'تومان', TMN: 'تومان' };
+        function formatMoney(n, curr) { const x = parseFloat(n) || 0; const sym = currencySymbols[curr] || curr || 'تومان'; return x.toLocaleString('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym; }
+        function formatMoneyEn(n) { const x = parseFloat(n) || 0; return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         async function loadServicesSummary() {
-            var [sumRes, cpRes] = await Promise.all([
+            const [sumRes, cpRes] = await Promise.all([
                 apiFetch('/api/exchange/summary'),
                 apiFetch('/api/exchange/currency-position')
             ]);
             if (sumRes.needLogin || !sumRes.ok) return;
-            var d = sumRes.data || {};
+            const d = sumRes.data || {};
             document.getElementById('summaryTotalCash').textContent = formatMoney(d.totalCash, 'IRR');
             document.getElementById('summaryTotalBank').textContent = formatMoney(d.totalBank, 'IRR');
             document.getElementById('summaryTotal').textContent = formatMoney(d.total, 'IRR');
-            var cb = document.getElementById('summaryCashBoxes');
-            var ba = document.getElementById('summaryBankAccounts');
+            const cb = document.getElementById('summaryCashBoxes');
+            const ba = document.getElementById('summaryBankAccounts');
             if (cb) cb.innerHTML = (d.cashBoxes || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده' : 'No cash boxes') + '</div>';
             if (ba) ba.innerHTML = (d.bankAccounts || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'حساب بانکی تعریف نشده' : 'No bank accounts') + '</div>';
 
             if (cpRes.ok && cpRes.data) {
-                var cp = cpRes.data;
-                var cpEl = document.getElementById('summaryCurrencyPosition');
+                const cp = cpRes.data;
+                const cpEl = document.getElementById('summaryCurrencyPosition');
                 if (cpEl) {
-                    var posEntries = Object.entries(cp.currencyPosition || {});
+                    const posEntries = Object.entries(cp.currencyPosition || {});
                     cpEl.innerHTML = posEntries.length ? posEntries.map(function(e) {
                         return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance">' + formatMoneyEn(e[1].total) + '</span></div>';
                     }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</div>';
                 }
-                var obEl = document.getElementById('summaryOutstandingBalance');
+                const obEl = document.getElementById('summaryOutstandingBalance');
                 if (obEl) {
-                    var obs = cp.outstandingBalance || [];
-                    var totalOB = obs.reduce(function(s, o) { return s + o.balance; }, 0);
+                    const obs = cp.outstandingBalance || [];
+                    const totalOB = obs.reduce(function(s, o) { return s + o.balance; }, 0);
                     obEl.innerHTML = obs.length ? obs.map(function(o) {
                         return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(o.account) + ' <small style="color:var(--text-muted)">' + escapeHtml(o.currency) + '</small></span><span class="balance">' + formatMoneyEn(o.balance) + '</span></div>';
                     }).join('') + '<div class="exchange-summary-item" style="border-color:var(--accent);"><span class="name" style="font-weight:700;">' + (LANG === 'fa' ? 'مجموع' : 'Total') + '</span><span class="balance" style="font-weight:700;">' + formatMoneyEn(totalOB) + '</span></div>' : '<div class="empty">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</div>';
                 }
-                var piEl = document.getElementById('summaryPendingInward');
+                const piEl = document.getElementById('summaryPendingInward');
                 if (piEl) {
-                    var piEntries = Object.entries(cp.pendingInward || {});
+                    const piEntries = Object.entries(cp.pendingInward || {});
                     piEl.innerHTML = piEntries.length ? piEntries.map(function(e) {
                         return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--accent);">' + formatMoneyEn(e[1]) + '</span></div>';
                     }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'دریافتی در انتظار نیست' : 'No pending inward') + '</div>';
                 }
-                var poEl = document.getElementById('summaryPendingOutward');
+                const poEl = document.getElementById('summaryPendingOutward');
                 if (poEl) {
-                    var poEntries = Object.entries(cp.pendingOutward || {});
+                    const poEntries = Object.entries(cp.pendingOutward || {});
                     poEl.innerHTML = poEntries.length ? poEntries.map(function(e) {
                         return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--danger);">' + formatMoneyEn(e[1]) + '</span></div>';
                     }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'پرداختی در انتظار نیست' : 'No pending outward') + '</div>';
@@ -1632,58 +1632,58 @@
             }
         }
         async function loadCashBoxes() {
-            var list = document.getElementById('cashBoxList');
+            const list = document.getElementById('cashBoxList');
             if (!list) return;
             list.innerHTML = t('loading');
-            var res = await apiFetch('/api/exchange/cash-boxes');
+            const res = await apiFetch('/api/exchange/cash-boxes');
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
-            var data = res.data || [];
+            const data = res.data || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده. افزودن صندوق کنید.' : 'No cash boxes. Add one.') + '</div>'; return; }
             list.innerHTML = data.map(function(b) {
-                var badge = b.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
+                const badge = b.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
                 return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.branch ? escapeHtml(b.branch.name) : '') + ' · ' + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openCashBoxModal(\'' + b.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteCashBox(\'' + b.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function loadBankAccounts() {
-            var list = document.getElementById('bankAccountList');
+            const list = document.getElementById('bankAccountList');
             if (!list) return;
             list.innerHTML = t('loading');
-            var res = await apiFetch('/api/exchange/bank-accounts');
+            const res = await apiFetch('/api/exchange/bank-accounts');
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
-            var data = res.data || [];
+            const data = res.data || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'حساب بانکی تعریف نشده. افزودن حساب کنید.' : 'No bank accounts. Add one.') + '</div>'; return; }
             list.innerHTML = data.map(function(b) {
-                var badge = b.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
+                const badge = b.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
                 return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.bankName ? escapeHtml(b.bankName) + ' · ' : '') + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openBankAccountModal(\'' + b.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteBankAccount(\'' + b.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function loadTransactions() {
-            var list = document.getElementById('transactionList');
+            const list = document.getElementById('transactionList');
             if (!list) return;
             list.innerHTML = t('loading');
-            var params = [];
-            var from = document.getElementById('txFromDate'); if (from && from.value) params.push('fromDate=' + encodeURIComponent(from.value));
-            var to = document.getElementById('txToDate'); if (to && to.value) params.push('toDate=' + encodeURIComponent(to.value));
-            var typ = document.getElementById('txTypeFilter'); if (typ && typ.value) params.push('type=' + encodeURIComponent(typ.value));
-            var st = document.getElementById('txStatusFilter'); if (st && st.value) params.push('status=' + encodeURIComponent(st.value));
-            var cust = document.getElementById('txCustomerFilter'); if (cust && cust.value) params.push('customerId=' + encodeURIComponent(cust.value));
-            var res = await apiFetch('/api/exchange/transactions?' + params.join('&'));
+            const params = [];
+            const from = document.getElementById('txFromDate'); if (from && from.value) params.push('fromDate=' + encodeURIComponent(from.value));
+            const to = document.getElementById('txToDate'); if (to && to.value) params.push('toDate=' + encodeURIComponent(to.value));
+            const typ = document.getElementById('txTypeFilter'); if (typ && typ.value) params.push('type=' + encodeURIComponent(typ.value));
+            const st = document.getElementById('txStatusFilter'); if (st && st.value) params.push('status=' + encodeURIComponent(st.value));
+            const cust = document.getElementById('txCustomerFilter'); if (cust && cust.value) params.push('customerId=' + encodeURIComponent(cust.value));
+            const res = await apiFetch('/api/exchange/transactions?' + params.join('&'));
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
-            var rows = (res.data && res.data.rows) || [];
+            const rows = (res.data && res.data.rows) || [];
             if (rows.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'تراکنشی یافت نشد' : 'No transactions') + '</div>'; return; }
-            var typeLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه', buy: 'خرید', sell: 'فروش' };
-            var statusLabels = { pending: 'در انتظار تأیید', approved: 'تأیید شده', rejected: 'رد شده' };
-            var statusClasses = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
-            var canApprove = currentUser && ['owner', 'admin', 'manager'].indexOf(currentUser.role) >= 0;
+            const typeLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه', buy: 'خرید', sell: 'فروش' };
+            const statusLabels = { pending: 'در انتظار تأیید', approved: 'تأیید شده', rejected: 'رد شده' };
+            const statusClasses = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
+            const canApprove = currentUser && ['owner', 'admin', 'manager'].indexOf(currentUser.role) >= 0;
             list.innerHTML = rows.map(function(tx) {
-                var isIn = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(tx.type) >= 0;
-                var amt = parseFloat(tx.amount) || 0;
-                var desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '…' : '');
-                var ref = tx.reference ? ' · ' + escapeHtml(tx.reference) : '';
-                var custName = (tx.customer && (tx.customer.name || tx.customer.phone)) ? escapeHtml(tx.customer.name || tx.customer.phone) : '';
-                var custLink = tx.customerId ? '<a href="#" onclick="showPage(\'customers\'); showCustomerHistory(\'' + tx.customerId + '\'); return false;" class="tx-customer-link">' + custName + '</a>' : '';
-                var statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
-                var actions = '<div class="tx-row-actions">';
+                const isIn = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(tx.type) >= 0;
+                const amt = parseFloat(tx.amount) || 0;
+                const desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '…' : '');
+                const ref = tx.reference ? ' · ' + escapeHtml(tx.reference) : '';
+                const custName = (tx.customer && (tx.customer.name || tx.customer.phone)) ? escapeHtml(tx.customer.name || tx.customer.phone) : '';
+                const custLink = tx.customerId ? '<a href="#" onclick="showPage(\'customers\'); showCustomerHistory(\'' + tx.customerId + '\'); return false;" class="tx-customer-link">' + custName + '</a>' : '';
+                const statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
+                let actions = '<div class="tx-row-actions">';
                 actions += '<button type="button" class="btn-secondary btn-sm" onclick="openTransactionModalForEdit(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
                 if (tx.status === 'pending' && canApprove) {
                     actions += ' <button type="button" class="btn-primary btn-sm" onclick="approveTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
@@ -1694,7 +1694,7 @@
             }).join('');
         }
         function openCashBoxModal(id) {
-            var m = document.getElementById('cashBoxModal'); if (!m) return;
+            const m = document.getElementById('cashBoxModal'); if (!m) return;
             m.style.display = 'flex';
             document.getElementById('cashBoxModalId').value = id || '';
             document.getElementById('cashBoxModalTitle').textContent = id ? (LANG === 'fa' ? 'ویرایش صندوق' : 'Edit cash box') : t('cashbox_add');
@@ -1705,26 +1705,26 @@
             document.getElementById('cashBoxModalDescription').value = '';
             document.getElementById('cashBoxModalActive').checked = true;
             loadBranchesForSelect(['cashBoxModalBranch']);
-            if (id) apiFetch('/api/exchange/cash-boxes').then(function(r) { var b = (r.data || []).find(function(x) { return x.id === id; }); if (b) { document.getElementById('cashBoxModalName').value = b.name || ''; document.getElementById('cashBoxModalBranch').value = b.branchId || ''; document.getElementById('cashBoxModalCurrency').value = b.currency || 'IRR'; document.getElementById('cashBoxModalBalance').value = b.balance || 0; document.getElementById('cashBoxModalDescription').value = b.description || ''; document.getElementById('cashBoxModalActive').checked = b.isActive !== false; } });
+            if (id) apiFetch('/api/exchange/cash-boxes').then(function(r) { const b = (r.data || []).find(function(x) { return x.id === id; }); if (b) { document.getElementById('cashBoxModalName').value = b.name || ''; document.getElementById('cashBoxModalBranch').value = b.branchId || ''; document.getElementById('cashBoxModalCurrency').value = b.currency || 'IRR'; document.getElementById('cashBoxModalBalance').value = b.balance || 0; document.getElementById('cashBoxModalDescription').value = b.description || ''; document.getElementById('cashBoxModalActive').checked = b.isActive !== false; } });
         }
-        function closeCashBoxModal() { var m = document.getElementById('cashBoxModal'); if (m) m.style.display = 'none'; }
+        function closeCashBoxModal() { const m = document.getElementById('cashBoxModal'); if (m) m.style.display = 'none'; }
         async function saveCashBoxFromModal() {
-            var id = document.getElementById('cashBoxModalId').value.trim();
-            var name = document.getElementById('cashBoxModalName').value.trim();
-            var branchId = document.getElementById('cashBoxModalBranch').value || null;
-            var currency = document.getElementById('cashBoxModalCurrency').value;
-            var balance = parseFloat(document.getElementById('cashBoxModalBalance').value) || 0;
-            var description = document.getElementById('cashBoxModalDescription').value.trim() || null;
-            var isActive = document.getElementById('cashBoxModalActive').checked;
+            const id = document.getElementById('cashBoxModalId').value.trim();
+            const name = document.getElementById('cashBoxModalName').value.trim();
+            const branchId = document.getElementById('cashBoxModalBranch').value || null;
+            const currency = document.getElementById('cashBoxModalCurrency').value;
+            const balance = parseFloat(document.getElementById('cashBoxModalBalance').value) || 0;
+            const description = document.getElementById('cashBoxModalDescription').value.trim() || null;
+            const isActive = document.getElementById('cashBoxModalActive').checked;
             if (!name) { toast(LANG === 'fa' ? 'نام صندوق الزامی است' : 'Name required', true); return; }
-            var body = { name, branchId, currency, balance, description, isActive };
-            var res = id ? await apiFetch('/api/exchange/cash-boxes/' + id, { method: 'PUT', body: JSON.stringify(body) }) : await apiFetch('/api/exchange/cash-boxes', { method: 'POST', body: JSON.stringify(body) });
+            const body = { name, branchId, currency, balance, description, isActive };
+            const res = id ? await apiFetch('/api/exchange/cash-boxes/' + id, { method: 'PUT', body: JSON.stringify(body) }) : await apiFetch('/api/exchange/cash-boxes', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { closeCashBoxModal(); toast(t('btn_save')); loadCashBoxes(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
-        async function deleteCashBox(id) { if (!confirm(LANG === 'fa' ? 'حذف این صندوق؟' : 'Delete this cash box?')) return; var res = await apiFetch('/api/exchange/cash-boxes/' + id, { method: 'DELETE' }); if (res.needLogin) return; if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadCashBoxes(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); } }
+        async function deleteCashBox(id) { if (!confirm(LANG === 'fa' ? 'حذف این صندوق؟' : 'Delete this cash box?')) return; const res = await apiFetch('/api/exchange/cash-boxes/' + id, { method: 'DELETE' }); if (res.needLogin) return; if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadCashBoxes(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); } }
         function openBankAccountModal(id) {
-            var m = document.getElementById('bankAccountModal'); if (!m) return;
+            const m = document.getElementById('bankAccountModal'); if (!m) return;
             m.style.display = 'flex';
             document.getElementById('bankAccountModalId').value = id || '';
             document.getElementById('bankAccountModalTitle').textContent = id ? (LANG === 'fa' ? 'ویرایش حساب بانکی' : 'Edit bank account') : t('bankaccount_add');
@@ -1738,32 +1738,32 @@
             document.getElementById('bankAccountModalDescription').value = '';
             document.getElementById('bankAccountModalActive').checked = true;
             loadBranchesForSelect(['bankAccountModalBranch']);
-            if (id) apiFetch('/api/exchange/bank-accounts').then(function(r) { var b = (r.data || []).find(function(x) { return x.id === id; }); if (b) { document.getElementById('bankAccountModalName').value = b.name || ''; document.getElementById('bankAccountModalBankName').value = b.bankName || ''; document.getElementById('bankAccountModalAccountNumber').value = b.accountNumber || ''; document.getElementById('bankAccountModalIban').value = b.iban || ''; document.getElementById('bankAccountModalBranch').value = b.branchId || ''; document.getElementById('bankAccountModalCurrency').value = b.currency || 'IRR'; document.getElementById('bankAccountModalBalance').value = b.balance || 0; document.getElementById('bankAccountModalDescription').value = b.description || ''; document.getElementById('bankAccountModalActive').checked = b.isActive !== false; } });
+            if (id) apiFetch('/api/exchange/bank-accounts').then(function(r) { const b = (r.data || []).find(function(x) { return x.id === id; }); if (b) { document.getElementById('bankAccountModalName').value = b.name || ''; document.getElementById('bankAccountModalBankName').value = b.bankName || ''; document.getElementById('bankAccountModalAccountNumber').value = b.accountNumber || ''; document.getElementById('bankAccountModalIban').value = b.iban || ''; document.getElementById('bankAccountModalBranch').value = b.branchId || ''; document.getElementById('bankAccountModalCurrency').value = b.currency || 'IRR'; document.getElementById('bankAccountModalBalance').value = b.balance || 0; document.getElementById('bankAccountModalDescription').value = b.description || ''; document.getElementById('bankAccountModalActive').checked = b.isActive !== false; } });
         }
-        function closeBankAccountModal() { var m = document.getElementById('bankAccountModal'); if (m) m.style.display = 'none'; }
+        function closeBankAccountModal() { const m = document.getElementById('bankAccountModal'); if (m) m.style.display = 'none'; }
         async function saveBankAccountFromModal() {
-            var id = document.getElementById('bankAccountModalId').value.trim();
-            var name = document.getElementById('bankAccountModalName').value.trim();
-            var bankName = document.getElementById('bankAccountModalBankName').value.trim() || null;
-            var accountNumber = document.getElementById('bankAccountModalAccountNumber').value.trim() || null;
-            var iban = document.getElementById('bankAccountModalIban').value.trim() || null;
-            var branchId = document.getElementById('bankAccountModalBranch').value || null;
-            var currency = document.getElementById('bankAccountModalCurrency').value;
-            var balance = parseFloat(document.getElementById('bankAccountModalBalance').value) || 0;
-            var description = document.getElementById('bankAccountModalDescription').value.trim() || null;
-            var isActive = document.getElementById('bankAccountModalActive').checked;
+            const id = document.getElementById('bankAccountModalId').value.trim();
+            const name = document.getElementById('bankAccountModalName').value.trim();
+            const bankName = document.getElementById('bankAccountModalBankName').value.trim() || null;
+            const accountNumber = document.getElementById('bankAccountModalAccountNumber').value.trim() || null;
+            const iban = document.getElementById('bankAccountModalIban').value.trim() || null;
+            const branchId = document.getElementById('bankAccountModalBranch').value || null;
+            const currency = document.getElementById('bankAccountModalCurrency').value;
+            const balance = parseFloat(document.getElementById('bankAccountModalBalance').value) || 0;
+            const description = document.getElementById('bankAccountModalDescription').value.trim() || null;
+            const isActive = document.getElementById('bankAccountModalActive').checked;
             if (!name) { toast(LANG === 'fa' ? 'نام حساب الزامی است' : 'Name required', true); return; }
-            var body = { name, bankName, accountNumber, iban, branchId, currency, balance, description, isActive };
-            var res = id ? await apiFetch('/api/exchange/bank-accounts/' + id, { method: 'PUT', body: JSON.stringify(body) }) : await apiFetch('/api/exchange/bank-accounts', { method: 'POST', body: JSON.stringify(body) });
+            const body = { name, bankName, accountNumber, iban, branchId, currency, balance, description, isActive };
+            const res = id ? await apiFetch('/api/exchange/bank-accounts/' + id, { method: 'PUT', body: JSON.stringify(body) }) : await apiFetch('/api/exchange/bank-accounts', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { closeBankAccountModal(); toast(t('btn_save')); loadBankAccounts(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
-        async function deleteBankAccount(id) { if (!confirm(LANG === 'fa' ? 'حذف این حساب بانکی؟' : 'Delete this bank account?')) return; var res = await apiFetch('/api/exchange/bank-accounts/' + id, { method: 'DELETE' }); if (res.needLogin) return; if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadBankAccounts(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); } }
+        async function deleteBankAccount(id) { if (!confirm(LANG === 'fa' ? 'حذف این حساب بانکی؟' : 'Delete this bank account?')) return; const res = await apiFetch('/api/exchange/bank-accounts/' + id, { method: 'DELETE' }); if (res.needLogin) return; if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadBankAccounts(); loadServicesSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); } }
         function openTransactionModal(prefillCustomerId) {
-            var m = document.getElementById('transactionModal'); if (!m) return;
+            const m = document.getElementById('transactionModal'); if (!m) return;
             document.getElementById('txModalId').value = '';
-            var titleEl = document.getElementById('txModalTitle'); if (titleEl) titleEl.textContent = LANG === 'fa' ? 'ثبت تراکنش' : 'Add transaction';
-            var subEl = document.querySelector('.tx-modal-subtitle'); if (subEl) subEl.textContent = LANG === 'fa' ? 'اطلاعات تراکنش مالی را وارد کنید' : 'Enter financial transaction details';
+            const titleEl = document.getElementById('txModalTitle'); if (titleEl) titleEl.textContent = LANG === 'fa' ? 'ثبت تراکنش' : 'Add transaction';
+            const subEl = document.querySelector('.tx-modal-subtitle'); if (subEl) subEl.textContent = LANG === 'fa' ? 'اطلاعات تراکنش مالی را وارد کنید' : 'Enter financial transaction details';
             m.style.display = 'flex';
             document.getElementById('txModalType').value = 'cash_in';
             document.getElementById('txModalAmount').value = '';
@@ -1782,13 +1782,13 @@
             loadCustomersForTxSelect(prefillCustomerId);
         }
         async function openTransactionModalForEdit(txId) {
-            var m = document.getElementById('transactionModal'); if (!m) return;
-            var res = await apiFetch('/api/exchange/transactions/' + txId);
+            const m = document.getElementById('transactionModal'); if (!m) return;
+            const res = await apiFetch('/api/exchange/transactions/' + txId);
             if (!res.ok || !res.data) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
-            var tx = res.data;
+            const tx = res.data;
             document.getElementById('txModalId').value = tx.id;
-            var titleEl = document.getElementById('txModalTitle'); if (titleEl) titleEl.textContent = LANG === 'fa' ? 'ویرایش تراکنش' : 'Edit transaction';
-            var subEl = document.querySelector('.tx-modal-subtitle'); if (subEl) subEl.textContent = LANG === 'fa' ? 'اطلاعات تراکنش را ویرایش کنید' : 'Edit transaction details';
+            const titleEl = document.getElementById('txModalTitle'); if (titleEl) titleEl.textContent = LANG === 'fa' ? 'ویرایش تراکنش' : 'Edit transaction';
+            const subEl = document.querySelector('.tx-modal-subtitle'); if (subEl) subEl.textContent = LANG === 'fa' ? 'اطلاعات تراکنش را ویرایش کنید' : 'Edit transaction details';
             m.style.display = 'flex';
             document.getElementById('txModalType').value = tx.type || 'cash_in';
             document.getElementById('txModalAmount').value = tx.amount || '';
@@ -1807,92 +1807,92 @@
             loadCustomersForTxSelect(tx.customerId);
         }
         async function approveTransaction(txId) {
-            var res = await apiFetch('/api/exchange/transactions/' + txId + '/approve', { method: 'POST' });
+            const res = await apiFetch('/api/exchange/transactions/' + txId + '/approve', { method: 'POST' });
             if (res.needLogin) return;
             if (res.ok) { toast(LANG === 'fa' ? 'تراکنش تأیید شد' : 'Transaction approved'); loadTransactions(); loadServicesSummary(); if (currentCustomerId) loadCustomerTransactions(currentCustomerId); loadCustomerTimeline(currentCustomerId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function rejectTransaction(txId) {
             if (!confirm(LANG === 'fa' ? 'آیا از رد این تراکنش مطمئن هستید؟' : 'Reject this transaction?')) return;
-            var res = await apiFetch('/api/exchange/transactions/' + txId + '/reject', { method: 'POST' });
+            const res = await apiFetch('/api/exchange/transactions/' + txId + '/reject', { method: 'POST' });
             if (res.needLogin) return;
             if (res.ok) { toast(LANG === 'fa' ? 'تراکنش رد شد' : 'Transaction rejected'); loadTransactions(); loadServicesSummary(); if (currentCustomerId) loadCustomerTransactions(currentCustomerId); loadCustomerTimeline(currentCustomerId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function txModalUpdateFields() {
-            var t = document.getElementById('txModalType').value;
-            var fromBox = document.getElementById('txModalFromBoxWrap'); var toBox = document.getElementById('txModalToBoxWrap');
-            var fromBank = document.getElementById('txModalFromBankWrap'); var toBank = document.getElementById('txModalToBankWrap');
-            var showFrom = ['cash_out','transfer_box','bank_deposit','expense','buy'].indexOf(t) >= 0;
-            var showTo = ['cash_in','transfer_box','bank_withdraw','income','sell'].indexOf(t) >= 0;
-            var showFromBank = ['bank_withdraw','transfer_account'].indexOf(t) >= 0;
-            var showToBank = ['bank_deposit','transfer_account'].indexOf(t) >= 0;
+            const t = document.getElementById('txModalType').value;
+            const fromBox = document.getElementById('txModalFromBoxWrap'); const toBox = document.getElementById('txModalToBoxWrap');
+            const fromBank = document.getElementById('txModalFromBankWrap'); const toBank = document.getElementById('txModalToBankWrap');
+            const showFrom = ['cash_out','transfer_box','bank_deposit','expense','buy'].indexOf(t) >= 0;
+            const showTo = ['cash_in','transfer_box','bank_withdraw','income','sell'].indexOf(t) >= 0;
+            const showFromBank = ['bank_withdraw','transfer_account'].indexOf(t) >= 0;
+            const showToBank = ['bank_deposit','transfer_account'].indexOf(t) >= 0;
             if (fromBox) fromBox.style.display = showFrom ? 'block' : 'none';
             if (toBox) toBox.style.display = showTo ? 'block' : 'none';
             if (fromBank) fromBank.style.display = showFromBank ? 'block' : 'none';
             if (toBank) toBank.style.display = showToBank ? 'block' : 'none';
-            var dynSection = document.querySelector('.tx-modal-section-dynamic');
+            const dynSection = document.querySelector('.tx-modal-section-dynamic');
             if (dynSection) {
                 if (showFrom || showTo || showFromBank || showToBank) { dynSection.classList.remove('tx-dynamic-hidden'); } else { dynSection.classList.add('tx-dynamic-hidden'); }
             }
         }
         async function loadCashBoxesForTxSelect() {
-            var res = await apiFetch('/api/exchange/cash-boxes');
-            var list = (res.data || []).filter(function(b) { return b.isActive; });
-            var from = document.getElementById('txModalFromCashBox'); var to = document.getElementById('txModalToCashBox');
+            const res = await apiFetch('/api/exchange/cash-boxes');
+            const list = (res.data || []).filter(function(b) { return b.isActive; });
+            const from = document.getElementById('txModalFromCashBox'); const to = document.getElementById('txModalToCashBox');
             if (from) { from.innerHTML = '<option value="">انتخاب صندوق</option>' + list.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + ' (' + formatMoney(b.balance, b.currency) + ')</option>'; }).join(''); }
             if (to) { to.innerHTML = '<option value="">انتخاب صندوق</option>' + list.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + ' (' + formatMoney(b.balance, b.currency) + ')</option>'; }).join(''); }
         }
         async function loadBankAccountsForTxSelect() {
-            var res = await apiFetch('/api/exchange/bank-accounts');
-            var list = (res.data || []).filter(function(b) { return b.isActive; });
-            var from = document.getElementById('txModalFromBankAccount'); var to = document.getElementById('txModalToBankAccount');
+            const res = await apiFetch('/api/exchange/bank-accounts');
+            const list = (res.data || []).filter(function(b) { return b.isActive; });
+            const from = document.getElementById('txModalFromBankAccount'); const to = document.getElementById('txModalToBankAccount');
             if (from) { from.innerHTML = '<option value="">انتخاب حساب</option>' + list.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + ' (' + formatMoney(b.balance, b.currency) + ')</option>'; }).join(''); }
             if (to) { to.innerHTML = '<option value="">انتخاب حساب</option>' + list.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name) + ' (' + formatMoney(b.balance, b.currency) + ')</option>'; }).join(''); }
         }
         async function loadCustomersForTxSelect(selectedId) {
-            var res = await apiFetch('/api/customers?limit=500');
-            var list = (res.data && res.data.data) || [];
-            var sel = document.getElementById('txModalCustomer');
+            const res = await apiFetch('/api/customers?limit=500');
+            const list = (res.data && res.data.data) || [];
+            const sel = document.getElementById('txModalCustomer');
             if (!sel) return;
             sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'بدون مشتری' : 'No customer') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '"' + (c.id === selectedId ? ' selected' : '') + '>' + escapeHtml(c.name || c.phone || '') + (c.phone ? ' · ' + escapeHtml(c.phone) : '') + '</option>'; }).join('');
         }
-        (function(){ var el = document.getElementById('txModalType'); if (el) el.addEventListener('change', txModalUpdateFields); })();
-        (function(){ var m = document.getElementById('transactionModal'); if (m) m.addEventListener('click', function(e) { if (e.target === m) closeTransactionModal(); }); })();
-        function closeTransactionModal() { var m = document.getElementById('transactionModal'); if (m) m.style.display = 'none'; }
+        (function(){ const el = document.getElementById('txModalType'); if (el) el.addEventListener('change', txModalUpdateFields); })();
+        (function(){ const m = document.getElementById('transactionModal'); if (m) m.addEventListener('click', function(e) { if (e.target === m) closeTransactionModal(); }); })();
+        function closeTransactionModal() { const m = document.getElementById('transactionModal'); if (m) m.style.display = 'none'; }
         async function saveTransactionFromModal() {
-            var txId = (document.getElementById('txModalId') && document.getElementById('txModalId').value) || '';
-            var type = document.getElementById('txModalType').value;
-            var amount = parseFloat(document.getElementById('txModalAmount').value);
-            var currency = document.getElementById('txModalCurrency').value;
-            var fromBox = document.getElementById('txModalFromCashBox').value || null;
-            var toBox = document.getElementById('txModalToCashBox').value || null;
-            var fromBank = document.getElementById('txModalFromBankAccount').value || null;
-            var toBank = document.getElementById('txModalToBankAccount').value || null;
-            var customerId = document.getElementById('txModalCustomer').value || null;
-            var description = document.getElementById('txModalDescription').value.trim() || null;
-            var reference = document.getElementById('txModalReference').value.trim() || null;
-            var date = document.getElementById('txModalDate').value || new Date().toISOString().slice(0, 10);
+            const txId = (document.getElementById('txModalId') && document.getElementById('txModalId').value) || '';
+            const type = document.getElementById('txModalType').value;
+            const amount = parseFloat(document.getElementById('txModalAmount').value);
+            const currency = document.getElementById('txModalCurrency').value;
+            const fromBox = document.getElementById('txModalFromCashBox').value || null;
+            const toBox = document.getElementById('txModalToCashBox').value || null;
+            const fromBank = document.getElementById('txModalFromBankAccount').value || null;
+            const toBank = document.getElementById('txModalToBankAccount').value || null;
+            const customerId = document.getElementById('txModalCustomer').value || null;
+            const description = document.getElementById('txModalDescription').value.trim() || null;
+            const reference = document.getElementById('txModalReference').value.trim() || null;
+            const date = document.getElementById('txModalDate').value || new Date().toISOString().slice(0, 10);
             if (!amount || amount <= 0) { toast(LANG === 'fa' ? 'مبلغ معتبر وارد کنید' : 'Enter valid amount', true); return; }
-            var body = { type, amount, currency, fromCashBoxId: fromBox, toCashBoxId: toBox, fromBankAccountId: fromBank, toBankAccountId: toBank, customerId, description, reference, transactionDate: date };
-            var res = txId ? await apiFetch('/api/exchange/transactions/' + txId, { method: 'PUT', body: JSON.stringify(body) }) : await apiFetch('/api/exchange/transactions', { method: 'POST', body: JSON.stringify(body) });
+            const body = { type, amount, currency, fromCashBoxId: fromBox, toCashBoxId: toBox, fromBankAccountId: fromBank, toBankAccountId: toBank, customerId, description, reference, transactionDate: date };
+            const res = txId ? await apiFetch('/api/exchange/transactions/' + txId, { method: 'PUT', body: JSON.stringify(body) }) : await apiFetch('/api/exchange/transactions', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { closeTransactionModal(); toast(LANG === 'fa' ? 'ذخیره شد' : 'Saved'); loadTransactions(); loadServicesSummary(); if (currentCustomerId) loadCustomerTransactions(currentCustomerId); loadCustomerTimeline(currentCustomerId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function loadServices() {
-            var list = document.getElementById('serviceList');
+            const list = document.getElementById('serviceList');
             if (!list) return;
             list.innerHTML = t('loading');
-            var res = await apiFetch('/api/services');
+            const res = await apiFetch('/api/services');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
-            var data = (res.data && res.data.data) || [];
+            const data = (res.data && res.data.data) || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هنوز سرویسی تعریف نشده. با دکمه افزودن سرویس اضافه کنید.' : 'No services yet. Add one with the button above.') + '</div>'; return; }
             list.innerHTML = data.map(function(s) {
-                var badge = s.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
+                const badge = s.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
                 return '<div class="list-item"><div><span class="name">' + escapeHtml(s.name) + '</span>' + (s.code ? '<div class="meta">' + escapeHtml(s.code) + '</div>' : '') + (s.category ? '<div class="meta">' + escapeHtml(s.category) + '</div>' : '') + (s.description ? '<div class="meta">' + escapeHtml((s.description || '').slice(0, 80)) + (s.description.length > 80 ? '…' : '') + '</div>' : '') + '</div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openServiceModal(\'' + s.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteService(\'' + s.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
             }).join('');
         }
         function openServiceModal(serviceId) {
-            var modal = document.getElementById('serviceModal');
+            const modal = document.getElementById('serviceModal');
             if (!modal) return;
             modal.style.display = 'flex';
             document.getElementById('serviceModalId').value = serviceId || '';
@@ -1905,7 +1905,7 @@
             if (serviceId) {
                 apiFetch('/api/services/' + serviceId).then(function(r) {
                     if (r.ok && r.data) {
-                        var s = r.data;
+                        const s = r.data;
                         document.getElementById('serviceModalName').value = s.name || '';
                         document.getElementById('serviceModalCode').value = s.code || '';
                         document.getElementById('serviceModalCategory').value = s.category || '';
@@ -1915,14 +1915,14 @@
                 });
             }
         }
-        function closeServiceModal() { var m = document.getElementById('serviceModal'); if (m) m.style.display = 'none'; }
+        function closeServiceModal() { const m = document.getElementById('serviceModal'); if (m) m.style.display = 'none'; }
         async function saveServiceFromModal() {
-            var id = document.getElementById('serviceModalId').value.trim();
-            var name = document.getElementById('serviceModalName').value.trim();
-            var code = document.getElementById('serviceModalCode').value.trim();
-            var category = document.getElementById('serviceModalCategory').value.trim();
-            var description = document.getElementById('serviceModalDescription').value.trim();
-            var isActive = document.getElementById('serviceModalActive').checked;
+            const id = document.getElementById('serviceModalId').value.trim();
+            const name = document.getElementById('serviceModalName').value.trim();
+            const code = document.getElementById('serviceModalCode').value.trim();
+            const category = document.getElementById('serviceModalCategory').value.trim();
+            const description = document.getElementById('serviceModalDescription').value.trim();
+            const isActive = document.getElementById('serviceModalActive').checked;
             if (!name) { toast(LANG === 'fa' ? 'نام سرویس الزامی است' : 'Service name required', true); return; }
             if (id) {
                 var res = await apiFetch('/api/services/' + id, { method: 'PUT', body: JSON.stringify({ name: name, code: code || null, category: category || null, description: description || null, isActive: isActive }) });
@@ -1936,23 +1936,23 @@
         }
         async function deleteService(id) {
             if (!confirm(LANG === 'fa' ? 'حذف این سرویس؟' : 'Delete this service?')) return;
-            var res = await apiFetch('/api/services/' + id, { method: 'DELETE' });
+            const res = await apiFetch('/api/services/' + id, { method: 'DELETE' });
             if (res.needLogin) return;
             if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadServices(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         // ========== Statement of Account (صورت حساب) ==========
-        var stmtFilters = { customerId: '', fromDate: '', toDate: '', currency: '', narration: '', amount: '', debitCredit: '', type: '', userId: '', groupByCurrency: false };
-        var stmtData = null;
-        var stmtMarkedRows = {};
+        const stmtFilters = { customerId: '', fromDate: '', toDate: '', currency: '', narration: '', amount: '', debitCredit: '', type: '', userId: '', groupByCurrency: false };
+        let stmtData = null;
+        let stmtMarkedRows = {};
 
         async function loadStatement() {
-            var body = document.getElementById('statementBody');
-            var empty = document.getElementById('statementEmpty');
-            var title = document.getElementById('statementCustomerTitle');
+            const body = document.getElementById('statementBody');
+            const empty = document.getElementById('statementEmpty');
+            const title = document.getElementById('statementCustomerTitle');
             if (!body) return;
             body.innerHTML = '<tr><td colspan="11" style="text-align:center;padding:24px;">' + t('loading') + '</td></tr>';
             if (empty) empty.style.display = 'none';
-            var params = [];
+            const params = [];
             if (stmtFilters.customerId) params.push('customerId=' + encodeURIComponent(stmtFilters.customerId));
             if (stmtFilters.fromDate) params.push('fromDate=' + encodeURIComponent(stmtFilters.fromDate));
             if (stmtFilters.toDate) params.push('toDate=' + encodeURIComponent(stmtFilters.toDate));
@@ -1963,7 +1963,7 @@
             if (stmtFilters.type) params.push('type=' + encodeURIComponent(stmtFilters.type));
             if (stmtFilters.userId) params.push('userId=' + encodeURIComponent(stmtFilters.userId));
             if (stmtFilters.groupByCurrency) params.push('groupByCurrency=true');
-            var res = await apiFetch('/api/exchange/statement?' + params.join('&'));
+            const res = await apiFetch('/api/exchange/statement?' + params.join('&'));
             if (res.needLogin || !res.ok) { body.innerHTML = ''; if (empty) { empty.style.display = 'block'; empty.textContent = (res.data && res.data.error) || t('err_generic'); } return; }
             stmtData = res.data;
             if (title) {
@@ -1974,15 +1974,15 @@
         }
 
         function renderStatement() {
-            var body = document.getElementById('statementBody');
-            var empty = document.getElementById('statementEmpty');
+            const body = document.getElementById('statementBody');
+            const empty = document.getElementById('statementEmpty');
             if (!body || !stmtData) return;
-            var html = '';
+            let html = '';
             if (stmtData.grouped) {
-                var currencies = Object.keys(stmtData.statement);
+                const currencies = Object.keys(stmtData.statement);
                 if (currencies.length === 0) { body.innerHTML = ''; if (empty) { empty.style.display = 'block'; empty.textContent = LANG === 'fa' ? 'تراکنشی یافت نشد' : 'No transactions found'; } return; }
                 currencies.forEach(function(curr) {
-                    var grp = stmtData.statement[curr];
+                    const grp = stmtData.statement[curr];
                     html += '<tr class="stmt-row-bf"><td></td><td></td><td></td><td></td><td></td><td><strong>BALANCE B/F</strong></td><td>' + escapeHtml(curr) + '</td><td></td><td></td><td class="stmt-num">0.00</td><td></td></tr>';
                     grp.items.forEach(function(item) {
                         html += buildStmtRow(item);
@@ -1991,7 +1991,7 @@
                     html += '<tr class="stmt-row-cf"><td></td><td></td><td></td><td></td><td></td><td><strong>BALANCE C/F</strong></td><td>' + escapeHtml(curr) + '</td><td></td><td></td><td class="stmt-num stmt-cf-val">' + formatMoneyEn(Math.abs(grp.balanceCF)) + '</td><td class="stmt-cf-sign">' + grp.balanceCFSign + '</td></tr>';
                 });
             } else {
-                var st = stmtData.statement;
+                const st = stmtData.statement;
                 if (!st || !st.items || st.items.length === 0) { body.innerHTML = ''; if (empty) { empty.style.display = 'block'; empty.textContent = LANG === 'fa' ? 'تراکنشی یافت نشد' : 'No transactions found'; } return; }
                 html += '<tr class="stmt-row-bf"><td></td><td></td><td></td><td></td><td></td><td><strong>BALANCE B/F</strong></td><td></td><td></td><td></td><td class="stmt-num">0.00</td><td></td></tr>';
                 st.items.forEach(function(item) { html += buildStmtRow(item); });
@@ -2001,15 +2001,15 @@
             if (empty) empty.style.display = 'none';
             body.innerHTML = html;
             Object.keys(stmtMarkedRows).forEach(function(id) {
-                var row = body.querySelector('tr[data-id="' + id + '"]');
+                const row = body.querySelector('tr[data-id="' + id + '"]');
                 if (row) row.style.backgroundColor = stmtMarkedRows[id];
             });
         }
 
         function buildStmtRow(item) {
-            var isMarked = stmtMarkedRows[item.id];
-            var bg = isMarked ? ' style="background:' + isMarked + ';"' : '';
-            var checkAttr = isMarked ? ' checked' : '';
+            const isMarked = stmtMarkedRows[item.id];
+            const bg = isMarked ? ' style="background:' + isMarked + ';"' : '';
+            const checkAttr = isMarked ? ' checked' : '';
             return '<tr class="stmt-row-data" data-id="' + item.id + '"' + bg + '>' +
                 '<td class="stmt-col-sel"><input type="checkbox" class="stmt-check"' + checkAttr + ' onchange="toggleStmtMark(this,\'' + item.id + '\')"></td>' +
                 '<td class="stmt-col-act"><button type="button" class="btn-icon-sm stmt-act-view" onclick="viewTransactionDetail(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'مشاهده' : 'View') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-eye"/></svg></button><button type="button" class="btn-icon-sm stmt-act-edit" onclick="openTransactionModalForEdit(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-edit"/></svg></button></td>' +
@@ -2026,12 +2026,12 @@
         }
 
         async function viewTransactionDetail(txId) {
-            var res = await apiFetch('/api/exchange/transactions/' + txId);
+            const res = await apiFetch('/api/exchange/transactions/' + txId);
             if (!res.ok || !res.data) { toast(t('err_generic'), true); return; }
-            var tx = res.data;
-            var typeLabels = { cash_in: LANG === 'fa' ? 'ورود به صندوق' : 'Cash In', cash_out: LANG === 'fa' ? 'خروج از صندوق' : 'Cash Out', transfer_box: LANG === 'fa' ? 'انتقال صندوق' : 'Transfer Box', bank_deposit: LANG === 'fa' ? 'واریز بانک' : 'Bank Deposit', bank_withdraw: LANG === 'fa' ? 'برداشت بانک' : 'Bank Withdraw', transfer_account: LANG === 'fa' ? 'انتقال حساب' : 'Transfer Account', income: LANG === 'fa' ? 'درآمد' : 'Income', expense: LANG === 'fa' ? 'هزینه' : 'Expense', buy: LANG === 'fa' ? 'خرید' : 'Buy', sell: LANG === 'fa' ? 'فروش' : 'Sell' };
-            var statusLabels = { pending: LANG === 'fa' ? 'در انتظار' : 'Pending', approved: LANG === 'fa' ? 'تایید شده' : 'Approved', rejected: LANG === 'fa' ? 'رد شده' : 'Rejected' };
-            var info = '<div class="tx-detail-grid">' +
+            const tx = res.data;
+            const typeLabels = { cash_in: LANG === 'fa' ? 'ورود به صندوق' : 'Cash In', cash_out: LANG === 'fa' ? 'خروج از صندوق' : 'Cash Out', transfer_box: LANG === 'fa' ? 'انتقال صندوق' : 'Transfer Box', bank_deposit: LANG === 'fa' ? 'واریز بانک' : 'Bank Deposit', bank_withdraw: LANG === 'fa' ? 'برداشت بانک' : 'Bank Withdraw', transfer_account: LANG === 'fa' ? 'انتقال حساب' : 'Transfer Account', income: LANG === 'fa' ? 'درآمد' : 'Income', expense: LANG === 'fa' ? 'هزینه' : 'Expense', buy: LANG === 'fa' ? 'خرید' : 'Buy', sell: LANG === 'fa' ? 'فروش' : 'Sell' };
+            const statusLabels = { pending: LANG === 'fa' ? 'در انتظار' : 'Pending', approved: LANG === 'fa' ? 'تایید شده' : 'Approved', rejected: LANG === 'fa' ? 'رد شده' : 'Rejected' };
+            const info = '<div class="tx-detail-grid">' +
                 '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'نوع' : 'Type') + '</span><span class="tx-detail-value"><span class="stmt-type-badge">' + (typeLabels[tx.type] || tx.type) + '</span></span></div>' +
                 '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'مبلغ' : 'Amount') + '</span><span class="tx-detail-value" style="font-weight:700;font-size:1.1rem;">' + formatMoneyEn(tx.amount) + ' ' + (tx.currency || '') + '</span></div>' +
                 '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'تاریخ' : 'Date') + '</span><span class="tx-detail-value">' + escapeHtml(tx.transactionDate || '') + '</span></div>' +
@@ -2045,18 +2045,18 @@
                 (tx.customer ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'مشتری' : 'Customer') + '</span><span class="tx-detail-value">' + escapeHtml(tx.customer.name || tx.customer.phone || '') + '</span></div>' : '') +
                 (tx.user ? '<div class="tx-detail-item"><span class="tx-detail-label">' + (LANG === 'fa' ? 'ثبت‌کننده' : 'Created by') + '</span><span class="tx-detail-value">' + escapeHtml(tx.user.name) + '</span></div>' : '') +
                 '</div>';
-            var m = document.getElementById('accountBalanceModal');
-            var content = document.getElementById('accountBalanceContent');
-            var title = m ? m.querySelector('.modal-header h3') : null;
+            const m = document.getElementById('accountBalanceModal');
+            const content = document.getElementById('accountBalanceContent');
+            const title = m ? m.querySelector('.modal-header h3') : null;
             if (title) title.textContent = LANG === 'fa' ? 'جزئیات تراکنش' : 'Transaction Detail';
             if (content) content.innerHTML = info;
             if (m) m.style.display = 'flex';
         }
 
         function toggleStmtMark(checkbox, id) {
-            var row = checkbox.closest('tr');
+            const row = checkbox.closest('tr');
             if (checkbox.checked) {
-                var color = document.getElementById('stmtChooseColor').value || '#ffeb3b';
+                const color = document.getElementById('stmtChooseColor').value || '#ffeb3b';
                 stmtMarkedRows[id] = color;
                 if (row) row.style.backgroundColor = color;
             } else {
@@ -2067,14 +2067,14 @@
 
         function stmtUnmarkAll() {
             stmtMarkedRows = {};
-            var checks = document.querySelectorAll('.stmt-check');
+            const checks = document.querySelectorAll('.stmt-check');
             checks.forEach(function(c) { c.checked = false; });
-            var rows = document.querySelectorAll('.stmt-row-data');
+            const rows = document.querySelectorAll('.stmt-row-data');
             rows.forEach(function(r) { r.style.backgroundColor = ''; });
         }
 
         function openStatementFilters() {
-            var m = document.getElementById('statementFiltersModal');
+            const m = document.getElementById('statementFiltersModal');
             if (!m) return;
             m.style.display = 'flex';
             document.getElementById('stmtFilterCustomer').value = stmtFilters.customerId;
@@ -2092,7 +2092,7 @@
         }
 
         function closeStatementFilters() {
-            var m = document.getElementById('statementFiltersModal'); if (m) m.style.display = 'none';
+            const m = document.getElementById('statementFiltersModal'); if (m) m.style.display = 'none';
         }
 
         function applyStatementFilters() {
@@ -2111,54 +2111,54 @@
         }
 
         async function loadCustomersForStmtFilter() {
-            var sel = document.getElementById('stmtFilterCustomer');
+            const sel = document.getElementById('stmtFilterCustomer');
             if (!sel) return;
-            var res = await apiFetch('/api/customers?limit=500');
-            var list = (res.data && res.data.data) || [];
-            var curVal = sel.value;
+            const res = await apiFetch('/api/customers?limit=500');
+            const list = (res.data && res.data.data) || [];
+            const curVal = sel.value;
             sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه' : 'All') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name || c.phone || '') + '</option>'; }).join('');
             if (curVal) sel.value = curVal;
         }
 
         async function loadUsersForStmtFilter() {
-            var sel = document.getElementById('stmtFilterUser');
+            const sel = document.getElementById('stmtFilterUser');
             if (!sel) return;
-            var res = await apiFetch('/api/users');
-            var list = (res.data && Array.isArray(res.data)) ? res.data : (res.data && res.data.data) || [];
-            var curVal = sel.value;
+            const res = await apiFetch('/api/users');
+            const list = (res.data && Array.isArray(res.data)) ? res.data : (res.data && res.data.data) || [];
+            const curVal = sel.value;
             sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه' : 'All') + '</option>' + list.map(function(u) { return '<option value="' + u.id + '">' + escapeHtml(u.name || u.email || '') + '</option>'; }).join('');
             if (curVal) sel.value = curVal;
         }
 
         async function showAccountBalance() {
-            var custId = stmtFilters.customerId;
+            const custId = stmtFilters.customerId;
             if (!custId) { toast(LANG === 'fa' ? 'ابتدا یک مشتری/حساب از فیلترها انتخاب کنید' : 'Select a customer first', true); return; }
-            var m = document.getElementById('accountBalanceModal');
-            var content = document.getElementById('accountBalanceContent');
+            const m = document.getElementById('accountBalanceModal');
+            const content = document.getElementById('accountBalanceContent');
             if (!m || !content) return;
             m.style.display = 'flex';
             content.innerHTML = '<div style="text-align:center;padding:20px;">' + t('loading') + '</div>';
-            var res = await apiFetch('/api/exchange/account-balance?customerId=' + encodeURIComponent(custId));
+            const res = await apiFetch('/api/exchange/account-balance?customerId=' + encodeURIComponent(custId));
             if (!res.ok || !res.data) { content.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'خطا در بارگذاری' : 'Error loading') + '</div>'; return; }
-            var entries = Object.entries(res.data);
+            const entries = Object.entries(res.data);
             if (entries.length === 0) { content.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'تراکنشی ثبت نشده' : 'No transactions') + '</div>'; return; }
             content.innerHTML = '<table class="account-balance-table"><thead><tr><th>' + (LANG === 'fa' ? 'ارز' : 'Currency') + '</th><th>' + (LANG === 'fa' ? 'بدهکار' : 'Debit') + '</th><th>' + (LANG === 'fa' ? 'بستانکار' : 'Credit') + '</th><th>' + (LANG === 'fa' ? 'مانده' : 'Balance') + '</th></tr></thead><tbody>' +
                 entries.map(function(e) {
-                    var b = e[1];
+                    const b = e[1];
                     return '<tr><td>' + escapeHtml(e[0]) + '</td><td class="stmt-num">' + formatMoneyEn(b.totalDebit) + '</td><td class="stmt-num">' + formatMoneyEn(b.totalCredit) + '</td><td class="stmt-num" style="font-weight:700;">' + formatMoneyEn(Math.abs(b.balance)) + ' <span class="' + (b.balance >= 0 ? 'stmt-sign-cr' : 'stmt-sign-dr') + '">' + (b.balance >= 0 ? 'Cr' : 'Dr') + '</span></td></tr>';
                 }).join('') + '</tbody></table>';
         }
 
         function closeAccountBalance() {
-            var m = document.getElementById('accountBalanceModal'); if (m) m.style.display = 'none';
+            const m = document.getElementById('accountBalanceModal'); if (m) m.style.display = 'none';
         }
 
         function exportStatementPDF() {
             if (!stmtData) { toast(LANG === 'fa' ? 'ابتدا گزارش تولید کنید' : 'Generate report first', true); return; }
-            var table = document.getElementById('statementTable');
+            const table = document.getElementById('statementTable');
             if (!table) return;
-            var title = stmtData.customerName ? (LANG === 'fa' ? 'صورت حساب — ' : 'Statement Of Account — ') + stmtData.customerName : (LANG === 'fa' ? 'صورت حساب' : 'Statement Of Account');
-            var printWin = window.open('', '_blank');
+            const title = stmtData.customerName ? (LANG === 'fa' ? 'صورت حساب — ' : 'Statement Of Account — ') + stmtData.customerName : (LANG === 'fa' ? 'صورت حساب' : 'Statement Of Account');
+            const printWin = window.open('', '_blank');
             printWin.document.write('<!DOCTYPE html><html dir="' + (LANG === 'fa' ? 'rtl' : 'ltr') + '"><head><meta charset="utf-8"><title>' + escapeHtml(title) + '</title><style>body{font-family:Tahoma,Arial,sans-serif;margin:20px;direction:' + (LANG === 'fa' ? 'rtl' : 'ltr') + ';}h2{color:#6b21a8;margin-bottom:16px;}table{width:100%;border-collapse:collapse;font-size:12px;}th,td{border:1px solid #ddd;padding:6px 8px;text-align:right;}th{background:#6b21a8;color:#fff;}.stmt-num{text-align:left;font-variant-numeric:tabular-nums;}.stmt-row-bf td,.stmt-row-cf td{background:#f3f0ff;font-weight:bold;}.stmt-row-total td{background:#ede9fe;font-weight:bold;}.stmt-sign-cr{color:#16a34a;}.stmt-sign-dr{color:#dc2626;}</style></head><body><h2>' + escapeHtml(title) + '</h2>' + table.outerHTML + '</body></html>');
             printWin.document.close();
             setTimeout(function() { printWin.print(); }, 500);
@@ -2166,28 +2166,28 @@
 
         function exportStatementExcel() {
             if (!stmtData) { toast(LANG === 'fa' ? 'ابتدا گزارش تولید کنید' : 'Generate report first', true); return; }
-            var items = [];
+            const items = [];
             if (stmtData.grouped) {
                 Object.keys(stmtData.statement).forEach(function(curr) {
-                    var grp = stmtData.statement[curr];
+                    const grp = stmtData.statement[curr];
                     items.push({ date: '', type: '', number: '', narration: 'BALANCE B/F', currency: curr, debit: '', credit: '', balance: '0.00', sign: '' });
                     grp.items.forEach(function(i) { items.push(i); });
                     items.push({ date: '', type: '', number: '', narration: 'TOTAL', currency: curr, debit: grp.totalDebit, credit: grp.totalCredit, balance: '', sign: '' });
                     items.push({ date: '', type: '', number: '', narration: 'BALANCE C/F', currency: curr, debit: '', credit: '', balance: Math.abs(grp.balanceCF), sign: grp.balanceCFSign });
                 });
             } else {
-                var st = stmtData.statement;
+                const st = stmtData.statement;
                 items.push({ date: '', type: '', number: '', narration: 'BALANCE B/F', currency: '', debit: '', credit: '', balance: '0.00', sign: '' });
                 (st.items || []).forEach(function(i) { items.push(i); });
                 items.push({ date: '', type: '', number: '', narration: 'TOTAL', currency: '', debit: st.totalDebit, credit: st.totalCredit, balance: '', sign: '' });
                 items.push({ date: '', type: '', number: '', narration: 'BALANCE C/F', currency: '', debit: '', credit: '', balance: Math.abs(st.balanceCF), sign: st.balanceCFSign });
             }
-            var headers = ['Date', 'Type', 'Number', 'Narration', 'Currency', 'Debit', 'Credit', 'Balance Amt.', 'Sign'];
-            var csv = '\ufeff' + headers.join(',') + '\n' + items.map(function(r) {
+            const headers = ['Date', 'Type', 'Number', 'Narration', 'Currency', 'Debit', 'Credit', 'Balance Amt.', 'Sign'];
+            const csv = '\ufeff' + headers.join(',') + '\n' + items.map(function(r) {
                 return [r.date || '', r.type || '', r.number || '', '"' + (r.narration || '').replace(/"/g, '""') + '"', r.currency || '', r.debit || '', r.credit || '', r.balance !== undefined && r.balance !== '' ? r.balance : '', r.sign || ''].join(',');
             }).join('\n');
-            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            var link = document.createElement('a');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'statement-of-account-' + new Date().toISOString().slice(0, 10) + '.csv';
             link.click();
@@ -2195,14 +2195,14 @@
 
         // ========== Commitment Summary & Bank Position (خلاصه تعهدات) ==========
         function renderCommitmentTable(cpData) {
-            var body = document.getElementById('commitmentBody');
+            const body = document.getElementById('commitmentBody');
             if (!body || !cpData) return;
-            var cp = cpData.currencyPosition || {};
-            var entries = Object.entries(cp);
+            const cp = cpData.currencyPosition || {};
+            const entries = Object.entries(cp);
             if (entries.length === 0) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px;">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</td></tr>'; return; }
             body.innerHTML = entries.map(function(e) {
-                var curr = e[0], d = e[1];
-                var diff = d.total;
+                const curr = e[0], d = e[1];
+                const diff = d.total;
                 return '<tr><td><strong>' + escapeHtml(curr) + '</strong></td>' +
                     '<td class="stmt-num">' + formatMoneyEn(d.cashBoxes) + '</td>' +
                     '<td class="stmt-num">' + formatMoneyEn(d.bankAccounts) + '</td>' +
@@ -2211,9 +2211,9 @@
         }
 
         function renderBankPositionTable(cpData) {
-            var body = document.getElementById('bankPositionBody');
+            const body = document.getElementById('bankPositionBody');
             if (!body || !cpData) return;
-            var banks = cpData.bankAccounts || [];
+            const banks = cpData.bankAccounts || [];
             if (banks.length === 0) { body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px;">' + (LANG === 'fa' ? 'حساب بانکی ندارید' : 'No bank accounts') + '</td></tr>'; return; }
             body.innerHTML = banks.map(function(b) {
                 return '<tr><td>' + escapeHtml(b.name) + (b.bankName ? ' <small style="color:var(--text-muted);">(' + escapeHtml(b.bankName) + ')</small>' : '') + '</td>' +
@@ -2223,24 +2223,24 @@
         }
 
         // ========== Reports Page (گزارش‌ها) ==========
-        var currentReportType = 'turnover';
+        let currentReportType = 'turnover';
 
         function showReport(type) {
             currentReportType = type;
-            var btns = document.querySelectorAll('.report-nav-btn');
+            const btns = document.querySelectorAll('.report-nav-btn');
             btns.forEach(function(b) { b.classList.remove('active'); });
-            var activeBtn = document.querySelector('.report-nav-btn[data-report="' + type + '"]');
+            const activeBtn = document.querySelector('.report-nav-btn[data-report="' + type + '"]');
             if (activeBtn) activeBtn.classList.add('active');
-            var panels = document.querySelectorAll('.report-content');
+            const panels = document.querySelectorAll('.report-content');
             panels.forEach(function(p) { p.classList.remove('show'); });
-            var rptMap = { turnover: 'reportTurnover', 'profit-loss': 'reportProfitLoss', 'expense-journal': 'reportExpenseJournal', 'cash-bank': 'reportCashBank' };
-            var panel = document.getElementById(rptMap[type]);
+            const rptMap = { turnover: 'reportTurnover', 'profit-loss': 'reportProfitLoss', 'expense-journal': 'reportExpenseJournal', 'cash-bank': 'reportCashBank' };
+            const panel = document.getElementById(rptMap[type]);
             if (panel) panel.classList.add('show');
             loadCurrentReport();
         }
 
         function switchToReport(type) {
-            var tab = document.querySelector('.services-tab[data-tab="reports"]');
+            const tab = document.querySelector('.services-tab[data-tab="reports"]');
             if (tab) tab.click();
             setTimeout(function() { showReport(type === 'statement' ? 'turnover' : type); }, 100);
         }
@@ -2253,18 +2253,18 @@
         }
 
         async function loadTurnoverReport() {
-            var el = document.getElementById('turnoverContent');
+            const el = document.getElementById('turnoverContent');
             if (!el) return;
             el.innerHTML = '<div style="padding:24px;text-align:center;">' + t('loading') + '</div>';
-            var params = [];
-            var fd = document.getElementById('reportFromDate'); if (fd && fd.value) params.push('fromDate=' + fd.value);
-            var td = document.getElementById('reportToDate'); if (td && td.value) params.push('toDate=' + td.value);
-            var cr = document.getElementById('reportCurrency'); if (cr && cr.value) params.push('currency=' + cr.value);
-            var res = await apiFetch('/api/exchange/account-turnover?' + params.join('&'));
+            const params = [];
+            const fd = document.getElementById('reportFromDate'); if (fd && fd.value) params.push('fromDate=' + fd.value);
+            const td = document.getElementById('reportToDate'); if (td && td.value) params.push('toDate=' + td.value);
+            const cr = document.getElementById('reportCurrency'); if (cr && cr.value) params.push('currency=' + cr.value);
+            const res = await apiFetch('/api/exchange/account-turnover?' + params.join('&'));
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
-            var data = res.data || [];
+            const data = res.data || [];
             if (data.length === 0) { el.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'حسابی یافت نشد' : 'No accounts found') + '</div>'; return; }
-            var totalDebit = 0, totalCredit = 0, totalTurnover = 0;
+            let totalDebit = 0, totalCredit = 0, totalTurnover = 0;
             data.forEach(function(a) { totalDebit += a.debit; totalCredit += a.credit; totalTurnover += a.turnover; });
             el.innerHTML = '<table class="report-table"><thead><tr>' +
                 '<th>' + (LANG === 'fa' ? 'حساب' : 'Account') + '</th>' +
@@ -2277,7 +2277,7 @@
                 '<th class="stmt-num">' + (LANG === 'fa' ? 'موجودی' : 'Balance') + '</th>' +
                 '</tr></thead><tbody>' +
                 data.map(function(a) {
-                    var typeLabel = a.type === 'cashbox' ? (LANG === 'fa' ? 'صندوق' : 'Cash Box') : (LANG === 'fa' ? 'بانک' : 'Bank');
+                    const typeLabel = a.type === 'cashbox' ? (LANG === 'fa' ? 'صندوق' : 'Cash Box') : (LANG === 'fa' ? 'بانک' : 'Bank');
                     return '<tr><td>' + escapeHtml(a.name) + '</td>' +
                         '<td><span class="stmt-type-badge">' + typeLabel + '</span></td>' +
                         '<td>' + escapeHtml(a.currency) + '</td>' +
@@ -2296,16 +2296,16 @@
         }
 
         async function loadProfitLossReport() {
-            var el = document.getElementById('profitLossContent');
+            const el = document.getElementById('profitLossContent');
             if (!el) return;
             el.innerHTML = '<div style="padding:24px;text-align:center;">' + t('loading') + '</div>';
-            var params = [];
-            var fd = document.getElementById('reportFromDate'); if (fd && fd.value) params.push('fromDate=' + fd.value);
-            var td = document.getElementById('reportToDate'); if (td && td.value) params.push('toDate=' + td.value);
-            var res = await apiFetch('/api/exchange/profit-loss?' + params.join('&'));
+            const params = [];
+            const fd = document.getElementById('reportFromDate'); if (fd && fd.value) params.push('fromDate=' + fd.value);
+            const td = document.getElementById('reportToDate'); if (td && td.value) params.push('toDate=' + td.value);
+            const res = await apiFetch('/api/exchange/profit-loss?' + params.join('&'));
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
-            var d = res.data || {};
-            var currEntries = Object.entries(d.byCurrency || {});
+            const d = res.data || {};
+            const currEntries = Object.entries(d.byCurrency || {});
             el.innerHTML = '<div class="pl-summary-cards">' +
                 '<div class="pl-card pl-income"><div class="pl-label">' + (LANG === 'fa' ? 'مجموع درآمد' : 'Total Income') + '</div><div class="pl-value">' + formatMoneyEn(d.totalIncome) + '</div></div>' +
                 '<div class="pl-card pl-expense"><div class="pl-label">' + (LANG === 'fa' ? 'مجموع هزینه' : 'Total Expense') + '</div><div class="pl-value">' + formatMoneyEn(d.totalExpense) + '</div></div>' +
@@ -2326,17 +2326,17 @@
         }
 
         async function loadExpenseJournalReport() {
-            var el = document.getElementById('expenseJournalContent');
+            const el = document.getElementById('expenseJournalContent');
             if (!el) return;
             el.innerHTML = '<div style="padding:24px;text-align:center;">' + t('loading') + '</div>';
-            var params = [];
-            var fd = document.getElementById('reportFromDate'); if (fd && fd.value) params.push('fromDate=' + fd.value);
-            var td = document.getElementById('reportToDate'); if (td && td.value) params.push('toDate=' + td.value);
-            var cr = document.getElementById('reportCurrency'); if (cr && cr.value) params.push('currency=' + cr.value);
-            var res = await apiFetch('/api/exchange/expense-journal?' + params.join('&'));
+            const params = [];
+            const fd = document.getElementById('reportFromDate'); if (fd && fd.value) params.push('fromDate=' + fd.value);
+            const td = document.getElementById('reportToDate'); if (td && td.value) params.push('toDate=' + td.value);
+            const cr = document.getElementById('reportCurrency'); if (cr && cr.value) params.push('currency=' + cr.value);
+            const res = await apiFetch('/api/exchange/expense-journal?' + params.join('&'));
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
-            var d = res.data || {};
-            var rows = d.rows || [];
+            const d = res.data || {};
+            const rows = d.rows || [];
             if (rows.length === 0) { el.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هزینه‌ای ثبت نشده' : 'No expenses recorded') + '</div>'; return; }
             el.innerHTML = '<div class="report-summary-badge">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + d.count + ' | ' + (LANG === 'fa' ? 'مجموع: ' : 'Total: ') + formatMoneyEn(d.totalAmount) + '</div>' +
                 '<table class="report-table"><thead><tr>' +
@@ -2365,17 +2365,17 @@
         }
 
         async function loadCashBankReport() {
-            var el = document.getElementById('cashBankContent');
+            const el = document.getElementById('cashBankContent');
             if (!el) return;
             el.innerHTML = '<div style="padding:24px;text-align:center;">' + t('loading') + '</div>';
-            var res = await apiFetch('/api/exchange/cash-bank-status');
+            const res = await apiFetch('/api/exchange/cash-bank-status');
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
-            var data = res.data || {};
-            var currencies = Object.keys(data);
+            const data = res.data || {};
+            const currencies = Object.keys(data);
             if (currencies.length === 0) { el.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'حسابی تعریف نشده' : 'No accounts defined') + '</div>'; return; }
-            var html = '';
+            let html = '';
             currencies.forEach(function(curr) {
-                var grp = data[curr];
+                const grp = data[curr];
                 html += '<div class="cash-bank-currency-group"><h4 class="cash-bank-currency-title">' + escapeHtml(curr) + '</h4>';
                 if (grp.cashBoxes.length > 0) {
                     html += '<h5>' + (LANG === 'fa' ? 'صندوق‌ها' : 'Cash Boxes') + '</h5><table class="report-table"><thead><tr><th>' + (LANG === 'fa' ? 'نام' : 'Name') + '</th><th>' + (LANG === 'fa' ? 'شعبه' : 'Branch') + '</th><th>' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</th><th class="stmt-num">' + (LANG === 'fa' ? 'موجودی' : 'Balance') + '</th></tr></thead><tbody>';
@@ -2397,20 +2397,20 @@
         }
 
         function exportCurrentReportExcel() {
-            var panel = document.querySelector('.report-content.show');
+            const panel = document.querySelector('.report-content.show');
             if (!panel) return;
-            var table = panel.querySelector('.report-table');
+            const table = panel.querySelector('.report-table');
             if (!table) { toast(LANG === 'fa' ? 'ابتدا گزارش تولید کنید' : 'Generate report first', true); return; }
-            var rows = table.querySelectorAll('tr');
-            var csv = '\ufeff';
+            const rows = table.querySelectorAll('tr');
+            let csv = '\ufeff';
             rows.forEach(function(row) {
-                var cells = row.querySelectorAll('th, td');
-                var line = [];
+                const cells = row.querySelectorAll('th, td');
+                const line = [];
                 cells.forEach(function(cell) { line.push('"' + cell.textContent.replace(/"/g, '""').trim() + '"'); });
                 csv += line.join(',') + '\n';
             });
-            var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            var link = document.createElement('a');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = 'report-' + currentReportType + '-' + new Date().toISOString().slice(0, 10) + '.csv';
             link.click();
@@ -2429,47 +2429,47 @@
                 if (typeof io !== 'undefined') {
                     socket = io({ auth: { token: token } });
                     socket.on('user_status', function() {
-                        var active = document.querySelector('.nav-link.active');
+                        const active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
                     });
                     socket.on('message_status_updated', function(data) {
                         if (data.conversationId === currentConvId) {
-                            var msgEl = document.querySelector('.msg[data-msg-id="' + data.messageId + '"]');
+                            const msgEl = document.querySelector('.msg[data-msg-id="' + data.messageId + '"]');
                             if (msgEl) {
-                                var statusEl = msgEl.querySelector('.msg-status');
+                                const statusEl = msgEl.querySelector('.msg-status');
                                 if (statusEl) statusEl.className = 'msg-status msg-status-' + (data.status || '');
                                 else if (data.status) {
-                                    var footer = msgEl.querySelector('.msg-footer');
+                                    const footer = msgEl.querySelector('.msg-footer');
                                     if (footer) footer.insertAdjacentHTML('beforeend', '<span class="msg-status msg-status-' + data.status + '">' + (data.status === 'read' ? '✓✓' : '✓') + '</span>');
                                 }
                             }
                         }
                     });
                     socket.on('new_message', function(data) {
-                        var active = document.querySelector('.nav-link.active');
-                        var onConv = active && active.getAttribute('data-page') === 'conversations';
-                        var convId = data.conversationId || (data.conversation && data.conversation.id);
-                        var viewingConv = onConv && currentConvId === convId;
+                        const active = document.querySelector('.nav-link.active');
+                        const onConv = active && active.getAttribute('data-page') === 'conversations';
+                        const convId = data.conversationId || (data.conversation && data.conversation.id);
+                        const viewingConv = onConv && currentConvId === convId;
                         if (onConv) { debouncedLoadConversations(400); updateNavBadges(); }
                         if (viewingConv && convId) loadMessages(convId);
                         else if (data.customer && !viewingConv) toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + (data.customer.name || data.customer.phone || ''), false);
                         if (document.hidden && data.customer && typeof showDesktopNotification === 'function') showDesktopNotification(data);
                     });
                     socket.on('user_login', function() {
-                        var active = document.querySelector('.nav-link.active');
+                        const active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
                     });
                     socket.on('internal_message', function(data) {
                         playInternalChatSound();
-                        var fromName = (data.fromUser && data.fromUser.name) || (LANG === 'fa' ? 'کاربر' : 'User');
-                        var preview = (data.message && data.message.content) ? String(data.message.content).slice(0, 50) : '';
+                        const fromName = (data.fromUser && data.fromUser.name) || (LANG === 'fa' ? 'کاربر' : 'User');
+                        let preview = (data.message && data.message.content) ? String(data.message.content).slice(0, 50) : '';
                         if (preview.length > 50) preview += '…';
-                        var active = document.querySelector('.nav-link.active');
-                        var onInternalPage = active && active.getAttribute('data-page') === 'internal-chat';
-                        var viewingThread = currentInternalThreadId === data.threadId;
-                        var popup = document.getElementById('internalChatPopup');
-                        var popupOpen = popup && popup.style.display !== 'none';
-                        var popupViewingThread = popupOpen && currentInternalThreadId === data.threadId;
+                        const active = document.querySelector('.nav-link.active');
+                        const onInternalPage = active && active.getAttribute('data-page') === 'internal-chat';
+                        const viewingThread = currentInternalThreadId === data.threadId;
+                        const popup = document.getElementById('internalChatPopup');
+                        const popupOpen = popup && popup.style.display !== 'none';
+                        const popupViewingThread = popupOpen && currentInternalThreadId === data.threadId;
                         if (onInternalPage && viewingThread) {
                             appendInternalMessage(data.message);
                             loadInternalThreads();
@@ -2489,12 +2489,12 @@
                     });
                     socket.on('ticket_reply', function(data) {
                         playInternalChatSound();
-                        var fromName = (data.fromUser && data.fromUser.name) || (LANG === 'fa' ? 'کاربر' : 'User');
-                        var preview = (data.reply && data.reply.content) ? String(data.reply.content).slice(0, 40) : '';
+                        const fromName = (data.fromUser && data.fromUser.name) || (LANG === 'fa' ? 'کاربر' : 'User');
+                        let preview = (data.reply && data.reply.content) ? String(data.reply.content).slice(0, 40) : '';
                         if (preview.length > 40) preview += '…';
-                        var active = document.querySelector('.nav-link.active');
-                        var onTicketsPage = active && active.getAttribute('data-page') === 'tickets';
-                        var viewingTicket = currentTicketId === data.ticketId;
+                        const active = document.querySelector('.nav-link.active');
+                        const onTicketsPage = active && active.getAttribute('data-page') === 'tickets';
+                        const viewingTicket = currentTicketId === data.ticketId;
                         if (onTicketsPage && viewingTicket) {
                             appendTicketReply(data.reply);
                         } else {
@@ -2518,10 +2518,10 @@
                     });
                     socket.on('call_answer', function(data) {
                         if (data.threadId !== currentInternalThreadId) return;
-                        var pc = internalCallPeers[data.fromUserId];
+                        const pc = internalCallPeers[data.fromUserId];
                         if (pc) {
                             pc.setRemoteDescription(new RTCSessionDescription(data.sdp)).then(function() {
-                                var queue = internalCallIceQueue[data.fromUserId] || [];
+                                const queue = internalCallIceQueue[data.fromUserId] || [];
                                 internalCallIceQueue[data.fromUserId] = [];
                                 queue.forEach(function(c) {
                                     if (c) pc.addIceCandidate(new RTCIceCandidate(c)).catch(function(e) { console.warn('addIce:', e); });
@@ -2532,7 +2532,7 @@
                     socket.on('call_ice', function(data) {
                         if (data.threadId !== currentInternalThreadId) return;
                         if (!data.candidate) return;
-                        var pc = internalCallPeers[data.fromUserId];
+                        const pc = internalCallPeers[data.fromUserId];
                         if (pc) {
                             if (pc.remoteDescription) {
                                 pc.addIceCandidate(new RTCIceCandidate(data.candidate)).catch(function(e) { console.warn('addIce:', e); });
@@ -2544,34 +2544,34 @@
                     });
                     socket.on('call_participant_joined', function(data) {
                         if (data.threadId !== currentInternalThreadId || !internalCallLocalStream) return;
-                        var newUserId = data.userId;
+                        const newUserId = data.userId;
                         if (internalCallPeers[newUserId]) return;
-                        var pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
+                        const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
                         internalCallPeers[newUserId] = pc;
                         attachPeerConnectionStateHandlers(pc, newUserId);
                         internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
-                        pc.onicecandidate = function(e) { var sk = getSocket(); if (e.candidate && sk) sk.emit('call_ice', { toUserId: newUserId, threadId: currentInternalThreadId, candidate: e.candidate }); };
-                        pc.ontrack = function(e) { var rv = getOrCreateRemoteVideoEl(newUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
+                        pc.onicecandidate = function(e) { const sk = getSocket(); if (e.candidate && sk) sk.emit('call_ice', { toUserId: newUserId, threadId: currentInternalThreadId, candidate: e.candidate }); };
+                        pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(newUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
                         pc.createOffer().then(function(offer) { return pc.setLocalDescription(offer).then(function() { return offer; }); }).then(function(offer) {
-                            var sk = getSocket(); if (sk) sk.emit('call_offer', { toUserId: newUserId, threadId: currentInternalThreadId, type: internalCallType, sdp: offer });
+                            const sk = getSocket(); if (sk) sk.emit('call_offer', { toUserId: newUserId, threadId: currentInternalThreadId, type: internalCallType, sdp: offer });
                         }).catch(function(err) { console.warn('createOffer for new participant:', err); });
                     });
                     socket.on('call_participant_left', function(data) {
                         if (data.threadId !== currentInternalThreadId) return;
-                        var pc = internalCallPeers[data.userId];
+                        const pc = internalCallPeers[data.userId];
                         if (pc) { pc.close(); delete internalCallPeers[data.userId]; }
                         removeRemoteVideoEl(data.userId);
-                        var addBtn = document.getElementById('internalCallAddBtn');
+                        const addBtn = document.getElementById('internalCallAddBtn');
                         if (addBtn) addBtn.style.display = (Object.keys(internalCallPeers).length > 0) ? 'flex' : 'none';
                         if (Object.keys(internalCallPeers).length === 0) hideInternalCallModal();
                     });
                     socket.on('call_invite', function(data) {
                         internalCallPendingInvite = data;
                         currentInternalThreadId = data.threadId;
-                        var fromName = (data.fromUserName || '').trim() || (LANG === 'fa' ? 'کاربر' : 'User');
-                        var txt = document.getElementById('internalCallInviteText');
+                        const fromName = (data.fromUserName || '').trim() || (LANG === 'fa' ? 'کاربر' : 'User');
+                        const txt = document.getElementById('internalCallInviteText');
                         if (txt) txt.textContent = (LANG === 'fa' ? fromName + ' شما را به تماس دعوت کرده' : fromName + ' invites you to the call');
-                        var mod = document.getElementById('internalCallInviteModal');
+                        const mod = document.getElementById('internalCallInviteModal');
                         if (mod) mod.style.display = 'flex';
                         playCallRingtone();
                     });
@@ -2581,7 +2581,7 @@
                         internalCallPendingInvite.type = data.type || 'voice';
                     });
                     socket.on('call_invite_reject', function(data) {
-                        var name = (data.userName || '').trim() || (LANG === 'fa' ? 'کاربر' : 'User');
+                        const name = (data.userName || '').trim() || (LANG === 'fa' ? 'کاربر' : 'User');
                         toast(name + (LANG === 'fa' ? ' دعوت را رد کرد' : ' declined the invite'));
                     });
                     socket.on('call_end', function(data) {
@@ -2592,27 +2592,27 @@
                     });
                     socket.on('unanswered_alert', function(data) {
                         playInternalChatSound();
-                        var cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
-                        var mins = data.minutesWaiting || 0;
-                        var waitStr = mins < 60 ? (mins + (LANG === 'fa' ? ' دقیقه' : ' min')) : (mins < 1440 ? (Math.floor(mins / 60) + (LANG === 'fa' ? ' ساعت' : ' hr')) : (Math.floor(mins / 1440) + (LANG === 'fa' ? ' روز' : ' days')));
-                        var msg = (LANG === 'fa' ? 'مکالمه بدون پاسخ: ' : 'Unanswered: ') + cust + ' — ' + waitStr;
+                        const cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                        const mins = data.minutesWaiting || 0;
+                        const waitStr = mins < 60 ? (mins + (LANG === 'fa' ? ' دقیقه' : ' min')) : (mins < 1440 ? (Math.floor(mins / 60) + (LANG === 'fa' ? ' ساعت' : ' hr')) : (Math.floor(mins / 1440) + (LANG === 'fa' ? ' روز' : ' days')));
+                        const msg = (LANG === 'fa' ? 'مکالمه بدون پاسخ: ' : 'Unanswered: ') + cust + ' — ' + waitStr;
                         toast(msg, 8000);
-                        var active = document.querySelector('.nav-link.active');
+                        const active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'conversations') debouncedLoadConversations(400);
                     });
                     socket.on('conversation_escalated', function(data) {
                         playInternalChatSound();
-                        var cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
-                        var dept = data.department || (LANG === 'fa' ? 'پشتیبانی' : 'Support');
-                        var msg = (LANG === 'fa' ? 'Escalation: ' : 'Escalated: ') + cust + (LANG === 'fa' ? ' به ' : ' to ') + dept;
+                        const cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                        const dept = data.department || (LANG === 'fa' ? 'پشتیبانی' : 'Support');
+                        const msg = (LANG === 'fa' ? 'Escalation: ' : 'Escalated: ') + cust + (LANG === 'fa' ? ' به ' : ' to ') + dept;
                         toast(msg, 10000);
-                        var active = document.querySelector('.nav-link.active');
+                        const active = document.querySelector('.nav-link.active');
                         if (active && active.getAttribute('data-page') === 'conversations') debouncedLoadConversations(400);
                     });
                     socket.on('important_announcement', function(data) {
                         playInternalChatSound();
                         window._lastImportantAnnouncementId = data.id;
-                        var a = { id: data.id, title: data.title, body: data.body, fromUser: data.fromUser, targetType: 'all', targetId: null, createdAt: new Date().toISOString() };
+                        const a = { id: data.id, title: data.title, body: data.body, fromUser: data.fromUser, targetType: 'all', targetId: null, createdAt: new Date().toISOString() };
                         showAnnouncementModal(a);
                         loadAnnouncements();
                         loadGeneralAnnouncementsMarquee();
@@ -2625,7 +2625,7 @@
         function disconnectSocket() {
             if (socket) { socket.disconnect(); socket = null; }
         }
-        var navBadgeRefreshInterval = null;
+        let navBadgeRefreshInterval = null;
         function startNavBadgeRefresh() {
             if (navBadgeRefreshInterval) return;
             if (typeof fetchWhatsappHeaderStatus === 'function') fetchWhatsappHeaderStatus();
@@ -2638,26 +2638,26 @@
             }, 120000);
         }
         function stopNavBadgeRefresh() { if (navBadgeRefreshInterval) { clearInterval(navBadgeRefreshInterval); navBadgeRefreshInterval = null; } }
-        var callRingtoneInterval = null;
-        var callRingtoneCtx = null;
+        let callRingtoneInterval = null;
+        let callRingtoneCtx = null;
         function showDesktopNotification(data) {
             try {
                 if (!('Notification' in window) || Notification.permission === 'denied') return;
                 if (Notification.permission === 'default') { Notification.requestPermission(function(p) { if (p === 'granted' && data) showDesktopNotification(data); }); return; }
-                var cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
-                var preview = (data.message && data.message.content) ? String(data.message.content).slice(0, 80) : '';
+                const cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                let preview = (data.message && data.message.content) ? String(data.message.content).slice(0, 80) : '';
                 if (preview.length >= 80) preview += '…';
-                var n = new Notification((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + cust, { body: preview || (LANG === 'fa' ? 'پیام واتساپ' : 'WhatsApp message'), icon: '/favicon.ico' });
+                const n = new Notification((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + cust, { body: preview || (LANG === 'fa' ? 'پیام واتساپ' : 'WhatsApp message'), icon: '/favicon.ico' });
                 n.onclick = function() { window.focus(); n.close(); if (data.conversationId) { showPage('conversations'); setTimeout(function() { openChat(data.conversationId, cust, data.customer && data.customer.phone, data.customer && data.customer.profilePic); }, 200); } };
             } catch (e) {}
         }
 
         function playInternalChatSound() {
             try {
-                var ctx = new (window.AudioContext || window.webkitAudioContext)();
-                var playTone = function(freq, start, dur, vol) {
-                    var osc = ctx.createOscillator();
-                    var gain = ctx.createGain();
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const playTone = function(freq, start, dur, vol) {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
                     osc.connect(gain);
                     gain.connect(ctx.destination);
                     osc.frequency.value = freq;
@@ -2675,17 +2675,17 @@
         function playCallRingtone() {
             stopCallRingtone();
             try {
-                var ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
                 callRingtoneCtx = ctx;
-                var playTone = function() {
+                const playTone = function() {
                     if (!callRingtoneCtx) return;
-                    var c = callRingtoneCtx;
-                    var melody = [{ f: 523.25, t: 0 }, { f: 659.25, t: 0.12 }, { f: 783.99, t: 0.24 }, { f: 1046.5, t: 0.36 }];
-                    var t0 = c.currentTime;
+                    const c = callRingtoneCtx;
+                    const melody = [{ f: 523.25, t: 0 }, { f: 659.25, t: 0.12 }, { f: 783.99, t: 0.24 }, { f: 1046.5, t: 0.36 }];
+                    const t0 = c.currentTime;
                     melody.forEach(function(n, i) {
-                        var osc = c.createOscillator();
-                        var osc2 = c.createOscillator();
-                        var gain = c.createGain();
+                        const osc = c.createOscillator();
+                        const osc2 = c.createOscillator();
+                        const gain = c.createGain();
                         osc.type = 'sine';
                         osc2.type = 'sine';
                         osc.frequency.value = n.f;
@@ -2693,7 +2693,7 @@
                         osc.connect(gain);
                         osc2.connect(gain);
                         gain.connect(c.destination);
-                        var st = t0 + n.t;
+                        const st = t0 + n.t;
                         gain.gain.setValueAtTime(0, st);
                         gain.gain.linearRampToValueAtTime(0.06, st + 0.02);
                         gain.gain.exponentialRampToValueAtTime(0.001, st + 0.22);
@@ -2714,11 +2714,11 @@
         function playCallConnected() {
             stopCallRingtone();
             try {
-                var ctx = new (window.AudioContext || window.webkitAudioContext)();
-                var osc1 = ctx.createOscillator();
-                var osc2 = ctx.createOscillator();
-                var osc3 = ctx.createOscillator();
-                var gain = ctx.createGain();
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc1 = ctx.createOscillator();
+                const osc2 = ctx.createOscillator();
+                const osc3 = ctx.createOscillator();
+                const gain = ctx.createGain();
                 osc1.type = 'sine';
                 osc2.type = 'sine';
                 osc3.type = 'sine';
@@ -2729,7 +2729,7 @@
                 osc2.connect(gain);
                 osc3.connect(gain);
                 gain.connect(ctx.destination);
-                var t = ctx.currentTime;
+                const t = ctx.currentTime;
                 gain.gain.setValueAtTime(0, t);
                 gain.gain.linearRampToValueAtTime(0.08, t + 0.04);
                 gain.gain.exponentialRampToValueAtTime(0.001, t + 0.4);
@@ -2744,9 +2744,9 @@
         function isImageExt(name) { return /\.(png|jpg|jpeg|gif|webp)$/i.test(name || ''); }
         function isPdfExt(name) { return /\.pdf$/i.test(name || ''); }
         function renderInternalAttachment(a) {
-            var allowDl = a.allowDownload !== false;
-            var name = a.name || t('file');
-            var fullUrl = (a.url && a.url.startsWith('/')) ? (window.API || '') + a.url : a.url;
+            const allowDl = a.allowDownload !== false;
+            const name = a.name || t('file');
+            let fullUrl = (a.url && a.url.startsWith('/')) ? (window.API || '') + a.url : a.url;
             fullUrl = ensureHttpsUrl(fullUrl);
             if (allowDl) return '<a href="' + escapeHtml(fullUrl) + '" target="_blank" rel="noopener" style="color:var(--accent); display:block; margin-top:4px;">📎 ' + escapeHtml(name) + '</a>';
             if (isImageExt(name)) return '<div class="internal-att-viewonly" style="margin-top:6px;"><img src="' + escapeHtml(fullUrl) + '" alt="" style="max-width:100%; max-height:200px; border-radius:6px; pointer-events:none; user-select:none;" oncontextmenu="return false;"><span class="badge" style="font-size:0.7rem; margin-top:4px; display:inline-block;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
@@ -2754,29 +2754,29 @@
             return '<div style="margin-top:4px;"><span style="color:var(--text-secondary);">📎 ' + escapeHtml(name) + '</span> <span class="badge" style="font-size:0.7rem;">' + (LANG === 'fa' ? 'فقط نمایش' : 'View only') + '</span></div>';
         }
         function toggleInternalFileOption() {
-            var fi = document.getElementById('internalChatFile');
-            var opt = document.getElementById('internalChatFileOption');
+            const fi = document.getElementById('internalChatFile');
+            const opt = document.getElementById('internalChatFileOption');
             if (opt) opt.style.display = (fi && fi.files && fi.files[0]) ? 'inline' : 'none';
         }
         function appendInternalMessage(m) {
-            var list = document.getElementById('internalChatMessages');
+            const list = document.getElementById('internalChatMessages');
             if (!list || !currentInternalThreadId) return;
-            var emptyEl = list.querySelector('.empty');
+            const emptyEl = list.querySelector('.empty');
             if (emptyEl) emptyEl.remove();
-            var me = (currentUser && currentUser.id) || '';
-            var isOut = m.fromUserId === me;
-            var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-            var avatarHtml = internalMsgAvatarHtml(m.fromUser);
-            var timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
-            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
+            const me = (currentUser && currentUser.id) || '';
+            const isOut = m.fromUserId === me;
+            const att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
+            const avatarHtml = internalMsgAvatarHtml(m.fromUser);
+            const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+            const html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
-        var STAFF_ACTIVITY_INTERVAL_VISIBLE = 15000;
-        var STAFF_ACTIVITY_INTERVAL_HIDDEN = 30000;
+        const STAFF_ACTIVITY_INTERVAL_VISIBLE = 15000;
+        const STAFF_ACTIVITY_INTERVAL_HIDDEN = 30000;
         function startStaffActivityLive() {
             if (staffActivityInterval) clearInterval(staffActivityInterval);
-            var ms = (typeof document !== 'undefined' && document.hidden) ? STAFF_ACTIVITY_INTERVAL_HIDDEN : STAFF_ACTIVITY_INTERVAL_VISIBLE;
+            const ms = (typeof document !== 'undefined' && document.hidden) ? STAFF_ACTIVITY_INTERVAL_HIDDEN : STAFF_ACTIVITY_INTERVAL_VISIBLE;
             staffActivityInterval = setInterval(loadStaffActivity, ms);
             if (typeof document !== 'undefined' && document.addEventListener) {
                 document.removeEventListener('visibilitychange', _staffActivityVisibilityHandler);
@@ -2786,7 +2786,7 @@
         function _staffActivityVisibilityHandler() {
             if (!staffActivityInterval) return;
             clearInterval(staffActivityInterval);
-            var ms = document.hidden ? STAFF_ACTIVITY_INTERVAL_HIDDEN : STAFF_ACTIVITY_INTERVAL_VISIBLE;
+            const ms = document.hidden ? STAFF_ACTIVITY_INTERVAL_HIDDEN : STAFF_ACTIVITY_INTERVAL_VISIBLE;
             staffActivityInterval = setInterval(loadStaffActivity, ms);
         }
         function stopStaffActivityLive() {
@@ -2795,19 +2795,19 @@
         }
 
         function doHeaderSearch() {
-            var inp = document.getElementById('headerSearch');
-            var modalInp = document.getElementById('headerSearchModalInput');
-            var q = (inp && inp.value) ? inp.value.trim() : ((modalInp && modalInp.value) ? modalInp.value.trim() : '');
+            const inp = document.getElementById('headerSearch');
+            const modalInp = document.getElementById('headerSearchModalInput');
+            const q = (inp && inp.value) ? inp.value.trim() : ((modalInp && modalInp.value) ? modalInp.value.trim() : '');
             if (!q) return;
-            var active = document.querySelector('.nav-link.active');
-            var page = active ? active.getAttribute('data-page') : '';
+            const active = document.querySelector('.nav-link.active');
+            const page = active ? active.getAttribute('data-page') : '';
             if (page === 'conversations') { showPage('conversations'); toast(LANG === 'en' ? 'Search in conversations is supported via API filter.' : 'جستج�� در ��Rست �&کا��&ات از ف�R�تر API پشت�Rبا� �R �&�R�Rش��د.'); }
             else if (page === 'customers') { showPage('customers'); toast(LANG === 'en' ? 'Search in customers is supported via API filter.' : 'جستج�� در �&شتر�Rا�  از ف�R�تر API پشت�Rبا� �R �&�R�Rش��د.'); }
             else toast(LANG === 'en' ? 'Search in this section coming soon.' : 'جستج�� در ا�R�  بخش ب�! ز��د�R.'); 
         }
 
         function toast(msg, isErr) {
-            var el = document.getElementById('toast');
+            const el = document.getElementById('toast');
             el.textContent = msg;
             el.className = 'toast' + (isErr ? ' err' : '');
             el.style.display = 'block';
@@ -2815,12 +2815,12 @@
         }
 
         function setLoading(listId, count) {
-            var list = document.getElementById(listId);
+            const list = document.getElementById(listId);
             if (!list) return;
-            var isTicketList = listId === 'ticketList';
-            var isCustomerList = listId === 'customerList';
-            var html = '';
-            for (var i = 0; i < (count || 5); i++) {
+            const isTicketList = listId === 'ticketList';
+            const isCustomerList = listId === 'customerList';
+            let html = '';
+            for (let i = 0; i < (count || 5); i++) {
                 if (isTicketList) html += '<div class="ticket-card ticket-card-skeleton"><div class="ticket-card-body"><div class="loading-skeleton" style="height:12px;width:80px;margin-bottom:8px;"></div><div class="loading-skeleton" style="height:16px;width:90%;margin-bottom:6px;"></div><div class="loading-skeleton" style="height:12px;width:60%;"></div></div><div class="ticket-card-badges"><span class="loading-skeleton" style="height:24px;width:50px;border-radius:8px;"></span><span class="loading-skeleton" style="height:24px;width:60px;border-radius:8px;"></span></div></div>';
                 else if (isCustomerList) html += '<div class="customer-card customer-card-skeleton"><div class="customer-card-main"><div class="loading-skeleton" style="width:44px;height:44px;border-radius:10px;"></div><div class="customer-card-body" style="flex:1;"><div class="loading-skeleton" style="height:14px;width:70%;margin-bottom:8px;"></div><div class="loading-skeleton" style="height:12px;width:90%;margin-bottom:4px;"></div><div class="loading-skeleton" style="height:12px;width:60%;"></div></div></div><div class="loading-skeleton" style="width:70px;height:36px;border-radius:8px;"></div></div>';
                 else html += '<div class="loading-skeleton loading-row"></div>';
@@ -2832,10 +2832,10 @@
             if (window.CRM && window.CRM.Api && typeof window.CRM.Api.fetch === 'function') {
                 return window.CRM.Api.fetch(url, opts);
             }
-            var opt = opts || {};
-            var h = opt.auth === false ? { 'Content-Type': 'application/json' } : headers();
+            const opt = opts || {};
+            const h = opt.auth === false ? { 'Content-Type': 'application/json' } : headers();
             if (opt.body instanceof FormData) { delete h['Content-Type']; }
-            var r, text;
+            let r, text;
             try {
                 r = await fetch(API + url, { ...opt, credentials: 'include', headers: { ...h, ...opt.headers }, body: opt.body });
                 text = await r.text();
@@ -2845,13 +2845,13 @@
             if ((text || '').trim().startsWith('<')) {
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'سرور به جای JSON پاسخ داد. مطمئن شوید backend در حال اجراست.' : 'Server returned non-JSON. Ensure backend is running.') };
             }
-            var data;
+            let data;
             try { data = JSON.parse(text); } catch (_) {
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
                 token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
-                var errEl = document.getElementById('loginErr');
+                const errEl = document.getElementById('loginErr');
                 if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
             }
@@ -2873,20 +2873,20 @@
         }
 
         (function initLoginTogglePass() {
-            var wrap = document.querySelector('.login-box .password-wrap');
+            const wrap = document.querySelector('.login-box .password-wrap');
             if (!wrap) return;
-            var input = wrap.querySelector('input');
-            var btn = document.getElementById('loginTogglePass');
+            const input = wrap.querySelector('input');
+            const btn = document.getElementById('loginTogglePass');
             if (!input || !btn) return;
             btn.addEventListener('click', function() {
-                var show = input.type === 'password';
+                const show = input.type === 'password';
                 input.type = show ? 'text' : 'password';
-                var title = show ? (LANG === 'fa' ? 'مخفی کردن رمز' : 'Hide password') : (LANG === 'fa' ? 'نمایش رمز' : 'Show password');
+                const title = show ? (LANG === 'fa' ? 'مخفی کردن رمز' : 'Hide password') : (LANG === 'fa' ? 'نمایش رمز' : 'Show password');
                 btn.setAttribute('title', title);
                 btn.setAttribute('aria-label', title);
                 btn.setAttribute('aria-pressed', show ? 'true' : 'false');
                 btn.classList.toggle('active', show);
-                var use = btn.querySelector('use');
+                const use = btn.querySelector('use');
                 if (use) use.setAttribute('href', show ? '#icon-eye-off' : '#icon-eye');
             });
         })();
@@ -2895,30 +2895,30 @@
             function onLoginKeydown(e) {
                 if (e.key !== 'Enter') return;
                 e.preventDefault();
-                var totpStep = document.getElementById('loginStepTotp');
-                var isTotpVisible = totpStep && totpStep.style.display !== 'none';
+                const totpStep = document.getElementById('loginStepTotp');
+                const isTotpVisible = totpStep && totpStep.style.display !== 'none';
                 if (isTotpVisible) {
                     if (typeof verifyTotpLogin === 'function') verifyTotpLogin();
                 } else {
                     if (typeof login === 'function') login();
                 }
             }
-            var emailEl = document.getElementById('email');
-            var passEl = document.getElementById('pass');
-            var totpEl = document.getElementById('totpCode');
+            const emailEl = document.getElementById('email');
+            const passEl = document.getElementById('pass');
+            const totpEl = document.getElementById('totpCode');
             if (emailEl) emailEl.addEventListener('keydown', onLoginKeydown);
             if (passEl) passEl.addEventListener('keydown', onLoginKeydown);
             if (totpEl) totpEl.addEventListener('keydown', onLoginKeydown);
         })();
 
         async function login() {
-            var email = document.getElementById('email').value.trim();
-            var pass = document.getElementById('pass').value;
+            const email = document.getElementById('email').value.trim();
+            const pass = document.getElementById('pass').value;
             document.getElementById('loginErr').textContent = '';
-            var btn = document.getElementById('btnLogin');
+            const btn = document.getElementById('btnLogin');
             btn.disabled = true;
             btn.textContent = t('login_loading');
-            var r, text;
+            let r, text;
             try {
                 r = await fetch(API + '/api/auth/login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: pass }) });
                 text = await r.text();
@@ -2934,9 +2934,9 @@
                 document.getElementById('loginErr').textContent = t('login_err_server_html');
                 return;
             }
-            var data;
+            let data;
             try { data = JSON.parse(text); } catch (_) {
-                var hint;
+                let hint;
                 if (r.status === 0) hint = t('login_err_connect');
                 else if (r.status === 429) hint = t('login_err_429');
                 else hint = t('login_err_invalid') + ' (HTTP ' + r.status + ')';
@@ -2990,7 +2990,7 @@
             document.getElementById('loginStep1').style.display = 'none';
             document.getElementById('loginStepTotp').style.display = 'none';
             document.getElementById('loginStepReset').style.display = 'none';
-            var el = document.getElementById('loginStepForgot');
+            const el = document.getElementById('loginStepForgot');
             if (el) { el.style.display = 'block'; document.getElementById('forgotEmail').value = ''; document.getElementById('forgotErr').textContent = ''; document.getElementById('forgotSuccess').style.display = 'none'; }
         }
         function backToLoginFromForgot() {
@@ -2998,17 +2998,17 @@
             document.getElementById('loginStep1').style.display = 'block';
         }
         async function submitForgotPassword() {
-            var email = (document.getElementById('forgotEmail') && document.getElementById('forgotEmail').value || '').trim();
-            var errEl = document.getElementById('forgotErr');
-            var successEl = document.getElementById('forgotSuccess');
-            var btn = document.getElementById('btnForgotSubmit');
+            const email = (document.getElementById('forgotEmail') && document.getElementById('forgotEmail').value || '').trim();
+            const errEl = document.getElementById('forgotErr');
+            const successEl = document.getElementById('forgotSuccess');
+            const btn = document.getElementById('btnForgotSubmit');
             if (!email) { if (errEl) errEl.textContent = (LANG === 'fa' ? 'ایمیل را وارد کنید.' : 'Please enter your email.'); return; }
             if (errEl) errEl.textContent = '';
             if (successEl) successEl.style.display = 'none';
             if (btn) btn.disabled = true;
             try {
-                var r = await fetch(API + '/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
-                var data = await r.json().catch(function() { return {}; });
+                const r = await fetch(API + '/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
+                const data = await r.json().catch(function() { return {}; });
                 if (successEl) { successEl.textContent = (data.message || t('forgot_success_msg')); successEl.style.display = 'block'; }
             } catch (e) { if (errEl) errEl.textContent = t('login_err_connect'); }
             if (btn) btn.disabled = false;
@@ -3018,28 +3018,28 @@
             document.getElementById('loginStep1').style.display = 'none';
             document.getElementById('loginStepTotp').style.display = 'none';
             document.getElementById('loginStepForgot').style.display = 'none';
-            var el = document.getElementById('loginStepReset');
+            const el = document.getElementById('loginStepReset');
             if (el) { el.style.display = 'block'; document.getElementById('resetNewPass').value = ''; document.getElementById('resetConfirmPass').value = ''; document.getElementById('resetErr').textContent = ''; }
         }
         function backToLoginFromReset() {
             window._resetToken = null;
             document.getElementById('loginStepReset').style.display = 'none';
             document.getElementById('loginStep1').style.display = 'block';
-            try { var u = window.location.pathname + window.location.hash; window.history.replaceState(null, '', u.replace(/\?.*$/, '')); } catch (_) {}
+            try { const u = window.location.pathname + window.location.hash; window.history.replaceState(null, '', u.replace(/\?.*$/, '')); } catch (_) {}
         }
         async function submitResetPassword() {
-            var newPass = document.getElementById('resetNewPass') && document.getElementById('resetNewPass').value || '';
-            var confirmPass = document.getElementById('resetConfirmPass') && document.getElementById('resetConfirmPass').value || '';
-            var errEl = document.getElementById('resetErr');
-            var btn = document.getElementById('btnResetSubmit');
+            const newPass = document.getElementById('resetNewPass') && document.getElementById('resetNewPass').value || '';
+            const confirmPass = document.getElementById('resetConfirmPass') && document.getElementById('resetConfirmPass').value || '';
+            const errEl = document.getElementById('resetErr');
+            const btn = document.getElementById('btnResetSubmit');
             if (newPass !== confirmPass) { if (errEl) errEl.textContent = t('reset_err_match'); return; }
             if (newPass.length < 6) { if (errEl) errEl.textContent = t('reset_err_length'); return; }
             if (!window._resetToken) { if (errEl) errEl.textContent = 'لینک منقضی شده است.'; return; }
             if (errEl) errEl.textContent = '';
             if (btn) btn.disabled = true;
             try {
-                var r = await fetch(API + '/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: window._resetToken, newPassword: newPass }) });
-                var data = await r.json().catch(function() { return {}; });
+                const r = await fetch(API + '/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: window._resetToken, newPassword: newPass }) });
+                const data = await r.json().catch(function() { return {}; });
                 if (r.ok && data.message) {
                     window._resetToken = null;
                     if (errEl) errEl.textContent = '';
@@ -3058,19 +3058,19 @@
         }
         (function checkResetPasswordUrl() {
             if (localStorage.getItem('crm_token')) return;
-            var params = new URLSearchParams(window.location.search);
-            var reset = params.get('reset');
-            var token = params.get('token');
+            const params = new URLSearchParams(window.location.search);
+            const reset = params.get('reset');
+            const token = params.get('token');
             if (reset === '1' && token && typeof showResetStep === 'function') showResetStep(token);
         })();
         async function verifyTotpLogin() {
-            var code = (document.getElementById('totpCode') && document.getElementById('totpCode').value || '').replace(/\s/g, '');
+            const code = (document.getElementById('totpCode') && document.getElementById('totpCode').value || '').replace(/\s/g, '');
             if (!code || code.length !== 6) { document.getElementById('totpErr').textContent = t('login_totp_code_required'); return; }
             if (!window._totpTempToken) { document.getElementById('totpErr').textContent = t('login_totp_retry'); return; }
             document.getElementById('totpErr').textContent = '';
             document.getElementById('btnTotpVerify').disabled = true;
-            var r = await fetch(API + '/api/auth/totp/verify-login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempToken: window._totpTempToken, code: code }) });
-            var data = await r.json().catch(function() { return {}; });
+            const r = await fetch(API + '/api/auth/totp/verify-login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempToken: window._totpTempToken, code: code }) });
+            const data = await r.json().catch(function() { return {}; });
             document.getElementById('btnTotpVerify').disabled = false;
             if (data.token) {
                 window._totpTempToken = null;
@@ -3109,21 +3109,21 @@
             if (!currentUser) return;
             if (currentUser.totpEnabled) return;
             if (localStorage.getItem('totp_prompt_dismissed')) return;
-            var ban = document.getElementById('totpPromptBanner');
+            const ban = document.getElementById('totpPromptBanner');
             if (ban) ban.style.display = 'block';
         }
-        function setElText(id, text) { var el = document.getElementById(id); if (el) el.textContent = text || '\u2014'; }
+        function setElText(id, text) { const el = document.getElementById(id); if (el) el.textContent = text || '\u2014'; }
         function updateProfileAvatarPreview(urlOrName) {
-            var el = document.getElementById('profileAvatarPreview');
+            const el = document.getElementById('profileAvatarPreview');
             if (!el) return;
-            var raw = (typeof urlOrName === 'string' && urlOrName.trim()) ? urlOrName.trim() : '';
-            var url = null;
+            const raw = (typeof urlOrName === 'string' && urlOrName.trim()) ? urlOrName.trim() : '';
+            let url = null;
             if (raw.indexOf('http') === 0) url = raw;
             else if (raw.indexOf('/') === 0) url = (window.location.origin || '') + raw;
-            var name = !url ? raw : (currentUser && (currentUser.firstName || currentUser.lastName || currentUser.name)) ? [currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ').trim() || currentUser.name : '';
-            var initial = (name && name[0]) ? name[0].toUpperCase() : '?';
+            const name = !url ? raw : (currentUser && (currentUser.firstName || currentUser.lastName || currentUser.name)) ? [currentUser.firstName, currentUser.lastName].filter(Boolean).join(' ').trim() || currentUser.name : '';
+            const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
             if (url) {
-                var img = new Image();
+                const img = new Image();
                 img.onload = function() { el.innerHTML = ''; el.appendChild(img); };
                 img.onerror = function() { el.innerHTML = '<span>' + escapeHtml(initial) + '</span>'; };
                 img.src = url;
@@ -3135,21 +3135,21 @@
             }
         }
         async function loadProfile() {
-            var u = null;
-            var res = await apiFetch('/api/users/me');
+            let u = null;
+            const res = await apiFetch('/api/users/me');
             if (res.ok && res.data) { u = res.data; currentUser = res.data; }
             else if (currentUser) u = currentUser;
             if (u) {
-                var roleLabel = (LANG === 'fa' ? { owner: 'مالک', admin: 'ادمین', manager: 'مدیر', supervisor: 'ناظر', agent: 'کارمند' } : { owner: 'Owner', admin: 'Admin', manager: 'Manager', supervisor: 'Supervisor', agent: 'Agent' })[u.role] || u.role;
-                var branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
-                var deptName = (u.department && u.department.name) ? u.department.name : '\u2014';
-                var lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '\u2014';
-                var displayName = [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.name || '\u2014';
+                const roleLabel = (LANG === 'fa' ? { owner: 'مالک', admin: 'ادمین', manager: 'مدیر', supervisor: 'ناظر', agent: 'کارمند' } : { owner: 'Owner', admin: 'Admin', manager: 'Manager', supervisor: 'Supervisor', agent: 'Agent' })[u.role] || u.role;
+                const branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
+                const deptName = (u.department && u.department.name) ? u.department.name : '\u2014';
+                const lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '\u2014';
+                const displayName = [u.firstName, u.lastName].filter(Boolean).join(' ').trim() || u.name || '\u2014';
                 setElText('profileDisplayUsername', u.username ? '@' + u.username : '\u2014');
                 setElText('profileDisplayName', displayName);
                 setElText('profileDisplayEmail', u.email || '\u2014');
                 setElText('profileRoleBadge', roleLabel);
-                var branchBadge = document.getElementById('profileBranchBadge');
+                const branchBadge = document.getElementById('profileBranchBadge');
                 if (branchBadge) {
                     branchBadge.textContent = branchName;
                     branchBadge.style.display = (u.branch && u.branch.name) ? '' : 'none';
@@ -3158,10 +3158,10 @@
                 setElText('profileLastLogin', (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLogin);
                 setElText('profileEmail', u.email);
                 setElText('profileDepartment', deptName);
-                var canEditEmail = !!(currentUser && currentUser.permissions && currentUser.permissions.manage_users);
-                var emailGroup = document.getElementById('profileEmailGroup');
-                var emailReadonlyRow = document.getElementById('profileEmailReadonlyRow');
-                var emailInput = document.getElementById('profileEmailInput');
+                const canEditEmail = !!(currentUser && currentUser.permissions && currentUser.permissions.manage_users);
+                const emailGroup = document.getElementById('profileEmailGroup');
+                const emailReadonlyRow = document.getElementById('profileEmailReadonlyRow');
+                const emailInput = document.getElementById('profileEmailInput');
                 if (emailGroup && emailReadonlyRow && emailInput) {
                     if (canEditEmail) {
                         emailGroup.style.display = '';
@@ -3172,32 +3172,32 @@
                         emailReadonlyRow.style.display = '';
                     }
                 }
-                var usernameEl = document.getElementById('profileUsername');
-                var firstEl = document.getElementById('profileFirstName');
-                var lastEl = document.getElementById('profileLastName');
-                var dobEl = document.getElementById('profileDateOfBirth');
+                const usernameEl = document.getElementById('profileUsername');
+                const firstEl = document.getElementById('profileFirstName');
+                const lastEl = document.getElementById('profileLastName');
+                const dobEl = document.getElementById('profileDateOfBirth');
                 if (usernameEl) usernameEl.value = u.username || '';
                 if (firstEl) firstEl.value = u.firstName || '';
                 if (lastEl) lastEl.value = u.lastName || '';
                 if (dobEl) dobEl.value = u.dateOfBirth || '';
                 if (document.getElementById('profilePhone')) document.getElementById('profilePhone').value = u.phone || '';
-                var avatarEl = document.getElementById('profileAvatar');
+                const avatarEl = document.getElementById('profileAvatar');
                 if (avatarEl) { avatarEl.value = u.avatar || ''; if (!avatarEl._bound) { avatarEl._bound = true; avatarEl.addEventListener('input', function() { updateProfileAvatarPreview(avatarEl.value); }); avatarEl.addEventListener('blur', function() { updateProfileAvatarPreview(avatarEl.value || displayName); }); } }
-                var avatarFileEl = document.getElementById('profileAvatarFile');
+                const avatarFileEl = document.getElementById('profileAvatarFile');
                 if (avatarFileEl && !avatarFileEl._bound) { avatarFileEl._bound = true; avatarFileEl.addEventListener('change', function() { if (avatarFileEl.files && avatarFileEl.files[0]) uploadProfileAvatar(avatarFileEl.files[0]); }); }
                 if (document.getElementById('profilePassword')) document.getElementById('profilePassword').value = '';
                 updateProfileAvatarPreview(u.avatar || displayName);
-                var profileFields = ['profileUsername','profileFirstName','profileLastName','profileDateOfBirth','profilePhone','profileAvatar','profilePassword','profileEmailInput','profileAvatarFile'];
-                profileFields.forEach(function(fid) { var el = document.getElementById(fid); if (el) el.disabled = false; });
-                var profileSaveBtn = document.getElementById('profileSaveBtn');
+                const profileFields = ['profileUsername','profileFirstName','profileLastName','profileDateOfBirth','profilePhone','profileAvatar','profilePassword','profileEmailInput','profileAvatarFile'];
+                profileFields.forEach(function(fid) { const el = document.getElementById(fid); if (el) el.disabled = false; });
+                const profileSaveBtn = document.getElementById('profileSaveBtn');
                 if (profileSaveBtn) profileSaveBtn.style.display = '';
-                var profileProtectedBanner = document.getElementById('profileProtectedBanner');
+                const profileProtectedBanner = document.getElementById('profileProtectedBanner');
                 if (profileProtectedBanner) profileProtectedBanner.style.display = 'none';
             }
-            var statusEl = document.getElementById('profileTotpStatus');
-            var actionsEl = document.getElementById('profileTotpActions');
+            const statusEl = document.getElementById('profileTotpStatus');
+            const actionsEl = document.getElementById('profileTotpActions');
             if (statusEl && actionsEl) {
-                var enabled = !!(u && u.totpEnabled);
+                const enabled = !!(u && u.totpEnabled);
                 statusEl.innerHTML = enabled ? '<span class="badge done">' + t('totp_active') + '</span>' : '<span class="badge pending">' + t('totp_inactive') + '</span>';
                 if (enabled) {
                     actionsEl.innerHTML = '<button type="button" class="btn-secondary" id="totpDisableBtnDynamic">' + t('totp_disable_btn') + '</button>';
@@ -3209,48 +3209,48 @@
             }
         }
         async function uploadProfileAvatar(file) {
-            var formData = new FormData();
+            const formData = new FormData();
             formData.append('file', file);
-            var r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-            var data = await r.json().catch(function() { return {}; });
+            const r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+            const data = await r.json().catch(function() { return {}; });
             if (data.url) {
-                var avatarInput = document.getElementById('profileAvatar');
-                var avatarValue = data.url;
+                const avatarInput = document.getElementById('profileAvatar');
+                const avatarValue = data.url;
                 if (avatarInput) { avatarInput.value = avatarValue; updateProfileAvatarPreview(avatarValue); }
-                var patchRes = await apiFetch('/api/users/me', { method: 'PATCH', body: JSON.stringify({ avatar: avatarValue }) });
+                const patchRes = await apiFetch('/api/users/me', { method: 'PATCH', body: JSON.stringify({ avatar: avatarValue }) });
                 if (patchRes.ok) { if (patchRes.data) currentUser = patchRes.data; setUserDisplay(currentUser); toast(t('saved') || (LANG === 'fa' ? 'تصویر بارگذاری و ذخیره شد' : 'Image uploaded and saved')); }
                 else { toast(t('saved') || (LANG === 'fa' ? 'تصویر بارگذاری شد — ذخیره تغییرات را بزنید' : 'Image uploaded — click Save to persist')); }
             } else { toast((data.error) || t('err_generic'), true); }
         }
         async function saveProfile() {
-            var username = document.getElementById('profileUsername') && document.getElementById('profileUsername').value;
-            var firstName = document.getElementById('profileFirstName') && document.getElementById('profileFirstName').value;
-            var lastName = document.getElementById('profileLastName') && document.getElementById('profileLastName').value;
-            var dateOfBirth = document.getElementById('profileDateOfBirth') && document.getElementById('profileDateOfBirth').value;
-            var phone = document.getElementById('profilePhone') && document.getElementById('profilePhone').value;
-            var avatar = document.getElementById('profileAvatar') && document.getElementById('profileAvatar').value;
-            var password = document.getElementById('profilePassword') && document.getElementById('profilePassword').value;
-            var body = { username: (username || '').trim() || null, firstName: (firstName || '').trim() || null, lastName: (lastName || '').trim() || null, dateOfBirth: (dateOfBirth || '').trim() || null, phone: (phone || '').trim() || null, avatar: (avatar || '').trim() || null };
-            var canEditEmail = !!(currentUser && currentUser.permissions && currentUser.permissions.manage_users);
+            const username = document.getElementById('profileUsername') && document.getElementById('profileUsername').value;
+            const firstName = document.getElementById('profileFirstName') && document.getElementById('profileFirstName').value;
+            const lastName = document.getElementById('profileLastName') && document.getElementById('profileLastName').value;
+            const dateOfBirth = document.getElementById('profileDateOfBirth') && document.getElementById('profileDateOfBirth').value;
+            const phone = document.getElementById('profilePhone') && document.getElementById('profilePhone').value;
+            const avatar = document.getElementById('profileAvatar') && document.getElementById('profileAvatar').value;
+            const password = document.getElementById('profilePassword') && document.getElementById('profilePassword').value;
+            const body = { username: (username || '').trim() || null, firstName: (firstName || '').trim() || null, lastName: (lastName || '').trim() || null, dateOfBirth: (dateOfBirth || '').trim() || null, phone: (phone || '').trim() || null, avatar: (avatar || '').trim() || null };
+            const canEditEmail = !!(currentUser && currentUser.permissions && currentUser.permissions.manage_users);
             if (canEditEmail) {
-                var emailInput = document.getElementById('profileEmailInput');
+                const emailInput = document.getElementById('profileEmailInput');
                 if (emailInput && emailInput.offsetParent !== null) {
-                    var emailVal = (emailInput.value || '').trim();
+                    const emailVal = (emailInput.value || '').trim();
                     if (emailVal) body.email = emailVal;
                 }
             }
-            var usernameTrim = (username || '').trim();
+            const usernameTrim = (username || '').trim();
             if (usernameTrim) body.username = usernameTrim;
             if (password) body.password = password;
-            var btn = document.getElementById('profileSaveBtn');
+            const btn = document.getElementById('profileSaveBtn');
             if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ذخیره...' : LANG === 'tr' ? 'Kaydediliyor...' : 'Saving...'); }
-            var res = await apiFetch('/api/users/me', { method: 'PATCH', body: JSON.stringify(body) });
+            const res = await apiFetch('/api/users/me', { method: 'PATCH', body: JSON.stringify(body) });
             if (btn) { btn.disabled = false; btn.textContent = t('profile_save') || (LANG === 'fa' ? 'ذخیره تغییرات' : 'Save changes'); }
             if (res.needLogin) return;
             if (res.ok) {
                 toast(t('saved'));
                 if (res.data) currentUser = res.data;
-                var passEl = document.getElementById('profilePassword');
+                const passEl = document.getElementById('profilePassword');
                 if (passEl) passEl.value = '';
                 setUserDisplay(currentUser);
                 loadProfile();
@@ -3260,27 +3260,27 @@
         }
         function closeTotpSetupModal() { document.getElementById('totpSetupModal').style.display = 'none'; }
         async function openTotpSetup() {
-            var res = await apiFetch('/api/auth/totp/setup');
+            const res = await apiFetch('/api/auth/totp/setup');
             if (res.needLogin || !res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
-            var d = res.data;
+            const d = res.data;
             document.getElementById('totpSetupQr').innerHTML = d.qrCode ? '<img src="' + d.qrCode + '" alt="QR" style="max-width:220px; height:auto;">' : '';
             document.getElementById('totpSetupSecret').textContent = d.secret ? t('modal_totp_secret') + ' ' + d.secret : '';
             document.getElementById('totpSetupCode').value = '';
             document.getElementById('totpSetupModal').style.display = 'flex';
         }
         async function confirmTotpSetup() {
-            var code = (document.getElementById('totpSetupCode') && document.getElementById('totpSetupCode').value || '').replace(/\s/g, '');
+            const code = (document.getElementById('totpSetupCode') && document.getElementById('totpSetupCode').value || '').replace(/\s/g, '');
             if (!code || code.length !== 6) { toast(t('enter_6_digit'), true); return; }
-            var res = await apiFetch('/api/auth/totp/confirm-setup', { method: 'POST', body: JSON.stringify({ code: code }) });
+            const res = await apiFetch('/api/auth/totp/confirm-setup', { method: 'POST', body: JSON.stringify({ code: code }) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_totp_enabled')); closeTotpSetupModal(); currentUser.totpEnabled = true; loadProfile(); document.getElementById('totpPromptBanner').style.display = 'none'; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function closeTotpDisableModal() { document.getElementById('totpDisableModal').style.display = 'none'; document.getElementById('totpDisablePassword').value = ''; }
         function openTotpDisableModal() { document.getElementById('totpDisablePassword').value = ''; document.getElementById('totpDisableModal').style.display = 'flex'; }
         async function disableTotpSubmit() {
-            var password = document.getElementById('totpDisablePassword') && document.getElementById('totpDisablePassword').value;
+            const password = document.getElementById('totpDisablePassword') && document.getElementById('totpDisablePassword').value;
             if (!password) { toast(t('enter_password'), true); return; }
-            var res = await apiFetch('/api/auth/totp/disable', { method: 'POST', body: JSON.stringify({ password: password }) });
+            const res = await apiFetch('/api/auth/totp/disable', { method: 'POST', body: JSON.stringify({ password: password }) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_totp_disabled')); closeTotpDisableModal(); currentUser.totpEnabled = false; loadProfile(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
@@ -3298,18 +3298,18 @@
             localStorage.removeItem('crm_token');
             document.documentElement.classList.remove('auth-has-token');
             document.getElementById('loginBox').style.display = 'flex';
-            var appEl = document.getElementById('app');
+            const appEl = document.getElementById('app');
             if (appEl) { appEl.classList.remove('show', 'app-loading', 'app-ready'); }
         }
 
-        function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
-        function resolveAvatarUrl(avatar) { if (!avatar || typeof avatar !== 'string') return ''; var s = avatar.trim(); if (!s) return ''; if (s.indexOf('http') === 0) return ensureHttpsUrl(s); var origin = window.location.origin || ''; if (s.indexOf('/') === 0) return origin + s; return origin + '/' + s; }
-        function internalMsgAvatarHtml(fromUser) { var u = fromUser || {}; var name = (u.name || u.email || '').trim(); var initial = name[0] ? name[0].toUpperCase() : '?'; var pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'"></span>'; return '<span class="msg-avatar">' + escapeHtml(initial) + '</span>'; }
+        function resolveAvatarUrl(avatar) { if (!avatar || typeof avatar !== 'string') return ''; const s = avatar.trim(); if (!s) return ''; if (s.indexOf('http') === 0) return ensureHttpsUrl(s); const origin = window.location.origin || ''; if (s.indexOf('/') === 0) return origin + s; return origin + '/' + s; }
+        function internalMsgAvatarHtml(fromUser) { const u = fromUser || {}; const name = (u.name || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'"></span>'; return '<span class="msg-avatar">' + escapeHtml(initial) + '</span>'; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         function refreshDashboard() {
-            var btn = document.getElementById('dashboardRefreshBtn');
+            const btn = document.getElementById('dashboardRefreshBtn');
             if (btn) { btn.classList.add('loading'); btn.disabled = true; }
             loadDashboard().then(function() {
                 if (btn) { btn.classList.remove('loading'); btn.disabled = false; }
@@ -3320,19 +3320,19 @@
             if (cardsTitleEl) cardsTitleEl.style.display = 'none';
         }
         async function loadDashboard() {
-            var container = document.getElementById('dashboardCards');
-            var summaryEl = document.getElementById('dashboardSummary');
-            var quickEl = document.getElementById('dashboardQuickActions');
-            var attentionEl = document.getElementById('dashboardAttention');
-            var cardsTitleEl = document.getElementById('dashboardCardsTitle');
+            const container = document.getElementById('dashboardCards');
+            const summaryEl = document.getElementById('dashboardSummary');
+            const quickEl = document.getElementById('dashboardQuickActions');
+            const attentionEl = document.getElementById('dashboardAttention');
+            const cardsTitleEl = document.getElementById('dashboardCardsTitle');
             if (!container) return;
-            var perms = (currentUser && currentUser.permissions) || {};
-            var can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
+            const perms = (currentUser && currentUser.permissions) || {};
+            const can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
             if (container) container.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (summaryEl) summaryEl.innerHTML = '';
             if (quickEl) quickEl.innerHTML = '';
             if (attentionEl) { attentionEl.innerHTML = ''; attentionEl.style.display = 'none'; }
-            var res;
+            let res;
             try {
                 res = await apiFetch('/api/analytics/dashboard');
             } catch (e) {
@@ -3343,21 +3343,21 @@
                 setDashboardError(container, cardsTitleEl, LANG === 'fa' ? 'لطفاً وارد شوید.' : 'Please sign in.');
                 return;
             }
-            var stats = res.ok && res.data ? res.data : {};
-            var n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
+            const stats = res.ok && res.data ? res.data : {};
+            const n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
             if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
-                var parts = [];
+                const parts = [];
                 if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" onclick="showPage(\'conversations\'); setConvQuickTab(\'unread\'); return false;" class="dashboard-attention-link">' + n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread') + '</a>');
                 if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" onclick="showPage(\'tasks\'); return false;" class="dashboard-attention-link">' + n(stats.tasksPending) + ' ' + t('dashboard_stat_tasks') + '</a>');
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" onclick="showPage(\'announcements\'); return false;" class="dashboard-attention-link">' + n(stats.unreadAnnouncements) + ' ' + t('dashboard_stat_announcements') + '</a>');
                 if (parts.length) {
-                    var needsLabel = (t('dashboard_needs_attention') || (LANG === 'fa' ? 'نیاز به توجه: ' : 'Needs attention: ')) + ' ';
+                    const needsLabel = (t('dashboard_needs_attention') || (LANG === 'fa' ? 'نیاز به توجه: ' : 'Needs attention: ')) + ' ';
                     attentionEl.innerHTML = needsLabel + parts.join(' · ');
                     attentionEl.style.display = 'block';
                 }
             }
             if (summaryEl) {
-                var summaryItems = [];
+                const summaryItems = [];
                 if (can('staff_activity') || can('users')) {
                     summaryItems.push({ page: 'staff-activity', num: n(stats.staffOnline), label: t('dashboard_stat_online') });
                     summaryItems.push({ page: 'staff-activity', num: n(stats.loginsToday), label: t('dashboard_stat_logins_today') });
@@ -3373,23 +3373,23 @@
                 if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min'), label: (LANG === 'fa' ? 'میانگین زمان پاسخ' : 'Avg response time') });
                 if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgRating + '/5', label: (LANG === 'fa' ? 'نرخ رضایت' : 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + stats.ratedConversationsCount + ')' : '') });
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: n(stats.unreadAnnouncements), label: t('dashboard_stat_announcements'), warn: true });
-                var summaryHtml = summaryItems.map(function(item) {
-                    var cls = 'dashboard-stat-box' + (item.warn ? ' warn' : '');
+                const summaryHtml = summaryItems.map(function(item) {
+                    const cls = 'dashboard-stat-box' + (item.warn ? ' warn' : '');
                     return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" onclick="showPage(\'' + item.page.replace(/'/g, "\\'") + '\'); return false;"><span class="stat-number">' + escapeHtml(String(item.num)) + '</span><span class="stat-label">' + escapeHtml(item.label) + '</span></a>';
                 }).join('');
                 summaryEl.innerHTML = summaryHtml || '';
             }
             if (quickEl) {
-                var quickBtns = [];
+                const quickBtns = [];
                 if (can('conversations')) quickBtns.push({ label: t('dashboard_quick_new_conv'), icon: 'icon-chat', onclick: "showPage('conversations'); openNewConvModal();" });
                 if (can('customers')) quickBtns.push({ label: t('dashboard_quick_new_customer'), icon: 'icon-user-plus', onclick: "showPage('customers'); openCustomerModal();" });
                 if (can('tickets')) quickBtns.push({ label: t('dashboard_quick_new_ticket'), icon: 'icon-ticket', onclick: "showPage('tickets'); setTimeout(function(){ toggleTicketForm(); }, 350);" });
-                var quickHtml = quickBtns.map(function(b) {
+                const quickHtml = quickBtns.map(function(b) {
                     return '<button type="button" class="btn-quick" onclick="' + escapeHtml(b.onclick) + '"><svg viewBox="0 0 24 24"><use href="#' + escapeHtml(b.icon) + '"/></svg>' + escapeHtml(b.label) + '</button>';
                 }).join('');
                 quickEl.innerHTML = quickHtml || '';
             }
-            var cards = [
+            const cards = [
                 { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread')) : (n(stats.openConversations) + ' ' + t('filter_open')), badgeWarn: n(stats.unreadConversations) > 0 },
                 { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + ' ' + t('nav_customers').toLowerCase() },
                 { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', stat: n(stats.ticketsOpen) + ' ' + t('status_open').toLowerCase() },
@@ -3408,10 +3408,10 @@
                 { page: 'staff-activity', section: 'staff_activity', title: t('nav_staff_activity'), icon: 'icon-user-online', stat: null },
                 { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-settings', stat: null }
             ];
-            var html = '';
+            let html = '';
             cards.forEach(function(c) {
                 if (!can(c.section)) return;
-                var badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
+                const badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
                 html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
             });
             container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : t('no_data')) + '</div>');
@@ -3420,32 +3420,32 @@
         }
 
         window._marqueeAnnouncements = [];
-        function pauseAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.add('paused'); }
-        function resumeAnnouncementMarquee() { var el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.remove('paused'); }
+        function pauseAnnouncementMarquee() { const el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.add('paused'); }
+        function resumeAnnouncementMarquee() { const el = document.querySelector('.announcement-marquee-inner'); if (el) el.classList.remove('paused'); }
         function getAnnMarqueeDismissedKey() {
-            var uid = (currentUser && currentUser.id) ? String(currentUser.id) : 'guest';
+            const uid = (currentUser && currentUser.id) ? String(currentUser.id) : 'guest';
             return 'ann_marquee_dismissed_' + uid;
         }
         function closeAnnouncementMarquee() { 
-            var el = document.getElementById('announcementMarquee'); 
+            const el = document.getElementById('announcementMarquee'); 
             if (el) { 
                 el.style.display = 'none'; 
-                var ids = (window._marqueeAnnouncements || []).map(function(a) { return String(a.id); });
+                const ids = (window._marqueeAnnouncements || []).map(function(a) { return String(a.id); });
                 try { localStorage.setItem(getAnnMarqueeDismissedKey(), JSON.stringify(ids)); } catch (e) {}
             }
             // Show toggle button
-            var toggleBtn = document.getElementById('headerAnnToggleBtn');
+            const toggleBtn = document.getElementById('headerAnnToggleBtn');
             if (toggleBtn) toggleBtn.style.display = 'flex';
         }
         function openAnnouncementMarquee() {
-            var el = document.getElementById('announcementMarquee');
+            const el = document.getElementById('announcementMarquee');
             if (el) el.style.display = 'flex';
             // Hide toggle button
-            var toggleBtn = document.getElementById('headerAnnToggleBtn');
+            const toggleBtn = document.getElementById('headerAnnToggleBtn');
             if (toggleBtn) toggleBtn.style.display = 'none';
         }
         function toggleAnnouncementMarquee() {
-            var el = document.getElementById('announcementMarquee');
+            const el = document.getElementById('announcementMarquee');
             if (el && el.style.display !== 'none') {
                 closeAnnouncementMarquee();
             } else {
@@ -3453,18 +3453,18 @@
             }
         }
         function showAnnouncementMarquee() {
-            var el = document.getElementById('announcementMarquee');
+            const el = document.getElementById('announcementMarquee');
             if (el && window._marqueeAnnouncements && window._marqueeAnnouncements.length > 0) {
                 el.style.display = 'flex';
             }
             // Hide toggle button
-            var toggleBtn = document.getElementById('headerAnnToggleBtn');
+            const toggleBtn = document.getElementById('headerAnnToggleBtn');
             if (toggleBtn) toggleBtn.style.display = 'none';
         }
         function checkAnnouncementMarqueeVisibility() {
-            var el = document.getElementById('announcementMarquee');
-            var toggleBtn = document.getElementById('headerAnnToggleBtn');
-            var announcements = window._marqueeAnnouncements || [];
+            const el = document.getElementById('announcementMarquee');
+            const toggleBtn = document.getElementById('headerAnnToggleBtn');
+            const announcements = window._marqueeAnnouncements || [];
             if (el && el.style.display !== 'none') {
                 if (toggleBtn) toggleBtn.style.display = 'none';
             } else if (announcements.length > 0 && toggleBtn) {
@@ -3477,46 +3477,46 @@
             if (id) {
                 showPage('announcements');
                 setTimeout(function() {
-                    var el = document.querySelector('.announcement-item[data-id="' + id + '"]');
+                    const el = document.querySelector('.announcement-item[data-id="' + id + '"]');
                     if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('highlight'); }
                 }, 300);
             }
         }
-        function pauseTickerRatesMarquee() { var el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.add('paused'); }
-        function resumeTickerRatesMarquee() { var el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.remove('paused'); }
+        function pauseTickerRatesMarquee() { const el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.add('paused'); }
+        function resumeTickerRatesMarquee() { const el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.remove('paused'); }
         function renderMarqueeItem(a) {
-            var badge = a.isImportant ? '<span class="ann-marquee-badge important">' + (t('ann_type_important') || 'Important') + '</span>' : '<span class="ann-marquee-badge info">' + (t('ann_type_info') || 'Info') + '</span>';
-            var text = (a.title || '') + (a.body ? (LANG === 'fa' ? ': ' : ': ') + String(a.body).substring(0, 80) + (a.body.length > 80 ? '…' : '') : '');
+            const badge = a.isImportant ? '<span class="ann-marquee-badge important">' + (t('ann_type_important') || 'Important') + '</span>' : '<span class="ann-marquee-badge info">' + (t('ann_type_info') || 'Info') + '</span>';
+            const text = (a.title || '') + (a.body ? (LANG === 'fa' ? ': ' : ': ') + String(a.body).substring(0, 80) + (a.body.length > 80 ? '…' : '') : '');
             return '<div class="announcement-marquee-item' + (a.isImportant ? ' ann-important' : '') + '" data-id="' + escapeHtml(a.id) + '" style="cursor:pointer;"><span class="ann-marquee-badge-wrap">' + badge + '</span><span class="ann-marquee-sep">|</span><span class="ann-marquee-text">' + escapeHtml(text) + '</span></div>';
         }
         function marqueeAnnouncementClick(id) {
-            var a = (window._marqueeAnnouncements || []).find(function(x) { return String(x.id) === String(id); });
+            const a = (window._marqueeAnnouncements || []).find(function(x) { return String(x.id) === String(id); });
             if (a) { apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadGeneralAnnouncementsMarquee(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); }); showAnnouncementModal(a); }
         }
         async function loadGeneralAnnouncementsMarquee() {
-            var banner = document.getElementById('announcementMarquee');
+            const banner = document.getElementById('announcementMarquee');
             if (!banner) return;
             if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf('announcements') >= 0) { banner.style.display = 'none'; return; }
             try {
-                var res = await apiFetch('/api/announcements/for-me');
+                const res = await apiFetch('/api/announcements/for-me');
                 if (res.needLogin || !res.ok) { banner.style.display = 'none'; return; }
-                var list = (res.data && res.data.data) ? res.data.data : [];
-                var general = list.filter(function(a) { return a.targetType === 'all'; });
-                var seenIds = {};
+                const list = (res.data && res.data.data) ? res.data.data : [];
+                let general = list.filter(function(a) { return a.targetType === 'all'; });
+                const seenIds = {};
                 general = general.filter(function(a) { if (a.id && seenIds[a.id]) return false; if (a.id) seenIds[a.id] = true; return true; });
                 if (general.length === 0) { banner.style.display = 'none'; return; }
                 window._marqueeAnnouncements = general;
-                var inner = banner.querySelector('.announcement-marquee-inner');
-                var countEl = document.getElementById('annMarqueeCount');
+                const inner = banner.querySelector('.announcement-marquee-inner');
+                const countEl = document.getElementById('annMarqueeCount');
                 if (countEl) { countEl.textContent = general.length; countEl.style.display = general.length > 1 ? 'inline' : 'none'; }
                 if (inner) {
-                    var html = general.map(renderMarqueeItem).join('');
+                    const html = general.map(renderMarqueeItem).join('');
                     inner.innerHTML = html;
                     delete inner.dataset.marqueeDuplicated;
-                    var track = banner.querySelector('.announcement-marquee-track');
+                    const track = banner.querySelector('.announcement-marquee-track');
                     function updateMarqueeMode() {
                         if (!track) return;
-                        var fits = inner.scrollWidth <= track.clientWidth;
+                        const fits = inner.scrollWidth <= track.clientWidth;
                         if (!fits && !inner.dataset.marqueeDuplicated) {
                             inner.innerHTML = inner.innerHTML + inner.innerHTML;
                             inner.dataset.marqueeDuplicated = '1';
@@ -3537,14 +3537,14 @@
                         inner.classList.add('scrolling');
                     }
                 }
-                var currentIds = general.map(function(a) { return String(a.id); });
-                var dismissedIds = [];
+                const currentIds = general.map(function(a) { return String(a.id); });
+                let dismissedIds = [];
                 try {
-                    var stored = localStorage.getItem(getAnnMarqueeDismissedKey());
+                    const stored = localStorage.getItem(getAnnMarqueeDismissedKey());
                     if (stored) dismissedIds = JSON.parse(stored) || [];
                 } catch (e) {}
-                var hasNew = currentIds.some(function(id) { return dismissedIds.indexOf(id) === -1; });
-                var toggleBtn = document.getElementById('headerAnnToggleBtn');
+                const hasNew = currentIds.some(function(id) { return dismissedIds.indexOf(id) === -1; });
+                const toggleBtn = document.getElementById('headerAnnToggleBtn');
                 if (dismissedIds.length > 0 && !hasNew) {
                     banner.style.display = 'none';
                     if (toggleBtn) toggleBtn.style.display = 'flex';
@@ -3555,35 +3555,35 @@
             } catch (e) { banner.style.display = 'none'; }
         }
 
-        var announcementsTab = 'all';
-        var announcementsData = [];
-        var announcementsSearchQuery = '';
-        var announcementsSort = 'newest';
+        let announcementsTab = 'all';
+        let announcementsData = [];
+        let announcementsSearchQuery = '';
+        let announcementsSort = 'newest';
         function toggleAnnouncementSendForm() {
-            var box = document.getElementById('announcementSendBox');
-            var toggle = document.getElementById('annSendFormToggle');
-            var textSpan = toggle ? toggle.querySelector('.ann-send-toggle-text') : null;
+            const box = document.getElementById('announcementSendBox');
+            const toggle = document.getElementById('annSendFormToggle');
+            const textSpan = toggle ? toggle.querySelector('.ann-send-toggle-text') : null;
             if (box && toggle) {
                 box.classList.toggle('collapsed');
-                var isCollapsed = box.classList.contains('collapsed');
+                const isCollapsed = box.classList.contains('collapsed');
                 toggle.setAttribute('aria-expanded', !isCollapsed);
                 if (textSpan) textSpan.textContent = t(isCollapsed ? 'ann_expand' : 'ann_collapse');
             }
         }
         function resetAnnouncementForm() {
-            var titleEl = document.getElementById('annTitle');
-            var bodyEl = document.getElementById('annBody');
-            var importantEl = document.getElementById('annImportant');
+            const titleEl = document.getElementById('annTitle');
+            const bodyEl = document.getElementById('annBody');
+            const importantEl = document.getElementById('annImportant');
             if (titleEl) titleEl.value = '';
             if (bodyEl) bodyEl.value = '';
             if (importantEl) importantEl.checked = false;
-            var hintEl = document.getElementById('annImportantHint');
+            const hintEl = document.getElementById('annImportantHint');
             if (hintEl) hintEl.style.display = 'none';
             toast(LANG === 'fa' ? 'فرم پاک شد' : 'Form cleared');
         }
         function toggleAnnImportantHint() {
-            var importantEl = document.getElementById('annImportant');
-            var hintEl = document.getElementById('annImportantHint');
+            const importantEl = document.getElementById('annImportant');
+            const hintEl = document.getElementById('annImportantHint');
             if (hintEl && importantEl) hintEl.style.display = importantEl.checked ? 'block' : 'none';
         }
         function filterAnnouncementsBySearch(q) {
@@ -3597,7 +3597,7 @@
         }
         function setAnnouncementsSort(sort) {
             announcementsSort = sort || 'newest';
-            var sel = document.getElementById('announcementSort');
+            const sel = document.getElementById('announcementSort');
             if (sel) sel.value = announcementsSort;
             renderAnnouncementsList();
         }
@@ -3609,9 +3609,9 @@
             return list;
         }
         function sortAnnouncements(list) {
-            var arr = list.slice();
+            const arr = list.slice();
             if (announcementsSort === 'oldest') arr.sort(function(a, b) { return new Date(a.createdAt || 0) - new Date(b.createdAt || 0); });
-            else if (announcementsSort === 'important') arr.sort(function(a, b) { var ai = a.isImportant ? 1 : 0; var bi = b.isImportant ? 1 : 0; if (bi !== ai) return bi - ai; return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); });
+            else if (announcementsSort === 'important') arr.sort(function(a, b) { const ai = a.isImportant ? 1 : 0; const bi = b.isImportant ? 1 : 0; if (bi !== ai) return bi - ai; return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); });
             else arr.sort(function(a, b) { return new Date(b.createdAt || 0) - new Date(a.createdAt || 0); });
             return arr;
         }
@@ -3622,16 +3622,16 @@
             return '';
         }
         async function loadAnnouncements() {
-            var list = document.getElementById('announcementList');
+            const list = document.getElementById('announcementList');
             if (!list) return;
             list.innerHTML = t('loading');
-            var res = await apiFetch('/api/announcements/for-me');
+            const res = await apiFetch('/api/announcements/for-me');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             announcementsData = (res.data && res.data.data) || [];
             renderAnnouncementsList();
             // mark همه اعلان‌های خوانده‌نشده به عنوان خوانده‌شده
-            var unread = announcementsData.filter(function(a) { return !a.read; });
+            const unread = announcementsData.filter(function(a) { return !a.read; });
             if (unread.length > 0) {
                 Promise.all(unread.map(function(a) {
                     return apiFetch('/api/announcements/' + a.id + '/read', { method: 'POST' }).catch(function(){});
@@ -3645,15 +3645,15 @@
             }
         }
         function renderAnnouncementsList() {
-            var list = document.getElementById('announcementList');
+            const list = document.getElementById('announcementList');
             if (!list) return;
-            var filtered = filterAnnouncementsByTab(announcementsData);
+            let filtered = filterAnnouncementsByTab(announcementsData);
             if (announcementsSearchQuery) {
-                var q = announcementsSearchQuery;
+                const q = announcementsSearchQuery;
                 filtered = filtered.filter(function(a) {
-                    var title = (a.title || '').toLowerCase();
-                    var body = (a.body || '').toLowerCase();
-                    var fromName = (a.fromUser && a.fromUser.name || '').toLowerCase();
+                    const title = (a.title || '').toLowerCase();
+                    const body = (a.body || '').toLowerCase();
+                    const fromName = (a.fromUser && a.fromUser.name || '').toLowerCase();
                     return title.indexOf(q) >= 0 || body.indexOf(q) >= 0 || fromName.indexOf(q) >= 0;
                 });
             }
@@ -3661,14 +3661,14 @@
             if (filtered.length === 0) { list.className = 'announcements-list empty'; list.innerHTML = '<span class="empty-icon">📢</span><p class="empty-text">' + (t('ann_empty') || (LANG === 'fa' ? 'اعلانی وجود ندارد.' : 'No announcements.')) + '</p><p class="empty-hint">' + (t('ann_empty_hint') || '') + '</p>'; return; }
             list.classList.remove('empty');
             list.innerHTML = filtered.map(function(a) {
-                var fromName = (a.fromUser && a.fromUser.name) ? a.fromUser.name : '';
-                var targetStr = annTargetLabel(a);
-                var readCls = a.read ? ' ann-read' : '';
-                var impBadge = a.isImportant ? '<span class="ann-badge-important">' + (t('ann_type_important') || 'Important') + '</span>' : '';
-                var typeIcon = a.isImportant ? '<span class="ann-card-type-icon ann-card-type-important" title="' + (t('ann_type_important') || '') + '">⚠</span>' : '<span class="ann-card-type-icon ann-card-type-info" title="' + (t('ann_type_info') || '') + '">ℹ</span>';
-                var timeStr = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
-                var bodyHtml = (escapeHtml(a.body || '') || '').replace(/\n/g, '<br>');
-                var delBtn = a.canDelete ? '<button type="button" class="ann-delete-btn btn-secondary btn-sm" data-id="' + escapeHtml(a.id) + '" title="' + (t('ann_delete') || '') + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button>' : '';
+                const fromName = (a.fromUser && a.fromUser.name) ? a.fromUser.name : '';
+                const targetStr = annTargetLabel(a);
+                const readCls = a.read ? ' ann-read' : '';
+                const impBadge = a.isImportant ? '<span class="ann-badge-important">' + (t('ann_type_important') || 'Important') + '</span>' : '';
+                const typeIcon = a.isImportant ? '<span class="ann-card-type-icon ann-card-type-important" title="' + (t('ann_type_important') || '') + '">⚠</span>' : '<span class="ann-card-type-icon ann-card-type-info" title="' + (t('ann_type_info') || '') + '">ℹ</span>';
+                const timeStr = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
+                const bodyHtml = (escapeHtml(a.body || '') || '').replace(/\n/g, '<br>');
+                const delBtn = a.canDelete ? '<button type="button" class="ann-delete-btn btn-secondary btn-sm" data-id="' + escapeHtml(a.id) + '" title="' + (t('ann_delete') || '') + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button>' : '';
                 return '<div class="announcement-card' + readCls + (a.isImportant ? ' ann-card-important' : '') + '" data-id="' + escapeHtml(a.id) + '"><div class="announcement-card-header">' + typeIcon + '<span class="announcement-card-title">' + escapeHtml(a.title || '') + '</span><div class="announcement-card-header-right">' + impBadge + delBtn + '</div></div><div class="announcement-card-body">' + bodyHtml + '</div><div class="announcement-card-meta"><span>' + t('ann_from') + ' ' + escapeHtml(fromName) + '</span><span>' + t('ann_to') + ' ' + escapeHtml(targetStr) + '</span><span class="announcement-card-time">' + (t('ann_sent_at') ? t('ann_sent_at') + ' ' : '') + timeStr + '</span></div></div>';
             }).join('');
             list.querySelectorAll('.announcement-card').forEach(function(card) {
@@ -3680,14 +3680,14 @@
         }
         async function markAnnouncementReadAndShow(id) {
             if (!id) return;
-            var a = announcementsData.find(function(x) { return x.id === id; });
-            var needRead = !a || !a.read;
+            let a = announcementsData.find(function(x) { return x.id === id; });
+            const needRead = !a || !a.read;
             if (needRead) {
                 await apiFetch('/api/announcements/' + id + '/read', { method: 'POST' });
                 apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
             }
             if (!a) {
-                var res = await apiFetch('/api/announcements/for-me');
+                const res = await apiFetch('/api/announcements/for-me');
                 if (res.ok && res.data && res.data.data) {
                     a = res.data.data.find(function(x) { return x.id === id; });
                     if (a) { a.read = true; announcementsData = res.data.data; renderAnnouncementsList(); }
@@ -3699,20 +3699,20 @@
             if (a) showAnnouncementModal(a);
         }
         function showAnnouncementModal(a) {
-            var modal = document.getElementById('announcementModal');
-            var box = document.getElementById('announcementModalBox');
+            const modal = document.getElementById('announcementModal');
+            const box = document.getElementById('announcementModalBox');
             if (!modal) return;
             document.getElementById('annModalTitle').textContent = a.title || '';
             document.getElementById('annModalBody').innerHTML = (escapeHtml(a.body || '') || '').replace(/\n/g, '<br>');
-            var metaEl = document.getElementById('annModalMeta');
+            const metaEl = document.getElementById('annModalMeta');
             if (metaEl) {
-                var fromName = (a.fromUser && a.fromUser.name) ? a.fromUser.name : '';
-                var targetStr = annTargetLabel(a);
-                var timeStr = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
+                const fromName = (a.fromUser && a.fromUser.name) ? a.fromUser.name : '';
+                const targetStr = annTargetLabel(a);
+                const timeStr = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
                 metaEl.innerHTML = (t('ann_from') || '') + ' ' + escapeHtml(fromName) + ' · ' + (t('ann_to') || '') + ' ' + escapeHtml(targetStr) + (timeStr ? ' · ' + (t('ann_sent_at') || '') + ' ' + timeStr : '');
                 metaEl.style.display = 'block';
             }
-            var badgeEl = document.getElementById('annModalTypeBadge');
+            const badgeEl = document.getElementById('annModalTypeBadge');
             if (badgeEl) {
                 badgeEl.textContent = a.isImportant ? (t('ann_type_important') || 'Important') : (t('ann_type_info') || 'Info');
                 badgeEl.className = 'announcement-modal-type-badge' + (a.isImportant ? ' important' : ' info');
@@ -3722,22 +3722,22 @@
             modal.style.display = 'flex';
         }
         async function loadAnnouncementTargets() {
-            var typeSel = document.getElementById('annTargetType');
-            var idSel = document.getElementById('annTargetId');
-            var wrap = document.getElementById('annTargetIdWrap');
-            var typeWrap = typeSel ? typeSel.closest('.announcements-send-field') : null;
+            const typeSel = document.getElementById('annTargetType');
+            const idSel = document.getElementById('annTargetId');
+            const wrap = document.getElementById('annTargetIdWrap');
+            const typeWrap = typeSel ? typeSel.closest('.announcements-send-field') : null;
             if (!typeSel || !idSel) return;
-            var res = await apiFetch('/api/announcements/targets');
+            const res = await apiFetch('/api/announcements/targets');
             if (res.needLogin || !res.ok) return;
-            var users = res.users || [];
-            var departments = res.departments || [];
-            var isManager = currentUser && currentUser.role === 'manager';
+            const users = res.users || [];
+            const departments = res.departments || [];
+            const isManager = currentUser && currentUser.role === 'manager';
             if (isManager && departments.length >= 1) {
                 typeSel.value = 'department';
                 idSel.innerHTML = '';
                 departments.forEach(function(d) { idSel.innerHTML += '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; });
                 wrap.style.display = 'block';
-                var labelEl = wrap.querySelector('label');
+                const labelEl = wrap.querySelector('label');
                 if (labelEl) labelEl.textContent = (LANG === 'fa' ? 'دپارتمان' : LANG === 'tr' ? 'Departman' : 'Department');
                 if (typeWrap) typeWrap.style.display = 'none';
             } else if (isManager && departments.length === 0) {
@@ -3747,7 +3747,7 @@
             } else {
                 if (typeWrap) typeWrap.style.display = 'block';
                 typeSel.onchange = function() {
-                    var v = typeSel.value;
+                    const v = typeSel.value;
                     wrap.style.display = (v === 'department' || v === 'user') ? 'block' : 'none';
                     idSel.innerHTML = '<option value="">' + t('ann_select') + '</option>';
                     if (v === 'department') departments.forEach(function(d) { idSel.innerHTML += '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; });
@@ -3757,15 +3757,15 @@
             }
         }
         async function sendAnnouncement() {
-            var title = (document.getElementById('annTitle') && document.getElementById('annTitle').value) || '';
-            var body = (document.getElementById('annBody') && document.getElementById('annBody').value) || '';
+            const title = (document.getElementById('annTitle') && document.getElementById('annTitle').value) || '';
+            const body = (document.getElementById('annBody') && document.getElementById('annBody').value) || '';
             if (!title.trim() || !body.trim()) { toast(t('ann_title') + ' ' + (LANG === 'fa' ? 'و متن الزامی است' : 'and message are required'), true); return; }
-            var targetType = (document.getElementById('annTargetType') && document.getElementById('annTargetType').value) || 'all';
-            var targetId = (document.getElementById('annTargetId') && document.getElementById('annTargetId').value) || '';
+            const targetType = (document.getElementById('annTargetType') && document.getElementById('annTargetType').value) || 'all';
+            const targetId = (document.getElementById('annTargetId') && document.getElementById('annTargetId').value) || '';
             if (targetType !== 'all' && !targetId) { toast(t('ann_select'), true); return; }
-            var isImportant = (document.getElementById('annImportant') && document.getElementById('annImportant').checked) || false;
-            var payload = { title: title.trim(), body: body.trim(), isImportant: isImportant, targetType: targetType, targetId: targetType === 'all' ? null : targetId };
-            var res = await apiFetch('/api/announcements', { method: 'POST', body: JSON.stringify(payload) });
+            const isImportant = (document.getElementById('annImportant') && document.getElementById('annImportant').checked) || false;
+            const payload = { title: title.trim(), body: body.trim(), isImportant: isImportant, targetType: targetType, targetId: targetType === 'all' ? null : targetId };
+            const res = await apiFetch('/api/announcements', { method: 'POST', body: JSON.stringify(payload) });
             if (res.needLogin) return;
             if (res.ok) {
                 document.getElementById('annTitle').value = '';
@@ -3778,17 +3778,17 @@
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function closeAnnouncementModal() {
-            var id = window._lastImportantAnnouncementId;
+            const id = window._lastImportantAnnouncementId;
             if (id) {
                 window._lastImportantAnnouncementId = null;
                 apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadAnnouncements(); loadGeneralAnnouncementsMarquee(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
             }
-            var m = document.getElementById('announcementModal'); if (m) m.style.display = 'none';
+            const m = document.getElementById('announcementModal'); if (m) m.style.display = 'none';
         }
         async function deleteAnnouncement(id) {
             if (!id) return;
             if (!confirm(t('ann_delete_confirm') || (LANG === 'fa' ? 'حذف این اعلان؟' : 'Delete this announcement?'))) return;
-            var res = await apiFetch('/api/announcements/' + id, { method: 'DELETE' });
+            const res = await apiFetch('/api/announcements/' + id, { method: 'DELETE' });
             if (res.needLogin) return;
             if (res.ok) {
                 toast(LANG === 'fa' ? 'اعلان حذف شد' : 'Announcement deleted');
@@ -3799,20 +3799,20 @@
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
-        var convQuickTab = 'all';
-        var convCurrentPage = 1;
+        let convQuickTab = 'all';
+        let convCurrentPage = 1;
 
         /* ========== Global Delegated Event Handler for Dynamic Content ========== */
         function setupGlobalDelegatedHandlers() {
             // Global document-level click handler to catch dynamically generated buttons with onclick
             document.addEventListener('click', function(e) {
-                var target = e.target;
+                const target = e.target;
                 // کلیک روی اسم فرستنده در گروه → باز کردن مکالمه خصوصی
-                var senderEl = target.closest('.msg-sender-clickable');
+                const senderEl = target.closest('.msg-sender-clickable');
                 if (senderEl) {
                     e.preventDefault(); e.stopPropagation();
-                    var sPhone = senderEl.getAttribute('data-sender-phone');
-                    var sName = senderEl.getAttribute('data-sender-name');
+                    const sPhone = senderEl.getAttribute('data-sender-phone');
+                    const sName = senderEl.getAttribute('data-sender-name');
                     if (sPhone && typeof openPrivateChatFromGroup === 'function') {
                         openPrivateChatFromGroup(sPhone, sName);
                     } else {
@@ -3821,7 +3821,7 @@
                     return;
                 }
                 // Conversation quick tab buttons (همه، خوانده‌نشده، بدون پاسخ، ...)
-                var convTabBtn = target.closest('.conv-quick-tabs .conv-tab');
+                const convTabBtn = target.closest('.conv-quick-tabs .conv-tab');
                 if (convTabBtn && typeof setConvQuickTab === 'function') {
                     var tab = convTabBtn.getAttribute('data-tab');
                     if (tab) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); setConvQuickTab(tab); }
@@ -3853,7 +3853,7 @@
                     return;
                 }
                 // تب‌های سریع تسک (همه، در انتظار، در حال انجام، ...)
-                var taskTabBtn = target.closest('.task-quick-tabs .task-tab');
+                const taskTabBtn = target.closest('.task-quick-tabs .task-tab');
                 if (taskTabBtn && typeof setTaskQuickTab === 'function') {
                     var tab = taskTabBtn.getAttribute('data-tab');
                     if (tab) { e.preventDefault(); e.stopPropagation(); setTaskQuickTab(tab); }
@@ -3885,7 +3885,7 @@
                     return;
                 }
                 // کلیک روی آیتم تسک — باز کردن جزئیات
-                var taskItem = target.closest('.task-list-item[data-task-id]');
+                const taskItem = target.closest('.task-list-item[data-task-id]');
                 if (taskItem && typeof loadTaskDetail === 'function') {
                     var tid = taskItem.getAttribute('data-task-id');
                     if (tid) { e.preventDefault(); e.stopPropagation(); loadTaskDetail(tid); }
@@ -3951,9 +3951,9 @@
                     return;
                 }
                 // لینک‌های آمار واتساپ — مشاهده مکالمات
-                var statLink = target.closest('.whatsapp-stat-link[data-stat]');
+                const statLink = target.closest('.whatsapp-stat-link[data-stat]');
                 if (statLink && typeof showPage === 'function' && typeof setConvQuickTab === 'function') {
-                    var stat = statLink.getAttribute('data-stat');
+                    const stat = statLink.getAttribute('data-stat');
                     if (stat) { e.preventDefault(); e.stopPropagation(); showPage('conversations'); setConvQuickTab(stat); }
                     return;
                 }
@@ -3990,18 +3990,18 @@
                 // چت داخلی — دکمه‌ها و المان‌های کلیکی
                 if (target.closest('.internal-chat-new-btn') && typeof showNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); showNewChatForm(); return; }
                 if (target.closest('.internal-chat-back-btn') && typeof backToInternalChatList === 'function') { e.preventDefault(); e.stopPropagation(); backToInternalChatList(); return; }
-                if (target.closest('.internal-chat-attach-btn-sm')) { e.preventDefault(); e.stopPropagation(); var f = document.getElementById('internalChatFile'); if (f) f.click(); return; }
+                if (target.closest('.internal-chat-attach-btn-sm')) { e.preventDefault(); e.stopPropagation(); const f = document.getElementById('internalChatFile'); if (f) f.click(); return; }
                 if (target.closest('.internal-chat-send-btn-sm') && typeof sendInternalMessage === 'function') { e.preventDefault(); e.stopPropagation(); sendInternalMessage(); return; }
                 if (target.closest('#internalChatFloatingBtn') && typeof toggleInternalChatFloating === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatFloating(); return; }
                 if (target.closest('.internal-chat-popup-minimize') && typeof toggleInternalChatPopupMinimize === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatPopupMinimize(); return; }
                 if (target.closest('.internal-chat-popup-expand') && typeof openInternalChatFromPopup === 'function') { e.preventDefault(); e.stopPropagation(); openInternalChatFromPopup(); return; }
                 if (target.closest('.internal-chat-popup-close') && typeof closeInternalChatPopup === 'function') { e.preventDefault(); e.stopPropagation(); closeInternalChatPopup(); return; }
-                if (target.closest('.internal-chat-popup-attach-btn')) { e.preventDefault(); e.stopPropagation(); var pf = document.getElementById('internalChatPopupFile'); if (pf) pf.click(); return; }
+                if (target.closest('.internal-chat-popup-attach-btn')) { e.preventDefault(); e.stopPropagation(); const pf = document.getElementById('internalChatPopupFile'); if (pf) pf.click(); return; }
                 if (target.closest('.internal-chat-popup-send-btn') && typeof sendInternalMessageFromPopup === 'function') { e.preventDefault(); e.stopPropagation(); sendInternalMessageFromPopup(); return; }
-                var internalThreadItem = target.closest('.internal-chat-thread-item[data-id]');
+                const internalThreadItem = target.closest('.internal-chat-thread-item[data-id]');
                 if (internalThreadItem && typeof openInternalThread === 'function') { var tid = internalThreadItem.getAttribute('data-id'); if (tid) { e.preventDefault(); e.stopPropagation(); openInternalThread(tid); } return; }
-                var popupThreadItem = target.closest('.internal-chat-popup-thread-item[data-id]');
-                if (popupThreadItem && typeof selectThreadInPopup === 'function') { var pid = popupThreadItem.getAttribute('data-id'); if (pid) { e.preventDefault(); e.stopPropagation(); selectThreadInPopup(pid); } return; }
+                const popupThreadItem = target.closest('.internal-chat-popup-thread-item[data-id]');
+                if (popupThreadItem && typeof selectThreadInPopup === 'function') { const pid = popupThreadItem.getAttribute('data-id'); if (pid) { e.preventDefault(); e.stopPropagation(); selectThreadInPopup(pid); } return; }
                 if (target.closest('.internal-chat-popup-new-btn')) { e.preventDefault(); e.stopPropagation(); if (typeof closeInternalChatPopup === 'function') closeInternalChatPopup(); if (typeof showPage === 'function') showPage('internal-chat'); return; }
                 if (target.closest('#btnInternalStartChat') && typeof startInternalChat === 'function') { e.preventDefault(); e.stopPropagation(); startInternalChat(); return; }
                 if (target.closest('#btnInternalCancelChat') && typeof hideNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); hideNewChatForm(); return; }
@@ -4022,12 +4022,12 @@
                 if (target.closest('#msgTemplateBtn') && typeof toggleTemplateDropdown === 'function') { e.preventDefault(); e.stopPropagation(); toggleTemplateDropdown(); return; }
                 // آیتم‌های دراپ‌داون تمپلیت — کلیک برای درج در چت
                 // آیتم فایل template در dropdown
-                var fileTplItem = target.closest('.chat-file-tpl-item[data-file-id]');
+                const fileTplItem = target.closest('.chat-file-tpl-item[data-file-id]');
                 if (fileTplItem) {
                     var fid = fileTplItem.getAttribute('data-file-id');
-                    var fname = fileTplItem.getAttribute('data-filename') || fileTplItem.getAttribute('data-file-name') || '';
-                    var fmime = fileTplItem.getAttribute('data-mimetype') || '';
-                    var furl = fileTplItem.getAttribute('data-file-url') || '';
+                    const fname = fileTplItem.getAttribute('data-filename') || fileTplItem.getAttribute('data-file-name') || '';
+                    const fmime = fileTplItem.getAttribute('data-mimetype') || '';
+                    const furl = fileTplItem.getAttribute('data-file-url') || '';
                     if (fid && typeof sendMsg === 'function') {
                         e.preventDefault(); e.stopPropagation();
                         var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('msgTemplateBtn');
@@ -4037,22 +4037,22 @@
                     }
                     return;
                 }
-                var tplItem = target.closest('.chat-template-dropdown-item[data-id]');
+                const tplItem = target.closest('.chat-template-dropdown-item[data-id]');
                 if (tplItem && tplItem.hasAttribute('data-content')) {
                     var tid = tplItem.getAttribute('data-id');
-                    var c = typeof unescapeFromDataAttr === 'function' ? unescapeFromDataAttr(tplItem.getAttribute('data-content') || '') : (tplItem.getAttribute('data-content') || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+                    const c = typeof unescapeFromDataAttr === 'function' ? unescapeFromDataAttr(tplItem.getAttribute('data-content') || '') : (tplItem.getAttribute('data-content') || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
                     if (typeof insertTemplateIntoChat === 'function') { e.preventDefault(); e.stopPropagation(); insertTemplateIntoChat(c, tid); var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('msgTemplateBtn'); if (dd) dd.style.display = 'none'; if (btn) btn.setAttribute('aria-expanded', 'false'); }
                     return;
                 }
                 // Handle elements whose onclick was moved to data-onclick-backup (CSP compliance)
-                var backupEl = target.closest('[data-onclick-backup]');
+                const backupEl = target.closest('[data-onclick-backup]');
                 if (backupEl) {
-                    var backup = backupEl.getAttribute('data-onclick-backup');
+                    const backup = backupEl.getAttribute('data-onclick-backup');
                     if (backup) {
                         e.preventDefault();
                         e.stopPropagation();
                         try {
-                            var fn = new Function('event', backup);
+                            const fn = new Function('event', backup);
                             fn.call(backupEl, e);
                         } catch (err) { console.error('onclick-backup:', err); }
                         return;
@@ -4065,7 +4065,7 @@
                 }
                 else if (target.matches('[onclick*="openCustomerModal"]') || target.closest('#emptyCustomerAddBtn')) {
                     e.preventDefault();
-                    var customerId = (target.closest('[data-id]') || target).getAttribute('data-id') || '';
+                    const customerId = (target.closest('[data-id]') || target).getAttribute('data-id') || '';
                     openCustomerModal(customerId);
                 }
                 else if (target.closest('#customerRetryBtn') || target.closest('#customerRefreshBtn')) {
@@ -4074,8 +4074,8 @@
                 }
                 else if (target.closest('.customer-avatar-clickable')) {
                     e.preventDefault();
-                    var avatar = target.closest('.customer-avatar-clickable');
-                    var src = avatar && avatar.getAttribute('data-profile-pic');
+                    const avatar = target.closest('.customer-avatar-clickable');
+                    const src = avatar && avatar.getAttribute('data-profile-pic');
                     if (src && typeof openImagePreviewModal === 'function') openImagePreviewModal(src);
                 }
                 else if (target.closest('.image-preview-close') || (target.closest('#imagePreviewModal') && target.id === 'imagePreviewModal')) {
@@ -4100,7 +4100,7 @@
                     toggleBulkSelect(target.closest('.bulk-customer-check'));
                 }
                 else if (target.closest('.customer-card') && !target.closest('.customer-card-skeleton')) {
-                    var card = target.closest('.customer-card');
+                    const card = target.closest('.customer-card');
                     if (!card || target.closest('.bulk-customer-check') || target.closest('.customer-send-btn')) return;
                     e.preventDefault();
                     var custId = card.getAttribute('data-customer-id');
@@ -4115,31 +4115,31 @@
                 }
                 else if (target.matches('[onclick*="loadTicketDetail"]')) {
                     e.preventDefault();
-                    var ticketId = target.getAttribute('data-ticket-id') || '';
+                    const ticketId = target.getAttribute('data-ticket-id') || '';
                     if (ticketId) loadTicketDetail(ticketId);
                 }
             }, true); // Use capturing phase to catch before other handlers
             document.addEventListener('keydown', function(e) {
                 if (e.key !== 'Enter' && e.key !== ' ') return;
-                var active = document.activeElement;
+                const active = document.activeElement;
                 if (!active || !active.closest) return;
                 if (active.closest('.customer-avatar-clickable')) {
-                    var avatar = active.closest('.customer-avatar-clickable');
-                    var src = avatar && avatar.getAttribute('data-profile-pic');
+                    const avatar = active.closest('.customer-avatar-clickable');
+                    const src = avatar && avatar.getAttribute('data-profile-pic');
                     if (src) { e.preventDefault(); if (typeof openImagePreviewModal === 'function') openImagePreviewModal(src); }
                     return;
                 }
                 if (active.closest('.bulk-customer-check') || active.closest('.customer-send-btn')) return;
-                var card = active.closest('.customer-card:not(.customer-card-skeleton)');
+                const card = active.closest('.customer-card:not(.customer-card-skeleton)');
                 if (card) {
-                    var custId = card.getAttribute('data-customer-id');
-                    var custName = card.getAttribute('data-customer-name') || '';
+                    const custId = card.getAttribute('data-customer-id');
+                    const custName = card.getAttribute('data-customer-name') || '';
                     if (custId) { e.preventDefault(); if (typeof showCustomerHistory === 'function') showCustomerHistory(custId, custName); }
                     return;
                 }
-                var taskItem = active.closest('.task-list-item[data-task-id]');
+                const taskItem = active.closest('.task-list-item[data-task-id]');
                 if (taskItem && typeof loadTaskDetail === 'function') {
-                    var tid = taskItem.getAttribute('data-task-id');
+                    const tid = taskItem.getAttribute('data-task-id');
                     if (tid) { e.preventDefault(); loadTaskDetail(tid); }
                 }
                 // چت داخلی — Enter برای ارسال پیام
@@ -4152,8 +4152,8 @@
             document.addEventListener('change', function(e) {
                 if (e.target.id === 'internalChatFile' && typeof toggleInternalFileOption === 'function') toggleInternalFileOption();
                 if (e.target.id === 'internalChatPopupFile') {
-                    var f = e.target.files && e.target.files[0];
-                    var label = document.getElementById('internalChatPopupFileLabel');
+                    const f = e.target.files && e.target.files[0];
+                    const label = document.getElementById('internalChatPopupFileLabel');
                     if (label) { label.textContent = f ? f.name : ''; label.style.display = f ? 'inline' : 'none'; }
                 }
             }, true);
@@ -4164,7 +4164,7 @@
             // Remove all onclick, onkeyup, onchange, onkeypress attributes to comply with CSP
             document.querySelectorAll('[onclick]').forEach(function(el) {
                 // Save the onclick content as data attribute for dynamic handler
-                var onclickVal = el.getAttribute('onclick');
+                const onclickVal = el.getAttribute('onclick');
                 if (onclickVal && !el.hasAttribute('data-onclick-backup')) {
                     el.setAttribute('data-onclick-backup', onclickVal);
                 }
@@ -4184,46 +4184,46 @@
         /* ========== Login Page Event Handlers Setup ========== */
         function setupLoginEventHandlers() {
             // Language buttons on login page
-            var loginLangButtons = document.querySelectorAll('.login-langs button[data-lang]');
+            const loginLangButtons = document.querySelectorAll('.login-langs button[data-lang]');
             if (loginLangButtons) {
                 loginLangButtons.forEach(function(btn) {
                     btn.removeEventListener('click', function handleLangClick(e) { 
-                        var lang = btn.getAttribute('data-lang');
+                        const lang = btn.getAttribute('data-lang');
                         if (lang) window.setLang(lang); 
                     });
                     btn.addEventListener('click', function handleLangClick(e) { 
-                        var lang = btn.getAttribute('data-lang');
+                        const lang = btn.getAttribute('data-lang');
                         if (lang) window.setLang(lang); 
                     });
                 });
             }
             
             // Login button
-            var btnLogin = document.getElementById('btnLogin');
+            const btnLogin = document.getElementById('btnLogin');
             if (btnLogin) {
                 btnLogin.removeEventListener('click', window.login);
                 btnLogin.addEventListener('click', window.login);
             }
             
             // Forgot password link
-            var linkForgot = document.getElementById('linkForgotPassword');
+            const linkForgot = document.getElementById('linkForgotPassword');
             if (linkForgot) {
                 linkForgot.removeEventListener('click', function(e) { e.preventDefault(); window.showForgotStep(); });
                 linkForgot.addEventListener('click', function(e) { e.preventDefault(); window.showForgotStep(); });
             }
             
             // TOTP verify button
-            var btnTotpVerify = document.getElementById('btnTotpVerify');
+            const btnTotpVerify = document.getElementById('btnTotpVerify');
             if (btnTotpVerify) {
                 btnTotpVerify.removeEventListener('click', window.verifyTotpLogin);
                 btnTotpVerify.addEventListener('click', window.verifyTotpLogin);
             }
             
             // Back to login button (from TOTP)
-            var btnBackToLogin1 = document.querySelector('[onclick="backToLoginStep1()"]');
+            let btnBackToLogin1 = document.querySelector('[onclick="backToLoginStep1()"]');
             if (!btnBackToLogin1) {
                 try {
-                    var xpathResult = document.evaluate("//button[contains(text(), 'بازگشت')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
+                    const xpathResult = document.evaluate("//button[contains(text(), 'بازگشت')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
                     btnBackToLogin1 = xpathResult.singleNodeValue;
                 } catch(xe) { btnBackToLogin1 = null; }
             }
@@ -4233,59 +4233,59 @@
             }
             
             // Forgot password submit button
-            var btnForgotSubmit = document.getElementById('btnForgotSubmit');
+            const btnForgotSubmit = document.getElementById('btnForgotSubmit');
             if (btnForgotSubmit) {
                 btnForgotSubmit.removeEventListener('click', window.submitForgotPassword);
                 btnForgotSubmit.addEventListener('click', window.submitForgotPassword);
             }
             
             // Back to login from forgot
-            var btnBackFromForgot = document.querySelectorAll('[onclick="backToLoginFromForgot()"]')[0];
+            const btnBackFromForgot = document.querySelectorAll('[onclick="backToLoginFromForgot()"]')[0];
             if (btnBackFromForgot) {
                 btnBackFromForgot.removeEventListener('click', window.backToLoginFromForgot);
                 btnBackFromForgot.addEventListener('click', window.backToLoginFromForgot);
             }
             
             // Reset password submit button
-            var btnResetSubmit = document.getElementById('btnResetSubmit');
+            const btnResetSubmit = document.getElementById('btnResetSubmit');
             if (btnResetSubmit) {
                 btnResetSubmit.removeEventListener('click', window.submitResetPassword);
                 btnResetSubmit.addEventListener('click', window.submitResetPassword);
             }
             
             // Back to login from reset
-            var btnBackFromReset = document.querySelectorAll('[onclick="backToLoginFromReset(); return false;"]')[0];
+            const btnBackFromReset = document.querySelectorAll('[onclick="backToLoginFromReset(); return false;"]')[0];
             if (btnBackFromReset) {
                 btnBackFromReset.removeEventListener('click', function(e) { e.preventDefault(); window.backToLoginFromReset(); });
                 btnBackFromReset.addEventListener('click', function(e) { e.preventDefault(); window.backToLoginFromReset(); });
             }
             
             // Language buttons in forgot/reset modal
-            var forgotLangButtons = document.querySelectorAll('.forgot-langs button[data-lang]');
+            const forgotLangButtons = document.querySelectorAll('.forgot-langs button[data-lang]');
             if (forgotLangButtons) {
                 forgotLangButtons.forEach(function(btn) {
                     btn.removeEventListener('click', function handleLangClick(e) { 
-                        var lang = btn.getAttribute('data-lang');
+                        const lang = btn.getAttribute('data-lang');
                         if (lang) window.setLang(lang); 
                     });
                     btn.addEventListener('click', function handleLangClick(e) { 
-                        var lang = btn.getAttribute('data-lang');
+                        const lang = btn.getAttribute('data-lang');
                         if (lang) window.setLang(lang); 
                     });
                 });
             }
             
             // Skip to content link
-            var skipLink = document.getElementById('skipLink');
+            const skipLink = document.getElementById('skipLink');
             if (skipLink) {
                 skipLink.removeEventListener('click', function(e) { 
                     e.preventDefault(); 
-                    var m = document.getElementById('mainContent');
+                    const m = document.getElementById('mainContent');
                     if (m) m.focus(); 
                 });
                 skipLink.addEventListener('click', function(e) { 
                     e.preventDefault(); 
-                    var m = document.getElementById('mainContent');
+                    const m = document.getElementById('mainContent');
                     if (m) m.focus(); 
                 });
             }
@@ -4294,21 +4294,21 @@
         /* ========== Global Event Handlers Setup ========== */
         function setupGlobalEventHandlers() {
             // Header menu button
-            var menuBtn = document.getElementById('headerMenuBtn');
+            const menuBtn = document.getElementById('headerMenuBtn');
             if (menuBtn) {
                 menuBtn.removeEventListener('click', toggleSidebarMobile);
                 menuBtn.addEventListener('click', toggleSidebarMobile);
             }
             
             // Sidebar overlay
-            var sidebarOverlay = document.getElementById('sidebarOverlay');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
             if (sidebarOverlay) {
                 sidebarOverlay.removeEventListener('click', closeSidebarMobile);
                 sidebarOverlay.addEventListener('click', closeSidebarMobile);
             }
             
             // Header announcement toggle button
-            var annToggleBtn = document.getElementById('headerAnnToggleBtn');
+            const annToggleBtn = document.getElementById('headerAnnToggleBtn');
             if (annToggleBtn) {
                 annToggleBtn.removeEventListener('click', toggleAnnouncementMarquee);
                 annToggleBtn.addEventListener('click', toggleAnnouncementMarquee);
@@ -4317,22 +4317,22 @@
             // Header notify buttons — use onclick from HTML only (avoid duplicate handlers)
             
             // Header search triggers
-            var searchTrigger = document.getElementById('headerSearchTrigger');
+            const searchTrigger = document.getElementById('headerSearchTrigger');
             if (searchTrigger) {
                 searchTrigger.removeEventListener('click', openHeaderSearchPopup);
                 searchTrigger.addEventListener('click', openHeaderSearchPopup);
             }
             
-            var searchTriggerDesktop = document.getElementById('headerSearchTriggerDesktop');
+            const searchTriggerDesktop = document.getElementById('headerSearchTriggerDesktop');
             if (searchTriggerDesktop) {
                 searchTriggerDesktop.removeEventListener('click', openHeaderSearchPopup);
                 searchTriggerDesktop.addEventListener('click', openHeaderSearchPopup);
             }
             
             // Header search modal overlay - close on background click
-            var headerSearchModal = document.getElementById('headerSearchModal');
+            const headerSearchModal = document.getElementById('headerSearchModal');
             if (headerSearchModal) {
-                var searchModalCloseHandler = function(e) {
+                const searchModalCloseHandler = function(e) {
                     if (e.target === headerSearchModal) closeHeaderSearchPopup();
                 };
                 headerSearchModal.removeEventListener('click', searchModalCloseHandler);
@@ -4340,16 +4340,16 @@
             }
             
             // Header search modal close button
-            var headerSearchClose = document.querySelector('#headerSearchModal .modal-close');
+            const headerSearchClose = document.querySelector('#headerSearchModal .modal-close');
             if (headerSearchClose) {
                 headerSearchClose.removeEventListener('click', closeHeaderSearchPopup);
                 headerSearchClose.addEventListener('click', closeHeaderSearchPopup);
             }
             
             // Header search modal input - Enter key
-            var headerSearchModalInput = document.getElementById('headerSearchModalInput');
+            const headerSearchModalInput = document.getElementById('headerSearchModalInput');
             if (headerSearchModalInput) {
-                var searchInputHandler = function(e) {
+                const searchInputHandler = function(e) {
                     if (e.key === 'Enter') doHeaderSearchFromModal();
                 };
                 headerSearchModalInput.removeEventListener('keyup', searchInputHandler);
@@ -4357,22 +4357,22 @@
             }
             
             // Header user dropdown triggers (mobile + desktop)
-            var userDropdownHandler = function(e) { toggleUserDropdown(e); };
-            var userDropdownMobile = document.getElementById('userDropdownTriggerMobile');
+            const userDropdownHandler = function(e) { toggleUserDropdown(e); };
+            const userDropdownMobile = document.getElementById('userDropdownTriggerMobile');
             if (userDropdownMobile) {
                 userDropdownMobile.removeEventListener('click', userDropdownHandler);
                 userDropdownMobile.addEventListener('click', userDropdownHandler);
             }
-            var userDropdownDesktop = document.getElementById('userDropdownTrigger');
+            const userDropdownDesktop = document.getElementById('userDropdownTrigger');
             if (userDropdownDesktop) {
                 userDropdownDesktop.removeEventListener('click', userDropdownHandler);
                 userDropdownDesktop.addEventListener('click', userDropdownHandler);
             }
             
             // Header logo
-            var headerLogo = document.getElementById('headerLogo');
+            const headerLogo = document.getElementById('headerLogo');
             if (headerLogo) {
-                var logoHandler = function(e) {
+                const logoHandler = function(e) {
                     e.preventDefault();
                     showPage('dashboard');
                     closeSidebarMobile();
@@ -4382,16 +4382,16 @@
                 headerLogo.addEventListener('click', logoHandler);
             }
             // Chat back button (mobile) — bind globally so it works when chat is open
-            var chatBackBtn = document.getElementById('chatBackBtn');
+            const chatBackBtn = document.getElementById('chatBackBtn');
             if (chatBackBtn && typeof closeChatMobile === 'function') {
                 chatBackBtn.removeEventListener('click', closeChatMobile);
                 chatBackBtn.addEventListener('click', closeChatMobile);
             }
             
             // Header search input - Enter key
-            var headerSearch = document.getElementById('headerSearch');
+            const headerSearch = document.getElementById('headerSearch');
             if (headerSearch) {
-                var searchHandler = function(e) {
+                const searchHandler = function(e) {
                     if (e.key === 'Enter') doHeaderSearch();
                 };
                 headerSearch.removeEventListener('keyup', searchHandler);
@@ -4399,7 +4399,7 @@
             }
             
             // Header quick action buttons (Show conversations, add customer, add ticket)
-            var headerQuickBtns = document.querySelectorAll('.header-quick-btn');
+            const headerQuickBtns = document.querySelectorAll('.header-quick-btn');
             if (headerQuickBtns) {
                 headerQuickBtns.forEach(function(btn) {
                     btn.removeEventListener('click', function handleQuickBtnClick(e) { handleHeaderQuickBtnClick(e, btn); });
@@ -4410,42 +4410,42 @@
             // Header notification button (desktop) — use onclick from HTML only
             
             // Header language buttons
-            var headerLangBtns = document.querySelectorAll('.header-lang-btn');
+            const headerLangBtns = document.querySelectorAll('.header-lang-btn');
             if (headerLangBtns) {
                 headerLangBtns.forEach(function(btn) {
                     btn.removeEventListener('click', function handleLangClick(e) { 
-                        var lang = btn.getAttribute('data-lang');
+                        const lang = btn.getAttribute('data-lang');
                         if (lang) window.setLang(lang); 
                     });
                     btn.addEventListener('click', function handleLangClick(e) { 
-                        var lang = btn.getAttribute('data-lang');
+                        const lang = btn.getAttribute('data-lang');
                         if (lang) window.setLang(lang); 
                     });
                 });
             }
             
             // Header language dropdown items (in languageDropdown)
-            var langDropdownItems = document.querySelectorAll('.language-dropdown button[data-lang]');
+            const langDropdownItems = document.querySelectorAll('.language-dropdown button[data-lang]');
             if (langDropdownItems) {
                 langDropdownItems.forEach(function(btn) {
                     btn.removeEventListener('click', function handleLangDropdownClick(e) {
                         e.preventDefault();
-                        var lang = btn.getAttribute('data-lang');
+                        const lang = btn.getAttribute('data-lang');
                         if (lang) window.setLang(lang);
                     });
                     btn.addEventListener('click', function handleLangDropdownClick(e) {
                         e.preventDefault();
-                        var lang = btn.getAttribute('data-lang');
+                        const lang = btn.getAttribute('data-lang');
                         if (lang) window.setLang(lang);
                     });
                 });
             }
             
             // User dropdown items
-            var userDropdownItems = document.querySelectorAll('.user-dropdown a, .user-dropdown button');
+            const userDropdownItems = document.querySelectorAll('.user-dropdown a, .user-dropdown button');
             if (userDropdownItems) {
                 userDropdownItems.forEach(function(item) {
-                    var dataset = item.getAttribute('data-action');
+                    const dataset = item.getAttribute('data-action');
                     if (dataset === 'logout') {
                         item.removeEventListener('click', function handleLogout(e) { 
                             e.preventDefault(); 
@@ -4470,7 +4470,7 @@
         }
         
         function handleHeaderQuickBtnClick(e, btn) {
-            var onclick = btn.getAttribute('data-onclick-backup') || btn.getAttribute('data-onclick') || '';
+            const onclick = btn.getAttribute('data-onclick-backup') || btn.getAttribute('data-onclick') || '';
             if (onclick === "showPage('conversations'); openNewConvModal();") {
                 showPage('conversations');
                 setTimeout(openNewConvModal, 100);
@@ -4484,11 +4484,11 @@
         }
         
         /* ========== Conversation Event Handlers Setup ========== */
-        var convListClickHandler = null;
+        let convListClickHandler = null;
         
         function setupConversationEventHandlers() {
             // Conversation list items - event delegation
-            var convList = document.getElementById('convList');
+            const convList = document.getElementById('convList');
             
             if (convList) {
                 // Remove old handler
@@ -4498,14 +4498,14 @@
                 
                 // Create new handler
                 convListClickHandler = function(e) {
-                    var item = e.target.closest('.conv-list-item');
+                    const item = e.target.closest('.conv-list-item');
                     if (!item) return;
                     
-                    var id = item.getAttribute('data-id');
-                    var name = item.getAttribute('data-name');
-                    var phone = item.getAttribute('data-phone');
-                    var profilePic = item.getAttribute('data-profile-pic');
-                    var isGroup = item.getAttribute('data-is-group') === '1';
+                    const id = item.getAttribute('data-id');
+                    const name = item.getAttribute('data-name');
+                    const phone = item.getAttribute('data-phone');
+                    const profilePic = item.getAttribute('data-profile-pic');
+                    const isGroup = item.getAttribute('data-is-group') === '1';
                     
                     if (id) {
                         openChat(id, name || '', phone || '', profilePic || '', isGroup);
@@ -4515,47 +4515,47 @@
                 convList.addEventListener('click', convListClickHandler);
             }
             // Close button handlers
-            var annCloseBtn = document.getElementById('annMarqueeCloseBtn');
+            const annCloseBtn = document.getElementById('annMarqueeCloseBtn');
             if (annCloseBtn) {
                 annCloseBtn.removeEventListener('click', closeAnnouncementMarquee);
                 annCloseBtn.addEventListener('click', closeAnnouncementMarquee);
             }
             
-            var annMoreBtn = document.getElementById('annMarqueeMoreBtn');
+            const annMoreBtn = document.getElementById('annMarqueeMoreBtn');
             if (annMoreBtn) {
                 annMoreBtn.removeEventListener('click', handleAnnMoreClick);
                 annMoreBtn.addEventListener('click', handleAnnMoreClick);
             }
             
-            var annTrack = document.getElementById('annMarqueeTrack');
+            const annTrack = document.getElementById('annMarqueeTrack');
             if (annTrack) {
                 annTrack.removeEventListener('mouseenter', pauseAnnouncementMarquee);
                 annTrack.removeEventListener('mouseleave', resumeAnnouncementMarquee);
                 annTrack.addEventListener('mouseenter', pauseAnnouncementMarquee);
                 annTrack.addEventListener('mouseleave', resumeAnnouncementMarquee);
             }
-            var annImportantEl = document.getElementById('annImportant');
+            const annImportantEl = document.getElementById('annImportant');
             if (annImportantEl && !annImportantEl._hintBound) {
                 annImportantEl._hintBound = true;
                 annImportantEl.addEventListener('change', toggleAnnImportantHint);
             }
             
             // Marquee items delegation
-            var marqueeInner = document.querySelector('.announcement-marquee-inner');
+            const marqueeInner = document.querySelector('.announcement-marquee-inner');
             if (marqueeInner) {
                 marqueeInner.removeEventListener('click', handleMarqueeItemClick);
                 marqueeInner.addEventListener('click', handleMarqueeItemClick);
             }
             
             // Sync groups button
-            var syncBtn = document.getElementById('btnSyncGroups');
+            const syncBtn = document.getElementById('btnSyncGroups');
             if (syncBtn) {
                 syncBtn.removeEventListener('click', syncWhatsAppGroups);
                 syncBtn.addEventListener('click', syncWhatsAppGroups);
             }
             
             // New conversation button
-            var newConvBtn = document.getElementById('btnNewConv');
+            const newConvBtn = document.getElementById('btnNewConv');
             if (newConvBtn) {
                 newConvBtn.removeEventListener('click', openNewConvModal);
                 newConvBtn.addEventListener('click', openNewConvModal);
@@ -4568,21 +4568,21 @@
             });
             
             // Search input
-            var searchInput = document.getElementById('convSearch');
+            const searchInput = document.getElementById('convSearch');
             if (searchInput) {
                 searchInput.removeEventListener('keypress', handleSearchKeyPress);
                 searchInput.addEventListener('keypress', handleSearchKeyPress);
             }
             
             // Filter toggle
-            var filterToggle = document.getElementById('convFilterToggle');
+            const filterToggle = document.getElementById('convFilterToggle');
             if (filterToggle) {
                 filterToggle.removeEventListener('click', toggleConvAdvancedFilters);
                 filterToggle.addEventListener('click', toggleConvAdvancedFilters);
             }
             
             // Apply filters button
-            var applyBtn = document.getElementById('btnApplyConvFilters');
+            const applyBtn = document.getElementById('btnApplyConvFilters');
             if (applyBtn) {
                 applyBtn.removeEventListener('click', applyConvFilters);
                 applyBtn.addEventListener('click', applyConvFilters);
@@ -4590,7 +4590,7 @@
             
             // Filter selects - change events
             ['convFilterStatus', 'convFilterPriority', 'convFilterBranch', 'convFilterDept', 'convFilterAssignee'].forEach(function(id) {
-                var select = document.getElementById(id);
+                const select = document.getElementById(id);
                 if (select) {
                     select.removeEventListener('change', applyConvFilters);
                     select.addEventListener('change', applyConvFilters);
@@ -4598,40 +4598,40 @@
             });
             
             // Chat back button
-            var backBtn = document.getElementById('chatBackBtn');
+            const backBtn = document.getElementById('chatBackBtn');
             if (backBtn) {
                 backBtn.removeEventListener('click', closeChatMobile);
                 backBtn.addEventListener('click', closeChatMobile);
             }
             
             // Chat detail toggle
-            var detailToggle = document.getElementById('chatDetailToggle');
+            const detailToggle = document.getElementById('chatDetailToggle');
             if (detailToggle) {
                 detailToggle.removeEventListener('click', toggleChatDetailBar);
                 detailToggle.addEventListener('click', toggleChatDetailBar);
             }
             
             // New conversation modal close button
-            var newConvModalClose = document.querySelector('#newConvModal .modal-close');
+            const newConvModalClose = document.querySelector('#newConvModal .modal-close');
             if (newConvModalClose) {
                 newConvModalClose.removeEventListener('click', closeNewConvModal);
                 newConvModalClose.addEventListener('click', closeNewConvModal);
             }
             
             // Conversation detail delete/archive buttons
-            var convDeleteBtn = document.getElementById('btnConvDelete');
+            const convDeleteBtn = document.getElementById('btnConvDelete');
             if (convDeleteBtn) {
                 convDeleteBtn.removeEventListener('click', deleteConversation);
                 convDeleteBtn.addEventListener('click', deleteConversation);
             }
             
-            var convArchiveBtn = document.getElementById('btnConvArchive');
+            const convArchiveBtn = document.getElementById('btnConvArchive');
             if (convArchiveBtn) {
                 convArchiveBtn.removeEventListener('click', archiveConversation);
                 convArchiveBtn.addEventListener('click', archiveConversation);
             }
             
-            var assignBtn = document.getElementById('btnAssignToMe');
+            const assignBtn = document.getElementById('btnAssignToMe');
             if (assignBtn) {
                 assignBtn.removeEventListener('click', assignConvToMe);
                 assignBtn.addEventListener('click', assignConvToMe);
@@ -4641,21 +4641,21 @@
         // Setup Profile page event handlers
         function setupProfileEventHandlers() {
             // Save profile button
-            var saveBtn = document.getElementById('profileSaveBtn');
+            const saveBtn = document.getElementById('profileSaveBtn');
             if (saveBtn) {
                 saveBtn.removeEventListener('click', saveProfile);
                 saveBtn.addEventListener('click', saveProfile);
             }
             
             // TOTP setup button (dynamically created)
-            var totpSetupBtn = document.getElementById('totpSetupBtnDynamic');
+            const totpSetupBtn = document.getElementById('totpSetupBtnDynamic');
             if (totpSetupBtn) {
                 totpSetupBtn.removeEventListener('click', openTotpSetup);
                 totpSetupBtn.addEventListener('click', openTotpSetup);
             }
             
             // TOTP disable button (dynamically created)
-            var totpDisableBtn = document.getElementById('totpDisableBtnDynamic');
+            const totpDisableBtn = document.getElementById('totpDisableBtnDynamic');
             if (totpDisableBtn) {
                 totpDisableBtn.removeEventListener('click', openTotpDisableModal);
                 totpDisableBtn.addEventListener('click', openTotpDisableModal);
@@ -4665,21 +4665,21 @@
         // Setup Staff Activity event handlers
         function setupStaffActivityEventHandlers() {
             // Refresh button
-            var refreshBtn = document.getElementById('staffActivityRefresh');
+            const refreshBtn = document.getElementById('staffActivityRefresh');
             if (refreshBtn) {
                 refreshBtn.removeEventListener('click', loadStaffActivity);
                 refreshBtn.addEventListener('click', loadStaffActivity);
             }
             
             // Attendance apply button
-            var applyBtn = document.getElementById('attendanceApplyBtn');
+            const applyBtn = document.getElementById('attendanceApplyBtn');
             if (applyBtn) {
                 applyBtn.removeEventListener('click', loadAttendanceReport);
                 applyBtn.addEventListener('click', loadAttendanceReport);
             }
             
             // Conversation detail update button
-            var updateConvBtn = document.querySelector('[onclick*="updateConvFromDetail"]');
+            let updateConvBtn = document.querySelector('[onclick*="updateConvFromDetail"]');
             if (!updateConvBtn) {
                 updateConvBtn = document.querySelector('.conv-detail-bar button[data-i18n="btn_apply"]');
             }
@@ -4690,7 +4690,7 @@
             
             // Conversation detail selects - change handlers
             ['convDetailStatus', 'convDetailPriority', 'convDetailAssignee', 'convDetailDept'].forEach(function(id) {
-                var select = document.getElementById(id);
+                const select = document.getElementById(id);
                 if (select) {
                     select.removeEventListener('change', function() {});
                     select.addEventListener('change', function() {});
@@ -4698,7 +4698,7 @@
             });
             
             // Chat message handlers
-            var msgAttachBtn = document.getElementById('msgAttachBtn');
+            const msgAttachBtn = document.getElementById('msgAttachBtn');
             if (msgAttachBtn) {
                 msgAttachBtn.removeEventListener('click', function() {
                     document.getElementById('msgFileInput').click();
@@ -4708,30 +4708,30 @@
                 });
             }
 
-            var msgFileInput = document.getElementById('msgFileInput');
+            const msgFileInput = document.getElementById('msgFileInput');
             if (msgFileInput) {
-                var _prevFileHandler = msgFileInput._previewHandler;
+                const _prevFileHandler = msgFileInput._previewHandler;
                 if (_prevFileHandler) msgFileInput.removeEventListener('change', _prevFileHandler);
                 msgFileInput._previewHandler = function() {
-                    var f = this.files && this.files[0];
+                    const f = this.files && this.files[0];
                     if (f) showFilePreview(f);
                     else clearFilePreview();
                 };
                 msgFileInput.addEventListener('change', msgFileInput._previewHandler);
             }
 
-            var filePreviewRemove = document.getElementById('chatFilePreviewRemove');
+            const filePreviewRemove = document.getElementById('chatFilePreviewRemove');
             if (filePreviewRemove) {
                 filePreviewRemove.onclick = function() { clearFilePreview(); };
             }
             
-            var msgTemplateBtn = document.getElementById('msgTemplateBtn');
+            const msgTemplateBtn = document.getElementById('msgTemplateBtn');
             if (msgTemplateBtn) {
                 msgTemplateBtn.removeEventListener('click', toggleTemplateDropdown);
                 msgTemplateBtn.addEventListener('click', toggleTemplateDropdown);
             }
             
-            var chatReplyCancelBtn = document.querySelector('.chat-reply-cancel');
+            const chatReplyCancelBtn = document.querySelector('.chat-reply-cancel');
             if (chatReplyCancelBtn) {
                 chatReplyCancelBtn.removeEventListener('click', cancelReply);
                 chatReplyCancelBtn.addEventListener('click', cancelReply);
@@ -4740,24 +4740,24 @@
             // Chat rating stars
             document.querySelectorAll('.conv-rating-star').forEach(function(star) {
                 star.removeEventListener('click', function() {
-                    var newRating = parseInt(this.getAttribute('data-rating'), 10);
+                    const newRating = parseInt(this.getAttribute('data-rating'), 10);
                     updateConvRating(currentConvId, newRating);
                 });
                 star.addEventListener('click', function() {
-                    var newRating = parseInt(this.getAttribute('data-rating'), 10);
+                    const newRating = parseInt(this.getAttribute('data-rating'), 10);
                     updateConvRating(currentConvId, newRating);
                 });
             });
             
             // Dashboard refresh button
-            var dashRefreshBtn = document.getElementById('dashboardRefreshBtn');
+            const dashRefreshBtn = document.getElementById('dashboardRefreshBtn');
             if (dashRefreshBtn) {
                 dashRefreshBtn.removeEventListener('click', refreshDashboard);
                 dashRefreshBtn.addEventListener('click', refreshDashboard);
             }
             
             // Sidebar toggle (desktop)
-            var sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
             if (sidebarToggleBtn) {
                 sidebarToggleBtn.removeEventListener('click', toggleSidebarDesktop);
                 sidebarToggleBtn.addEventListener('click', toggleSidebarDesktop);
@@ -4768,17 +4768,17 @@
                 // Skip the sidebar and dropdown buttons since they have other logic
                 if (btn.classList.contains('lang-switch')) return;
                 btn.removeEventListener('click', function() {
-                    var lang = this.getAttribute('data-lang');
+                    const lang = this.getAttribute('data-lang');
                     if (lang) setLang(lang);
                 });
                 btn.addEventListener('click', function() {
-                    var lang = this.getAttribute('data-lang');
+                    const lang = this.getAttribute('data-lang');
                     if (lang) setLang(lang);
                 });
             });
             
             // Language dropdown
-            var langDropdownBtn = document.getElementById('langDropdownBtn');
+            const langDropdownBtn = document.getElementById('langDropdownBtn');
             if (langDropdownBtn) {
                 langDropdownBtn.removeEventListener('click', toggleLangDropdown);
                 langDropdownBtn.addEventListener('click', toggleLangDropdown);
@@ -4786,8 +4786,8 @@
             
             // Language dropdown menu items
             document.querySelectorAll('.lang-dropdown-menu button').forEach(function(btn) {
-                var langHandler = function() {
-                    var lang = this.getAttribute('data-lang');
+                const langHandler = function() {
+                    const lang = this.getAttribute('data-lang');
                     if (lang) {
                         setLang(lang);
                         if (typeof closeLangDropdown === 'function') closeLangDropdown();
@@ -4801,7 +4801,7 @@
             document.querySelectorAll('.mobile-tab-item').forEach(function(tab) {
                 tab.removeEventListener('click', function(e) {
                     e.preventDefault();
-                    var page = this.getAttribute('data-page');
+                    const page = this.getAttribute('data-page');
                     if (page) {
                         showPage(page);
                         closeSidebarMobile();
@@ -4810,7 +4810,7 @@
                 });
                 tab.addEventListener('click', function(e) {
                     e.preventDefault();
-                    var page = this.getAttribute('data-page');
+                    const page = this.getAttribute('data-page');
                     if (page) {
                         showPage(page);
                         closeSidebarMobile();
@@ -4822,7 +4822,7 @@
         
         function handleQuickTabClick(e) {
             if (e && e.target && e.target.getAttribute) {
-                var tab = e.target.getAttribute('data-tab');
+                const tab = e.target.getAttribute('data-tab');
                 if (tab) setConvQuickTab(tab);
             }
         }
@@ -4833,7 +4833,7 @@
             }
         }
         
-        var convPageSize = 50;
+        const convPageSize = 50;
         function setConvQuickTab(tab) {
             convQuickTab = tab || 'all';
             convCurrentPage = 1;
@@ -4841,45 +4841,45 @@
             applyConvFilters();
         }
         function toggleConvAdvancedFilters() {
-            var el = document.getElementById('convAdvancedFilters');
-            var btn = document.getElementById('convFilterToggle');
+            const el = document.getElementById('convAdvancedFilters');
+            const btn = document.getElementById('convFilterToggle');
             if (el && btn) { el.classList.toggle('show'); btn.setAttribute('aria-expanded', el.classList.contains('show')); }
         }
-        function canViewArchivedConversations() { var r = (currentUser && currentUser.role) || ''; return ['owner','admin','manager'].indexOf(r) >= 0; }
-        function canManageConversations() { var r = (currentUser && currentUser.role) || ''; return r === 'owner'; }
+        function canViewArchivedConversations() { const r = (currentUser && currentUser.role) || ''; return ['owner','admin','manager'].indexOf(r) >= 0; }
+        function canManageConversations() { const r = (currentUser && currentUser.role) || ''; return r === 'owner'; }
         async function loadConvFiltersInit() {
             await loadConvAssignees();
             loadBranchesForSelect(['convFilterBranch']);
-            var res = await apiFetch('/api/departments');
+            const res = await apiFetch('/api/departments');
             if (res.ok && res.data && res.data.data) {
-                var sel = document.getElementById('convFilterDept');
+                const sel = document.getElementById('convFilterDept');
                 if (sel) {
                     var opt = '<option value="">' + (LANG === 'fa' ? 'همه دپارتمان‌ها' : 'All departments') + '</option>' + res.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
                     sel.innerHTML = opt;
                 }
             }
-            var tabArchived = document.getElementById('convTabArchived');
+            const tabArchived = document.getElementById('convTabArchived');
             if (tabArchived) tabArchived.style.display = canViewArchivedConversations() ? '' : 'none';
-            var statusFilter = document.getElementById('convFilterStatus');
+            const statusFilter = document.getElementById('convFilterStatus');
             if (statusFilter && canViewArchivedConversations()) {
-                var hasArchived = Array.from(statusFilter.options).some(function(o){ return o.value === 'archived'; });
+                const hasArchived = Array.from(statusFilter.options).some(function(o){ return o.value === 'archived'; });
                 if (!hasArchived) { var opt = document.createElement('option'); opt.value = 'archived'; opt.textContent = t('filter_archived') || t('status_archived') || 'آرشیو'; statusFilter.appendChild(opt); }
             }
         }
         async function syncWhatsAppGroups() {
-            var btn = document.getElementById('btnSyncGroups');
-            var textSpan = btn && btn.querySelector('.conv-sync-text');
-            var syncText = t('conv_sync_groups') || (LANG === 'fa' ? 'همگام‌سازی گروه‌ها' : 'Sync groups');
+            const btn = document.getElementById('btnSyncGroups');
+            const textSpan = btn && btn.querySelector('.conv-sync-text');
+            const syncText = t('conv_sync_groups') || (LANG === 'fa' ? 'همگام‌سازی گروه‌ها' : 'Sync groups');
             if (btn) { btn.disabled = true; if (textSpan) textSpan.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); else btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); }
             try {
-                var res = await apiFetch('/api/conversations/sync-groups', { method: 'POST' });
+                const res = await apiFetch('/api/conversations/sync-groups', { method: 'POST' });
                 if (res.needLogin) return;
                 if (res.ok) {
                     toast((res.data && res.data.message) || (LANG === 'fa' ? 'گروه‌ها همگام شدند' : 'Groups synced'));
                     setConvQuickTab('groups');
                     loadConversations();
                 } else {
-                    var errMsg = (res.data && res.data.error) || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed');
+                    let errMsg = (res.data && res.data.error) || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed');
                     if (errMsg.indexOf('503') !== -1 || errMsg.indexOf('not ready') !== -1) {
                         errMsg = LANG === 'fa' ? 'واتساپ متصل نیست. ابتدا اتصال را برقرار کنید.' : 'WhatsApp not connected. Connect first.';
                     }
@@ -4890,16 +4890,16 @@
             }
         }
         async function loadConversations(appendMode) {
-            var list = document.getElementById('convList');
-            var statsEl = document.getElementById('convStats');
+            const list = document.getElementById('convList');
+            const statsEl = document.getElementById('convStats');
             if (!appendMode) setLoading('convList', 4);
-            var q = '?limit=' + convPageSize + '&page=' + convCurrentPage;
-            var statusEl = document.getElementById('convFilterStatus');
-            var priorityEl = document.getElementById('convFilterPriority');
-            var branchEl = document.getElementById('convFilterBranch');
-            var deptEl = document.getElementById('convFilterDept');
-            var assigneeEl = document.getElementById('convFilterAssignee');
-            var searchEl = document.getElementById('convSearch');
+            let q = '?limit=' + convPageSize + '&page=' + convCurrentPage;
+            const statusEl = document.getElementById('convFilterStatus');
+            const priorityEl = document.getElementById('convFilterPriority');
+            const branchEl = document.getElementById('convFilterBranch');
+            const deptEl = document.getElementById('convFilterDept');
+            const assigneeEl = document.getElementById('convFilterAssignee');
+            const searchEl = document.getElementById('convSearch');
             if (convQuickTab === 'unread') q += '&unread=true';
             else if (convQuickTab === 'unanswered') q += '&unanswered=true';
             else if (convQuickTab === 'unassigned') q += '&unassigned=true';
@@ -4913,19 +4913,19 @@
             if (deptEl && deptEl.value) q += '&departmentId=' + encodeURIComponent(deptEl.value);
             if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open' || convQuickTab === 'archived' || convQuickTab === 'groups') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
-            var res = await apiFetch('/api/conversations' + q);
+            const res = await apiFetch('/api/conversations' + q);
             if (res.needLogin) return;
-            if (!res.ok) { var ce = document.getElementById('convListCount'); if (ce) ce.textContent = ''; list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + (res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
-            var data = res.data;
-            var totalCount = data.total != null ? data.total : (data.data || []).length;
+            if (!res.ok) { const ce = document.getElementById('convListCount'); if (ce) ce.textContent = ''; list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + (res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
+            const data = res.data;
+            const totalCount = data.total != null ? data.total : (data.data || []).length;
             // آمار از total واقعی سرور گرفته می‌شه نه فقط صفحه جاری
             if (statsEl && data.total != null) {
-                var openCount = data.openCount != null ? data.openCount : (data.data || []).filter(function(c){ return c.status === 'open'; }).length;
-                var unreadCount = data.unreadCount != null ? data.unreadCount : (data.data || []).reduce(function(s,c){ return s + (c.unreadCount || 0); }, 0);
+                const openCount = data.openCount != null ? data.openCount : (data.data || []).filter(function(c){ return c.status === 'open'; }).length;
+                const unreadCount = data.unreadCount != null ? data.unreadCount : (data.data || []).reduce(function(s,c){ return s + (c.unreadCount || 0); }, 0);
                 statsEl.innerHTML = '<span class="conv-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</span><span class="conv-stat"><strong>' + openCount + '</strong> ' + (LANG === 'fa' ? 'باز' : 'open') + '</span><span class="conv-stat"><strong>' + unreadCount + '</strong> ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread') + '</span>';
                 statsEl.style.display = 'flex';
             }
-            var countEl = document.getElementById('convListCount');
+            const countEl = document.getElementById('convListCount');
             if (countEl) countEl.textContent = totalCount > 0 ? '(' + totalCount + ')' : '';
             if (!data.data || data.data.length === 0) {
                 if (!appendMode) list.innerHTML = '<div class="empty conv-empty"><span class="empty-icon">💬</span><p>' + t('empty_conv') + '</p><button type="button" class="btn-primary" id="emptyConvNewBtn">' + (t('conv_new') || (LANG === 'fa' ? 'مکالمه جدید' : 'New conversation')) + '</button></div>';
@@ -4934,7 +4934,7 @@
                 if (lmBtn) lmBtn.style.display = 'none';
                 // Bind empty state button
                 setTimeout(function() {
-                    var emptyBtn = document.getElementById('emptyConvNewBtn');
+                    const emptyBtn = document.getElementById('emptyConvNewBtn');
                     if (emptyBtn) {
                         emptyBtn.removeEventListener('click', openNewConvModal);
                         emptyBtn.addEventListener('click', openNewConvModal);
@@ -4942,31 +4942,31 @@
                 }, 50);
                 return;
             }
-            var newItems = data.data.map(function(c) {
-                var cust = c.customer || {};
-                var isGroup = !!(c.metadata && c.metadata.isGroup);
-                var name = (isGroup && (c.metadata && (c.metadata.groupName || c.metadata.name))) || cust.name || cust.phone || (isGroup ? (LANG === 'fa' ? 'گروه' : 'Group') : t('customer'));
-                var phone = cust.phone || '';
-                var metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
-                var initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
-                var profilePic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
+            const newItems = data.data.map(function(c) {
+                const cust = c.customer || {};
+                const isGroup = !!(c.metadata && c.metadata.isGroup);
+                const name = (isGroup && (c.metadata && (c.metadata.groupName || c.metadata.name))) || cust.name || cust.phone || (isGroup ? (LANG === 'fa' ? 'گروه' : 'Group') : t('customer'));
+                const phone = cust.phone || '';
+                const metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
+                const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
+                let profilePic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
                 if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
                 profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
-                var avatarHtml = (isGroup || !profilePic || profilePic.indexOf('http') !== 0) ? '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (profilePic && profilePic.indexOf('http') === 0 ? '<img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : '') : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">';
-                var assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
-                var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
-                var statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
-                var priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
-                var unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
-                var preview = (c.lastMessagePreview || '').trim();
-                var timeStr = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'time') : '';
-                var unansweredBadge = '';
+                const avatarHtml = (isGroup || !profilePic || profilePic.indexOf('http') !== 0) ? '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (profilePic && profilePic.indexOf('http') === 0 ? '<img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : '') : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">';
+                const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
+                const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
+                const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
+                const priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
+                const unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
+                const preview = (c.lastMessagePreview || '').trim();
+                const timeStr = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'time') : '';
+                let unansweredBadge = '';
                 if (c.lastIncomingMessageAt && (!c.lastOutgoingMessageAt || new Date(c.lastIncomingMessageAt) > new Date(c.lastOutgoingMessageAt))) {
-                    var mins = Math.floor((Date.now() - new Date(c.lastIncomingMessageAt).getTime()) / 60000);
-                    var waitStr = mins < 60 ? (mins + (LANG === 'fa' ? ' دقیقه' : ' min')) : (mins < 1440 ? (Math.floor(mins / 60) + (LANG === 'fa' ? ' ساعت' : ' hr')) : (Math.floor(mins / 1440) + (LANG === 'fa' ? ' روز' : ' days')));
+                    const mins = Math.floor((Date.now() - new Date(c.lastIncomingMessageAt).getTime()) / 60000);
+                    const waitStr = mins < 60 ? (mins + (LANG === 'fa' ? ' دقیقه' : ' min')) : (mins < 1440 ? (Math.floor(mins / 60) + (LANG === 'fa' ? ' ساعت' : ' hr')) : (Math.floor(mins / 1440) + (LANG === 'fa' ? ' روز' : ' days')));
                     unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + waitStr + '</span>';
                 }
-                var activeClass = (c.id === currentConvId) ? ' active' : '';
+                const activeClass = (c.id === currentConvId) ? ' active' : '';
                 // نام و شماره در data-* ذخیره می‌شن — event handler میتواند کلیک رو handle کند
                 return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
@@ -4979,7 +4979,7 @@
                 list.innerHTML = newItems;
             }
             // نمایش/مخفی کردن دکمه load more
-            var loadedSoFar = convCurrentPage * convPageSize;
+            const loadedSoFar = convCurrentPage * convPageSize;
             var lmBtn = document.getElementById('convLoadMoreBtn');
             if (!lmBtn) {
                 lmBtn = document.createElement('div');
@@ -4987,7 +4987,7 @@
                 lmBtn.style.cssText = 'text-align:center;padding:10px;';
                 lmBtn.innerHTML = '<button type="button" class="btn-secondary" id="convLoadMoreBtnInner">' + (LANG === 'fa' ? 'بارگذاری بیشتر' : 'Load more') + '</button>';
                 setTimeout(function() {
-                    var loadBtn = document.getElementById('convLoadMoreBtnInner');
+                    const loadBtn = document.getElementById('convLoadMoreBtnInner');
                     if (loadBtn) {
                         loadBtn.removeEventListener('click', function() { convCurrentPage++; loadConversations(true); });
                         loadBtn.addEventListener('click', function() { convCurrentPage++; loadConversations(true); });
@@ -4998,12 +4998,12 @@
             lmBtn.style.display = loadedSoFar < totalCount ? '' : 'none';
         }
 
-        var currentConvDetail = null;
+        let currentConvDetail = null;
         function toggleChatDetailBar() {
-            var bar = document.getElementById('convDetailBar');
-            var btn = document.getElementById('chatDetailToggle');
+            const bar = document.getElementById('convDetailBar');
+            const btn = document.getElementById('chatDetailToggle');
             if (bar && btn) {
-                var isCollapsed = bar.classList.contains('collapsed');
+                const isCollapsed = bar.classList.contains('collapsed');
                 if (isCollapsed) {
                     bar.style.display = '';
                     bar.classList.remove('collapsed');
@@ -5015,96 +5015,96 @@
             }
         }
         function closeChatMobile() {
-            var chatArea = document.getElementById('chatArea');
-            var layout = chatArea && chatArea.closest('.conv-layout');
+            const chatArea = document.getElementById('chatArea');
+            const layout = chatArea && chatArea.closest('.conv-layout');
             if (chatArea) chatArea.classList.remove('show');
             if (layout) layout.classList.remove('chat-open');
-            var btn = document.querySelector('.chat-back-btn');
+            const btn = document.querySelector('.chat-back-btn');
             if (btn) btn.style.display = 'none';
-            var pm = document.getElementById('headerMobileTitle');
+            const pm = document.getElementById('headerMobileTitle');
             if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = t('nav_conversations');
         }
         function updateChatBackBtn() {
-            var btn = document.querySelector('.chat-back-btn');
-            var chatArea = document.getElementById('chatArea');
+            const btn = document.querySelector('.chat-back-btn');
+            const chatArea = document.getElementById('chatArea');
             if (btn && chatArea && chatArea.classList.contains('show')) {
                 btn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
             }
         }
         if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
-        var currentConvIsGroup = false;
+        let currentConvIsGroup = false;
         function openChat(id, name, phone, profilePic, isGroup) {
             currentConvId = id;
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
             cancelReply();
             if (chatTemplatesCache.length === 0) { apiFetch('/api/message-templates').then(function(res) { if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data; }).catch(function(){}); }
-            var headerEl = document.getElementById('chatHeader');
-            var avatarEl = document.getElementById('chatHeaderAvatar');
-            var barEl = document.getElementById('convDetailBar');
-            var badgesEl = document.getElementById('convDetailBadges');
-            var actionsEl = document.getElementById('convDetailActions');
-            var supPanel = document.getElementById('convSupervisionPanel');
-            var supStats = document.getElementById('convSupervisionStats');
+            const headerEl = document.getElementById('chatHeader');
+            const avatarEl = document.getElementById('chatHeaderAvatar');
+            const barEl = document.getElementById('convDetailBar');
+            const badgesEl = document.getElementById('convDetailBadges');
+            const actionsEl = document.getElementById('convDetailActions');
+            const supPanel = document.getElementById('convSupervisionPanel');
+            const supStats = document.getElementById('convSupervisionStats');
             if (headerEl) headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
             if (avatarEl) {
-                var pic = (profilePic || '').trim();
+                let pic = (profilePic || '').trim();
                 if (pic && pic.indexOf('/') === 0) pic = (window.location.origin || '') + pic;
                 pic = pic ? ensureHttpsUrl(pic) : '';
-                var initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
+                const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
                 if (pic && pic.indexOf('http') === 0) {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'">';
                 } else {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 }
             }
-            var chatArea = document.getElementById('chatArea');
-            var layout = chatArea && chatArea.closest('.conv-layout');
+            const chatArea = document.getElementById('chatArea');
+            const layout = chatArea && chatArea.closest('.conv-layout');
             if (chatArea) chatArea.classList.add('show');
             if (layout) layout.classList.add('chat-open');
-            var backBtn = document.querySelector('.chat-back-btn');
+            const backBtn = document.querySelector('.chat-back-btn');
             if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
-            var pm = document.getElementById('headerMobileTitle');
+            const pm = document.getElementById('headerMobileTitle');
             if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = name || phone || t('customer');
             if (barEl) barEl.style.display = 'none';
             apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
             loadMessages(id);
-            var canViewSupervision = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
+            const canViewSupervision = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
             if (canViewSupervision && supPanel && supStats) { loadConvStats(id, supStats); supPanel.style.display = 'block'; } else if (supPanel) supPanel.style.display = 'none';
             apiFetch('/api/conversations/' + id).then(function(res) {
                 if (!res.ok || !res.data) return;
                 currentConvDetail = res.data;
                 if (!barEl || !badgesEl) return;
-                var d = res.data;
-                var assigneeName = userDisplay(d.assignee) || (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned');
-                var deptName = (d.department && d.department.name) ? d.department.name : '';
-                var statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
-                var prioT = LANG === 'fa' ? { low: 'کم', normal: 'عادی', high: 'مهم', urgent: 'فوری' } : { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
+                const d = res.data;
+                const assigneeName = userDisplay(d.assignee) || (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned');
+                const deptName = (d.department && d.department.name) ? d.department.name : '';
+                const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
+                const prioT = LANG === 'fa' ? { low: 'کم', normal: 'عادی', high: 'مهم', urgent: 'فوری' } : { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
                 badgesEl.innerHTML = '<span class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</span>' + (statusT[d.status] || d.status) + '</span><span class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'اولویت' : 'Priority') + '</span>' + (prioT[d.priority] || d.priority) + '</span><span class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + (LANG === 'fa' ? 'مسئول' : 'Assignee') + '</span>' + escapeHtml(assigneeName) + '</span>' + (deptName ? '<span class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + (LANG === 'fa' ? 'دپارتمان' : 'Dept') + '</span>' + escapeHtml(deptName) + '</span>' : '');
                 barEl.style.display = '';
                 barEl.classList.add('collapsed');
-                var toggleBtn = document.getElementById('chatDetailToggle');
+                const toggleBtn = document.getElementById('chatDetailToggle');
                 if (toggleBtn) { toggleBtn.style.display = 'flex'; toggleBtn.classList.remove('active'); }
-                var canManage = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager'));
-                var isAssignedToMe = d.assignedTo === (currentUser && currentUser.id);
+                const canManage = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager'));
+                const isAssignedToMe = d.assignedTo === (currentUser && currentUser.id);
                 if (actionsEl) {
                     actionsEl.style.display = 'flex';
-                    var assignBtn = document.getElementById('btnAssignToMe');
+                    const assignBtn = document.getElementById('btnAssignToMe');
                     if (assignBtn) assignBtn.style.display = (canManage || !isAssignedToMe) ? '' : 'none';
                     actionsEl.querySelectorAll('select').forEach(function(el){ el.style.display = canManage ? '' : 'none'; });
                     var deptSel = document.getElementById('convDetailDept');
                     if (deptSel) deptSel.style.display = canManage ? '' : 'none';
-                    var applyBtn = actionsEl.querySelector('[onclick="updateConvFromDetail()"]');
+                    const applyBtn = actionsEl.querySelector('[onclick="updateConvFromDetail()"]');
                     if (applyBtn) applyBtn.style.display = canManage ? '' : 'none';
                 }
                 if (canManage) {
-                    var statusSel = document.getElementById('convDetailStatus');
-                    var prioritySel = document.getElementById('convDetailPriority');
-                    var assigneeSel = document.getElementById('convDetailAssignee');
+                    const statusSel = document.getElementById('convDetailStatus');
+                    const prioritySel = document.getElementById('convDetailPriority');
+                    const assigneeSel = document.getElementById('convDetailAssignee');
                     var deptSel = document.getElementById('convDetailDept');
                     if (statusSel) {
-                        var hasArchivedOpt = Array.from(statusSel.options).some(function(o){ return o.value === 'archived'; });
-                        if (canManageConversations() && !hasArchivedOpt) { var o = document.createElement('option'); o.value = 'archived'; o.textContent = t('status_archived') || 'آرشیو'; statusSel.appendChild(o); }
+                        const hasArchivedOpt = Array.from(statusSel.options).some(function(o){ return o.value === 'archived'; });
+                        if (canManageConversations() && !hasArchivedOpt) { const o = document.createElement('option'); o.value = 'archived'; o.textContent = t('status_archived') || 'آرشیو'; statusSel.appendChild(o); }
                         statusSel.value = d.status || 'open';
                     }
                     if (prioritySel) prioritySel.value = d.priority || 'normal';
@@ -5113,31 +5113,31 @@
                         if (deptSel) deptSel.value = d.departmentId || '';
                     });
                 }
-                var archBtn = document.getElementById('btnConvArchive');
-                var delBtn = document.getElementById('btnConvDelete');
+                const archBtn = document.getElementById('btnConvArchive');
+                const delBtn = document.getElementById('btnConvDelete');
                 if (archBtn) archBtn.style.display = (canManageConversations() && d.status !== 'archived') ? '' : 'none';
                 if (delBtn) delBtn.style.display = canManageConversations() ? '' : 'none';
-                var chatSend = document.querySelector('.chat-send');
+                const chatSend = document.querySelector('.chat-send');
                 if (chatSend) chatSend.style.display = (d.status === 'archived') ? 'none' : '';
-                var ratingSection = document.getElementById('convRatingSection');
+                const ratingSection = document.getElementById('convRatingSection');
                 if (ratingSection) {
                     ratingSection.style.display = 'block';
-                    var stars = ratingSection.querySelectorAll('.conv-rating-star');
-                    var r = d.rating || 0;
+                    const stars = ratingSection.querySelectorAll('.conv-rating-star');
+                    const r = d.rating || 0;
                     stars.forEach(function(s) {
-                        var v = parseInt(s.getAttribute('data-rating'), 10);
+                        const v = parseInt(s.getAttribute('data-rating'), 10);
                         s.classList.toggle('active', v <= r);
                         s.onclick = function() {
-                            var newR = parseInt(this.getAttribute('data-rating'), 10);
+                            const newR = parseInt(this.getAttribute('data-rating'), 10);
                             stars.forEach(function(x) { x.classList.toggle('active', parseInt(x.getAttribute('data-rating'), 10) <= newR); });
                             apiFetch('/api/conversations/' + id, { method: 'PATCH', body: JSON.stringify({ rating: newR }) }).then(function(res) { if (res.ok && currentConvDetail) currentConvDetail.rating = newR; });
                         };
                     });
-                    var feedbackEl = document.getElementById('convFeedback');
+                    const feedbackEl = document.getElementById('convFeedback');
                     if (feedbackEl) {
                         feedbackEl.value = d.feedback || '';
                         feedbackEl.onblur = function() {
-                            var v = (feedbackEl.value || '').trim();
+                            const v = (feedbackEl.value || '').trim();
                             if (v !== (d.feedback || '')) apiFetch('/api/conversations/' + id, { method: 'PATCH', body: JSON.stringify({ feedback: v }) }).then(function(res) { if (res.ok && currentConvDetail) currentConvDetail.feedback = v; });
                         };
                     }
@@ -5145,21 +5145,21 @@
             });
         }
         async function loadConvAssignees() {
-            var selFilter = document.getElementById('convFilterAssignee');
-            var selDetail = document.getElementById('convDetailAssignee');
-            var selDetailDept = document.getElementById('convDetailDept');
+            const selFilter = document.getElementById('convFilterAssignee');
+            const selDetail = document.getElementById('convDetailAssignee');
+            const selDetailDept = document.getElementById('convDetailDept');
             if (!selFilter && !selDetail && !selDetailDept) return;
-            var res = await apiFetch('/api/users');
+            const res = await apiFetch('/api/users');
             if (!res.ok || !res.data || !res.data.data) return;
-            var users = res.data.data;
-            var opt = '<option value="">' + (LANG === 'fa' ? 'هر مسئول' : 'Any assignee') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            const users = res.data.data;
+            const opt = '<option value="">' + (LANG === 'fa' ? 'هر مسئول' : 'Any assignee') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
             if (selFilter) selFilter.innerHTML = opt;
-            var optDetail = '<option value="">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            const optDetail = '<option value="">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
             if (selDetail) selDetail.innerHTML = optDetail;
             if (selDetailDept) {
-                var deptRes = await apiFetch('/api/departments');
+                const deptRes = await apiFetch('/api/departments');
                 if (deptRes.ok && deptRes.data && deptRes.data.data) {
-                    var depts = deptRes.data.data;
+                    const depts = deptRes.data.data;
                     selDetailDept.innerHTML = '<option value="">' + (LANG === 'fa' ? 'بدون دپارتمان' : 'No department') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
                 }
             }
@@ -5172,34 +5172,34 @@
         }
         function closeNewConvModal() { document.getElementById('newConvModal').style.display = 'none'; }
         async function loadNewConvCustomers(search) {
-            var list = document.getElementById('newConvCustomerList');
+            const list = document.getElementById('newConvCustomerList');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var q = '?limit=30';
+            let q = '?limit=30';
             if (search && String(search).trim()) q += '&search=' + encodeURIComponent(String(search).trim());
-            var res = await apiFetch('/api/customers' + q);
+            const res = await apiFetch('/api/customers' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
+            const data = res.data;
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
             list.innerHTML = data.data.map(function(c) {
-                var name = c.name || c.phone || t('customer');
-                var initial = (name && name[0]) ? name[0].toUpperCase() : '?';
-                var profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                const name = c.name || c.phone || t('customer');
+                const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
+                let profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
                 profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
-                var avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" onclick="startNewConversation(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
         async function startNewConversation(customerId, name) {
             closeNewConvModal();
-            var res = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customerId }) });
+            const res = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customerId }) });
             if (res.needLogin) return;
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
-            var conv = res.data;
-            var phone = (conv.customer && conv.customer.phone) || '';
-            var pic = (conv.customer && conv.customer.profilePic) || '';
+            const conv = res.data;
+            const phone = (conv.customer && conv.customer.phone) || '';
+            const pic = (conv.customer && conv.customer.profilePic) || '';
             openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone, pic);
             loadConversations();
         }
@@ -5208,101 +5208,101 @@
         window.openPrivateChatFromGroup = async function(phone, name) {
             if (!phone) return;
             // نرمال‌سازی شماره: اگر با 0 شروع شد → 98 اضافه کن
-            var normalized = String(phone).replace(/\D/g, '');
+            let normalized = String(phone).replace(/\D/g, '');
             if (normalized.startsWith('0')) normalized = '98' + normalized.slice(1);
             // جستجوی مشتری با این شماره
-            var searchRes = await apiFetch('/api/customers?search=' + encodeURIComponent(normalized) + '&limit=5');
-            var customer = null;
+            const searchRes = await apiFetch('/api/customers?search=' + encodeURIComponent(normalized) + '&limit=5');
+            let customer = null;
             if (searchRes.ok && searchRes.data) {
-                var rows = searchRes.data.data || searchRes.data.rows || [];
+                const rows = searchRes.data.data || searchRes.data.rows || [];
                 customer = rows.find(function(c) {
-                    var cp = String(c.phone || '').replace(/\D/g, '');
+                    const cp = String(c.phone || '').replace(/\D/g, '');
                     return cp === normalized || cp === phone.replace(/\D/g, '');
                 }) || null;
             }
             if (!customer) {
                 // ساخت مشتری جدید
-                var createRes = await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify({ name: name || phone, phone: normalized }) });
+                const createRes = await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify({ name: name || phone, phone: normalized }) });
                 if (!createRes.ok) { toast((createRes.data && createRes.data.error) || t('err_generic'), true); return; }
                 customer = createRes.data;
             }
             // باز کردن مکالمه
-            var convRes = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customer.id }) });
+            const convRes = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customer.id }) });
             if (!convRes.ok) { toast((convRes.data && convRes.data.error) || t('err_generic'), true); return; }
-            var conv = convRes.data;
-            var cPhone = (conv.customer && conv.customer.phone) || normalized;
-            var cPic = (conv.customer && conv.customer.profilePic) || '';
+            const conv = convRes.data;
+            const cPhone = (conv.customer && conv.customer.phone) || normalized;
+            const cPic = (conv.customer && conv.customer.profilePic) || '';
             openChat(conv.id, name || (conv.customer && conv.customer.name) || cPhone, cPhone, cPic, false);
             loadConversations();
             toast(LANG === 'fa' ? 'مکالمه خصوصی باز شد' : 'Private chat opened');
         };
         async function assignConvToMe() {
             if (!currentConvId || !currentUser) return;
-            var assigneeSel = document.getElementById('convDetailAssignee');
+            const assigneeSel = document.getElementById('convDetailAssignee');
             if (assigneeSel) assigneeSel.value = currentUser.id;
             await updateConvFromDetail();
         }
         async function updateConvFromDetail() {
             if (!currentConvId) return;
-            var statusSel = document.getElementById('convDetailStatus');
-            var prioritySel = document.getElementById('convDetailPriority');
-            var assigneeSel = document.getElementById('convDetailAssignee');
-            var deptSel = document.getElementById('convDetailDept');
-            var body = {};
+            const statusSel = document.getElementById('convDetailStatus');
+            const prioritySel = document.getElementById('convDetailPriority');
+            const assigneeSel = document.getElementById('convDetailAssignee');
+            const deptSel = document.getElementById('convDetailDept');
+            const body = {};
             if (statusSel) body.status = statusSel.value;
             if (prioritySel) body.priority = prioritySel.value;
             if (assigneeSel) body.assignedTo = assigneeSel.value || null;
             if (deptSel) body.departmentId = deptSel.value || null;
-            var ratingStars = document.querySelectorAll('#convRatingSection .conv-rating-star.active');
-            var lastActive = ratingStars.length > 0 ? Math.max.apply(null, Array.from(ratingStars).map(function(s) { return parseInt(s.getAttribute('data-rating'), 10); })) : null;
+            const ratingStars = document.querySelectorAll('#convRatingSection .conv-rating-star.active');
+            const lastActive = ratingStars.length > 0 ? Math.max.apply(null, Array.from(ratingStars).map(function(s) { return parseInt(s.getAttribute('data-rating'), 10); })) : null;
             if (lastActive) body.rating = lastActive;
-            var feedbackEl = document.getElementById('convFeedback');
+            const feedbackEl = document.getElementById('convFeedback');
             if (feedbackEl) body.feedback = (feedbackEl.value || '').trim() || null;
-            var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify(body) });
+            const res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; var h = document.getElementById('chatHeader'); var activeItem = document.querySelector('.conv-list-item.active[data-id="' + currentConvId + '"]'); var pic = (activeItem && activeItem.getAttribute('data-profile-pic')) || (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.profilePic) || ''; var ig = (activeItem && activeItem.getAttribute('data-is-group') === '1') || (res.data && res.data.metadata && res.data.metadata.isGroup); openChat(currentConvId, (currentConvDetail && (currentConvDetail.customer && currentConvDetail.customer.name)) || (h ? h.textContent.replace(/^👥\s*/, '') : ''), (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.phone) || '', pic, ig); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+            if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; const h = document.getElementById('chatHeader'); const activeItem = document.querySelector('.conv-list-item.active[data-id="' + currentConvId + '"]'); const pic = (activeItem && activeItem.getAttribute('data-profile-pic')) || (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.profilePic) || ''; const ig = (activeItem && activeItem.getAttribute('data-is-group') === '1') || (res.data && res.data.metadata && res.data.metadata.isGroup); openChat(currentConvId, (currentConvDetail && (currentConvDetail.customer && currentConvDetail.customer.name)) || (h ? h.textContent.replace(/^👥\s*/, '') : ''), (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.phone) || '', pic, ig); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
         async function archiveConversation() {
             if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را آرشیو کند' : 'Only owner can archive', true); return; }
             if (!confirm(LANG === 'fa' ? 'آیا از آرشیو کردن این مکالمه مطمئن هستید؟' : 'Archive this conversation?')) return;
-            var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify({ status: 'archived' }) });
+            const res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify({ status: 'archived' }) });
             if (res.needLogin) return;
             if (res.ok) { toast(LANG === 'fa' ? 'مکالمه به آرشیو ارسال شد' : 'Conversation archived'); closeChatMobile(); loadConversations(); currentConvId = null; } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
         async function deleteConversation() {
             if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را حذف کند' : 'Only owner can delete', true); return; }
             if (!confirm(LANG === 'fa' ? 'آیا از حذف دائمی این مکالمه و تمام پیام‌های آن مطمئن هستید؟ این عمل قابل بازگشت نیست.' : 'Permanently delete this conversation and all messages? This cannot be undone.')) return;
-            var res = await apiFetch('/api/conversations/' + currentConvId, { method: 'DELETE' });
+            const res = await apiFetch('/api/conversations/' + currentConvId, { method: 'DELETE' });
             if (res.needLogin) return;
             if (res.ok) { toast(LANG === 'fa' ? 'مکالمه حذف شد' : 'Conversation deleted'); closeChatMobile(); loadConversations(); currentConvId = null; } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
 
         function openChatFromHistory(el) {
-            var convId = el.getAttribute('data-convid');
-            var name = el.getAttribute('data-customername') || '';
-            var isGrp = el.getAttribute('data-is-group') === '1';
+            const convId = el.getAttribute('data-convid');
+            const name = el.getAttribute('data-customername') || '';
+            const isGrp = el.getAttribute('data-is-group') === '1';
             if (!convId) return;
             // نمایش صفحه مکالمات
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
-            var convPage = document.getElementById('pageConversations');
+            const convPage = document.getElementById('pageConversations');
             if (convPage) { convPage.style.display = 'flex'; convPage.classList.add('show'); }
-            var content = document.querySelector('.content');
+            const content = document.querySelector('.content');
             if (content) content.classList.add('page-conversations');
             // آپدیت sidebar active link
             document.querySelectorAll('.sidebar .nav-link[data-page]').forEach(function(l) { l.classList.remove('active'); });
-            var convLink = document.querySelector('.sidebar .nav-link[data-page="conversations"]');
+            const convLink = document.querySelector('.sidebar .nav-link[data-page="conversations"]');
             if (convLink) convLink.classList.add('active');
             // اطلاعات مکالمه را مستقیم از API بگیر و باز کن
             apiFetch('/api/conversations/' + convId).then(function(res) {
                 if (res.needLogin) return;
-                var convData = (res.ok && res.data) ? res.data : null;
-                var finalName = (convData && convData.customer && convData.customer.name) ? convData.customer.name : name;
-                var finalPhone = (convData && convData.customer && convData.customer.phone) ? convData.customer.phone : '';
-                var finalPic = (convData && convData.customer && convData.customer.profilePic) ? convData.customer.profilePic : '';
-                var finalIsGrp = convData ? !!(convData.metadata && convData.metadata.isGroup) : isGrp;
+                const convData = (res.ok && res.data) ? res.data : null;
+                const finalName = (convData && convData.customer && convData.customer.name) ? convData.customer.name : name;
+                const finalPhone = (convData && convData.customer && convData.customer.phone) ? convData.customer.phone : '';
+                const finalPic = (convData && convData.customer && convData.customer.profilePic) ? convData.customer.profilePic : '';
+                const finalIsGrp = convData ? !!(convData.metadata && convData.metadata.isGroup) : isGrp;
                 // اگر لیست مکالمات هنوز بارگذاری نشده، بارگذاری کن
-                var convList = document.getElementById('conversationsList');
-                var needsLoad = !convList || convList.children.length === 0;
+                const convList = document.getElementById('conversationsList');
+                const needsLoad = !convList || convList.children.length === 0;
                 if (needsLoad) {
                     loadConvFiltersInit();
                     loadConversations();
@@ -5312,8 +5312,8 @@
                 openChat(convId, finalName, finalPhone, finalPic, finalIsGrp);
             }).catch(function() {
                 // در صورت خطا با اطلاعات موجود باز کن
-                var convList = document.getElementById('conversationsList');
-                var needsLoad = !convList || convList.children.length === 0;
+                const convList = document.getElementById('conversationsList');
+                const needsLoad = !convList || convList.children.length === 0;
                 if (needsLoad) {
                     loadConvFiltersInit();
                     loadConversations();
@@ -5324,9 +5324,9 @@
             });
         }
 
-        var _loadMessagesController = null;
-        var _currentMsgConvId = null;
-        var _currentMsgOldestId = null;
+        let _loadMessagesController = null;
+        let _currentMsgConvId = null;
+        let _currentMsgOldestId = null;
         async function loadMessages(id, loadOlder) {
             // لغو درخواست قبلی در صورت تغییر مکالمه
             if (_loadMessagesController) { _loadMessagesController.abort(); _loadMessagesController = null; }
@@ -5335,126 +5335,126 @@
                 _currentMsgOldestId = null;
             }
             // اگر مکالمه عوض شده باشه، نتیجه قدیمی رو نشون نده
-            var thisConvId = id;
+            const thisConvId = id;
             _loadMessagesController = typeof AbortController !== 'undefined' ? new AbortController() : null;
-            var el = document.getElementById('chatMessages');
+            const el = document.getElementById('chatMessages');
             if (!loadOlder) {
                 el.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
             }
-            var url = '/api/conversations/' + id + '/messages';
+            let url = '/api/conversations/' + id + '/messages';
             if (loadOlder && _currentMsgOldestId) url += '?before=' + encodeURIComponent(_currentMsgOldestId);
-            var fetchOpts = _loadMessagesController ? { signal: _loadMessagesController.signal } : {};
-            var res = await apiFetch(url, fetchOpts);
+            const fetchOpts = _loadMessagesController ? { signal: _loadMessagesController.signal } : {};
+            const res = await apiFetch(url, fetchOpts);
             // اگر مکالمه عوض شده بود نتیجه رو نادیده بگیر
             if (_currentMsgConvId !== thisConvId) return;
             if (res.needLogin) return;
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
+            const data = res.data;
             if (!data.data || data.data.length === 0) { if (!loadOlder) el.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCAC</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
             // ذخیره قدیمی‌ترین id برای load older
             if (data.oldestId) _currentMsgOldestId = data.oldestId;
-            var list = data.data.filter(function(m) {
+            const list = data.data.filter(function(m) {
                 if (m.direction === 'outgoing') return true;
-                var hasContent = (m.content && String(m.content).trim()) || (m.hasMedia && m.mediaData && (m.mediaData.url || m.mediaData.filename));
+                const hasContent = (m.content && String(m.content).trim()) || (m.hasMedia && m.mediaData && (m.mediaData.url || m.mediaData.filename));
                 return !!hasContent;
             });
-            var newMsgs = list.map(function(m) {
-                var isOut = m.direction === 'outgoing';
-                var time = m.timestamp ? fmtTZ(m.timestamp, 'time') : '';
-                var senderLabel = '';
+            const newMsgs = list.map(function(m) {
+                const isOut = m.direction === 'outgoing';
+                const time = m.timestamp ? fmtTZ(m.timestamp, 'time') : '';
+                let senderLabel = '';
                 if (isOut && m.isAutoReply) {
                     senderLabel = '<div class="msg-sender">' + escapeHtml(t('ai_assistant') || 'AI assistant') + '</div>';
                 } else if (isOut && m.user && (m.user.name || m.user.username)) {
                     senderLabel = '<div class="msg-sender">' + escapeHtml(m.user.name || m.user.username) + '</div>';
                 } else if (!isOut && currentConvIsGroup) {
-                    var sn = (m.metadata && m.metadata.senderName) || null;
-                    var sid = (m.metadata && m.metadata.senderId) || null;
-                    var displayName = sn;
+                    const sn = (m.metadata && m.metadata.senderName) || null;
+                    const sid = (m.metadata && m.metadata.senderId) || null;
+                    let displayName = sn;
                     // استخراج شماره تلفن از senderId (مثلاً 989123456789@c.us)
-                    var senderPhone = null;
+                    let senderPhone = null;
                     if (sid) {
-                        var rawPhone = String(sid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, '');
+                        const rawPhone = String(sid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, '');
                         if (rawPhone) senderPhone = rawPhone;
                         if (!displayName) displayName = rawPhone ? (rawPhone.replace(/^98/, '0') || rawPhone) : null;
                     }
                     if (!displayName) displayName = LANG === 'fa' ? 'عضو گروه' : 'Group member';
-                    var senderPhoneAttr = senderPhone ? ' data-sender-phone="' + escapeHtml(senderPhone) + '"' : '';
-                    var senderNameAttr = ' data-sender-name="' + escapeHtml(displayName) + '"';
+                    const senderPhoneAttr = senderPhone ? ' data-sender-phone="' + escapeHtml(senderPhone) + '"' : '';
+                    const senderNameAttr = ' data-sender-name="' + escapeHtml(displayName) + '"';
                     senderLabel = '<div class="msg-sender msg-sender-group msg-sender-clickable"' + senderPhoneAttr + senderNameAttr + ' title="' + (LANG === 'fa' ? 'کلیک برای پیام خصوصی' : 'Click to send private message') + '">' + escapeHtml(displayName) + '</div>';
                 }
-                var mediaHtml = '';
-                var baseUrl = (API && String(API).length) ? String(API).replace(/\/$/, '') : (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : '');
+                let mediaHtml = '';
+                const baseUrl = (API && String(API).length) ? String(API).replace(/\/$/, '') : (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : '');
                 function inferMediaType(msg) {
-                    var t = (msg.type || 'document').toLowerCase();
+                    const t = (msg.type || 'document').toLowerCase();
                     if (t === 'image' || t === 'video' || t === 'audio' || t === 'ptt') return (t === 'ptt' ? 'audio' : t);
-                    var md = msg.mediaData || {};
-                    var mime = (md.mimetype || '').toLowerCase();
-                    var name = (md.filename || msg.content || '').toLowerCase();
+                    const md = msg.mediaData || {};
+                    const mime = (md.mimetype || '').toLowerCase();
+                    const name = (md.filename || msg.content || '').toLowerCase();
                     if (mime.indexOf('image/') === 0 || /\.(jpe?g|png|gif|webp|bmp)$/.test(name)) return 'image';
                     if (mime.indexOf('video/') === 0 || /\.(mp4|webm|mov|avi)$/.test(name)) return 'video';
                     if (mime.indexOf('audio/') === 0 || /\.(mp3|ogg|wav|m4a|opus|oga)$/.test(name)) return 'audio';
                     return 'document';
                 }
-                var mediaUrl = '';
+                let mediaUrl = '';
                 if (m.hasMedia && m.mediaData) {
-                    var md = m.mediaData;
+                    const md = m.mediaData;
                     if (md.url && String(md.url).trim()) {
-                        var rawUrl = String(md.url).trim();
-                        var mediaBase = (rawUrl.startsWith('http')) ? '' : (window.location.origin || baseUrl);
+                        const rawUrl = String(md.url).trim();
+                        const mediaBase = (rawUrl.startsWith('http')) ? '' : (window.location.origin || baseUrl);
                         mediaUrl = rawUrl.startsWith('http') ? rawUrl : (mediaBase + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
                         mediaUrl = ensureHttpsUrl(mediaUrl);
                     } else if (md.data && (inferMediaType(m) === 'image' || (md.mimetype || '').toLowerCase().indexOf('image/') === 0)) {
-                        var mime = (md.mimetype || 'image/jpeg').split(';')[0].trim();
+                        const mime = (md.mimetype || 'image/jpeg').split(';')[0].trim();
                         mediaUrl = 'data:' + mime + ';base64,' + md.data;
                     } else if (md.data && (inferMediaType(m) === 'audio' || (md.mimetype || '').toLowerCase().indexOf('audio/') === 0)) {
-                        var mimeAudio = (md.mimetype || 'audio/ogg').split(';')[0].trim();
+                        const mimeAudio = (md.mimetype || 'audio/ogg').split(';')[0].trim();
                         mediaUrl = 'data:' + mimeAudio + ';base64,' + md.data;
                     }
                 }
                 if (mediaUrl && m.hasMedia && m.mediaData) {
-                    var mediaType = inferMediaType(m);
+                    const mediaType = inferMediaType(m);
                     if (mediaType === 'image') {
-                        var imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
-                        var fn = escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'تصویر' : 'Image'));
+                        const imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
+                        const fn = escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'تصویر' : 'Image'));
                         mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\';var s=this.parentNode.querySelector(\'.msg-media-filename\');if(s)s.style.display=\'inline\';">' + '<span class="msg-media-filename" style="display:none;">📎 ' + fn + '</span></a></div>';
                     } else if (mediaType === 'video') {
                         mediaHtml = '<div class="msg-media"><video src="' + escapeHtml(mediaUrl) + '" controls preload="metadata"></video><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">' + (LANG === 'fa' ? 'پخش ویدیو' : 'Play video') + '</a></div>';
                     } else if (mediaType === 'audio') {
-                        var isPtt = (m.type || '').toLowerCase() === 'ptt' || /voice|\.ogg|\.webm|پیام صوتی|ptt/i.test(m.mediaData.filename || m.content || '');
-                        var voiceClass = isPtt ? ' msg-media-voice' : '';
+                        const isPtt = (m.type || '').toLowerCase() === 'ptt' || /voice|\.ogg|\.webm|پیام صوتی|ptt/i.test(m.mediaData.filename || m.content || '');
+                        const voiceClass = isPtt ? ' msg-media-voice' : '';
                         mediaHtml = '<div class="msg-media' + voiceClass + '"><audio src="' + escapeHtml(mediaUrl) + '" controls preload="metadata"></audio><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">' + (LANG === 'fa' ? 'دانلود' : 'Download') + '</a></div>';
                     } else {
                         mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-file-link msg-media-link" data-open="1">📎 ' + escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'فایل' : 'File')) + '</a></div>';
                     }
                 } else if (m.hasMedia && (m.content || (m.mediaData && m.mediaData.filename))) {
-                    var fileName = (m.mediaData && m.mediaData.filename) || m.content || (LANG === 'fa' ? 'فایل' : 'File');
-                    var isImageName = /\.(jpe?g|png|gif|webp|bmp)$/i.test(fileName);
+                    const fileName = (m.mediaData && m.mediaData.filename) || m.content || (LANG === 'fa' ? 'فایل' : 'File');
+                    const isImageName = /\.(jpe?g|png|gif|webp|bmp)$/i.test(fileName);
                     mediaHtml = '<div class="msg-media msg-media-placeholder">' + (isImageName ? '🖼 ' : '📎 ') + escapeHtml(fileName) + '</div>';
                 }
-                var contentHtml = '';
-                var displayContent = (m.content || '').trim();
+                let contentHtml = '';
+                let displayContent = (m.content || '').trim();
                 if (isOut && (displayContent.indexOf('🤖 ') === 0)) displayContent = displayContent.slice(2).trim();
                 else if (isOut && displayContent.indexOf('AI KAYA: ') === 0) displayContent = displayContent.slice(9).trim();
                 if (m.hasMedia && m.mediaData && m.mediaData.url && m.content) contentHtml = '<div class="msg-caption">' + escapeHtml(displayContent || m.content) + '</div>';
                 else if ((displayContent || m.content) && !(m.hasMedia && !(m.mediaData && m.mediaData.url))) contentHtml = '<div>' + escapeHtml(displayContent || m.content) + '</div>';
-                var preview = (m.content || '').slice(0, 50) || (m.hasMedia ? '📎' : '');
+                let preview = (m.content || '').slice(0, 50) || (m.hasMedia ? '📎' : '');
                 if ((m.content || '').length > 50) preview += '…';
                 // اضافه کردن اسم فرستنده به preview برای گروه
-                var replyPreviewSender = '';
+                let replyPreviewSender = '';
                 if (!isOut && currentConvIsGroup) {
-                    var rSn = (m.metadata && m.metadata.senderName) || null;
-                    var rSid = (m.metadata && m.metadata.senderId) || null;
-                    if (!rSn && rSid) { var rRaw = String(rSid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, ''); rSn = rRaw ? rRaw.replace(/^98/, '0') : null; }
+                    let rSn = (m.metadata && m.metadata.senderName) || null;
+                    const rSid = (m.metadata && m.metadata.senderId) || null;
+                    if (!rSn && rSid) { const rRaw = String(rSid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, ''); rSn = rRaw ? rRaw.replace(/^98/, '0') : null; }
                     if (rSn) replyPreviewSender = rSn + ': ';
                 }
-                var replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeHtml(m.whatsappId) + '" data-preview="' + escapeHtml(replyPreviewSender + preview) + '" onclick="event.stopPropagation();var b=this;setReplyTo(b.getAttribute(\'data-wa-id\'), b.getAttribute(\'data-preview\'))" title="' + (LANG === 'fa' ? 'پاسخ' : 'Reply') + '">↩</button>' : '';
-                var statusHtml = (isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + (m.status === 'read' ? '✓✓' : m.status === 'delivered' || m.status === 'sent' ? '✓' : m.status === 'failed' ? '!' : '') + '</span>' : '';
+                const replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeHtml(m.whatsappId) + '" data-preview="' + escapeHtml(replyPreviewSender + preview) + '" onclick="event.stopPropagation();var b=this;setReplyTo(b.getAttribute(\'data-wa-id\'), b.getAttribute(\'data-preview\'))" title="' + (LANG === 'fa' ? 'پاسخ' : 'Reply') + '">↩</button>' : '';
+                const statusHtml = (isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + (m.status === 'read' ? '✓✓' : m.status === 'delivered' || m.status === 'sent' ? '✓' : m.status === 'failed' ? '!' : '') + '</span>' : '';
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');
             if (loadOlder) {
                 // اضافه کردن پیام‌های قدیمی‌تر به ابتدای لیست با حفظ scroll position
-                var prevScrollHeight = el.scrollHeight;
-                var loadOlderBtn = el.querySelector('.load-older-btn');
+                const prevScrollHeight = el.scrollHeight;
+                const loadOlderBtn = el.querySelector('.load-older-btn');
                 if (loadOlderBtn) loadOlderBtn.insertAdjacentHTML('afterend', newMsgs);
                 else el.insertAdjacentHTML('afterbegin', newMsgs);
                 el.scrollTop = el.scrollHeight - prevScrollHeight;
@@ -5463,15 +5463,15 @@
                 scrollChatToEnd(el);
             }
             // نمایش/مخفی کردن دکمه بارگذاری پیام‌های قدیمی‌تر
-            var existingBtn = el.querySelector('.load-older-btn');
+            const existingBtn = el.querySelector('.load-older-btn');
             if (data.hasMore) {
                 if (!existingBtn) {
-                    var olderBtn = document.createElement('div');
+                    const olderBtn = document.createElement('div');
                     olderBtn.className = 'load-older-btn';
                     olderBtn.style.cssText = 'text-align:center;padding:8px;';
                     olderBtn.innerHTML = '<button type="button" class="btn-secondary" style="font-size:0.8rem;" id="loadOlderBtn_' + id + '" data-msg-id="' + id + '">' + (LANG === 'fa' ? 'پیام‌های قدیمی‌تر' : 'Load older messages') + '</button>';
                     setTimeout(function() {
-                        var btn = document.getElementById('loadOlderBtn_' + id);
+                        const btn = document.getElementById('loadOlderBtn_' + id);
                         if (btn) {
                             btn.removeEventListener('click', function() { loadMessages(id, true); });
                             btn.addEventListener('click', function() { loadMessages(id, true); });
@@ -5487,7 +5487,7 @@
             if (!el) return;
             function doScroll() {
                 el.scrollTop = el.scrollHeight;
-                var last = el.lastElementChild;
+                const last = el.lastElementChild;
                 if (last && last.scrollIntoView) last.scrollIntoView({ block: 'end' });
             }
             doScroll();
@@ -5498,12 +5498,12 @@
         async function loadConvStats(convId, el) {
             if (!el) return;
             el.innerHTML = '<span class="loading-skeleton" style="display:inline-block;width:120px;height:20px;border-radius:4px;"></span>';
-            var res = await apiFetch('/api/conversations/' + convId + '/stats');
+            const res = await apiFetch('/api/conversations/' + convId + '/stats');
             if (res.needLogin || !res.ok) { el.innerHTML = ''; return; }
-            var s = res.data;
-            var parts = [];
+            const s = res.data;
+            const parts = [];
             if (s.firstResponseTimeMin != null) {
-                var timeLabel = s.firstResponseTimeMin < 60 ? (s.firstResponseTimeMin + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')) : (Math.floor(s.firstResponseTimeMin / 60) + ' ' + (LANG === 'fa' ? 'ساعت' : 'hr'));
+                const timeLabel = s.firstResponseTimeMin < 60 ? (s.firstResponseTimeMin + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')) : (Math.floor(s.firstResponseTimeMin / 60) + ' ' + (LANG === 'fa' ? 'ساعت' : 'hr'));
                 parts.push('<span class="conv-stat-item"><span class="conv-stat-label">' + (LANG === 'fa' ? 'اولین پاسخ' : 'First response') + '</span>' + timeLabel + '</span>');
             }
             if (s.responders && s.responders.length > 0) {
@@ -5519,65 +5519,65 @@
         window._replyingTo = null;
         function setReplyTo(whatsappId, preview) {
             window._replyingTo = { whatsappId: whatsappId, preview: preview || '' };
-            var el = document.getElementById('chatReplyPreview');
-            var textEl = document.getElementById('chatReplyText');
+            const el = document.getElementById('chatReplyPreview');
+            const textEl = document.getElementById('chatReplyText');
             if (el && textEl) { textEl.textContent = (preview || '').slice(0, 60) + (preview && preview.length > 60 ? '…' : ''); el.style.display = 'flex'; }
         }
         function cancelReply() {
             window._replyingTo = null;
-            var el = document.getElementById('chatReplyPreview');
+            const el = document.getElementById('chatReplyPreview');
             if (el) el.style.display = 'none';
         }
 
         function clearFilePreview() {
-            var bar = document.getElementById('chatFilePreview');
-            var thumb = document.getElementById('chatFilePreviewThumb');
-            var nameEl = document.getElementById('chatFilePreviewName');
-            var sizeEl = document.getElementById('chatFilePreviewSize');
+            const bar = document.getElementById('chatFilePreview');
+            const thumb = document.getElementById('chatFilePreviewThumb');
+            const nameEl = document.getElementById('chatFilePreviewName');
+            const sizeEl = document.getElementById('chatFilePreviewSize');
             if (bar) bar.style.display = 'none';
             if (thumb) thumb.innerHTML = '';
             if (nameEl) nameEl.textContent = '';
             if (sizeEl) sizeEl.textContent = '';
-            var fi = document.getElementById('msgFileInput');
+            const fi = document.getElementById('msgFileInput');
             if (fi) fi.value = '';
         }
 
         function showFilePreview(file) {
             if (!file) { clearFilePreview(); return; }
-            var bar = document.getElementById('chatFilePreview');
-            var thumb = document.getElementById('chatFilePreviewThumb');
-            var nameEl = document.getElementById('chatFilePreviewName');
-            var sizeEl = document.getElementById('chatFilePreviewSize');
+            const bar = document.getElementById('chatFilePreview');
+            const thumb = document.getElementById('chatFilePreviewThumb');
+            const nameEl = document.getElementById('chatFilePreviewName');
+            const sizeEl = document.getElementById('chatFilePreviewSize');
             if (!bar) return;
 
             if (nameEl) nameEl.textContent = file.name;
             if (sizeEl) {
-                var sz = file.size;
-                var sizeStr = sz < 1024 ? sz + ' B' : sz < 1024*1024 ? (sz/1024).toFixed(1) + ' KB' : (sz/(1024*1024)).toFixed(1) + ' MB';
+                const sz = file.size;
+                const sizeStr = sz < 1024 ? sz + ' B' : sz < 1024*1024 ? (sz/1024).toFixed(1) + ' KB' : (sz/(1024*1024)).toFixed(1) + ' MB';
                 sizeEl.textContent = sizeStr;
             }
             if (thumb) {
                 thumb.innerHTML = '';
-                var mime = file.type || '';
+                const mime = file.type || '';
                 if (mime.startsWith('image/')) {
-                    var img = document.createElement('img');
+                    const img = document.createElement('img');
                     img.alt = file.name;
-                    var reader = new FileReader();
+                    const reader = new FileReader();
                     reader.onload = function(e) { img.src = e.target.result; };
                     reader.readAsDataURL(file);
                     thumb.appendChild(img);
                 } else if (mime.startsWith('video/')) {
-                    var vid = document.createElement('video');
+                    const vid = document.createElement('video');
                     vid.muted = true;
-                    var reader2 = new FileReader();
+                    const reader2 = new FileReader();
                     reader2.onload = function(e) { vid.src = e.target.result; };
                     reader2.readAsDataURL(file);
                     thumb.appendChild(vid);
                 } else {
-                    var iconMap = { 'application/pdf': '📄', 'audio/': '🎵', 'text/': '📝', 'application/zip': '🗜️', 'application/x-rar': '🗜️', 'application/msword': '📝', 'application/vnd.openxmlformats': '📝', 'application/vnd.ms-excel': '📊' };
-                    var icon = '📎';
-                    for (var k in iconMap) { if (mime.startsWith(k)) { icon = iconMap[k]; break; } }
-                    var span = document.createElement('span');
+                    const iconMap = { 'application/pdf': '📄', 'audio/': '🎵', 'text/': '📝', 'application/zip': '🗜️', 'application/x-rar': '🗜️', 'application/msword': '📝', 'application/vnd.openxmlformats': '📝', 'application/vnd.ms-excel': '📊' };
+                    let icon = '📎';
+                    for (const k in iconMap) { if (mime.startsWith(k)) { icon = iconMap[k]; break; } }
+                    const span = document.createElement('span');
                     span.className = 'file-icon';
                     span.textContent = icon;
                     thumb.appendChild(span);
@@ -5587,34 +5587,34 @@
         }
 
         async function sendMsg() {
-            var input = document.getElementById('msgInput');
-            var fileInput = document.getElementById('msgFileInput');
-            var content = (input.value || '').trim();
-            var file = fileInput && fileInput.files && fileInput.files[0];
+            const input = document.getElementById('msgInput');
+            const fileInput = document.getElementById('msgFileInput');
+            const content = (input.value || '').trim();
+            const file = fileInput && fileInput.files && fileInput.files[0];
             if ((!content && !file) || !currentConvId) return;
-            var media = null;
+            let media = null;
             if (file) {
-                var fd = new FormData();
+                const fd = new FormData();
                 fd.append('file', file);
-                var uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
-                var uploadData = await uploadRes.json().catch(function() { return {}; });
+                const uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+                const uploadData = await uploadRes.json().catch(function() { return {}; });
                 if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
                 media = { url: uploadData.url, filename: uploadData.name || file.name, mimetype: file.type };
                 fileInput.value = '';
                 clearFilePreview();
             }
             input.value = '';
-            var body = { content: content || '', media: media };
+            const body = { content: content || '', media: media };
             if (window._replyingTo && window._replyingTo.whatsappId) { body.replyTo = window._replyingTo.whatsappId; cancelReply(); }
-            var res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify(body) });
+            const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) loadMessages(currentConvId);
             else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
         }
 
-        var voiceRecorderState = { active: false, recorder: null, chunks: [] };
+        const voiceRecorderState = { active: false, recorder: null, chunks: [] };
         function updateVoiceBtn() {
-            var btn = document.getElementById('msgVoiceBtn');
+            const btn = document.getElementById('msgVoiceBtn');
             if (!btn) return;
             btn.classList.toggle('recording', voiceRecorderState.active);
             btn.setAttribute('title', voiceRecorderState.active ? (t('voice_stop') || (LANG === 'fa' ? 'توقف ضبط' : 'Stop recording')) : (t('voice_record') || (LANG === 'fa' ? 'ضبط پیام صوتی' : 'Voice message')));
@@ -5626,7 +5626,7 @@
                 return;
             }
             navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
-                var mime = (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) ? 'audio/webm;codecs=opus' : (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) ? 'audio/webm' : 'audio/ogg';
+                const mime = (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) ? 'audio/webm;codecs=opus' : (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) ? 'audio/webm' : 'audio/ogg';
                 try {
                     var recorder = new MediaRecorder(stream, { mimeType: mime });
                 } catch (e) {
@@ -5636,7 +5636,7 @@
                 recorder.ondataavailable = function(e) { if (e.data && e.data.size) voiceRecorderState.chunks.push(e.data); };
                 recorder.onstop = function() {
                     stream.getTracks().forEach(function(t) { t.stop(); });
-                    var blob = new Blob(voiceRecorderState.chunks, { type: recorder.mimeType || 'audio/webm' });
+                    const blob = new Blob(voiceRecorderState.chunks, { type: recorder.mimeType || 'audio/webm' });
                     voiceRecorderState.chunks = [];
                     if (blob.size > 0) sendVoiceMessage(blob);
                 };
@@ -5662,18 +5662,18 @@
         }
         async function sendVoiceMessage(blob) {
             if (!currentConvId || !blob || blob.size === 0) return;
-            var fd = new FormData();
-            var rawType = blob.type || '';
-            var baseMime = rawType.split(';')[0].trim() || 'audio/webm';
-            var ext = baseMime.indexOf('ogg') >= 0 ? '.ogg' : baseMime.indexOf('mp4') >= 0 ? '.m4a' : '.webm';
+            const fd = new FormData();
+            const rawType = blob.type || '';
+            const baseMime = rawType.split(';')[0].trim() || 'audio/webm';
+            const ext = baseMime.indexOf('ogg') >= 0 ? '.ogg' : baseMime.indexOf('mp4') >= 0 ? '.m4a' : '.webm';
             // Create new blob with clean MIME type so server accepts it
-            var cleanBlob = new Blob([blob], { type: baseMime });
+            const cleanBlob = new Blob([blob], { type: baseMime });
             fd.append('file', cleanBlob, 'voice' + ext);
-            var uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
-            var uploadData = await uploadRes.json().catch(function() { return {}; });
+            const uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+            const uploadData = await uploadRes.json().catch(function() { return {}; });
             if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
-            var media = { url: uploadData.url, filename: uploadData.name || 'voice' + ext, mimetype: baseMime };
-            var res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
+            const media = { url: uploadData.url, filename: uploadData.name || 'voice' + ext, mimetype: baseMime };
+            const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
             if (res.needLogin) return;
             if (res.ok) loadMessages(currentConvId);
             else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
@@ -5681,7 +5681,7 @@
 
         function sortCustomerList(arr, sortBy) {
             if (!arr || !arr.length) return arr;
-            var key = sortBy || 'newest';
+            const key = sortBy || 'newest';
             return arr.slice().sort(function(a, b) {
                 if (key === 'newest' || key === 'last_contact') {
                     var ta = a.lastContactAt ? new Date(a.lastContactAt).getTime() : 0;
@@ -5694,60 +5694,60 @@
                     return ta - tb;
                 }
                 if (key === 'name') {
-                    var na = (a.name || a.phone || '').toLowerCase();
-                    var nb = (b.name || b.phone || '').toLowerCase();
+                    const na = (a.name || a.phone || '').toLowerCase();
+                    const nb = (b.name || b.phone || '').toLowerCase();
                     return na.localeCompare(nb, 'fa');
                 }
                 return 0;
             });
         }
         async function loadCustomers() {
-            var list = document.getElementById('customerList');
-            var statsEl = document.getElementById('customerStats');
-            var countEl = document.getElementById('customerListCount');
+            const list = document.getElementById('customerList');
+            const statsEl = document.getElementById('customerStats');
+            const countEl = document.getElementById('customerListCount');
             if (!list) return;
             setLoading('customerList', 5);
-            var q = '?limit=200';
-            var searchEl = document.getElementById('customerSearch');
-            var statusEl = document.getElementById('customerFilterStatus');
+            let q = '?limit=200';
+            const searchEl = document.getElementById('customerSearch');
+            const statusEl = document.getElementById('customerFilterStatus');
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
             if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value);
-            var res = await apiFetch('/api/customers' + q);
+            const res = await apiFetch('/api/customers' + q);
             if (res.needLogin) { list.innerHTML = '<div class="empty"><span class="empty-icon">&#128101;</span><p>' + (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please log in again') + '</p></div>'; return; }
             if (!res.ok) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128101;</span><p>' + (res.data && res.data.error ? escapeHtml(res.data.error) : (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load failed')) + '</p><button type="button" class="btn-primary" id="customerRetryBtn">' + (LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>'; return; }
-            var data = res.data;
+            const data = res.data;
             if (statsEl && data.stats) { statsEl.style.display = 'flex'; statsEl.innerHTML = '<span class="customer-stat"><strong>' + data.stats.total + '</strong> ' + (LANG === 'fa' ? 'مشتری' : 'customers') + '</span><span class="customer-stat"><strong>' + data.stats.active + '</strong> ' + (LANG === 'fa' ? 'فعال' : 'active') + '</span><span class="customer-stat"><strong>' + data.stats.inactive + '</strong> ' + (LANG === 'fa' ? 'غیرفعال' : 'inactive') + '</span><span class="customer-stat"><strong>' + data.stats.blocked + '</strong> ' + (LANG === 'fa' ? 'مسدود' : 'blocked') + '</span>'; }
             if (countEl) countEl.textContent = (data.total || 0) + ' ' + (LANG === 'fa' ? 'مشتری' : '');
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + t('empty_customers') + '</p><button type="button" class="btn-primary" id="emptyCustomerAddBtn">' + escapeHtml(t('customer_add')) + '</button></div>'; return; }
-            var sortEl = document.getElementById('customerSort');
-            var sortVal = sortEl ? sortEl.value : 'newest';
-            var sorted = sortCustomerList(data.data, sortVal);
+            const sortEl = document.getElementById('customerSort');
+            const sortVal = sortEl ? sortEl.value : 'newest';
+            const sorted = sortCustomerList(data.data, sortVal);
             window._currentCustomerListData = sorted;
-            var bulkIds = window._bulkSelectedIds || [];
+            const bulkIds = window._bulkSelectedIds || [];
             list.innerHTML = sorted.map(function(c) {
-                var name = c.name || c.phone || t('customer');
-                var initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
-                var profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                const name = c.name || c.phone || t('customer');
+                const initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+                let profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
                 profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
-                var avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-card-avatar-fallback\');if(f)f.style.display=\'flex\'">' : escapeHtml(initial);
-                var statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
-                var statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
-                var lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
-                var loc = c.lastOpenConv;
-                var assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
-                var safeName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                var checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
+                const avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-card-avatar-fallback\');if(f)f.style.display=\'flex\'">' : escapeHtml(initial);
+                const statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
+                const statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
+                const lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
+                const loc = c.lastOpenConv;
+                const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
+                const safeName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                const checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
                 return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main"><div class="customer-card-avatar">' + avatarHtml + '</div><div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" data-i18n="btn_send">ارسال</button></div>';
             }).join('');
             updateBulkSelectedCount();
         }
         async function startCustomerChat(customerId, name, phone) {
-            var res = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customerId }) });
+            const res = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customerId }) });
             if (res.needLogin) return;
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
-            var conv = res.data;
-            var pic = (conv.customer && conv.customer.profilePic) || '';
+            const conv = res.data;
+            const pic = (conv.customer && conv.customer.profilePic) || '';
             showPage('conversations');
             setTimeout(function() { openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone || '', pic); loadConversations(); }, 100);
         }
@@ -5756,14 +5756,14 @@
         function initCustomerFilters() {
             if (window._customerFiltersInited) return;
             window._customerFiltersInited = true;
-            var searchEl = document.getElementById('customerSearch');
-            var clearBtn = document.getElementById('customerSearchClear');
-            var statusEl = document.getElementById('customerFilterStatus');
-            var sortEl = document.getElementById('customerSort');
+            const searchEl = document.getElementById('customerSearch');
+            const clearBtn = document.getElementById('customerSearchClear');
+            const statusEl = document.getElementById('customerFilterStatus');
+            const sortEl = document.getElementById('customerSort');
             try {
-                var saved = localStorage.getItem('crm_customer_filters');
+                const saved = localStorage.getItem('crm_customer_filters');
                 if (saved) {
-                    var o = JSON.parse(saved);
+                    const o = JSON.parse(saved);
                     if (searchEl && o.search != null) searchEl.value = o.search;
                     if (statusEl && o.status != null) statusEl.value = o.status;
                     if (sortEl && o.sort != null) sortEl.value = o.sort;
@@ -5799,26 +5799,26 @@
 
         window._bulkSelectedIds = window._bulkSelectedIds || [];
         function toggleBulkSelect(el) {
-            var id = el && el.getAttribute('data-customer-id');
+            const id = el && el.getAttribute('data-customer-id');
             if (!id) return;
-            var arr = window._bulkSelectedIds;
-            var idx = arr.indexOf(id);
+            const arr = window._bulkSelectedIds;
+            const idx = arr.indexOf(id);
             if (idx >= 0) arr.splice(idx, 1); else arr.push(id);
             updateBulkSelectedCount();
         }
         function updateBulkSelectedCount() {
-            var n = window._bulkSelectedIds.length || 0;
-            var el = document.getElementById('bulkSelectedCount');
+            const n = window._bulkSelectedIds.length || 0;
+            const el = document.getElementById('bulkSelectedCount');
             if (el) el.textContent = n + ' ' + (LANG === 'fa' ? 'مشتری انتخاب شده' : 'customers selected');
-            var bar = document.getElementById('customerBulkBar');
-            var barCount = document.getElementById('customerBulkBarCount');
+            const bar = document.getElementById('customerBulkBar');
+            const barCount = document.getElementById('customerBulkBarCount');
             if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
             if (barCount) barCount.textContent = n + ' ' + (LANG === 'fa' ? 'انتخاب شده' : 'selected');
-            var submitBtn = document.getElementById('bulkSendSubmitBtn');
+            const submitBtn = document.getElementById('bulkSendSubmitBtn');
             if (submitBtn) { submitBtn.disabled = n === 0; submitBtn.title = n === 0 ? (LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer') : ''; }
         }
         function bulkSelectFiltered() {
-            var data = window._currentCustomerListData || [];
+            const data = window._currentCustomerListData || [];
             window._bulkSelectedIds = data.map(function(c) { return c.id; });
             document.querySelectorAll('.bulk-customer-check').forEach(function(cb) { cb.checked = true; });
             updateBulkSelectedCount();
@@ -5839,13 +5839,13 @@
         }
         function closeBulkSendModal() { document.getElementById('modalBulkSend').style.display = 'none'; }
         async function submitBulkSend() {
-            var ids = window._bulkSelectedIds || [];
+            const ids = window._bulkSelectedIds || [];
             if (ids.length === 0) { toast(LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer', true); return; }
-            var content = (document.getElementById('bulkMessageContent') && document.getElementById('bulkMessageContent').value || '').trim();
+            const content = (document.getElementById('bulkMessageContent') && document.getElementById('bulkMessageContent').value || '').trim();
             if (!content) { toast(LANG === 'fa' ? 'متن پیام الزامی است' : 'Message text required', true); return; }
-            var delaySec = parseInt(document.getElementById('bulkDelaySec').value, 10) || 5;
-            var delayMs = Math.min(60, Math.max(2, delaySec)) * 1000;
-            var res = await apiFetch('/api/bulk/send', { method: 'POST', body: JSON.stringify({ customerIds: ids, message: content, delayMs: delayMs }) });
+            const delaySec = parseInt(document.getElementById('bulkDelaySec').value, 10) || 5;
+            const delayMs = Math.min(60, Math.max(2, delaySec)) * 1000;
+            const res = await apiFetch('/api/bulk/send', { method: 'POST', body: JSON.stringify({ customerIds: ids, message: content, delayMs: delayMs }) });
             if (res.needLogin) return;
             if (res.ok) { toast((LANG === 'fa' ? 'ارسال شروع شد. ' : 'Sending started. ') + (res.data && res.data.message ? res.data.message : '')); closeBulkSendModal(); bulkClearSelection(); loadCustomers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
@@ -5860,16 +5860,16 @@
         }
         function closeImportCustomersModal() { document.getElementById('modalImportCustomers').style.display = 'none'; }
         (function bindImportFileInput() {
-            var inp = document.getElementById('importExcelFile');
+            const inp = document.getElementById('importExcelFile');
             if (inp && !inp._importBound) {
                 inp._importBound = true;
                 inp.addEventListener('change', async function() {
-                var file = this.files && this.files[0];
+                const file = this.files && this.files[0];
                 if (!file) return;
-                var fd = new FormData();
+                const fd = new FormData();
                 fd.append('file', file);
-                var res = await fetch(API + '/api/customers/import/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('crm_token') || '') }, body: fd });
-                var data = await res.json().catch(function() { return {}; });
+                const res = await fetch(API + '/api/customers/import/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('crm_token') || '') }, body: fd });
+                const data = await res.json().catch(function() { return {}; });
                 if (data.rows && data.rows.length > 0) {
                     window._importFileRows = data.rows;
                     document.getElementById('importPreview').style.display = 'block';
@@ -5880,62 +5880,62 @@
             }
         })();
         async function submitImportCustomers() {
-            var rows = window._importFileRows;
+            const rows = window._importFileRows;
             if (!rows || rows.length === 0) { toast(LANG === 'fa' ? 'ابتدا فایل را انتخاب کنید' : 'Select file first', true); return; }
-            var res = await apiFetch('/api/customers/import/import', { method: 'POST', body: JSON.stringify({ rows: rows }) });
+            const res = await apiFetch('/api/customers/import/import', { method: 'POST', body: JSON.stringify({ rows: rows }) });
             if (res.needLogin) return;
             if (res.ok) { toast((LANG === 'fa' ? 'ورود انجام شد: ' : 'Import done: ') + (res.data.created || 0) + ' ' + (LANG === 'fa' ? 'ایجاد' : 'created') + ', ' + (res.data.updated || 0) + ' ' + (LANG === 'fa' ? 'بروزرسانی' : 'updated')); closeImportCustomersModal(); loadCustomers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         var currentCustomerId = null;
-        var currentCustomerData = null;
+        let currentCustomerData = null;
         async function showCustomerHistory(custId, name) {
             currentCustomerId = custId;
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
             document.getElementById('pageCustomerDetail').style.display = 'block';
             document.getElementById('pageCustomerDetail').classList.add('show');
             document.querySelectorAll('.sidebar .nav-link[data-page]').forEach(function(l) { l.classList.remove('active'); });
-            var custLink = document.querySelector('.sidebar .nav-link[data-page="customers"]');
+            const custLink = document.querySelector('.sidebar .nav-link[data-page="customers"]');
             if (custLink) custLink.classList.add('active');
-            var cardEl = document.getElementById('customerDetailCard');
-            var list = document.getElementById('customerHistoryList');
-            var timelineEl = document.getElementById('customerTimelineList');
-            var quickActionsEl = document.getElementById('customerDetailQuickActions');
+            const cardEl = document.getElementById('customerDetailCard');
+            const list = document.getElementById('customerHistoryList');
+            const timelineEl = document.getElementById('customerTimelineList');
+            const quickActionsEl = document.getElementById('customerDetailQuickActions');
             if (quickActionsEl) quickActionsEl.innerHTML = '';
             if (cardEl) cardEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (list) list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (timelineEl) timelineEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             document.querySelectorAll('.customer-detail-panel').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
-            var tlPanel = document.getElementById('customerTimelinePanel');
+            const tlPanel = document.getElementById('customerTimelinePanel');
             if (tlPanel) { tlPanel.style.display = 'block'; tlPanel.classList.add('show'); }
             document.querySelectorAll('.customer-detail-tab').forEach(function(b) { b.classList.remove('active'); });
-            var tlTab = document.querySelector('.customer-detail-tab[data-tab="timeline"]');
+            const tlTab = document.querySelector('.customer-detail-tab[data-tab="timeline"]');
             if (tlTab) tlTab.classList.add('active');
-            var resDetail = await apiFetch('/api/customers/' + custId);
+            const resDetail = await apiFetch('/api/customers/' + custId);
             if (resDetail.needLogin) return;
             if (!resDetail.ok) { if (cardEl) cardEl.innerHTML = '<div class="empty">' + (resDetail.data && resDetail.data.error ? resDetail.data.error : '') + '</div>'; list.innerHTML = ''; return; }
             currentCustomerData = resDetail.data;
-            var c = currentCustomerData;
-            var initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
-            var statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
-            var firstContact = c.firstContactAt ? fmtTZ(c.firstContactAt, 'date') : '—';
-            var lastContact = c.lastContactAt ? fmtTZ(c.lastContactAt, 'datetime') : '—';
+            const c = currentCustomerData;
+            const initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+            const statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
+            const firstContact = c.firstContactAt ? fmtTZ(c.firstContactAt, 'date') : '—';
+            const lastContact = c.lastContactAt ? fmtTZ(c.lastContactAt, 'datetime') : '—';
             if (quickActionsEl) {
-                var qName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                var qPhone = (c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
-                var delBtn = (currentUser && currentUser.canDeleteCustomer) ? '<button type="button" class="btn-danger btn-danger-outline customer-detail-action-btn" id="custDeleteBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_delete') || (LANG === 'fa' ? 'حذف مشتری' : 'Delete customer')) + '</button>' : '';
+                const qName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                const qPhone = (c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                const delBtn = (currentUser && currentUser.canDeleteCustomer) ? '<button type="button" class="btn-danger btn-danger-outline customer-detail-action-btn" id="custDeleteBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_delete') || (LANG === 'fa' ? 'حذف مشتری' : 'Delete customer')) + '</button>' : '';
                 quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" id="custChatBtn" data-cust-id="' + c.id + '" data-cust-name="' + qName + '" data-cust-phone="' + qPhone + '">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custEditBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custTransBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('transaction_add')) + '</button>' + delBtn;
                 setTimeout(function() {
-                    var chatBtn = document.getElementById('custChatBtn');
-                    var editBtn = document.getElementById('custEditBtn');
-                    var transBtn = document.getElementById('custTransBtn');
-                    var delBtnEl = document.getElementById('custDeleteBtn');
+                    const chatBtn = document.getElementById('custChatBtn');
+                    const editBtn = document.getElementById('custEditBtn');
+                    const transBtn = document.getElementById('custTransBtn');
+                    const delBtnEl = document.getElementById('custDeleteBtn');
                     if (chatBtn) {
                         chatBtn.removeEventListener('click', function() {});
                         chatBtn.addEventListener('click', function(e) {
-                            var cid = chatBtn.getAttribute('data-cust-id');
-                            var cn = chatBtn.getAttribute('data-cust-name');
-                            var cp = chatBtn.getAttribute('data-cust-phone');
+                            const cid = chatBtn.getAttribute('data-cust-id');
+                            const cn = chatBtn.getAttribute('data-cust-name');
+                            const cp = chatBtn.getAttribute('data-cust-phone');
                             startCustomerChat(cid, cn, cp);
                         });
                     }
@@ -5953,33 +5953,33 @@
                     }
                 }, 50);
             }
-            var detailProfilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+            let detailProfilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
             if (detailProfilePic && detailProfilePic.indexOf('/') === 0) detailProfilePic = (window.location.origin || '') + detailProfilePic;
             detailProfilePic = detailProfilePic ? ensureHttpsUrl(detailProfilePic) : '';
-            var avatarClickable = detailProfilePic && detailProfilePic.indexOf('http') === 0;
-            var detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
-            var avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
+            const avatarClickable = detailProfilePic && detailProfilePic.indexOf('http') === 0;
+            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
+            const avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
             if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailProfilePic) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
-            var res = await apiFetch('/api/customers/' + custId + '/conversations');
+            const res = await apiFetch('/api/customers/' + custId + '/conversations');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
+            const data = res.data;
             if (!data.data || data.data.length === 0) {
                 list.innerHTML = '<div class="cust-hist-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>' + (t('no_conv_history') || (LANG === 'fa' ? 'هیچ مکالمه‌ای ثبت نشده است.' : 'No conversation history.')) + '</p></div>';
             } else {
-                var safeName = (c.name || c.phone || name || '').replace(/'/g, '&#39;');
-                var statusColors = { open: 'var(--accent)', waiting: '#f59e0b', closed: 'var(--text-muted)', resolved: '#22c55e', archived: 'var(--text-muted)' };
-                var statusLabels = { open: LANG === 'fa' ? 'باز' : 'Open', waiting: LANG === 'fa' ? 'در انتظار' : 'Waiting', closed: LANG === 'fa' ? 'بسته' : 'Closed', resolved: LANG === 'fa' ? 'حل‌شده' : 'Resolved', archived: LANG === 'fa' ? 'آرشیو' : 'Archived' };
+                const safeName = (c.name || c.phone || name || '').replace(/'/g, '&#39;');
+                const statusColors = { open: 'var(--accent)', waiting: '#f59e0b', closed: 'var(--text-muted)', resolved: '#22c55e', archived: 'var(--text-muted)' };
+                const statusLabels = { open: LANG === 'fa' ? 'باز' : 'Open', waiting: LANG === 'fa' ? 'در انتظار' : 'Waiting', closed: LANG === 'fa' ? 'بسته' : 'Closed', resolved: LANG === 'fa' ? 'حل‌شده' : 'Resolved', archived: LANG === 'fa' ? 'آرشیو' : 'Archived' };
                 list.innerHTML = data.data.map(function(conv) {
-                    var date = conv.lastMessageAt ? fmtTZ(conv.lastMessageAt, 'datetime') : (conv.createdAt ? fmtTZ(conv.createdAt, 'datetime') : '');
-                    var assignee = conv.assignee && conv.assignee.name ? escapeHtml(conv.assignee.name) : '';
-                    var dept = conv.department && conv.department.name ? escapeHtml(conv.department.name) : '';
-                    var isGrp = !!(conv.metadata && conv.metadata.isGroup);
-                    var st = conv.status || 'open';
-                    var stColor = statusColors[st] || 'var(--text-muted)';
-                    var stLabel = statusLabels[st] || st;
-                    var msgCount = conv.messageCount || 0;
-                    var metaParts = [];
+                    const date = conv.lastMessageAt ? fmtTZ(conv.lastMessageAt, 'datetime') : (conv.createdAt ? fmtTZ(conv.createdAt, 'datetime') : '');
+                    const assignee = conv.assignee && conv.assignee.name ? escapeHtml(conv.assignee.name) : '';
+                    const dept = conv.department && conv.department.name ? escapeHtml(conv.department.name) : '';
+                    const isGrp = !!(conv.metadata && conv.metadata.isGroup);
+                    const st = conv.status || 'open';
+                    const stColor = statusColors[st] || 'var(--text-muted)';
+                    const stLabel = statusLabels[st] || st;
+                    const msgCount = conv.messageCount || 0;
+                    const metaParts = [];
                     if (msgCount) metaParts.push(msgCount + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs'));
                     if (assignee) metaParts.push((LANG === 'fa' ? 'مسئول: ' : 'By: ') + assignee);
                     if (dept) metaParts.push(dept);
@@ -5997,33 +5997,33 @@
             }
             loadCustomerTimeline(custId);
             initCustomerDetailTabs();
-            var noteContentEl = document.getElementById('customerNoteContent');
-            var noteAddBtn = document.getElementById('customerNoteAddBtn');
+            const noteContentEl = document.getElementById('customerNoteContent');
+            const noteAddBtn = document.getElementById('customerNoteAddBtn');
             if (noteContentEl) noteContentEl.placeholder = t('customer_note_ph') || (LANG === 'fa' ? 'متن گزارش یا یادداشت...' : 'Note or report text...');
             if (noteAddBtn && !noteAddBtn._bound) { noteAddBtn._bound = true; noteAddBtn.addEventListener('click', function() { addCustomerNote(custId); }); }
-            var btnTx = document.getElementById('btnCustomerAddTransaction');
+            const btnTx = document.getElementById('btnCustomerAddTransaction');
             if (btnTx && !btnTx._bound) { btnTx._bound = true; btnTx.onclick = function() { openTransactionModal(currentCustomerId); }; }
-            var btnRefreshTx = document.getElementById('btnRefreshCustomerTransactions');
+            const btnRefreshTx = document.getElementById('btnRefreshCustomerTransactions');
             if (btnRefreshTx && !btnRefreshTx._bound) { btnRefreshTx._bound = true; btnRefreshTx.onclick = function() { if (currentCustomerId) loadCustomerTransactions(currentCustomerId); }; }
             loadCustomerNotes(custId);
         }
         window.showCustomerHistory = showCustomerHistory;
         window.openChatFromHistory = openChatFromHistory;
         function openImagePreviewModal(imgSrc) {
-            var modal = document.getElementById('imagePreviewModal');
-            var img = document.getElementById('imagePreviewImg');
+            const modal = document.getElementById('imagePreviewModal');
+            const img = document.getElementById('imagePreviewImg');
             if (modal && img && imgSrc) { img.src = imgSrc; modal.style.display = 'flex'; document.body.style.overflow = 'hidden'; }
         }
         function closeImagePreviewModal() {
-            var modal = document.getElementById('imagePreviewModal');
-            var img = document.getElementById('imagePreviewImg');
+            const modal = document.getElementById('imagePreviewModal');
+            const img = document.getElementById('imagePreviewImg');
             if (modal) modal.style.display = 'none';
             if (img) img.src = '';
             document.body.style.overflow = '';
         }
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
-                var modal = document.getElementById('imagePreviewModal');
+                const modal = document.getElementById('imagePreviewModal');
                 if (modal && modal.style.display === 'flex') closeImagePreviewModal();
             }
         });
@@ -6032,12 +6032,12 @@
             showPage('services');
             document.querySelectorAll('.services-tab').forEach(function(t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
             document.querySelectorAll('.services-panel').forEach(function(p) { p.classList.remove('show'); });
-            var txTab = document.querySelector('.services-tab[data-tab="transactions"]');
-            var txPanel = document.getElementById('servicesTransactionsPanel');
+            const txTab = document.querySelector('.services-tab[data-tab="transactions"]');
+            const txPanel = document.getElementById('servicesTransactionsPanel');
             if (txTab) { txTab.classList.add('active'); txTab.setAttribute('aria-selected', 'true'); }
             if (txPanel) { txPanel.classList.add('show'); }
             loadCustomerFilterForTransactions().then(function() {
-                var custSel = document.getElementById('txCustomerFilter');
+                const custSel = document.getElementById('txCustomerFilter');
                 if (custSel) custSel.value = currentCustomerId;
                 loadTransactions();
             });
@@ -6045,12 +6045,12 @@
         function initCustomerDetailTabs() {
             document.querySelectorAll('.customer-detail-tab').forEach(function(btn) {
                 btn.onclick = function() {
-                    var tab = this.getAttribute('data-tab');
+                    const tab = this.getAttribute('data-tab');
                     document.querySelectorAll('.customer-detail-tab').forEach(function(b) { b.classList.remove('active'); });
                     document.querySelectorAll('.customer-detail-panel').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
                     this.classList.add('active');
-                    var pid = tab === 'timeline' ? 'customerTimelinePanel' : tab === 'conversations' ? 'customerConversationsPanel' : tab === 'transactions' ? 'customerTransactionsPanel' : tab === 'documents' ? 'customerDocumentsPanel' : 'customerNotesPanel';
-                    var panel = document.getElementById(pid);
+                    const pid = tab === 'timeline' ? 'customerTimelinePanel' : tab === 'conversations' ? 'customerConversationsPanel' : tab === 'transactions' ? 'customerTransactionsPanel' : tab === 'documents' ? 'customerDocumentsPanel' : 'customerNotesPanel';
+                    const panel = document.getElementById(pid);
                     if (panel) { panel.style.display = 'block'; panel.classList.add('show'); }
                     if (tab === 'notes' && currentCustomerId) loadCustomerNotes(currentCustomerId);
                     if (tab === 'transactions' && currentCustomerId) loadCustomerTransactions(currentCustomerId);
@@ -6058,74 +6058,74 @@
                 };
             });
         }
-        var activityLabels = { message_sent: LANG === 'fa' ? 'ارسال پیام' : 'Message sent', conversation_assigned: LANG === 'fa' ? 'تخصیص مکالمه' : 'Conversation assigned', conversation_department_changed: LANG === 'fa' ? 'تغییر دپارتمان مکالمه' : 'Department changed', customer_note_added: LANG === 'fa' ? 'ثبت گزارش/یادداشت' : 'Note added' };
+        const activityLabels = { message_sent: LANG === 'fa' ? 'ارسال پیام' : 'Message sent', conversation_assigned: LANG === 'fa' ? 'تخصیص مکالمه' : 'Conversation assigned', conversation_department_changed: LANG === 'fa' ? 'تغییر دپارتمان مکالمه' : 'Department changed', customer_note_added: LANG === 'fa' ? 'ثبت گزارش/یادداشت' : 'Note added' };
         async function loadCustomerTimeline(custId) {
-            var list = document.getElementById('customerTimelineList');
+            const list = document.getElementById('customerTimelineList');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var res = await apiFetch('/api/customers/' + custId + '/timeline');
+            const res = await apiFetch('/api/customers/' + custId + '/timeline');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
-            var items = (res.data && res.data.data) || [];
+            const items = (res.data && res.data.data) || [];
             if (items.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📋</span><br>' + (LANG === 'fa' ? 'هنوز فعالیتی ثبت نشده.' : 'No activity yet.') + '</div>'; return; }
-            var safeName = (currentCustomerData && currentCustomerData.name) ? (currentCustomerData.name || '').replace(/'/g, '&#39;') : '';
+            const safeName = (currentCustomerData && currentCustomerData.name) ? (currentCustomerData.name || '').replace(/'/g, '&#39;') : '';
             list.innerHTML = items.map(function(item) {
-                var date = item.date ? fmtTZ(item.date, 'datetime') : '';
+                const date = item.date ? fmtTZ(item.date, 'datetime') : '';
                 if (item.type === 'conversation') {
-                    var d = item.data;
-                    var who = [d.assignee && d.assignee.name].filter(Boolean).join(', ');
-                    var isGrp = !!(d.metadata && d.metadata.isGroup);
+                    const d = item.data;
+                    const who = [d.assignee && d.assignee.name].filter(Boolean).join(', ');
+                    const isGrp = !!(d.metadata && d.metadata.isGroup);
                     return '<div class="customer-timeline-item customer-timeline-conv" data-convid="' + d.id + '" data-customername="' + safeName + '" data-is-group="' + (isGrp ? '1' : '0') + '" onclick="openChatFromHistory(this)"><div class="customer-timeline-icon">' + (isGrp ? '👥' : '💬') + '</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (LANG === 'fa' ? 'مکالمه' : 'Conversation') + ' ' + (d.status || '') + '</div><div class="customer-timeline-meta">' + (d.messageCount || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + (who ? ' · ' + (LANG === 'fa' ? 'مسئول: ' : 'Assignee: ') + escapeHtml(who) : '') + ' · ' + date + '</div></div></div>';
                 }
                 if (item.type === 'note') {
-                    var n = item.data;
+                    const n = item.data;
                     var un = userDisplay(n.user);
                     return '<div class="customer-timeline-item customer-timeline-note"><div class="customer-timeline-icon">📝</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (LANG === 'fa' ? 'گزارش/یادداشت' : 'Note') + ' · ' + escapeHtml(un) + '</div><div class="customer-timeline-content">' + escapeHtml((n.content || '').slice(0, 300)) + (n.content && n.content.length > 300 ? '…' : '') + '</div><div class="customer-timeline-meta">' + date + '</div></div></div>';
                 }
                 if (item.type === 'activity') {
-                    var a = item.data;
+                    const a = item.data;
                     var un = userDisplay(a.user);
-                    var label = (LANG === 'fa' ? activityLabels[a.action] : null) || a.action || '';
+                    const label = (LANG === 'fa' ? activityLabels[a.action] : null) || a.action || '';
                     return '<div class="customer-timeline-item customer-timeline-activity"><div class="customer-timeline-icon">⚡</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + escapeHtml(label) + ' · ' + escapeHtml(un) + '</div><div class="customer-timeline-meta">' + escapeHtml(a.summary || '') + ' · ' + date + '</div></div></div>';
                 }
                 if (item.type === 'transaction') {
-                    var tx = item.data;
-                    var txLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه' };
-                    var isIn = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(tx.type) >= 0;
-                    var amt = parseFloat(tx.amount) || 0;
-                    var desc = (tx.description || '').slice(0, 80) + (tx.description && tx.description.length > 80 ? '…' : '');
+                    const tx = item.data;
+                    const txLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه' };
+                    const isIn = ['cash_in','transfer_box','bank_withdraw','income'].indexOf(tx.type) >= 0;
+                    const amt = parseFloat(tx.amount) || 0;
+                    const desc = (tx.description || '').slice(0, 80) + (tx.description && tx.description.length > 80 ? '…' : '');
                     return '<div class="customer-timeline-item customer-timeline-transaction"><div class="customer-timeline-icon">💰</div><div class="customer-timeline-body"><div class="customer-timeline-title">' + (txLabels[tx.type] || tx.type) + '</div><div class="customer-timeline-content">' + escapeHtml(desc) + '</div><div class="customer-timeline-meta">' + date + ' · <span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span></div></div></div>';
                 }
                 return '';
             }).join('');
         }
         // ——— اسناد و مدیا مشتری
-        var _docUploadBound = false;
+        let _docUploadBound = false;
         async function loadCustomerDocuments(custId) {
-            var list = document.getElementById('customerDocsList');
+            const list = document.getElementById('customerDocsList');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var cat = (document.getElementById('customerDocsFilterCat') || {}).value || '';
-            var ftype = (document.getElementById('customerDocsFilterType') || {}).value || '';
-            var url = '/api/customers/' + custId + '/documents';
-            var params = [];
+            const cat = (document.getElementById('customerDocsFilterCat') || {}).value || '';
+            const ftype = (document.getElementById('customerDocsFilterType') || {}).value || '';
+            let url = '/api/customers/' + custId + '/documents';
+            const params = [];
             if (cat) params.push('category=' + encodeURIComponent(cat));
             if (ftype) params.push('fileType=' + encodeURIComponent(ftype));
             if (params.length) url += '?' + params.join('&');
-            var res = await apiFetch(url);
+            const res = await apiFetch(url);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + ((res.data && res.data.error) || 'خطا در بارگذاری') + '</div>'; return; }
-            var docs = (res.data && res.data.data) || [];
+            const docs = (res.data && res.data.data) || [];
             if (docs.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📁</span><br>هنوز سندی ثبت نشده.</div>'; }
             else {
-                var catLabels = { identity: 'مدارک هویتی', contract: 'قرارداد', financial: 'مالی', media: 'رسانه', other: 'سایر' };
+                const catLabels = { identity: 'مدارک هویتی', contract: 'قرارداد', financial: 'مالی', media: 'رسانه', other: 'سایر' };
                 list.innerHTML = docs.map(function(d) {
-                    var icon = d.fileType === 'image' ? '🖼️' : d.fileType === 'video' ? '🎬' : d.fileType === 'audio' ? '🎵' : d.fileType === 'document' ? '📄' : '📎';
-                    var size = d.fileSize ? (d.fileSize > 1048576 ? (d.fileSize/1048576).toFixed(1)+'MB' : (d.fileSize/1024).toFixed(0)+'KB') : '';
-                    var expiry = d.expiresAt ? '<span class="doc-expiry' + (new Date(d.expiresAt) < new Date() ? ' doc-expiry-expired' : '') + '">انقضا: ' + d.expiresAt + '</span>' : '';
-                    var src = d.filePath && d.filePath.startsWith('http') ? d.filePath : (d.filePath ? (window.location.origin + d.filePath) : '');
-                    var previewBtn = src ? '<a href="' + escapeHtml(src) + '" target="_blank" class="btn-link btn-sm">مشاهده</a>' : '';
-                    var dlBtn = src ? '<a href="' + escapeHtml(src) + '" download class="btn-link btn-sm">دانلود</a>' : '';
+                    const icon = d.fileType === 'image' ? '🖼️' : d.fileType === 'video' ? '🎬' : d.fileType === 'audio' ? '🎵' : d.fileType === 'document' ? '📄' : '📎';
+                    const size = d.fileSize ? (d.fileSize > 1048576 ? (d.fileSize/1048576).toFixed(1)+'MB' : (d.fileSize/1024).toFixed(0)+'KB') : '';
+                    const expiry = d.expiresAt ? '<span class="doc-expiry' + (new Date(d.expiresAt) < new Date() ? ' doc-expiry-expired' : '') + '">انقضا: ' + d.expiresAt + '</span>' : '';
+                    const src = d.filePath && d.filePath.startsWith('http') ? d.filePath : (d.filePath ? (window.location.origin + d.filePath) : '');
+                    const previewBtn = src ? '<a href="' + escapeHtml(src) + '" target="_blank" class="btn-link btn-sm">مشاهده</a>' : '';
+                    const dlBtn = src ? '<a href="' + escapeHtml(src) + '" download class="btn-link btn-sm">دانلود</a>' : '';
                     return '<div class="customer-doc-item" data-docid="' + d.id + '">' +
                         '<div class="customer-doc-icon">' + icon + '</div>' +
                         '<div class="customer-doc-info">' +
@@ -6141,48 +6141,48 @@
                 }).join('');
             }
             // bind filters
-            var catSel = document.getElementById('customerDocsFilterCat');
-            var typeSel = document.getElementById('customerDocsFilterType');
+            const catSel = document.getElementById('customerDocsFilterCat');
+            const typeSel = document.getElementById('customerDocsFilterType');
             if (catSel && !catSel._docBound) { catSel._docBound = true; catSel.onchange = function() { loadCustomerDocuments(custId); }; }
             if (typeSel && !typeSel._docBound) { typeSel._docBound = true; typeSel.onchange = function() { loadCustomerDocuments(custId); }; }
             // bind upload button
             if (!_docUploadBound) {
                 _docUploadBound = true;
-                var uploadBtn = document.getElementById('btnCustomerUploadDoc');
+                const uploadBtn = document.getElementById('btnCustomerUploadDoc');
                 if (uploadBtn) uploadBtn.onclick = function() {
-                    var form = document.getElementById('customerDocUploadForm');
+                    const form = document.getElementById('customerDocUploadForm');
                     if (form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
                 };
-                var cancelBtn = document.getElementById('btnDocUploadCancel');
+                const cancelBtn = document.getElementById('btnDocUploadCancel');
                 if (cancelBtn) cancelBtn.onclick = function() {
-                    var form = document.getElementById('customerDocUploadForm');
+                    const form = document.getElementById('customerDocUploadForm');
                     if (form) form.style.display = 'none';
                 };
-                var saveBtn = document.getElementById('btnDocUploadSave');
+                const saveBtn = document.getElementById('btnDocUploadSave');
                 if (saveBtn) saveBtn.onclick = function() { uploadCustomerDoc(custId); };
             }
         }
         async function uploadCustomerDoc(custId) {
-            var fileInput = document.getElementById('docUploadFile');
+            const fileInput = document.getElementById('docUploadFile');
             if (!fileInput || !fileInput.files || !fileInput.files[0]) { toast('فایل انتخاب نشده', true); return; }
-            var title = (document.getElementById('docUploadTitle').value || '').trim() || fileInput.files[0].name;
-            var category = document.getElementById('docUploadCategory').value || 'other';
-            var desc = (document.getElementById('docUploadDesc').value || '').trim();
-            var expiry = (document.getElementById('docUploadExpiry').value || '').trim();
-            var fd = new FormData();
+            const title = (document.getElementById('docUploadTitle').value || '').trim() || fileInput.files[0].name;
+            const category = document.getElementById('docUploadCategory').value || 'other';
+            const desc = (document.getElementById('docUploadDesc').value || '').trim();
+            const expiry = (document.getElementById('docUploadExpiry').value || '').trim();
+            const fd = new FormData();
             fd.append('file', fileInput.files[0]);
             fd.append('title', title);
             fd.append('category', category);
             if (desc) fd.append('description', desc);
             if (expiry) fd.append('expiresAt', expiry);
-            var saveBtn = document.getElementById('btnDocUploadSave');
+            const saveBtn = document.getElementById('btnDocUploadSave');
             if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'در حال آپلود...'; }
             try {
-                var res = await apiFetch('/api/customers/' + custId + '/documents', { method: 'POST', body: fd });
+                const res = await apiFetch('/api/customers/' + custId + '/documents', { method: 'POST', body: fd });
                 if (res.needLogin) return;
                 if (res.ok) {
                     toast('سند با موفقیت ذخیره شد');
-                    var form = document.getElementById('customerDocUploadForm');
+                    const form = document.getElementById('customerDocUploadForm');
                     if (form) form.style.display = 'none';
                     fileInput.value = '';
                     document.getElementById('docUploadTitle').value = '';
@@ -6196,84 +6196,84 @@
         }
         async function deleteCustomerDoc(docId, custId) {
             if (!confirm('آیا از حذف این سند مطمئن هستید؟')) return;
-            var res = await apiFetch('/api/customers/' + custId + '/documents/' + docId, { method: 'DELETE' });
+            const res = await apiFetch('/api/customers/' + custId + '/documents/' + docId, { method: 'DELETE' });
             if (res.needLogin) return;
             if (res.ok) { toast('سند حذف شد'); loadCustomerDocuments(custId); }
             else toast((res.data && res.data.error) || 'خطا در حذف', true);
         }
 
         async function loadCustomerTransactions(custId) {
-            var list = document.getElementById('customerTransactionsList');
+            const list = document.getElementById('customerTransactionsList');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var res = await apiFetch('/api/customers/' + custId + '/transactions');
+            const res = await apiFetch('/api/customers/' + custId + '/transactions');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
-            var rows = (res.data && res.data.data) || [];
+            const rows = (res.data && res.data.data) || [];
             if (rows.length === 0) {
                 list.innerHTML = '<div class="customer-transactions-empty"><div class="customer-transactions-empty-icon">\uD83D\uDCB0</div><p class="customer-transactions-empty-text">' + (LANG === 'fa' ? 'تراکنشی برای این مشتری ثبت نشده.' : 'No transactions for this customer.') + '</p><p class="customer-transactions-empty-hint">' + (LANG === 'fa' ? 'با دکمه\u200Cی «ثبت تراکنش» اولین تراکنش را ثبت کنید.' : 'Use «Register transaction» to add the first one.') + '</p></div>';
                 return;
             }
-            var typeLabels = { cash_in: LANG === 'fa' ? 'ورود به صندوق' : 'Cash in', cash_out: LANG === 'fa' ? 'خروج از صندوق' : 'Cash out', transfer_box: LANG === 'fa' ? 'انتقال صندوق' : 'Transfer', bank_deposit: LANG === 'fa' ? 'واریز بانک' : 'Bank deposit', bank_withdraw: LANG === 'fa' ? 'برداشت بانک' : 'Bank withdraw', transfer_account: LANG === 'fa' ? 'انتقال حساب' : 'Transfer account', income: LANG === 'fa' ? 'درآمد' : 'Income', expense: LANG === 'fa' ? 'هزینه' : 'Expense', buy: LANG === 'fa' ? 'خرید' : 'Buy', sell: LANG === 'fa' ? 'فروش' : 'Sell' };
-            var statusLabels = { pending: LANG === 'fa' ? 'در انتظار تأیید' : 'Pending', approved: LANG === 'fa' ? 'تأیید شده' : 'Approved', rejected: LANG === 'fa' ? 'رد شده' : 'Rejected' };
-            var statusClasses = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
-            var canApprove = currentUser && ['owner', 'admin', 'manager'].indexOf(currentUser.role) >= 0;
-            var inTypes = ['cash_in','transfer_box','bank_withdraw','income','sell','buy'];
-            var totalIn = 0; var totalOut = 0;
+            const typeLabels = { cash_in: LANG === 'fa' ? 'ورود به صندوق' : 'Cash in', cash_out: LANG === 'fa' ? 'خروج از صندوق' : 'Cash out', transfer_box: LANG === 'fa' ? 'انتقال صندوق' : 'Transfer', bank_deposit: LANG === 'fa' ? 'واریز بانک' : 'Bank deposit', bank_withdraw: LANG === 'fa' ? 'برداشت بانک' : 'Bank withdraw', transfer_account: LANG === 'fa' ? 'انتقال حساب' : 'Transfer account', income: LANG === 'fa' ? 'درآمد' : 'Income', expense: LANG === 'fa' ? 'هزینه' : 'Expense', buy: LANG === 'fa' ? 'خرید' : 'Buy', sell: LANG === 'fa' ? 'فروش' : 'Sell' };
+            const statusLabels = { pending: LANG === 'fa' ? 'در انتظار تأیید' : 'Pending', approved: LANG === 'fa' ? 'تأیید شده' : 'Approved', rejected: LANG === 'fa' ? 'رد شده' : 'Rejected' };
+            const statusClasses = { pending: 'badge-pending', approved: 'badge-approved', rejected: 'badge-rejected' };
+            const canApprove = currentUser && ['owner', 'admin', 'manager'].indexOf(currentUser.role) >= 0;
+            const inTypes = ['cash_in','transfer_box','bank_withdraw','income','sell','buy'];
+            let totalIn = 0; let totalOut = 0;
             rows.forEach(function(tx) {
-                var amt = parseFloat(tx.amount) || 0;
+                const amt = parseFloat(tx.amount) || 0;
                 if (inTypes.indexOf(tx.type) >= 0) totalIn += amt; else totalOut += amt;
             });
-            var summaryHtml = '<div class="customer-transactions-summary"><span class="customer-transactions-summary-count">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + rows.length + '</span><span class="customer-transactions-summary-in">' + (LANG === 'fa' ? 'جمع ورودی: ' : 'Total in: ') + '<strong class="tx-amount positive">' + formatMoney(totalIn, 'IRR') + '</strong></span><span class="customer-transactions-summary-out">' + (LANG === 'fa' ? 'جمع خروجی: ' : 'Total out: ') + '<strong class="tx-amount negative">' + formatMoney(totalOut, 'IRR') + '</strong></span></div>';
+            const summaryHtml = '<div class="customer-transactions-summary"><span class="customer-transactions-summary-count">' + (LANG === 'fa' ? 'تعداد: ' : 'Count: ') + rows.length + '</span><span class="customer-transactions-summary-in">' + (LANG === 'fa' ? 'جمع ورودی: ' : 'Total in: ') + '<strong class="tx-amount positive">' + formatMoney(totalIn, 'IRR') + '</strong></span><span class="customer-transactions-summary-out">' + (LANG === 'fa' ? 'جمع خروجی: ' : 'Total out: ') + '<strong class="tx-amount negative">' + formatMoney(totalOut, 'IRR') + '</strong></span></div>';
             list.innerHTML = summaryHtml + rows.map(function(tx) {
-                var isIn = inTypes.indexOf(tx.type) >= 0;
-                var amt = parseFloat(tx.amount) || 0;
-                var desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '\u2026' : '');
-                var ref = tx.reference ? ' \u00B7 ' + escapeHtml(tx.reference) : '';
-                var statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
-                var actions = '<div class="tx-row-actions">';
+                const isIn = inTypes.indexOf(tx.type) >= 0;
+                const amt = parseFloat(tx.amount) || 0;
+                const desc = (tx.description || '').slice(0, 60) + (tx.description && tx.description.length > 60 ? '\u2026' : '');
+                const ref = tx.reference ? ' \u00B7 ' + escapeHtml(tx.reference) : '';
+                const statusBadge = '<span class="badge ' + (statusClasses[tx.status] || '') + '">' + (statusLabels[tx.status] || tx.status || 'pending') + '</span>';
+                let actions = '<div class="tx-row-actions">';
                 actions += '<button type="button" class="btn-secondary btn-sm" onclick="openTransactionModalForEdit(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button>';
                 if (tx.status === 'pending' && canApprove) {
                     actions += ' <button type="button" class="btn-primary btn-sm" onclick="approveTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '">' + (LANG === 'fa' ? 'تأیید' : 'Approve') + '</button>';
                     actions += ' <button type="button" class="btn-secondary btn-sm" onclick="rejectTransaction(\'' + tx.id + '\')" title="' + (LANG === 'fa' ? 'رد' : 'Reject') + '">' + (LANG === 'fa' ? 'رد' : 'Reject') + '</button>';
                 }
                 actions += '</div>';
-                var dateStr = tx.transactionDate || (tx.createdAt ? tx.createdAt.toString().slice(0, 10) : '');
+                const dateStr = tx.transactionDate || (tx.createdAt ? tx.createdAt.toString().slice(0, 10) : '');
                 return '<div class="transaction-row customer-transaction-row"><div><span class="tx-type">' + (typeLabels[tx.type] || tx.type) + '</span> ' + statusBadge + '<div class="meta" style="margin-top:4px;">' + escapeHtml(desc) + ref + '</div><div class="meta">' + dateStr + '</div></div><div class="tx-row-right"><span class="tx-amount ' + (isIn ? 'positive' : 'negative') + '">' + (isIn ? '+' : '-') + formatMoney(amt, tx.currency) + '</span>' + actions + '</div></div>';
             }).join('');
         }
         async function loadCustomerNotes(custId) {
-            var list = document.getElementById('customerNotesList');
+            const list = document.getElementById('customerNotesList');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var res = await apiFetch('/api/customers/' + custId + '/notes');
+            const res = await apiFetch('/api/customers/' + custId + '/notes');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
-            var data = res.data;
-            var notes = (data && data.data) ? data.data : [];
+            const data = res.data;
+            const notes = (data && data.data) ? data.data : [];
             if (notes.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هنوز یادداشتی ثبت نشده.' : 'No notes yet.') + '</div>'; return; }
             list.innerHTML = notes.map(function(n) {
-                var userName = userDisplay(n.user);
-                var date = n.createdAt ? fmtTZ(n.createdAt, 'datetime') : '';
+                const userName = userDisplay(n.user);
+                const date = n.createdAt ? fmtTZ(n.createdAt, 'datetime') : '';
                 return '<div class="customer-note-item"><div class="customer-note-meta">' + escapeHtml(userName) + ' \u00B7 ' + date + '</div><div class="customer-note-content">' + escapeHtml((n.content || '').slice(0, 500)) + (n.content && n.content.length > 500 ? '\u2026' : '') + '</div></div>';
             }).join('');
         }
         async function addCustomerNote(custId) {
-            var textarea = document.getElementById('customerNoteContent');
-            var content = (textarea && textarea.value || '').trim();
+            const textarea = document.getElementById('customerNoteContent');
+            const content = (textarea && textarea.value || '').trim();
             if (!content) { toast(LANG === 'fa' ? 'متن یادداشت الزامی است' : 'Note text required', true); return; }
-            var btn = document.getElementById('customerNoteAddBtn');
+            const btn = document.getElementById('customerNoteAddBtn');
             if (btn) btn.disabled = true;
-            var res = await apiFetch('/api/customers/' + custId + '/notes', { method: 'POST', body: JSON.stringify({ content: content }) });
+            const res = await apiFetch('/api/customers/' + custId + '/notes', { method: 'POST', body: JSON.stringify({ content: content }) });
             if (btn) btn.disabled = false;
             if (res.needLogin) return;
             if (res.ok) { if (textarea) textarea.value = ''; toast(t('saved') || (LANG === 'fa' ? 'ذخیره شد' : 'Saved')); loadCustomerNotes(custId); loadCustomerTimeline(custId); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
-        var customerModalSelectedTags = [];
-        var allTagsCache = [];
+        let customerModalSelectedTags = [];
+        let allTagsCache = [];
         function openCustomerModal(customerId) {
-            var modal = document.getElementById('customerModal');
+            const modal = document.getElementById('customerModal');
             if (!modal) return;
             modal.style.display = 'flex';
             document.getElementById('customerModalId').value = customerId || '';
@@ -6287,13 +6287,13 @@
             customerModalSelectedTags = [];
             updateCustomerModalAvatarPreview('');
             // پاک کردن فیلدهای جدید
-            var _newFields = ['customerModalBirthDate','customerModalNationalId','customerModalNationality','customerModalGender','customerModalOccupation','customerModalCompanyName','customerModalAddress','customerModalCity','customerModalCountry','customerModalPostalCode','customerModalInstagram','customerModalTelegram','customerModalWebsite'];
-            _newFields.forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = ''; });
+            const _newFields = ['customerModalBirthDate','customerModalNationalId','customerModalNationality','customerModalGender','customerModalOccupation','customerModalCompanyName','customerModalAddress','customerModalCity','customerModalCountry','customerModalPostalCode','customerModalInstagram','customerModalTelegram','customerModalWebsite'];
+            _newFields.forEach(function(fid) { const el = document.getElementById(fid); if (el) el.value = ''; });
             if (customerId) {
                 (async function() {
-                    var res = await apiFetch('/api/customers/' + customerId);
+                    const res = await apiFetch('/api/customers/' + customerId);
                     if (res.ok && res.data) {
-                        var c = res.data;
+                        const c = res.data;
                         document.getElementById('customerModalName').value = c.name || '';
                         document.getElementById('customerModalPhone').value = c.phone || '';
                         document.getElementById('customerModalEmail').value = c.email || '';
@@ -6305,8 +6305,8 @@
                         renderCustomerModalCustomFields(c.customFields || {});
                         if (currentCustomerId === customerId) currentCustomerData = c;
                         // لود فیلدهای جدید
-                        var _map = { customerModalBirthDate: 'birthDate', customerModalNationalId: 'nationalId', customerModalNationality: 'nationality', customerModalGender: 'gender', customerModalOccupation: 'occupation', customerModalCompanyName: 'companyName', customerModalAddress: 'address', customerModalCity: 'city', customerModalCountry: 'country', customerModalPostalCode: 'postalCode', customerModalInstagram: 'instagram', customerModalTelegram: 'telegram', customerModalWebsite: 'website' };
-                        Object.keys(_map).forEach(function(fid) { var el = document.getElementById(fid); if (el) el.value = c[_map[fid]] || ''; });
+                        const _map = { customerModalBirthDate: 'birthDate', customerModalNationalId: 'nationalId', customerModalNationality: 'nationality', customerModalGender: 'gender', customerModalOccupation: 'occupation', customerModalCompanyName: 'companyName', customerModalAddress: 'address', customerModalCity: 'city', customerModalCountry: 'country', customerModalPostalCode: 'postalCode', customerModalInstagram: 'instagram', customerModalTelegram: 'telegram', customerModalWebsite: 'website' };
+                        Object.keys(_map).forEach(function(fid) { const el = document.getElementById(fid); if (el) el.value = c[_map[fid]] || ''; });
                     }
                     renderCustomerModalTags();
                 })();
@@ -6318,8 +6318,8 @@
             bindCustomerModalAvatarUpload();
             bindCustomerModalAddTag();
             bindCustomerModalAddCustomField();
-            var delWrap = document.getElementById('customerModalDeleteWrap');
-            var delBtn = document.getElementById('btnCustomerModalDelete');
+            const delWrap = document.getElementById('customerModalDeleteWrap');
+            const delBtn = document.getElementById('btnCustomerModalDelete');
             if (delWrap && delBtn) {
                 if (customerId && currentUser && currentUser.canDeleteCustomer) {
                     delWrap.style.display = '';
@@ -6330,12 +6330,12 @@
             }
         }
         function updateCustomerModalAvatarPreview(url) {
-            var el = document.getElementById('customerModalAvatarPreview');
+            const el = document.getElementById('customerModalAvatarPreview');
             if (!el) return;
-            var u = (url || '').trim();
+            let u = (url || '').trim();
             if (u && u.indexOf('/') === 0) u = (window.location.origin || '') + u;
             if (u && u.indexOf('http') === 0) {
-                var img = new Image();
+                const img = new Image();
                 img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
                 img.onload = function() { el.innerHTML = ''; el.appendChild(img); };
                 img.onerror = function() { el.textContent = '?'; };
@@ -6345,16 +6345,16 @@
             }
         }
         async function loadAllTagsForModal() {
-            var res = await apiFetch('/api/tags');
+            const res = await apiFetch('/api/tags');
             if (res.ok && res.data && res.data.data) { allTagsCache = res.data.data; renderCustomerModalTagSelect(); }
         }
         function renderCustomerModalTagSelect() {
-            var sel = document.getElementById('customerModalTagSelect');
+            const sel = document.getElementById('customerModalTagSelect');
             if (!sel) return;
             sel.innerHTML = '<option value="">' + (LANG === 'fa' ? '— افزودن تگ —' : '— Add tag —') + '</option>';
             allTagsCache.forEach(function(t) {
                 if (customerModalSelectedTags.indexOf(t.id) >= 0) return;
-                var opt = document.createElement('option');
+                const opt = document.createElement('option');
                 opt.value = t.id;
                 opt.textContent = t.name;
                 opt.style.backgroundColor = t.color || '#95a5a6';
@@ -6362,9 +6362,9 @@
             });
         }
         function renderCustomerModalTags() {
-            var list = document.getElementById('customerModalTagsList');
+            const list = document.getElementById('customerModalTagsList');
             if (!list) return;
-            var tags = allTagsCache.filter(function(t) { return customerModalSelectedTags.indexOf(t.id) >= 0; });
+            const tags = allTagsCache.filter(function(t) { return customerModalSelectedTags.indexOf(t.id) >= 0; });
             list.innerHTML = tags.map(function(t) {
                 return '<span class="customer-modal-tag-chip" data-tag-id="' + escapeHtml(t.id) + '"><span class="tag-dot" style="background:' + escapeHtml(t.color || '#95a5a6') + '"></span>' + escapeHtml(t.name) + '<span class="tag-remove" onclick="removeCustomerModalTag(\'' + escapeHtml(t.id) + '\')">&times;</span></span>';
             }).join('');
@@ -6381,35 +6381,35 @@
             renderCustomerModalTagSelect();
         }
         function bindCustomerModalAddTag() {
-            var btn = document.getElementById('btnCustomerModalAddTag');
-            var sel = document.getElementById('customerModalTagSelect');
-            var newBtn = document.getElementById('btnCustomerModalNewTag');
+            const btn = document.getElementById('btnCustomerModalAddTag');
+            const sel = document.getElementById('customerModalTagSelect');
+            const newBtn = document.getElementById('btnCustomerModalNewTag');
             if (btn && sel) {
                 btn.onclick = function() {
-                    var v = sel.value;
+                    const v = sel.value;
                     if (v) { addCustomerModalTag(v); sel.value = ''; }
                 };
             }
             if (newBtn) {
                 newBtn.onclick = async function() {
-                    var name = prompt(LANG === 'fa' ? 'نام تگ جدید:' : 'New tag name:');
+                    const name = prompt(LANG === 'fa' ? 'نام تگ جدید:' : 'New tag name:');
                     if (!name || !name.trim()) return;
-                    var res = await apiFetch('/api/tags', { method: 'POST', body: JSON.stringify({ name: name.trim() }) });
+                    const res = await apiFetch('/api/tags', { method: 'POST', body: JSON.stringify({ name: name.trim() }) });
                     if (res.needLogin) return;
                     if (res.ok) { allTagsCache.push(res.data); addCustomerModalTag(res.data.id); renderCustomerModalTagSelect(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
                 };
             }
         }
         function renderCustomerModalCustomFields(cf) {
-            var container = document.getElementById('customerModalCustomFields');
+            const container = document.getElementById('customerModalCustomFields');
             if (!container) return;
-            var keys = Object.keys(cf || {});
+            const keys = Object.keys(cf || {});
             container.innerHTML = keys.map(function(k) {
                 return '<div class="customer-modal-custom-field-row"><input type="text" class="cf-key" value="' + escapeHtml(k) + '" placeholder="' + (LANG === 'fa' ? 'کلید' : 'Key') + '"><input type="text" class="cf-val" value="' + escapeHtml(String(cf[k] || '')) + '" placeholder="' + (LANG === 'fa' ? 'مقدار' : 'Value') + '"><button type="button" class="btn-remove-field">×</button></div>';
             }).join('');
             // Bind remove buttons for all custom field rows
             setTimeout(function() {
-                var removeButtons = container.querySelectorAll('.btn-remove-field');
+                const removeButtons = container.querySelectorAll('.btn-remove-field');
                 removeButtons.forEach(function(btn) {
                     btn.removeEventListener('click', function handleRemove(e) { btn.parentNode.remove(); });
                     btn.addEventListener('click', function handleRemove(e) { btn.parentNode.remove(); });
@@ -6417,14 +6417,14 @@
             }, 50);
         }
         function bindCustomerModalAddCustomField() {
-            var btn = document.getElementById('btnCustomerModalAddCustomField');
-            var container = document.getElementById('customerModalCustomFields');
+            const btn = document.getElementById('btnCustomerModalAddCustomField');
+            const container = document.getElementById('customerModalCustomFields');
             if (btn && container) {
                 btn.onclick = function() {
-                    var row = document.createElement('div');
+                    const row = document.createElement('div');
                     row.className = 'customer-modal-custom-field-row';
                     row.innerHTML = '<input type="text" class="cf-key" placeholder="' + (LANG === 'fa' ? 'کلید' : 'Key') + '"><input type="text" class="cf-val" placeholder="' + (LANG === 'fa' ? 'مقدار' : 'Value') + '"><button type="button" class="btn-remove-field">×</button>';
-                var removeBtn = row.querySelector('.btn-remove-field');
+                const removeBtn = row.querySelector('.btn-remove-field');
                 if (removeBtn) {
                     removeBtn.removeEventListener('click', function(e) { row.remove(); });
                     removeBtn.addEventListener('click', function(e) { row.remove(); });
@@ -6434,27 +6434,27 @@
             }
         }
         function getCustomerModalCustomFields() {
-            var container = document.getElementById('customerModalCustomFields');
+            const container = document.getElementById('customerModalCustomFields');
             if (!container) return {};
-            var out = {};
+            const out = {};
             container.querySelectorAll('.customer-modal-custom-field-row').forEach(function(row) {
-                var k = (row.querySelector('.cf-key') && row.querySelector('.cf-key').value || '').trim();
-                var v = (row.querySelector('.cf-val') && row.querySelector('.cf-val').value || '').trim();
+                const k = (row.querySelector('.cf-key') && row.querySelector('.cf-key').value || '').trim();
+                const v = (row.querySelector('.cf-val') && row.querySelector('.cf-val').value || '').trim();
                 if (k) out[k] = v;
             });
             return out;
         }
         function bindCustomerModalAvatarUpload() {
-            var fileInput = document.getElementById('customerModalAvatarFile');
-            var btn = document.getElementById('btnCustomerModalAvatarUpload');
+            const fileInput = document.getElementById('customerModalAvatarFile');
+            const btn = document.getElementById('btnCustomerModalAvatarUpload');
             if (btn && fileInput) {
                 btn.onclick = function() { fileInput.click(); };
                 fileInput.onchange = async function() {
                     if (!fileInput.files || !fileInput.files[0]) return;
-                    var formData = new FormData();
+                    const formData = new FormData();
                     formData.append('file', fileInput.files[0]);
-                    var r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-                    var data = await r.json().catch(function() { return {}; });
+                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                    const data = await r.json().catch(function() { return {}; });
                     if (data.url) {
                         document.getElementById('customerModalProfilePic').value = data.url;
                         updateCustomerModalAvatarPreview(data.url);
@@ -6464,28 +6464,28 @@
                 };
             }
         }
-        function closeCustomerModal() { var m = document.getElementById('customerModal'); if (m) m.style.display = 'none'; }
+        function closeCustomerModal() { const m = document.getElementById('customerModal'); if (m) m.style.display = 'none'; }
         async function deleteCustomer(custId) {
             if (!currentUser || !currentUser.canDeleteCustomer) { toast(LANG === 'fa' ? 'شما اجازه حذف مشتری را ندارید' : 'You cannot delete customers', true); return; }
-            var name = (currentCustomerData && currentCustomerData.id === custId) ? (currentCustomerData.name || currentCustomerData.phone) : (document.getElementById('customerModalName') && document.getElementById('customerModalName').value) || (document.getElementById('customerModalPhone') && document.getElementById('customerModalPhone').value) || custId;
-            var msg = (LANG === 'fa' ? 'آیا از حذف مشتری «' : 'Delete customer "') + (name || custId) + (LANG === 'fa' ? '» مطمئن هستید؟ مکالمات، یادداشت‌ها و تراکنش‌ها هم حذف می‌شوند.' : '"? Conversations, notes and transactions will be removed.');
+            const name = (currentCustomerData && currentCustomerData.id === custId) ? (currentCustomerData.name || currentCustomerData.phone) : (document.getElementById('customerModalName') && document.getElementById('customerModalName').value) || (document.getElementById('customerModalPhone') && document.getElementById('customerModalPhone').value) || custId;
+            const msg = (LANG === 'fa' ? 'آیا از حذف مشتری «' : 'Delete customer "') + (name || custId) + (LANG === 'fa' ? '» مطمئن هستید؟ مکالمات، یادداشت‌ها و تراکنش‌ها هم حذف می‌شوند.' : '"? Conversations, notes and transactions will be removed.');
             if (!confirm(msg)) return;
-            var res = await apiFetch('/api/customers/' + custId, { method: 'DELETE' });
+            const res = await apiFetch('/api/customers/' + custId, { method: 'DELETE' });
             if (res.needLogin) return;
             if (res.ok) { toast(LANG === 'fa' ? 'مشتری حذف شد' : 'Customer deleted'); closeCustomerModal(); showPage('customers'); loadCustomers(); currentCustomerId = null; currentCustomerData = null; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function saveCustomerFromModal() {
-            var id = document.getElementById('customerModalId').value.trim();
-            var name = document.getElementById('customerModalName').value.trim();
-            var phone = (document.getElementById('customerModalPhone').value || '').trim().replace(/\s/g, '');
-            var email = (document.getElementById('customerModalEmail').value || '').trim();
-            var status = document.getElementById('customerModalStatus').value || 'active';
-            var notes = (document.getElementById('customerModalNotes').value || '').trim();
-            var profilePic = (document.getElementById('customerModalProfilePic') && document.getElementById('customerModalProfilePic').value || '').trim();
-            var customFields = getCustomerModalCustomFields();
+            const id = document.getElementById('customerModalId').value.trim();
+            const name = document.getElementById('customerModalName').value.trim();
+            const phone = (document.getElementById('customerModalPhone').value || '').trim().replace(/\s/g, '');
+            const email = (document.getElementById('customerModalEmail').value || '').trim();
+            const status = document.getElementById('customerModalStatus').value || 'active';
+            const notes = (document.getElementById('customerModalNotes').value || '').trim();
+            const profilePic = (document.getElementById('customerModalProfilePic') && document.getElementById('customerModalProfilePic').value || '').trim();
+            const customFields = getCustomerModalCustomFields();
             // فیلدهای جدید
-            var _getVal = function(fid) { var el = document.getElementById(fid); return el ? (el.value || '').trim() : ''; };
-            var extraFields = {
+            const _getVal = function(fid) { const el = document.getElementById(fid); return el ? (el.value || '').trim() : ''; };
+            const extraFields = {
                 birthDate: _getVal('customerModalBirthDate') || undefined,
                 nationalId: _getVal('customerModalNationalId') || undefined,
                 nationality: _getVal('customerModalNationality') || undefined,
@@ -6503,20 +6503,20 @@
             if (!name) { toast(LANG === 'fa' ? 'نام الزامی است' : 'Name required', true); return; }
             if (!id && !phone) { toast(LANG === 'fa' ? 'تلفن برای مشتری جدید الزامی است' : 'Phone required', true); return; }
             if (id) {
-                var body = Object.assign({ name: name || undefined, phone: phone || undefined, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }, extraFields);
+                const body = Object.assign({ name: name || undefined, phone: phone || undefined, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }, extraFields);
                 var res = await apiFetch('/api/customers/' + id, { method: 'PUT', body: JSON.stringify(body) });
                 if (res.needLogin) return;
                 if (res.ok) {
-                    var tagRes = await apiFetch('/api/customers/' + id + '/tags', { method: 'PUT', body: JSON.stringify({ tagIds: customerModalSelectedTags }) });
+                    const tagRes = await apiFetch('/api/customers/' + id + '/tags', { method: 'PUT', body: JSON.stringify({ tagIds: customerModalSelectedTags }) });
                     if (tagRes.ok && currentCustomerId === id) currentCustomerData = res.data;
                     closeCustomerModal(); toast(t('btn_save')); if (currentCustomerId === id) showCustomerHistory(id, res.data.name || res.data.phone); loadCustomers();
                 } else toast((res.data && res.data.error) || t('err_generic'), true);
             } else {
-                var body2 = Object.assign({ name: name, phone: phone, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }, extraFields);
+                const body2 = Object.assign({ name: name, phone: phone, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }, extraFields);
                 var res = await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify(body2) });
                 if (res.needLogin) return;
                 if (res.ok) {
-                    var newId = res.data && res.data.id;
+                    const newId = res.data && res.data.id;
                     if (newId && customerModalSelectedTags.length) await apiFetch('/api/customers/' + newId + '/tags', { method: 'PUT', body: JSON.stringify({ tagIds: customerModalSelectedTags }) });
                     closeCustomerModal(); toast(t('btn_save')); loadCustomers();
                 } else toast((res.data && res.data.error) || t('err_generic'), true);
@@ -6525,16 +6525,16 @@
 
         function setUserDisplay(u) {
             if (!u) return;
-            var emailEl = document.getElementById('userEmail');
-            var avatarEl = document.getElementById('userAvatar');
-            var avatarMobile = document.getElementById('userAvatarMobile');
+            const emailEl = document.getElementById('userEmail');
+            const avatarEl = document.getElementById('userAvatar');
+            const avatarMobile = document.getElementById('userAvatarMobile');
             if (emailEl) emailEl.textContent = u.username || u.email || u.name || '';
-            var setAvatar = function(el) {
+            const setAvatar = function(el) {
                 if (!el) return;
-                var avatarUrl = (u.avatar || '').trim();
+                let avatarUrl = (u.avatar || '').trim();
                 if (avatarUrl.indexOf('/') === 0) avatarUrl = (window.location.origin || '') + avatarUrl;
                 if (avatarUrl && avatarUrl.indexOf('http') === 0) {
-                    var img = document.createElement('img');
+                    const img = document.createElement('img');
                     img.src = avatarUrl;
                     img.alt = '';
                     img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.borderRadius = 'inherit';
@@ -6550,65 +6550,65 @@
             setAvatar(avatarMobile);
         }
         function applyNavByRole() {
-            var perms = (currentUser && currentUser.permissions) || {};
-            var role = (currentUser && currentUser.role) || '';
-            var isOwnerOrAdmin = (role === 'owner' || role === 'admin');
-            var can = function(section) { return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
+            const perms = (currentUser && currentUser.permissions) || {};
+            const role = (currentUser && currentUser.role) || '';
+            const isOwnerOrAdmin = (role === 'owner' || role === 'admin');
+            const can = function(section) { return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
             document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
-                var section = link.getAttribute('data-section');
+                const section = link.getAttribute('data-section');
                 link.style.display = can(section) ? '' : 'none';
             });
             document.querySelectorAll('.header-quick-btn[data-perm]').forEach(function(btn) {
-                var perm = btn.getAttribute('data-perm');
+                const perm = btn.getAttribute('data-perm');
                 btn.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
             });
             document.querySelectorAll('.header-status-wrap [data-perm]').forEach(function(el) {
-                var perm = el.getAttribute('data-perm');
+                const perm = el.getAttribute('data-perm');
                 el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
             });
             document.querySelectorAll('#headerNotifyBtn, #headerNotifyBtnMobile').forEach(function(el) {
                 el.style.display = (can('announcements') || can('tickets')) ? '' : 'none';
             });
             document.querySelectorAll('.user-dropdown-menu .user-dropdown-item[data-perm]').forEach(function(el) {
-                var perm = el.getAttribute('data-perm');
+                const perm = el.getAttribute('data-perm');
                 el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
             });
             document.querySelectorAll('.notify-section[data-perm]').forEach(function(el) {
-                var perm = el.getAttribute('data-perm');
+                const perm = el.getAttribute('data-perm');
                 el.style.display = (typeof can === 'function' && can(perm)) ? '' : 'none';
             });
             document.querySelectorAll('[data-perm]').forEach(function(el) {
                 if (el.closest('.nav-link') || el.closest('.header-quick-btn') || el.closest('.user-dropdown-menu') || el.closest('.notify-section') || el.closest('.header-status-wrap')) return;
-                var perm = el.getAttribute('data-perm');
+                const perm = el.getAttribute('data-perm');
                 el.style.display = can(perm) ? '' : 'none';
             });
             document.querySelectorAll('.nav-section').forEach(function(section) {
-                var body = section.querySelector('.nav-section-body');
+                const body = section.querySelector('.nav-section-body');
                 if (!body) return;
-                var links = body.querySelectorAll('.nav-link[data-section]');
-                var hasVisible = false;
+                const links = body.querySelectorAll('.nav-link[data-section]');
+                let hasVisible = false;
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 section.style.display = hasVisible ? '' : 'none';
             });
             document.querySelectorAll('.nav-subsection').forEach(function(sub) {
-                var links = sub.querySelectorAll('.nav-link[data-section]');
-                var hasVisible = false;
+                const links = sub.querySelectorAll('.nav-link[data-section]');
+                let hasVisible = false;
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 sub.style.display = hasVisible ? '' : 'none';
             });
-            var activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+            const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
         }
         function updateBottomBarVisibility() {
-            var bottomBar = document.getElementById('bottomBar');
-            var tickerEl = document.getElementById('priceTicker');
-            var appFooter = document.getElementById('appFooter');
-            var mobileTabBar = document.getElementById('mobileTabBar');
+            const bottomBar = document.getElementById('bottomBar');
+            const tickerEl = document.getElementById('priceTicker');
+            const appFooter = document.getElementById('appFooter');
+            const mobileTabBar = document.getElementById('mobileTabBar');
             if (!bottomBar) return;
-            var tickerHidden = !tickerEl || tickerEl.style.display === 'none';
-            var footerHidden = !appFooter || appFooter.style.display === 'none';
-            var bothHidden = tickerHidden && footerHidden;
-            var isMobile = window.innerWidth <= 900;
+            const tickerHidden = !tickerEl || tickerEl.style.display === 'none';
+            const footerHidden = !appFooter || appFooter.style.display === 'none';
+            const bothHidden = tickerHidden && footerHidden;
+            const isMobile = window.innerWidth <= 900;
             if (isMobile && mobileTabBar) {
                 bottomBar.style.display = '';
                 document.body.classList.remove('bottom-bar-hidden');
@@ -6621,45 +6621,45 @@
         }
         function applyBranding(s) {
             if (!s) return;
-            var defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
-            var defSite = (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
-            var defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
+            const defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
+            const defSite = (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
+            const defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
             if (s.pageTitle) document.title = s.pageTitle; else document.title = defTitle;
-            var fav = document.getElementById('favicon');
+            const fav = document.getElementById('favicon');
             if (fav) fav.href = (s.faviconUrl && s.faviconUrl.trim()) ? s.faviconUrl : '/favicon-kaya.svg';
-            var logoText = s.siteName || defSite;
-            var headerIcon = document.getElementById('headerLogoIcon');
+            const logoText = s.siteName || defSite;
+            const headerIcon = document.getElementById('headerLogoIcon');
             if (headerIcon) {
                 if (s.logoUrl && s.logoUrl.trim()) { headerIcon.innerHTML = '<img src="' + escapeHtml(s.logoUrl) + '" alt="" style="width:28px;height:28px;object-fit:contain">'; } else { headerIcon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg>'; }
             }
-            var headerLogoText = document.getElementById('headerLogoText');
+            const headerLogoText = document.getElementById('headerLogoText');
             if (headerLogoText) headerLogoText.textContent = logoText;
-            var headerLogo = document.getElementById('headerLogo');
+            const headerLogo = document.getElementById('headerLogo');
             if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
-            var footerBrand = document.getElementById('appFooterBrand');
+            const footerBrand = document.getElementById('appFooterBrand');
             if (footerBrand) footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
-            var appFooter = document.getElementById('appFooter');
+            const appFooter = document.getElementById('appFooter');
             if (appFooter) {
                 appFooter.style.display = (s.showFooter === false) ? 'none' : '';
-                var style = (s.footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(s.footerStyle) >= 0) ? s.footerStyle : 'accent';
+                const style = (s.footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(s.footerStyle) >= 0) ? s.footerStyle : 'accent';
                 appFooter.classList.remove('app-footer--accent', 'app-footer--minimal', 'app-footer--compact', 'app-footer--line');
                 appFooter.classList.add('app-footer--' + style);
             }
             updateBottomBarVisibility();
-            var loginTitleEl = document.getElementById('loginTitle');
+            const loginTitleEl = document.getElementById('loginTitle');
             if (loginTitleEl) loginTitleEl.textContent = (s.loginTitle && s.loginTitle.trim()) ? s.loginTitle : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal');
-            var setLoginLogo = function(containerId, size) {
-                var c = document.getElementById(containerId);
+            const setLoginLogo = function(containerId, size) {
+                const c = document.getElementById(containerId);
                 if (!c) return;
                 if (s.logoUrl && s.logoUrl.trim()) { c.innerHTML = '<img src="' + escapeHtml(s.logoUrl) + '" alt="" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain">'; } else { c.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg>'; }
             };
             setLoginLogo('loginLogo', 48);
             setLoginLogo('loginLogoTotp', 40);
-            var root = document.documentElement;
-            var target = document.body;
+            const root = document.documentElement;
+            const target = document.body;
             if (s.primaryColor && /^#[0-9a-fA-F]{6}$/.test(s.primaryColor)) {
-                var r = parseInt(s.primaryColor.slice(1, 3), 16); var g = parseInt(s.primaryColor.slice(3, 5), 16); var b = parseInt(s.primaryColor.slice(5, 7), 16);
-                var hoverHex = '#' + [r, g, b].map(function(x) { return Math.max(0, Math.min(255, x - 20)).toString(16).padStart(2, '0'); }).join('');
+                const r = parseInt(s.primaryColor.slice(1, 3), 16); const g = parseInt(s.primaryColor.slice(3, 5), 16); const b = parseInt(s.primaryColor.slice(5, 7), 16);
+                const hoverHex = '#' + [r, g, b].map(function(x) { return Math.max(0, Math.min(255, x - 20)).toString(16).padStart(2, '0'); }).join('');
                 [root, target].forEach(function(el) {
                     if (el) { el.style.setProperty('--accent', s.primaryColor); el.style.setProperty('--accent-hover', hoverHex); el.style.setProperty('--accent-soft', 'rgba(' + r + ',' + g + ',' + b + ',0.15)'); }
                 });
@@ -6668,49 +6668,49 @@
                     if (el) { el.style.removeProperty('--accent'); el.style.removeProperty('--accent-hover'); el.style.removeProperty('--accent-soft'); }
                 });
             }
-            var themeClass = (s.uiTheme && s.uiTheme !== 'default') ? 'theme-' + s.uiTheme : '';
+            const themeClass = (s.uiTheme && s.uiTheme !== 'default') ? 'theme-' + s.uiTheme : '';
             document.body.classList.remove('theme-minimal', 'theme-dark', 'theme-light', 'theme-ocean', 'theme-warm');
             if (themeClass) document.body.classList.add(themeClass);
-            var fontSizeClass = (s.fontSize && ['small', 'medium', 'large'].indexOf(s.fontSize) >= 0) ? 'font-size-' + s.fontSize : 'font-size-medium';
+            const fontSizeClass = (s.fontSize && ['small', 'medium', 'large'].indexOf(s.fontSize) >= 0) ? 'font-size-' + s.fontSize : 'font-size-medium';
             document.body.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
             document.body.classList.add(fontSizeClass);
             if (s.fontFamily && s.fontFamily.trim()) {
                 root.style.setProperty('--font', s.fontFamily.trim());
                 root.style.setProperty('--font-ltr', s.fontFamily.trim());
             } else { root.style.removeProperty('--font'); root.style.removeProperty('--font-ltr'); }
-            var fw = (s.fontWeight && ['normal', 'medium', 'bold'].indexOf(s.fontWeight) >= 0) ? s.fontWeight : 'normal';
+            const fw = (s.fontWeight && ['normal', 'medium', 'bold'].indexOf(s.fontWeight) >= 0) ? s.fontWeight : 'normal';
             document.body.style.fontWeight = fw;
             if (Array.isArray(s.sidebarOrder) && s.sidebarOrder.length > 0) applySidebarOrder(s.sidebarOrder);
         }
         function applySidebarOrder(order) {
-            var inner = document.querySelector('.sidebar .sidebar-inner');
+            const inner = document.querySelector('.sidebar .sidebar-inner');
             if (!inner) return;
-            var sections = order.map(function(id) { return inner.querySelector('.nav-section[data-section="' + id + '"]'); }).filter(Boolean);
+            const sections = order.map(function(id) { return inner.querySelector('.nav-section[data-section="' + id + '"]'); }).filter(Boolean);
             if (sections.length === 0) return;
             sections.forEach(function(el) { inner.appendChild(el); });
         }
         var HIDDEN_SECTIONS = [];
         function applyHiddenSections(hidden) {
             HIDDEN_SECTIONS = Array.isArray(hidden) ? hidden : [];
-            var perms = (currentUser && currentUser.permissions) || {};
-            var can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
-            var pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
+            const perms = (currentUser && currentUser.permissions) || {};
+            const can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
+            const pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
-                var page = link.getAttribute('data-page');
-                var section = link.getAttribute('data-section') || pageToSection[page];
-                var inHidden = HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0);
-                var noPerm = section && !can(section);
+                const page = link.getAttribute('data-page');
+                const section = link.getAttribute('data-section') || pageToSection[page];
+                const inHidden = HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0);
+                const noPerm = section && !can(section);
                 link.style.display = (inHidden || noPerm) ? 'none' : '';
             });
-            var annBanner = document.getElementById('announcementMarquee');
+            const annBanner = document.getElementById('announcementMarquee');
             if (annBanner) {
                 if (HIDDEN_SECTIONS.indexOf('announcements') >= 0) annBanner.style.display = 'none';
                 else if (typeof loadGeneralAnnouncementsMarquee === 'function') loadGeneralAnnouncementsMarquee();
             }
-            var tickerEl = document.getElementById('priceTicker');
+            const tickerEl = document.getElementById('priceTicker');
             if (tickerEl) tickerEl.style.display = HIDDEN_SECTIONS.indexOf('rates') >= 0 ? 'none' : '';
             updateBottomBarVisibility();
-            var activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+            const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
             if (ratesInterval) clearInterval(ratesInterval);
             if (tickerTimeInterval) clearInterval(tickerTimeInterval);
@@ -6718,22 +6718,22 @@
             tickerTimeInterval = null;
             if (HIDDEN_SECTIONS.indexOf('rates') < 0 && typeof startRatesInterval === 'function') startRatesInterval();
             document.querySelectorAll('.nav-section').forEach(function(section) {
-                var body = section.querySelector('.nav-section-body');
+                const body = section.querySelector('.nav-section-body');
                 if (!body) return;
-                var links = body.querySelectorAll('.nav-link[data-section]');
-                var hasVisible = false;
+                const links = body.querySelectorAll('.nav-link[data-section]');
+                let hasVisible = false;
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 section.style.display = hasVisible ? '' : 'none';
             });
             document.querySelectorAll('.nav-subsection').forEach(function(sub) {
-                var links = sub.querySelectorAll('.nav-link[data-section]');
-                var hasVisible = false;
+                const links = sub.querySelectorAll('.nav-link[data-section]');
+                let hasVisible = false;
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 sub.style.display = hasVisible ? '' : 'none';
             });
         }
         async function loadPanelSettingsAndApply() {
-            var res = await apiFetch('/api/panel-settings');
+            const res = await apiFetch('/api/panel-settings');
             if (res.ok && res.data) {
                 applyBranding(res.data);
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
@@ -6744,7 +6744,7 @@
             fetch(API + '/api/panel-settings/public/visibility').then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage); }).catch(function() {});
         }
-        var SECTIONS_FOR_VISIBILITY = [
+        const SECTIONS_FOR_VISIBILITY = [
             { page: 'dashboard', labelKey: 'nav_dashboard' },
             { page: 'conversations', labelKey: 'nav_conversations' },
             { page: 'customers', labelKey: 'nav_customers' },
@@ -6765,42 +6765,42 @@
             { page: 'panel-settings', labelKey: 'nav_panel_settings' }
         ];
         async function loadPanelSettings() {
-            var loadingEl = document.getElementById('panelSettingsLoading');
-            var contentEl = document.getElementById('panelSettingsContent');
+            const loadingEl = document.getElementById('panelSettingsLoading');
+            const contentEl = document.getElementById('panelSettingsContent');
             if (loadingEl) loadingEl.style.display = 'flex';
             if (contentEl) contentEl.style.display = 'none';
-            var res = await apiFetch('/api/panel-settings');
+            const res = await apiFetch('/api/panel-settings');
             if (loadingEl) loadingEl.style.display = 'none';
             if (contentEl) contentEl.style.display = 'block';
             if (!res.ok) { toast(res.data && res.data.error ? res.data.error : t('err_generic'), true); return; }
-            var d = res.data || {};
-            var set = function(id, v) { var el = document.getElementById(id); if (el) el.value = v != null ? v : ''; };
+            const d = res.data || {};
+            const set = function(id, v) { const el = document.getElementById(id); if (el) el.value = v != null ? v : ''; };
             set('panelSettingSiteName', d.siteName);
             set('panelSettingLogoUrl', d.logoUrl);
             set('panelSettingFaviconUrl', d.faviconUrl);
             set('panelSettingLoginTitle', d.loginTitle);
             set('panelSettingPageTitle', d.pageTitle);
             set('panelSettingFooterText', d.footerText);
-            var footerStyleEl = document.getElementById('panelSettingFooterStyle');
+            const footerStyleEl = document.getElementById('panelSettingFooterStyle');
             if (footerStyleEl) footerStyleEl.value = (d.footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(d.footerStyle) >= 0) ? d.footerStyle : 'accent';
-            var hideFooterEl = document.getElementById('panelSettingHideFooter');
+            const hideFooterEl = document.getElementById('panelSettingHideFooter');
             if (hideFooterEl) hideFooterEl.checked = d.showFooter === false;
-            var langModeEl = document.getElementById('panelSettingLanguageMode');
-            var validModes = ['single', 'single_en', 'single_tr', 'bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'];
+            const langModeEl = document.getElementById('panelSettingLanguageMode');
+            const validModes = ['single', 'single_en', 'single_tr', 'bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'];
             if (langModeEl) langModeEl.value = validModes.indexOf(d.languageMode) >= 0 ? d.languageMode : 'trilingual';
             set('panelSettingDefaultLanguage', (d.defaultLanguage === 'fa' || d.defaultLanguage === 'en' || d.defaultLanguage === 'tr') ? d.defaultLanguage : 'fa');
-            var colorVal = (d.primaryColor && /^#[0-9a-fA-F]{6}$/.test(d.primaryColor)) ? d.primaryColor : '#10b981';
-            var colorEl = document.getElementById('panelSettingPrimaryColor');
-            var colorTextEl = document.getElementById('panelSettingPrimaryColorText');
+            const colorVal = (d.primaryColor && /^#[0-9a-fA-F]{6}$/.test(d.primaryColor)) ? d.primaryColor : '#10b981';
+            const colorEl = document.getElementById('panelSettingPrimaryColor');
+            const colorTextEl = document.getElementById('panelSettingPrimaryColorText');
             if (colorEl) colorEl.value = colorVal;
             if (colorTextEl) colorTextEl.value = colorVal;
-            var fontFamilyEl = document.getElementById('panelSettingFontFamily');
+            const fontFamilyEl = document.getElementById('panelSettingFontFamily');
             if (fontFamilyEl) fontFamilyEl.value = d.fontFamily || '';
-            var fontSizeEl = document.getElementById('panelSettingFontSize');
+            const fontSizeEl = document.getElementById('panelSettingFontSize');
             if (fontSizeEl) fontSizeEl.value = (d.fontSize && ['small', 'medium', 'large'].indexOf(d.fontSize) >= 0) ? d.fontSize : 'medium';
-            var fontWeightEl = document.getElementById('panelSettingFontWeight');
+            const fontWeightEl = document.getElementById('panelSettingFontWeight');
             if (fontWeightEl) fontWeightEl.value = (d.fontWeight && ['normal', 'medium', 'bold'].indexOf(d.fontWeight) >= 0) ? d.fontWeight : 'normal';
-            var uiThemeEl = document.getElementById('panelSettingUiTheme');
+            const uiThemeEl = document.getElementById('panelSettingUiTheme');
             if (uiThemeEl) uiThemeEl.value = (d.uiTheme && ['default', 'minimal', 'dark', 'light', 'ocean', 'warm'].indexOf(d.uiTheme) >= 0) ? d.uiTheme : 'default';
             if (typeof updatePanelLanguageHint === 'function') updatePanelLanguageHint();
             if (typeof toggleDefaultLanguageVisibility === 'function') toggleDefaultLanguageVisibility();
@@ -6810,21 +6810,21 @@
             set('panelSettingSmtpPass', d.smtpPass != null ? d.smtpPass : '');
             set('panelSettingSmtpFrom', d.smtpFrom);
             set('panelSettingSmtpFromName', d.smtpFromName);
-            var smtpSecureEl = document.getElementById('panelSettingSmtpSecure');
+            const smtpSecureEl = document.getElementById('panelSettingSmtpSecure');
             if (smtpSecureEl) smtpSecureEl.checked = !!d.smtpSecure;
-            var loginNotifEl = document.getElementById('panelSettingEmailLoginNotification');
+            const loginNotifEl = document.getElementById('panelSettingEmailLoginNotification');
             if (loginNotifEl) loginNotifEl.checked = !!d.emailLoginNotification;
-            var hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
-            var container = document.getElementById('panelVisibilityToggles');
+            const hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
+            const container = document.getElementById('panelVisibilityToggles');
             if (container) {
                 container.innerHTML = '';
                 SECTIONS_FOR_VISIBILITY.forEach(function(s) {
-                    var labelText = (t(s.labelKey) || s.page);
-                    var item = document.createElement('div');
+                    const labelText = (t(s.labelKey) || s.page);
+                    const item = document.createElement('div');
                     item.className = 'panel-visibility-item';
                     item.dataset.searchText = (labelText + ' ' + s.page).toLowerCase();
-                    var label = document.createElement('label');
-                    var cb = document.createElement('input');
+                    const label = document.createElement('label');
+                    const cb = document.createElement('input');
                     cb.type = 'checkbox';
                     cb.dataset.page = s.page;
                     cb.checked = hidden.indexOf(s.page) < 0;
@@ -6850,26 +6850,26 @@
             initSidebarOrderList(d.sidebarOrder);
             clearPanelSettingsChanged();
         }
-        var SIDEBAR_SECTIONS = [
+        const SIDEBAR_SECTIONS = [
             { section: 'dashboard', labelKey: 'nav_dashboard' },
             { section: 'communications', labelKey: 'nav_communications' },
             { section: 'organization', labelKey: 'nav_organization' },
             { section: 'settings', labelKey: 'nav_settings' }
         ];
         function initSidebarOrderList(savedOrder) {
-            var container = document.getElementById('panelSidebarOrderList');
+            const container = document.getElementById('panelSidebarOrderList');
             if (!container) return;
-            var order = Array.isArray(savedOrder) && savedOrder.length > 0 ? savedOrder : SIDEBAR_SECTIONS.map(function(s) { return s.section; });
+            const order = Array.isArray(savedOrder) && savedOrder.length > 0 ? savedOrder : SIDEBAR_SECTIONS.map(function(s) { return s.section; });
             container.innerHTML = '';
             order.forEach(function(sectionId, idx) {
-                var info = SIDEBAR_SECTIONS.find(function(s) { return s.section === sectionId; });
+                const info = SIDEBAR_SECTIONS.find(function(s) { return s.section === sectionId; });
                 if (!info) return;
-                var item = document.createElement('div');
+                const item = document.createElement('div');
                 item.className = 'sidebar-order-item';
                 item.dataset.section = sectionId;
-                var label = document.createElement('label');
+                const label = document.createElement('label');
                 label.textContent = (typeof t === 'function' ? t(info.labelKey) : info.labelKey) || sectionId;
-                var input = document.createElement('input');
+                const input = document.createElement('input');
                 input.type = 'number';
                 input.min = '1';
                 input.value = idx + 1;
@@ -6880,12 +6880,12 @@
             });
             SIDEBAR_SECTIONS.forEach(function(info) {
                 if (order.indexOf(info.section) < 0) {
-                    var item = document.createElement('div');
+                    const item = document.createElement('div');
                     item.className = 'sidebar-order-item';
                     item.dataset.section = info.section;
-                    var label = document.createElement('label');
+                    const label = document.createElement('label');
                     label.textContent = (typeof t === 'function' ? t(info.labelKey) : info.labelKey) || info.section;
-                    var input = document.createElement('input');
+                    const input = document.createElement('input');
                     input.type = 'number';
                     input.min = '1';
                     input.value = order.length + 1;
@@ -6897,133 +6897,133 @@
             });
         }
         function getSidebarOrderFromForm() {
-            var container = document.getElementById('panelSidebarOrderList');
+            const container = document.getElementById('panelSidebarOrderList');
             if (!container) return null;
-            var items = [].slice.call(container.querySelectorAll('.sidebar-order-item'));
+            const items = [].slice.call(container.querySelectorAll('.sidebar-order-item'));
             items.sort(function(a, b) {
-                var ra = parseInt(a.querySelector('input').value, 10) || 999;
-                var rb = parseInt(b.querySelector('input').value, 10) || 999;
+                const ra = parseInt(a.querySelector('input').value, 10) || 999;
+                const rb = parseInt(b.querySelector('input').value, 10) || 999;
                 return ra - rb;
             });
             return items.map(function(el) { return el.dataset.section; });
         }
         function syncPanelColorInput() {
-            var colorEl = document.getElementById('panelSettingPrimaryColor');
-            var textEl = document.getElementById('panelSettingPrimaryColorText');
+            const colorEl = document.getElementById('panelSettingPrimaryColor');
+            const textEl = document.getElementById('panelSettingPrimaryColorText');
             if (colorEl && textEl) textEl.value = colorEl.value;
         }
         function syncPanelColorFromText() {
-            var textEl = document.getElementById('panelSettingPrimaryColorText');
-            var colorEl = document.getElementById('panelSettingPrimaryColor');
+            const textEl = document.getElementById('panelSettingPrimaryColorText');
+            const colorEl = document.getElementById('panelSettingPrimaryColor');
             if (!textEl || !colorEl) return;
-            var v = String(textEl.value || '').trim();
+            const v = String(textEl.value || '').trim();
             if (/^#[0-9a-fA-F]{6}$/.test(v)) colorEl.value = v;
         }
         function syncSmtpPortWithSecure() {
-            var portEl = document.getElementById('panelSettingSmtpPort');
-            var secureEl = document.getElementById('panelSettingSmtpSecure');
+            const portEl = document.getElementById('panelSettingSmtpPort');
+            const secureEl = document.getElementById('panelSettingSmtpSecure');
             if (!portEl || !secureEl) return;
-            var port = String(portEl.value || '').trim();
+            const port = String(portEl.value || '').trim();
             if (port === '465') secureEl.checked = true;
             else if (port === '587') secureEl.checked = false;
         }
         function syncSmtpSecureWithPort() {
-            var portEl = document.getElementById('panelSettingSmtpPort');
-            var secureEl = document.getElementById('panelSettingSmtpSecure');
+            const portEl = document.getElementById('panelSettingSmtpPort');
+            const secureEl = document.getElementById('panelSettingSmtpSecure');
             if (!portEl || !secureEl) return;
             if (secureEl.checked && (!portEl.value || portEl.value === '587')) portEl.value = '465';
             else if (!secureEl.checked && (!portEl.value || portEl.value === '465')) portEl.value = '587';
         }
         function markPanelSettingsChanged() {
-            var badge = document.getElementById('panelSettingsUnsavedBadge');
+            const badge = document.getElementById('panelSettingsUnsavedBadge');
             if (badge) badge.style.display = 'inline';
         }
         function clearPanelSettingsChanged() {
-            var badge = document.getElementById('panelSettingsUnsavedBadge');
+            const badge = document.getElementById('panelSettingsUnsavedBadge');
             if (badge) badge.style.display = 'none';
         }
         function initPanelSettingsTabs() {
-            var tabs = document.querySelectorAll('.panel-settings-tab');
-            var panels = document.querySelectorAll('.panel-settings-tab-panel');
+            const tabs = document.querySelectorAll('.panel-settings-tab');
+            const panels = document.querySelectorAll('.panel-settings-tab-panel');
             tabs.forEach(function(tab) {
                 tab.addEventListener('click', function() {
-                    var targetTab = tab.getAttribute('data-tab');
+                    const targetTab = tab.getAttribute('data-tab');
                     tabs.forEach(function(t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
                     panels.forEach(function(p) { p.classList.remove('active'); p.hidden = true; });
                     tab.classList.add('active');
                     tab.setAttribute('aria-selected', 'true');
-                    var panelId = 'panelTab' + (targetTab.charAt(0).toUpperCase() + targetTab.slice(1));
-                    var panel = document.getElementById(panelId);
+                    const panelId = 'panelTab' + (targetTab.charAt(0).toUpperCase() + targetTab.slice(1));
+                    const panel = document.getElementById(panelId);
                     if (panel) { panel.classList.add('active'); panel.hidden = false; }
                 });
             });
         }
         function initPanelSettingsCollapse() {
-            var EXPANDED_MAX = 1200;
+            const EXPANDED_MAX = 1200;
             document.querySelectorAll('.panel-settings-section-collapsible').forEach(function(section) {
-                var toggle = section.querySelector('.panel-settings-section-toggle');
-                var body = section.querySelector('.panel-settings-section-body');
+                const toggle = section.querySelector('.panel-settings-section-toggle');
+                const body = section.querySelector('.panel-settings-section-body');
                 if (!toggle || !body) return;
                 body.style.maxHeight = EXPANDED_MAX + 'px';
                 toggle.addEventListener('click', function() {
-                    var collapsed = section.classList.toggle('collapsed');
+                    const collapsed = section.classList.toggle('collapsed');
                     toggle.setAttribute('aria-expanded', !collapsed);
                     body.style.maxHeight = collapsed ? '0' : EXPANDED_MAX + 'px';
                 });
             });
         }
         function initPanelVisibilitySearch() {
-            var searchEl = document.getElementById('panelVisibilitySearch');
-            var container = document.getElementById('panelVisibilityToggles');
+            const searchEl = document.getElementById('panelVisibilitySearch');
+            const container = document.getElementById('panelVisibilityToggles');
             if (!searchEl || !container) return;
             searchEl.addEventListener('input', function() {
-                var q = (searchEl.value || '').trim().toLowerCase();
+                const q = (searchEl.value || '').trim().toLowerCase();
                 container.querySelectorAll('.panel-visibility-item').forEach(function(item) {
-                    var text = item.dataset.searchText || '';
+                    const text = item.dataset.searchText || '';
                     item.classList.toggle('hidden-by-search', q && text.indexOf(q) < 0);
                 });
             });
         }
         async function loadCompanyEmailUserSelect() {
-            var sel = document.getElementById('companyEmailAssignedUser');
+            const sel = document.getElementById('companyEmailAssignedUser');
             if (!sel) return;
-            var first = sel.options[0];
+            const first = sel.options[0];
             sel.innerHTML = '';
             if (first) sel.appendChild(first);
-            var res = await apiFetch('/api/users');
+            const res = await apiFetch('/api/users');
             if (!res.ok || !res.data || !res.data.data) return;
             res.data.data.forEach(function(u) {
-                var opt = document.createElement('option');
+                const opt = document.createElement('option');
                 opt.value = u.id;
                 opt.textContent = (u.name || u.username || u.email || u.id).trim() || ('User ' + u.id);
                 sel.appendChild(opt);
             });
         }
         async function loadCompanyEmails() {
-            var tbody = document.getElementById('companyEmailsTableBody');
-            var emptyEl = document.getElementById('companyEmailsEmpty');
+            const tbody = document.getElementById('companyEmailsTableBody');
+            const emptyEl = document.getElementById('companyEmailsEmpty');
             if (!tbody) return;
-            var res = await apiFetch('/api/company-emails');
+            const res = await apiFetch('/api/company-emails');
             if (!res.ok) { if (emptyEl) emptyEl.style.display = 'block'; tbody.innerHTML = ''; return; }
-            var list = (res.data && res.data.data) || [];
+            const list = (res.data && res.data.data) || [];
             if (list.length === 0) {
                 tbody.innerHTML = '';
                 if (emptyEl) emptyEl.style.display = 'block';
                 return;
             }
             if (emptyEl) emptyEl.style.display = 'none';
-            function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+            function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (s == null) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
             tbody.innerHTML = list.map(function(item) {
-                var assigned = (item.assignedUser && (item.assignedUser.name || item.assignedUser.email)) || '—';
-                var passBadge = item.hasPassword ? '<span class="badge badge-success">✓</span>' : '<span class="badge badge-muted">—</span>';
-                var statusBadge = item.isActive ? '<span class="badge badge-success">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge badge-muted">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
-                var sendCredsBtn = item.assignedUser && item.hasPassword ? '<button type="button" class="btn-sm btn-secondary company-email-send-creds" data-id="' + item.id + '" title="' + (t('panel_company_email_send_creds') || '') + '">' + (LANG === 'fa' ? 'ارسال ورود' : 'Send') + '</button>' : '';
+                const assigned = (item.assignedUser && (item.assignedUser.name || item.assignedUser.email)) || '—';
+                const passBadge = item.hasPassword ? '<span class="badge badge-success">✓</span>' : '<span class="badge badge-muted">—</span>';
+                const statusBadge = item.isActive ? '<span class="badge badge-success">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge badge-muted">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
+                const sendCredsBtn = item.assignedUser && item.hasPassword ? '<button type="button" class="btn-sm btn-secondary company-email-send-creds" data-id="' + item.id + '" title="' + (t('panel_company_email_send_creds') || '') + '">' + (LANG === 'fa' ? 'ارسال ورود' : 'Send') + '</button>' : '';
                 return '<tr data-id="' + item.id + '"><td>' + escapeHtml(item.email) + '</td><td>' + escapeHtml(item.label || '') + '</td><td>' + escapeHtml(assigned) + '</td><td>' + passBadge + '</td><td>' + statusBadge + '</td><td class="company-email-actions"><button type="button" class="btn-sm btn-secondary company-email-edit" data-id="' + item.id + '">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> ' + sendCredsBtn + ' <button type="button" class="btn-sm btn-danger company-email-delete" data-id="' + item.id + '">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></td></tr>';
             }).join('');
         }
         function openCompanyEmailForm(item) {
-            var box = document.getElementById('companyEmailFormBox');
-            var idEl = document.getElementById('companyEmailId');
+            const box = document.getElementById('companyEmailFormBox');
+            const idEl = document.getElementById('companyEmailId');
             if (!box || !idEl) return;
             if (item) {
                 idEl.value = item.id;
@@ -7045,50 +7045,50 @@
             box.style.display = 'block';
         }
         function closeCompanyEmailForm() {
-            var box = document.getElementById('companyEmailFormBox');
+            const box = document.getElementById('companyEmailFormBox');
             if (box) box.style.display = 'none';
         }
         async function saveCompanyEmail() {
-            var idEl = document.getElementById('companyEmailId');
-            var email = (document.getElementById('companyEmailAddress') && document.getElementById('companyEmailAddress').value || '').trim();
-            var label = (document.getElementById('companyEmailLabel') && document.getElementById('companyEmailLabel').value || '').trim();
-            var assignedUserId = (document.getElementById('companyEmailAssignedUser') && document.getElementById('companyEmailAssignedUser').value || '') || null;
-            var password = (document.getElementById('companyEmailPassword') && document.getElementById('companyEmailPassword').value || '').trim();
-            var notes = (document.getElementById('companyEmailNotes') && document.getElementById('companyEmailNotes').value || '').trim();
-            var isActive = document.getElementById('companyEmailActive') && document.getElementById('companyEmailActive').checked;
+            const idEl = document.getElementById('companyEmailId');
+            const email = (document.getElementById('companyEmailAddress') && document.getElementById('companyEmailAddress').value || '').trim();
+            const label = (document.getElementById('companyEmailLabel') && document.getElementById('companyEmailLabel').value || '').trim();
+            const assignedUserId = (document.getElementById('companyEmailAssignedUser') && document.getElementById('companyEmailAssignedUser').value || '') || null;
+            const password = (document.getElementById('companyEmailPassword') && document.getElementById('companyEmailPassword').value || '').trim();
+            const notes = (document.getElementById('companyEmailNotes') && document.getElementById('companyEmailNotes').value || '').trim();
+            const isActive = document.getElementById('companyEmailActive') && document.getElementById('companyEmailActive').checked;
             if (!email) { toast(LANG === 'fa' ? 'آدرس ایمیل را وارد کنید.' : 'Enter email address.', true); return; }
-            var payload = { email: email, label: label || null, assignedUserId: assignedUserId, notes: notes || null, isActive: isActive };
+            const payload = { email: email, label: label || null, assignedUserId: assignedUserId, notes: notes || null, isActive: isActive };
             if (password) payload.password = password;
-            var url = '/api/company-emails';
-            var method = 'POST';
+            let url = '/api/company-emails';
+            let method = 'POST';
             if (idEl && idEl.value) { url = '/api/company-emails/' + idEl.value; method = 'PUT'; }
-            var res = await apiFetch(url, { method: method, body: JSON.stringify(payload) });
+            const res = await apiFetch(url, { method: method, body: JSON.stringify(payload) });
             if (res.ok) { toast(t('btn_save')); closeCompanyEmailForm(); loadCompanyEmails(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function deleteCompanyEmail(id) {
             if (!confirm(LANG === 'fa' ? 'این ایمیل شرکتی حذف شود؟' : 'Delete this company email?')) return;
-            var res = await apiFetch('/api/company-emails/' + id, { method: 'DELETE' });
+            const res = await apiFetch('/api/company-emails/' + id, { method: 'DELETE' });
             if (res.ok) { toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); loadCompanyEmails(); closeCompanyEmailForm(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function sendCompanyEmailCredentials(id) {
-            var res = await apiFetch('/api/company-emails/' + id + '/send-credentials', { method: 'POST', body: JSON.stringify({}) });
+            const res = await apiFetch('/api/company-emails/' + id + '/send-credentials', { method: 'POST', body: JSON.stringify({}) });
             if (res.ok) toast((res.data && res.data.message) || (LANG === 'fa' ? 'ارسال شد' : 'Sent')); else toast((res.data && res.data.error) || t('err_generic'), true);
         }
-        var companyEmailsHandlersInited = false;
+        let companyEmailsHandlersInited = false;
         function initCompanyEmailsHandlers() {
             if (companyEmailsHandlersInited) return;
             companyEmailsHandlersInited = true;
-            var addBtn = document.getElementById('btnAddCompanyEmail');
+            const addBtn = document.getElementById('btnAddCompanyEmail');
             if (addBtn) addBtn.addEventListener('click', function() { openCompanyEmailForm(null); });
-            var cancelBtn = document.getElementById('companyEmailCancelBtn');
+            const cancelBtn = document.getElementById('companyEmailCancelBtn');
             if (cancelBtn) cancelBtn.addEventListener('click', closeCompanyEmailForm);
-            var saveBtn = document.getElementById('companyEmailSaveBtn');
+            const saveBtn = document.getElementById('companyEmailSaveBtn');
             if (saveBtn) saveBtn.addEventListener('click', function() { saveCompanyEmail(); });
-            var tbody = document.getElementById('companyEmailsTableBody');
+            const tbody = document.getElementById('companyEmailsTableBody');
             if (tbody) tbody.addEventListener('click', function(e) {
-                var target = e.target;
+                const target = e.target;
                 if (!target || !target.classList) return;
-                var id = target.getAttribute('data-id');
+                const id = target.getAttribute('data-id');
                 if (!id) return;
                 if (target.classList.contains('company-email-edit')) {
                     apiFetch('/api/company-emails/' + id).then(function(res) { if (res.ok && res.data) openCompanyEmailForm(res.data); });
@@ -7097,16 +7097,16 @@
             });
         }
         function applyThemeFromForm() {
-            var colorEl = document.getElementById('panelSettingPrimaryColor');
-            var colorVal = colorEl && /^#[0-9a-fA-F]{6}$/.test(colorEl.value) ? colorEl.value : null;
-            var themeEl = document.getElementById('panelSettingUiTheme');
-            var themeVal = (themeEl && themeEl.value && themeEl.value !== 'default') ? themeEl.value : '';
-            var fontSizeEl = document.getElementById('panelSettingFontSize');
-            var fontSizeVal = (fontSizeEl && ['small', 'medium', 'large'].indexOf(fontSizeEl.value) >= 0) ? fontSizeEl.value : 'medium';
-            var fontFamilyEl = document.getElementById('panelSettingFontFamily');
-            var fontFamilyVal = fontFamilyEl && fontFamilyEl.value.trim() ? fontFamilyEl.value.trim() : null;
-            var fontWeightEl = document.getElementById('panelSettingFontWeight');
-            var fontWeightVal = (fontWeightEl && ['normal', 'medium', 'bold'].indexOf(fontWeightEl.value) >= 0) ? fontWeightEl.value : 'normal';
+            const colorEl = document.getElementById('panelSettingPrimaryColor');
+            const colorVal = colorEl && /^#[0-9a-fA-F]{6}$/.test(colorEl.value) ? colorEl.value : null;
+            const themeEl = document.getElementById('panelSettingUiTheme');
+            const themeVal = (themeEl && themeEl.value && themeEl.value !== 'default') ? themeEl.value : '';
+            const fontSizeEl = document.getElementById('panelSettingFontSize');
+            const fontSizeVal = (fontSizeEl && ['small', 'medium', 'large'].indexOf(fontSizeEl.value) >= 0) ? fontSizeEl.value : 'medium';
+            const fontFamilyEl = document.getElementById('panelSettingFontFamily');
+            const fontFamilyVal = fontFamilyEl && fontFamilyEl.value.trim() ? fontFamilyEl.value.trim() : null;
+            const fontWeightEl = document.getElementById('panelSettingFontWeight');
+            const fontWeightVal = (fontWeightEl && ['normal', 'medium', 'bold'].indexOf(fontWeightEl.value) >= 0) ? fontWeightEl.value : 'normal';
             applyBranding({
                 primaryColor: colorVal,
                 uiTheme: themeVal || 'default',
@@ -7117,19 +7117,19 @@
         }
         function updatePanelLivePreview() {
             applyThemeFromForm();
-            var siteName = (document.getElementById('panelSettingSiteName') && document.getElementById('panelSettingSiteName').value.trim()) || (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
-            var pageTitle = (document.getElementById('panelSettingPageTitle') && document.getElementById('panelSettingPageTitle').value.trim()) || (LANG === 'fa' ? 'پورتال کارکنان | صرافی کایا' : 'Staff Portal | Kaya Exchange');
-            var footerText = (document.getElementById('panelSettingFooterText') && document.getElementById('panelSettingFooterText').value.trim()) || (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
-            var hideFooter = document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked;
-            var logoUrl = (document.getElementById('panelSettingLogoUrl') && document.getElementById('panelSettingLogoUrl').value.trim()) || '';
-            var faviconUrl = (document.getElementById('panelSettingFaviconUrl') && document.getElementById('panelSettingFaviconUrl').value.trim()) || '';
-            var titleEl = document.getElementById('panelPreviewPageTitle');
-            var siteNameEl = document.getElementById('panelPreviewSiteName');
-            var logoEl = document.getElementById('panelPreviewLogo');
-            var logoPlaceholder = document.getElementById('panelPreviewLogoPlaceholder');
-            var faviconEl = document.getElementById('panelPreviewFavicon');
-            var footerEl = document.getElementById('panelPreviewFooter');
-            var footerTextEl = document.getElementById('panelPreviewFooterText');
+            const siteName = (document.getElementById('panelSettingSiteName') && document.getElementById('panelSettingSiteName').value.trim()) || (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
+            const pageTitle = (document.getElementById('panelSettingPageTitle') && document.getElementById('panelSettingPageTitle').value.trim()) || (LANG === 'fa' ? 'پورتال کارکنان | صرافی کایا' : 'Staff Portal | Kaya Exchange');
+            const footerText = (document.getElementById('panelSettingFooterText') && document.getElementById('panelSettingFooterText').value.trim()) || (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
+            const hideFooter = document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked;
+            const logoUrl = (document.getElementById('panelSettingLogoUrl') && document.getElementById('panelSettingLogoUrl').value.trim()) || '';
+            const faviconUrl = (document.getElementById('panelSettingFaviconUrl') && document.getElementById('panelSettingFaviconUrl').value.trim()) || '';
+            const titleEl = document.getElementById('panelPreviewPageTitle');
+            const siteNameEl = document.getElementById('panelPreviewSiteName');
+            const logoEl = document.getElementById('panelPreviewLogo');
+            const logoPlaceholder = document.getElementById('panelPreviewLogoPlaceholder');
+            const faviconEl = document.getElementById('panelPreviewFavicon');
+            const footerEl = document.getElementById('panelPreviewFooter');
+            const footerTextEl = document.getElementById('panelPreviewFooterText');
             if (titleEl) titleEl.textContent = pageTitle;
             if (siteNameEl) siteNameEl.textContent = siteName;
             if (footerTextEl) footerTextEl.textContent = footerText;
@@ -7139,9 +7139,9 @@
             updatePanelSettingsHeaderBranding(logoUrl, faviconUrl);
         }
         function updatePanelSettingsHeaderBranding(logoUrl, faviconUrl) {
-            var logoEl = document.getElementById('panelSettingsHeaderLogo');
-            var faviconEl = document.getElementById('panelSettingsHeaderFavicon');
-            var fallbackEl = document.getElementById('panelSettingsHeaderIconFallback');
+            const logoEl = document.getElementById('panelSettingsHeaderLogo');
+            const faviconEl = document.getElementById('panelSettingsHeaderFavicon');
+            const fallbackEl = document.getElementById('panelSettingsHeaderIconFallback');
             if (!logoEl || !faviconEl || !fallbackEl) return;
             logoUrl = (logoUrl || '').trim();
             faviconUrl = (faviconUrl || '').trim();
@@ -7165,48 +7165,48 @@
             }
         }
         function updatePanelLanguageHint() {
-            var sel = document.getElementById('panelSettingLanguageMode');
-            var hint = document.getElementById('panelLanguageModeDesc');
+            const sel = document.getElementById('panelSettingLanguageMode');
+            const hint = document.getElementById('panelLanguageModeDesc');
             if (!sel || !hint) return;
-            var mode = sel.value;
-            var hints = { single: 'panel_language_hint_single', single_en: 'panel_language_hint_single_en', single_tr: 'panel_language_hint_single_tr', bilingual: 'panel_language_hint_bilingual', bilingual_fa_tr: 'panel_language_hint_bilingual_fa_tr', bilingual_en_tr: 'panel_language_hint_bilingual_en_tr', trilingual: 'panel_language_hint_trilingual' };
+            const mode = sel.value;
+            const hints = { single: 'panel_language_hint_single', single_en: 'panel_language_hint_single_en', single_tr: 'panel_language_hint_single_tr', bilingual: 'panel_language_hint_bilingual', bilingual_fa_tr: 'panel_language_hint_bilingual_fa_tr', bilingual_en_tr: 'panel_language_hint_bilingual_en_tr', trilingual: 'panel_language_hint_trilingual' };
             hint.textContent = t(hints[mode] || 'panel_language_hint_trilingual') !== (hints[mode] || 'panel_language_hint_trilingual') ? t(hints[mode] || 'panel_language_hint_trilingual') : '';
         }
         function toggleDefaultLanguageVisibility() {
-            var wrap = document.getElementById('panelDefaultLanguageWrap');
-            var sel = document.getElementById('panelSettingLanguageMode');
+            const wrap = document.getElementById('panelDefaultLanguageWrap');
+            const sel = document.getElementById('panelSettingLanguageMode');
             if (!wrap || !sel) return;
-            var multi = ['bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'].indexOf(sel.value) >= 0;
+            const multi = ['bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'].indexOf(sel.value) >= 0;
             wrap.style.display = multi ? 'block' : 'none';
         }
         function previewPanelLogo(url) {
-            var wrap = document.getElementById('panelLogoPreview');
-            var img = document.getElementById('panelLogoPreviewImg');
+            const wrap = document.getElementById('panelLogoPreview');
+            const img = document.getElementById('panelLogoPreviewImg');
             if (!wrap || !img) return;
             url = (url || '').trim();
             if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = ''; img.onerror = function() { img.style.display = 'none'; }; } else { wrap.style.display = 'none'; }
         }
         function previewPanelFavicon(url) {
-            var wrap = document.getElementById('panelFaviconPreview');
-            var img = document.getElementById('panelFaviconPreviewImg');
+            const wrap = document.getElementById('panelFaviconPreview');
+            const img = document.getElementById('panelFaviconPreviewImg');
             if (!wrap || !img) return;
             url = (url || '').trim();
             if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = ''; img.onerror = function() { img.style.display = 'none'; }; } else { wrap.style.display = 'none'; }
         }
         async function savePanelSettings() {
-            var btn = document.getElementById('panelSettingsSaveBtn');
-            var btnFooter = document.getElementById('panelSettingsSaveBtnFooter');
-            var statusEl = document.getElementById('panelSettingsSaveStatus');
-            var savingText = (LANG === 'fa' ? 'در حال ذخیره...' : LANG === 'tr' ? 'Kaydediliyor...' : 'Saving...');
+            const btn = document.getElementById('panelSettingsSaveBtn');
+            const btnFooter = document.getElementById('panelSettingsSaveBtnFooter');
+            const statusEl = document.getElementById('panelSettingsSaveStatus');
+            const savingText = (LANG === 'fa' ? 'در حال ذخیره...' : LANG === 'tr' ? 'Kaydediliyor...' : 'Saving...');
             if (btn) { btn.disabled = true; btn.textContent = savingText; }
             if (btnFooter) { btnFooter.disabled = true; btnFooter.textContent = savingText; }
             if (statusEl) { statusEl.style.display = 'none'; statusEl.className = 'panel-settings-save-status'; }
-            var get = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
-            var hiddenSections = [];
+            const get = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            const hiddenSections = [];
             document.querySelectorAll('#panelVisibilityToggles input[type="checkbox"][data-page]').forEach(function(cb) {
                 if (!cb.checked) hiddenSections.push(cb.dataset.page);
             });
-            var payload = {
+            const payload = {
                 siteName: get('panelSettingSiteName'),
                 logoUrl: get('panelSettingLogoUrl'),
                 faviconUrl: get('panelSettingFaviconUrl'),
@@ -7214,12 +7214,12 @@
                 pageTitle: get('panelSettingPageTitle'),
                 footerText: get('panelSettingFooterText'),
                 showFooter: !(document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked),
-                footerStyle: (function() { var el = document.getElementById('panelSettingFooterStyle'); var v = el ? el.value : 'accent'; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : 'accent'; })(),
-                primaryColor: (function() { var el = document.getElementById('panelSettingPrimaryColor'); var v = el ? el.value : ''; return /^#[0-9a-fA-F]{6}$/.test(v) ? v : null; })(),
+                footerStyle: (function() { const el = document.getElementById('panelSettingFooterStyle'); const v = el ? el.value : 'accent'; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : 'accent'; })(),
+                primaryColor: (function() { const el = document.getElementById('panelSettingPrimaryColor'); const v = el ? el.value : ''; return /^#[0-9a-fA-F]{6}$/.test(v) ? v : null; })(),
                 fontFamily: get('panelSettingFontFamily') || null,
-                fontSize: (function() { var el = document.getElementById('panelSettingFontSize'); var v = el ? el.value : 'medium'; return ['small', 'medium', 'large'].indexOf(v) >= 0 ? v : 'medium'; })(),
-                fontWeight: (function() { var el = document.getElementById('panelSettingFontWeight'); var v = el ? el.value : 'normal'; return ['normal', 'medium', 'bold'].indexOf(v) >= 0 ? v : 'normal'; })(),
-                uiTheme: (function() { var el = document.getElementById('panelSettingUiTheme'); var v = el ? el.value : 'default'; return ['default', 'minimal', 'dark', 'light', 'ocean', 'warm'].indexOf(v) >= 0 ? v : 'default'; })(),
+                fontSize: (function() { const el = document.getElementById('panelSettingFontSize'); const v = el ? el.value : 'medium'; return ['small', 'medium', 'large'].indexOf(v) >= 0 ? v : 'medium'; })(),
+                fontWeight: (function() { const el = document.getElementById('panelSettingFontWeight'); const v = el ? el.value : 'normal'; return ['normal', 'medium', 'bold'].indexOf(v) >= 0 ? v : 'normal'; })(),
+                uiTheme: (function() { const el = document.getElementById('panelSettingUiTheme'); const v = el ? el.value : 'default'; return ['default', 'minimal', 'dark', 'light', 'ocean', 'warm'].indexOf(v) >= 0 ? v : 'default'; })(),
                 sidebarOrder: getSidebarOrderFromForm(),
                 smtpHost: get('panelSettingSmtpHost'),
                 smtpPort: get('panelSettingSmtpPort'),
@@ -7231,21 +7231,21 @@
                 emailLoginNotification: !!(document.getElementById('panelSettingEmailLoginNotification') && document.getElementById('panelSettingEmailLoginNotification').checked),
                 hiddenSections: hiddenSections
             };
-            var langModeEl = document.getElementById('panelSettingLanguageMode');
-            var validModes = ['single', 'single_en', 'single_tr', 'bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'];
+            const langModeEl = document.getElementById('panelSettingLanguageMode');
+            const validModes = ['single', 'single_en', 'single_tr', 'bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'];
             payload.languageMode = (langModeEl && validModes.indexOf(langModeEl.value) >= 0) ? langModeEl.value : 'trilingual';
-            var defaultLangEl = document.getElementById('panelSettingDefaultLanguage');
+            const defaultLangEl = document.getElementById('panelSettingDefaultLanguage');
             if (defaultLangEl && (defaultLangEl.value === 'fa' || defaultLangEl.value === 'en' || defaultLangEl.value === 'tr')) payload.defaultLanguage = defaultLangEl.value;
-            var res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
-            var saveText = t('btn_save');
+            const res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
+            const saveText = t('btn_save');
             if (btn) { btn.disabled = false; btn.textContent = saveText; }
             if (btnFooter) { btnFooter.disabled = false; btnFooter.textContent = saveText; }
             if (res.ok && res.data) {
-                var savedFooterStyle = (function() { var el = document.getElementById('panelSettingFooterStyle'); var v = el ? el.value : ''; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : null; })();
+                const savedFooterStyle = (function() { const el = document.getElementById('panelSettingFooterStyle'); const v = el ? el.value : ''; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : null; })();
                 if (savedFooterStyle != null) res.data.footerStyle = savedFooterStyle;
                 applyBranding(res.data);
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
-                var mode = res.data.languageMode;
+                const mode = res.data.languageMode;
                 if (mode && window.applySupportedLanguages) window.applySupportedLanguages(mode === 'single' ? ['fa'] : mode === 'bilingual' ? ['fa', 'en'] : ['fa', 'en', 'tr']);
                 toast(t('saved'));
                 clearPanelSettingsChanged();
@@ -7256,17 +7256,17 @@
             }
         }
         async function sendPanelTestEmail() {
-            var toEl = document.getElementById('panelTestEmailTo');
-            var btn = document.getElementById('panelTestEmailBtn');
-            var statusEl = document.getElementById('panelTestEmailStatus');
-            var to = (toEl && toEl.value || '').trim();
+            const toEl = document.getElementById('panelTestEmailTo');
+            const btn = document.getElementById('panelTestEmailBtn');
+            const statusEl = document.getElementById('panelTestEmailStatus');
+            const to = (toEl && toEl.value || '').trim();
             if (!to) { toast(LANG === 'fa' ? 'آدرس ایمیل را وارد کنید.' : 'Enter email address.', true); return; }
             if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ارسال...' : 'Sending...'); }
             if (statusEl) { statusEl.style.display = 'none'; }
-            var get = function(id) { var el = document.getElementById(id); return el ? el.value.trim() : ''; };
-            var payload = { to: to };
-            var host = get('panelSettingSmtpHost');
-            var port = get('panelSettingSmtpPort');
+            const get = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            const payload = { to: to };
+            const host = get('panelSettingSmtpHost');
+            const port = get('panelSettingSmtpPort');
             if (host && port) {
                 payload.smtpHost = host;
                 payload.smtpPort = port;
@@ -7277,15 +7277,15 @@
                 payload.smtpSecure = !!(document.getElementById('panelSettingSmtpSecure') && document.getElementById('panelSettingSmtpSecure').checked);
             }
             try {
-                var ctrl = new AbortController();
-                var timeoutId = setTimeout(function() { ctrl.abort(); }, 35000);
-                var res = await apiFetch('/api/panel-settings/test-email', { method: 'POST', body: JSON.stringify(payload), signal: ctrl.signal });
+                const ctrl = new AbortController();
+                const timeoutId = setTimeout(function() { ctrl.abort(); }, 35000);
+                const res = await apiFetch('/api/panel-settings/test-email', { method: 'POST', body: JSON.stringify(payload), signal: ctrl.signal });
                 clearTimeout(timeoutId);
                 if (res.ok && res.data && res.data.ok) {
                     toast(res.data.message || (LANG === 'fa' ? 'ایمیل تست ارسال شد.' : 'Test email sent.'));
                     if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ارسال شد' : 'Sent'); statusEl.className = 'panel-test-email-status success'; statusEl.style.display = 'inline'; }
                     if (res.data.usedFallback) {
-                        var hostEl = document.getElementById('panelSettingSmtpHost');
+                        const hostEl = document.getElementById('panelSettingSmtpHost');
                         if (hostEl) { hostEl.value = res.data.usedFallback; markPanelSettingsChanged(); }
                     }
                 } else {
@@ -7293,27 +7293,27 @@
                     if (statusEl) { statusEl.textContent = (res.data && res.data.error) || ''; statusEl.className = 'panel-test-email-status error'; statusEl.style.display = 'inline'; }
                 }
             } catch (e) {
-                var errMsg = (e && e.name === 'AbortError') ? (LANG === 'fa' ? 'زمان اتصال به پایان رسید. Host یا پورت را بررسی کنید.' : 'Connection timed out. Check Host and Port.') : (e && e.message) || (LANG === 'fa' ? 'خطا در ارسال' : 'Send error');
+                const errMsg = (e && e.name === 'AbortError') ? (LANG === 'fa' ? 'زمان اتصال به پایان رسید. Host یا پورت را بررسی کنید.' : 'Connection timed out. Check Host and Port.') : (e && e.message) || (LANG === 'fa' ? 'خطا در ارسال' : 'Send error');
                 toast(errMsg, true);
                 if (statusEl) { statusEl.textContent = errMsg; statusEl.className = 'panel-test-email-status error'; statusEl.style.display = 'inline'; }
             }
             if (btn) { btn.disabled = false; btn.textContent = t('panel_test_email_btn'); }
         }
-        var VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
+        const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
         function applyHashRoute() {
             initSidebarCollapsedState();
-            var hash = (location.hash || '').replace(/^#/, '');
-            var page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() { try { var last = sessionStorage.getItem('crm_last_page'); return last && VALID_PAGES.indexOf(last) >= 0 ? last : 'dashboard'; } catch (_) { return 'dashboard'; } })();
+            const hash = (location.hash || '').replace(/^#/, '');
+            const page = VALID_PAGES.indexOf(hash) >= 0 ? hash : (function() { try { const last = sessionStorage.getItem('crm_last_page'); return last && VALID_PAGES.indexOf(last) >= 0 ? last : 'dashboard'; } catch (_) { return 'dashboard'; } })();
             showPage(page);
         }
-        function toggleSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s && s.classList.contains('sidebar-open')) { closeSidebarMobile(); } else { if (s) s.classList.add('sidebar-open'); if (o) { o.classList.add('show'); o.style.display = 'block'; document.body.style.overflow = 'hidden'; } if (btn) btn.setAttribute('aria-expanded', 'true'); } }
-        function closeSidebarMobile() { var s = document.getElementById('sidebar'); var o = document.getElementById('sidebarOverlay'); var btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
-        function toggleSidebarDesktop() { var s = document.getElementById('sidebar'); var btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; var collapsed = s.classList.toggle('sidebar-collapsed'); try { localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0'); } catch (_) {} btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true'); btn.setAttribute('aria-label', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); btn.setAttribute('title', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = collapsed ? t('sidebar_toggle_expand') : t('sidebar_toggle_collapse'); }
-        function initSidebarCollapsedState() { var s = document.getElementById('sidebar'); var btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; var collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
+        function toggleSidebarMobile() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); const btn = document.getElementById('headerMenuBtn'); if (s && s.classList.contains('sidebar-open')) { closeSidebarMobile(); } else { if (s) s.classList.add('sidebar-open'); if (o) { o.classList.add('show'); o.style.display = 'block'; document.body.style.overflow = 'hidden'; } if (btn) btn.setAttribute('aria-expanded', 'true'); } }
+        function closeSidebarMobile() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); const btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
+        function toggleSidebarDesktop() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; const collapsed = s.classList.toggle('sidebar-collapsed'); try { localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0'); } catch (_) {} btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true'); btn.setAttribute('aria-label', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); btn.setAttribute('title', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); const txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = collapsed ? t('sidebar_toggle_expand') : t('sidebar_toggle_collapse'); }
+        function initSidebarCollapsedState() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; let collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
         function showPage(page) {
-            var perms = (currentUser && currentUser.permissions) || {};
-            var pageToSection = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TO_SECTION : {};
-            var section = pageToSection[page];
+            const perms = (currentUser && currentUser.permissions) || {};
+            const pageToSection = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TO_SECTION : {};
+            const section = pageToSection[page];
             if (section && page !== 'profile' && page !== 'dashboard' && perms[section] !== true) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
@@ -7321,23 +7321,23 @@
             if (qrRefreshInterval && page !== 'whatsapp') { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             if (page && window.location.hash !== '#' + page) { var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#' + page); } catch (e) {} }
             try { sessionStorage.setItem('crm_last_page', page); } catch (_) {}
-            var navLinks = document.querySelectorAll('.sidebar .nav-link[data-page]');
+            const navLinks = document.querySelectorAll('.sidebar .nav-link[data-page]');
             navLinks.forEach(function(l) { l.classList.remove('active'); });
             navLinks.forEach(function(l) { if (l.getAttribute('data-page') === page) l.classList.add('active'); });
             updateMobileTabBar(page);
-            var pageTitles = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TITLES : {};
-            var titleKey = pageTitles[page] || 'nav_dashboard';
-            var titleText = t(titleKey);
-            var pt = document.getElementById('headerPageTitle');
-            var pb = document.getElementById('headerBreadcrumb');
-            var pm = document.getElementById('headerMobileTitle');
+            const pageTitles = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TITLES : {};
+            const titleKey = pageTitles[page] || 'nav_dashboard';
+            const titleText = t(titleKey);
+            const pt = document.getElementById('headerPageTitle');
+            const pb = document.getElementById('headerBreadcrumb');
+            const pm = document.getElementById('headerMobileTitle');
             if (pt) { pt.textContent = titleText; pt.setAttribute('data-i18n', titleKey); }
             if (pb) pb.textContent = titleText;
             if (pm) pm.textContent = titleText;
             document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
-            var ids = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_IDS : {};
-            if (ids[page]) { var el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations' || page === 'internal-chat') ? 'flex' : 'block'; el.classList.add('show'); } }
-            var content = document.querySelector('.content');
+            const ids = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_IDS : {};
+            if (ids[page]) { const el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations' || page === 'internal-chat') ? 'flex' : 'block'; el.classList.add('show'); } }
+            const content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
             if (page === 'dashboard') loadDashboard();
             if (page === 'conversations') { 
@@ -7352,7 +7352,7 @@
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
             if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }
             if (page === 'tickets') { loadTicketFiltersInit(); loadTickets(); }
-            if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); var ta = document.getElementById('taskAssignType'); if (ta && !ta._bound) { ta._bound = true; ta.addEventListener('change', toggleTaskAssignTarget); } }
+            if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); const ta = document.getElementById('taskAssignType'); if (ta && !ta._bound) { ta._bound = true; ta.addEventListener('change', toggleTaskAssignTarget); } }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
             if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); loadWhatsappStats(); }
             if (page === 'message-templates') { initMessageTemplatesTabs(); loadMessageTemplates(); }
@@ -7378,15 +7378,15 @@
                 }, 100);
             }
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
-            if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); var popupTid = currentInternalThreadId; closeInternalChatPopup(); var wrap = document.getElementById('internalChatLayoutWrap'); if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open'); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
+            if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); const popupTid = currentInternalThreadId; closeInternalChatPopup(); var wrap = document.getElementById('internalChatLayoutWrap'); if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open'); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
             if (page === 'supervision') { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
             if (page === 'panel-settings') loadPanelSettings();
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (prevPage === 'internal-chat' && page !== 'internal-chat' && currentInternalThreadId) {
-                var headerEl = document.getElementById('internalChatHeader');
-                var name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');
+                const headerEl = document.getElementById('internalChatHeader');
+                const name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');
                 showInternalChatPopup(currentInternalThreadId, name);
-                var pane = document.getElementById('internalChatPane');
+                const pane = document.getElementById('internalChatPane');
                 if (pane) pane.style.display = 'none';
                 var wrap = document.getElementById('internalChatLayoutWrap');
                 if (wrap) wrap.classList.remove('internal-chat-has-chat', 'internal-chat-mobile-chat-open');
@@ -7395,63 +7395,63 @@
         }
 
         function toggleTicketForm() {
-            var box = document.getElementById('ticketFormBox');
+            const box = document.getElementById('ticketFormBox');
             if (box.style.display === 'none') { box.style.display = 'block'; loadTicketFormSelects(); } else { box.style.display = 'none'; }
         }
         async function loadTicketFiltersInit() {
             await loadTicketFormSelects();
-            var res = await apiFetch('/api/departments');
+            const res = await apiFetch('/api/departments');
             if (res.ok && res.data && res.data.data) {
-                var sel = document.getElementById('ticketFilterDept');
+                const sel = document.getElementById('ticketFilterDept');
                 if (sel) sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه دپارتمان‌ها' : 'All depts') + '</option>' + res.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
             }
         }
         async function loadTicketFormSelects() {
-            var res = await apiFetch('/api/users');
+            const res = await apiFetch('/api/users');
             if (!res.ok || !res.data || !res.data.data) return;
-            var users = res.data.data;
-            var unassOpt = '<option value="">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
-            var anyOpt = '<option value="">' + (LANG === 'fa' ? 'هر مسئول' : 'Any') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
-            var a1 = document.getElementById('ticketAssignee'); if (a1) a1.innerHTML = unassOpt;
-            var a2 = document.getElementById('ticketFilterAssignee'); if (a2) a2.innerHTML = anyOpt;
-            var a3 = document.getElementById('ticketDetailAssignee'); if (a3) a3.innerHTML = unassOpt;
-            var deptRes = await apiFetch('/api/departments');
+            const users = res.data.data;
+            const unassOpt = '<option value="">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            const anyOpt = '<option value="">' + (LANG === 'fa' ? 'هر مسئول' : 'Any') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            const a1 = document.getElementById('ticketAssignee'); if (a1) a1.innerHTML = unassOpt;
+            const a2 = document.getElementById('ticketFilterAssignee'); if (a2) a2.innerHTML = anyOpt;
+            const a3 = document.getElementById('ticketDetailAssignee'); if (a3) a3.innerHTML = unassOpt;
+            const deptRes = await apiFetch('/api/departments');
             if (deptRes.ok && deptRes.data && deptRes.data.data) {
-                var deptOpt = '<option value="">' + (LANG === 'fa' ? 'بدون دپارتمان' : 'No dept') + '</option>' + deptRes.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
-                var td = document.getElementById('ticketDept'); if (td) td.innerHTML = deptOpt;
+                const deptOpt = '<option value="">' + (LANG === 'fa' ? 'بدون دپارتمان' : 'No dept') + '</option>' + deptRes.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+                const td = document.getElementById('ticketDept'); if (td) td.innerHTML = deptOpt;
             }
         }
         function applyTicketFilters() { loadTickets(); }
         async function loadTickets() {
-            var list = document.getElementById('ticketList');
-            var statsEl = document.getElementById('ticketStats');
+            const list = document.getElementById('ticketList');
+            const statsEl = document.getElementById('ticketStats');
             if (!list) return;
             setLoading('ticketList', 4);
-            var q = '?limit=50';
-            var s = document.getElementById('ticketFilterStatus'); if (s && s.value) q += '&status=' + encodeURIComponent(s.value);
-            var p = document.getElementById('ticketFilterPriority'); if (p && p.value) q += '&priority=' + encodeURIComponent(p.value);
-            var a = document.getElementById('ticketFilterAssignee'); if (a && a.value) q += '&assignedTo=' + encodeURIComponent(a.value);
-            var d = document.getElementById('ticketFilterDept'); if (d && d.value) q += '&departmentId=' + encodeURIComponent(d.value);
-            var search = document.getElementById('ticketSearch'); if (search && search.value.trim()) q += '&search=' + encodeURIComponent(search.value.trim());
-            var sortEl = document.getElementById('ticketFilterSort'); if (sortEl && sortEl.value) q += '&sort=' + encodeURIComponent(sortEl.value);
+            let q = '?limit=50';
+            const s = document.getElementById('ticketFilterStatus'); if (s && s.value) q += '&status=' + encodeURIComponent(s.value);
+            const p = document.getElementById('ticketFilterPriority'); if (p && p.value) q += '&priority=' + encodeURIComponent(p.value);
+            const a = document.getElementById('ticketFilterAssignee'); if (a && a.value) q += '&assignedTo=' + encodeURIComponent(a.value);
+            const d = document.getElementById('ticketFilterDept'); if (d && d.value) q += '&departmentId=' + encodeURIComponent(d.value);
+            const search = document.getElementById('ticketSearch'); if (search && search.value.trim()) q += '&search=' + encodeURIComponent(search.value.trim());
+            const sortEl = document.getElementById('ticketFilterSort'); if (sortEl && sortEl.value) q += '&sort=' + encodeURIComponent(sortEl.value);
             try {
-                var res = await apiFetch('/api/tickets' + q);
-                var statsRes = await apiFetch('/api/tickets/stats');
+                const res = await apiFetch('/api/tickets' + q);
+                const statsRes = await apiFetch('/api/tickets/stats');
                 if (res.needLogin) return;
                 if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-                var data = res.data;
+                const data = res.data;
                 if (!data) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
-                var rows = Array.isArray(data.data) ? data.data : (Array.isArray(data.rows) ? data.rows : []);
-                var stats;
+                const rows = Array.isArray(data.data) ? data.data : (Array.isArray(data.rows) ? data.rows : []);
+                let stats;
                 if (statsRes.ok && statsRes.data) { stats = statsRes.data; } else { stats = { total: data.total || rows.length || 0, open: 0, in_progress: 0, resolved: 0, closed: 0 }; rows.forEach(function(x){ if (stats[x.status] !== undefined) stats[x.status]++; }); }
                 if (statsEl) {
-                    var archCount = stats.archived || 0;
+                    const archCount = stats.archived || 0;
                     statsEl.innerHTML = '<div class="ticket-stat-card"><div class="ticket-stat-val">' + (stats.total || 0) + '</div><div class="ticket-stat-label">' + (LANG === 'fa' ? 'کل' : 'Total') + '</div></div><div class="ticket-stat-card ticket-stat-open"><div class="ticket-stat-val">' + (stats.open || 0) + '</div><div class="ticket-stat-label">' + t('status_open') + '</div></div><div class="ticket-stat-card ticket-stat-progress"><div class="ticket-stat-val">' + (stats.in_progress || 0) + '</div><div class="ticket-stat-label">' + t('status_in_progress') + '</div></div><div class="ticket-stat-card ticket-stat-resolved"><div class="ticket-stat-val">' + (stats.resolved || 0) + '</div><div class="ticket-stat-label">' + t('status_resolved') + '</div></div><div class="ticket-stat-card ticket-stat-closed"><div class="ticket-stat-val">' + (stats.closed || 0) + '</div><div class="ticket-stat-label">' + t('status_closed') + '</div></div><div class="ticket-stat-card ticket-stat-archived"><div class="ticket-stat-val">' + archCount + '</div><div class="ticket-stat-label">' + t('status_archived') + '</div></div>';
                     statsEl.style.display = 'grid';
                 }
                 if (rows.length === 0) { list.innerHTML = '<div class="empty ticket-list-empty"><span class="empty-icon">🎫</span><p>' + t('empty_tickets') + '</p><button type="button" class="btn-primary" id="emptyTicketCreateBtn" style="margin-top:12px;">' + t('create_ticket') + '</button></div>'; 
                     setTimeout(function() {
-                        var emptyBtn = document.getElementById('emptyTicketCreateBtn');
+                        const emptyBtn = document.getElementById('emptyTicketCreateBtn');
                         if (emptyBtn) {
                             emptyBtn.removeEventListener('click', toggleTicketForm);
                             emptyBtn.addEventListener('click', toggleTicketForm);
@@ -7460,14 +7460,14 @@
                     return; 
                 }
                 list.innerHTML = rows.map(function(tk) {
-                    var statusLabel = tk.status === 'open' ? t('status_open') : tk.status === 'in_progress' ? t('status_in_progress') : tk.status === 'resolved' ? t('status_resolved') : tk.status === 'closed' ? t('status_closed') : tk.status === 'archived' ? t('status_archived') : tk.status || '';
-                    var prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[tk.priority] || tk.priority || '';
-                    var assign = userDisplay(tk.assignee);
-                    var dept = (tk.department && tk.department.name) ? tk.department.name : '';
-                    var createdStr = tk.createdAt ? (fmtTZ ? fmtTZ(tk.createdAt, 'datetime') : tk.createdAt) : '';
-                    var meta = [createdStr, userDisplay(tk.creator), assign, dept].filter(Boolean).join(' · ');
-                    var num = (tk.ticketNumber || '').trim();
-                    var numHtml = num ? '<span class="ticket-number">' + escapeHtml(num) + '</span> ' : '';
+                    const statusLabel = tk.status === 'open' ? t('status_open') : tk.status === 'in_progress' ? t('status_in_progress') : tk.status === 'resolved' ? t('status_resolved') : tk.status === 'closed' ? t('status_closed') : tk.status === 'archived' ? t('status_archived') : tk.status || '';
+                    const prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[tk.priority] || tk.priority || '';
+                    const assign = userDisplay(tk.assignee);
+                    const dept = (tk.department && tk.department.name) ? tk.department.name : '';
+                    const createdStr = tk.createdAt ? (fmtTZ ? fmtTZ(tk.createdAt, 'datetime') : tk.createdAt) : '';
+                    const meta = [createdStr, userDisplay(tk.creator), assign, dept].filter(Boolean).join(' · ');
+                    const num = (tk.ticketNumber || '').trim();
+                    const numHtml = num ? '<span class="ticket-number">' + escapeHtml(num) + '</span> ' : '';
                     return '<div class="ticket-card" onclick="loadTicketDetail(\'' + (tk.id || '').replace(/'/g, "\\'") + '\')"><div class="ticket-card-body">' + numHtml + '<span class="ticket-card-title">' + escapeHtml(tk.title || '') + '</span><div class="ticket-card-meta">' + escapeHtml(meta) + '</div></div><div class="ticket-card-badges"><span class="ticket-badge ticket-badge-prio ' + (tk.priority || '') + '">' + escapeHtml(prioLabel) + '</span><span class="ticket-badge ticket-badge-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span></div></div>';
                 }).join('');
             } catch (e) {
@@ -7485,16 +7485,16 @@
             loadTickets();
         }
         function canManageTickets() { return !!(currentUser && (currentUser.canManageTickets === true || (currentUser.permissions && currentUser.permissions.manage_tickets === true))); }
-        var ticketEditMode = false;
+        let ticketEditMode = false;
         function toggleTicketEditMode() {
             ticketEditMode = !ticketEditMode;
-            var titleEl = document.getElementById('ticketDetailTitle');
-            var titleEdit = document.getElementById('ticketDetailTitleEdit');
-            var titleInput = document.getElementById('ticketDetailTitleInput');
-            var descEl = document.getElementById('ticketDetailDesc');
-            var descEdit = document.getElementById('ticketDetailDescEdit');
-            var descInput = document.getElementById('ticketDetailDescInput');
-            var editBtn = document.getElementById('ticketEditBtn');
+            const titleEl = document.getElementById('ticketDetailTitle');
+            const titleEdit = document.getElementById('ticketDetailTitleEdit');
+            const titleInput = document.getElementById('ticketDetailTitleInput');
+            const descEl = document.getElementById('ticketDetailDesc');
+            const descEdit = document.getElementById('ticketDetailDescEdit');
+            const descInput = document.getElementById('ticketDetailDescInput');
+            const editBtn = document.getElementById('ticketEditBtn');
             if (ticketEditMode) {
                 if (titleEl) titleEl.style.display = 'none';
                 if (titleEdit) titleEdit.style.display = 'block';
@@ -7513,20 +7513,20 @@
         }
         async function updateTicketFromDetail() {
             if (!currentTicketId) return;
-            var statusSel = document.getElementById('ticketDetailStatus');
-            var assigneeSel = document.getElementById('ticketDetailAssignee');
-            var prioritySel = document.getElementById('ticketDetailPriority');
-            var dueInp = document.getElementById('ticketDetailDueDate');
-            var titleInput = document.getElementById('ticketDetailTitleInput');
-            var descInput = document.getElementById('ticketDetailDescInput');
-            var body = {};
+            const statusSel = document.getElementById('ticketDetailStatus');
+            const assigneeSel = document.getElementById('ticketDetailAssignee');
+            const prioritySel = document.getElementById('ticketDetailPriority');
+            const dueInp = document.getElementById('ticketDetailDueDate');
+            const titleInput = document.getElementById('ticketDetailTitleInput');
+            const descInput = document.getElementById('ticketDetailDescInput');
+            const body = {};
             if (statusSel) body.status = statusSel.value;
             if (assigneeSel) body.assignedTo = assigneeSel.value || null;
             if (prioritySel) body.priority = prioritySel.value;
             if (dueInp) body.dueDate = dueInp.value ? dueInp.value : null;
             if (ticketEditMode && titleInput) { body.title = titleInput.value.trim(); if (!body.title) { toast(t('ticket_title_required') || (LANG === 'fa' ? 'عنوان الزامی است' : 'Title required'), true); return; } }
             if (ticketEditMode && descInput !== undefined) body.description = descInput.value || '';
-            var res = await apiFetch('/api/tickets/' + currentTicketId, { method: 'PUT', body: JSON.stringify(body) });
+            const res = await apiFetch('/api/tickets/' + currentTicketId, { method: 'PUT', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { if (ticketEditMode) { ticketEditMode = false; toggleTicketEditMode(); } toast(t('btn_save')); loadTicketDetail(currentTicketId); loadTickets(); } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
@@ -7540,12 +7540,12 @@
             deleteTicket(currentTicketId);
         }
         async function updateTicketStatus(id, status) {
-            var res = await apiFetch('/api/tickets/' + id, { method: 'PUT', body: JSON.stringify({ status: status }) });
+            const res = await apiFetch('/api/tickets/' + id, { method: 'PUT', body: JSON.stringify({ status: status }) });
             if (res.needLogin) return;
             if (res.ok) { toast(LANG === 'fa' ? 'تیکت به آرشیو ارسال شد' : 'Ticket archived'); loadTicketDetail(currentTicketId); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function deleteTicket(id) {
-            var res = await apiFetch('/api/tickets/' + id, { method: 'DELETE' });
+            const res = await apiFetch('/api/tickets/' + id, { method: 'DELETE' });
             if (res.needLogin) return;
             if (res.ok) { toast(LANG === 'fa' ? 'تیکت حذف شد' : 'Ticket deleted'); showTicketList(); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
@@ -7554,50 +7554,50 @@
             ticketEditMode = false;
             document.getElementById('ticketList').style.display = 'none';
             document.getElementById('ticketDetail').style.display = 'block';
-            var titleEdit = document.getElementById('ticketDetailTitleEdit');
-            var descEdit = document.getElementById('ticketDetailDescEdit');
+            const titleEdit = document.getElementById('ticketDetailTitleEdit');
+            const descEdit = document.getElementById('ticketDetailDescEdit');
             if (titleEdit) titleEdit.style.display = 'none';
             if (descEdit) descEdit.style.display = 'none';
-            var titleEl = document.getElementById('ticketDetailTitle');
+            const titleEl = document.getElementById('ticketDetailTitle');
             if (titleEl) titleEl.style.display = '';
-            var editBtn = document.getElementById('ticketEditBtn');
+            const editBtn = document.getElementById('ticketEditBtn');
             if (editBtn) { editBtn.textContent = t('btn_edit') || (LANG === 'fa' ? 'ویرایش' : 'Edit'); editBtn.style.display = canManageTickets() ? '' : 'none'; }
-            var delBtn = document.getElementById('ticketDeleteBtn');
-            var archBtn = document.getElementById('ticketArchiveBtn');
+            const delBtn = document.getElementById('ticketDeleteBtn');
+            const archBtn = document.getElementById('ticketArchiveBtn');
             if (delBtn) delBtn.style.display = canManageTickets() ? '' : 'none';
             if (archBtn) archBtn.style.display = canManageTickets() ? '' : 'none';
-            var res = await apiFetch('/api/tickets/' + id);
+            const res = await apiFetch('/api/tickets/' + id);
             if (res.needLogin) return;
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showTicketList(); return; }
             var t = res.data;
-            var numEl = document.getElementById('ticketDetailNumber');
+            const numEl = document.getElementById('ticketDetailNumber');
             if (numEl) numEl.textContent = (t.ticketNumber || '').trim() || '';
             document.getElementById('ticketDetailTitle').textContent = t.title || '';
-            var statusLabel = t.status === 'open' ? t('status_open') : t.status === 'in_progress' ? t('status_in_progress') : t.status === 'resolved' ? t('status_resolved') : t.status === 'closed' ? t('status_closed') : t.status === 'archived' ? t('status_archived') : t.status || '';
-            var prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[t.priority] || t.priority || '';
-            var createdStr = t.createdAt ? (fmtTZ ? fmtTZ(t.createdAt, 'datetime') : t.createdAt) : '';
-            var metaParts = [(LANG === 'fa' ? 'تاریخ ثبت: ' : 'Created: ') + createdStr, t('creator_label') + ' ' + userDisplay(t.creator), t('assignee_label') + ' ' + userDisplay(t.assignee), t('th_status') + ': ' + statusLabel, t('ticket_priority') + ': ' + prioLabel];
+            const statusLabel = t.status === 'open' ? t('status_open') : t.status === 'in_progress' ? t('status_in_progress') : t.status === 'resolved' ? t('status_resolved') : t.status === 'closed' ? t('status_closed') : t.status === 'archived' ? t('status_archived') : t.status || '';
+            const prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[t.priority] || t.priority || '';
+            const createdStr = t.createdAt ? (fmtTZ ? fmtTZ(t.createdAt, 'datetime') : t.createdAt) : '';
+            const metaParts = [(LANG === 'fa' ? 'تاریخ ثبت: ' : 'Created: ') + createdStr, t('creator_label') + ' ' + userDisplay(t.creator), t('assignee_label') + ' ' + userDisplay(t.assignee), t('th_status') + ': ' + statusLabel, t('ticket_priority') + ': ' + prioLabel];
             if (t.department && t.department.name) metaParts.push((t('label_dept') || 'دپارتمان') + ': ' + t.department.name);
             if (t.dueDate) metaParts.push(t('due_label') + ' ' + (fmtTZ ? fmtTZ(t.dueDate, 'date') : t.dueDate));
             document.getElementById('ticketDetailMeta').textContent = metaParts.join(' | ');
-            var descEl = document.getElementById('ticketDetailDesc');
+            const descEl = document.getElementById('ticketDetailDesc');
             if (descEl) { descEl.textContent = (t.description || '').trim(); descEl.style.display = (t.description || '').trim() ? '' : 'none'; }
-            var overdueEl = document.getElementById('ticketDetailOverdue');
+            const overdueEl = document.getElementById('ticketDetailOverdue');
             if (overdueEl) {
-                var due = t.dueDate;
-                var isOverdue = due && ['open','in_progress'].indexOf(t.status) >= 0 && new Date(due) < new Date();
+                const due = t.dueDate;
+                const isOverdue = due && ['open','in_progress'].indexOf(t.status) >= 0 && new Date(due) < new Date();
                 overdueEl.style.display = isOverdue ? '' : 'none';
             }
-            var statusSel = document.getElementById('ticketDetailStatus');
-            var assigneeSel = document.getElementById('ticketDetailAssignee');
-            var prioritySel = document.getElementById('ticketDetailPriority');
-            var dueInp = document.getElementById('ticketDetailDueDate');
+            const statusSel = document.getElementById('ticketDetailStatus');
+            const assigneeSel = document.getElementById('ticketDetailAssignee');
+            const prioritySel = document.getElementById('ticketDetailPriority');
+            const dueInp = document.getElementById('ticketDetailDueDate');
             if (statusSel) statusSel.value = t.status || 'open';
             if (assigneeSel) { await loadTicketFormSelects(); assigneeSel.value = t.assignedTo || ''; }
             if (prioritySel) prioritySel.value = t.priority || 'normal';
-            if (dueInp && t.dueDate) { var d = new Date(t.dueDate); dueInp.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); } else if (dueInp) dueInp.value = '';
-            var repliesHtml = (t.replies || []).map(function(r) {
-                var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
+            if (dueInp && t.dueDate) { const d = new Date(t.dueDate); dueInp.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); } else if (dueInp) dueInp.value = '';
+            const repliesHtml = (t.replies || []).map(function(r) {
+                const att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
                 return '<div class="ticket-reply-msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '"><div class="ticket-reply-content">' + escapeHtml(r.content || '') + '</div>' + att + '<div class="ticket-reply-meta">' + userDisplay(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('ticketReplies').innerHTML = repliesHtml || '<p class="ticket-no-replies text-muted">' + t('no_reply') + '</p>';
@@ -7607,76 +7607,76 @@
         }
         async function submitTicketReply() {
             if (!currentTicketId) return;
-            var content = (document.getElementById('ticketReplyContent') && document.getElementById('ticketReplyContent').value) || '';
-            var fileInput = document.getElementById('ticketReplyFile');
-            var attachments = [];
+            const content = (document.getElementById('ticketReplyContent') && document.getElementById('ticketReplyContent').value) || '';
+            const fileInput = document.getElementById('ticketReplyFile');
+            const attachments = [];
             if (fileInput && fileInput.files && fileInput.files[0]) {
-                var formData = new FormData();
+                const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-                var up = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-                var upData = await up.json().catch(function() { return {}; });
+                const up = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                const upData = await up.json().catch(function() { return {}; });
                 if (!up.ok || !upData.url) { toast((upData.error || (LANG === 'fa' ? 'خطا در آپلود فایل' : 'Upload failed')), true); return; }
                 attachments.push({ url: upData.url, name: upData.name || (t('file') || 'فایل'), size: upData.size });
             }
             if (!content.trim() && attachments.length === 0) { toast(t('reply_or_file_required'), true); return; }
-            var res = await apiFetch('/api/tickets/' + currentTicketId + '/replies', { method: 'POST', body: JSON.stringify({ content: content.trim() || (LANG === 'fa' ? '(پیوست)' : '(Attachment)'), attachments: attachments }) });
+            const res = await apiFetch('/api/tickets/' + currentTicketId + '/replies', { method: 'POST', body: JSON.stringify({ content: content.trim() || (LANG === 'fa' ? '(پیوست)' : '(Attachment)'), attachments: attachments }) });
             if (res.needLogin) return;
-            if (res.ok) { toast(t('toast_reply_sent')); loadTicketDetail(currentTicketId); if (fileInput) fileInput.value = ''; var attEl = document.getElementById('ticketReplyAttachments'); if (attEl) attEl.textContent = ''; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { toast(t('toast_reply_sent')); loadTicketDetail(currentTicketId); if (fileInput) fileInput.value = ''; const attEl = document.getElementById('ticketReplyAttachments'); if (attEl) attEl.textContent = ''; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
-        var currentTaskId = null;
-        var taskQuickTab = 'all';
+        let currentTaskId = null;
+        let taskQuickTab = 'all';
         function setTaskQuickTab(tab) {
             taskQuickTab = tab || 'all';
-            var tabs = document.querySelectorAll('.task-quick-tabs .task-tab');
+            const tabs = document.querySelectorAll('.task-quick-tabs .task-tab');
             if (tabs) tabs.forEach(function(btn) { btn.classList.toggle('active', (btn.getAttribute('data-tab') || '') === taskQuickTab); });
-            var statusSel = document.getElementById('taskFilterStatus');
+            const statusSel = document.getElementById('taskFilterStatus');
             if (statusSel) statusSel.value = (tab === 'all' ? '' : tab);
             loadTasks();
         }
         function taskStatusLabel(s) { return { pending: t('status_pending'), in_progress: t('status_in_progress'), done: t('status_done'), cancelled: t('status_cancelled') }[s] || s; }
         function taskPriorityLabel(s) { return { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[s] || s; }
         function toggleTaskForm() {
-            var box = document.getElementById('taskFormBox');
-            var btn = document.getElementById('btnTaskCreate');
+            const box = document.getElementById('taskFormBox');
+            const btn = document.getElementById('btnTaskCreate');
             if (box && btn) {
-                var show = box.style.display !== 'block';
+                const show = box.style.display !== 'block';
                 box.style.display = show ? 'block' : 'none';
                 btn.textContent = show ? (t('cancel') || (LANG === 'fa' ? 'انصراف' : 'Cancel')) : (t('new_task') || (LANG === 'fa' ? 'تسک جدید' : 'New task'));
                 if (show) { toggleTaskAssignTarget(); }
             }
         }
         function toggleTaskAssignTarget() {
-            var typeSel = document.getElementById('taskAssignType');
-            var userSel = document.getElementById('taskAssignUser');
-            var deptSel = document.getElementById('taskAssignDept');
-            var isUser = typeSel && typeSel.value === 'user';
+            const typeSel = document.getElementById('taskAssignType');
+            const userSel = document.getElementById('taskAssignUser');
+            const deptSel = document.getElementById('taskAssignDept');
+            const isUser = typeSel && typeSel.value === 'user';
             if (userSel) userSel.style.display = isUser ? '' : 'none';
             if (deptSel) deptSel.style.display = isUser ? 'none' : '';
         }
         function loadTasksFilters() {
-            var userSel = document.getElementById('taskAssignUser');
-            var deptSel = document.getElementById('taskAssignDept');
-            var branchSel = document.getElementById('taskBranch');
+            const userSel = document.getElementById('taskAssignUser');
+            const deptSel = document.getElementById('taskAssignDept');
+            const branchSel = document.getElementById('taskBranch');
             Promise.all([apiFetch('/api/users'), apiFetch('/api/departments'), apiFetch('/api/branches')]).then(function(ress) {
-                var users = (ress[0].data && ress[0].data.data) || [];
-                var depts = (ress[1].data && ress[1].data.data) || [];
-                var branches = (ress[2].data && ress[2].data.data) || [];
-                var activeUsers = users.filter(function(u){ return u.isActive !== false; });
+                const users = (ress[0].data && ress[0].data.data) || [];
+                const depts = (ress[1].data && ress[1].data.data) || [];
+                const branches = (ress[2].data && ress[2].data.data) || [];
+                const activeUsers = users.filter(function(u){ return u.isActive !== false; });
                 if (userSel) userSel.innerHTML = '<option value="">' + t('select_user_task') + '</option>' + activeUsers.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
                 if (deptSel) deptSel.innerHTML = '<option value="">' + t('select_dept') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
                 if (branchSel) branchSel.innerHTML = '<option value="">' + t('no_branch') + '</option>' + branches.map(function(b){ return '<option value="' + b.id + '">' + escapeHtml(b.name || '') + '</option>'; }).join('');
-                var filterDept = document.getElementById('taskFilterDept');
-                var filterUser = document.getElementById('taskFilterUser');
-                var myDeptOpt = (currentUser && currentUser.departmentId) ? '<option value="__my_dept__">' + (LANG === 'fa' ? 'دپارتمان من' : 'My department') + '</option>' : '';
+                const filterDept = document.getElementById('taskFilterDept');
+                const filterUser = document.getElementById('taskFilterUser');
+                const myDeptOpt = (currentUser && currentUser.departmentId) ? '<option value="__my_dept__">' + (LANG === 'fa' ? 'دپارتمان من' : 'My department') + '</option>' : '';
                 if (filterDept) filterDept.innerHTML = '<option value="">' + t('all_depts') + '</option>' + myDeptOpt + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
                 if (filterUser) filterUser.innerHTML = '<option value="">' + t('filter_all_users') + '</option>' + activeUsers.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
-                var filterBranch = document.getElementById('taskFilterBranch');
+                const filterBranch = document.getElementById('taskFilterBranch');
                 if (filterBranch) filterBranch.innerHTML = '<option value="">' + t('all_branches') + '</option>' + branches.map(function(b){ return '<option value="' + b.id + '">' + escapeHtml(b.name || '') + '</option>'; }).join('');
             });
         }
         function initTaskSearchDebounce() {
-            var inp = document.getElementById('taskSearch');
+            const inp = document.getElementById('taskSearch');
             if (inp && !inp._taskSearchBound) {
                 inp._taskSearchBound = true;
                 inp.addEventListener('input', function() {
@@ -7685,48 +7685,48 @@
                 });
             }
         }
-        var taskListPage = 1;
-        var taskListTotal = 0;
+        let taskListPage = 1;
+        let taskListTotal = 0;
         function renderTaskItem(task) {
-            var assign = task.assignedToDepartmentId && task.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(task.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(task.assignee) || '\u2014';
-            var due = task.dueDate ? fmtTZ(task.dueDate, 'date') : '';
-            var isOverdue = task.dueDate && (task.status === 'pending' || task.status === 'in_progress') && new Date(task.dueDate) < new Date();
-            var overdueBadge = isOverdue ? '<span class="badge overdue" title="' + (t('overdue') || 'مهلت گذشته') + '">' + (t('overdue') || 'مهلت گذشته') + '</span>' : '';
-            var prioBadge = task.priority && task.priority !== 'normal' ? '<span class="badge ' + task.priority + '">' + escapeHtml(taskPriorityLabel(task.priority)) + '</span>' : '';
-            var dueLabel = t('due_label') || (LANG === 'fa' ? 'مهلت: ' : 'Due: ');
+            const assign = task.assignedToDepartmentId && task.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(task.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(task.assignee) || '\u2014';
+            const due = task.dueDate ? fmtTZ(task.dueDate, 'date') : '';
+            const isOverdue = task.dueDate && (task.status === 'pending' || task.status === 'in_progress') && new Date(task.dueDate) < new Date();
+            const overdueBadge = isOverdue ? '<span class="badge overdue" title="' + (t('overdue') || 'مهلت گذشته') + '">' + (t('overdue') || 'مهلت گذشته') + '</span>' : '';
+            const prioBadge = task.priority && task.priority !== 'normal' ? '<span class="badge ' + task.priority + '">' + escapeHtml(taskPriorityLabel(task.priority)) + '</span>' : '';
+            const dueLabel = t('due_label') || (LANG === 'fa' ? 'مهلت: ' : 'Due: ');
             return '<div class="task-list-item' + (isOverdue ? ' task-overdue' : '') + '" data-task-id="' + escapeHtml(task.id) + '" role="button" tabindex="0"><div class="task-item-body"><span class="name">' + escapeHtml(task.title) + '</span><div class="meta">' + assign + ' \u00B7 ' + taskStatusLabel(task.status) + (due ? ' \u00B7 ' + dueLabel + ' ' + due : '') + '</div></div><div class="task-item-badges">' + overdueBadge + prioBadge + '<span class="badge ' + (task.status || '') + '">' + taskStatusLabel(task.status) + '</span></div></div>';
         }
         async function loadTasks(append) {
-            var list = document.getElementById('taskList');
+            const list = document.getElementById('taskList');
             if (!list) return;
             if (!append) { taskListPage = 1; setLoading('taskList', 4); }
-            var statusSel = document.getElementById('taskFilterStatus');
-            var status = (statusSel && statusSel.value) || '';
-            if (!append && statusSel) { taskQuickTab = status || 'all'; var tabs = document.querySelectorAll('.task-quick-tabs .task-tab'); if (tabs) tabs.forEach(function(btn) { btn.classList.toggle('active', (btn.getAttribute('data-tab') || '') === taskQuickTab); }); }
-            var deptEl = document.getElementById('taskFilterDept');
-            var dept = deptEl ? deptEl.value : '';
+            const statusSel = document.getElementById('taskFilterStatus');
+            const status = (statusSel && statusSel.value) || '';
+            if (!append && statusSel) { taskQuickTab = status || 'all'; const tabs = document.querySelectorAll('.task-quick-tabs .task-tab'); if (tabs) tabs.forEach(function(btn) { btn.classList.toggle('active', (btn.getAttribute('data-tab') || '') === taskQuickTab); }); }
+            const deptEl = document.getElementById('taskFilterDept');
+            let dept = deptEl ? deptEl.value : '';
             if (dept === '__my_dept__' && currentUser && currentUser.departmentId) dept = currentUser.departmentId;
-            var user = (document.getElementById('taskFilterUser') && document.getElementById('taskFilterUser').value) || '';
-            var branch = (document.getElementById('taskFilterBranch') && document.getElementById('taskFilterBranch').value) || '';
-            var search = (document.getElementById('taskSearch') && document.getElementById('taskSearch').value || '').trim();
-            var q = '?limit=50&page=' + (append ? taskListPage : 1);
+            const user = (document.getElementById('taskFilterUser') && document.getElementById('taskFilterUser').value) || '';
+            const branch = (document.getElementById('taskFilterBranch') && document.getElementById('taskFilterBranch').value) || '';
+            const search = (document.getElementById('taskSearch') && document.getElementById('taskSearch').value || '').trim();
+            let q = '?limit=50&page=' + (append ? taskListPage : 1);
             if (status) q += '&status=' + encodeURIComponent(status);
             if (dept && dept !== '__my_dept__') q += '&assignedToDepartmentId=' + encodeURIComponent(dept);
             if (user) q += '&assignedTo=' + encodeURIComponent(user);
             if (branch) q += '&branchId=' + encodeURIComponent(branch);
             if (search) q += '&search=' + encodeURIComponent(search);
-            var res = await apiFetch('/api/tasks' + q);
+            const res = await apiFetch('/api/tasks' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
+            const data = res.data;
             taskListTotal = data.total || 0;
-            var countEl = document.getElementById('taskListCount');
-            var loadMoreEl = document.getElementById('taskListLoadMore');
+            const countEl = document.getElementById('taskListCount');
+            const loadMoreEl = document.getElementById('taskListLoadMore');
             if (!data.data || data.data.length === 0) {
                 if (!append) {
                     list.innerHTML = '<div class="empty task-list-empty"><span class="empty-icon">📋</span><p>' + t('empty_tasks') + '</p><button type="button" class="btn-primary" id="emptyTaskFormBtn" style="margin-top:12px;">' + t('new_task') + '</button></div>';
                     setTimeout(function() {
-                        var emptyBtn = document.getElementById('emptyTaskFormBtn');
+                        const emptyBtn = document.getElementById('emptyTaskFormBtn');
                         if (emptyBtn) {
                             emptyBtn.removeEventListener('click', toggleTaskForm);
                             emptyBtn.addEventListener('click', toggleTaskForm);
@@ -7737,34 +7737,34 @@
                 if (loadMoreEl) loadMoreEl.style.display = 'none';
                 return;
             }
-            var html = data.data.map(renderTaskItem).join('');
+            const html = data.data.map(renderTaskItem).join('');
             if (append) list.innerHTML += html; else list.innerHTML = html;
             list.classList.remove('empty');
-            var loadedCount = append ? (taskListPage * 50) : data.data.length;
+            const loadedCount = append ? (taskListPage * 50) : data.data.length;
             if (countEl) { countEl.textContent = loadedCount + (LANG === 'fa' ? ' از ' : ' of ') + taskListTotal + (LANG === 'fa' ? ' تسک' : ' tasks'); countEl.style.display = ''; }
             if (loadMoreEl) { loadMoreEl.style.display = (taskListTotal > loadedCount) ? 'block' : 'none'; }
             taskListPage = append ? taskListPage + 1 : 2;
         }
         function loadMoreTasks() {
-            var btn = document.getElementById('btnLoadMoreTasks') || document.querySelector('#taskListLoadMore button');
+            const btn = document.getElementById('btnLoadMoreTasks') || document.querySelector('#taskListLoadMore button');
             if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال بارگذاری...' : 'Loading...'); }
             loadTasks(true).finally(function() {
                 if (btn) { btn.disabled = false; btn.textContent = t('load_more'); }
             });
         }
         async function loadTasksSummary() {
-            var box = document.getElementById('tasksSummaryBox');
+            const box = document.getElementById('tasksSummaryBox');
             if (!box) return;
-            var role = (currentUser && currentUser.role) || '';
+            const role = (currentUser && currentUser.role) || '';
             if (role !== 'owner' && role !== 'admin' && role !== 'manager' && role !== 'supervisor') { box.style.display = 'none'; return; }
-            var res = await apiFetch('/api/tasks/summary');
+            const res = await apiFetch('/api/tasks/summary');
             if (res.needLogin || !res.ok) { box.style.display = 'none'; return; }
-            var d = res.data;
-            var html = '';
+            const d = res.data;
+            let html = '';
             if (d.byDepartment && d.byDepartment.length) {
                 html += '<div class="stat-card" style="min-width:220px;"><div class="label" style="margin-bottom:12px;">' + t('by_dept') + '</div>';
                 d.byDepartment.forEach(function(x) {
-                    var sep = LANG === 'fa' ? '، ' : ', ';
+                    const sep = LANG === 'fa' ? '، ' : ', ';
                     html += '<div class="task-summary-row" style="margin-top:8px; font-size:0.9rem; padding:6px 0; border-bottom:1px solid var(--border);">' + escapeHtml(x.department && x.department.name ? x.department.name : '') + ': ' + t('status_pending') + ' ' + (x.pending||0) + sep + t('status_in_progress') + ' ' + (x.in_progress||0) + sep + t('status_done') + ' ' + (x.done||0) + '</div>';
                 });
                 html += '</div>';
@@ -7772,7 +7772,7 @@
             if (d.byUser && d.byUser.length) {
                 html += '<div class="stat-card" style="min-width:220px;"><div class="label" style="margin-bottom:12px;">' + t('by_user') + '</div>';
                 d.byUser.forEach(function(x) {
-                    var sep = LANG === 'fa' ? '، ' : ', ';
+                    const sep = LANG === 'fa' ? '، ' : ', ';
                     html += '<div class="task-summary-row" style="margin-top:8px; font-size:0.9rem; padding:6px 0; border-bottom:1px solid var(--border);">' + escapeHtml(userDisplay(x.user)) + ': ' + t('status_pending') + ' ' + (x.pending||0) + sep + t('status_in_progress') + ' ' + (x.in_progress||0) + sep + t('status_done') + ' ' + (x.done||0) + '</div>';
                 });
                 html += '</div>';
@@ -7781,18 +7781,18 @@
             box.style.display = (html ? 'flex' : 'none');
         }
         async function addTask() {
-            var title = (document.getElementById('taskTitle') && document.getElementById('taskTitle').value) || '';
+            const title = (document.getElementById('taskTitle') && document.getElementById('taskTitle').value) || '';
             if (!title.trim()) { toast(t('task_title_required'), true); return; }
-            var type = (document.getElementById('taskAssignType') && document.getElementById('taskAssignType').value) || 'user';
-            var userId = type === 'user' ? (document.getElementById('taskAssignUser') && document.getElementById('taskAssignUser').value) : null;
-            var deptId = type === 'department' ? (document.getElementById('taskAssignDept') && document.getElementById('taskAssignDept').value) : null;
+            const type = (document.getElementById('taskAssignType') && document.getElementById('taskAssignType').value) || 'user';
+            const userId = type === 'user' ? (document.getElementById('taskAssignUser') && document.getElementById('taskAssignUser').value) : null;
+            const deptId = type === 'department' ? (document.getElementById('taskAssignDept') && document.getElementById('taskAssignDept').value) : null;
             if (!userId && !deptId) { toast(t('select_assignee'), true); return; }
-            var body = { title: title.trim(), description: (document.getElementById('taskDesc') && document.getElementById('taskDesc').value) || '', assignedTo: userId || undefined, assignedToDepartmentId: deptId || undefined, priority: (document.getElementById('taskPriority') && document.getElementById('taskPriority').value) || 'normal' };
-            var due = document.getElementById('taskDueDate') && document.getElementById('taskDueDate').value;
+            const body = { title: title.trim(), description: (document.getElementById('taskDesc') && document.getElementById('taskDesc').value) || '', assignedTo: userId || undefined, assignedToDepartmentId: deptId || undefined, priority: (document.getElementById('taskPriority') && document.getElementById('taskPriority').value) || 'normal' };
+            const due = document.getElementById('taskDueDate') && document.getElementById('taskDueDate').value;
             if (due) body.dueDate = new Date(due).toISOString();
-            var branchId = document.getElementById('taskBranch') && document.getElementById('taskBranch').value;
+            const branchId = document.getElementById('taskBranch') && document.getElementById('taskBranch').value;
             if (branchId) body.branchId = branchId;
-            var res = await apiFetch('/api/tasks', { method: 'POST', body: JSON.stringify(body) });
+            const res = await apiFetch('/api/tasks', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) {
                 if (document.getElementById('taskTitle')) document.getElementById('taskTitle').value = '';
@@ -7814,32 +7814,32 @@
             loadTasks();
         }
         function toggleTaskDetailAssign() {
-            var typeSel = document.getElementById('taskDetailAssignType');
-            var userSel = document.getElementById('taskDetailAssignUser');
-            var deptSel = document.getElementById('taskDetailAssignDept');
-            var isUser = typeSel && typeSel.value === 'user';
+            const typeSel = document.getElementById('taskDetailAssignType');
+            const userSel = document.getElementById('taskDetailAssignUser');
+            const deptSel = document.getElementById('taskDetailAssignDept');
+            const isUser = typeSel && typeSel.value === 'user';
             if (userSel) userSel.style.display = isUser ? '' : 'none';
             if (deptSel) deptSel.style.display = isUser ? 'none' : '';
         }
         async function updateTaskFromDetail() {
             if (!currentTaskId) return;
-            var typeSel = document.getElementById('taskDetailAssignType');
-            var userSel = document.getElementById('taskDetailAssignUser');
-            var deptSel = document.getElementById('taskDetailAssignDept');
-            var type = typeSel ? typeSel.value : 'user';
-            var userId = type === 'user' && userSel ? userSel.value : null;
-            var deptId = type === 'department' && deptSel ? deptSel.value : null;
+            const typeSel = document.getElementById('taskDetailAssignType');
+            const userSel = document.getElementById('taskDetailAssignUser');
+            const deptSel = document.getElementById('taskDetailAssignDept');
+            const type = typeSel ? typeSel.value : 'user';
+            const userId = type === 'user' && userSel ? userSel.value : null;
+            const deptId = type === 'department' && deptSel ? deptSel.value : null;
             if (!userId && !deptId) { toast(t('select_assignee'), true); return; }
-            var body = { assignedTo: type === 'user' ? userId : null, assignedToDepartmentId: type === 'department' ? deptId : null };
-            var statusSel = document.getElementById('taskDetailStatus');
+            const body = { assignedTo: type === 'user' ? userId : null, assignedToDepartmentId: type === 'department' ? deptId : null };
+            const statusSel = document.getElementById('taskDetailStatus');
             if (statusSel && statusSel.value) body.status = statusSel.value;
-            var dueEl = document.getElementById('taskDetailDueDate');
+            const dueEl = document.getElementById('taskDetailDueDate');
             if (dueEl) body.dueDate = dueEl.value ? new Date(dueEl.value).toISOString() : null;
-            var prioEl = document.getElementById('taskDetailPriority');
+            const prioEl = document.getElementById('taskDetailPriority');
             if (prioEl && prioEl.value) body.priority = prioEl.value;
-            var branchEl = document.getElementById('taskDetailBranch');
+            const branchEl = document.getElementById('taskDetailBranch');
             if (branchEl) body.branchId = branchEl.value || null;
-            var res = await apiFetch('/api/tasks/' + currentTaskId, { method: 'PUT', body: JSON.stringify(body) });
+            const res = await apiFetch('/api/tasks/' + currentTaskId, { method: 'PUT', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_status_updated')); loadTaskDetail(currentTaskId); loadTasks(); loadTasksSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
@@ -7847,26 +7847,26 @@
             currentTaskId = id;
             document.getElementById('taskList').style.display = 'none';
             document.getElementById('taskDetailBox').style.display = 'block';
-            var ress = await Promise.all([apiFetch('/api/tasks/' + id), apiFetch('/api/users'), apiFetch('/api/departments'), apiFetch('/api/branches')]);
-            var taskRes = ress[0];
+            const ress = await Promise.all([apiFetch('/api/tasks/' + id), apiFetch('/api/users'), apiFetch('/api/departments'), apiFetch('/api/branches')]);
+            const taskRes = ress[0];
             if (taskRes.needLogin) return;
             if (!taskRes.ok) { toast((taskRes.data && taskRes.data.error) || t('err_generic'), true); showTaskList(); return; }
-            var taskData = taskRes.data;
-            var users = (ress[1].data && ress[1].data.data) || [];
-            var depts = (ress[2].data && ress[2].data.data) || [];
-            var branches = (ress[3].data && ress[3].data.data) || [];
-            var assign = taskData.assignedToDepartmentId && taskData.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(taskData.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(taskData.assignee) || '\u2014';
-            var creator = userDisplay(taskData.creator) || '\u2014';
-            var due = taskData.dueDate ? fmtTZ(taskData.dueDate, 'datetime') : '\u2014';
-            var statusOpts = ['pending','in_progress','done','cancelled'].map(function(s){ return '<option value="' + s + '"' + (taskData.status === s ? ' selected' : '') + '>' + taskStatusLabel(s) + '</option>'; }).join('');
-            var prioOpts = ['low','normal','high','urgent'].map(function(p){ return '<option value="' + p + '"' + ((taskData.priority || 'normal') === p ? ' selected' : '') + '>' + taskPriorityLabel(p) + '</option>'; }).join('');
-            var userOpts = users.map(function(u){ return '<option value="' + u.id + '"' + (taskData.assignedTo === u.id ? ' selected' : '') + '>' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
-            var deptOpts = depts.map(function(d){ return '<option value="' + d.id + '"' + (taskData.assignedToDepartmentId === d.id ? ' selected' : '') + '>' + escapeHtml(d.name) + '</option>'; }).join('');
-            var branchOpts = '<option value="">' + t('no_branch') + '</option>' + branches.map(function(b){ return '<option value="' + b.id + '"' + (taskData.branchId === b.id ? ' selected' : '') + '>' + escapeHtml(b.name || '') + '</option>'; }).join('');
-            var isDept = !!taskData.assignedToDepartmentId;
-            var dueVal = taskData.dueDate ? (function(){ var d=new Date(taskData.dueDate); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); })() : '';
-            var branchName = taskData.branch && taskData.branch.name ? escapeHtml(taskData.branch.name) : '\u2014';
-            var editHtml = '<div class="task-detail-edit" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">' +
+            const taskData = taskRes.data;
+            const users = (ress[1].data && ress[1].data.data) || [];
+            const depts = (ress[2].data && ress[2].data.data) || [];
+            const branches = (ress[3].data && ress[3].data.data) || [];
+            const assign = taskData.assignedToDepartmentId && taskData.department ? (LANG === 'fa' ? 'دپارتمان ' : 'Dept ') + escapeHtml(taskData.department.name) + (LANG === 'fa' ? ' (همه اعضا)' : ' (all)') : userDisplay(taskData.assignee) || '\u2014';
+            const creator = userDisplay(taskData.creator) || '\u2014';
+            const due = taskData.dueDate ? fmtTZ(taskData.dueDate, 'datetime') : '\u2014';
+            const statusOpts = ['pending','in_progress','done','cancelled'].map(function(s){ return '<option value="' + s + '"' + (taskData.status === s ? ' selected' : '') + '>' + taskStatusLabel(s) + '</option>'; }).join('');
+            const prioOpts = ['low','normal','high','urgent'].map(function(p){ return '<option value="' + p + '"' + ((taskData.priority || 'normal') === p ? ' selected' : '') + '>' + taskPriorityLabel(p) + '</option>'; }).join('');
+            const userOpts = users.map(function(u){ return '<option value="' + u.id + '"' + (taskData.assignedTo === u.id ? ' selected' : '') + '>' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            const deptOpts = depts.map(function(d){ return '<option value="' + d.id + '"' + (taskData.assignedToDepartmentId === d.id ? ' selected' : '') + '>' + escapeHtml(d.name) + '</option>'; }).join('');
+            const branchOpts = '<option value="">' + t('no_branch') + '</option>' + branches.map(function(b){ return '<option value="' + b.id + '"' + (taskData.branchId === b.id ? ' selected' : '') + '>' + escapeHtml(b.name || '') + '</option>'; }).join('');
+            const isDept = !!taskData.assignedToDepartmentId;
+            const dueVal = taskData.dueDate ? (function(){ const d=new Date(taskData.dueDate); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'T'+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); })() : '';
+            const branchName = taskData.branch && taskData.branch.name ? escapeHtml(taskData.branch.name) : '\u2014';
+            const editHtml = '<div class="task-detail-edit" style="margin-top:16px; padding-top:16px; border-top:1px solid var(--border);">' +
                 '<label>' + t('assign_to') + '</label><div class="task-assign-row"><select id="taskDetailAssignType" onchange="toggleTaskDetailAssign()"><option value="user"' + (!isDept?' selected':'') + '>' + t('assign_user') + '</option><option value="department"' + (isDept?' selected':'') + '>' + t('assign_dept') + '</option></select>' +
                 '<select id="taskDetailAssignUser" style="min-width:180px;' + (isDept?' display:none':'') + '"><option value="">' + t('select_user_task') + '</option>' + userOpts + '</select>' +
                 '<select id="taskDetailAssignDept" style="min-width:180px;' + (!isDept?' display:none':'') + '"><option value="">' + t('select_dept') + '</option>' + deptOpts + '</select></div>' +
@@ -7879,39 +7879,39 @@
                 '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(taskData.title) + '</h3>' +
                 (taskData.description ? '<p style="color:var(--text-secondary); margin:8px 0;">' + escapeHtml(taskData.description) + '</p>' : '') +
                 '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + escapeHtml(assign) + ' | ' + t('due_label') + ' ' + due + ' | ' + t('th_branch') + ': ' + branchName + ' | ' + t('ticket_priority') + ': ' + taskPriorityLabel(taskData.priority) + '</p>' + editHtml;
-            var updates = (taskData.updates || []).map(function(u) {
+            const updates = (taskData.updates || []).map(function(u) {
                 return '<div class="msg in" style="margin:8px 0;"><div>' + escapeHtml(u.content || '') + '</div><div class="time">' + userDisplay(u.user) + ' \u00B7 ' + (u.createdAt ? fmtTZ(u.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('taskUpdatesList').innerHTML = updates ? '<h4 style="font-size:1rem; margin:12px 0;">' + t('updates') + '</h4>' + updates : '<p class="text-muted" style="color:var(--text-muted);">' + t('no_updates') + '</p>';
             document.getElementById('taskUpdateContent').value = '';
-            var detailAssignType = document.getElementById('taskDetailAssignType');
+            const detailAssignType = document.getElementById('taskDetailAssignType');
             if (detailAssignType) { detailAssignType.onchange = null; detailAssignType.addEventListener('change', toggleTaskDetailAssign); }
         }
         async function updateTaskStatus() {
             if (!currentTaskId) return;
-            var sel = document.getElementById('taskDetailStatus');
-            var status = sel ? sel.value : '';
+            const sel = document.getElementById('taskDetailStatus');
+            const status = sel ? sel.value : '';
             if (!status) return;
-            var res = await apiFetch('/api/tasks/' + currentTaskId, { method: 'PUT', body: JSON.stringify({ status: status }) });
+            const res = await apiFetch('/api/tasks/' + currentTaskId, { method: 'PUT', body: JSON.stringify({ status: status }) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_status_updated')); loadTaskDetail(currentTaskId); loadTasks(); loadTasksSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function addTaskUpdate() {
             if (!currentTaskId) return;
-            var content = (document.getElementById('taskUpdateContent') && document.getElementById('taskUpdateContent').value) || '';
-            var statusChange = document.getElementById('taskUpdateStatusChange') && document.getElementById('taskUpdateStatusChange').value;
+            const content = (document.getElementById('taskUpdateContent') && document.getElementById('taskUpdateContent').value) || '';
+            const statusChange = document.getElementById('taskUpdateStatusChange') && document.getElementById('taskUpdateStatusChange').value;
             if (!content.trim() && !statusChange) { toast(t('task_update_required'), true); return; }
-            var body = { content: content.trim() };
+            const body = { content: content.trim() };
             if (statusChange) body.statusChange = statusChange;
-            var res = await apiFetch('/api/tasks/' + currentTaskId + '/updates', { method: 'POST', body: JSON.stringify(body) });
+            const res = await apiFetch('/api/tasks/' + currentTaskId + '/updates', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { document.getElementById('taskUpdateContent').value = ''; var sc=document.getElementById('taskUpdateStatusChange'); if(sc)sc.value=''; toast(t('toast_update_added')); loadTaskDetail(currentTaskId); loadTasks(); loadTasksSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { document.getElementById('taskUpdateContent').value = ''; const sc=document.getElementById('taskUpdateStatusChange'); if(sc)sc.value=''; toast(t('toast_update_added')); loadTaskDetail(currentTaskId); loadTasks(); loadTasksSummary(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         function initProcessTabs() {
             document.querySelectorAll('.process-tab').forEach(function(btn) {
                 btn.onclick = function() {
-                    var tab = this.getAttribute('data-tab');
+                    const tab = this.getAttribute('data-tab');
                     document.querySelectorAll('.process-tab').forEach(function(b){ b.classList.remove('active'); });
                     this.classList.add('active');
                     document.querySelectorAll('.process-panel').forEach(function(p){ p.classList.remove('show'); p.style.display = 'none'; });
@@ -7921,24 +7921,24 @@
             });
         }
         async function loadProcessTemplateSelect() {
-            var sel = document.getElementById('processInstanceTemplate');
-            var res = await apiFetch('/api/processes/templates');
+            const sel = document.getElementById('processInstanceTemplate');
+            const res = await apiFetch('/api/processes/templates');
             if (!res.ok || !res.data || !res.data.data) return;
-            var opts = '<option value="">' + t('all_templates') + '</option>' + res.data.data.filter(function(t){ return t.isActive; }).map(function(t){ return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join('');
+            const opts = '<option value="">' + t('all_templates') + '</option>' + res.data.data.filter(function(t){ return t.isActive; }).map(function(t){ return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join('');
             if (sel) sel.innerHTML = opts;
         }
         async function loadProcessTemplates() {
-            var list = document.getElementById('processTemplatesList');
+            const list = document.getElementById('processTemplatesList');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var res = await apiFetch('/api/processes/templates');
+            const res = await apiFetch('/api/processes/templates');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
-            var data = (res.data && res.data.data) || [];
+            const data = (res.data && res.data.data) || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📋</span><br>' + t('empty_process_templates') + '</div>'; return; }
             list.innerHTML = data.map(function(t) {
-                var stages = (t.stages || []).map(function(s){ return s.name; }).join(' \u2192 ');
-                var cnt = (t.instanceCount || 0);
+                const stages = (t.stages || []).map(function(s){ return s.name; }).join(' \u2192 ');
+                const cnt = (t.instanceCount || 0);
                 return '<div class="list-item" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">' +
                     '<div><span class="name">' + escapeHtml(t.name) + '</span><div class="meta">' + (stages || '—') + ' | ' + (t('process_instances_count') || 'Instances: ') + cnt + '</div></div>' +
                     '<div style="display:flex; gap:6px;"><button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessStartInstanceModal(\'' + t.id + '\')">' + t('process_start_instance') + '</button>' +
@@ -7947,30 +7947,30 @@
             }).join('');
         }
         async function loadProcessInstances() {
-            var list = document.getElementById('processInstancesList');
-            var box = document.getElementById('processInstanceDetailBox');
+            const list = document.getElementById('processInstancesList');
+            const box = document.getElementById('processInstanceDetailBox');
             if (!list) return;
             if (box && box.style.display !== 'none') return;
             list.style.display = 'block';
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var status = (document.getElementById('processInstanceStatus') && document.getElementById('processInstanceStatus').value) || '';
-            var templateId = (document.getElementById('processInstanceTemplate') && document.getElementById('processInstanceTemplate').value) || '';
-            var q = '?limit=50';
+            const status = (document.getElementById('processInstanceStatus') && document.getElementById('processInstanceStatus').value) || '';
+            const templateId = (document.getElementById('processInstanceTemplate') && document.getElementById('processInstanceTemplate').value) || '';
+            let q = '?limit=50';
             if (status) q += '&status=' + encodeURIComponent(status);
             if (templateId) q += '&templateId=' + encodeURIComponent(templateId);
-            var res = await apiFetch('/api/processes/instances' + q);
+            const res = await apiFetch('/api/processes/instances' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
-            var data = (res.data && res.data.data) || [];
+            const data = (res.data && res.data.data) || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🔄</span><br>' + t('empty_process_instances') + '</div>'; return; }
             list.innerHTML = data.map(function(i) {
-                var statusLabel = i.status === 'active' ? t('status_active') : i.status === 'completed' ? t('status_done') : t('status_cancelled');
-                var templateName = (i.template && i.template.name) ? i.template.name : '�';
-                var assignee = userDisplay(i.assignee) || '\u2014';
+                const statusLabel = i.status === 'active' ? t('status_active') : i.status === 'completed' ? t('status_done') : t('status_cancelled');
+                const templateName = (i.template && i.template.name) ? i.template.name : '�';
+                const assignee = userDisplay(i.assignee) || '\u2014';
                 return '<div class="list-item" onclick="loadProcessInstanceDetail(\'' + i.id + '\')" style="cursor:pointer;"><div><span class="name">' + escapeHtml(i.title) + '</span><div class="meta">' + escapeHtml(templateName) + ' ⬢ ' + assignee + ' ⬢ ' + statusLabel + '</div></div><span class="badge ' + (i.status || '') + '">' + statusLabel + '</span></div>';
             }).join('');
         }
-        var currentProcessInstanceId = null;
+        let currentProcessInstanceId = null;
         function showProcessInstancesList() {
             document.getElementById('processInstanceDetailBox').style.display = 'none';
             document.getElementById('processInstancesList').style.display = 'block';
@@ -7981,34 +7981,34 @@
             currentProcessInstanceId = id;
             document.getElementById('processInstancesList').style.display = 'none';
             document.getElementById('processInstanceDetailBox').style.display = 'block';
-            var res = await apiFetch('/api/processes/instances/' + id);
+            const res = await apiFetch('/api/processes/instances/' + id);
             if (res.needLogin) return;
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showProcessInstancesList(); return; }
-            var i = (res.data && res.data.data) || res.data;
-            var template = i.template || {};
-            var stages = template.stages || [];
-            var currentIdx = i.currentStageIndex != null ? i.currentStageIndex : 0;
-            var currentStageName = (stages[currentIdx] && stages[currentIdx].name) ? stages[currentIdx].name : t('process_current_stage');
-            var assignee = userDisplay(i.assignee) || '\u2014';
-            var creator = userDisplay(i.creator) || '\u2014';
-            var stepsHtml = (i.steps || []).map(function(s) {
-                var done = s.completedAt ? '\u2713 ' : '';
+            const i = (res.data && res.data.data) || res.data;
+            const template = i.template || {};
+            const stages = template.stages || [];
+            const currentIdx = i.currentStageIndex != null ? i.currentStageIndex : 0;
+            const currentStageName = (stages[currentIdx] && stages[currentIdx].name) ? stages[currentIdx].name : t('process_current_stage');
+            const assignee = userDisplay(i.assignee) || '\u2014';
+            const creator = userDisplay(i.creator) || '\u2014';
+            const stepsHtml = (i.steps || []).map(function(s) {
+                const done = s.completedAt ? '\u2713 ' : '';
                 return '<div class="msg in" style="margin:6px 0;"><div>' + done + escapeHtml(s.stageName) + (s.notes ? ' \u2014 ' + escapeHtml(s.notes) : '') + '</div><div class="time">' + userDisplay(s.assignee) + ' \u22C6 ' + (s.startedAt ? fmtTZ(s.startedAt, 'datetime') : '') + (s.completedAt ? ' \u2014 ' + fmtTZ(s.completedAt, 'datetime') : '') + '</div></div>';
             }).join('');
             document.getElementById('processInstanceDetailContent').innerHTML =
                 '<div class="form-box" style="max-width:100%;"><h3 style="margin:0 0 8px;">' + escapeHtml(i.title) + '</h3>' +
                 '<p style="font-size:0.9rem; color:var(--text-muted);">' + t('creator_label') + ' ' + escapeHtml(creator) + ' | ' + t('assignee_label') + ' ' + assignee + ' | ' + t('process_current_stage') + ': ' + escapeHtml(currentStageName) + '</p>' +
                 '<h4 style="font-size:1rem; margin:12px 0;">' + t('history') + '</h4>' + (stepsHtml || '<p class="text-muted">' + (t('no_updates') || '') + '</p>') + '</div>';
-            var advanceBox = document.getElementById('processInstanceAdvanceBox');
+            const advanceBox = document.getElementById('processInstanceAdvanceBox');
             if (i.status !== 'active') { advanceBox.innerHTML = ''; return; }
-            var isLast = currentIdx >= stages.length - 1;
+            const isLast = currentIdx >= stages.length - 1;
             advanceBox.innerHTML = '<label>' + t('process_notes') + '</label><textarea id="processAdvanceNotes" rows="2" style="width:100%; margin-bottom:8px;"></textarea>' +
                 (isLast ? '<button type="button" class="btn-primary" onclick="advanceProcessInstance(true)">' + t('process_complete') + '</button>' : '<button type="button" class="btn-primary" onclick="advanceProcessInstance(false)">' + t('process_advance') + '</button>');
         }
         async function advanceProcessInstance(complete) {
             if (!currentProcessInstanceId) return;
-            var notes = (document.getElementById('processAdvanceNotes') && document.getElementById('processAdvanceNotes').value) || '';
-            var res = await apiFetch('/api/processes/instances/' + currentProcessInstanceId + '/advance', { method: 'POST', body: JSON.stringify({ notes: notes }) });
+            const notes = (document.getElementById('processAdvanceNotes') && document.getElementById('processAdvanceNotes').value) || '';
+            const res = await apiFetch('/api/processes/instances/' + currentProcessInstanceId + '/advance', { method: 'POST', body: JSON.stringify({ notes: notes }) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_status_updated')); loadProcessInstanceDetail(currentProcessInstanceId); loadProcessInstances(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
@@ -8021,10 +8021,10 @@
             if (id) {
                 apiFetch('/api/processes/templates/' + id).then(function(res) {
                     if (res.ok && res.data) {
-                        var t = (res.data.data) ? res.data.data : res.data;
+                        const t = (res.data.data) ? res.data.data : res.data;
                         document.getElementById('processTemplateName').value = t.name || '';
                         document.getElementById('processTemplateDesc').value = t.description || '';
-                        var stages = t.stages || [];
+                        const stages = t.stages || [];
                         stages.forEach(function(s) { addProcessTemplateStageRow(s.name); });
                     }
                 });
@@ -8033,11 +8033,11 @@
         }
         function addProcessTemplateStageRow(name) {
             var name = (typeof name === 'string') ? name : '';
-            var container = document.getElementById('processTemplateStagesContainer');
-            var div = document.createElement('div');
+            const container = document.getElementById('processTemplateStagesContainer');
+            const div = document.createElement('div');
             div.style.cssText = 'display:flex; gap:8px; margin-bottom:8px; align-items:center;';
             div.innerHTML = '<input type="text" class="process-stage-name" data-i18n-ph="process_stage_name" placeholder="' + (t('process_stage_name') || 'نام مرحله') + '" value="' + escapeHtml(name) + '" style="flex:1;"><button type="button" class="btn-secondary" style="padding:4px 10px;" class="process-stage-remove">×</button>';
-            var removeStageBtn = div.querySelector('.process-stage-remove');
+            const removeStageBtn = div.querySelector('.process-stage-remove');
             if (removeStageBtn) {
                 removeStageBtn.removeEventListener('click', function(e) { div.remove(); });
                 removeStageBtn.addEventListener('click', function(e) { div.remove(); });
@@ -8046,24 +8046,24 @@
         }
         function closeProcessTemplateModal() { document.getElementById('modalProcessTemplate').style.display = 'none'; }
         async function saveProcessTemplate() {
-            var id = document.getElementById('processTemplateId').value;
-            var name = (document.getElementById('processTemplateName') && document.getElementById('processTemplateName').value) || '';
+            const id = document.getElementById('processTemplateId').value;
+            const name = (document.getElementById('processTemplateName') && document.getElementById('processTemplateName').value) || '';
             if (!name.trim()) { toast(t('dept_name_required'), true); return; }
-            var desc = (document.getElementById('processTemplateDesc') && document.getElementById('processTemplateDesc').value) || '';
-            var inputs = document.querySelectorAll('#processTemplateStagesContainer .process-stage-name');
-            var stages = [];
-            inputs.forEach(function(inp, i) { var v = (inp.value || '').trim(); if (v) stages.push({ name: v, order: i }); });
+            const desc = (document.getElementById('processTemplateDesc') && document.getElementById('processTemplateDesc').value) || '';
+            const inputs = document.querySelectorAll('#processTemplateStagesContainer .process-stage-name');
+            const stages = [];
+            inputs.forEach(function(inp, i) { const v = (inp.value || '').trim(); if (v) stages.push({ name: v, order: i }); });
             if (stages.length === 0) { toast(t('process_min_one_stage'), true); return; }
-            var body = { name: name.trim(), description: desc, stages: stages };
-            var url = id ? '/api/processes/templates/' + id : '/api/processes/templates';
-            var method = id ? 'PUT' : 'POST';
-            var res = await apiFetch(url, { method: method, body: JSON.stringify(body) });
+            const body = { name: name.trim(), description: desc, stages: stages };
+            const url = id ? '/api/processes/templates/' + id : '/api/processes/templates';
+            const method = id ? 'PUT' : 'POST';
+            const res = await apiFetch(url, { method: method, body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { closeProcessTemplateModal(); loadProcessTemplates(); loadProcessTemplateSelect(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function deleteProcessTemplate(id) {
             if (!confirm(t('process_delete_template_confirm') || (LANG === 'en' ? 'Delete this template?' : 'این قالب حذف شود؟'))) return;
-            var res = await apiFetch('/api/processes/templates/' + id, { method: 'DELETE' });
+            const res = await apiFetch('/api/processes/templates/' + id, { method: 'DELETE' });
             if (res.ok) { loadProcessTemplates(); loadProcessTemplateSelect(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function openProcessStartInstanceModal(templateId, refType, refId, suggestedTitle) {
@@ -8072,39 +8072,39 @@
             document.getElementById('processStartTitle').value = (suggestedTitle && suggestedTitle.trim()) ? suggestedTitle.trim() : '';
             document.getElementById('processStartAssignedTo').value = '';
             apiFetch('/api/processes/templates').then(function(res) {
-                var sel = document.getElementById('processStartTemplateSel');
+                const sel = document.getElementById('processStartTemplateSel');
                 if (!sel) return;
-                var list = (res.data && res.data.data) || [];
-                var active = list.filter(function(t){ return t.isActive !== false; });
+                const list = (res.data && res.data.data) || [];
+                const active = list.filter(function(t){ return t.isActive !== false; });
                 sel.innerHTML = '<option value="">' + (t('process_select_template') || t('all_templates')) + '</option>' + active.map(function(t){ return '<option value="' + t.id + '">' + escapeHtml(t.name) + '</option>'; }).join('');
                 if (templateId) sel.value = templateId;
             });
             apiFetch('/api/users').then(function(res) {
-                var sel = document.getElementById('processStartAssignedTo');
+                const sel = document.getElementById('processStartAssignedTo');
                 if (!sel) return;
-                var users = (res.data && res.data.data) || [];
+                const users = (res.data && res.data.data) || [];
                 sel.innerHTML = '<option value="">' + t('no_user') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>'; }).join('');
             });
             document.getElementById('modalProcessStartInstance').style.display = 'flex';
         }
         function closeProcessStartInstanceModal() { document.getElementById('modalProcessStartInstance').style.display = 'none'; }
         async function startProcessInstance() {
-            var templateId = (document.getElementById('processStartTemplateSel') && document.getElementById('processStartTemplateSel').value) || '';
-            var title = (document.getElementById('processStartTitle') && document.getElementById('processStartTitle').value) || '';
+            const templateId = (document.getElementById('processStartTemplateSel') && document.getElementById('processStartTemplateSel').value) || '';
+            const title = (document.getElementById('processStartTitle') && document.getElementById('processStartTitle').value) || '';
             if (!templateId || !title.trim()) { toast(t('ticket_title_required'), true); return; }
-            var assignedTo = (document.getElementById('processStartAssignedTo') && document.getElementById('processStartAssignedTo').value) || null;
-            var refType = (document.getElementById('processStartRefType') && document.getElementById('processStartRefType').value) || null;
-            var refId = (document.getElementById('processStartRefId') && document.getElementById('processStartRefId').value) || null;
-            var body = { templateId: templateId, title: title.trim(), assignedTo: assignedTo || undefined };
+            const assignedTo = (document.getElementById('processStartAssignedTo') && document.getElementById('processStartAssignedTo').value) || null;
+            const refType = (document.getElementById('processStartRefType') && document.getElementById('processStartRefType').value) || null;
+            const refId = (document.getElementById('processStartRefId') && document.getElementById('processStartRefId').value) || null;
+            const body = { templateId: templateId, title: title.trim(), assignedTo: assignedTo || undefined };
             if (refType && refId) { body.referenceType = refType; body.referenceId = refId; }
-            var res = await apiFetch('/api/processes/instances', { method: 'POST', body: JSON.stringify(body) });
+            const res = await apiFetch('/api/processes/instances', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { closeProcessStartInstanceModal(); loadProcessInstances(); loadProcessTemplates(); toast(t('toast_task_created')); document.querySelectorAll('.process-tab').forEach(function(b){ if(b.getAttribute('data-tab')==='instances') b.click(); }); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function startProcessFromTicket() {
             if (!currentTicketId) return;
-            var titleEl = document.getElementById('ticketDetailTitle');
-            var suggestedTitle = titleEl ? titleEl.textContent : '';
+            const titleEl = document.getElementById('ticketDetailTitle');
+            const suggestedTitle = titleEl ? titleEl.textContent : '';
             showPage('processes');
             setTimeout(function() {
                 loadProcessTemplateSelect();
@@ -8113,74 +8113,74 @@
         }
 
         async function addTicket() {
-            var title = document.getElementById('ticketTitle').value.trim();
+            const title = document.getElementById('ticketTitle').value.trim();
             if (!title) { toast(t('ticket_title_required'), true); return; }
-            var assigneeEl = document.getElementById('ticketAssignee');
-            var deptEl = document.getElementById('ticketDept');
-            var dueEl = document.getElementById('ticketDueDate');
-            var body = { title: title, description: (document.getElementById('ticketDesc').value || '').trim(), priority: (document.getElementById('ticketPriority').value || 'normal') };
+            const assigneeEl = document.getElementById('ticketAssignee');
+            const deptEl = document.getElementById('ticketDept');
+            const dueEl = document.getElementById('ticketDueDate');
+            const body = { title: title, description: (document.getElementById('ticketDesc').value || '').trim(), priority: (document.getElementById('ticketPriority').value || 'normal') };
             if (assigneeEl && assigneeEl.value) body.assignedTo = assigneeEl.value;
             if (deptEl && deptEl.value) body.departmentId = deptEl.value;
             if (dueEl && dueEl.value) body.dueDate = dueEl.value;
-            var res = await apiFetch('/api/tickets', { method: 'POST', body: JSON.stringify(body) });
+            const res = await apiFetch('/api/tickets', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { document.getElementById('ticketTitle').value = ''; document.getElementById('ticketDesc').value = ''; var dueInp = document.getElementById('ticketDueDate'); if (dueInp) dueInp.value = ''; document.getElementById('ticketFormBox').style.display = 'none'; toast(t('toast_ticket_created')); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { document.getElementById('ticketTitle').value = ''; document.getElementById('ticketDesc').value = ''; const dueInp = document.getElementById('ticketDueDate'); if (dueInp) dueInp.value = ''; document.getElementById('ticketFormBox').style.display = 'none'; toast(t('toast_ticket_created')); loadTickets(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
-        var _editingDeptId = null;
+        let _editingDeptId = null;
         function cancelDeptEdit() {
             _editingDeptId = null;
             document.getElementById('deptName').value = '';
             document.getElementById('deptDesc').value = '';
             document.getElementById('deptKeywords').value = '';
-            var colorEl = document.getElementById('deptColor'); if (colorEl) colorEl.value = '#10b981';
-            var defEl = document.getElementById('deptIsDefault'); if (defEl) defEl.checked = false;
-            var actEl = document.getElementById('deptIsActive'); if (actEl) actEl.checked = true;
-            var branchEl = document.getElementById('deptBranch'); if (branchEl) branchEl.value = '';
-            var btn = document.getElementById('btnDeptSave'); if (btn) { btn.textContent = t('add_dept'); btn.setAttribute('data-i18n', 'add_dept'); }
-            var cancelBtn = document.getElementById('btnDeptCancel'); if (cancelBtn) cancelBtn.style.display = 'none';
+            const colorEl = document.getElementById('deptColor'); if (colorEl) colorEl.value = '#10b981';
+            const defEl = document.getElementById('deptIsDefault'); if (defEl) defEl.checked = false;
+            const actEl = document.getElementById('deptIsActive'); if (actEl) actEl.checked = true;
+            const branchEl = document.getElementById('deptBranch'); if (branchEl) branchEl.value = '';
+            const btn = document.getElementById('btnDeptSave'); if (btn) { btn.textContent = t('add_dept'); btn.setAttribute('data-i18n', 'add_dept'); }
+            const cancelBtn = document.getElementById('btnDeptCancel'); if (cancelBtn) cancelBtn.style.display = 'none';
         }
         function editDepartment(idx) {
-            var list = window._deptListData;
+            const list = window._deptListData;
             if (!list || !list[idx]) return;
-            var d = list[idx];
+            const d = list[idx];
             _editingDeptId = d.id;
             document.getElementById('deptName').value = d.name || '';
             document.getElementById('deptDesc').value = d.description || '';
             document.getElementById('deptKeywords').value = d.keywords || '';
-            var colorEl = document.getElementById('deptColor'); if (colorEl) colorEl.value = (d.color || '#10b981').replace(/^#?/, '#');
-            var defEl = document.getElementById('deptIsDefault'); if (defEl) defEl.checked = !!d.isDefault;
-            var actEl = document.getElementById('deptIsActive'); if (actEl) actEl.checked = d.isActive !== false;
-            var branchEl = document.getElementById('deptBranch'); if (branchEl) branchEl.value = d.branchId || '';
-            var btn = document.getElementById('btnDeptSave'); if (btn) { btn.textContent = t('save_changes'); btn.setAttribute('data-i18n', 'save_changes'); }
-            var cancelBtn = document.getElementById('btnDeptCancel'); if (cancelBtn) cancelBtn.style.display = '';
+            const colorEl = document.getElementById('deptColor'); if (colorEl) colorEl.value = (d.color || '#10b981').replace(/^#?/, '#');
+            const defEl = document.getElementById('deptIsDefault'); if (defEl) defEl.checked = !!d.isDefault;
+            const actEl = document.getElementById('deptIsActive'); if (actEl) actEl.checked = d.isActive !== false;
+            const branchEl = document.getElementById('deptBranch'); if (branchEl) branchEl.value = d.branchId || '';
+            const btn = document.getElementById('btnDeptSave'); if (btn) { btn.textContent = t('save_changes'); btn.setAttribute('data-i18n', 'save_changes'); }
+            const cancelBtn = document.getElementById('btnDeptCancel'); if (cancelBtn) cancelBtn.style.display = '';
             toast(t('dept_edit_hint'), false);
         }
         function normalizeKeywordsInput(raw) {
             if (!raw || !raw.trim()) return '';
-            var parts = raw.split(/[,،;\s]+/).map(function(p) { return p.trim(); }).filter(Boolean);
-            var seen = {};
-            return parts.filter(function(p) { var k = p.toLowerCase(); if (seen[k]) return false; seen[k] = true; return true; }).join(', ');
+            const parts = raw.split(/[,،;\s]+/).map(function(p) { return p.trim(); }).filter(Boolean);
+            const seen = {};
+            return parts.filter(function(p) { const k = p.toLowerCase(); if (seen[k]) return false; seen[k] = true; return true; }).join(', ');
         }
         function formatDeptKeywords() {
-            var el = document.getElementById('deptKeywords');
+            const el = document.getElementById('deptKeywords');
             if (!el) return;
             el.value = normalizeKeywordsInput(el.value);
             toast(LANG === 'fa' ? 'کلمات کلیدی مرتب شد' : 'Keywords formatted');
         }
         async function saveDepartment() {
-            var name = document.getElementById('deptName').value.trim();
+            const name = document.getElementById('deptName').value.trim();
             if (!name) { toast(t('dept_name_required'), true); return; }
-            var branchId = document.getElementById('deptBranch').value || null;
-            var colorEl = document.getElementById('deptColor');
-            var defEl = document.getElementById('deptIsDefault');
-            var actEl = document.getElementById('deptIsActive');
-            var keywordsRaw = document.getElementById('deptKeywords').value;
-            var body = { name: name, description: document.getElementById('deptDesc').value.trim(), keywords: normalizeKeywordsInput(keywordsRaw), branchId: branchId };
+            const branchId = document.getElementById('deptBranch').value || null;
+            const colorEl = document.getElementById('deptColor');
+            const defEl = document.getElementById('deptIsDefault');
+            const actEl = document.getElementById('deptIsActive');
+            const keywordsRaw = document.getElementById('deptKeywords').value;
+            const body = { name: name, description: document.getElementById('deptDesc').value.trim(), keywords: normalizeKeywordsInput(keywordsRaw), branchId: branchId };
             if (colorEl) body.color = colorEl.value || '#10b981';
             if (defEl) body.isDefault = defEl.checked;
             if (actEl) body.isActive = actEl.checked;
-            var res;
+            let res;
             if (_editingDeptId) {
                 res = await apiFetch('/api/departments/' + _editingDeptId, { method: 'PUT', body: JSON.stringify(body) });
             } else {
@@ -8194,16 +8194,16 @@
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
-        var userListData = [];
+        let userListData = [];
         function initUserFilters() {
-            var searchEl = document.getElementById('userSearchInput');
-            var roleEl = document.getElementById('userFilterRole');
-            var statusEl = document.getElementById('userFilterStatus');
+            const searchEl = document.getElementById('userSearchInput');
+            const roleEl = document.getElementById('userFilterRole');
+            const statusEl = document.getElementById('userFilterStatus');
             if (searchEl) searchEl.oninput = searchEl.onkeyup = function() { filterAndRenderUsers(); };
             if (statusEl) statusEl.onchange = function() { filterAndRenderUsers(); };
             if (roleEl) roleEl.onchange = function() {
                 document.querySelectorAll('#userRolePills .pill').forEach(function(x) { x.classList.remove('active'); });
-                var p = document.querySelector('#userRolePills .pill[data-role="' + (roleEl.value || '') + '"]');
+                const p = document.querySelector('#userRolePills .pill[data-role="' + (roleEl.value || '') + '"]');
                 if (p) p.classList.add('active');
                 filterAndRenderUsers();
             };
@@ -8211,7 +8211,7 @@
                 p.onclick = function() {
                     document.querySelectorAll('#userRolePills .pill').forEach(function(x) { x.classList.remove('active'); });
                     this.classList.add('active');
-                    var r = this.getAttribute('data-role') || '';
+                    const r = this.getAttribute('data-role') || '';
                     if (roleEl) roleEl.value = r;
                     filterAndRenderUsers();
                 };
@@ -8220,11 +8220,11 @@
         function initUserEditTabs() {
             document.querySelectorAll('.user-edit-tab').forEach(function(btn) {
                 btn.onclick = function() {
-                    var tab = this.getAttribute('data-tab');
+                    const tab = this.getAttribute('data-tab');
                     document.querySelectorAll('.user-edit-tab').forEach(function(b) { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
                     document.querySelectorAll('.user-edit-tab-panel').forEach(function(p) { p.classList.remove('active'); p.style.display = 'none'; });
                     this.classList.add('active'); this.setAttribute('aria-selected', 'true');
-                    var panel = document.getElementById('userEditTab' + (tab === 'info' ? 'Info' : 'Perms'));
+                    const panel = document.getElementById('userEditTab' + (tab === 'info' ? 'Info' : 'Perms'));
                     if (panel) { panel.classList.add('active'); panel.style.display = 'block'; }
                 };
             });
@@ -8234,70 +8234,70 @@
             return (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?');
         }
         function filterAndRenderUsers() {
-            var search = (document.getElementById('userSearchInput') && document.getElementById('userSearchInput').value) || '';
-            var roleFilter = (document.getElementById('userFilterRole') && document.getElementById('userFilterRole').value) || '';
-            var statusFilter = (document.getElementById('userFilterStatus') && document.getElementById('userFilterStatus').value) || '';
-            var q = search.trim().toLowerCase();
-            var filtered = userListData.filter(function(u) {
+            const search = (document.getElementById('userSearchInput') && document.getElementById('userSearchInput').value) || '';
+            const roleFilter = (document.getElementById('userFilterRole') && document.getElementById('userFilterRole').value) || '';
+            const statusFilter = (document.getElementById('userFilterStatus') && document.getElementById('userFilterStatus').value) || '';
+            const q = search.trim().toLowerCase();
+            const filtered = userListData.filter(function(u) {
                 if (statusFilter === 'active' && u.isActive === false) return false;
                 if (statusFilter === 'blocked' && u.isActive !== false) return false;
                 if (roleFilter && u.role !== roleFilter) return false;
                 if (!q) return true;
-                var name = (u.name || '').toLowerCase();
-                var email = (u.email || '').toLowerCase();
-                var username = (u.username || '').toLowerCase();
+                const name = (u.name || '').toLowerCase();
+                const email = (u.email || '').toLowerCase();
+                const username = (u.username || '').toLowerCase();
                 return name.indexOf(q) >= 0 || email.indexOf(q) >= 0 || username.indexOf(q) >= 0;
             });
             renderUserList(filtered);
         }
         function renderUserList(users) {
-            var list = document.getElementById('userList');
+            const list = document.getElementById('userList');
             if (!list) return;
-            var canManage = (currentUser && currentUser.permissions && currentUser.permissions.manage_users);
-            var canViewActivity = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
-            var roleLabels = { owner: t('role_owner'), admin: t('role_admin'), manager: t('role_manager'), supervisor: t('role_supervisor'), agent: t('role_agent') };
-            var statusLabels = { online: t('status_online'), away: t('status_away') || 'دور', busy: t('status_busy') || 'مشغول', offline: t('status_offline') || 'آفلاین' };
+            const canManage = (currentUser && currentUser.permissions && currentUser.permissions.manage_users);
+            const canViewActivity = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
+            const roleLabels = { owner: t('role_owner'), admin: t('role_admin'), manager: t('role_manager'), supervisor: t('role_supervisor'), agent: t('role_agent') };
+            const statusLabels = { online: t('status_online'), away: t('status_away') || 'دور', busy: t('status_busy') || 'مشغول', offline: t('status_offline') || 'آفلاین' };
             if (!users || users.length === 0) { list.innerHTML = '<div class="empty" style="grid-column:1/-1;"><span class="empty-icon">👤</span><br>' + t('empty_users') + '</div>'; return; }
             list.innerHTML = users.map(function(u) {
-                var initial = userInitial(u) || '?';
-                var avatarUrl = (u.avatar && String(u.avatar).trim()) ? ((u.avatar.indexOf('/') === 0 ? (window.location.origin || '') : '') + u.avatar) : '';
-                var onerr = 'this.style.display=' + String.fromCharCode(39) + 'none' + String.fromCharCode(39);
-                var avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="' + onerr + '">' : initial;
-                var deptBranch = [];
+                const initial = userInitial(u) || '?';
+                const avatarUrl = (u.avatar && String(u.avatar).trim()) ? ((u.avatar.indexOf('/') === 0 ? (window.location.origin || '') : '') + u.avatar) : '';
+                const onerr = 'this.style.display=' + String.fromCharCode(39) + 'none' + String.fromCharCode(39);
+                const avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="' + onerr + '">' : initial;
+                const deptBranch = [];
                 if (u.department && u.department.name) deptBranch.push(escapeHtml(u.department.name));
                 if (u.branch && u.branch.name) deptBranch.push(escapeHtml(u.branch.name));
-                var statusClass = (u.status && ['online', 'away', 'busy'].indexOf(u.status) !== -1) ? u.status : 'offline';
-                var statusLabel = statusLabels[u.status] || statusLabels.offline;
-                var lastLoginStr = u.lastLoginAt ? timeAgo(u.lastLoginAt) : (LANG === 'fa' ? 'هرگز' : 'Never');
-                var inactiveClass = u.isActive === false ? ' inactive' : '';
-                var blockedBadge = u.isActive === false ? '<span class="badge cancelled">' + t('blocked') + '</span>' : '';
-                var protectedBadge = u.isProtectedAdmin ? '<span class="badge" style="background:#fff3cd;color:#856404;font-size:11px;">' + (LANG === 'fa' ? 'غیر قابل ویرایش' : 'Protected') + '</span>' : '';
-                var roleBadge = '<span class="badge" style="background:var(--accent-soft);color:var(--accent);">' + escapeHtml(roleLabels[u.role] || u.role) + '</span>';
-                var statusBadge = '<span class="status-dot ' + statusClass + '" title="' + escapeHtml(statusLabel) + '"></span>';
-                var btns = [];
+                const statusClass = (u.status && ['online', 'away', 'busy'].indexOf(u.status) !== -1) ? u.status : 'offline';
+                const statusLabel = statusLabels[u.status] || statusLabels.offline;
+                const lastLoginStr = u.lastLoginAt ? timeAgo(u.lastLoginAt) : (LANG === 'fa' ? 'هرگز' : 'Never');
+                const inactiveClass = u.isActive === false ? ' inactive' : '';
+                const blockedBadge = u.isActive === false ? '<span class="badge cancelled">' + t('blocked') + '</span>' : '';
+                const protectedBadge = u.isProtectedAdmin ? '<span class="badge" style="background:#fff3cd;color:#856404;font-size:11px;">' + (LANG === 'fa' ? 'غیر قابل ویرایش' : 'Protected') + '</span>' : '';
+                const roleBadge = '<span class="badge" style="background:var(--accent-soft);color:var(--accent);">' + escapeHtml(roleLabels[u.role] || u.role) + '</span>';
+                const statusBadge = '<span class="status-dot ' + statusClass + '" title="' + escapeHtml(statusLabel) + '"></span>';
+                const btns = [];
                 if (canViewActivity) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openStaffDetailModal(\'' + u.id + '\')">' + t('view_activity') + '</button>');
                 if (canManage) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openUserEdit(\'' + u.id + '\')">' + (u.isProtectedAdmin ? (LANG === 'fa' ? 'مشاهده' : 'View') : t('edit_access')) + '</button>');
-                var btn = btns.join(' ');
-                var cardClick = canViewActivity ? 'onclick="openStaffDetailModal(\'' + u.id + '\')" style="cursor:pointer;"' : '';
-                var positionLine = u.position ? '<div class="user-card-meta" style="color:var(--accent);font-weight:500;">' + escapeHtml(u.position) + '</div>' : '';
+                const btn = btns.join(' ');
+                const cardClick = canViewActivity ? 'onclick="openStaffDetailModal(\'' + u.id + '\')" style="cursor:pointer;"' : '';
+                const positionLine = u.position ? '<div class="user-card-meta" style="color:var(--accent);font-weight:500;">' + escapeHtml(u.position) + '</div>' : '';
                 return '<div class="user-card' + inactiveClass + '" ' + cardClick + '><div class="user-card-header"><div class="user-card-avatar">' + avatarHtml + '</div><div class="user-card-name">' + statusBadge + ' ' + escapeHtml(u.name) + ' ' + blockedBadge + ' ' + protectedBadge + '</div></div><div class="user-card-body">' + positionLine + '<div class="user-card-email">' + escapeHtml(u.email || '') + '</div><div class="user-card-meta">' + (deptBranch.length ? deptBranch.join(' · ') : '') + '</div><div class="user-card-meta">' + (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLoginStr + '</div><div class="user-card-badges">' + roleBadge + '</div></div><div class="user-card-actions" onclick="event.stopPropagation();">' + btn + '</div></div>';
             }).join('');
         }
         function toggleUserForm() {
-            var box = document.getElementById('userFormBox');
-            var btnAdd = document.getElementById('btnAddUser');
-            var btnCancel = document.getElementById('btnCancelUserForm');
-            var visible = box.style.display === 'block';
+            const box = document.getElementById('userFormBox');
+            const btnAdd = document.getElementById('btnAddUser');
+            const btnCancel = document.getElementById('btnCancelUserForm');
+            const visible = box.style.display === 'block';
             box.style.display = visible ? 'none' : 'block';
             btnAdd.style.display = visible ? '' : 'none';
             if (btnCancel) btnCancel.style.display = visible ? 'none' : '';
         }
         function initUserAddPerms() {
-            var box = document.getElementById('userAddPermsBox');
-            var cont = document.getElementById('userAddPerms');
+            const box = document.getElementById('userAddPermsBox');
+            const cont = document.getElementById('userAddPerms');
             if (!box || !cont || !(currentUser && currentUser.permissions && currentUser.permissions.manage_users)) return;
-            var canGrantManageUsers = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
-            var html = Object.keys(sectionLabels).map(function(k) {
+            const canGrantManageUsers = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
+            const html = Object.keys(sectionLabels).map(function(k) {
                 if (k === 'manage_users' && !canGrantManageUsers) return '';
                 return '<label style="display:block; margin:6px 0;"><input type="checkbox" data-perm="' + k + '"> ' + sectionLabel(k) + '</label>';
             }).join('');
@@ -8305,42 +8305,42 @@
             box.style.display = 'block';
         }
         async function loadUsers() {
-            var list = document.getElementById('userList');
+            const list = document.getElementById('userList');
             setLoading('userList', 4);
-            var res = await apiFetch('/api/users');
+            const res = await apiFetch('/api/users');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
+            const data = res.data;
             userListData = data.data || [];
             if (userListData.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">👤</span><br>' + t('empty_users') + '</div>'; return; }
             filterAndRenderUsers();
         }
-        var currentEditUserId = null;
+        let currentEditUserId = null;
         var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets' };
-        var permGroups = [
+        const permGroups = [
             { key: 'communications', title: 'user_perms_group_communications', keys: ['conversations', 'customers', 'tickets', 'internal_chat', 'whatsapp', 'announcements'] },
             { key: 'organization', title: 'user_perms_group_organization', keys: ['dashboard', 'departments', 'users', 'branches', 'tasks', 'processes', 'staff_activity', 'supervision'] },
             { key: 'settings', title: 'user_perms_group_settings', keys: ['rates', 'services', 'panel_settings'] },
             { key: 'special', title: 'user_perms_group_special', keys: ['manage_users', 'manage_tickets'] }
         ];
-        function sectionLabel(k) { var lbl = t(sectionLabels[k] || k); return (lbl && String(lbl).trim()) ? lbl : (sectionLabels[k] || k); }
+        function sectionLabel(k) { const lbl = t(sectionLabels[k] || k); return (lbl && String(lbl).trim()) ? lbl : (sectionLabels[k] || k); }
         function closeUserEditModal() { document.getElementById('userEditModal').style.display = 'none'; currentEditUserId = null; }
         function userPermsSelectAll(checked) {
             document.querySelectorAll('#userEditPerms input[data-perm]').forEach(function(cb) { cb.checked = !!checked; });
         }
         function userPermsSelectGroup(groupKey, checked) {
-            var group = permGroups.find(function(g) { return g.key === groupKey; });
+            const group = permGroups.find(function(g) { return g.key === groupKey; });
             if (!group) return;
             group.keys.forEach(function(k) {
-                var cb = document.querySelector('#userEditPerms input[data-perm="' + k + '"]');
+                const cb = document.querySelector('#userEditPerms input[data-perm="' + k + '"]');
                 if (cb) cb.checked = !!checked;
             });
         }
         async function openUserEdit(userId) {
-            var res = await apiFetch('/api/users/' + userId);
+            const res = await apiFetch('/api/users/' + userId);
             if (res.needLogin || !res.ok) return;
-            var u = res.data;
-            var isProtected = !!u.isProtectedAdmin;
+            const u = res.data;
+            const isProtected = !!u.isProtectedAdmin;
             currentEditUserId = userId;
             document.querySelectorAll('.user-edit-tab').forEach(function(b) { b.classList.remove('active'); b.setAttribute('aria-selected', b.getAttribute('data-tab') === 'info' ? 'true' : 'false'); if (b.getAttribute('data-tab') === 'info') b.classList.add('active'); });
             document.getElementById('userEditTabInfo').classList.add('active'); document.getElementById('userEditTabInfo').style.display = 'block';
@@ -8354,73 +8354,73 @@
             document.getElementById('userEditBranch').value = u.branchId || '';
             document.getElementById('userEditActive').checked = u.isActive !== false;
             document.getElementById('userEditPassword').value = '';
-            var skillsEl = document.getElementById('userEditSkillsKeywords');
+            const skillsEl = document.getElementById('userEditSkillsKeywords');
             if (skillsEl) skillsEl.value = (u.settings && u.settings.skillsKeywords) || '';
-            var posEl = document.getElementById('userEditPosition');
+            const posEl = document.getElementById('userEditPosition');
             if (posEl) posEl.value = u.position || '';
-            var editFields = ['userEditName','userEditUsername','userEditEmail','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition'];
-            editFields.forEach(function(fid) { var el = document.getElementById(fid); if (el) el.disabled = isProtected; });
-            var protectedBanner = document.getElementById('userEditProtectedBanner');
+            const editFields = ['userEditName','userEditUsername','userEditEmail','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition'];
+            editFields.forEach(function(fid) { const el = document.getElementById(fid); if (el) el.disabled = isProtected; });
+            let protectedBanner = document.getElementById('userEditProtectedBanner');
             if (!protectedBanner) {
                 protectedBanner = document.createElement('div');
                 protectedBanner.id = 'userEditProtectedBanner';
                 protectedBanner.style.cssText = 'background:#fff3cd;color:#856404;border:1px solid #ffc107;border-radius:8px;padding:10px 14px;margin-bottom:12px;font-size:14px;text-align:center;font-weight:600;';
-                var editBody = document.querySelector('.user-edit-body');
+                const editBody = document.querySelector('.user-edit-body');
                 if (editBody) editBody.insertBefore(protectedBanner, editBody.firstChild);
             }
             protectedBanner.style.display = isProtected ? 'block' : 'none';
             protectedBanner.textContent = LANG === 'fa' ? 'این کاربر ادمین اصلی سیستم است و اطلاعات آن غیر قابل ویرایش می‌باشد' : 'This is the main system admin — account info is read-only';
-            var modalTitle = document.getElementById('userEditModalTitle');
+            const modalTitle = document.getElementById('userEditModalTitle');
             if (modalTitle) modalTitle.textContent = isProtected ? (LANG === 'fa' ? 'مشاهده ادمین اصلی (غیر قابل ویرایش)' : 'View Main Admin (Read-only)') : (t('modal_user_edit') || 'ویرایش کاربر');
-            var perms = u.permissions || {};
-            var canGrantSpecial = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
-            var html = '';
+            const perms = u.permissions || {};
+            const canGrantSpecial = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin'));
+            let html = '';
             permGroups.forEach(function(gr) {
-                var visibleKeys = gr.keys.filter(function(k) { return (k !== 'manage_users' && k !== 'manage_tickets') || canGrantSpecial; });
+                const visibleKeys = gr.keys.filter(function(k) { return (k !== 'manage_users' && k !== 'manage_tickets') || canGrantSpecial; });
                 if (visibleKeys.length === 0) return;
                 html += '<div class="user-edit-perm-group" data-group="' + gr.key + '">';
                 html += '<div class="user-edit-perm-group-header"><span class="user-edit-perm-group-title">' + (t(gr.title) || gr.key) + '</span><span class="user-edit-perm-group-toggles"><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', true)"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_all') || 'همه') + '</button><button type="button" class="btn-user-perms-group" onclick="userPermsSelectGroup(\'' + gr.key + '\', false)"' + (isProtected ? ' disabled' : '') + '>' + (t('user_perms_none') || 'هیچ‌کدام') + '</button></span></div>';
                 html += '<div class="user-edit-perm-group-items">';
                 visibleKeys.forEach(function(k) {
-                    var checked = perms[k] !== false ? ' checked' : '';
-                    var lbl = sectionLabel(k);
+                    const checked = perms[k] !== false ? ' checked' : '';
+                    const lbl = sectionLabel(k);
                     html += '<label class="user-edit-perm-item"><input type="checkbox" data-perm="' + k + '"' + checked + (isProtected ? ' disabled' : '') + '><span class="user-edit-perm-label">' + escapeHtml(lbl) + '</span></label>';
                 });
                 html += '</div></div>';
             });
             document.getElementById('userEditPerms').innerHTML = html;
-            var btnDel = document.getElementById('btnUserDelete');
+            const btnDel = document.getElementById('btnUserDelete');
             if (btnDel) btnDel.style.display = (!isProtected && currentUser && currentUser.canDeleteUser && u.id !== (currentUser && currentUser.id)) ? '' : 'none';
-            var btnSave = document.querySelector('.user-edit-footer .btn-primary');
+            const btnSave = document.querySelector('.user-edit-footer .btn-primary');
             if (btnSave) btnSave.style.display = isProtected ? 'none' : '';
-            var permsAllBtn = document.querySelector('.user-edit-perms-actions .btn-perms-all');
-            var permsNoneBtn = document.querySelector('.user-edit-perms-actions .btn-perms-none');
+            const permsAllBtn = document.querySelector('.user-edit-perms-actions .btn-perms-all');
+            const permsNoneBtn = document.querySelector('.user-edit-perms-actions .btn-perms-none');
             if (permsAllBtn) permsAllBtn.disabled = isProtected;
             if (permsNoneBtn) permsNoneBtn.disabled = isProtected;
             document.getElementById('userEditModal').style.display = 'flex';
         }
         function openDeleteUserModal() {
             if (!currentEditUserId) return;
-            var u = userListData.find(function(x) { return x.id === currentEditUserId; });
+            const u = userListData.find(function(x) { return x.id === currentEditUserId; });
             if (!u) return;
             document.getElementById('deleteUserModalText').textContent = (LANG === 'fa' ? 'مکالمات، تسک‌ها، تیکت‌ها و فرایندهای ' : 'Conversations, tasks, tickets and processes of ') + (u.name || u.email) + (LANG === 'fa' ? ' به کاربر انتخابی منتقل و حساب غیرفعال می‌شود.' : ' will be transferred and the account will be deactivated.');
-            var sel = document.getElementById('deleteUserTransferTo');
-            var others = userListData.filter(function(x) { return x.id !== currentEditUserId && x.isActive !== false; });
+            const sel = document.getElementById('deleteUserTransferTo');
+            const others = userListData.filter(function(x) { return x.id !== currentEditUserId && x.isActive !== false; });
             sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'انتخاب کاربر' : 'Select user') + '</option>' + others.map(function(x) { return '<option value="' + x.id + '">' + escapeHtml(x.name || x.username || x.email) + '</option>'; }).join('');
-            var permCb = document.getElementById('deleteUserPermanent');
+            const permCb = document.getElementById('deleteUserPermanent');
             if (permCb) permCb.checked = false;
             document.getElementById('deleteUserModal').style.display = 'flex';
         }
         function closeDeleteUserModal() { document.getElementById('deleteUserModal').style.display = 'none'; }
         async function confirmDeleteUser() {
             if (!currentEditUserId) return;
-            var transferTo = document.getElementById('deleteUserTransferTo').value;
+            const transferTo = document.getElementById('deleteUserTransferTo').value;
             if (!transferTo) { toast(LANG === 'fa' ? 'انتخاب کاربر برای انتقال الزامی است' : 'Select user to transfer data to', true); return; }
-            var permanent = document.getElementById('deleteUserPermanent') && document.getElementById('deleteUserPermanent').checked;
-            var endpoint = permanent ? '/api/users/' + currentEditUserId + '/permanent-delete' : '/api/users/' + currentEditUserId + '/delete-with-transfer';
-            var btn = document.getElementById('btnConfirmDeleteUser');
+            const permanent = document.getElementById('deleteUserPermanent') && document.getElementById('deleteUserPermanent').checked;
+            const endpoint = permanent ? '/api/users/' + currentEditUserId + '/permanent-delete' : '/api/users/' + currentEditUserId + '/delete-with-transfer';
+            const btn = document.getElementById('btnConfirmDeleteUser');
             if (btn) { btn.disabled = true; btn.textContent = LANG === 'fa' ? 'در حال پردازش...' : 'Processing...'; }
-            var res = await apiFetch(endpoint, { method: 'POST', body: JSON.stringify({ transferToUserId: transferTo }) });
+            const res = await apiFetch(endpoint, { method: 'POST', body: JSON.stringify({ transferToUserId: transferTo }) });
             if (btn) { btn.disabled = false; btn.textContent = t('user_delete_confirm_btn') || (LANG === 'fa' ? 'حذف و انتقال' : 'Delete & transfer'); }
             if (res.needLogin) return;
             if (res.ok) {
@@ -8430,15 +8430,15 @@
         }
         async function saveUserEdit() {
             if (!currentEditUserId) return;
-            var perms = {};
+            const perms = {};
             document.querySelectorAll('#userEditPerms input[data-perm]').forEach(function(cb) {
                 perms[cb.getAttribute('data-perm')] = cb.checked;
             });
-            var skillsEl = document.getElementById('userEditSkillsKeywords');
-            var posEl = document.getElementById('userEditPosition');
-            var editEmail = document.getElementById('userEditEmail').value.trim();
+            const skillsEl = document.getElementById('userEditSkillsKeywords');
+            const posEl = document.getElementById('userEditPosition');
+            const editEmail = document.getElementById('userEditEmail').value.trim();
             if (!editEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail)) { toast(LANG === 'fa' ? 'فرمت ایمیل نامعتبر است' : 'Invalid email format', true); return; }
-            var payload = {
+            const payload = {
                 name: document.getElementById('userEditName').value.trim(),
                 username: document.getElementById('userEditUsername').value.trim() || null,
                 email: editEmail,
@@ -8450,43 +8450,43 @@
                 permissions: perms,
                 skillsKeywords: skillsEl ? skillsEl.value.trim() || null : null
             };
-            var pw = document.getElementById('userEditPassword').value;
+            const pw = document.getElementById('userEditPassword').value;
             if (pw) {
                 if (pw.length < 6) { toast(LANG === 'fa' ? 'رمز عبور حداقل ۶ کاراکتر باشد' : 'Password must be at least 6 characters', true); return; }
                 payload.password = pw;
             }
-            var res = await apiFetch('/api/users/' + currentEditUserId, { method: 'PUT', body: JSON.stringify(payload) });
+            const res = await apiFetch('/api/users/' + currentEditUserId, { method: 'PUT', body: JSON.stringify(payload) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('saved')); closeUserEditModal(); loadUsers(); if (currentEditUserId === (currentUser && currentUser.id)) { apiFetch('/api/users/me').then(function(r) { if (r.ok && r.data) { currentUser = r.data; applyNavByRole(); } }); } } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         async function loadDeptsForUser() {
-            var res = await apiFetch('/api/departments');
+            const res = await apiFetch('/api/departments');
             if (res.needLogin) return;
-            var arr = (res.data && res.data.data) || [];
-            var opt = '<option value="">' + t('no_dept') + '</option>' + arr.map(function(d) { return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
-            ['userDept','userEditDept'].forEach(function(id) { var el = document.getElementById(id); if (el) el.innerHTML = opt; });
+            const arr = (res.data && res.data.data) || [];
+            const opt = '<option value="">' + t('no_dept') + '</option>' + arr.map(function(d) { return '<option value="' + d.id + '">' + escapeHtml(d.name) + '</option>'; }).join('');
+            ['userDept','userEditDept'].forEach(function(id) { const el = document.getElementById(id); if (el) el.innerHTML = opt; });
         }
 
         async function addUser() {
             if (!(currentUser && currentUser.permissions && currentUser.permissions.manage_users)) { toast(t('manage_users_required'), true); return; }
-            var name = document.getElementById('userName').value.trim();
-            var email = document.getElementById('userEmailAdd').value.trim();
-            var password = document.getElementById('userPass').value;
+            const name = document.getElementById('userName').value.trim();
+            const email = document.getElementById('userEmailAdd').value.trim();
+            const password = document.getElementById('userPass').value;
             if (!name || !email || !password) { toast(t('required_name_email_pass'), true); return; }
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { toast(LANG === 'fa' ? 'فرمت ایمیل نامعتبر است' : 'Invalid email format', true); return; }
             if (password.length < 6) { toast(LANG === 'fa' ? 'رمز عبور حداقل ۶ کاراکتر باشد' : 'Password must be at least 6 characters', true); return; }
-            var username = (document.getElementById('userUsernameAdd') && document.getElementById('userUsernameAdd').value) ? document.getElementById('userUsernameAdd').value.trim() : null;
-            var branchId = document.getElementById('userBranch').value || null;
-            var deptId = document.getElementById('userDept').value || null;
-            var perms = {};
-            var permsEl = document.getElementById('userAddPerms');
+            const username = (document.getElementById('userUsernameAdd') && document.getElementById('userUsernameAdd').value) ? document.getElementById('userUsernameAdd').value.trim() : null;
+            const branchId = document.getElementById('userBranch').value || null;
+            const deptId = document.getElementById('userDept').value || null;
+            const perms = {};
+            const permsEl = document.getElementById('userAddPerms');
             if (permsEl) permsEl.querySelectorAll('input[data-perm]').forEach(function(cb) { perms[cb.getAttribute('data-perm')] = cb.checked; });
-            var skillsEl = document.getElementById('userSkillsAdd');
-            var skillsKeywords = (skillsEl && skillsEl.value.trim()) || null;
-            var positionEl = document.getElementById('userPositionAdd');
-            var positionVal = (positionEl && positionEl.value.trim()) || null;
-            var res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms, skillsKeywords: skillsKeywords, position: positionVal }) });
+            const skillsEl = document.getElementById('userSkillsAdd');
+            const skillsKeywords = (skillsEl && skillsEl.value.trim()) || null;
+            const positionEl = document.getElementById('userPositionAdd');
+            const positionVal = (positionEl && positionEl.value.trim()) || null;
+            const res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms, skillsKeywords: skillsKeywords, position: positionVal }) });
             if (res.needLogin) return;
             if (res.ok) {
                 document.getElementById('userName').value = '';
@@ -8500,8 +8500,8 @@
         }
 
         var currentInternalThreadId = null;
-        var currentInternalThreadOtherUserId = null;
-        var currentInternalThreadParticipants = [];
+        let currentInternalThreadOtherUserId = null;
+        let currentInternalThreadParticipants = [];
         var internalCallPeers = {};
         var internalCallIceQueue = {};
         var internalCallLocalStream = null;
@@ -8510,44 +8510,44 @@
         var internalCallIsIncoming = false;
         var internalCallIsJoining = false;
         var internalCallType = 'voice';
-        var internalCallMicMuted = false;
-        var internalCallCameraOff = false;
-        var internalCallStartedAt = null;
-        var internalCallDurationInterval = null;
+        let internalCallMicMuted = false;
+        let internalCallCameraOff = false;
+        let internalCallStartedAt = null;
+        let internalCallDurationInterval = null;
         var INTERNAL_CALL_ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }];
         function getSocket() { return socket; }
         function getInternalCallOtherDisplay() {
-            var id = currentInternalThreadOtherUserId || (internalCallPendingInvite && internalCallPendingInvite.fromUserId) || (internalCallPendingOffer && internalCallPendingOffer.fromUserId);
+            const id = currentInternalThreadOtherUserId || (internalCallPendingInvite && internalCallPendingInvite.fromUserId) || (internalCallPendingOffer && internalCallPendingOffer.fromUserId);
             if (!id) return { name: '', initial: '?' };
-            var p = (currentInternalThreadParticipants || []).find(function(x) { return String(x.id) === String(id); });
-            var name = (p && (p.name || p.email)) || (internalCallPendingInvite && internalCallPendingInvite.fromUserName) || '';
-            var initial = (name && name.trim()[0]) ? name.trim()[0].toUpperCase() : '?';
+            const p = (currentInternalThreadParticipants || []).find(function(x) { return String(x.id) === String(id); });
+            const name = (p && (p.name || p.email)) || (internalCallPendingInvite && internalCallPendingInvite.fromUserName) || '';
+            const initial = (name && name.trim()[0]) ? name.trim()[0].toUpperCase() : '?';
             return { name: name || (LANG === 'fa' ? 'طرف تماس' : 'Contact'), initial: initial };
         }
         function formatCallDuration(ms) {
-            var s = Math.floor(ms / 1000);
-            var m = Math.floor(s / 60);
+            let s = Math.floor(ms / 1000);
+            const m = Math.floor(s / 60);
             s = s % 60;
             return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
         }
         function startInternalCallDurationTimer() {
             if (internalCallDurationInterval) return;
             internalCallStartedAt = internalCallStartedAt || Date.now();
-            var el = document.getElementById('internalCallDuration');
+            const el = document.getElementById('internalCallDuration');
             if (el) { el.style.display = 'block'; el.textContent = formatCallDuration(0); }
             internalCallDurationInterval = setInterval(function() {
-                var el = document.getElementById('internalCallDuration');
+                const el = document.getElementById('internalCallDuration');
                 if (el) el.textContent = formatCallDuration(Date.now() - internalCallStartedAt);
             }, 1000);
         }
         function stopInternalCallDurationTimer() {
             if (internalCallDurationInterval) { clearInterval(internalCallDurationInterval); internalCallDurationInterval = null; }
             internalCallStartedAt = null;
-            var el = document.getElementById('internalCallDuration');
+            const el = document.getElementById('internalCallDuration');
             if (el) el.style.display = 'none';
         }
         function updateInternalCallConnectionStatus(text, stateClass) {
-            var el = document.getElementById('internalCallConnectionStatus');
+            const el = document.getElementById('internalCallConnectionStatus');
             if (!el) return;
             el.textContent = text || '';
             el.style.display = text ? 'block' : 'none';
@@ -8556,7 +8556,7 @@
         function attachPeerConnectionStateHandlers(pc, userId) {
             if (!pc) return;
             function updateState() {
-                var state = pc.iceConnectionState || (pc.connectionState || '');
+                const state = pc.iceConnectionState || (pc.connectionState || '');
                 if (state === 'connected' || state === 'completed') updateInternalCallConnectionStatus(t('call_connected') || 'متصل', 'connected');
                 else if (state === 'connecting' || state === 'checking') updateInternalCallConnectionStatus(t('call_connecting') || 'در حال اتصال...', 'connecting');
                 else if (state === 'failed') updateInternalCallConnectionStatus(t('call_failed') || 'خطا در اتصال', 'failed');
@@ -8567,91 +8567,91 @@
             updateState();
         }
         function getOrCreateRemoteVideoEl(userId) {
-            var container = document.getElementById('internalCallRemoteVideos');
+            const container = document.getElementById('internalCallRemoteVideos');
             if (!container) return null;
-            var id = 'internalCallRemoteVideo_' + userId;
-            var el = document.getElementById(id);
+            const id = 'internalCallRemoteVideo_' + userId;
+            let el = document.getElementById(id);
             if (!el) { el = document.createElement('video'); el.id = id; el.className = 'internal-call-remote-video'; el.autoplay = true; el.playsInline = true; container.appendChild(el); }
             return el;
         }
         function removeRemoteVideoEl(userId) {
-            var el = document.getElementById('internalCallRemoteVideo_' + userId);
+            const el = document.getElementById('internalCallRemoteVideo_' + userId);
             if (el) { el.srcObject = null; el.remove(); }
         }
-        var internalThreadsCache = [];
+        let internalThreadsCache = [];
         async function loadInternalThreads() {
-            var list = document.getElementById('internalThreadList');
+            const list = document.getElementById('internalThreadList');
             if (!list) return;
             list.innerHTML = t('loading');
-            var res = await apiFetch('/api/internal/threads');
+            const res = await apiFetch('/api/internal/threads');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; return; }
-            var data = (res.data && res.data.data) || [];
+            const data = (res.data && res.data.data) || [];
             internalThreadsCache = data;
             renderInternalThreadList(data);
             updateInternalChatFloatingBtn();
         }
         function renderInternalThreadList(data) {
-            var list = document.getElementById('internalThreadList');
+            const list = document.getElementById('internalThreadList');
             if (!list) return;
             list.classList.remove('empty');
             if (data.length === 0) { list.innerHTML = '<div class="empty internal-chat-empty-state"><span class="empty-icon">\uD83D\uDCAC</span><p>' + (t('start_chat_hint') || (LANG === 'fa' ? 'گفتگویی را انتخاب کنید یا گفتگوی جدید شروع کنید.' : 'Select a conversation or start a new one.')) + '</p></div>'; return; }
-            var me = (currentUser && currentUser.id) || '';
+            const me = (currentUser && currentUser.id) || '';
             list.innerHTML = data.map(function(t) {
-                var participants = t.participants || [];
-                var names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
-                var first = participants[0];
-                var initial = (first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F';
-                var avatarUrl = resolveAvatarUrl(first && first.avatar);
-                var avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
-                var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 45) + ((t.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';
-                var timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
-                var fromLabel = t.lastMessage && t.lastMessage.fromUser && String(t.lastMessage.fromUser.id) !== String(me) ? (t.lastMessage.fromUser.name || '') + ': ' : '';
+                const participants = t.participants || [];
+                const names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
+                const first = participants[0];
+                const initial = (first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F';
+                const avatarUrl = resolveAvatarUrl(first && first.avatar);
+                const avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
+                const last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 45) + ((t.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';
+                const timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
+                const fromLabel = t.lastMessage && t.lastMessage.fromUser && String(t.lastMessage.fromUser.id) !== String(me) ? (t.lastMessage.fromUser.name || '') + ': ' : '';
                 return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(t.id) + '" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + avatarHtml + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
             }).join('');
         }
         function filterInternalThreads(q) {
             q = (q || '').trim().toLowerCase();
             if (!q) { renderInternalThreadList(internalThreadsCache); return; }
-            var filtered = internalThreadsCache.filter(function(th) {
-                var names = (th.participants || []).map(function(p) { return (p.name || '') + ' ' + (p.email || ''); }).join(' ').toLowerCase();
-                var last = (th.lastMessage && th.lastMessage.content) ? th.lastMessage.content.toLowerCase() : '';
+            const filtered = internalThreadsCache.filter(function(th) {
+                const names = (th.participants || []).map(function(p) { return (p.name || '') + ' ' + (p.email || ''); }).join(' ').toLowerCase();
+                const last = (th.lastMessage && th.lastMessage.content) ? th.lastMessage.content.toLowerCase() : '';
                 return names.indexOf(q) >= 0 || last.indexOf(q) >= 0;
             });
             renderInternalThreadList(filtered);
         }
         function updateInternalChatFloatingBtn() {
-            var btn = document.getElementById('internalChatFloatingBtn');
-            var popup = document.getElementById('internalChatPopup');
-            var perms = (currentUser && currentUser.permissions) || {};
-            var hasAccess = perms.internal_chat !== false;
+            const btn = document.getElementById('internalChatFloatingBtn');
+            const popup = document.getElementById('internalChatPopup');
+            const perms = (currentUser && currentUser.permissions) || {};
+            const hasAccess = perms.internal_chat !== false;
             if (!btn) return;
             if (!hasAccess) { btn.style.display = 'none'; return; }
             btn.style.display = 'flex';
-            var badge = document.getElementById('internalChatFloatingBadge');
+            const badge = document.getElementById('internalChatFloatingBadge');
             if (badge) { badge.style.display = window.hasNewInternalChat ? 'flex' : 'none'; badge.textContent = window.navBadgeCounts && window.navBadgeCounts['internal-chat'] ? window.navBadgeCounts['internal-chat'] : '1'; }
         }
         function toggleInternalChatFloating() {
-            var popup = document.getElementById('internalChatPopup');
+            const popup = document.getElementById('internalChatPopup');
             if (popup && popup.style.display !== 'none') { popup.classList.remove('minimized'); popup.style.display = 'flex'; return; }
             if (currentInternalThreadId) {
-                var headerEl = document.getElementById('internalChatHeader');
-                var name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');
+                const headerEl = document.getElementById('internalChatHeader');
+                const name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');
                 showInternalChatPopup(currentInternalThreadId, name);
             } else { openInternalChatPopupPicker(); }
         }
         function selectThreadInPopup(threadId) {
-            var t = (internalThreadsCache || []).find(function(x) { return String(x.id) === String(threadId); });
-            var names = (t && (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ')) || (LANG === 'fa' ? 'چت' : 'Chat');
+            const t = (internalThreadsCache || []).find(function(x) { return String(x.id) === String(threadId); });
+            const names = (t && (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ')) || (LANG === 'fa' ? 'چت' : 'Chat');
             showInternalChatPopup(threadId, names);
         }
         async function openInternalChatPopupPicker() {
-            var popup = document.getElementById('internalChatPopup');
-            var titleEl = document.getElementById('internalChatPopupTitle');
-            var listEl = document.getElementById('internalChatPopupThreadList');
-            var messagesEl = document.getElementById('internalChatPopupMessages');
-            var quickEl = document.getElementById('internalChatPopupQuickReplies');
-            var sendWrap = document.querySelector('.internal-chat-popup-send');
+            const popup = document.getElementById('internalChatPopup');
+            const titleEl = document.getElementById('internalChatPopupTitle');
+            const listEl = document.getElementById('internalChatPopupThreadList');
+            const messagesEl = document.getElementById('internalChatPopupMessages');
+            const quickEl = document.getElementById('internalChatPopupQuickReplies');
+            const sendWrap = document.querySelector('.internal-chat-popup-send');
             if (!popup || !listEl) return;
             if (titleEl) titleEl.textContent = LANG === 'fa' ? 'چت داخلی' : 'Internal chat';
             listEl.style.display = 'flex';
@@ -8660,66 +8660,66 @@
             if (quickEl) quickEl.style.display = 'none';
             if (sendWrap) sendWrap.style.display = 'none';
             popup.style.display = 'flex';
-            var btn = document.getElementById('internalChatFloatingBtn');
+            const btn = document.getElementById('internalChatFloatingBtn');
             if (btn) btn.classList.add('internal-chat-floating-btn-open');
             try {
-                var res = await apiFetch('/api/internal/threads');
+                const res = await apiFetch('/api/internal/threads');
                 if (res.needLogin || !res.ok) { listEl.innerHTML = '<div class="empty">' + (t('loading_err') || '') + '</div>'; return; }
-                var data = (res.data && res.data.data) || [];
+                const data = (res.data && res.data.data) || [];
                 internalThreadsCache = data;
-                var me = (currentUser && currentUser.id) || '';
-                var itemsHtml = data.map(function(t) {
-                    var participants = t.participants || [];
-                    var names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
-                    var first = participants[0];
-                    var initial = (first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F';
-                    var avatarUrl = resolveAvatarUrl(first && first.avatar);
-                    var avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
-                    var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 35) + ((t.lastMessage.content || '').length > 35 ? '\u2026' : '') : '\u2014';
-                    var timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
+                const me = (currentUser && currentUser.id) || '';
+                const itemsHtml = data.map(function(t) {
+                    const participants = t.participants || [];
+                    const names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
+                    const first = participants[0];
+                    const initial = (first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F';
+                    const avatarUrl = resolveAvatarUrl(first && first.avatar);
+                    const avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
+                    const last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 35) + ((t.lastMessage.content || '').length > 35 ? '\u2026' : '') : '\u2014';
+                    const timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
                     return '<button type="button" class="internal-chat-popup-thread-item" data-id="' + escapeHtml(t.id) + '"><span class="internal-chat-popup-thread-avatar">' + avatarHtml + '</span><div class="internal-chat-popup-thread-body"><span class="internal-chat-popup-thread-name">' + escapeHtml(names || t('chat')) + '</span><div class="internal-chat-popup-thread-meta">' + escapeHtml(last) + '</div></div><span class="internal-chat-popup-thread-time">' + escapeHtml(timeStr) + '</span></button>';
                 }).join('');
-                var newBtn = '<button type="button" class="internal-chat-popup-new-btn">' + (LANG === 'fa' ? '\u2795 گفتگوی جدید' : '+ New conversation') + '</button>';
+                const newBtn = '<button type="button" class="internal-chat-popup-new-btn">' + (LANG === 'fa' ? '\u2795 گفتگوی جدید' : '+ New conversation') + '</button>';
                 listEl.innerHTML = (data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">\uD83D\uDCAC</span><p>' + (t('start_chat_hint') || '') + '</p></div>' : '') + itemsHtml + newBtn;
             } catch (e) {
                 listEl.innerHTML = '<div class="empty">' + (t('loading_err') || '') + '</div>';
             }
         }
         async function loadInternalUsers() {
-            var res = await apiFetch('/api/internal/users');
+            const res = await apiFetch('/api/internal/users');
             if (res.needLogin || !res.ok) return;
-            var sel = document.getElementById('internalNewChatUser');
-            var data = (res.data && res.data.data) || [];
+            const sel = document.getElementById('internalNewChatUser');
+            const data = (res.data && res.data.data) || [];
             sel.innerHTML = '<option value="">' + t('select_user') + '</option>' + data.map(function(u) { return '<option value="' + u.id + '">' + escapeHtml(u.name) + '</option>'; }).join('');
         }
         function showNewChatForm() { document.getElementById('internalNewChatForm').style.display = 'block'; loadInternalUsers(); }
         function hideNewChatForm() { document.getElementById('internalNewChatForm').style.display = 'none'; }
         function showInternalCallModal(statusText, showAccept) {
-            var modal = document.getElementById('internalCallModal');
-            var statusEl = document.getElementById('internalCallStatus');
-            var connEl = document.getElementById('internalCallConnectionStatus');
-            var acceptBtn = document.getElementById('internalCallAcceptBtn');
-            var rejectBtn = document.getElementById('internalCallRejectBtn');
-            var endBtn = document.getElementById('internalCallEndBtn');
-            var addBtn = document.getElementById('internalCallAddBtn');
-            var micBtn = document.getElementById('internalCallMicBtn');
-            var cameraBtn = document.getElementById('internalCallCameraBtn');
-            var localV = document.getElementById('internalCallLocalVideo');
-            var container = document.getElementById('internalCallRemoteVideos');
-            var videosWrap = document.getElementById('internalCallVideos');
-            var voicePlaceholder = document.getElementById('internalCallVoicePlaceholder');
-            var voiceAvatar = document.getElementById('internalCallVoiceAvatar');
-            var voiceName = document.getElementById('internalCallVoiceName');
-            var isVoice = internalCallType === 'voice';
+            const modal = document.getElementById('internalCallModal');
+            const statusEl = document.getElementById('internalCallStatus');
+            const connEl = document.getElementById('internalCallConnectionStatus');
+            const acceptBtn = document.getElementById('internalCallAcceptBtn');
+            const rejectBtn = document.getElementById('internalCallRejectBtn');
+            const endBtn = document.getElementById('internalCallEndBtn');
+            const addBtn = document.getElementById('internalCallAddBtn');
+            const micBtn = document.getElementById('internalCallMicBtn');
+            const cameraBtn = document.getElementById('internalCallCameraBtn');
+            const localV = document.getElementById('internalCallLocalVideo');
+            const container = document.getElementById('internalCallRemoteVideos');
+            const videosWrap = document.getElementById('internalCallVideos');
+            const voicePlaceholder = document.getElementById('internalCallVoicePlaceholder');
+            const voiceAvatar = document.getElementById('internalCallVoiceAvatar');
+            const voiceName = document.getElementById('internalCallVoiceName');
+            const isVoice = internalCallType === 'voice';
             if (statusEl) statusEl.textContent = statusText || '';
             if (voicePlaceholder) voicePlaceholder.style.display = isVoice ? 'flex' : 'none';
             if (videosWrap) videosWrap.style.display = isVoice ? 'none' : 'block';
             if (isVoice) {
-                var d = getInternalCallOtherDisplay();
+                const d = getInternalCallOtherDisplay();
                 if (voiceAvatar) voiceAvatar.textContent = d.initial;
                 if (voiceName) voiceName.textContent = d.name;
             }
-            var isInCall = (statusText === t('in_call') || statusText === 'In call') && !showAccept;
+            const isInCall = (statusText === t('in_call') || statusText === 'In call') && !showAccept;
             if (isInCall) startInternalCallDurationTimer();
             else stopInternalCallDurationTimer();
             if (connEl) { connEl.style.display = 'none'; connEl.textContent = ''; connEl.className = 'internal-call-connection-status'; }
@@ -8741,15 +8741,15 @@
         function hideInternalCallModal() {
             stopCallRingtone();
             stopInternalCallDurationTimer();
-            var modal = document.getElementById('internalCallModal');
+            const modal = document.getElementById('internalCallModal');
             if (modal) modal.style.display = 'none';
             if (internalCallLocalStream) { internalCallLocalStream.getTracks().forEach(function(t){ t.stop(); }); internalCallLocalStream = null; }
-            var localV = document.getElementById('internalCallLocalVideo');
+            const localV = document.getElementById('internalCallLocalVideo');
             if (localV) localV.srcObject = null;
-            Object.keys(internalCallPeers).forEach(function(uid) { var pc = internalCallPeers[uid]; if (pc) pc.close(); });
+            Object.keys(internalCallPeers).forEach(function(uid) { const pc = internalCallPeers[uid]; if (pc) pc.close(); });
             internalCallPeers = {};
             internalCallIceQueue = {};
-            var container = document.getElementById('internalCallRemoteVideos');
+            const container = document.getElementById('internalCallRemoteVideos');
             if (container) container.innerHTML = '';
             internalCallPendingOffer = null;
             internalCallPendingInvite = null;
@@ -8760,83 +8760,83 @@
         }
         function toggleInternalCallMic() {
             if (!internalCallLocalStream) return;
-            var audioTracks = internalCallLocalStream.getAudioTracks();
-            var currentlyEnabled = audioTracks.length > 0 && audioTracks[0].enabled;
+            const audioTracks = internalCallLocalStream.getAudioTracks();
+            const currentlyEnabled = audioTracks.length > 0 && audioTracks[0].enabled;
             internalCallMicMuted = currentlyEnabled;
             if (audioTracks.length) audioTracks[0].enabled = !currentlyEnabled;
-            var micBtn = document.getElementById('internalCallMicBtn');
+            const micBtn = document.getElementById('internalCallMicBtn');
             if (micBtn) { micBtn.classList.toggle('muted', internalCallMicMuted); micBtn.title = internalCallMicMuted ? (t('call_unmute') || 'وصل میکروفون') : (t('call_mute') || 'قطع میکروفون'); }
         }
         function toggleInternalCallCamera() {
             if (!internalCallLocalStream) return;
-            var videoTracks = internalCallLocalStream.getVideoTracks();
+            const videoTracks = internalCallLocalStream.getVideoTracks();
             if (videoTracks.length) {
                 internalCallCameraOff = videoTracks[0].enabled;
                 videoTracks[0].enabled = !internalCallCameraOff;
             } else internalCallCameraOff = true;
-            var localV = document.getElementById('internalCallLocalVideo');
+            const localV = document.getElementById('internalCallLocalVideo');
             if (localV) localV.style.display = internalCallCameraOff ? 'none' : 'block';
-            var cameraBtn = document.getElementById('internalCallCameraBtn');
+            const cameraBtn = document.getElementById('internalCallCameraBtn');
             if (cameraBtn) { cameraBtn.classList.toggle('off', internalCallCameraOff); cameraBtn.title = internalCallCameraOff ? (t('call_camera_on') || 'روشن کردن دوربین') : (t('call_camera_off') || 'خاموش کردن دوربین'); }
         }
         async function startInternalCall(type) {
             if (!currentInternalThreadId || !currentInternalThreadOtherUserId) { toast(t('select_conversation_first'), true); return; }
-            var s = getSocket();
+            const s = getSocket();
             if (!s || !s.connected) { toast(t('user_offline') || 'کاربر آفلاین است', true); return; }
             try {
                 internalCallType = type;
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
-                var pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
-                var toId = currentInternalThreadOtherUserId;
+                const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
+                const toId = currentInternalThreadOtherUserId;
                 internalCallPeers[toId] = pc;
                 attachPeerConnectionStateHandlers(pc, toId);
                 internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
                 pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: toId, threadId: currentInternalThreadId, candidate: e.candidate }); };
-                pc.ontrack = function(e) { var rv = getOrCreateRemoteVideoEl(toId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
-                var offer = await pc.createOffer();
+                pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(toId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
+                const offer = await pc.createOffer();
                 await pc.setLocalDescription(offer);
                 s.emit('call_offer', { toUserId: toId, threadId: currentInternalThreadId, type: type, sdp: offer });
                 showInternalCallModal(type === 'video' ? t('calling_video') : t('calling_voice'), false);
-                var localV = document.getElementById('internalCallLocalVideo');
+                const localV = document.getElementById('internalCallLocalVideo');
                 if (localV) { localV.srcObject = internalCallLocalStream; localV.style.display = type === 'video' ? 'block' : 'none'; }
-                var addBtn = document.getElementById('internalCallAddBtn');
+                const addBtn = document.getElementById('internalCallAddBtn');
                 if (addBtn) addBtn.style.display = 'flex';
-                var micBtn = document.getElementById('internalCallMicBtn');
+                const micBtn = document.getElementById('internalCallMicBtn');
                 if (micBtn) { micBtn.style.display = 'flex'; micBtn.classList.toggle('muted', internalCallMicMuted); }
-                var cameraBtn = document.getElementById('internalCallCameraBtn');
+                const cameraBtn = document.getElementById('internalCallCameraBtn');
                 if (cameraBtn) { cameraBtn.style.display = type === 'video' ? 'flex' : 'none'; cameraBtn.classList.toggle('off', internalCallCameraOff); }
             } catch (e) { toast((e.name || 'Error') + ': ' + (e.message || ''), true); hideInternalCallModal(); }
         }
         async function acceptInternalCall() {
             if (!internalCallPendingOffer) return;
-            var toUserId = internalCallPendingOffer.fromUserId;
-            var threadId = internalCallPendingOffer.threadId;
-            var s = getSocket();
+            const toUserId = internalCallPendingOffer.fromUserId;
+            const threadId = internalCallPendingOffer.threadId;
+            const s = getSocket();
             if (!s || !s.connected) return;
             try {
-                var type = internalCallPendingOffer.type || 'voice';
+                const type = internalCallPendingOffer.type || 'voice';
                 internalCallType = type;
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
-                var pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
+                const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
                 internalCallPeers[toUserId] = pc;
                 attachPeerConnectionStateHandlers(pc, toUserId);
                 internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
                 pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: toUserId, threadId: threadId, candidate: e.candidate }); };
-                pc.ontrack = function(e) { var rv = getOrCreateRemoteVideoEl(toUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
+                pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(toUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
                 await pc.setRemoteDescription(new RTCSessionDescription(internalCallPendingOffer.sdp));
-                var answer = await pc.createAnswer();
+                const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
                 s.emit('call_answer', { toUserId: toUserId, threadId: threadId, sdp: answer });
                 currentInternalThreadId = threadId;
                 currentInternalThreadOtherUserId = toUserId;
                 showInternalCallModal(t('in_call'), false);
-                var localV = document.getElementById('internalCallLocalVideo');
+                const localV = document.getElementById('internalCallLocalVideo');
                 if (localV) { localV.srcObject = internalCallLocalStream; localV.style.display = type === 'video' ? 'block' : 'none'; }
-                var addBtn = document.getElementById('internalCallAddBtn');
+                const addBtn = document.getElementById('internalCallAddBtn');
                 if (addBtn) addBtn.style.display = 'flex';
-                var micBtn = document.getElementById('internalCallMicBtn');
+                const micBtn = document.getElementById('internalCallMicBtn');
                 if (micBtn) { micBtn.style.display = 'flex'; micBtn.classList.toggle('muted', internalCallMicMuted); }
-                var cameraBtn = document.getElementById('internalCallCameraBtn');
+                const cameraBtn = document.getElementById('internalCallCameraBtn');
                 if (cameraBtn) { cameraBtn.style.display = type === 'video' ? 'flex' : 'none'; cameraBtn.classList.toggle('off', internalCallCameraOff); }
                 internalCallPendingOffer = null;
                 internalCallIsIncoming = false;
@@ -8844,40 +8844,40 @@
             } catch (e) { toast((e.name || 'Error') + ': ' + (e.message || ''), true); rejectInternalCall(); }
         }
         function rejectInternalCall() {
-            var s = getSocket();
-            var toUserId = internalCallPendingOffer ? internalCallPendingOffer.fromUserId : currentInternalThreadOtherUserId;
-            var threadId = internalCallPendingOffer ? internalCallPendingOffer.threadId : currentInternalThreadId;
+            const s = getSocket();
+            const toUserId = internalCallPendingOffer ? internalCallPendingOffer.fromUserId : currentInternalThreadOtherUserId;
+            const threadId = internalCallPendingOffer ? internalCallPendingOffer.threadId : currentInternalThreadId;
             if (s && s.connected && toUserId && threadId) s.emit('call_reject', { toUserId: toUserId, threadId: threadId });
             hideInternalCallModal();
         }
         function endInternalCall() {
-            var s = getSocket();
+            const s = getSocket();
             if (s && s.connected && currentInternalThreadId) s.emit('call_end', { threadId: currentInternalThreadId });
             hideInternalCallModal();
         }
         async function handleCallOfferAsJoiner(data) {
-            var fromUserId = data.fromUserId;
-            var threadId = data.threadId;
-            var s = getSocket();
+            const fromUserId = data.fromUserId;
+            const threadId = data.threadId;
+            const s = getSocket();
             if (!s || threadId !== currentInternalThreadId || internalCallPeers[fromUserId]) return;
             try {
-                var pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
+                const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
                 internalCallPeers[fromUserId] = pc;
                 attachPeerConnectionStateHandlers(pc, fromUserId);
                 internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
                 pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: fromUserId, threadId: threadId, candidate: e.candidate }); };
-                pc.ontrack = function(e) { var rv = getOrCreateRemoteVideoEl(fromUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
+                pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(fromUserId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
                 await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
-                var answer = await pc.createAnswer();
+                const answer = await pc.createAnswer();
                 await pc.setLocalDescription(answer);
                 s.emit('call_answer', { toUserId: fromUserId, threadId: threadId, sdp: answer });
             } catch (err) { console.warn('handleCallOfferAsJoiner:', err); }
         }
         async function acceptInternalCallInvite() {
             if (!internalCallPendingInvite) return;
-            var threadId = internalCallPendingInvite.threadId;
-            var type = internalCallPendingInvite.type || 'voice';
-            var s = getSocket();
+            const threadId = internalCallPendingInvite.threadId;
+            const type = internalCallPendingInvite.type || 'voice';
+            const s = getSocket();
             if (!s || !s.connected) return;
             try {
                 document.getElementById('internalCallInviteModal').style.display = 'none';
@@ -8888,13 +8888,13 @@
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
                 s.emit('call_invite_accept', { threadId: threadId, type: type });
                 showInternalCallModal(t('in_call'), false);
-                var localV = document.getElementById('internalCallLocalVideo');
+                const localV = document.getElementById('internalCallLocalVideo');
                 if (localV) { localV.srcObject = internalCallLocalStream; localV.style.display = type === 'video' ? 'block' : 'none'; }
-                var addBtn = document.getElementById('internalCallAddBtn');
+                const addBtn = document.getElementById('internalCallAddBtn');
                 if (addBtn) addBtn.style.display = 'flex';
-                var micBtn = document.getElementById('internalCallMicBtn');
+                const micBtn = document.getElementById('internalCallMicBtn');
                 if (micBtn) { micBtn.style.display = 'flex'; micBtn.classList.toggle('muted', internalCallMicMuted); }
-                var cameraBtn = document.getElementById('internalCallCameraBtn');
+                const cameraBtn = document.getElementById('internalCallCameraBtn');
                 if (cameraBtn) { cameraBtn.style.display = type === 'video' ? 'flex' : 'none'; cameraBtn.classList.toggle('off', internalCallCameraOff); }
                 internalCallPendingInvite = null;
                 playCallConnected();
@@ -8903,68 +8903,68 @@
         }
         function rejectInternalCallInvite() {
             stopCallRingtone();
-            var s = getSocket();
+            const s = getSocket();
             if (internalCallPendingInvite && s && s.connected) s.emit('call_invite_reject', { fromUserId: internalCallPendingInvite.fromUserId, threadId: internalCallPendingInvite.threadId });
             internalCallPendingInvite = null;
-            var mod = document.getElementById('internalCallInviteModal');
+            const mod = document.getElementById('internalCallInviteModal');
             if (mod) mod.style.display = 'none';
         }
-        var addToCallParticipantsCache = [];
+        let addToCallParticipantsCache = [];
         function renderAddToCallList(participants) {
-            var list = document.getElementById('addToCallList');
+            const list = document.getElementById('addToCallList');
             if (!list) return;
             addToCallParticipantsCache = participants || addToCallParticipantsCache;
-            var search = (document.getElementById('addToCallSearch') && document.getElementById('addToCallSearch').value) || '';
-            var q = search.trim().toLowerCase();
-            var filtered = q ? addToCallParticipantsCache.filter(function(p) {
-                var name = (p.name || p.email || '').toLowerCase();
+            const search = (document.getElementById('addToCallSearch') && document.getElementById('addToCallSearch').value) || '';
+            const q = search.trim().toLowerCase();
+            const filtered = q ? addToCallParticipantsCache.filter(function(p) {
+                const name = (p.name || p.email || '').toLowerCase();
                 return name.indexOf(q) >= 0;
             }) : addToCallParticipantsCache;
             list.innerHTML = filtered.map(function(p) {
-                var name = p.name || p.email || p.id;
-                var initial = (name && name.toString().trim()[0]) ? name.toString().trim()[0].toUpperCase() : '?';
+                const name = p.name || p.email || p.id;
+                const initial = (name && name.toString().trim()[0]) ? name.toString().trim()[0].toUpperCase() : '?';
                 return '<label class="add-to-call-item" data-user-id="' + escapeHtml(p.id) + '"><input type="checkbox" class="add-to-call-check" data-user-id="' + escapeHtml(p.id) + '"><span class="add-to-call-avatar">' + escapeHtml(initial) + '</span><span class="add-to-call-name">' + escapeHtml(name) + '</span></label>';
             }).join('');
-            var selAll = document.getElementById('addToCallSelectAll');
+            const selAll = document.getElementById('addToCallSelectAll');
             if (selAll) selAll.checked = false;
         }
         function filterAddToCallList() {
             renderAddToCallList(addToCallParticipantsCache);
         }
         function toggleAddToCallSelectAll(checked) {
-            var list = document.getElementById('addToCallList');
+            const list = document.getElementById('addToCallList');
             if (!list) return;
             list.querySelectorAll('.add-to-call-check').forEach(function(cb) {
                 if (cb.closest('.add-to-call-item').style.display !== 'none') cb.checked = !!checked;
             });
         }
         function showAddToCallModal() {
-            var list = document.getElementById('addToCallList');
+            const list = document.getElementById('addToCallList');
             if (!list) return;
-            var inCallIds = Object.keys(internalCallPeers);
-            var participants = currentInternalThreadParticipants.filter(function(p) {
-                var id = String(p.id);
+            const inCallIds = Object.keys(internalCallPeers);
+            const participants = currentInternalThreadParticipants.filter(function(p) {
+                const id = String(p.id);
                 return id !== String(currentUser && currentUser.id) && inCallIds.indexOf(id) < 0;
             });
             if (participants.length === 0) { toast(LANG === 'fa' ? 'همه در تماس هستند' : 'Everyone is already in the call', true); return; }
-            var searchEl = document.getElementById('addToCallSearch');
+            const searchEl = document.getElementById('addToCallSearch');
             if (searchEl) searchEl.value = '';
-            var selAll = document.getElementById('addToCallSelectAll');
+            const selAll = document.getElementById('addToCallSelectAll');
             if (selAll) selAll.checked = false;
             renderAddToCallList(participants);
             document.getElementById('addToCallModal').style.display = 'flex';
         }
         function closeAddToCallModal() {
-            var mod = document.getElementById('addToCallModal');
+            const mod = document.getElementById('addToCallModal');
             if (mod) mod.style.display = 'none';
         }
         function inviteSelectedToCall() {
-            var list = document.getElementById('addToCallList');
+            const list = document.getElementById('addToCallList');
             if (!list) return;
-            var checked = list.querySelectorAll('.add-to-call-check:checked');
-            var ids = Array.from(checked).map(function(cb) { return cb.getAttribute('data-user-id'); }).filter(Boolean);
+            const checked = list.querySelectorAll('.add-to-call-check:checked');
+            const ids = Array.from(checked).map(function(cb) { return cb.getAttribute('data-user-id'); }).filter(Boolean);
             if (ids.length === 0) { toast(LANG === 'fa' ? 'حداقل یک نفر را انتخاب کنید' : 'Select at least one person', true); return; }
-            var s = getSocket();
+            const s = getSocket();
             if (!s || !s.connected || !currentInternalThreadId) { toast(t('user_offline') || (LANG === 'fa' ? 'اتصال برقرار نیست' : 'Not connected'), true); return; }
             ids.forEach(function(userId) {
                 s.emit('call_invite', { toUserId: userId, threadId: currentInternalThreadId });
@@ -8973,23 +8973,23 @@
             toast(ids.length === 1 ? (LANG === 'fa' ? 'دعوت ارسال شد' : 'Invite sent') : (LANG === 'fa' ? 'دعوت به ' + ids.length + ' نفر ارسال شد' : 'Invite sent to ' + ids.length + ' people'));
         }
         function inviteToCall(userId) {
-            var s = getSocket();
+            const s = getSocket();
             if (!s || !s.connected || !currentInternalThreadId) return;
             s.emit('call_invite', { toUserId: userId, threadId: currentInternalThreadId });
             toast((LANG === 'fa' ? 'دعوت ارسال شد' : 'Invite sent'));
         }
         async function startInternalChat() {
-            var sel = document.getElementById('internalNewChatUser');
-            var opts = sel ? Array.from(sel.selectedOptions || []) : [];
-            var userIds = opts.map(function(o) { return o.value; }).filter(function(v) { return v; });
+            const sel = document.getElementById('internalNewChatUser');
+            const opts = sel ? Array.from(sel.selectedOptions || []) : [];
+            const userIds = opts.map(function(o) { return o.value; }).filter(function(v) { return v; });
             if (!userIds.length) { toast(t('select_user_first'), true); return; }
-            var res = await apiFetch('/api/internal/threads', { method: 'POST', body: JSON.stringify({ userIds: userIds }) });
+            const res = await apiFetch('/api/internal/threads', { method: 'POST', body: JSON.stringify({ userIds: userIds }) });
             if (res.needLogin) return;
             if (res.ok) { hideNewChatForm(); openInternalThread(res.data.id); loadInternalThreads(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function backToInternalChatList() {
-            var wrap = document.getElementById('internalChatLayoutWrap');
-            var pane = document.getElementById('internalChatPane');
+            const wrap = document.getElementById('internalChatLayoutWrap');
+            const pane = document.getElementById('internalChatPane');
             if (wrap) { wrap.classList.remove('internal-chat-mobile-chat-open', 'internal-chat-has-chat'); }
             if (pane) pane.style.display = 'none';
         }
@@ -8997,129 +8997,129 @@
         async function openInternalThread(threadId) {
             currentInternalThreadId = threadId;
             currentInternalThreadOtherUserId = null;
-            var pane = document.getElementById('internalChatPane');
-            var wrap = document.getElementById('internalChatLayoutWrap');
+            const pane = document.getElementById('internalChatPane');
+            const wrap = document.getElementById('internalChatLayoutWrap');
             pane.style.display = 'flex';
             if (wrap) { wrap.classList.add('internal-chat-has-chat'); if (isInternalChatMobile()) wrap.classList.add('internal-chat-mobile-chat-open'); }
-            var partRes = await apiFetch('/api/internal/threads');
+            const partRes = await apiFetch('/api/internal/threads');
             if (partRes.ok && partRes.data && partRes.data.data) {
-                var t = partRes.data.data.find(function(x) { return x.id === threadId; });
-                var headerEl = document.getElementById('internalChatHeader');
+                const t = partRes.data.data.find(function(x) { return x.id === threadId; });
+                const headerEl = document.getElementById('internalChatHeader');
                 if (headerEl) headerEl.textContent = t && t.participants ? t.participants.map(function(p) { return p.name; }).join(', ') : t('chat');
-                var others = t && t.participants ? t.participants.filter(function(p) { return String(p.id) !== String(currentUser && currentUser.id); }) : [];
+                const others = t && t.participants ? t.participants.filter(function(p) { return String(p.id) !== String(currentUser && currentUser.id); }) : [];
                 currentInternalThreadOtherUserId = others.length ? others[0].id : null;
                 currentInternalThreadParticipants = t && t.participants ? t.participants : [];
-                var headerAvatarEl = document.getElementById('internalChatHeaderAvatar');
+                const headerAvatarEl = document.getElementById('internalChatHeaderAvatar');
                 if (headerAvatarEl) {
-                    var other = others[0];
-                    var initial = (other && (other.name || other.email || '').trim()[0]) ? (other.name || other.email || '').trim()[0].toUpperCase() : '\u003F';
-                    var pic = resolveAvatarUrl(other && other.avatar);
+                    const other = others[0];
+                    const initial = (other && (other.name || other.email || '').trim()[0]) ? (other.name || other.email || '').trim()[0].toUpperCase() : '\u003F';
+                    const pic = resolveAvatarUrl(other && other.avatar);
                     if (pic) headerAvatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'">';
                     else { headerAvatarEl.innerHTML = ''; headerAvatarEl.textContent = initial; }
                 }
-                var callBtns = document.getElementById('internalChatCallBtns');
+                const callBtns = document.getElementById('internalChatCallBtns');
                 if (callBtns) callBtns.style.display = currentInternalThreadOtherUserId ? 'flex' : 'none';
             }
             loadInternalMessages(threadId);
         }
         function insertInternalChatQuickReply(text) {
-            var inp = document.getElementById('internalChatInput');
+            const inp = document.getElementById('internalChatInput');
             if (inp) { inp.value = (inp.value ? inp.value + ' ' : '') + text; inp.focus(); }
         }
         async function loadInternalMessages(threadId) {
-            var list = document.getElementById('internalChatMessages');
+            const list = document.getElementById('internalChatMessages');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var res = await apiFetch('/api/internal/threads/' + threadId + '/messages');
+            const res = await apiFetch('/api/internal/threads/' + threadId + '/messages');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; return; }
-            var data = (res.data && res.data.data) || [];
-            var me = (currentUser && currentUser.id) || '';
-            var quickEl = document.getElementById('internalChatQuickReplies');
+            const data = (res.data && res.data.data) || [];
+            const me = (currentUser && currentUser.id) || '';
+            const quickEl = document.getElementById('internalChatQuickReplies');
             if (quickEl) {
                 if (data.length === 0) {
                     quickEl.style.display = 'flex';
-                    var chips = [{ key: 'quick_reply_hi', text: LANG === 'fa' ? 'سلام' : 'Hi' }, { key: 'quick_reply_gotit', text: LANG === 'fa' ? 'متوجه شدم' : 'Got it' }, { key: 'quick_reply_later', text: LANG === 'fa' ? 'بعداً پاسخ می‌دهم' : 'Will reply later' }, { key: 'quick_reply_checking', text: LANG === 'fa' ? 'در حال بررسی' : 'Checking' }];
+                    const chips = [{ key: 'quick_reply_hi', text: LANG === 'fa' ? 'سلام' : 'Hi' }, { key: 'quick_reply_gotit', text: LANG === 'fa' ? 'متوجه شدم' : 'Got it' }, { key: 'quick_reply_later', text: LANG === 'fa' ? 'بعداً پاسخ می‌دهم' : 'Will reply later' }, { key: 'quick_reply_checking', text: LANG === 'fa' ? 'در حال بررسی' : 'Checking' }];
                     quickEl.innerHTML = chips.map(function(c) { return '<button type="button" class="internal-quick-reply-chip" data-reply="' + String(c.text).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '">' + t(c.key) + '</button>'; }).join('');
                     quickEl.querySelectorAll('.internal-quick-reply-chip').forEach(function(btn) { btn.onclick = function() { insertInternalChatQuickReply(this.getAttribute('data-reply') || ''); }; });
                 } else { quickEl.style.display = 'none'; quickEl.innerHTML = ''; }
             }
             list.innerHTML = data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">💬</span><p>' + t('start_chat_hint') + '</p></div>' : data.map(function(m) {
-                var isOut = m.fromUserId === me;
-                var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-                var avatarHtml = internalMsgAvatarHtml(m.fromUser);
-                var timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+                const isOut = m.fromUserId === me;
+                const att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
+                const avatarHtml = internalMsgAvatarHtml(m.fromUser);
+                const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
             }).join('');
             list.scrollTop = list.scrollHeight;
         }
         function appendTicketReply(r) {
-            var list = document.getElementById('ticketReplies');
+            const list = document.getElementById('ticketReplies');
             if (!list || !currentTicketId) return;
-            var noReply = list.querySelector('.text-muted');
+            const noReply = list.querySelector('.text-muted');
             if (noReply) noReply.remove();
-            var isOut = String(r.userId) === String(currentUser && currentUser.id);
-            var att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
-            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + escapeHtml(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
+            const isOut = String(r.userId) === String(currentUser && currentUser.id);
+            const att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
+            const html = '<div class="msg ' + (isOut ? 'out' : 'in') + '" style="margin:8px 0;"><div>' + escapeHtml(r.content || '') + '</div>' + att + '<div class="time">' + userDisplay(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
         async function sendInternalMessage() {
             if (!currentInternalThreadId) { toast(t('select_conversation_first'), true); return; }
-            var content = (document.getElementById('internalChatInput') && document.getElementById('internalChatInput').value) || '';
-            var fileInput = document.getElementById('internalChatFile');
-            var allowDownload = !(document.getElementById('internalChatAllowDownload') && !document.getElementById('internalChatAllowDownload').checked);
-            var attachments = [];
+            const content = (document.getElementById('internalChatInput') && document.getElementById('internalChatInput').value) || '';
+            const fileInput = document.getElementById('internalChatFile');
+            const allowDownload = !(document.getElementById('internalChatAllowDownload') && !document.getElementById('internalChatAllowDownload').checked);
+            const attachments = [];
             if (fileInput && fileInput.files && fileInput.files[0]) {
-                var formData = new FormData();
+                const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-                var up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-                var upData = await up.json();
+                const up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                const upData = await up.json();
                 if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size, allowDownload: allowDownload });
             }
             if (!content.trim() && attachments.length === 0) { toast(t('enter_text_or_file'), true); return; }
-            var res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content.trim() || '(پیوست)', attachments: attachments }) });
+            const res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content.trim() || '(پیوست)', attachments: attachments }) });
             if (res.needLogin) return;
             if (res.ok) {
                 document.getElementById('internalChatInput').value = '';
                 if (fileInput) { fileInput.value = ''; toggleInternalFileOption(); }
-                var msg = res.data;
+                const msg = res.data;
                 if (msg) { msg.fromUserId = msg.fromUserId || (msg.fromUser && msg.fromUser.id); appendInternalMessage(msg); }
                 loadInternalThreads();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function showInternalChatPopup(threadId, fromName) {
             currentInternalThreadId = threadId;
-            var popup = document.getElementById('internalChatPopup');
-            var titleEl = document.getElementById('internalChatPopupTitle');
-            var listEl = document.getElementById('internalChatPopupThreadList');
-            var messagesEl = document.getElementById('internalChatPopupMessages');
-            var quickEl = document.getElementById('internalChatPopupQuickReplies');
-            var sendWrap = document.querySelector('.internal-chat-popup-send');
+            const popup = document.getElementById('internalChatPopup');
+            const titleEl = document.getElementById('internalChatPopupTitle');
+            const listEl = document.getElementById('internalChatPopupThreadList');
+            const messagesEl = document.getElementById('internalChatPopupMessages');
+            const quickEl = document.getElementById('internalChatPopupQuickReplies');
+            const sendWrap = document.querySelector('.internal-chat-popup-send');
             if (titleEl) titleEl.textContent = (LANG === 'fa' ? 'پیام از ' : 'Message from ') + (fromName || '');
             if (listEl) listEl.style.display = 'none';
             if (messagesEl) messagesEl.style.display = 'flex';
             if (sendWrap) sendWrap.style.display = 'flex';
             if (popup) popup.style.display = 'flex';
-            var btn = document.getElementById('internalChatFloatingBtn');
+            const btn = document.getElementById('internalChatFloatingBtn');
             if (btn) btn.classList.add('internal-chat-floating-btn-open');
             loadInternalMessagesForPopup(threadId);
         }
         function closeInternalChatPopup() {
-            var popup = document.getElementById('internalChatPopup');
+            const popup = document.getElementById('internalChatPopup');
             if (popup) { popup.style.display = 'none'; popup.classList.remove('minimized'); }
-            var btn = document.getElementById('internalChatFloatingBtn');
+            const btn = document.getElementById('internalChatFloatingBtn');
             if (btn) btn.classList.remove('internal-chat-floating-btn-open');
             currentInternalThreadId = null;
         }
         function toggleInternalChatPopupMinimize() {
-            var popup = document.getElementById('internalChatPopup');
+            const popup = document.getElementById('internalChatPopup');
             if (!popup) return;
             popup.classList.toggle('minimized');
-            var btn = popup.querySelector('.internal-chat-popup-minimize');
+            const btn = popup.querySelector('.internal-chat-popup-minimize');
             if (btn) {
                 btn.title = popup.classList.contains('minimized') ? (LANG === 'fa' ? 'باز کردن' : 'Expand') : (LANG === 'fa' ? 'کوچک‌سازی' : 'Minimize');
-                var svg = btn.querySelector('svg');
+                const svg = btn.querySelector('svg');
                 if (svg) svg.innerHTML = popup.classList.contains('minimized') ? '<path d="M19 12H5M12 19l-7-7 7-7"/>' : '<path d="M5 12h14"/>';
             }
         }
@@ -9127,93 +9127,93 @@
             if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendInternalMessageFromPopup(); }
         }
         function insertPopupQuickReply(text) {
-            var inp = document.getElementById('internalChatPopupInput');
+            const inp = document.getElementById('internalChatPopupInput');
             if (inp) { inp.value = (inp.value ? inp.value + ' ' : '') + text; inp.focus(); }
         }
         function openInternalChatFromPopup() {
-            var tid = currentInternalThreadId;
+            const tid = currentInternalThreadId;
             closeInternalChatPopup();
             showPage('internal-chat');
             setTimeout(function() { openInternalThread(tid); loadInternalThreads(); loadInternalUsers(); }, 100);
         }
         function appendInternalMessageToPopup(m) {
-            var list = document.getElementById('internalChatPopupMessages');
+            const list = document.getElementById('internalChatPopupMessages');
             if (!list || !currentInternalThreadId) return;
-            var emptyEl = list.querySelector('.empty');
+            const emptyEl = list.querySelector('.empty');
             if (emptyEl) emptyEl.remove();
-            var quickEl = document.getElementById('internalChatPopupQuickReplies');
+            const quickEl = document.getElementById('internalChatPopupQuickReplies');
             if (quickEl) { quickEl.style.display = 'none'; quickEl.innerHTML = ''; }
-            var me = (currentUser && currentUser.id) || '';
-            var isOut = m.fromUserId === me;
-            var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-            var avatarHtml = internalMsgAvatarHtml(m.fromUser);
-            var timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
-            var html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
+            const me = (currentUser && currentUser.id) || '';
+            const isOut = m.fromUserId === me;
+            const att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
+            const avatarHtml = internalMsgAvatarHtml(m.fromUser);
+            const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+            const html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
         async function loadInternalMessagesForPopup(threadId) {
-            var list = document.getElementById('internalChatPopupMessages');
+            const list = document.getElementById('internalChatPopupMessages');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var res = await apiFetch('/api/internal/threads/' + threadId + '/messages');
+            const res = await apiFetch('/api/internal/threads/' + threadId + '/messages');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; return; }
-            var data = (res.data && res.data.data) || [];
-            var me = (currentUser && currentUser.id) || '';
-            var quickEl = document.getElementById('internalChatPopupQuickReplies');
+            const data = (res.data && res.data.data) || [];
+            const me = (currentUser && currentUser.id) || '';
+            const quickEl = document.getElementById('internalChatPopupQuickReplies');
             if (quickEl) {
                 if (data.length === 0) {
                     quickEl.style.display = 'flex';
-                    var chips = [{ key: 'quick_reply_hi', text: LANG === 'fa' ? 'سلام' : 'Hi' }, { key: 'quick_reply_gotit', text: LANG === 'fa' ? 'متوجه شدم' : 'Got it' }, { key: 'quick_reply_later', text: LANG === 'fa' ? 'بعداً پاسخ می‌دهم' : 'Will reply later' }, { key: 'quick_reply_checking', text: LANG === 'fa' ? 'در حال بررسی' : 'Checking' }];
-                    quickEl.innerHTML = chips.map(function(c) { var s = String(c.text).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); return '<button type="button" class="internal-quick-reply-chip" data-reply="' + s + '">' + t(c.key) + '</button>'; }).join('');
+                    const chips = [{ key: 'quick_reply_hi', text: LANG === 'fa' ? 'سلام' : 'Hi' }, { key: 'quick_reply_gotit', text: LANG === 'fa' ? 'متوجه شدم' : 'Got it' }, { key: 'quick_reply_later', text: LANG === 'fa' ? 'بعداً پاسخ می‌دهم' : 'Will reply later' }, { key: 'quick_reply_checking', text: LANG === 'fa' ? 'در حال بررسی' : 'Checking' }];
+                    quickEl.innerHTML = chips.map(function(c) { const s = String(c.text).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); return '<button type="button" class="internal-quick-reply-chip" data-reply="' + s + '">' + t(c.key) + '</button>'; }).join('');
                     quickEl.querySelectorAll('.internal-quick-reply-chip').forEach(function(btn) { btn.onclick = function() { insertPopupQuickReply(this.getAttribute('data-reply') || ''); }; });
                 } else { quickEl.style.display = 'none'; quickEl.innerHTML = ''; }
             }
             list.innerHTML = data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">💬</span><p>' + t('start_chat_hint') + '</p></div>' : data.map(function(m) {
-                var isOut = m.fromUserId === me;
-                var att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
-                var avatarHtml = internalMsgAvatarHtml(m.fromUser);
-                var timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
+                const isOut = m.fromUserId === me;
+                const att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
+                const avatarHtml = internalMsgAvatarHtml(m.fromUser);
+                const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
             }).join('');
             list.scrollTop = list.scrollHeight;
         }
         async function sendInternalMessageFromPopup() {
             if (!currentInternalThreadId) return;
-            var inp = document.getElementById('internalChatPopupInput');
-            var fileInput = document.getElementById('internalChatPopupFile');
-            var content = (inp && inp.value) ? inp.value.trim() : '';
-            var attachments = [];
+            const inp = document.getElementById('internalChatPopupInput');
+            const fileInput = document.getElementById('internalChatPopupFile');
+            const content = (inp && inp.value) ? inp.value.trim() : '';
+            const attachments = [];
             if (fileInput && fileInput.files && fileInput.files[0]) {
-                var formData = new FormData();
+                const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-                var up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-                var upData = await up.json();
+                const up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                const upData = await up.json();
                 if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size, allowDownload: true });
             }
             if (!content && attachments.length === 0) { toast(t('enter_text_or_file'), true); return; }
-            var res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content || '(پیوست)', attachments: attachments }) });
+            const res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/messages', { method: 'POST', body: JSON.stringify({ content: content || '(پیوست)', attachments: attachments }) });
             if (res.needLogin) return;
             if (res.ok) {
                 if (inp) inp.value = '';
                 if (fileInput) fileInput.value = '';
-                var fileLabel = document.getElementById('internalChatPopupFileLabel');
+                const fileLabel = document.getElementById('internalChatPopupFileLabel');
                 if (fileLabel) { fileLabel.textContent = ''; fileLabel.style.display = 'none'; }
-                var msg = res.data;
+                const msg = res.data;
                 if (msg) { msg.fromUserId = msg.fromUserId || (msg.fromUser && msg.fromUser.id); appendInternalMessageToPopup(msg); }
                 loadInternalThreads();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
         var qrRefreshInterval = null;
-        var qrRetryTimeout = null;
-        var isWhatsappPolling = false;
-        var WHATSAPP_POLL_MS = 4000;
-        var WHATSAPP_QR_RETRY_MS = 3000;
+        let qrRetryTimeout = null;
+        let isWhatsappPolling = false;
+        const WHATSAPP_POLL_MS = 4000;
+        const WHATSAPP_QR_RETRY_MS = 3000;
 
         function setWhatsappStatusBadge(status) {
-            var badge = document.getElementById('whatsappStatusBadge');
+            const badge = document.getElementById('whatsappStatusBadge');
             if (badge) {
                 badge.className = 'whatsapp-status-badge whatsapp-status-' + status;
                 if (status === 'connected') badge.textContent = LANG === 'fa' ? 'متصل' : 'Connected';
@@ -9221,31 +9221,31 @@
                 else if (status === 'checking') badge.textContent = LANG === 'fa' ? 'در حال بررسی...' : 'Checking...';
                 else badge.textContent = LANG === 'fa' ? 'قطع' : 'Disconnected';
             }
-            var headerStatus = document.getElementById('headerWhatsappStatus');
+            const headerStatus = document.getElementById('headerWhatsappStatus');
             if (headerStatus) headerStatus.classList.toggle('connected', status === 'connected');
         }
         async function fetchWhatsappHeaderStatus() {
-            var perms = (currentUser && currentUser.permissions) || {};
+            const perms = (currentUser && currentUser.permissions) || {};
             if (!token || perms.whatsapp === false) return;
             try {
-                var res = await apiFetch('/api/gateway/status');
+                const res = await apiFetch('/api/gateway/status');
                 if (res.ok && res.data && res.data.whatsapp) setWhatsappStatusBadge('connected');
                 else setWhatsappStatusBadge('disconnected');
             } catch (_) { setWhatsappStatusBadge('disconnected'); }
         }
 
         async function loadWhatsappStatus(isInitial) {
-            var perms = (currentUser && currentUser.permissions) || {};
+            const perms = (currentUser && currentUser.permissions) || {};
             if (!token || perms.whatsapp === false) return;
-            var st = document.getElementById('gatewayStatus');
-            var qrBox = document.getElementById('qrBox');
-            var qrUnavailable = document.getElementById('whatsappQrUnavailable');
-            var qrWaitingMsg = document.getElementById('qrWaitingMsg');
-            var qrImg = document.getElementById('qrImg');
-            var btn = document.getElementById('btnStartGateway');
-            var btnStartClient = document.getElementById('btnStartWhatsApp');
-            var btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
-            var lastCard = document.getElementById('whatsappLastConnectionCard');
+            const st = document.getElementById('gatewayStatus');
+            const qrBox = document.getElementById('qrBox');
+            const qrUnavailable = document.getElementById('whatsappQrUnavailable');
+            const qrWaitingMsg = document.getElementById('qrWaitingMsg');
+            const qrImg = document.getElementById('qrImg');
+            const btn = document.getElementById('btnStartGateway');
+            const btnStartClient = document.getElementById('btnStartWhatsApp');
+            const btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
+            const lastCard = document.getElementById('whatsappLastConnectionCard');
             if (qrRetryTimeout) { clearTimeout(qrRetryTimeout); qrRetryTimeout = null; }
             if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             if (isInitial !== false) {
@@ -9258,10 +9258,10 @@
                 qrBox.style.display = 'none';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
                 if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
-                var af = document.getElementById('whatsappAuthFailure');
+                const af = document.getElementById('whatsappAuthFailure');
                 if (af) { af.style.display = 'none'; af.textContent = ''; }
             }
-            var ping;
+            let ping;
             try { ping = await apiFetch('/api/ping', { auth: false }); } catch (e) { ping = { needLogin: true }; }
             if (ping.needLogin || (ping.data && !ping.data.ok)) {
                 st.className = 'whatsapp-status-line empty';
@@ -9269,9 +9269,9 @@
                 setWhatsappStatusBadge('disconnected');
                 return;
             }
-            var res = await apiFetch('/api/gateway/status');
+            const res = await apiFetch('/api/gateway/status');
             if (res.needLogin) return;
-            var data = res.data;
+            const data = res.data;
             if (data && data.error) {
                 st.className = 'whatsapp-status-line empty';
                 st.textContent = t('whatsapp_gateway_off');
@@ -9281,11 +9281,12 @@
                 return;
             }
             st.className = 'whatsapp-status-line';
-            var phase = data && data.phase;
-            var statusLabel = data && data.whatsapp ? t('whatsapp_connected') : (phase === 'authenticated' ? t('whatsapp_syncing') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected')));
-            var statusText = t('whatsapp_status') + ' ' + statusLabel + ' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'));
+            const phase = data && data.phase;
+            var isCloudApi = !!(data && data.cloudApi);
+            const statusLabel = data && data.whatsapp ? (isCloudApi ? t('whatsapp_cloud_api_connected') : t('whatsapp_connected')) : (phase === 'authenticated' ? t('whatsapp_syncing') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected')));
+            const statusText = t('whatsapp_status') + ' ' + statusLabel + (isCloudApi ? '' : (' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'))));
             st.textContent = statusText;
-            var authFailureEl = document.getElementById('whatsappAuthFailure');
+            const authFailureEl = document.getElementById('whatsappAuthFailure');
             if (authFailureEl) {
                 if (data && data.authFailure) {
                     authFailureEl.style.display = 'block';
@@ -9296,21 +9297,39 @@
                 }
             }
             if (data && data.whatsapp) {
+                var isCloudApi = !!(data && data.cloudApi);
                 isWhatsappPolling = false;
                 setWhatsappStatusBadge('connected');
                 qrBox.style.display = 'none';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
                 if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 if (authFailureEl) authFailureEl.style.display = 'none';
-                if (btnDisconnect) { btnDisconnect.textContent = t('whatsapp_disconnect_btn'); btnDisconnect.disabled = false; }
+                if (btnDisconnect) {
+                    if (isCloudApi) {
+                        btnDisconnect.style.display = 'none';
+                    } else {
+                        btnDisconnect.style.display = 'inline-flex';
+                        btnDisconnect.textContent = t('whatsapp_disconnect_btn');
+                        btnDisconnect.disabled = false;
+                    }
+                }
+                const openWebBtn = document.querySelector('.whatsapp-actions a[href="https://web.whatsapp.com"]');
+                if (openWebBtn) openWebBtn.style.display = isCloudApi ? 'none' : 'inline-flex';
+                if (btn) btn.style.display = 'none';
+                if (btnStartClient) btnStartClient.style.display = 'none';
                 if (lastCard) {
                     lastCard.style.display = 'block';
-                    var lastStatus = document.getElementById('whatsappLastStatus');
-                    var lastNumber = document.getElementById('whatsappLastNumber');
-                    var lastResult = document.getElementById('whatsappLastResult');
-                    if (lastStatus) lastStatus.textContent = t('whatsapp_connected');
+                    const lastStatus = document.getElementById('whatsappLastStatus');
+                    const lastNumber = document.getElementById('whatsappLastNumber');
+                    const lastResult = document.getElementById('whatsappLastResult');
+                    if (lastStatus) lastStatus.textContent = isCloudApi ? t('whatsapp_cloud_api_connected') : t('whatsapp_connected');
                     if (lastNumber) lastNumber.textContent = (data.number || data.pushname) || '—';
                     if (lastResult) lastResult.textContent = LANG === 'fa' ? 'موفق' : 'Success';
+                    const cloudApiInfo = document.getElementById('whatsappCloudApiInfo');
+                    if (cloudApiInfo) {
+                        cloudApiInfo.textContent = t('whatsapp_cloud_api_info');
+                        cloudApiInfo.style.display = isCloudApi ? 'block' : 'none';
+                    }
                 }
                 loadWhatsappDeptRouting();
                 loadWhatsappUnassigned();
@@ -9318,18 +9337,22 @@
             }
             setWhatsappStatusBadge(data && data.starting ? 'starting' : 'disconnected');
             if (lastCard) lastCard.style.display = 'none';
-            if (btnDisconnect) btnDisconnect.disabled = true;
+            if (btnDisconnect) { btnDisconnect.disabled = true; btnDisconnect.style.display = 'inline-flex'; }
+            const openWebBtnEl = document.querySelector('.whatsapp-actions a[href="https://web.whatsapp.com"]');
+            if (openWebBtnEl) openWebBtnEl.style.display = 'inline-flex';
+            const cloudApiInfoEl = document.getElementById('whatsappCloudApiInfo');
+            if (cloudApiInfoEl) cloudApiInfoEl.style.display = 'none';
             loadWhatsappDeptRouting();
-            var qrRes = await apiFetch('/api/gateway/qr');
+            const qrRes = await apiFetch('/api/gateway/qr');
             if (qrRes.needLogin) return;
-            var qrData = qrRes.data;
+            const qrData = qrRes.data;
             if (qrData && qrData.qr) {
                 qrImg.src = qrData.qr;
                 qrBox.style.display = 'block';
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
                 if (phase === 'authenticated' && qrWaitingMsg) { qrWaitingMsg.style.display = 'block'; qrWaitingMsg.textContent = t('whatsapp_syncing'); } else if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 isWhatsappPolling = true;
-                var pollMs = 2000;
+                const pollMs = 2000;
                 qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, pollMs);
             } else {
                 qrBox.style.display = 'none';
@@ -9349,26 +9372,26 @@
         }
 
         async function startGateway() {
-            var res = await apiFetch('/api/admin/start-gateway', { method: 'POST' });
+            const res = await apiFetch('/api/admin/start-gateway', { method: 'POST' });
             if (res.needLogin) return;
-            var msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
+            const msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
             toast(msg);
             if (res.ok) setTimeout(loadWhatsappStatus, 3000);
         }
         async function startWhatsAppClient() {
-            var res = await apiFetch('/api/gateway/start', { method: 'POST' });
+            const res = await apiFetch('/api/gateway/start', { method: 'POST' });
             if (res.needLogin) return;
-            var msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
+            const msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
             toast(msg);
             if (res.ok) setTimeout(loadWhatsappStatus, 3000);
         }
         async function disconnectWhatsApp() {
-            var btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
+            const btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
             if (btnDisconnect && btnDisconnect.disabled) return;
             if (btnDisconnect) btnDisconnect.disabled = true;
             toast(LANG === 'fa' ? 'در حال خروج و حذف سشن واتساپ...' : 'Logging out and clearing session...');
             try {
-                var res = await apiFetch('/api/gateway/logout', { method: 'POST', body: JSON.stringify({}) });
+                const res = await apiFetch('/api/gateway/logout', { method: 'POST', body: JSON.stringify({}) });
                 if (res.needLogin) { if (btnDisconnect) btnDisconnect.disabled = false; return; }
                 if (!res.ok) {
                     toast((res.data && res.data.error) || res.error || t('err_generic'), true);
@@ -9377,7 +9400,7 @@
                 }
                 toast(LANG === 'fa' ? 'در حال ایجاد QR جدید...' : 'Generating new QR code...');
                 setWhatsappStatusBadge('starting');
-                var startRes = await apiFetch('/api/gateway/start', { method: 'POST' });
+                const startRes = await apiFetch('/api/gateway/start', { method: 'POST' });
                 if (startRes.ok) {
                     toast(LANG === 'fa' ? 'QR جدید در حال آماده‌سازی... لطفاً چند ثانیه صبر کنید.' : 'New QR code loading... Please wait a few seconds.');
                 } else {
@@ -9391,33 +9414,33 @@
             }
         }
         async function loadWhatsappWelcomeConfig() {
-            var ta = document.getElementById('whatsappWelcomeMessage');
-            var cb = document.getElementById('whatsappWelcomeEnabled');
-            var aiCb = document.getElementById('whatsappAIEnabled');
-            var alertIn = document.getElementById('whatsappAlertMinutes');
-            var escalateIn = document.getElementById('whatsappEscalateMinutes');
-            var deptSel = document.getElementById('whatsappEscalationDept');
-            var res = await apiFetch('/api/whatsapp/config');
+            const ta = document.getElementById('whatsappWelcomeMessage');
+            const cb = document.getElementById('whatsappWelcomeEnabled');
+            const aiCb = document.getElementById('whatsappAIEnabled');
+            const alertIn = document.getElementById('whatsappAlertMinutes');
+            const escalateIn = document.getElementById('whatsappEscalateMinutes');
+            const deptSel = document.getElementById('whatsappEscalationDept');
+            const res = await apiFetch('/api/whatsapp/config');
             if (res.needLogin) return;
             if (res.ok && res.data) {
                 if (ta) ta.value = res.data.welcomeMessage || '';
                 if (cb) cb.checked = res.data.welcomeEnabled !== false;
                 if (aiCb) aiCb.checked = res.data.aiAnswerEnabled !== false;
-                var openaiInput = document.getElementById('whatsappOpenAIApiKey');
-                var openaiStatus = document.getElementById('whatsappOpenAIKeyStatus');
+                const openaiInput = document.getElementById('whatsappOpenAIApiKey');
+                const openaiStatus = document.getElementById('whatsappOpenAIKeyStatus');
                 if (openaiInput) { openaiInput.value = ''; openaiInput.placeholder = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید ذخیره شده ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change') : (LANG === 'fa' ? 'کلید API را از platform.openai.com وارد کنید' : 'Enter API key from platform.openai.com'); }
                 if (openaiStatus) openaiStatus.textContent = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set') : ''; if (openaiStatus && res.data.openaiApiKeySet) openaiStatus.classList.add('set'); else if (openaiStatus) openaiStatus.classList.remove('set');
-                var clearLink = document.getElementById('whatsappOpenAIClearKey'); if (clearLink) clearLink.style.display = res.data.openaiApiKeySet ? 'inline' : 'none';
+                const clearLink = document.getElementById('whatsappOpenAIClearKey'); if (clearLink) clearLink.style.display = res.data.openaiApiKeySet ? 'inline' : 'none';
                 if (alertIn) alertIn.value = res.data.alertUnansweredAfterMinutes ?? 5;
                 if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
-                var deptMsg = document.getElementById('whatsappDeptAssignedMessage');
-                var empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+                const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
+                const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
                 if (deptMsg) deptMsg.value = res.data.deptAssignedMessage || '';
                 if (empMsg) empMsg.value = res.data.employeeIntroMessage || '';
                 if (deptSel) {
-                    var deptRes = await apiFetch('/api/departments');
+                    const deptRes = await apiFetch('/api/departments');
                     if (deptRes.ok && deptRes.data && deptRes.data.data) {
-                        var opts = deptRes.data.data.filter(function(d){ return d.isActive !== false; }).map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; });
+                        const opts = deptRes.data.data.filter(function(d){ return d.isActive !== false; }).map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; });
                         deptSel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'پشتیبانی (پیش‌فرض)' : 'Support (default)') + '</option>' + opts.join('');
                         deptSel.value = res.data.escalationDepartmentId || '';
                     }
@@ -9425,11 +9448,11 @@
             }
         }
         async function saveWhatsappUnansweredConfig() {
-            var alertIn = document.getElementById('whatsappAlertMinutes');
-            var escalateIn = document.getElementById('whatsappEscalateMinutes');
-            var deptSel = document.getElementById('whatsappEscalationDept');
+            const alertIn = document.getElementById('whatsappAlertMinutes');
+            const escalateIn = document.getElementById('whatsappEscalateMinutes');
+            const deptSel = document.getElementById('whatsappEscalationDept');
             if (!alertIn || !escalateIn) return;
-            var res = await apiFetch('/api/whatsapp/config', {
+            const res = await apiFetch('/api/whatsapp/config', {
                 method: 'PUT',
                 body: JSON.stringify({
                     alertUnansweredAfterMinutes: parseInt(alertIn.value) || 5,
@@ -9441,10 +9464,10 @@
             toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
         }
         async function saveWhatsappWelcomeConfig() {
-            var ta = document.getElementById('whatsappWelcomeMessage');
-            var cb = document.getElementById('whatsappWelcomeEnabled');
+            const ta = document.getElementById('whatsappWelcomeMessage');
+            const cb = document.getElementById('whatsappWelcomeEnabled');
             if (!ta || !cb) return;
-            var res = await apiFetch('/api/whatsapp/config', {
+            const res = await apiFetch('/api/whatsapp/config', {
                 method: 'PUT',
                 body: JSON.stringify({ welcomeMessage: ta.value.trim(), welcomeEnabled: cb.checked })
             });
@@ -9452,29 +9475,29 @@
             toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
         }
         async function clearWhatsappOpenAIKey() {
-            var res = await apiFetch('/api/whatsapp/config', { method: 'PUT', body: JSON.stringify({ openaiApiKey: '' }) });
+            const res = await apiFetch('/api/whatsapp/config', { method: 'PUT', body: JSON.stringify({ openaiApiKey: '' }) });
             if (res.needLogin) return;
             if (res.ok) { loadWhatsappWelcomeConfig(); toast(t('done_msg')); } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
         async function saveWhatsappAIConfig() {
-            var aiCb = document.getElementById('whatsappAIEnabled');
-            var openaiInput = document.getElementById('whatsappOpenAIApiKey');
+            const aiCb = document.getElementById('whatsappAIEnabled');
+            const openaiInput = document.getElementById('whatsappOpenAIApiKey');
             if (!aiCb) return;
-            var body = { aiAnswerEnabled: aiCb.checked };
+            const body = { aiAnswerEnabled: aiCb.checked };
             if (openaiInput && openaiInput.value.trim()) body.openaiApiKey = openaiInput.value.trim();
-            var res = await apiFetch('/api/whatsapp/config', {
+            const res = await apiFetch('/api/whatsapp/config', {
                 method: 'PUT',
                 body: JSON.stringify(body)
             });
             if (res.needLogin) return;
-            if (res.ok && openaiInput && openaiInput.value.trim()) { openaiInput.value = ''; openaiInput.placeholder = LANG === 'fa' ? 'کلید ذخیره شد ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change'; var st = document.getElementById('whatsappOpenAIKeyStatus'); if (st) { st.textContent = LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set'; st.classList.add('set'); } }
+            if (res.ok && openaiInput && openaiInput.value.trim()) { openaiInput.value = ''; openaiInput.placeholder = LANG === 'fa' ? 'کلید ذخیره شد ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change'; const st = document.getElementById('whatsappOpenAIKeyStatus'); if (st) { st.textContent = LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set'; st.classList.add('set'); } }
             toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
         }
         async function saveWhatsappAutoMessagesConfig() {
-            var deptMsg = document.getElementById('whatsappDeptAssignedMessage');
-            var empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+            const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
+            const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
             if (!deptMsg || !empMsg) return;
-            var res = await apiFetch('/api/whatsapp/config', {
+            const res = await apiFetch('/api/whatsapp/config', {
                 method: 'PUT',
                 body: JSON.stringify({
                     deptAssignedMessage: deptMsg.value.trim(),
@@ -9485,73 +9508,73 @@
             toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
         }
         async function loadWhatsappStats() {
-            var perms = (currentUser && currentUser.permissions) || {};
+            const perms = (currentUser && currentUser.permissions) || {};
             if (!token || perms.conversations === false) return;
-            var openEl = document.getElementById('whatsappStatOpen');
-            var unassignedEl = document.getElementById('whatsappStatUnassigned');
-            var unansweredEl = document.getElementById('whatsappStatUnanswered');
+            const openEl = document.getElementById('whatsappStatOpen');
+            const unassignedEl = document.getElementById('whatsappStatUnassigned');
+            const unansweredEl = document.getElementById('whatsappStatUnanswered');
             if (!openEl && !unassignedEl && !unansweredEl) return;
             try {
-                var resOpen = apiFetch('/api/conversations?status=open&limit=1');
-                var resUnassigned = apiFetch('/api/conversations?unassigned=1&limit=1');
-                var resUnanswered = apiFetch('/api/conversations?unanswered=1&limit=1');
-                var arr = await Promise.all([resOpen, resUnassigned, resUnanswered]);
+                const resOpen = apiFetch('/api/conversations?status=open&limit=1');
+                const resUnassigned = apiFetch('/api/conversations?unassigned=1&limit=1');
+                const resUnanswered = apiFetch('/api/conversations?unanswered=1&limit=1');
+                const arr = await Promise.all([resOpen, resUnassigned, resUnanswered]);
                 if (openEl) openEl.textContent = (arr[0].ok && arr[0].data && arr[0].data.total != null) ? arr[0].data.total : '—';
                 if (unassignedEl) unassignedEl.textContent = (arr[1].ok && arr[1].data && arr[1].data.total != null) ? arr[1].data.total : '—';
                 if (unansweredEl) unansweredEl.textContent = (arr[2].ok && arr[2].data && arr[2].data.total != null) ? arr[2].data.total : '—';
             } catch (e) { if (openEl) openEl.textContent = '—'; if (unassignedEl) unassignedEl.textContent = '—'; if (unansweredEl) unansweredEl.textContent = '—'; }
         }
         async function loadWhatsappDeptRouting() {
-            var box = document.getElementById('whatsappDeptRouting');
-            var list = document.getElementById('whatsappDeptList');
+            const box = document.getElementById('whatsappDeptRouting');
+            const list = document.getElementById('whatsappDeptList');
             if (!box || !list) return;
             box.style.display = 'block';
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var res = await apiFetch('/api/departments');
+            const res = await apiFetch('/api/departments');
             if (res.needLogin) return;
             if (!res.ok || !res.data || !res.data.data) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
-            var depts = res.data.data.filter(function(d){ return d.isActive !== false; });
+            const depts = res.data.data.filter(function(d){ return d.isActive !== false; });
             if (depts.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'دپارتمانی تعریف نشده' : 'No departments') + '</div>'; return; }
             list.innerHTML = depts.map(function(d) {
-                var kw = (d.keywords || '').trim() || '—';
-                var def = d.isDefault ? ' <span class="badge" style="font-size:0.7rem;">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';
+                const kw = (d.keywords || '').trim() || '—';
+                const def = d.isDefault ? ' <span class="badge" style="font-size:0.7rem;">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';
                 return '<div class="list-item" style="padding:10px 14px;"><span class="name">' + escapeHtml(d.name || '') + def + '</span><div class="meta" style="font-size:0.85rem; margin-top:4px;">' + (LANG === 'fa' ? 'کلمات کلیدی: ' : 'Keywords: ') + escapeHtml(kw) + '</div></div>';
             }).join('');
         }
         async function loadWhatsappUnassigned() {
-            var box = document.getElementById('whatsappUnassignedBox');
-            var list = document.getElementById('whatsappUnassignedList');
+            const box = document.getElementById('whatsappUnassignedBox');
+            const list = document.getElementById('whatsappUnassignedList');
             if (!box || !list) return;
-            var res = await apiFetch('/api/conversations?status=open&unassigned=1&limit=15');
+            const res = await apiFetch('/api/conversations?status=open&unassigned=1&limit=15');
             if (res.needLogin) return;
             if (!res.ok || !res.data) return;
-            var convs = res.data.data || [];
+            const convs = res.data.data || [];
             if (convs.length === 0) { box.style.display = 'none'; return; }
             box.style.display = 'block';
             list.innerHTML = convs.map(function(c) {
-                var name = (c.customer && (c.customer.name || c.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
-                var preview = (c.lastMessagePreview || '').slice(0, 50);
+                const name = (c.customer && (c.customer.name || c.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
+                let preview = (c.lastMessagePreview || '').slice(0, 50);
                 if (preview.length >= 50) preview += '…';
                 return '<div class="list-item" data-convid="' + c.id + '" onclick="openChat(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'") + '\', \'\'); showPage(\'conversations\');" style="cursor:pointer;"><span class="name">' + escapeHtml(name) + '</span><div class="meta">' + escapeHtml(preview) + '</div></div>';
             }).join('');
         }
 
         var chatTemplatesCache = [];
-        var _tplActiveCat = 'all';
+        let _tplActiveCat = 'all';
         function initMessageTemplatesTabs() {
             document.querySelectorAll('.tpl-tab').forEach(function(btn) {
                 btn.onclick = function() {
-                    var tab = btn.getAttribute('data-tab');
+                    const tab = btn.getAttribute('data-tab');
                     document.querySelectorAll('.tpl-tab').forEach(function(b) { b.classList.remove('active'); });
                     btn.classList.add('active');
-                    var textContent = document.getElementById('textTemplatesContent');
-                    var fileContent = document.getElementById('fileTemplatesContent');
+                    const textContent = document.getElementById('textTemplatesContent');
+                    const fileContent = document.getElementById('fileTemplatesContent');
                     if (textContent) textContent.style.display = (tab === 'text' ? 'block' : 'none');
                     if (fileContent) fileContent.style.display = (tab === 'file' ? 'block' : 'none');
                     if (tab === 'file') loadFileTemplates();
                 };
             });
-            var fileSearch = document.getElementById('fileTemplatesSearch');
+            const fileSearch = document.getElementById('fileTemplatesSearch');
             if (fileSearch && !fileSearch._bound) {
                 fileSearch._bound = true;
                 fileSearch.addEventListener('input', function() {
@@ -9559,7 +9582,7 @@
                     window._fileTplSearchT = setTimeout(function() { loadFileTemplates(); }, 350);
                 });
             }
-            var textSearch = document.getElementById('textTemplatesSearch');
+            const textSearch = document.getElementById('textTemplatesSearch');
             if (textSearch && !textSearch._bound) {
                 textSearch._bound = true;
                 textSearch.addEventListener('input', function() {
@@ -9569,13 +9592,13 @@
             }
         }
         function renderMessageTemplates() {
-            var list = document.getElementById('messageTemplatesList');
+            const list = document.getElementById('messageTemplatesList');
             if (!list) return;
-            var search = ((document.getElementById('textTemplatesSearch') && document.getElementById('textTemplatesSearch').value) || '').trim().toLowerCase();
-            var data = chatTemplatesCache || [];
-            var filtered = data.filter(function(tpl) {
-                var catMatch = _tplActiveCat === 'all' || (tpl.category || '') === _tplActiveCat;
-                var searchMatch = !search || (tpl.name || '').toLowerCase().indexOf(search) !== -1 || (tpl.content || '').toLowerCase().indexOf(search) !== -1 || (tpl.category || '').toLowerCase().indexOf(search) !== -1;
+            const search = ((document.getElementById('textTemplatesSearch') && document.getElementById('textTemplatesSearch').value) || '').trim().toLowerCase();
+            const data = chatTemplatesCache || [];
+            const filtered = data.filter(function(tpl) {
+                const catMatch = _tplActiveCat === 'all' || (tpl.category || '') === _tplActiveCat;
+                const searchMatch = !search || (tpl.name || '').toLowerCase().indexOf(search) !== -1 || (tpl.content || '').toLowerCase().indexOf(search) !== -1 || (tpl.category || '').toLowerCase().indexOf(search) !== -1;
                 return catMatch && searchMatch;
             });
             if (filtered.length === 0) {
@@ -9583,11 +9606,11 @@
                 return;
             }
             list.innerHTML = filtered.map(function(tpl) {
-                var preview = (tpl.content || '').slice(0, 120);
+                let preview = (tpl.content || '').slice(0, 120);
                 if ((tpl.content || '').length > 120) preview += '…';
-                var usage = (tpl.usageCount || 0) > 0 ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' + tpl.usageCount + (LANG === 'fa' ? ' بار' : ' uses') : '';
-                var catBadge = tpl.category ? '<span class="tpl-card-cat">' + escapeHtml(tpl.category) + '</span>' : '';
-                var inactiveBadge = tpl.isActive === false ? '<span class="tpl-card-inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>' : '';
+                const usage = (tpl.usageCount || 0) > 0 ? '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>' + tpl.usageCount + (LANG === 'fa' ? ' بار' : ' uses') : '';
+                const catBadge = tpl.category ? '<span class="tpl-card-cat">' + escapeHtml(tpl.category) + '</span>' : '';
+                const inactiveBadge = tpl.isActive === false ? '<span class="tpl-card-inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>' : '';
                 return '<div class="tpl-card" data-id="' + tpl.id + '">' +
                     '<div class="tpl-card-top"><div class="tpl-card-title-row"><span class="tpl-card-name" title="' + escapeHtml(tpl.name || '') + '">' + escapeHtml(tpl.name || '') + '</span>' + catBadge + inactiveBadge + '</div></div>' +
                     '<div class="tpl-card-body">' + escapeHtml(preview) + '</div>' +
@@ -9599,15 +9622,15 @@
             }).join('');
             list.querySelectorAll('.tpl-btn-copy').forEach(function(btn) {
                 btn.onclick = function() {
-                    var content = unescapeFromDataAttr(btn.getAttribute('data-content') || '');
+                    const content = unescapeFromDataAttr(btn.getAttribute('data-content') || '');
                     if (navigator.clipboard) { navigator.clipboard.writeText(content).then(function() { btn.classList.add('copied'); btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>' + (LANG === 'fa' ? 'کپی شد' : 'Copied'); setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>' + (LANG === 'fa' ? 'کپی' : 'Copy'); }, 1800); }); }
                 };
             });
         }
         function renderTextTemplatesCategoryFilter(data) {
-            var bar = document.getElementById('textTemplatesCategoryFilter');
+            const bar = document.getElementById('textTemplatesCategoryFilter');
             if (!bar) return;
-            var cats = [];
+            const cats = [];
             data.forEach(function(tpl) { if (tpl.category && cats.indexOf(tpl.category) === -1) cats.push(tpl.category); });
             if (cats.length === 0) { bar.innerHTML = ''; return; }
             bar.innerHTML = '<button type="button" class="tpl-cat-chip' + (_tplActiveCat === 'all' ? ' active' : '') + '" data-cat="all">' + (LANG === 'fa' ? 'همه' : 'All') + '</button>' +
@@ -9622,13 +9645,13 @@
             });
         }
         async function loadMessageTemplates() {
-            var list = document.getElementById('messageTemplatesList');
+            const list = document.getElementById('messageTemplatesList');
             if (!list) return;
-            var res = await apiFetch('/api/message-templates');
+            const res = await apiFetch('/api/message-templates');
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
-            var data = (res.data && res.data.data) || [];
+            const data = (res.data && res.data.data) || [];
             chatTemplatesCache = data;
-            var countEl = document.getElementById('textTemplatesCount');
+            const countEl = document.getElementById('textTemplatesCount');
             if (countEl) countEl.textContent = data.length || '';
             renderTextTemplatesCategoryFilter(data);
             renderMessageTemplates();
@@ -9641,9 +9664,9 @@
             document.getElementById('templateModalContent').value = '';
             document.getElementById('templateModalActive').checked = true;
             if (id) {
-                var tplData = chatTemplatesCache.find(function(x) { return x.id === id; });
+                let tplData = chatTemplatesCache.find(function(x) { return x.id === id; });
                 if (!tplData) {
-                    var res = await apiFetch('/api/message-templates/' + id);
+                    const res = await apiFetch('/api/message-templates/' + id);
                     if (res.ok && res.data) tplData = res.data;
                 }
                 if (tplData) {
@@ -9657,35 +9680,35 @@
         }
         function closeTemplateModal() { document.getElementById('templateModal').style.display = 'none'; }
         function insertVar(v) {
-            var ta = document.getElementById('templateModalContent');
+            const ta = document.getElementById('templateModalContent');
             if (!ta) return;
-            var start = ta.selectionStart, end = ta.selectionEnd;
+            const start = ta.selectionStart, end = ta.selectionEnd;
             ta.value = ta.value.slice(0, start) + v + ta.value.slice(end);
             ta.selectionStart = ta.selectionEnd = start + v.length;
             ta.focus();
         }
         window.insertVar = insertVar;
         async function saveTemplate() {
-            var id = document.getElementById('templateModalId').value.trim();
-            var name = (document.getElementById('templateModalName').value || '').trim();
-            var category = (document.getElementById('templateModalCategory').value || '').trim();
-            var content = (document.getElementById('templateModalContent').value || '').trim();
-            var isActive = document.getElementById('templateModalActive').checked;
+            const id = document.getElementById('templateModalId').value.trim();
+            const name = (document.getElementById('templateModalName').value || '').trim();
+            const category = (document.getElementById('templateModalCategory').value || '').trim();
+            const content = (document.getElementById('templateModalContent').value || '').trim();
+            const isActive = document.getElementById('templateModalActive').checked;
             if (!name) { toast(LANG === 'fa' ? 'نام الزامی است' : 'Name required', true); return; }
             if (!content) { toast(LANG === 'fa' ? 'محتوا الزامی است' : 'Content required', true); return; }
-            var url = id ? '/api/message-templates/' + id : '/api/message-templates';
-            var method = id ? 'PUT' : 'POST';
-            var res = await apiFetch(url, { method: method, body: JSON.stringify({ name: name, category: category || null, content: content, isActive: isActive }) });
+            const url = id ? '/api/message-templates/' + id : '/api/message-templates';
+            const method = id ? 'PUT' : 'POST';
+            const res = await apiFetch(url, { method: method, body: JSON.stringify({ name: name, category: category || null, content: content, isActive: isActive }) });
             if (res.needLogin) return;
             if (res.ok) { closeTemplateModal(); loadMessageTemplates(); chatTemplatesCache = (await apiFetch('/api/message-templates')).data?.data || chatTemplatesCache; toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function editTemplate(id) { openTemplateModal(id); }
         async function deleteTemplate(id) {
             if (!confirm(LANG === 'fa' ? 'حذف این تمپلیت؟' : 'Delete this template?')) return;
-            var res = await apiFetch('/api/message-templates/' + id, { method: 'DELETE' });
+            const res = await apiFetch('/api/message-templates/' + id, { method: 'DELETE' });
             if (res.ok) { loadMessageTemplates(); chatTemplatesCache = chatTemplatesCache.filter(function(x) { return x.id !== id; }); toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
-        var fileTemplatesCache = [];
+        let fileTemplatesCache = [];
         function getFileIcon(mimetype) {
             if (!mimetype) return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
             if (mimetype.indexOf('image') !== -1) return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
@@ -9696,27 +9719,27 @@
             return '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>';
         }
         async function loadFileTemplates() {
-            var list = document.getElementById('fileTemplatesList');
+            const list = document.getElementById('fileTemplatesList');
             if (!list) return;
-            var search = (document.getElementById('fileTemplatesSearch') && document.getElementById('fileTemplatesSearch').value || '').trim();
-            var q = search ? '?search=' + encodeURIComponent(search) : '';
-            var res = await apiFetch('/api/file-templates' + q);
+            const search = (document.getElementById('fileTemplatesSearch') && document.getElementById('fileTemplatesSearch').value || '').trim();
+            const q = search ? '?search=' + encodeURIComponent(search) : '';
+            const res = await apiFetch('/api/file-templates' + q);
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
-            var data = (res.data && res.data.data) || [];
+            const data = (res.data && res.data.data) || [];
             fileTemplatesCache = data;
-            var countEl = document.getElementById('fileTemplatesCount');
+            const countEl = document.getElementById('fileTemplatesCount');
             if (countEl) countEl.textContent = data.length || '';
             if (data.length === 0) {
                 list.innerHTML = '<div class="tpl-empty"><div class="tpl-empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div><h4>' + (LANG === 'fa' ? 'فایلی وجود ندارد' : 'No files yet') + '</h4><p>' + (search ? (LANG === 'fa' ? 'جستجوی دیگری امتحان کنید.' : 'Try a different search.') : (LANG === 'fa' ? 'بارگذاری فایل را بزنید تا اولین فایل را اضافه کنید.' : 'Click Upload file to add your first file.')) + '</p></div>';
                 return;
             }
             list.innerHTML = data.map(function(ft) {
-                var tags = (ft.tags || []).slice(0, 4).map(function(tg){ return '<span class="ft-card-tag">' + escapeHtml(tg) + '</span>'; }).join('');
-                var usage = (ft.usageCount || 0) > 0 ? (LANG === 'fa' ? ft.usageCount + ' بار استفاده' : ft.usageCount + ' uses') : '';
-                var size = ft.filesize ? (ft.filesize < 1024 ? ft.filesize + ' B' : (ft.filesize < 1024*1024 ? Math.round(ft.filesize/1024) + ' KB' : (ft.filesize/1024/1024).toFixed(1) + ' MB')) : '';
-                var catBadge = ft.category ? '<span class="ft-card-cat">' + escapeHtml(ft.category) + '</span>' : '';
-                var inactiveBadge = ft.isActive === false ? '<span class="tpl-card-inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>' : '';
-                var metaParts = [size, usage].filter(Boolean);
+                const tags = (ft.tags || []).slice(0, 4).map(function(tg){ return '<span class="ft-card-tag">' + escapeHtml(tg) + '</span>'; }).join('');
+                const usage = (ft.usageCount || 0) > 0 ? (LANG === 'fa' ? ft.usageCount + ' بار استفاده' : ft.usageCount + ' uses') : '';
+                const size = ft.filesize ? (ft.filesize < 1024 ? ft.filesize + ' B' : (ft.filesize < 1024*1024 ? Math.round(ft.filesize/1024) + ' KB' : (ft.filesize/1024/1024).toFixed(1) + ' MB')) : '';
+                const catBadge = ft.category ? '<span class="ft-card-cat">' + escapeHtml(ft.category) + '</span>' : '';
+                const inactiveBadge = ft.isActive === false ? '<span class="tpl-card-inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>' : '';
+                const metaParts = [size, usage].filter(Boolean);
                 return '<div class="ft-card" data-id="' + ft.id + '">' +
                     '<div class="ft-card-icon">' + getFileIcon(ft.mimetype) + '</div>' +
                     '<div class="ft-card-body">' +
@@ -9742,9 +9765,9 @@
             document.getElementById('fileTemplateUploadArea').style.display = id ? 'none' : 'block';
             document.getElementById('fileTemplateEditArea').style.display = id ? 'block' : 'none';
             if (id) {
-                var ft = fileTemplatesCache.find(function(x) { return x.id === id; });
+                let ft = fileTemplatesCache.find(function(x) { return x.id === id; });
                 if (!ft) {
-                    var res = await apiFetch('/api/file-templates/' + id);
+                    const res = await apiFetch('/api/file-templates/' + id);
                     if (res.ok && res.data) ft = res.data;
                 }
                 if (!ft) return;
@@ -9756,25 +9779,25 @@
                 document.getElementById('fileTemplateCurrentFile').textContent = ft.filename || '';
             }
             document.getElementById('fileTemplateModal').style.display = 'flex';
-            var fileInput = document.getElementById('fileTemplateFile');
+            const fileInput = document.getElementById('fileTemplateFile');
             if (fileInput && !fileInput._bound) {
                 fileInput._bound = true;
                 fileInput.addEventListener('change', function() {
-                    var fn = document.getElementById('fileTemplateFileName');
+                    const fn = document.getElementById('fileTemplateFileName');
                     if (fn) { fn.style.display = this.files && this.files[0] ? 'block' : 'none'; fn.textContent = this.files && this.files[0] ? '📎 ' + this.files[0].name : ''; }
                 });
             }
-            var uploadBox = document.getElementById('tplUploadBox');
+            const uploadBox = document.getElementById('tplUploadBox');
             if (uploadBox && !uploadBox._ddBound) {
                 uploadBox._ddBound = true;
                 uploadBox.addEventListener('dragover', function(e) { e.preventDefault(); uploadBox.style.borderColor = 'var(--accent)'; uploadBox.style.background = 'var(--accent-soft)'; });
                 uploadBox.addEventListener('dragleave', function() { uploadBox.style.borderColor = ''; uploadBox.style.background = ''; });
                 uploadBox.addEventListener('drop', function(e) {
                     e.preventDefault(); uploadBox.style.borderColor = ''; uploadBox.style.background = '';
-                    var files = e.dataTransfer && e.dataTransfer.files;
+                    const files = e.dataTransfer && e.dataTransfer.files;
                     if (files && files[0] && fileInput) {
-                        var dt = new DataTransfer(); dt.items.add(files[0]); fileInput.files = dt.files;
-                        var fn = document.getElementById('fileTemplateFileName');
+                        const dt = new DataTransfer(); dt.items.add(files[0]); fileInput.files = dt.files;
+                        const fn = document.getElementById('fileTemplateFileName');
                         if (fn) { fn.style.display = 'block'; fn.textContent = '📎 ' + files[0].name; }
                     }
                 });
@@ -9782,24 +9805,24 @@
         }
         function closeFileTemplateModal() { document.getElementById('fileTemplateModal').style.display = 'none'; }
         async function saveFileTemplate() {
-            var id = document.getElementById('fileTemplateModalId').value.trim();
-            var name = (document.getElementById('fileTemplateModalName').value || '').trim();
+            const id = document.getElementById('fileTemplateModalId').value.trim();
+            const name = (document.getElementById('fileTemplateModalName').value || '').trim();
             if (!name) { toast(LANG === 'fa' ? 'نام الزامی است' : 'Name required', true); return; }
             if (!id) {
-                var fileInput = document.getElementById('fileTemplateFile');
+                const fileInput = document.getElementById('fileTemplateFile');
                 if (!fileInput || !fileInput.files || !fileInput.files[0]) { toast(LANG === 'fa' ? 'فایل الزامی است' : 'File required', true); return; }
-                var formData = new FormData();
+                const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
                 formData.append('name', name);
                 formData.append('category', (document.getElementById('fileTemplateModalCategory').value || '').trim());
                 formData.append('description', (document.getElementById('fileTemplateModalDescription').value || '').trim());
-                var tagsStr = (document.getElementById('fileTemplateModalTags').value || '').trim();
+                const tagsStr = (document.getElementById('fileTemplateModalTags').value || '').trim();
                 if (tagsStr) formData.append('tags', JSON.stringify(tagsStr.split(',').map(function(t){ return t.trim(); }).filter(Boolean)));
                 var res = await apiFetch('/api/file-templates', { method: 'POST', body: formData });
                 if (res.needLogin) return;
                 if (res.ok) { closeFileTemplateModal(); loadFileTemplates(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
             } else {
-                var body = { name: name, category: (document.getElementById('fileTemplateModalCategory').value || '').trim(), description: (document.getElementById('fileTemplateModalDescription').value || '').trim(), tags: (document.getElementById('fileTemplateModalTags').value || '').split(',').map(function(t){ return t.trim(); }).filter(Boolean), isActive: document.getElementById('fileTemplateModalActive').checked };
+                const body = { name: name, category: (document.getElementById('fileTemplateModalCategory').value || '').trim(), description: (document.getElementById('fileTemplateModalDescription').value || '').trim(), tags: (document.getElementById('fileTemplateModalTags').value || '').split(',').map(function(t){ return t.trim(); }).filter(Boolean), isActive: document.getElementById('fileTemplateModalActive').checked };
                 var res = await apiFetch('/api/file-templates/' + id, { method: 'PUT', body: JSON.stringify(body) });
                 if (res.ok) { closeFileTemplateModal(); loadFileTemplates(); toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
             }
@@ -9807,7 +9830,7 @@
         function editFileTemplate(id) { openFileTemplateModal(id); }
         async function deleteFileTemplate(id) {
             if (!confirm(LANG === 'fa' ? 'حذف این فایل؟' : 'Delete this file?')) return;
-            var res = await apiFetch('/api/file-templates/' + id, { method: 'DELETE' });
+            const res = await apiFetch('/api/file-templates/' + id, { method: 'DELETE' });
             if (res.ok) { loadFileTemplates(); fileTemplatesCache = fileTemplatesCache.filter(function(x) { return x.id !== id; }); toast(LANG === 'fa' ? 'حذف شد' : 'Deleted'); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         window.openTemplateModal = openTemplateModal;
@@ -9824,8 +9847,8 @@
         window.loadFileTemplates = loadFileTemplates;
         // بستن مودال با کلیک روی overlay
         (function() {
-            var tm = document.getElementById('templateModal');
-            var fm = document.getElementById('fileTemplateModal');
+            const tm = document.getElementById('templateModal');
+            const fm = document.getElementById('fileTemplateModal');
             if (tm) tm.addEventListener('click', function(e) { if (e.target === tm) closeTemplateModal(); });
             if (fm) fm.addEventListener('click', function(e) { if (e.target === fm) closeFileTemplateModal(); });
         })();
@@ -9838,37 +9861,37 @@
             return String(str).replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
         }
         async function toggleTemplateDropdown() {
-            var dd = document.getElementById('chatTemplateDropdown');
-            var btn = document.getElementById('msgTemplateBtn');
+            const dd = document.getElementById('chatTemplateDropdown');
+            const btn = document.getElementById('msgTemplateBtn');
             if (!dd || !btn) return;
             if (dd.style.display === 'block') { dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); return; }
             dd.innerHTML = '<div class="chat-template-dropdown-loading">' + (LANG === 'fa' ? 'در حال بارگذاری...' : 'Loading...') + '</div>';
             dd.style.display = 'block';
             btn.setAttribute('aria-expanded', 'true');
             if (chatTemplatesCache.length === 0) {
-                var res = await apiFetch('/api/message-templates');
+                const res = await apiFetch('/api/message-templates');
                 if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data;
             }
-            var fileTplRes = await apiFetch('/api/file-templates');
-            var activeFileTpl = (fileTplRes.ok && fileTplRes.data && fileTplRes.data.data) ? fileTplRes.data.data.filter(function(f) { return f.isActive !== false; }) : [];
-            var activeTpl = chatTemplatesCache.filter(function(t) { return t.isActive !== false; });
-            var html = '';
+            const fileTplRes = await apiFetch('/api/file-templates');
+            const activeFileTpl = (fileTplRes.ok && fileTplRes.data && fileTplRes.data.data) ? fileTplRes.data.data.filter(function(f) { return f.isActive !== false; }) : [];
+            const activeTpl = chatTemplatesCache.filter(function(t) { return t.isActive !== false; });
+            let html = '';
             if (activeTpl.length > 0) {
                 html += '<div class="chat-tpl-dd-section-title">' + (LANG === 'fa' ? 'تمپلیت‌های متنی' : 'Text Templates') + '</div>';
                 html += activeTpl.map(function(t) {
-                    var preview = (t.content || '').slice(0, 55);
+                    let preview = (t.content || '').slice(0, 55);
                     if ((t.content || '').length > 55) preview += '…';
-                    var contentEsc = escapeForDataAttr(t.content || '');
+                    const contentEsc = escapeForDataAttr(t.content || '');
                     return '<div class="chat-template-dropdown-item" data-id="' + escapeHtml(t.id) + '" data-content="' + contentEsc + '" role="button" tabindex="0"><div class="tpl-name">' + escapeHtml(t.name || (LANG === 'fa' ? 'بدون نام' : 'Untitled')) + '</div><div class="tpl-preview">' + escapeHtml(preview) + '</div></div>';
                 }).join('');
             }
             if (activeFileTpl.length > 0) {
                 html += '<div class="chat-tpl-dd-section-title">' + (LANG === 'fa' ? 'فایل‌های پرکاربرد' : 'File Templates') + '</div>';
                 html += activeFileTpl.map(function(f) {
-                    var ext = (f.filename || '').split('.').pop().toLowerCase();
-                    var icon = f.mimetype && f.mimetype.indexOf('image') !== -1 ? '🖼' : f.mimetype && f.mimetype.indexOf('pdf') !== -1 ? '📄' : f.mimetype && f.mimetype.indexOf('audio') !== -1 ? '🎵' : f.mimetype && f.mimetype.indexOf('video') !== -1 ? '🎬' : '📎';
-                    var size = f.filesize ? (f.filesize < 1024*1024 ? Math.round(f.filesize/1024) + ' KB' : (f.filesize/1024/1024).toFixed(1) + ' MB') : '';
-                    var fUrl = f.url || (f.filepath ? '/uploads/file-templates/' + (f.filepath.split(/[\\/]/).pop()) : '');
+                    const ext = (f.filename || '').split('.').pop().toLowerCase();
+                    const icon = f.mimetype && f.mimetype.indexOf('image') !== -1 ? '🖼' : f.mimetype && f.mimetype.indexOf('pdf') !== -1 ? '📄' : f.mimetype && f.mimetype.indexOf('audio') !== -1 ? '🎵' : f.mimetype && f.mimetype.indexOf('video') !== -1 ? '🎬' : '📎';
+                    const size = f.filesize ? (f.filesize < 1024*1024 ? Math.round(f.filesize/1024) + ' KB' : (f.filesize/1024/1024).toFixed(1) + ' MB') : '';
+                    const fUrl = f.url || (f.filepath ? '/uploads/file-templates/' + (f.filepath.split(/[\\/]/).pop()) : '');
                     return '<div class="chat-template-dropdown-item chat-file-tpl-item" data-file-id="' + escapeHtml(f.id) + '" data-file-name="' + escapeHtml(f.name || f.filename || '') + '" data-file-url="' + escapeHtml(fUrl) + '" data-mimetype="' + escapeHtml(f.mimetype || '') + '" data-filename="' + escapeHtml(f.filename || '') + '" role="button" tabindex="0"><div class="tpl-name">' + icon + ' ' + escapeHtml(f.name || f.filename || '') + '</div>' + (size ? '<div class="tpl-preview">' + size + (f.category ? ' · ' + escapeHtml(f.category) : '') + '</div>' : '') + '</div>';
                 }).join('');
             }
@@ -9880,87 +9903,87 @@
         }
         function insertTemplateIntoChat(content, templateId) {
             if (!content) return;
-            var cust = currentConvDetail && currentConvDetail.customer;
-            var custName = (cust && (cust.name || cust.phone)) || '';
-            var custPhone = (cust && cust.phone) || '';
-            var custEmail = (cust && cust.email) || '';
-            var today = new Date();
-            var dateStr = today.getFullYear() + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + String(today.getDate()).padStart(2, '0');
-            var timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
-            var text = content.replace(/\{name\}/gi, custName).replace(/\{phone\}/gi, custPhone).replace(/\{email\}/gi, custEmail).replace(/\{date\}/g, dateStr).replace(/\{time\}/g, timeStr);
-            var input = document.getElementById('msgInput');
+            const cust = currentConvDetail && currentConvDetail.customer;
+            const custName = (cust && (cust.name || cust.phone)) || '';
+            const custPhone = (cust && cust.phone) || '';
+            const custEmail = (cust && cust.email) || '';
+            const today = new Date();
+            const dateStr = today.getFullYear() + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + String(today.getDate()).padStart(2, '0');
+            const timeStr = String(today.getHours()).padStart(2, '0') + ':' + String(today.getMinutes()).padStart(2, '0');
+            const text = content.replace(/\{name\}/gi, custName).replace(/\{phone\}/gi, custPhone).replace(/\{email\}/gi, custEmail).replace(/\{date\}/g, dateStr).replace(/\{time\}/g, timeStr);
+            const input = document.getElementById('msgInput');
             if (input) { input.value = text; input.focus(); }
             if (templateId) apiFetch('/api/message-templates/' + templateId + '/use', { method: 'POST' }).catch(function() {});
         }
 
         async function loadDepartments() {
-            var list = document.getElementById('deptList');
+            const list = document.getElementById('deptList');
             setLoading('deptList', 4);
-            var canEdit = currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager' || (currentUser.permissions && currentUser.permissions.manage_users));
-            var q = canEdit ? '?all=1' : '';
-            var res = await apiFetch('/api/departments' + q);
+            const canEdit = currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager' || (currentUser.permissions && currentUser.permissions.manage_users));
+            const q = canEdit ? '?all=1' : '';
+            const res = await apiFetch('/api/departments' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
+            const data = res.data;
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🏢</span><br>' + t('empty_dept') + '</div>'; return; }
             window._deptListData = data.data;
             list.innerHTML = data.data.map(function(d, idx) {
-                var branchName = (d.branch && d.branch.name) ? d.branch.name : '';
-                var color = (d.color || '#10b981').replace(/^#?/, '#');
-                var kw = (d.keywords || '').trim();
+                const branchName = (d.branch && d.branch.name) ? d.branch.name : '';
+                const color = (d.color || '#10b981').replace(/^#?/, '#');
+                let kw = (d.keywords || '').trim();
                 if (kw.length > 120) kw = kw.slice(0, 117) + '…';
-                var meta = [d.description, branchName].filter(Boolean).join(' · ');
-                var inactive = d.isActive === false;
-                var defBadge = d.isDefault ? '<span class="dept-card-badge">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';
-                var editBtn = canEdit ? '<button type="button" class="btn-secondary dept-edit-btn" onclick="editDepartment(' + idx + ')">' + t('edit') + '</button>' : '';
-                var metaHtml = meta ? '<div class="dept-card-meta">' + escapeHtml(meta) + '</div>' : '';
-                var kwHtml = kw ? '<div class="dept-card-keywords">' + escapeHtml(kw) + '</div>' : '';
+                const meta = [d.description, branchName].filter(Boolean).join(' · ');
+                const inactive = d.isActive === false;
+                const defBadge = d.isDefault ? '<span class="dept-card-badge">' + (LANG === 'fa' ? 'پیش‌فرض' : 'Default') + '</span>' : '';
+                const editBtn = canEdit ? '<button type="button" class="btn-secondary dept-edit-btn" onclick="editDepartment(' + idx + ')">' + t('edit') + '</button>' : '';
+                const metaHtml = meta ? '<div class="dept-card-meta">' + escapeHtml(meta) + '</div>' : '';
+                const kwHtml = kw ? '<div class="dept-card-keywords">' + escapeHtml(kw) + '</div>' : '';
                 return '<div class="dept-card' + (inactive ? ' dept-inactive' : '') + '" data-id="' + d.id + '"><div class="dept-card-header"><div class="dept-card-title"><span class="dept-card-color" style="background:' + color + ';"></span><span class="dept-card-name">' + defBadge + escapeHtml(d.name || '') + '</span></div><div class="dept-card-actions">' + editBtn + '</div></div>' + metaHtml + kwHtml + '</div>';
             }).join('');
         }
 
         async function loadBranchesForSelect(selectIds) {
-            var res = await apiFetch('/api/branches');
+            const res = await apiFetch('/api/branches');
             if (res.needLogin || !res.ok) return;
-            var arr = (res.data && res.data.data) || [];
-            var opt = '<option value="">' + t('no_branch') + '</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '') + (b.country ? ' (' + b.country + ')' : '')) + '</option>'; }).join('');
-            var allBranchOpt = '<option value="">' + t('all_branches') + '</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '')) + '</option>'; }).join('');
+            const arr = (res.data && res.data.data) || [];
+            const opt = '<option value="">' + t('no_branch') + '</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '') + (b.country ? ' (' + b.country + ')' : '')) + '</option>'; }).join('');
+            const allBranchOpt = '<option value="">' + t('all_branches') + '</option>' + arr.map(function(b) { return '<option value="' + b.id + '">' + escapeHtml(b.name + (b.city ? ' - ' + b.city : '')) + '</option>'; }).join('');
             (selectIds || ['userBranch', 'deptBranch', 'supBranch', 'supActBranch']).forEach(function(id) {
-                var el = document.getElementById(id);
+                const el = document.getElementById(id);
                 if (el) { el.innerHTML = (id === 'supBranch' || id === 'supActBranch' || id === 'convFilterBranch') ? allBranchOpt : opt; }
             });
         }
 
         async function loadBranches() {
-            var list = document.getElementById('branchList');
+            const list = document.getElementById('branchList');
             if (!list) return;
             setLoading('branchList', 4);
-            var res = await apiFetch('/api/branches');
+            const res = await apiFetch('/api/branches');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data;
+            const data = res.data;
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🏢</span><br>' + t('empty_branches') + '</div>'; return; }
-            var role = (currentUser && currentUser.role) || '';
-            var canEdit = (role === 'owner' || role === 'admin');
+            const role = (currentUser && currentUser.role) || '';
+            const canEdit = (role === 'owner' || role === 'admin');
             list.innerHTML = data.data.map(function(b) {
-                var loc = [b.city, b.country].filter(Boolean).join(' — ');
-                var name = (b.name || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                var city = (b.city || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                var country = (b.country || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-                var editBtn = canEdit ? '<button type="button" class="btn-secondary branch-edit-btn" onclick="var c=this.closest(\'.branch-card\'); editBranch(c.getAttribute(\'data-id\'), c.getAttribute(\'data-name\')||\'\', c.getAttribute(\'data-city\')||\'\', c.getAttribute(\'data-country\')||\'\')">' + t('edit') + '</button>' : '';
-                var iconHtml = '<span class="branch-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-building-2"/></svg></span>';
+                const loc = [b.city, b.country].filter(Boolean).join(' — ');
+                const name = (b.name || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                const city = (b.city || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                const country = (b.country || '').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+                const editBtn = canEdit ? '<button type="button" class="btn-secondary branch-edit-btn" onclick="var c=this.closest(\'.branch-card\'); editBranch(c.getAttribute(\'data-id\'), c.getAttribute(\'data-name\')||\'\', c.getAttribute(\'data-city\')||\'\', c.getAttribute(\'data-country\')||\'\')">' + t('edit') + '</button>' : '';
+                const iconHtml = '<span class="branch-card-icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-building-2"/></svg></span>';
                 return '<div class="branch-card" data-id="' + b.id + '" data-name="' + name + '" data-city="' + city + '" data-country="' + country + '"><div class="branch-card-header"><div class="branch-card-title">' + iconHtml + '<span class="branch-card-name">' + escapeHtml(b.name) + '</span></div><div class="branch-card-actions">' + editBtn + '</div></div>' + (loc ? '<div class="branch-card-meta">' + escapeHtml(loc) + '</div>' : '') + '</div>';
             }).join('');
         }
 
 
         async function addBranch() {
-            var id = window._editingBranchId;
-            var name = document.getElementById('branchName').value.trim();
+            const id = window._editingBranchId;
+            const name = document.getElementById('branchName').value.trim();
             if (!name) { toast(t('branch_name_required'), true); return; }
-            var city = document.getElementById('branchCity').value.trim();
-            var country = document.getElementById('branchCountry').value.trim();
-            var res;
+            const city = document.getElementById('branchCity').value.trim();
+            const country = document.getElementById('branchCountry').value.trim();
+            let res;
             if (id) {
                 res = await apiFetch('/api/branches/' + id, { method: 'PUT', body: JSON.stringify({ name: name, city: city || null, country: country || null }) });
                 window._editingBranchId = null;
@@ -9972,8 +9995,8 @@
                 document.getElementById('branchName').value = '';
                 document.getElementById('branchCity').value = '';
                 document.getElementById('branchCountry').value = '';
-                var btnSave = document.getElementById('btnBranchSave');
-                var btnCancel = document.getElementById('btnBranchCancel');
+                const btnSave = document.getElementById('btnBranchSave');
+                const btnCancel = document.getElementById('btnBranchCancel');
                 if (btnSave) btnSave.textContent = t('add_branch');
                 if (btnCancel) btnCancel.style.display = 'none';
                 toast(id ? t('toast_branch_updated') : t('toast_branch_added'));
@@ -9986,8 +10009,8 @@
             document.getElementById('branchCity').value = (city || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
             document.getElementById('branchCountry').value = (country || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<');
             window._editingBranchId = id;
-            var btnSave = document.getElementById('btnBranchSave');
-            var btnCancel = document.getElementById('btnBranchCancel');
+            const btnSave = document.getElementById('btnBranchSave');
+            const btnCancel = document.getElementById('btnBranchCancel');
             if (btnSave) btnSave.textContent = t('edit');
             if (btnCancel) btnCancel.style.display = 'inline-flex';
             toast(t('edit_branch_hint'), false);
@@ -9998,40 +10021,40 @@
             document.getElementById('branchName').value = '';
             document.getElementById('branchCity').value = '';
             document.getElementById('branchCountry').value = '';
-            var btnSave = document.getElementById('btnBranchSave');
-            var btnCancel = document.getElementById('btnBranchCancel');
+            const btnSave = document.getElementById('btnBranchSave');
+            const btnCancel = document.getElementById('btnBranchCancel');
             if (btnSave) btnSave.textContent = t('add_branch');
             if (btnCancel) btnCancel.style.display = 'none';
         }
 
         async function loadSupervisionFiltersInit() {
             await loadBranchesForSelect(['supBranch', 'supActBranch']);
-            var deptRes = await apiFetch('/api/departments?all=1');
+            const deptRes = await apiFetch('/api/departments?all=1');
             if (deptRes.ok && deptRes.data && deptRes.data.data) {
-                var sel = document.getElementById('supDept');
+                const sel = document.getElementById('supDept');
                 if (sel) sel.innerHTML = '<option value="">' + t('all_departments') + '</option>' + deptRes.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
             }
-            var userRes = await apiFetch('/api/users');
+            const userRes = await apiFetch('/api/users');
             if (userRes.ok && userRes.data && userRes.data.data) {
-                var anyOpt = '<option value="">' + t('any_assignee') + '</option>' + userRes.data.data.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email || '') + '</option>'; }).join('');
-                var allOpt = '<option value="">' + t('all_users') + '</option>' + userRes.data.data.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email || '') + '</option>'; }).join('');
-                var u1 = document.getElementById('supUser'); if (u1) u1.innerHTML = anyOpt;
-                var u2 = document.getElementById('supActUser'); if (u2) u2.innerHTML = allOpt;
-                var u3 = document.getElementById('supIntChatUser'); if (u3) u3.innerHTML = allOpt;
+                const anyOpt = '<option value="">' + t('any_assignee') + '</option>' + userRes.data.data.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email || '') + '</option>'; }).join('');
+                const allOpt = '<option value="">' + t('all_users') + '</option>' + userRes.data.data.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email || '') + '</option>'; }).join('');
+                const u1 = document.getElementById('supUser'); if (u1) u1.innerHTML = anyOpt;
+                const u2 = document.getElementById('supActUser'); if (u2) u2.innerHTML = allOpt;
+                const u3 = document.getElementById('supIntChatUser'); if (u3) u3.innerHTML = allOpt;
             }
         }
 
         async function loadSupervisionPerformance() {
-            var el = document.getElementById('supPerformanceContent');
+            const el = document.getElementById('supPerformanceContent');
             if (!el) return;
             el.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
             el.className = 'empty';
-            var res = await apiFetch('/api/supervision/performance');
+            const res = await apiFetch('/api/supervision/performance');
             if (res.needLogin) return;
             if (!res.ok) { el.innerHTML = t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : ''); return; }
-            var d = res.data;
-            var summary = d.summary || {};
-            var html = '<div class="sup-stat-cards stat-cards">';
+            const d = res.data;
+            const summary = d.summary || {};
+            let html = '<div class="sup-stat-cards stat-cards">';
             html += '<div class="stat-card"><div class="val">' + (summary.conversationCount || 0) + '</div><div class="label">' + t('total_conversations') + '</div></div>';
             html += '<div class="stat-card"><div class="val">' + (summary.messageCount || 0) + '</div><div class="label">' + t('outgoing_messages') + '</div></div>';
             html += '<div class="stat-card stat-card-accent"><div class="val">' + (summary.openCount || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'باز' : 'Open') + '</div></div>';
@@ -10045,14 +10068,14 @@
             if (d.branches && d.branches.length) {
                 html += '<h3 class="sup-section-title">' + t('sup_by_branch') + '</h3><div class="sup-branch-cards">';
                 d.branches.forEach(function(b) {
-                    var extra = (b.avgResponseTimeMinutes != null) ? '<div class="sup-branch-extra">' + (LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + b.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min') + '</div>' : '';
+                    const extra = (b.avgResponseTimeMinutes != null) ? '<div class="sup-branch-extra">' + (LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + b.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min') + '</div>' : '';
                     html += '<div class="sup-branch-card"><div class="sup-branch-name">' + escapeHtml(b.name) + '</div><div class="sup-branch-meta">' + escapeHtml((b.city || '') + (b.city && b.country ? ' \u00B7 ' : '') + (b.country || '')) + '</div><div class="sup-branch-count">' + (b.conversationCount || 0) + '</div>' + extra + '</div>';
                 });
                 html += '</div>';
             }
             if (d.users && d.users.length) {
                 html += '<h3 class="sup-section-title">' + t('sup_by_user') + '</h3><div class="sup-user-cards">';
-                d.users.forEach(function(u) { var bn = (u.branch && u.branch.name) ? u.branch.name : ''; html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '�') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div>' + (function() { var u2 = u; var extras = []; if (u2.avgResponseTimeMinutes != null) extras.push((LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + u2.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')); if (u2.avgRating != null) extras.push((LANG === 'fa' ? 'رضایت: ' : 'Rating: ') + u2.avgRating + ' ★'); return extras.length ? '<div class="sup-user-extra">' + extras.join(' · ') + '</div>' : ''; })() + '</div>'; });
+                d.users.forEach(function(u) { const bn = (u.branch && u.branch.name) ? u.branch.name : ''; html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '�') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div>' + (function() { const u2 = u; const extras = []; if (u2.avgResponseTimeMinutes != null) extras.push((LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + u2.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')); if (u2.avgRating != null) extras.push((LANG === 'fa' ? 'رضایت: ' : 'Rating: ') + u2.avgRating + ' ★'); return extras.length ? '<div class="sup-user-extra">' + extras.join(' · ') + '</div>' : ''; })() + '</div>'; });
                 html += '</div>';
             }
             el.className = '';
@@ -10060,82 +10083,82 @@
         }
 
         async function loadSupervisionConversations() {
-            var list = document.getElementById('supConvList');
+            const list = document.getElementById('supConvList');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var branchId = document.getElementById('supBranch') && document.getElementById('supBranch').value ? document.getElementById('supBranch').value : '';
-            var deptId = document.getElementById('supDept') && document.getElementById('supDept').value ? document.getElementById('supDept').value : '';
-            var userId = document.getElementById('supUser') && document.getElementById('supUser').value ? document.getElementById('supUser').value : '';
-            var status = document.getElementById('supStatus') && document.getElementById('supStatus').value ? document.getElementById('supStatus').value : '';
-            var unassigned = document.getElementById('supUnassigned') && document.getElementById('supUnassigned').checked;
-            var q = '?limit=50';
+            const branchId = document.getElementById('supBranch') && document.getElementById('supBranch').value ? document.getElementById('supBranch').value : '';
+            const deptId = document.getElementById('supDept') && document.getElementById('supDept').value ? document.getElementById('supDept').value : '';
+            const userId = document.getElementById('supUser') && document.getElementById('supUser').value ? document.getElementById('supUser').value : '';
+            const status = document.getElementById('supStatus') && document.getElementById('supStatus').value ? document.getElementById('supStatus').value : '';
+            const unassigned = document.getElementById('supUnassigned') && document.getElementById('supUnassigned').checked;
+            let q = '?limit=50';
             if (branchId) q += '&branchId=' + encodeURIComponent(branchId);
             if (deptId) q += '&departmentId=' + encodeURIComponent(deptId);
             if (userId) q += '&userId=' + encodeURIComponent(userId);
             if (status) q += '&status=' + encodeURIComponent(status);
             if (unassigned) q += '&unassigned=1';
-            var res = await apiFetch('/api/supervision/conversations' + q);
+            const res = await apiFetch('/api/supervision/conversations' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data.data || [];
-            var total = res.data.total || data.length;
+            const data = res.data.data || [];
+            const total = res.data.total || data.length;
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_conv') + '</div>'; return; }
-            var dash = '\u2014';
+            const dash = '\u2014';
             list.innerHTML = '<div class="sup-conv-count">' + total + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conversations') + '</div><table class="sup-table sup-responsive-table sup-conv-table"><thead><tr><th>' + t('th_customer') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_dept') + '</th><th>' + t('th_assignee') + '</th><th>' + t('th_status') + '</th><th>' + (LANG === 'fa' ? 'آخرین پیام' : 'Last') + '</th></tr></thead><tbody>' + data.map(function(c) {
-                var cust = c.customer || {};
-                var branch = c.branch ? c.branch.name : '\u2014';
-                var dept = c.department ? c.department.name : '\u2014';
-                var assignee = userDisplay(c.assignee) || '\u2014';
-                var cl = [t('th_customer'),t('th_branch'),t('th_dept'),t('th_assignee'),t('th_status'),(LANG === 'fa' ? 'آخرین پیام' : 'Last')]; var lm = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : dash; return '<tr><td data-label="'+cl[0]+'">' + escapeHtml(cust.name || cust.phone || '\u2014') + '</td><td data-label="'+cl[1]+'">' + escapeHtml(branch) + '</td><td data-label="'+cl[2]+'">' + escapeHtml(dept) + '</td><td data-label="'+cl[3]+'">' + escapeHtml(assignee) + '</td><td data-label="'+cl[4]+'">' + (c.status || '\u2014') + '</td><td data-label="'+cl[5]+'">' + lm + '</td></tr>';
+                const cust = c.customer || {};
+                const branch = c.branch ? c.branch.name : '\u2014';
+                const dept = c.department ? c.department.name : '\u2014';
+                const assignee = userDisplay(c.assignee) || '\u2014';
+                const cl = [t('th_customer'),t('th_branch'),t('th_dept'),t('th_assignee'),t('th_status'),(LANG === 'fa' ? 'آخرین پیام' : 'Last')]; const lm = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : dash; return '<tr><td data-label="'+cl[0]+'">' + escapeHtml(cust.name || cust.phone || '\u2014') + '</td><td data-label="'+cl[1]+'">' + escapeHtml(branch) + '</td><td data-label="'+cl[2]+'">' + escapeHtml(dept) + '</td><td data-label="'+cl[3]+'">' + escapeHtml(assignee) + '</td><td data-label="'+cl[4]+'">' + (c.status || '\u2014') + '</td><td data-label="'+cl[5]+'">' + lm + '</td></tr>';
             }).join('') + '</tbody></table>';
         }
 
         async function loadStaffActivity() {
-            var onlineList = document.getElementById('onlineStaffList');
-            var loginsList = document.getElementById('loginsList');
-            var countEl = document.getElementById('onlineCount');
-            var loginsTodayEl = document.getElementById('loginsTodayCount');
-            var loginsTotalEl = document.getElementById('loginsTotalCount');
+            const onlineList = document.getElementById('onlineStaffList');
+            const loginsList = document.getElementById('loginsList');
+            const countEl = document.getElementById('onlineCount');
+            const loginsTodayEl = document.getElementById('loginsTodayCount');
+            const loginsTotalEl = document.getElementById('loginsTotalCount');
             
-            var updatedEl = document.getElementById('staffActivityUpdated');
+            const updatedEl = document.getElementById('staffActivityUpdated');
             if (onlineList) onlineList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (loginsList) loginsList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var onlineRes = await apiFetch('/api/supervision/online');
+            const onlineRes = await apiFetch('/api/supervision/online');
             if (onlineRes.needLogin) return;
             if (onlineRes.ok && onlineRes.data && onlineRes.data.data) {
-                var users = onlineRes.data.data;
+                const users = onlineRes.data.data;
                 if (countEl) countEl.textContent = users.length;
                 if (onlineList) {
                     if (users.length === 0) onlineList.innerHTML = '<div class="empty">' + t('no_staff_online') + '</div>';
                     else onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('label_name') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_status') + '</th><th>' + t('th_last_login') + '</th><th>' + t('th_ip') + '</th><th>' + t('th_country') + '</th></tr></thead><tbody>' + users.map(function(u) {
-                        var statusClass = (u.status || 'offline').toLowerCase();
-                        var statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
-                        var lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '�';
-                        var branchName = (u.branch && u.branch.name) ? u.branch.name : '�';
-                        var ip = u.lastLoginIp || '\u2014'; var country = u.lastLoginCountry || '\u2014';
-                        var lbl = [t('label_name'),t('th_email'),t('th_branch'),t('th_status'),t('th_last_login'),t('th_ip'),t('th_country')]; return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer"><td data-label="'+lbl[0]+'">' + escapeHtml(userDisplay(u)) + '</td><td data-label="'+lbl[1]+'">' + escapeHtml(u.email || '\u2014') + '</td><td data-label="'+lbl[2]+'">' + escapeHtml(branchName) + '</td><td data-label="'+lbl[3]+'"><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td data-label="'+lbl[4]+'">' + lastLogin + '</td><td data-label="'+lbl[5]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+lbl[6]+'">' + escapeHtml(country) + '</td></tr>';
+                        const statusClass = (u.status || 'offline').toLowerCase();
+                        const statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
+                        const lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '�';
+                        const branchName = (u.branch && u.branch.name) ? u.branch.name : '�';
+                        const ip = u.lastLoginIp || '\u2014'; const country = u.lastLoginCountry || '\u2014';
+                        const lbl = [t('label_name'),t('th_email'),t('th_branch'),t('th_status'),t('th_last_login'),t('th_ip'),t('th_country')]; return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer"><td data-label="'+lbl[0]+'">' + escapeHtml(userDisplay(u)) + '</td><td data-label="'+lbl[1]+'">' + escapeHtml(u.email || '\u2014') + '</td><td data-label="'+lbl[2]+'">' + escapeHtml(branchName) + '</td><td data-label="'+lbl[3]+'"><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td data-label="'+lbl[4]+'">' + lastLogin + '</td><td data-label="'+lbl[5]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+lbl[6]+'">' + escapeHtml(country) + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
             } else { if (onlineList) onlineList.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; if (countEl) countEl.textContent = '0'; }
-            var loginsRes = await apiFetch('/api/supervision/logins?limit=50');
+            const loginsRes = await apiFetch('/api/supervision/logins?limit=50');
             if (loginsRes.needLogin) return;
             if (loginsRes.ok && loginsRes.data && loginsRes.data.data) {
-                var rows = loginsRes.data.data;
-                var todayStr = fmtTZ(new Date(), 'date');
+                const rows = loginsRes.data.data;
+                const todayStr = fmtTZ(new Date(), 'date');
                 function isToday(d) { try { return d && fmtTZ(d, 'date') === todayStr; } catch(e) { return false; } }
-                var loginsToday = rows.filter(function(r) { return isToday(r.createdAt); }).length;
+                const loginsToday = rows.filter(function(r) { return isToday(r.createdAt); }).length;
                 if (loginsTodayEl) loginsTodayEl.textContent = loginsToday;
                 if (loginsTotalEl) loginsTotalEl.textContent = rows.length;
                 if (loginsList) {
                     if (rows.length === 0) loginsList.innerHTML = '<div class="empty">' + t('empty_no_logins') + '</div>';
                     else loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_ip') + '</th><th>' + t('th_country') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
-                        var user = r.user || {};
-                        var branch = r.branch ? r.branch.name : '�';
-                        var time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
-                        var uid = r.userId || (user && user.id) || '';
-                        var rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
-                        var ip = r.ip || '\u2014'; var country = r.country || '\u2014';
-                        var ll = [t('th_user'),t('th_email'),t('th_branch'),t('th_login_time'),t('th_ip'),t('th_country'),t('th_summary')]; return '<tr' + rowAttrs + '><td data-label="'+ll[0]+'">' + escapeHtml(userDisplay(user)) + '</td><td data-label="'+ll[1]+'">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="'+ll[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+ll[3]+'">' + time + '</td><td data-label="'+ll[4]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+ll[5]+'">' + escapeHtml(country) + '</td><td data-label="'+ll[6]+'">' + escapeHtml(r.summary || '') + '</td></tr>';
+                        const user = r.user || {};
+                        const branch = r.branch ? r.branch.name : '�';
+                        const time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
+                        const uid = r.userId || (user && user.id) || '';
+                        const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
+                        const ip = r.ip || '\u2014'; const country = r.country || '\u2014';
+                        const ll = [t('th_user'),t('th_email'),t('th_branch'),t('th_login_time'),t('th_ip'),t('th_country'),t('th_summary')]; return '<tr' + rowAttrs + '><td data-label="'+ll[0]+'">' + escapeHtml(userDisplay(user)) + '</td><td data-label="'+ll[1]+'">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="'+ll[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+ll[3]+'">' + time + '</td><td data-label="'+ll[4]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+ll[5]+'">' + escapeHtml(country) + '</td><td data-label="'+ll[6]+'">' + escapeHtml(r.summary || '') + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
             } else { if (loginsList) loginsList.innerHTML = '<div class="empty">' + t('login_err_load') + '</div>'; if (loginsTodayEl) loginsTodayEl.textContent = '0'; if (loginsTotalEl) loginsTotalEl.textContent = '0'; }
@@ -10144,16 +10167,16 @@
         }
 
         async function loadAttendanceReportFilters() {
-            var branchSel = document.getElementById('attendanceBranch');
-            var userSel = document.getElementById('attendanceUser');
-            var fromInp = document.getElementById('attendanceFrom');
-            var toInp = document.getElementById('attendanceTo');
+            const branchSel = document.getElementById('attendanceBranch');
+            const userSel = document.getElementById('attendanceUser');
+            const fromInp = document.getElementById('attendanceFrom');
+            const toInp = document.getElementById('attendanceTo');
             if (!branchSel && !userSel) return;
-            var today = new Date();
-            var firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            const today = new Date();
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
             if (fromInp) fromInp.value = fmtTZ(firstDay, 'date');
             if (toInp) toInp.value = fmtTZ(today, 'date');
-            var [branchRes, userRes] = await Promise.all([apiFetch('/api/branches'), apiFetch('/api/users')]);
+            const [branchRes, userRes] = await Promise.all([apiFetch('/api/branches'), apiFetch('/api/users')]);
             if (branchRes.ok && branchRes.data && branchRes.data.data && branchSel) {
                 branchSel.innerHTML = '<option value="">' + (t('all_branches') || 'همه شعب') + '</option>' + branchRes.data.data.filter(function(b){ return b.isActive !== false; }).map(function(b){ return '<option value="' + b.id + '">' + escapeHtml(b.name || '') + '</option>'; }).join('');
             }
@@ -10163,33 +10186,33 @@
         }
 
         async function loadAttendanceReport() {
-            var el = document.getElementById('attendanceReportContent');
+            const el = document.getElementById('attendanceReportContent');
             if (!el) return;
             el.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var branchId = (document.getElementById('attendanceBranch') && document.getElementById('attendanceBranch').value) || '';
-            var userId = (document.getElementById('attendanceUser') && document.getElementById('attendanceUser').value) || '';
-            var from = (document.getElementById('attendanceFrom') && document.getElementById('attendanceFrom').value) || '';
-            var to = (document.getElementById('attendanceTo') && document.getElementById('attendanceTo').value) || '';
-            var q = '?';
+            const branchId = (document.getElementById('attendanceBranch') && document.getElementById('attendanceBranch').value) || '';
+            const userId = (document.getElementById('attendanceUser') && document.getElementById('attendanceUser').value) || '';
+            const from = (document.getElementById('attendanceFrom') && document.getElementById('attendanceFrom').value) || '';
+            const to = (document.getElementById('attendanceTo') && document.getElementById('attendanceTo').value) || '';
+            let q = '?';
             if (branchId) q += 'branchId=' + encodeURIComponent(branchId) + '&';
             if (userId) q += 'userId=' + encodeURIComponent(userId) + '&';
             if (from) q += 'from=' + encodeURIComponent(from) + '&';
             if (to) q += 'to=' + encodeURIComponent(to) + '&';
-            var res = await apiFetch('/api/supervision/attendance-report' + q);
+            const res = await apiFetch('/api/supervision/attendance-report' + q);
             if (res.needLogin) return;
             if (!res.ok) { el.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
-            var d = res.data;
-            var summary = d.summary || [];
-            var sessions = d.sessions || [];
+            const d = res.data;
+            const summary = d.summary || [];
+            const sessions = d.sessions || [];
             if (summary.length === 0 && sessions.length === 0) { el.innerHTML = '<div class="empty">' + (t('no_data') || 'داده‌ای یافت نشد') + '</div>'; return; }
-            var html = '<div class="attendance-summary-table-wrap"><table class="sup-table attendance-summary-table"><thead><tr><th>' + (t('label_name') || 'نام') + '</th><th>' + (LANG === 'fa' ? 'جمع ساعات' : 'Total hours') + '</th><th>' + (LANG === 'fa' ? 'دقیقه' : 'Minutes') + '</th></tr></thead><tbody>';
+            let html = '<div class="attendance-summary-table-wrap"><table class="sup-table attendance-summary-table"><thead><tr><th>' + (t('label_name') || 'نام') + '</th><th>' + (LANG === 'fa' ? 'جمع ساعات' : 'Total hours') + '</th><th>' + (LANG === 'fa' ? 'دقیقه' : 'Minutes') + '</th></tr></thead><tbody>';
             summary.forEach(function(s) { html += '<tr><td>' + escapeHtml(s.userName || '') + '</td><td>' + (s.totalHours || 0) + '</td><td>' + (s.totalMinutes || 0) + '</td></tr>'; });
             html += '</tbody></table></div>';
             if (sessions.length > 0 && sessions.length <= 100) {
                 html += '<h4 style="font-size:0.95rem;margin:16px 0 8px;">' + (LANG === 'fa' ? 'جلسات (ورود/خروج)' : 'Sessions') + '</h4><table class="sup-table"><thead><tr><th>' + (t('label_name') || 'نام') + '</th><th>' + (LANG === 'fa' ? 'ورود' : 'Login') + '</th><th>' + (LANG === 'fa' ? 'خروج' : 'Logout') + '</th><th>' + (LANG === 'fa' ? 'دقیقه' : 'Min') + '</th></tr></thead><tbody>';
-                var userMap = {};
+                const userMap = {};
                 summary.forEach(function(s) { userMap[s.userId] = s.userName; });
-                sessions.forEach(function(s) { var login = s.loginAt ? fmtTZ(s.loginAt, 'datetime') : '\u2014'; var logout = s.logoutAt ? fmtTZ(s.logoutAt, 'datetime') : (LANG === 'fa' ? 'در حال حاضر' : 'Now'); html += '<tr><td>' + escapeHtml(userMap[s.userId] || s.userId) + '</td><td>' + login + '</td><td>' + logout + '</td><td>' + (s.minutes || 0) + '</td></tr>'; });
+                sessions.forEach(function(s) { const login = s.loginAt ? fmtTZ(s.loginAt, 'datetime') : '\u2014'; const logout = s.logoutAt ? fmtTZ(s.logoutAt, 'datetime') : (LANG === 'fa' ? 'در حال حاضر' : 'Now'); html += '<tr><td>' + escapeHtml(userMap[s.userId] || s.userId) + '</td><td>' + login + '</td><td>' + logout + '</td><td>' + (s.minutes || 0) + '</td></tr>'; });
                 html += '</tbody></table>';
             }
             el.innerHTML = html;
@@ -10197,9 +10220,9 @@
 
         function openStaffDetailModal(userId) {
             if (!userId) return;
-            var modal = document.getElementById('staffDetailModal');
-            var loading = document.getElementById('staffDetailLoading');
-            var content = document.getElementById('staffDetailContent');
+            const modal = document.getElementById('staffDetailModal');
+            const loading = document.getElementById('staffDetailLoading');
+            const content = document.getElementById('staffDetailContent');
             if (!modal || !loading || !content) return;
             modal.style.display = 'flex';
             loading.style.display = 'block';
@@ -10208,23 +10231,23 @@
             loadStaffDetail(userId);
         }
         function closeStaffDetailModal() {
-            var modal = document.getElementById('staffDetailModal');
+            const modal = document.getElementById('staffDetailModal');
             if (modal) modal.style.display = 'none';
         }
         async function loadStaffDetail(userId) {
-            var loading = document.getElementById('staffDetailLoading');
-            var content = document.getElementById('staffDetailContent');
+            const loading = document.getElementById('staffDetailLoading');
+            const content = document.getElementById('staffDetailContent');
             if (!userId || !loading || !content) return;
             try {
-                var res = await apiFetch('/api/supervision/user/' + encodeURIComponent(userId) + '/detail');
+                const res = await apiFetch('/api/supervision/user/' + encodeURIComponent(userId) + '/detail');
                 loading.style.display = 'none';
                 content.style.display = 'block';
                 if (res.needLogin || !res.ok) { content.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('loading_err')) + '</div>'; return; }
-                var d = res.data;
-                var u = d.user || {};
-                var s = d.stats || {};
-                var actLabels = { message_sent: t('action_message_sent'), conversation_assigned: t('action_conv_assigned'), customer_note_added: (LANG === 'fa' ? 'ثبت گزارش/یادداشت' : 'Customer note') };
-                var html = '<div class="staff-detail-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px;">';
+                const d = res.data;
+                const u = d.user || {};
+                const s = d.stats || {};
+                const actLabels = { message_sent: t('action_message_sent'), conversation_assigned: t('action_conv_assigned'), customer_note_added: (LANG === 'fa' ? 'ثبت گزارش/یادداشت' : 'Customer note') };
+                let html = '<div class="staff-detail-stats" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-bottom:20px;">';
                 html += '<div class="stat-card"><div class="val">' + (s.onlineHoursTotal || '0') + '</div><div class="label">' + (LANG === 'fa' ? 'ساعت آنلاین (کل)' : 'Hours online') + '</div></div>';
                 html += '<div class="stat-card"><div class="val">' + (s.sessionsCount || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'تعداد نشست' : 'Sessions') + '</div></div>';
                 html += '<div class="stat-card"><div class="val">' + (s.conversationsAssigned || 0) + '</div><div class="label">' + (LANG === 'fa' ? 'مکالمه تخصیص‌یافته' : 'Conversations') + '</div></div>';
@@ -10237,8 +10260,8 @@
                     html += '<h4 style="font-size:0.95rem;margin:16px 0 8px;">' + (LANG === 'fa' ? 'ورود و خروج' : 'Login & Logout') + '</h4>';
                     html += '<table class="sup-table"><thead><tr><th>' + (LANG === 'fa' ? 'ورود' : 'Login') + '</th><th>' + (LANG === 'fa' ? 'خروج' : 'Logout') + '</th><th>' + (LANG === 'fa' ? 'دقایق' : 'Minutes') + '</th></tr></thead><tbody>';
                     d.sessions.forEach(function(s) {
-                        var login = s.loginAt ? fmtTZ(s.loginAt, 'datetime') : '\u2014';
-                        var logout = s.logoutAt ? fmtTZ(s.logoutAt, 'datetime') : (LANG === 'fa' ? 'در حال حاضر' : 'Now');
+                        const login = s.loginAt ? fmtTZ(s.loginAt, 'datetime') : '\u2014';
+                        const logout = s.logoutAt ? fmtTZ(s.logoutAt, 'datetime') : (LANG === 'fa' ? 'در حال حاضر' : 'Now');
                         html += '<tr><td>' + login + '</td><td>' + logout + '</td><td>' + (s.minutes || 0) + '</td></tr>';
                     });
                     html += '</tbody></table>';
@@ -10247,9 +10270,9 @@
                     html += '<h4 style="font-size:0.95rem;margin:16px 0 8px;">' + (LANG === 'fa' ? 'مکالمات تخصیص‌یافته (با چه کسانی صحبت کرده)' : 'Assigned conversations (who they talked to)') + '</h4>';
                     html += '<div class="staff-conv-list" style="max-height:200px;overflow-y:auto;">';
                     d.conversations.forEach(function(c) {
-                        var custName = (c.customer && (c.customer.name || c.customer.phone)) ? (c.customer.name || c.customer.phone) : (LANG === 'fa' ? 'مشتری' : 'Customer');
-                        var lastMsg = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : '';
-                        var safeName = (custName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        const custName = (c.customer && (c.customer.name || c.customer.phone)) ? (c.customer.name || c.customer.phone) : (LANG === 'fa' ? 'مشتری' : 'Customer');
+                        const lastMsg = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'datetime') : '';
+                        const safeName = (custName || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                         html += '<div class="staff-conv-item" data-convid="' + escapeHtml(c.id) + '" data-custname="' + escapeHtml(safeName) + '" onclick="var el=event.currentTarget;openChat(el.getAttribute(\'data-convid\'),el.getAttribute(\'data-custname\')||\'\',\'\');showPage(\'conversations\');closeStaffDetailModal();" style="padding:10px 12px;margin-bottom:6px;background:var(--bg-secondary);border-radius:var(--radius-sm);border:1px solid var(--border);cursor:pointer;transition:background 0.2s;"><div style="font-weight:600;">' + escapeHtml(custName) + '</div><div style="font-size:0.8rem;color:var(--text-muted);">' + lastMsg + '</div></div>';
                     });
                     html += '</div>';
@@ -10264,73 +10287,73 @@
                 }
                 if (!d.sessions || d.sessions.length === 0) { if (!d.recentActivities || d.recentActivities.length === 0) { if (!d.conversations || d.conversations.length === 0) html += '<p class="text-muted" style="font-size:0.9rem;">' + (LANG === 'fa' ? 'ورود/خروج ثبت‌شده‌ای یافت نشد. با خروج صحیح از سیستم، ساعات آنلاین دقیق‌تر محاسبه می‌شود.' : 'No login/logout records yet.') + '</p>'; } }
                 content.innerHTML = html;
-                var titleEl = document.getElementById('staffDetailTitle');
+                const titleEl = document.getElementById('staffDetailTitle');
                 if (titleEl) titleEl.textContent = (LANG === 'fa' ? 'جزئیات فعالیت: ' : 'Activity: ') + (userDisplay(u) || u.email || userId);
             } catch (e) { loading.style.display = 'none'; content.style.display = 'block'; content.innerHTML = '<div class="empty">' + (e.message || t('loading_err')) + '</div>'; }
         }
 
         async function loadSupervisionActivity() {
-            var list = document.getElementById('supActList');
+            const list = document.getElementById('supActList');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var branchId = document.getElementById('supActBranch') && document.getElementById('supActBranch').value ? document.getElementById('supActBranch').value : '';
-            var userId = document.getElementById('supActUser') && document.getElementById('supActUser').value ? document.getElementById('supActUser').value : '';
-            var action = document.getElementById('supActAction') && document.getElementById('supActAction').value ? document.getElementById('supActAction').value : '';
-            var q = '?limit=100';
+            const branchId = document.getElementById('supActBranch') && document.getElementById('supActBranch').value ? document.getElementById('supActBranch').value : '';
+            const userId = document.getElementById('supActUser') && document.getElementById('supActUser').value ? document.getElementById('supActUser').value : '';
+            const action = document.getElementById('supActAction') && document.getElementById('supActAction').value ? document.getElementById('supActAction').value : '';
+            let q = '?limit=100';
             if (branchId) q += '&branchId=' + encodeURIComponent(branchId);
             if (userId) q += '&userId=' + encodeURIComponent(userId);
             if (action) q += '&action=' + encodeURIComponent(action);
-            var res = await apiFetch('/api/supervision/activity' + q);
+            const res = await apiFetch('/api/supervision/activity' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
-            var data = res.data.data || [];
+            const data = res.data.data || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('no_data') + '</div>'; return; }
             list.innerHTML = '<table class="sup-table sup-responsive-table"><thead><tr><th>' + t('th_time') + '</th><th>' + t('th_user') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_action') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + data.map(function(a) {
-                var time = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
-                var user = userDisplay(a.user) || '�';
-                var branch = a.branch ? a.branch.name : '�';
-                var al = [t('th_time'),t('th_user'),t('th_branch'),t('th_action'),t('th_summary')]; return '<tr><td data-label="'+al[0]+'">' + time + '</td><td data-label="'+al[1]+'">' + escapeHtml(user) + '</td><td data-label="'+al[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+al[3]+'">' + escapeHtml(a.action || '') + '</td><td data-label="'+al[4]+'">' + escapeHtml(a.summary || '') + '</td></tr>';
+                const time = a.createdAt ? fmtTZ(a.createdAt, 'datetime') : '';
+                const user = userDisplay(a.user) || '�';
+                const branch = a.branch ? a.branch.name : '�';
+                const al = [t('th_time'),t('th_user'),t('th_branch'),t('th_action'),t('th_summary')]; return '<tr><td data-label="'+al[0]+'">' + time + '</td><td data-label="'+al[1]+'">' + escapeHtml(user) + '</td><td data-label="'+al[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+al[3]+'">' + escapeHtml(a.action || '') + '</td><td data-label="'+al[4]+'">' + escapeHtml(a.summary || '') + '</td></tr>';
             }).join('') + '</tbody></table>';
         }
 
         async function loadSupervisionInternalChats() {
-            var list = document.getElementById('supIntChatList');
+            const list = document.getElementById('supIntChatList');
             if (!list) return;
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            var userId = document.getElementById('supIntChatUser') && document.getElementById('supIntChatUser').value ? document.getElementById('supIntChatUser').value : '';
-            var q = '?limit=50&page=1';
+            const userId = document.getElementById('supIntChatUser') && document.getElementById('supIntChatUser').value ? document.getElementById('supIntChatUser').value : '';
+            let q = '?limit=50&page=1';
             if (userId) q += '&userId=' + encodeURIComponent(userId);
-            var res = await apiFetch('/api/supervision/internal-chats' + q);
+            const res = await apiFetch('/api/supervision/internal-chats' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('loading_err')) + '</div>'; return; }
-            var data = res.data.data || [];
+            const data = res.data.data || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'چت داخلی‌ای یافت نشد.' : 'No internal chats.') + '</div>'; return; }
             list.innerHTML = '<table class="sup-table sup-responsive-table"><thead><tr><th>' + (LANG === 'fa' ? 'شرکت‌کنندگان' : 'Participants') + '</th><th>' + (LANG === 'fa' ? 'آخرین پیام' : 'Last message') + '</th><th>' + (LANG === 'fa' ? 'عملیات' : 'Action') + '</th></tr></thead><tbody>' + data.map(function(t) {
-                var names = (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ');
-                var last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 60) + ((t.lastMessage.content || '').length > 60 ? '\u2026' : '') : '\u2014';
-                var from = t.lastMessage && t.lastMessage.fromUser ? t.lastMessage.fromUser.name || '' : '';
+                const names = (t.participants || []).map(function(p) { return p.name || p.email || ''; }).join(', ');
+                const last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 60) + ((t.lastMessage.content || '').length > 60 ? '\u2026' : '') : '\u2014';
+                const from = t.lastMessage && t.lastMessage.fromUser ? t.lastMessage.fromUser.name || '' : '';
                 return '<tr><td data-label="' + (LANG === 'fa' ? 'شرکت\u200Cکنندگان' : 'Participants') + '">' + escapeHtml(names || '\u2014') + '</td><td data-label="' + (LANG === 'fa' ? 'آخرین پیام' : 'Last') + '">' + escapeHtml(last) + (from ? ' <span class="text-muted">(' + escapeHtml(from) + ')</span>' : '') + '</td><td data-label="' + (LANG === 'fa' ? 'عملیات' : 'Action') + '"><button type="button" class="btn-secondary btn-sm" onclick="openSupInternalChatDetail(\'' + escapeHtml(t.id) + '\')">' + (LANG === 'fa' ? 'مشاهده' : 'View') + '</button></td></tr>';
             }).join('') + '</tbody></table>';
         }
         function openSupInternalChatDetail(threadId) {
-            var modal = document.getElementById('supInternalChatDetailModal');
-            var content = document.getElementById('supIntChatModalContent');
-            var titleEl = document.getElementById('supIntChatModalTitle');
+            const modal = document.getElementById('supInternalChatDetailModal');
+            const content = document.getElementById('supIntChatModalContent');
+            const titleEl = document.getElementById('supIntChatModalTitle');
             if (!modal || !content) return;
             modal.style.display = 'flex';
             content.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             (async function() {
-                var res = await apiFetch('/api/supervision/internal-chats/' + encodeURIComponent(threadId) + '/messages');
+                const res = await apiFetch('/api/supervision/internal-chats/' + encodeURIComponent(threadId) + '/messages');
                 if (res.needLogin || !res.ok) { content.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('loading_err')) + '</div>'; return; }
-                var messages = res.data.data || [];
-                var thread = res.data.thread || {};
-                var partNames = (thread.participants || []).map(function(p) { return p.name || p.email; }).join(', ');
+                const messages = res.data.data || [];
+                const thread = res.data.thread || {};
+                const partNames = (thread.participants || []).map(function(p) { return p.name || p.email; }).join(', ');
                 if (titleEl) titleEl.textContent = (LANG === 'fa' ? 'چت: ' : 'Chat: ') + (partNames || threadId);
                 if (messages.length === 0) { content.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'پیامی در این گفتگو نیست.' : 'No messages.') + '</div>'; return; }
-                var html = '<div class="sup-int-chat-messages" style="display:flex;flex-direction:column;gap:12px;">';
+                let html = '<div class="sup-int-chat-messages" style="display:flex;flex-direction:column;gap:12px;">';
                 messages.forEach(function(m) {
-                    var fromName = (m.fromUser && m.fromUser.name) || (m.fromUser && m.fromUser.email) || '';
-                    var att = (m.attachments && m.attachments.length) ? m.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent);">\uD83D\uDCCE ' + escapeHtml(a.name || '') + '</a>'; }).join(' ') : '';
+                    const fromName = (m.fromUser && m.fromUser.name) || (m.fromUser && m.fromUser.email) || '';
+                    const att = (m.attachments && m.attachments.length) ? m.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent);">\uD83D\uDCCE ' + escapeHtml(a.name || '') + '</a>'; }).join(' ') : '';
                     html += '<div style="padding:12px 16px;background:var(--bg-secondary);border-radius:10px;border:1px solid var(--border);"><div style="font-weight:600;margin-bottom:6px;color:var(--accent);">' + escapeHtml(fromName) + '</div><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div style="font-size:0.75rem;color:var(--text-muted);margin-top:6px;">' + (m.createdAt ? fmtTZ(m.createdAt, 'datetime') : '') + '</div></div>';
                 });
                 html += '</div>';
@@ -10338,13 +10361,13 @@
             })();
         }
         function closeSupInternalChatModal() {
-            var modal = document.getElementById('supInternalChatDetailModal');
+            const modal = document.getElementById('supInternalChatDetailModal');
             if (modal) modal.style.display = 'none';
         }
 
         document.querySelectorAll('.sup-tab').forEach(function(btn) {
             btn.addEventListener('click', function() {
-                var tab = this.getAttribute('data-tab');
+                const tab = this.getAttribute('data-tab');
                 document.querySelectorAll('.sup-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-tab') === tab) b.classList.add('active'); });
                 document.querySelectorAll('.sup-panel').forEach(function(p) { p.classList.remove('show'); if ((p.id === 'supPerformance' && tab === 'performance') || (p.id === 'supConversations' && tab === 'conversations') || (p.id === 'supInternalChats' && tab === 'internal-chats') || (p.id === 'supActivity' && tab === 'activity')) p.classList.add('show'); });
                 if (tab === 'performance') loadSupervisionPerformance();
@@ -10364,9 +10387,9 @@
             document.querySelectorAll('.sidebar .nav-section-collapsible .nav-section-title').forEach(function(btn) {
                 btn.addEventListener('click', function() {
                     if (window.innerWidth > 900) return;
-                    var section = this.closest('.nav-section-collapsible');
+                    const section = this.closest('.nav-section-collapsible');
                     if (!section) return;
-                    var collapsed = section.classList.toggle('collapsed');
+                    const collapsed = section.classList.toggle('collapsed');
                     this.setAttribute('aria-expanded', !collapsed);
                 });
             });
@@ -10375,24 +10398,24 @@
         window.addEventListener('resize', function() {
             if (document.getElementById('app').classList.contains('show')) {
                 updateBottomBarVisibility();
-                var activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+                const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
                 if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
             }
         });
 
         (function initMobileTicker() {
-            var btn = document.getElementById('tickerToggleMobile');
-            var ticker = document.getElementById('priceTicker');
+            const btn = document.getElementById('tickerToggleMobile');
+            const ticker = document.getElementById('priceTicker');
             if (!btn || !ticker) return;
-            var isMobile = function() { return window.innerWidth <= 900; };
+            const isMobile = function() { return window.innerWidth <= 900; };
             if (isMobile()) ticker.classList.add('ticker-collapsed');
             window.addEventListener('resize', function() { if (!isMobile()) ticker.classList.remove('ticker-collapsed'); });
             btn.addEventListener('click', function() { ticker.classList.toggle('ticker-collapsed'); });
         })();
         (function initTickerTouchScroll() {
-            var items = document.getElementById('tickerItems');
+            const items = document.getElementById('tickerItems');
             if (!items) return;
-            var touchEndTid = null;
+            let touchEndTid = null;
             function addPause() {
                 items.classList.add('ticker-touch-active');
                 if (touchEndTid) clearTimeout(touchEndTid);
@@ -10406,9 +10429,9 @@
         })();
         (function initChatMediaLinks() {
             document.addEventListener('click', function(e) {
-                var chatEl = document.getElementById('chatMessages');
+                const chatEl = document.getElementById('chatMessages');
                 if (!chatEl || !chatEl.contains(e.target)) return;
-                var a = e.target.closest && e.target.closest('.msg-media a[href], a.msg-media-link, a.msg-file-link');
+                const a = e.target.closest && e.target.closest('.msg-media a[href], a.msg-media-link, a.msg-file-link');
                 if (!a || !a.href) return;
                 if (e.ctrlKey || e.metaKey || e.button !== 0) return;
                 e.preventDefault();
@@ -10417,12 +10440,12 @@
             });
         })();
         (function initFooterYear() {
-            var el = document.getElementById('appFooterYear');
+            const el = document.getElementById('appFooterYear');
             if (el) el.textContent = new Date().getFullYear();
         })();
 
         (function initLang() {
-            var l = localStorage.getItem('crm_lang') || 'fa';
+            const l = localStorage.getItem('crm_lang') || 'fa';
             setLang(l);
         })();
 
@@ -10446,12 +10469,12 @@
             window.toggleSidebarMobile = toggleSidebarMobile;
             window.toggleSidebarDesktop = toggleSidebarDesktop;
             window.doHeaderSearch = doHeaderSearch;
-            var headerSearchModalEscHandler = null;
+            let headerSearchModalEscHandler = null;
             window.openHeaderSearchPopup = function() {
-                var m = document.getElementById('headerSearchModal');
-                var inp = document.getElementById('headerSearchModalInput');
+                const m = document.getElementById('headerSearchModal');
+                const inp = document.getElementById('headerSearchModalInput');
                 if (m && inp) {
-                    var mainInp = document.getElementById('headerSearch');
+                    const mainInp = document.getElementById('headerSearch');
                     if (mainInp && mainInp.value) inp.value = mainInp.value;
                     m.style.display = 'flex';
                     m.setAttribute('aria-hidden', 'false');
@@ -10466,7 +10489,7 @@
                 }
             };
             window.closeHeaderSearchPopup = function() {
-                var m = document.getElementById('headerSearchModal');
+                const m = document.getElementById('headerSearchModal');
                 if (m) {
                     m.style.display = 'none';
                     m.setAttribute('aria-hidden', 'true');
@@ -10477,8 +10500,8 @@
                 }
             };
             window.doHeaderSearchFromModal = function() {
-                var modalInp = document.getElementById('headerSearchModalInput');
-                var mainInp = document.getElementById('headerSearch');
+                const modalInp = document.getElementById('headerSearchModalInput');
+                const mainInp = document.getElementById('headerSearch');
                 if (modalInp && mainInp) {
                     mainInp.value = modalInp.value;
                     doHeaderSearch();
@@ -10486,17 +10509,17 @@
                 }
             };
             window.toggleLangDropdown = function() {
-                var btn = document.getElementById('langDropdownBtn');
-                var wrap = btn ? btn.closest('.lang-dropdown-wrap') : null;
+                const btn = document.getElementById('langDropdownBtn');
+                const wrap = btn ? btn.closest('.lang-dropdown-wrap') : null;
                 if (!wrap) return;
                 wrap.classList.toggle('open');
-                var menu = document.getElementById('langDropdownMenu');
+                const menu = document.getElementById('langDropdownMenu');
                 if (menu && btn) {
-                    var open = wrap.classList.contains('open');
+                    const open = wrap.classList.contains('open');
                     menu.setAttribute('aria-hidden', !open);
                     btn.setAttribute('aria-expanded', open);
                     if (open) {
-                        var closeOnOutside = function(e) {
+                        const closeOnOutside = function(e) {
                             if (!wrap.contains(e.target)) {
                                 closeLangDropdown();
                                 document.removeEventListener('click', closeOnOutside);
@@ -10507,29 +10530,29 @@
                 }
             };
             window.closeLangDropdown = function() {
-                var wrap = document.querySelector('.lang-dropdown-wrap.open');
+                const wrap = document.querySelector('.lang-dropdown-wrap.open');
                 if (wrap) {
                     wrap.classList.remove('open');
-                    var menu = document.getElementById('langDropdownMenu');
-                    var btn = document.getElementById('langDropdownBtn');
+                    const menu = document.getElementById('langDropdownMenu');
+                    const btn = document.getElementById('langDropdownBtn');
                     if (menu) menu.setAttribute('aria-hidden', 'true');
                     if (btn) btn.setAttribute('aria-expanded', 'false');
                 }
             };
             window.toggleUserDropdown = function(e) {
                 if (e) e.stopPropagation();
-                var header = document.querySelector('header.header');
-                var menu = document.getElementById('userDropdownMenu');
-                var trigger = document.getElementById('userDropdownTrigger');
-                var triggerMobile = document.getElementById('userDropdownTriggerMobile');
+                const header = document.querySelector('header.header');
+                const menu = document.getElementById('userDropdownMenu');
+                const trigger = document.getElementById('userDropdownTrigger');
+                const triggerMobile = document.getElementById('userDropdownTriggerMobile');
                 if (!header || !menu) return;
-                var open = header.classList.toggle('user-dropdown-open');
+                const open = header.classList.toggle('user-dropdown-open');
                 menu.setAttribute('aria-hidden', !open);
                 if (trigger) trigger.setAttribute('aria-expanded', open);
                 if (triggerMobile) triggerMobile.setAttribute('aria-expanded', open);
                 if (open) {
                     closeLangDropdown();
-                    var closeOnOutside = function(ev) {
+                    const closeOnOutside = function(ev) {
                         if (!header.contains(ev.target)) {
                             closeUserDropdown();
                             document.removeEventListener('click', closeOnOutside);
@@ -10539,10 +10562,10 @@
                 }
             };
             window.closeUserDropdown = function() {
-                var header = document.querySelector('header.header');
-                var menu = document.getElementById('userDropdownMenu');
-                var trigger = document.getElementById('userDropdownTrigger');
-                var triggerMobile = document.getElementById('userDropdownTriggerMobile');
+                const header = document.querySelector('header.header');
+                const menu = document.getElementById('userDropdownMenu');
+                const trigger = document.getElementById('userDropdownTrigger');
+                const triggerMobile = document.getElementById('userDropdownTriggerMobile');
                 if (header) header.classList.remove('user-dropdown-open');
                 if (menu) menu.setAttribute('aria-hidden', 'true');
                 if (trigger) trigger.setAttribute('aria-expanded', 'false');
@@ -10551,14 +10574,14 @@
             // event delegation برای notify dropdown و دکمه زنگوله - یک بار bind می‌شود
             (function() {
                 // handler برای dropdown items
-                var dropdown = document.getElementById('headerNotifyDropdown');
+                const dropdown = document.getElementById('headerNotifyDropdown');
                 if (dropdown) {
                     dropdown.addEventListener('click', function(e) {
-                        var item = e.target.closest('[data-action]');
+                        const item = e.target.closest('[data-action]');
                         if (!item) return;
                         e.preventDefault();
-                        var action = item.getAttribute('data-action');
-                        var id = item.getAttribute('data-id');
+                        const action = item.getAttribute('data-action');
+                        const id = item.getAttribute('data-id');
                         if (action === 'open-ann' && id) {
                             closeNotifyDropdown();
                             if (typeof markAnnouncementReadAndShow === 'function') markAnnouncementReadAndShow(id);
@@ -10586,13 +10609,13 @@
                     });
                 }
                 // handler برای دکمه زنگوله (خارج از dropdown)
-                var notifyBtn = document.getElementById('headerNotifyBtn');
+                const notifyBtn = document.getElementById('headerNotifyBtn');
                 if (notifyBtn) {
                     notifyBtn.addEventListener('click', function(e) {
                         if (typeof toggleNotifyDropdown === 'function') toggleNotifyDropdown(e);
                     });
                 }
-                var notifyBtnMobile = document.getElementById('headerNotifyBtnMobile');
+                const notifyBtnMobile = document.getElementById('headerNotifyBtnMobile');
                 if (notifyBtnMobile) {
                     notifyBtnMobile.addEventListener('click', function(e) {
                         if (typeof toggleNotifyDropdown === 'function') toggleNotifyDropdown(e);
@@ -10600,15 +10623,15 @@
                 }
             })();
 
-            var _notifyCloseOnOutside = null;
+            let _notifyCloseOnOutside = null;
             window.toggleNotifyDropdown = function(e) {
                 if (e) e.stopPropagation();
-                var header = document.querySelector('header.header');
-                var dropdown = document.getElementById('headerNotifyDropdown');
-                var btn = document.getElementById('headerNotifyBtn');
-                var btnMobile = document.getElementById('headerNotifyBtnMobile');
+                const header = document.querySelector('header.header');
+                const dropdown = document.getElementById('headerNotifyDropdown');
+                const btn = document.getElementById('headerNotifyBtn');
+                const btnMobile = document.getElementById('headerNotifyBtnMobile');
                 if (!header || !dropdown) return;
-                var open = header.classList.toggle('notify-dropdown-open');
+                const open = header.classList.toggle('notify-dropdown-open');
                 dropdown.setAttribute('aria-hidden', !open);
                 if (btn) btn.setAttribute('aria-expanded', open);
                 if (btnMobile) btnMobile.setAttribute('aria-expanded', open);
@@ -10629,10 +10652,10 @@
                 }
             };
             window.closeNotifyDropdown = function() {
-                var header = document.querySelector('header.header');
-                var dropdown = document.getElementById('headerNotifyDropdown');
-                var btn = document.getElementById('headerNotifyBtn');
-                var btnMobile = document.getElementById('headerNotifyBtnMobile');
+                const header = document.querySelector('header.header');
+                const dropdown = document.getElementById('headerNotifyDropdown');
+                const btn = document.getElementById('headerNotifyBtn');
+                const btnMobile = document.getElementById('headerNotifyBtnMobile');
                 if (header) header.classList.remove('notify-dropdown-open');
                 if (dropdown) { dropdown.setAttribute('aria-hidden', 'true'); dropdown.style.display = 'none'; }
                 if (btn) btn.setAttribute('aria-expanded', 'false');
@@ -10641,24 +10664,24 @@
                 apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
             };
             window.loadNotifyDropdownData = async function() {
-                var perms = (currentUser && currentUser.permissions) || {};
-                var canAnn = perms.announcements !== false;
-                var canTickets = perms.tickets !== false;
-                var arrowSvg = '<span class="notify-item-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>';
-                var emptyHtml = function(icon, msg) {
+                const perms = (currentUser && currentUser.permissions) || {};
+                const canAnn = perms.announcements !== false;
+                const canTickets = perms.tickets !== false;
+                const arrowSvg = '<span class="notify-item-arrow"><svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg></span>';
+                const emptyHtml = function(icon, msg) {
                     return '<div class="notify-empty"><div class="notify-empty-icon">' + icon + '</div><span class="notify-empty-text">' + msg + '</span></div>';
                 };
-                var annIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
-                var ticketIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>';
+                const annIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>';
+                const ticketIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>';
 
                 if (canAnn) {
-                    var annList = document.getElementById('notifyAnnList');
-                    var pendingBadge = document.getElementById('notifyAnnPending');
+                    const annList = document.getElementById('notifyAnnList');
+                    const pendingBadge = document.getElementById('notifyAnnPending');
                     try {
-                        var annRes = await apiFetch('/api/announcements/for-me');
+                        const annRes = await apiFetch('/api/announcements/for-me');
                         if (annRes.ok && annRes.data && annRes.data.data) {
-                            var anns = (annRes.data.data || []).slice(0, 5);
-                            var unreadCount = anns.filter(function(a) { return !a.read; }).length;
+                            const anns = (annRes.data.data || []).slice(0, 5);
+                            const unreadCount = anns.filter(function(a) { return !a.read; }).length;
                             if (pendingBadge) {
                                 pendingBadge.style.display = unreadCount > 0 ? '' : 'none';
                                 pendingBadge.innerHTML = '<span id="notifyAnnCount">' + unreadCount + '</span> <span>' + (LANG === 'fa' ? 'جدید' : 'New') + '</span>';
@@ -10668,11 +10691,11 @@
                                     annList.innerHTML = emptyHtml(annIcon, LANG === 'fa' ? 'اعلانی وجود ندارد.' : 'No announcements.');
                                 } else {
                                     annList.innerHTML = anns.map(function(a) {
-                                        var title = (a.title || '').substring(0, 48) + ((a.title || '').length > 48 ? '…' : '');
-                                        var timeStr = a.createdAt && typeof fmtTZ === 'function' ? fmtTZ(a.createdAt, 'datetime') : '';
-                                        var unreadClass = !a.read ? ' notify-item-unread' : '';
-                                        var dot = !a.read ? '<span class="notify-unread-dot"></span>' : '';
-                                        var iconHtml = '<span class="notify-item-icon">' + annIcon + '</span>';
+                                        const title = (a.title || '').substring(0, 48) + ((a.title || '').length > 48 ? '…' : '');
+                                        const timeStr = a.createdAt && typeof fmtTZ === 'function' ? fmtTZ(a.createdAt, 'datetime') : '';
+                                        const unreadClass = !a.read ? ' notify-item-unread' : '';
+                                        const dot = !a.read ? '<span class="notify-unread-dot"></span>' : '';
+                                        const iconHtml = '<span class="notify-item-icon">' + annIcon + '</span>';
                                         return '<a href="#" class="notify-item' + unreadClass + '" data-action="open-ann" data-id="' + escapeHtml(a.id || '') + '">' + dot + iconHtml + '<div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div>' + (timeStr ? '<div class="notify-item-meta">' + escapeHtml(timeStr) + '</div>' : '') + '</div>' + arrowSvg + '</a>';
                                     }).join('');
                                 }
@@ -10684,14 +10707,14 @@
                 }
 
                 if (canTickets) {
-                    var ticketsList = document.getElementById('notifyTicketsList');
-                    var tkPendingBadge = document.getElementById('notifyTicketsPending');
+                    const ticketsList = document.getElementById('notifyTicketsList');
+                    const tkPendingBadge = document.getElementById('notifyTicketsPending');
                     try {
-                        var tkRes = await apiFetch('/api/tickets?limit=5');
-                        var tkStatsRes = await apiFetch('/api/tickets/stats');
-                        var pendingCount = 0;
+                        const tkRes = await apiFetch('/api/tickets?limit=5');
+                        const tkStatsRes = await apiFetch('/api/tickets/stats');
+                        let pendingCount = 0;
                         if (tkStatsRes.ok && tkStatsRes.data) {
-                            var s = tkStatsRes.data;
+                            const s = tkStatsRes.data;
                             pendingCount = (s.open || 0) + (s.in_progress || 0);
                         }
                         if (tkPendingBadge) {
@@ -10699,18 +10722,18 @@
                             tkPendingBadge.innerHTML = '<span id="notifyTicketsCount">' + pendingCount + '</span> <span>' + (LANG === 'fa' ? 'باز' : 'Open') + '</span>';
                         }
                         if (ticketsList && tkRes.ok && tkRes.data) {
-                            var rows = Array.isArray(tkRes.data.data) ? tkRes.data.data : (Array.isArray(tkRes.data.rows) ? tkRes.data.rows : []);
+                            const rows = Array.isArray(tkRes.data.data) ? tkRes.data.data : (Array.isArray(tkRes.data.rows) ? tkRes.data.rows : []);
                             if (rows.length === 0) {
                                 ticketsList.innerHTML = emptyHtml(ticketIcon, LANG === 'fa' ? 'تیکتی وجود ندارد.' : 'No tickets.');
                             } else {
-                                var statusMap = { open: LANG === 'fa' ? 'باز' : 'Open', in_progress: LANG === 'fa' ? 'در حال انجام' : 'In progress', closed: LANG === 'fa' ? 'بسته' : 'Closed', resolved: LANG === 'fa' ? 'حل‌شده' : 'Resolved', archived: LANG === 'fa' ? 'آرشیو' : 'Archived' };
+                                const statusMap = { open: LANG === 'fa' ? 'باز' : 'Open', in_progress: LANG === 'fa' ? 'در حال انجام' : 'In progress', closed: LANG === 'fa' ? 'بسته' : 'Closed', resolved: LANG === 'fa' ? 'حل‌شده' : 'Resolved', archived: LANG === 'fa' ? 'آرشیو' : 'Archived' };
                                 ticketsList.innerHTML = rows.map(function(tk) {
-                                    var title = (tk.title || '').substring(0, 45) + ((tk.title || '').length > 45 ? '…' : '');
-                                    var statusLabel = statusMap[tk.status] || tk.status || '';
-                                    var isOpen = tk.status === 'open' || tk.status === 'in_progress';
-                                    var iconHtml = '<span class="notify-item-icon' + (isOpen ? ' warn' : '') + '">' + ticketIcon + '</span>';
-                                    var statusBadge = '<span class="notify-item-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span>';
-                                    var timeStr = tk.createdAt && typeof fmtTZ === 'function' ? fmtTZ(tk.createdAt, 'date') : '';
+                                    const title = (tk.title || '').substring(0, 45) + ((tk.title || '').length > 45 ? '…' : '');
+                                    const statusLabel = statusMap[tk.status] || tk.status || '';
+                                    const isOpen = tk.status === 'open' || tk.status === 'in_progress';
+                                    const iconHtml = '<span class="notify-item-icon' + (isOpen ? ' warn' : '') + '">' + ticketIcon + '</span>';
+                                    const statusBadge = '<span class="notify-item-status ' + (tk.status || '') + '">' + escapeHtml(statusLabel) + '</span>';
+                                    const timeStr = tk.createdAt && typeof fmtTZ === 'function' ? fmtTZ(tk.createdAt, 'date') : '';
                                     return '<a href="#" class="notify-item" data-action="open-ticket" data-id="' + escapeHtml(tk.id || '') + '">' + iconHtml + '<div class="notify-item-body"><div class="notify-item-title">' + escapeHtml(title) + '</div><div class="notify-item-meta">' + statusBadge + (timeStr ? '<span>' + escapeHtml(timeStr) + '</span>' : '') + '</div></div>' + arrowSvg + '</a>';
                                 }).join('');
                             }
@@ -10742,7 +10765,7 @@
         if (token) {
             apiFetch('/api/auth/me').then(async function(res) {
                 if (res.needLogin || !res.ok) { logout(); return; }
-                var u = res.data;
+                const u = res.data;
                 currentUser = u;
                 if (u && u.email) {
                     setUserDisplay(u);
@@ -10765,7 +10788,7 @@
                         startNavBadgeRefresh();
                         showTotpPromptIfNeeded();
                     } catch (e) { console.error('Post-me init:', e); }
-                    var appEl = document.getElementById('app');
+                    const appEl = document.getElementById('app');
                     if (appEl) { appEl.classList.remove('app-loading'); appEl.classList.add('app-ready'); }
                 } else { logout(); }
             }).catch(function() { logout(); });

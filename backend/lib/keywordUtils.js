@@ -23,7 +23,7 @@ const TYPO_FIXES = {
  */
 function normalizeKeywords(raw) {
     if (!raw || typeof raw !== 'string') return '';
-    let s = raw.trim();
+    const s = raw.trim();
     if (!s) return '';
 
     // جدا کردن با کاما، نقطه‌ویرگول، یا فاصله‌های متعدد

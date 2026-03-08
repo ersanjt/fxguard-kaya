@@ -1769,6 +1769,7 @@
         .whatsapp-meta-list { display: grid; gap: 8px 16px; margin: 0; font-size: 0.9rem; }
         .whatsapp-meta-list dt { margin: 0; color: var(--text-muted); font-weight: 500; }
         .whatsapp-meta-list dd { margin: 0; color: var(--text-primary); }
+        .whatsapp-cloud-api-info { line-height: 1.5; }
         .btn-primary { padding: 12px 24px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-weight: 600; cursor: pointer; }
         .btn-primary:hover { background: var(--accent-hover); }
         .btn-secondary { padding: 10px 20px; background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font); cursor: pointer; margin-bottom: 16px; }

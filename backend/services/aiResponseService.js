@@ -276,7 +276,7 @@ async function generateAIResponse({ conversation, customer, incomingMessage, mes
             return null;
         }
 
-        let cleaned = sanitizeResponse(content);
+        const cleaned = sanitizeResponse(content);
         if (!cleaned || cleaned.length < 5) return null;
 
         if (hasForbiddenContent(cleaned)) {

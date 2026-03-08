@@ -17,7 +17,7 @@ async function seed() {
         await ensureDefaultDepartments();
         for (const cfg of ADMIN_CONFIGS) {
             if (!MAIN_ADMIN_EMAILS.includes(cfg.email)) continue;
-            let existing = await User.findOne({
+            const existing = await User.findOne({
                 where: sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), cfg.email)
             });
             if (!existing) {
