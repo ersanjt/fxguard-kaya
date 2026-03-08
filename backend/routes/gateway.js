@@ -6,7 +6,8 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const axios = require('axios');
-const { gatewayGet, gatewayPost, isCloudApiConfigured } = require('../lib/gatewayClient');
+const { gatewayGet, gatewayPost, isCloudApiConfigured, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
+const { getPhoneNumberId } = require('../lib/whatsappCloudApi');
 const { authMiddleware, requireSection } = require('../middleware/auth');
 
 const GATEWAY_START_COOLDOWN_MS = 15000;
@@ -26,14 +27,17 @@ function createGatewayRouter(logger) {
         next();
     };
 
-    router.get('/gateway/status', authMiddleware, requireSection('whatsapp'), (req, res) => {
-        if (isCloudApiConfigured()) {
-            const { PHONE_NUMBER_ID } = require('../lib/whatsappCloudApi');
+    router.get('/gateway/status', authMiddleware, requireSection('whatsapp'), async (req, res) => {
+        const cfg = await getWhatsappConnectionConfig();
+        const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
+        const useCloud = (cfg.connectionMode === 'cloud' || cfg.connectionMode === 'cloud_first') && cloudOk;
+        if (useCloud) {
+            const phoneId = await getPhoneNumberId();
             return res.json({
                 whatsapp: true,
                 status: 'ready',
                 cloudApi: true,
-                number: PHONE_NUMBER_ID ? ('••••' + PHONE_NUMBER_ID.slice(-8) + ' (Cloud API)') : null,
+                number: phoneId ? ('••••' + String(phoneId).slice(-8) + ' (Cloud API)') : null,
             });
         }
         gatewayGet('/api/status', { timeout: 5000 })
@@ -59,10 +63,11 @@ function createGatewayRouter(logger) {
             });
     });
 
-    router.get('/gateway/qr', authMiddleware, requireSection('whatsapp'), (req, res) => {
-        if (isCloudApiConfigured()) {
-            return res.json({ qr: null });
-        }
+    router.get('/gateway/qr', authMiddleware, requireSection('whatsapp'), async (req, res) => {
+        const cfg = await getWhatsappConnectionConfig();
+        const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
+        const useCloud = (cfg.connectionMode === 'cloud' || cfg.connectionMode === 'cloud_first') && cloudOk;
+        if (useCloud) return res.json({ qr: null });
         gatewayGet('/api/qr', { timeout: 5000 })
             .then((r) => res.json(r.data))
             .catch((e) => {
@@ -78,8 +83,11 @@ function createGatewayRouter(logger) {
         authMiddleware,
         requireSection('whatsapp'),
         requireAdmin,
-        (req, res) => {
-            if (isCloudApiConfigured()) return res.json({ ok: true, status: 'ready', message: 'Cloud API فعال است' });
+        async (req, res) => {
+            const cfg = await getWhatsappConnectionConfig();
+            const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
+            const useCloud = (cfg.connectionMode === 'cloud' || cfg.connectionMode === 'cloud_first') && cloudOk;
+            if (useCloud) return res.json({ ok: true, status: 'ready', message: 'Cloud API فعال است' });
             gatewayPost('/api/start', {}, { timeout: 10000 })
                 .then((r) => res.json(r.data))
                 .catch((e) =>
@@ -95,8 +103,11 @@ function createGatewayRouter(logger) {
         authMiddleware,
         requireSection('whatsapp'),
         requireAdmin,
-        (req, res) => {
-            if (isCloudApiConfigured()) return res.json({ ok: true, status: 'stopped', message: 'Cloud API فعال است' });
+        async (req, res) => {
+            const cfg = await getWhatsappConnectionConfig();
+            const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
+            const useCloud = (cfg.connectionMode === 'cloud' || cfg.connectionMode === 'cloud_first') && cloudOk;
+            if (useCloud) return res.json({ ok: true, status: 'stopped', message: 'Cloud API فعال است' });
             gatewayPost('/api/stop', {}, { timeout: 10000 })
                 .then((r) => res.json(r.data))
                 .catch((e) =>
@@ -112,8 +123,11 @@ function createGatewayRouter(logger) {
         authMiddleware,
         requireSection('whatsapp'),
         requireAdmin,
-        (req, res) => {
-            if (isCloudApiConfigured()) return res.json({ ok: true, status: 'logged_out', message: 'Cloud API فعال است' });
+        async (req, res) => {
+            const cfg = await getWhatsappConnectionConfig();
+            const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
+            const useCloud = (cfg.connectionMode === 'cloud' || cfg.connectionMode === 'cloud_first') && cloudOk;
+            if (useCloud) return res.json({ ok: true, status: 'logged_out', message: 'Cloud API فعال است' });
             gatewayPost('/api/logout', {}, { timeout: 20000 })
                 .then((r) => res.json(r.data))
                 .catch((e) =>
@@ -142,12 +156,10 @@ function createGatewayRouter(logger) {
             }
 
             try {
-                const GATEWAY_URL = (process.env.GATEWAY_URL || 'http://localhost:3001').replace(
-                    /\/$/,
-                    ''
-                );
+                const cfg = await getWhatsappConnectionConfig();
+                const gwUrl = (cfg.gatewayUrl || 'http://localhost:3001').replace(/\/$/, '');
                 const testRes = await axios
-                    .get(GATEWAY_URL + '/api/status', { timeout: 3000 })
+                    .get(gwUrl + '/api/status', { timeout: 3000 })
                     .catch(() => null);
                 if (testRes && testRes.status === 200) {
                     return res.json({ message: 'Gateway از قبل در حال اجراست' });

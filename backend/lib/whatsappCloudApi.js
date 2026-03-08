@@ -1,21 +1,32 @@
 /**
  * WhatsApp Business Cloud API client
  * برای ارسال پیام و دریافت وب‌هوک از Meta
+ * تنظیمات از پنل (DB) یا .env
  * @see https://developers.facebook.com/docs/whatsapp/cloud-api
  */
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs').promises;
+const { getWhatsappConnectionConfig, isCloudApiConfigured: isCloudConfigured } = require('./whatsappConnectionLoader');
 
 const API_BASE = 'https://graph.facebook.com/v18.0';
-const ACCESS_TOKEN = (process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '').trim();
-const PHONE_NUMBER_ID = (process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID || '').trim();
 
-/**
- * آیا Cloud API تنظیم شده است؟
- */
-function isConfigured() {
-    return !!(ACCESS_TOKEN && PHONE_NUMBER_ID);
+/** sync — برای سازگاری؛ فقط env چک می‌کند */
+function isConfiguredSync() {
+    const t = (process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '').trim();
+    const p = (process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID || '').trim();
+    return !!(t && p);
+}
+
+/** async — از پنل یا env؛ آیا Cloud API فعال و تنظیم است؟ */
+async function isConfigured() {
+    return isCloudConfigured();
+}
+
+async function _getConfig() {
+    const c = await getWhatsappConnectionConfig();
+    if (!c.cloudEnabled || !c.cloudAccessToken || !c.cloudPhoneNumberId) return null;
+    return c;
 }
 
 /**
@@ -25,12 +36,13 @@ function isConfigured() {
  * @returns {Promise<{messageId: string}>}
  */
 async function sendText(to, text) {
-    if (!isConfigured()) throw new Error('WhatsApp Cloud API not configured');
+    const cfg = await _getConfig();
+    if (!cfg) throw new Error('WhatsApp Cloud API not configured');
     const phone = String(to).replace(/\D/g, '').replace(/^0/, '');
     if (!phone) throw new Error('Invalid phone number');
 
     const res = await axios.post(
-        `${API_BASE}/${PHONE_NUMBER_ID}/messages`,
+        `${API_BASE}/${cfg.cloudPhoneNumberId}/messages`,
         {
             messaging_product: 'whatsapp',
             recipient_type: 'individual',
@@ -41,7 +53,7 @@ async function sendText(to, text) {
         {
             headers: {
                 'Content-Type': 'application/json',
-                Authorization: `Bearer ${ACCESS_TOKEN}`,
+                Authorization: `Bearer ${cfg.cloudAccessToken}`,
             },
             timeout: 15000,
         }
@@ -55,21 +67,19 @@ async function sendText(to, text) {
 /**
  * ارسال رسانه (تصویر، صوت، ویدئو، سند)
  * Meta Cloud API فقط URL عمومی را می‌پذیرد — برای base64 ابتدا در uploads ذخیره و BACKEND_PUBLIC_URL استفاده کنید
- * @param {string} to - شماره
- * @param {object} media - { url } (عمومی) یا { data, mimetype, filename } برای base64 که به URL تبدیل می‌شود
- * @param {string} caption - متن اختیاری
  */
 async function sendMedia(to, media, caption = '') {
-    if (!isConfigured()) throw new Error('WhatsApp Cloud API not configured');
+    const cfg = await _getConfig();
+    if (!cfg) throw new Error('WhatsApp Cloud API not configured');
     const phone = String(to).replace(/\D/g, '').replace(/^0/, '');
     if (!phone) throw new Error('Invalid phone number');
 
     let mediaUrl = null;
+    const baseUrl = (process.env.BACKEND_PUBLIC_URL || process.env.GATEWAY_URL || 'http://localhost:3002').replace(/\/$/, '');
     if (media?.url && (media.url.startsWith('http://') || media.url.startsWith('https://'))) {
         mediaUrl = media.url;
     } else if (media?.url && media.url.startsWith('/uploads/')) {
-        const base = (process.env.BACKEND_PUBLIC_URL || process.env.GATEWAY_URL || 'http://localhost:3002').replace(/\/$/, '');
-        mediaUrl = base + media.url;
+        mediaUrl = baseUrl + media.url;
     } else if (media?.data) {
         const base = (process.env.BACKEND_PUBLIC_URL || '').replace(/\/$/, '');
         if (!base) throw new Error('For base64 media with Cloud API, BACKEND_PUBLIC_URL must be set');
@@ -102,10 +112,10 @@ async function sendMedia(to, media, caption = '') {
     };
     if (caption && String(caption).trim()) body.caption = String(caption).trim();
 
-    const res = await axios.post(`${API_BASE}/${PHONE_NUMBER_ID}/messages`, body, {
+    const res = await axios.post(`${API_BASE}/${cfg.cloudPhoneNumberId}/messages`, body, {
         headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${ACCESS_TOKEN}`,
+            Authorization: `Bearer ${cfg.cloudAccessToken}`,
         },
         timeout: 20000,
     });
@@ -133,16 +143,17 @@ async function sendMessage(payload) {
  * دانلود فایل رسانه از Cloud API
  */
 async function downloadMedia(mediaId) {
-    if (!isConfigured()) throw new Error('WhatsApp Cloud API not configured');
+    const cfg = await _getConfig();
+    if (!cfg) throw new Error('WhatsApp Cloud API not configured');
     const urlRes = await axios.get(`${API_BASE}/${mediaId}`, {
-        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+        headers: { Authorization: `Bearer ${cfg.cloudAccessToken}` },
         timeout: 10000,
     });
     const url = urlRes.data?.url;
     if (!url) throw new Error('No media URL in response');
     const dataRes = await axios.get(url, {
         responseType: 'arraybuffer',
-        headers: { Authorization: `Bearer ${ACCESS_TOKEN}` },
+        headers: { Authorization: `Bearer ${cfg.cloudAccessToken}` },
         timeout: 30000,
     });
     return {
@@ -217,13 +228,20 @@ function transformCloudWebhookToInternal(entry) {
         });
 }
 
+/** برای نمایش در UI — Phone Number ID (ممکن است از env باشد) */
+async function getPhoneNumberId() {
+    const cfg = await getWhatsappConnectionConfig();
+    return cfg.cloudPhoneNumberId || '';
+}
+
 module.exports = {
     isConfigured,
+    isConfiguredSync,
     sendText,
     sendMedia,
     sendMessage,
     downloadMedia,
     transformCloudWebhookToInternal,
+    getPhoneNumberId,
     API_BASE,
-    PHONE_NUMBER_ID,
 };

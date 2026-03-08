@@ -1339,6 +1339,34 @@
                             </div>
                         </aside>
                         <div class="whatsapp-col whatsapp-col-settings">
+                            <div id="whatsappConnectionSettingsBox" class="whatsapp-card form-box">
+                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_connection_settings_title">تنظیمات اتصال واتساپ</h3>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_connection_settings_hint">روش اتصال را انتخاب کنید. Cloud API (Meta رسمی) بدون QR؛ Gateway با اسکن QR. هر دو را می‌توانید فعال کنید — Cloud API در اولویت است.</p>
+                                <div class="whatsapp-connection-mode-row">
+                                    <label data-i18n="whatsapp_connection_mode">حالت اتصال</label>
+                                    <select id="whatsappConnectionMode" class="whatsapp-select">
+                                        <option value="cloud_first" data-i18n="whatsapp_mode_cloud_first">Cloud API در اولویت، Gateway پشتیبان</option>
+                                        <option value="cloud" data-i18n="whatsapp_mode_cloud_only">فقط Cloud API</option>
+                                        <option value="gateway" data-i18n="whatsapp_mode_gateway_only">فقط Gateway (QR)</option>
+                                    </select>
+                                </div>
+                                <div class="whatsapp-connection-tabs">
+                                    <button type="button" class="whatsapp-conn-tab active" data-tab="cloud" data-i18n="whatsapp_tab_cloud">Cloud API (Meta)</button>
+                                    <button type="button" class="whatsapp-conn-tab" data-tab="gateway" data-i18n="whatsapp_tab_gateway">Gateway (QR)</button>
+                                </div>
+                                <div id="whatsappCloudSettings" class="whatsapp-conn-panel active">
+                                    <label class="whatsapp-check-label"><input type="checkbox" id="whatsappCloudEnabled" checked> <span data-i18n="whatsapp_cloud_enabled">فعال</span></label>
+                                    <div class="whatsapp-form-row"><label for="whatsappCloudAccessToken" data-i18n="whatsapp_cloud_access_token">Access Token</label><input type="password" id="whatsappCloudAccessToken" class="whatsapp-input" placeholder="EAAxxx..." autocomplete="off"></div>
+                                    <div class="whatsapp-form-row"><label for="whatsappCloudPhoneNumberId" data-i18n="whatsapp_cloud_phone_id">Phone Number ID</label><input type="text" id="whatsappCloudPhoneNumberId" class="whatsapp-input" placeholder="1007665702430638"></div>
+                                    <div class="whatsapp-form-row"><label for="whatsappCloudVerifyToken" data-i18n="whatsapp_cloud_verify_token">Verify Token (وب‌هوک Meta)</label><input type="text" id="whatsappCloudVerifyToken" class="whatsapp-input" placeholder="کد تأیید دلخواه"></div>
+                                </div>
+                                <div id="whatsappGatewaySettings" class="whatsapp-conn-panel" style="display:none;">
+                                    <label class="whatsapp-check-label"><input type="checkbox" id="whatsappGatewayEnabled" checked> <span data-i18n="whatsapp_gateway_enabled">فعال</span></label>
+                                    <div class="whatsapp-form-row"><label for="whatsappGatewayUrl" data-i18n="whatsapp_gateway_url">آدرس Gateway</label><input type="text" id="whatsappGatewayUrl" class="whatsapp-input" placeholder="http://localhost:3001"></div>
+                                    <div class="whatsapp-form-row"><label for="whatsappGatewayApiSecret" data-i18n="whatsapp_gateway_secret">API Secret</label><input type="password" id="whatsappGatewayApiSecret" class="whatsapp-input" placeholder="اختیاری" autocomplete="off"></div>
+                                </div>
+                                <button type="button" class="btn-primary" id="btnSaveWhatsappConnection" data-i18n="btn_save">ذخیره</button>
+                            </div>
                             <div id="whatsappWelcomeBox" class="whatsapp-card form-box">
                                 <h3 class="whatsapp-card-title" data-i18n="whatsapp_welcome_title">پاسخ خودکار به اولین پیام</h3>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_welcome_hint">هر کسی که برای اولین بار به شما پیام می‌دهد، این متن به‌صورت خودکار برایش ارسال می‌شود. خالی = غیرفعال</p>

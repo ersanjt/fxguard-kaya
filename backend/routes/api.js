@@ -6,6 +6,7 @@ const { authMiddleware, requireSection } = require('../middleware/auth');
 const { createWebhookAuth } = require('../middleware/webhookAuth');
 const { processIncomingMessage } = require('../services/incomingMessage');
 const { transformCloudWebhookToInternal, downloadMedia, isConfigured: isCloudApiConfigured } = require('../lib/whatsappCloudApi');
+const { getCloudVerifyToken } = require('../lib/whatsappConnectionLoader');
 const models = require('../models');
 const { Message } = models;
 const { createContactRouter } = require('./contact');
@@ -93,11 +94,11 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     });
 
     // WhatsApp Cloud API — verification (Meta)
-    apiRouter.get('/webhook/whatsapp-cloud', (req, res) => {
+    apiRouter.get('/webhook/whatsapp-cloud', async (req, res) => {
         const mode = req.query['hub.mode'];
         const token = req.query['hub.verify_token'];
         const challenge = req.query['hub.challenge'];
-        const expectedToken = (process.env.WHATSAPP_CLOUD_VERIFY_TOKEN || '').trim();
+        const expectedToken = (await getCloudVerifyToken()).trim();
         if (mode === 'subscribe' && expectedToken && token === expectedToken) {
             return res.type('text/plain').send(challenge || '');
         }
@@ -107,7 +108,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     // WhatsApp Cloud API — incoming messages from Meta
     apiRouter.post('/webhook/whatsapp-cloud', express.json({ limit: '1mb' }), async (req, res) => {
         try {
-            if (!isCloudApiConfigured()) return res.status(404).send('Cloud API not configured');
+            if (!(await isCloudApiConfigured())) return res.status(404).send('Cloud API not configured');
             const body = req.body;
             if (!body || body.object !== 'whatsapp_business_account') return res.status(200).send('ok');
             const entries = body.entry || [];

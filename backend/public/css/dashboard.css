@@ -1746,6 +1746,19 @@
         }
         .whatsapp-link-btn { display: inline-flex !important; align-items: center; gap: 8px; text-decoration: none; }
         .whatsapp-check-label { display: inline-block; margin-bottom: 12px; }
+        .whatsapp-connection-mode-row { margin-bottom: 16px; }
+        .whatsapp-connection-mode-row label { display: block; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px; }
+        .whatsapp-connection-mode-row .whatsapp-select { width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; box-sizing: border-box; }
+        .whatsapp-connection-tabs { display: flex; gap: 8px; margin: 16px 0 12px; border-bottom: 1px solid var(--border); }
+        .whatsapp-conn-tab { padding: 10px 16px; background: none; border: none; border-bottom: 2px solid transparent; font-family: var(--font); font-size: 0.9rem; color: var(--text-muted); cursor: pointer; margin-bottom: -1px; }
+        .whatsapp-conn-tab:hover { color: var(--text-primary); }
+        .whatsapp-conn-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+        .whatsapp-conn-panel { margin-bottom: 16px; }
+        .whatsapp-conn-panel .whatsapp-check-label { margin-bottom: 12px; display: block; }
+        .whatsapp-form-row { margin-bottom: 12px; }
+        .whatsapp-form-row label { display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 4px; }
+        .whatsapp-form-row .whatsapp-input { width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; box-sizing: border-box; }
+        .whatsapp-form-row .whatsapp-input:focus { outline: none; border-color: var(--accent); }
         .whatsapp-openai-key-row { margin: 12px 0 16px; }
         .whatsapp-openai-key-row label { display: block; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px; }
         .whatsapp-openai-key-row .whatsapp-input { width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; box-sizing: border-box; }

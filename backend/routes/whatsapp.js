@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const { WhatsappConfig } = require('../models');
+const { WhatsappConfig, WhatsappConnection } = require('../models');
+const { invalidateCache } = require('../lib/whatsappConnectionLoader');
 const { isValidUUID } = require('../lib/validation');
 const { clearOpenAIApiKeyCache } = require('../lib/getOpenAIApiKey');
 
@@ -95,6 +96,88 @@ router.put('/config', async (req, res) => {
     } catch (err) {
         if (/no such column|SQLITE_ERROR/i.test(err.message)) {
             return res.status(500).json({ error: 'لطفاً اسکریپت‌های migration را اجرا کنید: node scripts/add-unanswered-columns.js و node scripts/add-auto-messages-columns.js' });
+        }
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// تنظیمات اتصال واتساپ (Cloud API و Gateway)
+router.get('/connection', async (req, res) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        const [row] = await WhatsappConnection.findOrCreate({
+            where: { id: 'default' },
+            defaults: { connectionMode: 'cloud_first', cloudEnabled: true, gatewayEnabled: true },
+        });
+        res.json({
+            connectionMode: row.connectionMode || 'cloud_first',
+            cloudEnabled: row.cloudEnabled !== false,
+            cloudAccessTokenSet: !!(row.cloudAccessToken && String(row.cloudAccessToken).trim().length > 10),
+            cloudPhoneNumberId: row.cloudPhoneNumberId || '',
+            cloudVerifyToken: row.cloudVerifyToken || '',
+            gatewayEnabled: row.gatewayEnabled !== false,
+            gatewayUrl: row.gatewayUrl || '',
+            gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
+        });
+    } catch (err) {
+        if (/no such table|relation .* does not exist/i.test(err.message)) {
+            return res.json({
+                connectionMode: 'cloud_first',
+                cloudEnabled: true,
+                cloudAccessTokenSet: false,
+                cloudPhoneNumberId: '',
+                cloudVerifyToken: '',
+                gatewayEnabled: true,
+                gatewayUrl: '',
+                gatewayApiSecretSet: false,
+            });
+        }
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.put('/connection', async (req, res) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+            return res.status(403).json({ error: 'فقط ادمین یا مالک می‌تواند تنظیمات اتصال را تغییر دهد' });
+        }
+        const body = req.body || {};
+        const [row] = await WhatsappConnection.findOrCreate({
+            where: { id: 'default' },
+            defaults: { connectionMode: 'cloud_first', cloudEnabled: true, gatewayEnabled: true },
+        });
+        if (body.connectionMode && ['cloud', 'gateway', 'cloud_first'].includes(body.connectionMode)) {
+            row.connectionMode = body.connectionMode;
+        }
+        if (typeof body.cloudEnabled === 'boolean') row.cloudEnabled = body.cloudEnabled;
+        if (body.cloudAccessToken !== undefined) {
+            const v = String(body.cloudAccessToken || '').trim();
+            row.cloudAccessToken = v || null;
+        }
+        if (body.cloudPhoneNumberId !== undefined) row.cloudPhoneNumberId = String(body.cloudPhoneNumberId || '').trim() || null;
+        if (body.cloudVerifyToken !== undefined) row.cloudVerifyToken = String(body.cloudVerifyToken || '').trim() || null;
+        if (typeof body.gatewayEnabled === 'boolean') row.gatewayEnabled = body.gatewayEnabled;
+        if (body.gatewayUrl !== undefined) row.gatewayUrl = String(body.gatewayUrl || '').trim() || null;
+        if (body.gatewayApiSecret !== undefined) {
+            const v = String(body.gatewayApiSecret || '').trim();
+            row.gatewayApiSecret = v || null;
+        }
+        await row.save();
+        invalidateCache();
+        res.json({
+            connectionMode: row.connectionMode,
+            cloudEnabled: row.cloudEnabled,
+            cloudAccessTokenSet: !!(row.cloudAccessToken && String(row.cloudAccessToken).trim().length > 10),
+            cloudPhoneNumberId: row.cloudPhoneNumberId || '',
+            cloudVerifyToken: row.cloudVerifyToken || '',
+            gatewayEnabled: row.gatewayEnabled,
+            gatewayUrl: row.gatewayUrl || '',
+            gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
+        });
+    } catch (err) {
+        if (/no such table|relation .* does not exist/i.test(err.message)) {
+            return res.status(500).json({ error: 'لطفاً ابتدا اسکریپت add-whatsapp-connection-table را اجرا کنید: node scripts/add-whatsapp-connection-table.js' });
         }
         res.status(500).json({ error: err.message });
     }

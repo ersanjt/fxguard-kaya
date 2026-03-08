@@ -3970,6 +3970,8 @@
                 if (target.closest('#whatsappOpenAIClearKey') && typeof clearWhatsappOpenAIKey === 'function') { e.preventDefault(); e.stopPropagation(); clearWhatsappOpenAIKey(); return; }
                 if (target.closest('#btnSaveWhatsappAutoMessages') && typeof saveWhatsappAutoMessagesConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAutoMessagesConfig(); return; }
                 if (target.closest('#btnSaveWhatsappUnanswered') && typeof saveWhatsappUnansweredConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappUnansweredConfig(); return; }
+                if (target.closest('#btnSaveWhatsappConnection') && typeof saveWhatsappConnectionSettings === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappConnectionSettings(); return; }
+                if (target.closest('.whatsapp-conn-tab') && typeof switchWhatsappConnectionTab === 'function') { e.preventDefault(); var tb = target.closest('.whatsapp-conn-tab'); if (tb) switchWhatsappConnectionTab(tb.getAttribute('data-tab')); return; }
                 // ویرایش و حذف فایل تمپلیت
                 if (target.closest('.btn-ft-edit') && typeof editFileTemplate === 'function') {
                     var fid = (target.closest('.btn-ft-edit') || {}).getAttribute('data-id');
@@ -7354,7 +7356,7 @@
             if (page === 'tickets') { loadTicketFiltersInit(); loadTickets(); }
             if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); const ta = document.getElementById('taskAssignType'); if (ta && !ta._bound) { ta._bound = true; ta.addEventListener('change', toggleTaskAssignTarget); } }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
-            if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappWelcomeConfig(); loadWhatsappStats(); }
+            if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappConnectionSettings(); loadWhatsappWelcomeConfig(); loadWhatsappStats(); }
             if (page === 'message-templates') { initMessageTemplatesTabs(); loadMessageTemplates(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); }
             if (page === 'rates-charts') loadRatesCharts();
@@ -9412,6 +9414,56 @@
                 toast((e && e.message) || t('err_generic'), true);
                 if (btnDisconnect) btnDisconnect.disabled = false;
             }
+        }
+        function switchWhatsappConnectionTab(tab) {
+            document.querySelectorAll('.whatsapp-conn-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === tab); });
+            var cloud = document.getElementById('whatsappCloudSettings');
+            var gw = document.getElementById('whatsappGatewaySettings');
+            if (cloud) cloud.style.display = tab === 'cloud' ? 'block' : 'none';
+            if (cloud) cloud.classList.toggle('active', tab === 'cloud');
+            if (gw) gw.style.display = tab === 'gateway' ? 'block' : 'none';
+            if (gw) gw.classList.toggle('active', tab === 'gateway');
+        }
+        async function loadWhatsappConnectionSettings() {
+            var res = await apiFetch('/api/whatsapp/connection');
+            if (res.needLogin) return;
+            var d = res.ok && res.data ? res.data : {};
+            var mode = document.getElementById('whatsappConnectionMode');
+            var cloudEn = document.getElementById('whatsappCloudEnabled');
+            var cloudToken = document.getElementById('whatsappCloudAccessToken');
+            var cloudPhone = document.getElementById('whatsappCloudPhoneNumberId');
+            var cloudVerify = document.getElementById('whatsappCloudVerifyToken');
+            var gwEn = document.getElementById('whatsappGatewayEnabled');
+            var gwUrl = document.getElementById('whatsappGatewayUrl');
+            var gwSecret = document.getElementById('whatsappGatewayApiSecret');
+            if (mode) mode.value = d.connectionMode || 'cloud_first';
+            if (cloudEn) cloudEn.checked = d.cloudEnabled !== false;
+            if (cloudToken) { cloudToken.value = ''; cloudToken.placeholder = d.cloudAccessTokenSet ? (LANG === 'fa' ? 'کلید ذخیره شده ✓ — برای تغییر وارد کنید' : 'Saved ✓ — Enter to change') : 'EAAxxx...'; }
+            if (cloudPhone) cloudPhone.value = d.cloudPhoneNumberId || '';
+            if (cloudVerify) cloudVerify.value = d.cloudVerifyToken || '';
+            if (gwEn) gwEn.checked = d.gatewayEnabled !== false;
+            if (gwUrl) gwUrl.value = d.gatewayUrl || '';
+            if (gwSecret) { gwSecret.value = ''; gwSecret.placeholder = d.gatewayApiSecretSet ? (LANG === 'fa' ? 'ذخیره شده ✓' : 'Saved ✓') : (LANG === 'fa' ? 'اختیاری' : 'Optional'); }
+        }
+        async function saveWhatsappConnectionSettings() {
+            var cloudToken = document.getElementById('whatsappCloudAccessToken');
+            var cloudPhone = document.getElementById('whatsappCloudPhoneNumberId');
+            var cloudVerify = document.getElementById('whatsappCloudVerifyToken');
+            var gwUrl = document.getElementById('whatsappGatewayUrl');
+            var gwSecret = document.getElementById('whatsappGatewayApiSecret');
+            var body = {
+                connectionMode: (document.getElementById('whatsappConnectionMode') || {}).value || 'cloud_first',
+                cloudEnabled: (document.getElementById('whatsappCloudEnabled') || {}).checked !== false,
+                cloudPhoneNumberId: (cloudPhone && cloudPhone.value) ? cloudPhone.value.trim() : undefined,
+                cloudVerifyToken: (cloudVerify && cloudVerify.value) ? cloudVerify.value.trim() : undefined,
+                gatewayEnabled: (document.getElementById('whatsappGatewayEnabled') || {}).checked !== false,
+                gatewayUrl: (gwUrl && gwUrl.value) ? gwUrl.value.trim() : undefined
+            };
+            if (cloudToken && cloudToken.value.trim()) body.cloudAccessToken = cloudToken.value.trim();
+            if (gwSecret && gwSecret.value.trim()) body.gatewayApiSecret = gwSecret.value.trim();
+            var res = await apiFetch('/api/whatsapp/connection', { method: 'PUT', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('done_msg')); loadWhatsappConnectionSettings(); loadWhatsappStatus(); } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
         async function loadWhatsappWelcomeConfig() {
             const ta = document.getElementById('whatsappWelcomeMessage');
