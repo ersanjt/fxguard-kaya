@@ -1686,8 +1686,8 @@
         /* ========== صفحه اتصال واتساپ — چیدمان و کارت‌ها ========== */
         .whatsapp-page { max-width: 100%; min-width: 0; display: flex; flex-direction: column; gap: 24px; }
         .whatsapp-page-header { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 8px; }
-        .whatsapp-header-badge { width: 48px; height: 48px; min-width: 48px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(37,211,102,0.2) 0%, rgba(34,197,94,0.1) 100%); border: 1px solid rgba(34,197,94,0.3); border-radius: 12px; color: #22c55e; }
-        .whatsapp-header-badge svg { width: 28px; height: 28px; }
+        .whatsapp-header-badge { width: 48px; height: 48px; min-width: 48px; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, rgba(37,211,102,0.25) 0%, rgba(34,197,94,0.12) 100%); border: 1px solid rgba(34,197,94,0.35); border-radius: 14px; color: #22c55e; box-shadow: 0 2px 8px rgba(34,197,94,0.15); }
+        .whatsapp-header-badge svg { width: 28px; height: 28px; flex-shrink: 0; }
         .whatsapp-header-text { flex: 1; min-width: 0; }
         .whatsapp-stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
         .whatsapp-stat-card { display: flex; align-items: center; gap: 14px; padding: 16px 18px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); transition: border-color 0.2s, box-shadow 0.2s; }
