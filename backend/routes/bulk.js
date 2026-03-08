@@ -5,7 +5,7 @@
 const express = require('express');
 const router = express.Router();
 const { Customer, Conversation, Message } = require('../models');
-const { gatewayPost } = require('../lib/gatewayClient');
+const { sendWhatsAppMessage } = require('../lib/gatewayClient');
 const { normalizePhone } = require('../lib/phoneUtils');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { logActivity } = require('../services/activityLog');
@@ -152,7 +152,7 @@ router.post('/send', async (req, res) => {
                     const payload = { to: phone, message: finalContent };
                     if (media && media.url) payload.media = { url: media.url, mimetype: media.mimetype || '' };
 
-                    await gatewayPost('/api/send-message', payload, { timeout: 15000 });
+                    await sendWhatsAppMessage(payload, { timeout: 15000 });
                     await msg.update({ status: 'sent' });
                     jobState.sent++;
 

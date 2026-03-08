@@ -628,7 +628,7 @@ router.post('/:id/send', async (req, res) => {
                 }
             } catch (_) {}
         }
-        const { gatewayPost } = require('../lib/gatewayClient');
+        const { sendWhatsAppMessage } = require('../lib/gatewayClient');
         const { getSendTarget } = require('../lib/phoneUtils');
         const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;
         if (!toPhone) return res.status(400).json({ error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح (مثلاً 09121234567 یا 989121234567) وارد کنید.' });
@@ -669,7 +669,7 @@ router.post('/:id/send', async (req, res) => {
         }
         if (replyTo) payload.replyTo = replyTo;
         try {
-            const gwRes = await gatewayPost('/api/send-message', payload, { timeout: 15000 });
+            const gwRes = await sendWhatsAppMessage(payload, { timeout: 15000 });
             const waId = gwRes?.data?.messageId;
             if (waId) await msg.update({ whatsappId: waId, status: 'sent' });
         } catch (gwErr) {

@@ -3,7 +3,7 @@
  */
 const { User, Conversation, Message, Department } = require('../models');
 const { getSendTarget } = require('../lib/phoneUtils');
-const { gatewayPost } = require('../lib/gatewayClient');
+const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { logActivity } = require('../services/activityLog');
 
@@ -107,12 +107,12 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
 
                 const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;
                 const rabbitChannel = typeof getRabbitChannel === 'function' ? getRabbitChannel() : getRabbitChannel;
-                if (rabbitChannel) {
+                if (rabbitChannel && !isCloudApiConfigured()) {
                     rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
                         to: toPhone, message: content, media: media, conversationId: conversation.id
                     })), { persistent: true });
                 } else {
-                    gatewayPost('/api/send-message', { to: toPhone, message: content, media: media || null }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
+                    sendWhatsAppMessage({ to: toPhone, message: content, media: media || null }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
                 }
 
                 const now = new Date();

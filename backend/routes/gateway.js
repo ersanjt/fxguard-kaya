@@ -6,7 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
 const axios = require('axios');
-const { gatewayGet, gatewayPost } = require('../lib/gatewayClient');
+const { gatewayGet, gatewayPost, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { authMiddleware, requireSection } = require('../middleware/auth');
 
 const GATEWAY_START_COOLDOWN_MS = 15000;
@@ -27,6 +27,9 @@ function createGatewayRouter(logger) {
     };
 
     router.get('/gateway/status', authMiddleware, requireSection('whatsapp'), (req, res) => {
+        if (isCloudApiConfigured()) {
+            return res.json({ whatsapp: true, status: 'ready', cloudApi: true });
+        }
         gatewayGet('/api/status', { timeout: 5000 })
             .then((r) => res.json(r.data))
             .catch((e) => {
@@ -51,6 +54,9 @@ function createGatewayRouter(logger) {
     });
 
     router.get('/gateway/qr', authMiddleware, requireSection('whatsapp'), (req, res) => {
+        if (isCloudApiConfigured()) {
+            return res.json({ qr: null });
+        }
         gatewayGet('/api/qr', { timeout: 5000 })
             .then((r) => res.json(r.data))
             .catch((e) => {
@@ -67,6 +73,7 @@ function createGatewayRouter(logger) {
         requireSection('whatsapp'),
         requireAdmin,
         (req, res) => {
+            if (isCloudApiConfigured()) return res.json({ ok: true, status: 'ready', message: 'Cloud API فعال است' });
             gatewayPost('/api/start', {}, { timeout: 10000 })
                 .then((r) => res.json(r.data))
                 .catch((e) =>
@@ -83,6 +90,7 @@ function createGatewayRouter(logger) {
         requireSection('whatsapp'),
         requireAdmin,
         (req, res) => {
+            if (isCloudApiConfigured()) return res.json({ ok: true, status: 'stopped', message: 'Cloud API فعال است' });
             gatewayPost('/api/stop', {}, { timeout: 10000 })
                 .then((r) => res.json(r.data))
                 .catch((e) =>
@@ -99,6 +107,7 @@ function createGatewayRouter(logger) {
         requireSection('whatsapp'),
         requireAdmin,
         (req, res) => {
+            if (isCloudApiConfigured()) return res.json({ ok: true, status: 'logged_out', message: 'Cloud API فعال است' });
             gatewayPost('/api/logout', {}, { timeout: 20000 })
                 .then((r) => res.json(r.data))
                 .catch((e) =>

@@ -2,7 +2,7 @@
  * پیام‌های خودکار: تخصیص دپارتمان و معرفی کارمند
  * متن‌ها از WhatsappConfig خوانده می‌شوند؛ خالی = پیش‌فرض
  */
-const { gatewayPost } = require('../lib/gatewayClient');
+const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
 const { Message, Customer, User, Department, Conversation, WhatsappConfig } = require('../models');
 const logger = require('../config/logger');
@@ -24,16 +24,16 @@ async function sendOutgoingAutoMessage(conversation, text) {
             return false;
         }
         const toPhone = getSendTarget(customer.phone) || customer.phone;
-        if (rabbitChannel) {
+        if (rabbitChannel && !isCloudApiConfigured()) {
             const sent = rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
                 to: toPhone, message: text, conversationId: conversation.id
             })), { persistent: true });
             if (sent === false) {
                 logger.warn('autoMessages: RabbitMQ queue full (backpressure), falling back to gateway', { conversationId: conversation.id });
-                await gatewayPost('/api/send-message', { to: toPhone, message: text }, { timeout: 10000 });
+                await sendWhatsAppMessage({ to: toPhone, message: text }, { timeout: 10000 });
             }
         } else {
-            await gatewayPost('/api/send-message', { to: toPhone, message: text }, { timeout: 10000 });
+            await sendWhatsAppMessage({ to: toPhone, message: text }, { timeout: 10000 });
         }
         await Message.create({
             conversationId: conversation.id,

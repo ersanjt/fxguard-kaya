@@ -5,6 +5,7 @@ const express = require('express');
 const { authMiddleware, requireSection } = require('../middleware/auth');
 const { createWebhookAuth } = require('../middleware/webhookAuth');
 const { processIncomingMessage } = require('../services/incomingMessage');
+const { transformCloudWebhookToInternal, downloadMedia, isConfigured: isCloudApiConfigured } = require('../lib/whatsappCloudApi');
 const models = require('../models');
 const { Message } = models;
 const { createContactRouter } = require('./contact');
@@ -89,6 +90,48 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
                 logger.error('Webhook process error:', err);
                 res.status(500).json({ error: 'Internal server error' });
             });
+    });
+
+    // WhatsApp Cloud API — verification (Meta)
+    apiRouter.get('/webhook/whatsapp-cloud', (req, res) => {
+        const mode = req.query['hub.mode'];
+        const token = req.query['hub.verify_token'];
+        const challenge = req.query['hub.challenge'];
+        const expectedToken = (process.env.WHATSAPP_CLOUD_VERIFY_TOKEN || '').trim();
+        if (mode === 'subscribe' && expectedToken && token === expectedToken) {
+            return res.type('text/plain').send(challenge || '');
+        }
+        res.status(403).send('Verification failed');
+    });
+
+    // WhatsApp Cloud API — incoming messages from Meta
+    apiRouter.post('/webhook/whatsapp-cloud', express.json({ limit: '1mb' }), async (req, res) => {
+        try {
+            if (!isCloudApiConfigured()) return res.status(404).send('Cloud API not configured');
+            const body = req.body;
+            if (!body || body.object !== 'whatsapp_business_account') return res.status(200).send('ok');
+            const entries = body.entry || [];
+            for (const entry of entries) {
+                const internalMessages = transformCloudWebhookToInternal(entry);
+                for (let msgData of internalMessages) {
+                    if (msgData._cloudMediaId) {
+                        try {
+                            const downloaded = await downloadMedia(msgData._cloudMediaId);
+                            msgData.media = { data: downloaded.data, mimetype: downloaded.mimetype };
+                        } catch (dlErr) {
+                            logger.warn('Cloud API media download failed', { mediaId: msgData._cloudMediaId, error: dlErr?.message });
+                        }
+                        delete msgData._cloudMediaId;
+                    }
+                    const rabbitChannel = typeof getRabbitChannel === 'function' ? getRabbitChannel() : getRabbitChannel;
+                    await processIncomingMessage(msgData, { io, rabbitChannel, redisClient, logger }).catch(err => logger.error('Cloud webhook process error:', err));
+                }
+            }
+            res.status(200).send('ok');
+        } catch (err) {
+            logger.error('Cloud webhook error:', err);
+            res.status(200).send('ok');
+        }
     });
 
     apiRouter.post('/webhook/message-status', webhookAuth, async (req, res) => {
