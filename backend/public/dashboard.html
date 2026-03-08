@@ -48,6 +48,8 @@
             <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
             <symbol id="icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
             <symbol id="icon-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
+            <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+            <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
         </defs>
     </svg>
     <div id="loginBox" class="login-wrap">
@@ -1820,6 +1822,68 @@
                                                                 <img id="panelFaviconPreviewImg" src="" alt="" class="panel-favicon-preview-img" onerror="this.style.display='none'">
                                                             </div>
                                                         </div>
+                                                    </div>
+                                                </div>
+                                            </section>
+                                            <section class="panel-settings-section panel-settings-section-collapsible">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                                    <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span><span data-i18n="panel_section_theme">رنگ و ظاهر پنل</span></h3>
+                                                    <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                                </button>
+                                                <div class="panel-settings-section-body">
+                                                    <div class="form-group">
+                                                        <label for="panelSettingPrimaryColor" data-i18n="panel_primary_color">رنگ اصلی (اکسن)</label>
+                                                        <div class="color-input-wrap">
+                                                            <input type="color" id="panelSettingPrimaryColor" value="#10b981" onchange="syncPanelColorInput(); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <input type="text" id="panelSettingPrimaryColorText" placeholder="#10b981" maxlength="7" class="color-text-input" oninput="syncPanelColorFromText(); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="panelSettingFontFamily" data-i18n="panel_font_family">فونت</label>
+                                                        <select id="panelSettingFontFamily" onchange="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <option value="" data-i18n="panel_font_default">پیش‌فرض (Vazirmatn)</option>
+                                                            <option value="Vazirmatn, 'Segoe UI', sans-serif">Vazirmatn</option>
+                                                            <option value="Inter, 'Segoe UI', sans-serif">Inter</option>
+                                                            <option value="Tahoma, sans-serif">Tahoma</option>
+                                                            <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                                                            <option value="system-ui, -apple-system, sans-serif">سیستم</option>
+                                                            <option value="'B Yekan', Tahoma, sans-serif">ایران‌سلکشن (BYekan)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-row-2">
+                                                        <div class="form-group">
+                                                            <label for="panelSettingFontSize" data-i18n="panel_font_size">سایز فونت</label>
+                                                            <select id="panelSettingFontSize" onchange="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                                <option value="small" data-i18n="panel_font_size_small">کوچک</option>
+                                                                <option value="medium" selected data-i18n="panel_font_size_medium">متوسط</option>
+                                                                <option value="large" data-i18n="panel_font_size_large">بزرگ</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="panelSettingFontWeight" data-i18n="panel_font_weight">وزن فونت</label>
+                                                            <select id="panelSettingFontWeight" onchange="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                                <option value="normal" selected data-i18n="panel_font_weight_normal">معمولی</option>
+                                                                <option value="medium" data-i18n="panel_font_weight_medium">متوسط</option>
+                                                                <option value="bold" data-i18n="panel_font_weight_bold">ضخیم</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="panelSettingUiTheme" data-i18n="panel_ui_theme">قالب ظاهری (بوت استایل)</label>
+                                                        <select id="panelSettingUiTheme" onchange="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <option value="default" selected data-i18n="panel_theme_default">پیش‌فرض</option>
+                                                            <option value="minimal" data-i18n="panel_theme_minimal">مینیمال</option>
+                                                            <option value="dark" data-i18n="panel_theme_dark">تیره</option>
+                                                            <option value="light" data-i18n="panel_theme_light">روشن</option>
+                                                            <option value="ocean" data-i18n="panel_theme_ocean">اقیانوسی</option>
+                                                            <option value="warm" data-i18n="panel_theme_warm">گرم</option>
+                                                        </select>
+                                                        <span class="form-hint" data-i18n="panel_theme_hint">سبک کلی دکمه‌ها، کارت‌ها و نوارها</span>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label data-i18n="panel_sidebar_order">ترتیب بخش‌های منو</label>
+                                                        <p class="panel-settings-section-desc" data-i18n="panel_sidebar_order_desc">رتبه هر بخش را وارد کنید. اعداد کوچک‌تر بالاتر نمایش داده می‌شوند. خالی = پیش‌فرض.</p>
+                                                        <div id="panelSidebarOrderList" class="sidebar-order-list"></div>
                                                     </div>
                                                 </div>
                                             </section>

@@ -22,7 +22,13 @@ router.get('/public/branding', async (req, res) => {
             pageTitle: s.pageTitle,
             footerText: s.footerText,
             showFooter: s.showFooter !== false,
-            footerStyle: s.footerStyle || 'accent'
+            footerStyle: s.footerStyle || 'accent',
+            primaryColor: s.primaryColor,
+            fontFamily: s.fontFamily,
+            fontSize: s.fontSize || 'medium',
+            fontWeight: s.fontWeight || 'normal',
+            uiTheme: s.uiTheme || 'default',
+            sidebarOrder: s.sidebarOrder
         });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -72,7 +78,7 @@ router.put('/', authMiddleware, async (req, res) => {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const body = req.body || {};
-        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, hiddenSections, languageMode, defaultLanguage } = body;
+        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder } = body;
         if (logoUrl && !/^https?:\/\//i.test(String(logoUrl).trim()) && !String(logoUrl).trim().startsWith('/uploads/')) {
             return res.status(400).json({ error: 'آدرس لوگو باید یک URL معتبر یا مسیر /uploads/ باشد' });
         }
@@ -109,6 +115,12 @@ router.put('/', authMiddleware, async (req, res) => {
         if (hiddenSections !== undefined) row.hiddenSections = Array.isArray(hiddenSections) ? JSON.stringify(hiddenSections) : (hiddenSections === '' ? null : row.hiddenSections);
         if (languageMode !== undefined) row.languageMode = languageMode === '' ? null : languageMode;
         if (defaultLanguage !== undefined && (defaultLanguage === 'fa' || defaultLanguage === 'en' || defaultLanguage === 'tr')) row.defaultLanguage = defaultLanguage;
+        if (primaryColor !== undefined) row.primaryColor = (typeof primaryColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(primaryColor.trim())) ? primaryColor.trim() : (primaryColor === '' ? null : row.primaryColor);
+        if (fontFamily !== undefined) row.fontFamily = fontFamily === '' ? null : fontFamily;
+        if (fontSize !== undefined && ['small', 'medium', 'large'].indexOf(fontSize) >= 0) row.fontSize = fontSize;
+        if (fontWeight !== undefined && ['normal', 'medium', 'bold'].indexOf(fontWeight) >= 0) row.fontWeight = fontWeight;
+        if (uiTheme !== undefined && ['default', 'minimal', 'dark', 'light', 'ocean', 'warm'].indexOf(uiTheme) >= 0) row.uiTheme = uiTheme;
+        if (sidebarOrder !== undefined) row.sidebarOrder = Array.isArray(sidebarOrder) ? JSON.stringify(sidebarOrder) : (sidebarOrder === '' ? null : row.sidebarOrder);
         await row.save();
         const s = await getSettings();
         if (footerStyle !== undefined) s.footerStyle = (footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(footerStyle) >= 0) ? footerStyle : 'accent';

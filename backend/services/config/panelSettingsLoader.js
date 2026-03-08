@@ -23,6 +23,12 @@ const DEFAULT = {
     hiddenSections: [],
     languageMode: 'trilingual',
     defaultLanguage: 'fa',
+    primaryColor: null,
+    fontFamily: null,
+    fontSize: 'medium',
+    fontWeight: 'normal',
+    uiTheme: 'default',
+    sidebarOrder: null,
 };
 
 const MODE_TO_LANGUAGES = {
@@ -38,6 +44,17 @@ const MODE_TO_LANGUAGES = {
 function getSupportedLanguagesFromMode(mode) {
     const list = MODE_TO_LANGUAGES[mode];
     return Array.isArray(list) ? list : ['fa', 'en', 'tr'];
+}
+
+function parseSidebarOrder(val) {
+    if (val == null || val === '') return null;
+    if (Array.isArray(val)) return val;
+    try {
+        const arr = JSON.parse(val);
+        return Array.isArray(arr) ? arr : null;
+    } catch (_) {
+        return null;
+    }
 }
 
 function parseHiddenSections(val) {
@@ -83,6 +100,12 @@ async function getPanelSettings() {
             ['fa', 'en', 'tr'].indexOf(row.defaultLanguage) >= 0
                 ? row.defaultLanguage
                 : DEFAULT.defaultLanguage,
+        primaryColor: row.primaryColor || null,
+        fontFamily: row.fontFamily || null,
+        fontSize: ['small', 'medium', 'large'].indexOf(row.fontSize) >= 0 ? row.fontSize : DEFAULT.fontSize,
+        fontWeight: ['normal', 'medium', 'bold'].indexOf(row.fontWeight) >= 0 ? row.fontWeight : DEFAULT.fontWeight,
+        uiTheme: ['default', 'minimal', 'dark', 'light', 'ocean', 'warm'].indexOf(row.uiTheme) >= 0 ? row.uiTheme : DEFAULT.uiTheme,
+        sidebarOrder: parseSidebarOrder(row.sidebarOrder),
     };
 }
 

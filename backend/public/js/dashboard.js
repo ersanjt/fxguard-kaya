@@ -120,6 +120,28 @@
                     panel_language_hint_bilingual_en_tr: 'انگلیسی و ترکی؛ کاربران می‌توانند زبان را عوض کنند.',
                     panel_language_hint_trilingual: 'فارسی، انگلیسی و ترکی؛ کاربران می‌توانند زبان را عوض کنند.',
                     panel_section_visibility: 'نمایش بخش‌ها در سایت',
+                    panel_section_theme: 'رنگ و ظاهر پنل',
+                    panel_primary_color: 'رنگ اصلی (اکسن)',
+                    panel_font_family: 'فونت',
+                    panel_font_default: 'پیش‌فرض (Vazirmatn)',
+                    panel_font_size: 'سایز فونت',
+                    panel_font_size_small: 'کوچک',
+                    panel_font_size_medium: 'متوسط',
+                    panel_font_size_large: 'بزرگ',
+                    panel_font_weight: 'وزن فونت',
+                    panel_font_weight_normal: 'معمولی',
+                    panel_font_weight_medium: 'متوسط',
+                    panel_font_weight_bold: 'ضخیم',
+                    panel_ui_theme: 'قالب ظاهری (بوت استایل)',
+                    panel_theme_default: 'پیش‌فرض',
+                    panel_theme_minimal: 'مینیمال',
+                    panel_theme_dark: 'تیره',
+                    panel_theme_light: 'روشن',
+                    panel_theme_ocean: 'اقیانوسی',
+                    panel_theme_warm: 'گرم',
+                    panel_theme_hint: 'سبک کلی دکمه‌ها، کارت‌ها و نوارها',
+                    panel_sidebar_order: 'ترتیب بخش‌های منو',
+                    panel_sidebar_order_desc: 'رتبه هر بخش را وارد کنید. اعداد کوچک‌تر بالاتر نمایش داده می‌شوند. خالی = پیش‌فرض.',
                     panel_visibility_desc: 'بخش‌هایی که مخفی می‌کنید در منو و در کل وب‌سایت نمایش داده نمی‌شوند. تیک خورده = نمایش داده شود.',
                     panel_tab_branding: 'برندینگ و ظاهر',
                     panel_tab_email: 'ایمیل',
@@ -741,6 +763,28 @@
                     panel_language_hint_bilingual_en_tr: 'English and Turkish; users can switch language.',
                     panel_language_hint_trilingual: 'Persian, English and Turkish; users can switch language.',
                     panel_section_visibility: 'Section visibility',
+                    panel_section_theme: 'Color & panel appearance',
+                    panel_primary_color: 'Primary (accent) color',
+                    panel_font_family: 'Font',
+                    panel_font_default: 'Default (Vazirmatn)',
+                    panel_font_size: 'Font size',
+                    panel_font_size_small: 'Small',
+                    panel_font_size_medium: 'Medium',
+                    panel_font_size_large: 'Large',
+                    panel_font_weight: 'Font weight',
+                    panel_font_weight_normal: 'Normal',
+                    panel_font_weight_medium: 'Medium',
+                    panel_font_weight_bold: 'Bold',
+                    panel_ui_theme: 'UI theme (Bootstrap style)',
+                    panel_theme_default: 'Default',
+                    panel_theme_minimal: 'Minimal',
+                    panel_theme_dark: 'Dark',
+                    panel_theme_light: 'Light',
+                    panel_theme_ocean: 'Ocean',
+                    panel_theme_warm: 'Warm',
+                    panel_theme_hint: 'Overall style for buttons, cards and bars',
+                    panel_sidebar_order: 'Menu section order',
+                    panel_sidebar_order_desc: 'Enter rank for each section. Lower numbers appear higher. Empty = default.',
                     panel_visibility_desc: 'Sections you hide are not shown in the menu or anywhere on the site. Checked = visible.'
                 },
                 tr: {}
@@ -1968,7 +2012,7 @@
             var checkAttr = isMarked ? ' checked' : '';
             return '<tr class="stmt-row-data" data-id="' + item.id + '"' + bg + '>' +
                 '<td class="stmt-col-sel"><input type="checkbox" class="stmt-check"' + checkAttr + ' onchange="toggleStmtMark(this,\'' + item.id + '\')"></td>' +
-                '<td class="stmt-col-act"><button type="button" class="btn-icon-sm stmt-act-view" onclick="viewTransactionDetail(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'مشاهده' : 'View') + '">&#128065;</button><button type="button" class="btn-icon-sm stmt-act-edit" onclick="openTransactionModalForEdit(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '">&#9998;</button></td>' +
+                '<td class="stmt-col-act"><button type="button" class="btn-icon-sm stmt-act-view" onclick="viewTransactionDetail(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'مشاهده' : 'View') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-eye"/></svg></button><button type="button" class="btn-icon-sm stmt-act-edit" onclick="openTransactionModalForEdit(\'' + item.id + '\')" title="' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '"><svg viewBox="0 0 24 24" width="18" height="18"><use href="#icon-edit"/></svg></button></td>' +
                 '<td>' + escapeHtml(item.date || '') + '</td>' +
                 '<td><span class="stmt-type-badge stmt-type-' + item.typeRaw + '">' + escapeHtml(item.type) + '</span></td>' +
                 '<td>' + escapeHtml(item.number) + '</td>' +
@@ -3350,7 +3394,7 @@
                 { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + ' ' + t('nav_customers').toLowerCase() },
                 { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', stat: n(stats.ticketsOpen) + ' ' + t('status_open').toLowerCase() },
                 { page: 'tasks', section: 'tasks', title: t('nav_tasks'), icon: 'icon-task', stat: n(stats.tasksPending) + ' ' + t('status_pending').toLowerCase() },
-                { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-user-online', stat: n(stats.announcementsCount) + ' ' + t('nav_announcements').toLowerCase() },
+                { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-megaphone', stat: n(stats.announcementsCount) + ' ' + t('nav_announcements').toLowerCase() },
                 { page: 'departments', section: 'departments', title: t('nav_departments'), icon: 'icon-building', stat: null },
                 { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user', stat: null },
                 { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
@@ -3362,7 +3406,7 @@
                 { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
                 { page: 'supervision', section: 'supervision', title: t('nav_supervision'), icon: 'icon-chart', stat: null },
                 { page: 'staff-activity', section: 'staff_activity', title: t('nav_staff_activity'), icon: 'icon-user-online', stat: null },
-                { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-chart', stat: null }
+                { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-settings', stat: null }
             ];
             var html = '';
             cards.forEach(function(c) {
@@ -6610,6 +6654,39 @@
             };
             setLoginLogo('loginLogo', 48);
             setLoginLogo('loginLogoTotp', 40);
+            var root = document.documentElement;
+            var target = document.body;
+            if (s.primaryColor && /^#[0-9a-fA-F]{6}$/.test(s.primaryColor)) {
+                var r = parseInt(s.primaryColor.slice(1, 3), 16); var g = parseInt(s.primaryColor.slice(3, 5), 16); var b = parseInt(s.primaryColor.slice(5, 7), 16);
+                var hoverHex = '#' + [r, g, b].map(function(x) { return Math.max(0, Math.min(255, x - 20)).toString(16).padStart(2, '0'); }).join('');
+                [root, target].forEach(function(el) {
+                    if (el) { el.style.setProperty('--accent', s.primaryColor); el.style.setProperty('--accent-hover', hoverHex); el.style.setProperty('--accent-soft', 'rgba(' + r + ',' + g + ',' + b + ',0.15)'); }
+                });
+            } else {
+                [root, target].forEach(function(el) {
+                    if (el) { el.style.removeProperty('--accent'); el.style.removeProperty('--accent-hover'); el.style.removeProperty('--accent-soft'); }
+                });
+            }
+            var themeClass = (s.uiTheme && s.uiTheme !== 'default') ? 'theme-' + s.uiTheme : '';
+            document.body.classList.remove('theme-minimal', 'theme-dark', 'theme-light', 'theme-ocean', 'theme-warm');
+            if (themeClass) document.body.classList.add(themeClass);
+            var fontSizeClass = (s.fontSize && ['small', 'medium', 'large'].indexOf(s.fontSize) >= 0) ? 'font-size-' + s.fontSize : 'font-size-medium';
+            document.body.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
+            document.body.classList.add(fontSizeClass);
+            if (s.fontFamily && s.fontFamily.trim()) {
+                root.style.setProperty('--font', s.fontFamily.trim());
+                root.style.setProperty('--font-ltr', s.fontFamily.trim());
+            } else { root.style.removeProperty('--font'); root.style.removeProperty('--font-ltr'); }
+            var fw = (s.fontWeight && ['normal', 'medium', 'bold'].indexOf(s.fontWeight) >= 0) ? s.fontWeight : 'normal';
+            document.body.style.fontWeight = fw;
+            if (Array.isArray(s.sidebarOrder) && s.sidebarOrder.length > 0) applySidebarOrder(s.sidebarOrder);
+        }
+        function applySidebarOrder(order) {
+            var inner = document.querySelector('.sidebar .sidebar-inner');
+            if (!inner) return;
+            var sections = order.map(function(id) { return inner.querySelector('.nav-section[data-section="' + id + '"]'); }).filter(Boolean);
+            if (sections.length === 0) return;
+            sections.forEach(function(el) { inner.appendChild(el); });
         }
         var HIDDEN_SECTIONS = [];
         function applyHiddenSections(hidden) {
@@ -6711,6 +6788,19 @@
             var validModes = ['single', 'single_en', 'single_tr', 'bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'];
             if (langModeEl) langModeEl.value = validModes.indexOf(d.languageMode) >= 0 ? d.languageMode : 'trilingual';
             set('panelSettingDefaultLanguage', (d.defaultLanguage === 'fa' || d.defaultLanguage === 'en' || d.defaultLanguage === 'tr') ? d.defaultLanguage : 'fa');
+            var colorVal = (d.primaryColor && /^#[0-9a-fA-F]{6}$/.test(d.primaryColor)) ? d.primaryColor : '#10b981';
+            var colorEl = document.getElementById('panelSettingPrimaryColor');
+            var colorTextEl = document.getElementById('panelSettingPrimaryColorText');
+            if (colorEl) colorEl.value = colorVal;
+            if (colorTextEl) colorTextEl.value = colorVal;
+            var fontFamilyEl = document.getElementById('panelSettingFontFamily');
+            if (fontFamilyEl) fontFamilyEl.value = d.fontFamily || '';
+            var fontSizeEl = document.getElementById('panelSettingFontSize');
+            if (fontSizeEl) fontSizeEl.value = (d.fontSize && ['small', 'medium', 'large'].indexOf(d.fontSize) >= 0) ? d.fontSize : 'medium';
+            var fontWeightEl = document.getElementById('panelSettingFontWeight');
+            if (fontWeightEl) fontWeightEl.value = (d.fontWeight && ['normal', 'medium', 'bold'].indexOf(d.fontWeight) >= 0) ? d.fontWeight : 'normal';
+            var uiThemeEl = document.getElementById('panelSettingUiTheme');
+            if (uiThemeEl) uiThemeEl.value = (d.uiTheme && ['default', 'minimal', 'dark', 'light', 'ocean', 'warm'].indexOf(d.uiTheme) >= 0) ? d.uiTheme : 'default';
             if (typeof updatePanelLanguageHint === 'function') updatePanelLanguageHint();
             if (typeof toggleDefaultLanguageVisibility === 'function') toggleDefaultLanguageVisibility();
             set('panelSettingSmtpHost', d.smtpHost);
@@ -6755,7 +6845,77 @@
             initPanelSettingsTabs();
             initPanelSettingsCollapse();
             initPanelVisibilitySearch();
+            initSidebarOrderList(d.sidebarOrder);
             clearPanelSettingsChanged();
+        }
+        var SIDEBAR_SECTIONS = [
+            { section: 'dashboard', labelKey: 'nav_dashboard' },
+            { section: 'communications', labelKey: 'nav_communications' },
+            { section: 'organization', labelKey: 'nav_organization' },
+            { section: 'settings', labelKey: 'nav_settings' }
+        ];
+        function initSidebarOrderList(savedOrder) {
+            var container = document.getElementById('panelSidebarOrderList');
+            if (!container) return;
+            var order = Array.isArray(savedOrder) && savedOrder.length > 0 ? savedOrder : SIDEBAR_SECTIONS.map(function(s) { return s.section; });
+            container.innerHTML = '';
+            order.forEach(function(sectionId, idx) {
+                var info = SIDEBAR_SECTIONS.find(function(s) { return s.section === sectionId; });
+                if (!info) return;
+                var item = document.createElement('div');
+                item.className = 'sidebar-order-item';
+                item.dataset.section = sectionId;
+                var label = document.createElement('label');
+                label.textContent = (typeof t === 'function' ? t(info.labelKey) : info.labelKey) || sectionId;
+                var input = document.createElement('input');
+                input.type = 'number';
+                input.min = '1';
+                input.value = idx + 1;
+                input.onchange = markPanelSettingsChanged;
+                item.appendChild(label);
+                item.appendChild(input);
+                container.appendChild(item);
+            });
+            SIDEBAR_SECTIONS.forEach(function(info) {
+                if (order.indexOf(info.section) < 0) {
+                    var item = document.createElement('div');
+                    item.className = 'sidebar-order-item';
+                    item.dataset.section = info.section;
+                    var label = document.createElement('label');
+                    label.textContent = (typeof t === 'function' ? t(info.labelKey) : info.labelKey) || info.section;
+                    var input = document.createElement('input');
+                    input.type = 'number';
+                    input.min = '1';
+                    input.value = order.length + 1;
+                    input.onchange = markPanelSettingsChanged;
+                    item.appendChild(label);
+                    item.appendChild(input);
+                    container.appendChild(item);
+                }
+            });
+        }
+        function getSidebarOrderFromForm() {
+            var container = document.getElementById('panelSidebarOrderList');
+            if (!container) return null;
+            var items = [].slice.call(container.querySelectorAll('.sidebar-order-item'));
+            items.sort(function(a, b) {
+                var ra = parseInt(a.querySelector('input').value, 10) || 999;
+                var rb = parseInt(b.querySelector('input').value, 10) || 999;
+                return ra - rb;
+            });
+            return items.map(function(el) { return el.dataset.section; });
+        }
+        function syncPanelColorInput() {
+            var colorEl = document.getElementById('panelSettingPrimaryColor');
+            var textEl = document.getElementById('panelSettingPrimaryColorText');
+            if (colorEl && textEl) textEl.value = colorEl.value;
+        }
+        function syncPanelColorFromText() {
+            var textEl = document.getElementById('panelSettingPrimaryColorText');
+            var colorEl = document.getElementById('panelSettingPrimaryColor');
+            if (!textEl || !colorEl) return;
+            var v = String(textEl.value || '').trim();
+            if (/^#[0-9a-fA-F]{6}$/.test(v)) colorEl.value = v;
         }
         function syncSmtpPortWithSecure() {
             var portEl = document.getElementById('panelSettingSmtpPort');
@@ -6934,7 +7094,27 @@
                 else if (target.classList.contains('company-email-send-creds')) sendCompanyEmailCredentials(id);
             });
         }
+        function applyThemeFromForm() {
+            var colorEl = document.getElementById('panelSettingPrimaryColor');
+            var colorVal = colorEl && /^#[0-9a-fA-F]{6}$/.test(colorEl.value) ? colorEl.value : null;
+            var themeEl = document.getElementById('panelSettingUiTheme');
+            var themeVal = (themeEl && themeEl.value && themeEl.value !== 'default') ? themeEl.value : '';
+            var fontSizeEl = document.getElementById('panelSettingFontSize');
+            var fontSizeVal = (fontSizeEl && ['small', 'medium', 'large'].indexOf(fontSizeEl.value) >= 0) ? fontSizeEl.value : 'medium';
+            var fontFamilyEl = document.getElementById('panelSettingFontFamily');
+            var fontFamilyVal = fontFamilyEl && fontFamilyEl.value.trim() ? fontFamilyEl.value.trim() : null;
+            var fontWeightEl = document.getElementById('panelSettingFontWeight');
+            var fontWeightVal = (fontWeightEl && ['normal', 'medium', 'bold'].indexOf(fontWeightEl.value) >= 0) ? fontWeightEl.value : 'normal';
+            applyBranding({
+                primaryColor: colorVal,
+                uiTheme: themeVal || 'default',
+                fontSize: fontSizeVal,
+                fontFamily: fontFamilyVal,
+                fontWeight: fontWeightVal
+            });
+        }
         function updatePanelLivePreview() {
+            applyThemeFromForm();
             var siteName = (document.getElementById('panelSettingSiteName') && document.getElementById('panelSettingSiteName').value.trim()) || (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
             var pageTitle = (document.getElementById('panelSettingPageTitle') && document.getElementById('panelSettingPageTitle').value.trim()) || (LANG === 'fa' ? 'پورتال کارکنان | صرافی کایا' : 'Staff Portal | Kaya Exchange');
             var footerText = (document.getElementById('panelSettingFooterText') && document.getElementById('panelSettingFooterText').value.trim()) || (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
@@ -7006,6 +7186,12 @@
                 footerText: get('panelSettingFooterText'),
                 showFooter: !(document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked),
                 footerStyle: (function() { var el = document.getElementById('panelSettingFooterStyle'); var v = el ? el.value : 'accent'; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : 'accent'; })(),
+                primaryColor: (function() { var el = document.getElementById('panelSettingPrimaryColor'); var v = el ? el.value : ''; return /^#[0-9a-fA-F]{6}$/.test(v) ? v : null; })(),
+                fontFamily: get('panelSettingFontFamily') || null,
+                fontSize: (function() { var el = document.getElementById('panelSettingFontSize'); var v = el ? el.value : 'medium'; return ['small', 'medium', 'large'].indexOf(v) >= 0 ? v : 'medium'; })(),
+                fontWeight: (function() { var el = document.getElementById('panelSettingFontWeight'); var v = el ? el.value : 'normal'; return ['normal', 'medium', 'bold'].indexOf(v) >= 0 ? v : 'normal'; })(),
+                uiTheme: (function() { var el = document.getElementById('panelSettingUiTheme'); var v = el ? el.value : 'default'; return ['default', 'minimal', 'dark', 'light', 'ocean', 'warm'].indexOf(v) >= 0 ? v : 'default'; })(),
+                sidebarOrder: getSidebarOrderFromForm(),
                 smtpHost: get('panelSettingSmtpHost'),
                 smtpPort: get('panelSettingSmtpPort'),
                 smtpUser: get('panelSettingSmtpUser'),

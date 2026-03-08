@@ -19,6 +19,15 @@
             --font: 'Vazirmatn', 'Segoe UI', sans-serif;
             --font-ltr: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
         }
+        /* قالب‌های ظاهری — هنگام انتخاب در تنظیمات پنل اعمال می‌شوند */
+        body.theme-minimal { --accent: #6366f1; --accent-hover: #4f46e5; --accent-soft: rgba(99, 102, 241, 0.15); --border: rgba(99, 102, 241, 0.25); }
+        body.theme-dark { --bg-primary: #050810; --bg-secondary: #0a0e18; --bg-card: #0d121c; --bg-hover: #131a28; --border: #1e2a3e; }
+        body.theme-light { --bg-primary: #f8fafc; --bg-secondary: #f1f5f9; --bg-card: #fff; --bg-hover: #e2e8f0; --border: #cbd5e1; --text-primary: #0f172a; --text-secondary: #475569; --text-muted: #94a3b8; --accent: #059669; --accent-hover: #047857; --accent-soft: rgba(5, 150, 105, 0.15); }
+        body.theme-ocean { --accent: #0ea5e9; --accent-hover: #0284c7; --accent-soft: rgba(14, 165, 233, 0.15); --border: rgba(14, 165, 233, 0.3); }
+        body.theme-warm { --accent: #f59e0b; --accent-hover: #d97706; --accent-soft: rgba(245, 158, 11, 0.15); --border: rgba(245, 158, 11, 0.3); }
+        body.font-size-small { font-size: 14px; }
+        body.font-size-medium { font-size: 16px; }
+        body.font-size-large { font-size: 18px; }
         html[dir="ltr"] body,
         html[dir="ltr"] .app,
         body.ltr { font-family: var(--font-ltr); }
@@ -1062,6 +1071,13 @@
         .panel-preview-label { font-size: 0.85rem; color: var(--text-muted); }
         .panel-logo-preview-img { max-height: 36px; max-width: 140px; object-fit: contain; vertical-align: middle; border-radius: 6px; }
         .panel-favicon-preview-img { width: 20px; height: 20px; vertical-align: middle; border-radius: 4px; }
+        .color-input-wrap { display: flex; gap: 12px; align-items: center; }
+        .color-input-wrap input[type="color"] { width: 56px; height: 44px; padding: 4px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg-secondary); cursor: pointer; flex-shrink: 0; }
+        .color-input-wrap .color-text-input { flex: 1; min-width: 0; }
+        .sidebar-order-list { display: flex; flex-direction: column; gap: 8px; }
+        .sidebar-order-item { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; }
+        .sidebar-order-item label { flex: 1; min-width: 0; margin: 0; font-size: 0.9rem; }
+        .sidebar-order-item input[type="number"] { width: 60px; padding: 8px 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-card); color: var(--text-primary); font-size: 0.9rem; }
         .panel-settings-actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 16px 0 0; border-top: 1px solid var(--border); margin-top: 4px; }
         .panel-settings-save-btn { padding: 14px 32px; font-size: 1rem; border-radius: 12px; min-height: 52px; font-weight: 600; transition: transform 0.15s, box-shadow 0.2s; }
         .panel-settings-save-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(16,185,129,0.35); }
@@ -3503,7 +3519,8 @@
         .tx-detail-value { font-size: 0.92rem; color: var(--text-primary); word-break: break-word; }
         /* Enhanced Statement Row Actions */
         .stmt-col-act { display: flex; gap: 2px; align-items: center; }
-        .stmt-act-view, .stmt-act-edit { font-size: 0.85rem; padding: 2px 4px; }
+        .stmt-act-view, .stmt-act-edit { font-size: 0.85rem; padding: 2px 4px; display: inline-flex; align-items: center; justify-content: center; }
+        .stmt-act-view svg, .stmt-act-edit svg { stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
         .stmt-type-buy { background: rgba(234, 88, 12, 0.15); color: #ea580c; }
         .stmt-type-sell { background: rgba(37, 99, 235, 0.15); color: #2563eb; }
         .stmt-type-cash_in { background: rgba(22, 163, 106, 0.15); color: #16a34a; }

@@ -232,6 +232,24 @@ async function connectDatabases(logger) {
                     if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('panel_settings.footerStyle', e.message);
                 }
             }
+            const newThemeCols = [
+                ['primaryColor', { type: DataTypes.STRING(20), allowNull: true }],
+                ['fontFamily', { type: DataTypes.STRING(64), allowNull: true }],
+                ['fontSize', { type: DataTypes.STRING(20), allowNull: true }],
+                ['fontWeight', { type: DataTypes.STRING(20), allowNull: true }],
+                ['uiTheme', { type: DataTypes.STRING(32), allowNull: true }],
+                ['sidebarOrder', { type: DataTypes.TEXT, allowNull: true }]
+            ];
+            for (const [name, def] of newThemeCols) {
+                if (desc && desc[name] === undefined) {
+                    try {
+                        await qi.addColumn('panel_settings', name, def);
+                        logger.info('✅ panel_settings: ' + name + ' column added (auto-migration)');
+                    } catch (e) {
+                        if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate')) logger.warn('panel_settings.' + name, e.message);
+                    }
+                }
+            }
         } catch (e) {
             logger.warn('panel_settings migration:', e.message);
         }
