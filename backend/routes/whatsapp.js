@@ -24,7 +24,7 @@ router.get('/config', async (req, res) => {
             employeeIntroMessage: cfg.employeeIntroMessage ?? ''
         });
     } catch (err) {
-        if (/no such column|SQLITE_ERROR/i.test(err.message)) {
+        if (/no such column|SQLITE_ERROR|column.*does not exist/i.test(err.message)) {
             return res.json({
                 welcomeMessage: '',
                 welcomeEnabled: true,
@@ -94,7 +94,7 @@ router.put('/config', async (req, res) => {
             employeeIntroMessage: cfg.employeeIntroMessage ?? ''
         });
     } catch (err) {
-        if (/no such column|SQLITE_ERROR/i.test(err.message)) {
+        if (/no such column|SQLITE_ERROR|column.*does not exist/i.test(err.message)) {
             return res.status(500).json({ error: 'لطفاً اسکریپت‌های migration را اجرا کنید: node scripts/add-unanswered-columns.js و node scripts/add-auto-messages-columns.js' });
         }
         res.status(500).json({ error: err.message });
