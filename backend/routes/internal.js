@@ -1,14 +1,14 @@
 const express = require('express');
 const { InternalThread, InternalMessage, InternalThreadParticipant, User } = require('../models');
 const { Op } = require('sequelize');
-const { isValidUUID } = require('../lib/validation');
+const { isValidUUID, safeString } = require('../lib/validation');
 const { logActivity } = require('../services/activityLog');
 
 function createInternalRouter(io) {
 const router = express.Router();
 
 // لیست تردهای چت داخلی من
-router.get('/threads', async (req, res) => {
+router.get('/threads', async (req, res, next) => {
     try {
         const threads = await InternalThreadParticipant.findAll({
             where: { userId: req.userId },
@@ -34,12 +34,12 @@ router.get('/threads', async (req, res) => {
         list.sort((a, b) => (new Date(b.lastMessageAt || 0)) - (new Date(a.lastMessageAt || 0)));
         res.json({ data: list });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ایجاد ترد با یک یا چند کاربر (یا باز کردن ترد موجود)
-router.post('/threads', async (req, res) => {
+router.post('/threads', async (req, res, next) => {
     try {
         const userIds = req.body.userIds || (req.body.userId ? [req.body.userId] : []);
         if (!userIds.length) return res.status(400).json({ error: 'حداقل یک کاربر لازم است' });
@@ -76,12 +76,12 @@ router.post('/threads', async (req, res) => {
         }).catch(() => {});
         res.status(201).json(withParticipants);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // پیام‌های یک ترد
-router.get('/threads/:id/messages', async (req, res) => {
+router.get('/threads/:id/messages', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه ترد نامعتبر است' });
     try {
         const part = await InternalThreadParticipant.findOne({ where: { threadId: req.params.id, userId: req.userId } });
@@ -93,20 +93,19 @@ router.get('/threads/:id/messages', async (req, res) => {
         });
         res.json({ data: messages });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ارسال پیام در ترد
-router.post('/threads/:id/messages', async (req, res) => {
+router.post('/threads/:id/messages', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه ترد نامعتبر است' });
     try {
         const part = await InternalThreadParticipant.findOne({ where: { threadId: req.params.id, userId: req.userId } });
         if (!part) return res.status(403).json({ error: 'دسترسی به این گفتگو ندارید' });
-        const content = (req.body.content || '').trim();
+        const content = safeString(req.body.content, 5000);
         const attachments = Array.isArray(req.body.attachments) ? req.body.attachments : (req.body.attachments ? [req.body.attachments] : []);
         if (!content && attachments.length === 0) return res.status(400).json({ error: 'متن پیام یا حداقل یک پیوست الزامی است' });
-        if (content.length > 5000) return res.status(400).json({ error: 'متن پیام بیش از ۵,۰۰۰ کاراکتر مجاز نیست' });
         const msg = await InternalMessage.create({
             threadId: req.params.id,
             fromUserId: req.userId,
@@ -134,12 +133,12 @@ router.post('/threads/:id/messages', async (req, res) => {
         }).catch(() => {});
         res.status(201).json(withUser);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // لیست کاربران برای شروع چت (همه به‌جز خودم؛ محدود به شعبه برای غیرمالک)
-router.get('/users', async (req, res) => {
+router.get('/users', async (req, res, next) => {
     try {
         const where = { isActive: true, id: { [Op.ne]: req.userId } };
         if (!require('../lib/permissions').isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.branchId) where.branchId = req.user.branchId;
@@ -150,7 +149,7 @@ router.get('/users', async (req, res) => {
         });
         res.json({ data: users });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

@@ -8,7 +8,7 @@ const logger = require('../config/logger');
 const { isValidUUID } = require('../lib/validation');
 
 // لیست اعلان‌های برای من (با فلگ خوانده شده)
-router.get('/for-me', async (req, res) => {
+router.get('/for-me', async (req, res, next) => {
     try {
         const me = req.user;
         const where = {
@@ -49,12 +49,12 @@ router.get('/for-me', async (req, res) => {
         });
         res.json({ data: withRead });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // علامت‌گذاری به‌عنوان خوانده‌شده
-router.post('/:id/read', async (req, res) => {
+router.post('/:id/read', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه اعلان نامعتبر است' });
     try {
         const ann = await Announcement.findByPk(req.params.id);
@@ -65,12 +65,12 @@ router.post('/:id/read', async (req, res) => {
         await AnnouncementRead.findOrCreate({ where: { announcementId: ann.id, userId: me.id }, defaults: {} });
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ارسال اعلان — مدیر فقط به دپارتمان خود؛ مالک/ادمین به کاربر/دپارتمان/همه
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
     try {
         const { title, body, isImportant, targetType, targetId } = req.body;
         if (!title || !body) return res.status(400).json({ error: 'عنوان و متن الزامی است' });
@@ -126,12 +126,12 @@ router.post('/', async (req, res) => {
         }
         res.status(201).json(withUser);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // لیست کاربران و دپارتمان‌ها برای انتخاب گیرنده
-router.get('/targets', async (req, res) => {
+router.get('/targets', async (req, res, next) => {
     try {
         const me = req.user;
         let users = [];
@@ -147,12 +147,12 @@ router.get('/targets', async (req, res) => {
         } else return res.status(403).json({ error: 'دسترسی غیرمجاز' });
         res.json({ users, departments });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // حذف اعلان — فقط فرستنده یا مالک/ادمین
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه اعلان نامعتبر است' });
     try {
         const me = req.user;
@@ -164,12 +164,12 @@ router.delete('/:id', async (req, res) => {
         await ann.destroy();
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // لیست اعلان‌های ارسال‌شده توسط من (برای مالک/ادمین/مدیر)
-router.get('/sent', async (req, res) => {
+router.get('/sent', async (req, res, next) => {
     try {
         const me = req.user;
         if (!isMainAdmin(me) && me.role !== 'owner' && me.role !== 'admin' && me.role !== 'manager') return res.status(403).json({ error: 'دسترسی غیرمجاز' });
@@ -198,7 +198,7 @@ router.get('/sent', async (req, res) => {
         });
         res.json({ data: withTarget });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

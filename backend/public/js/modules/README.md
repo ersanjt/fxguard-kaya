@@ -8,6 +8,8 @@ Modular JavaScript for the CRM SPA. Load order: constants → api-client → (i1
 | `utils.js` | escapeHtml, formatPrice, formatChange — formatting helpers. |
 | `api-client.js` | API fetch wrapper, error handling. Init from dashboard after `headers()` exists. |
 
+**معماری و تفکیک ماژول‌ها:** برای نقشهٔ بلندمدت و نحوهٔ استخراج بخش‌ها به فایل‌های جدا، مستند [FRONTEND-ARCHITECTURE.md](../../docs/FRONTEND-ARCHITECTURE.md) را ببینید.
+
 ## Usage
 
 ```html

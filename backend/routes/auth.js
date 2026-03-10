@@ -75,7 +75,7 @@ function issueToken(user) {
     );
 }
 
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
     const sendJson = (status, body) => {
         try {
             if (res.headersSent) return;
@@ -196,7 +196,7 @@ router.post('/login', async (req, res) => {
 
 const RESET_TOKEN_EXPIRY_MINUTES = 60;
 
-router.post('/forgot-password', async (req, res) => {
+router.post('/forgot-password', async (req, res, next) => {
     try {
         const email = (req.body.email || '').toString().trim().toLowerCase();
         if (!email) return res.status(400).json({ error: 'ایمیل الزامی است' });
@@ -215,11 +215,11 @@ router.post('/forgot-password', async (req, res) => {
         await emailService.sendPasswordReset(user, token, RESET_TOKEN_EXPIRY_MINUTES, emailConfig);
         res.status(200).json({ message: 'در صورت وجود حساب با این ایمیل، لینک بازیابی ارسال می‌شود.' });
     } catch (err) {
-        res.status(500).json({ error: err.message || 'خطای سرور' });
+        next(err);
     }
 });
 
-router.post('/reset-password', async (req, res) => {
+router.post('/reset-password', async (req, res, next) => {
     try {
         const { token: resetToken, newPassword } = req.body;
         if (!resetToken || !newPassword) return res.status(400).json({ error: 'توکن و رمز عبور جدید الزامی است' });
@@ -240,11 +240,11 @@ router.post('/reset-password', async (req, res) => {
         await PasswordResetToken.destroy({ where: { userId: user.id } });
         res.json({ message: 'رمز عبور با موفقیت تغییر کرد. اکنون می‌توانید وارد شوید.' });
     } catch (err) {
-        res.status(500).json({ error: err.message || 'خطای سرور' });
+        next(err);
     }
 });
 
-router.post('/totp/verify-login', async (req, res) => {
+router.post('/totp/verify-login', async (req, res, next) => {
     try {
         const { tempToken, code } = req.body;
         if (!tempToken || !code) return res.status(400).json({ error: 'کد احراز هویت الزامی است' });
@@ -319,13 +319,13 @@ router.post('/totp/verify-login', async (req, res) => {
         });
     } catch (err) {
         if (err.name === 'TokenExpiredError') return res.status(401).json({ error: 'زمان ورود تمام شده. دوباره وارد شوید.' });
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 const { authMiddleware } = require('../middleware/auth');
 
-router.get('/me', authMiddleware, async (req, res) => {
+router.get('/me', authMiddleware, async (req, res, next) => {
     try {
         const user = await User.findByPk(req.user.id, {
             attributes: { exclude: ['password'] },
@@ -344,11 +344,11 @@ router.get('/me', authMiddleware, async (req, res) => {
         u.canManageTickets = canManageTickets(user);
         res.json(u);
     } catch (err) {
-        res.status(500).json({ error: err.message || 'خطای سرور' });
+        next(err);
     }
 });
 
-router.get('/totp/setup', authMiddleware, async (req, res) => {
+router.get('/totp/setup', authMiddleware, async (req, res, next) => {
     try {
         if (req.user.totpEnabled) return res.status(400).json({ error: 'احراز دو مرحله‌ای از قبل فعال است' });
         const secret = authenticator.generateSecret(20);
@@ -357,11 +357,11 @@ router.get('/totp/setup', authMiddleware, async (req, res) => {
         const qrDataUrl = await QRCode.toDataURL(otpauth, { width: 220, margin: 2 });
         res.json({ secret, qrCode: qrDataUrl });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.post('/totp/confirm-setup', authMiddleware, async (req, res) => {
+router.post('/totp/confirm-setup', authMiddleware, async (req, res, next) => {
     try {
         const code = (req.body.code || '').toString().replace(/\s/g, '');
         if (!code) return res.status(400).json({ error: 'کد شش‌رقمی را وارد کنید' });
@@ -373,11 +373,11 @@ router.post('/totp/confirm-setup', authMiddleware, async (req, res) => {
         await req.user.update({ totpEnabled: true });
         res.json({ ok: true, message: 'احراز هویت دو مرحله‌ای فعال شد' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.post('/totp/disable', authMiddleware, async (req, res) => {
+router.post('/totp/disable', authMiddleware, async (req, res, next) => {
     try {
         const password = req.body.password;
         if (!password) return res.status(400).json({ error: 'رمز عبور الزامی است' });
@@ -386,11 +386,11 @@ router.post('/totp/disable', authMiddleware, async (req, res) => {
         await req.user.update({ totpSecret: null, totpEnabled: false });
         res.json({ ok: true, message: 'احراز هویت دو مرحله‌ای غیرفعال شد' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.post('/logout', authMiddleware, async (req, res) => {
+router.post('/logout', authMiddleware, async (req, res, next) => {
     try {
         clearAuthCookie(res);
         const user = req.user;
@@ -407,10 +407,10 @@ router.post('/logout', authMiddleware, async (req, res) => {
         });
         res.json({ ok: true, message: 'خروج انجام شد' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
-router.patch('/me/presence', authMiddleware, async (req, res) => {
+router.patch('/me/presence', authMiddleware, async (req, res, next) => {
     try {
         const status = req.body.status;
         const validStatuses = ['online', 'away', 'busy', 'offline'];
@@ -420,7 +420,7 @@ router.patch('/me/presence', authMiddleware, async (req, res) => {
         await req.user.update({ status });
         res.json({ ok: true, status });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

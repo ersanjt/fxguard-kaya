@@ -1,3 +1,8 @@
+/**
+ * Dashboard SPA — پنل اصلی CRM (ورود، ناو، مکالمات، مشتریان، تیکت، تسک، نرخ، صرافی، تنظیمات و …).
+ * وابستگی‌ها: CRM.Constants, CRM.Utils, CRM.Api (پس از init), i18n-fa/en/tr.
+ * برای نقشهٔ تفکیک به ماژول‌های feature و قراردادهای توسعهٔ چندنفره: backend/docs/FRONTEND-ARCHITECTURE.md
+ */
 (function() {
             let LANG = localStorage.getItem('crm_lang') || 'fa';
             const I18N = {
@@ -1349,7 +1354,7 @@
             const ratesRes = await apiFetch('/api/rates');
             const adjRes = await apiFetch('/api/rates/adjustments');
             if (ratesRes.needLogin || adjRes.needLogin) return;
-            if (!adjRes.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (adjRes.data && adjRes.data.error ? adjRes.data.error : '') + '</div>'; return; }
+            if (!adjRes.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(adjRes.data && adjRes.data.error ? adjRes.data.error : '') + '</div>'; return; }
             const items = (ratesRes.ok && ratesRes.data && (ratesRes.data.allItems || ratesRes.data.items)) ? (ratesRes.data.allItems || ratesRes.data.items) : [];
             const adjList = (adjRes.data && adjRes.data.data) || [];
             const adjMap = {};
@@ -1449,7 +1454,7 @@
             listEl.classList.add('empty');
             const res = await apiFetch('/api/rates/currencies');
             if (res.needLogin) return;
-            if (!res.ok) { listEl.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            if (!res.ok) { listEl.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             const data = (res.data && res.data.data) || [];
             if (data.length === 0) { listEl.innerHTML = '<div class="empty">' + (t('rates_no_currencies') || 'هنوز ارزی تعریف نشده. با «افزودن ارز» یکی اضافه کنید.') + '</div>'; return; }
             listEl.classList.remove('empty');
@@ -1636,7 +1641,7 @@
             if (!list) return;
             list.innerHTML = t('loading');
             const res = await apiFetch('/api/exchange/cash-boxes');
-            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = res.data || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده. افزودن صندوق کنید.' : 'No cash boxes. Add one.') + '</div>'; return; }
             list.innerHTML = data.map(function(b) {
@@ -1649,7 +1654,7 @@
             if (!list) return;
             list.innerHTML = t('loading');
             const res = await apiFetch('/api/exchange/bank-accounts');
-            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = res.data || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'حساب بانکی تعریف نشده. افزودن حساب کنید.' : 'No bank accounts. Add one.') + '</div>'; return; }
             list.innerHTML = data.map(function(b) {
@@ -1668,7 +1673,7 @@
             const st = document.getElementById('txStatusFilter'); if (st && st.value) params.push('status=' + encodeURIComponent(st.value));
             const cust = document.getElementById('txCustomerFilter'); if (cust && cust.value) params.push('customerId=' + encodeURIComponent(cust.value));
             const res = await apiFetch('/api/exchange/transactions?' + params.join('&'));
-            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const rows = (res.data && res.data.rows) || [];
             if (rows.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'تراکنشی یافت نشد' : 'No transactions') + '</div>'; return; }
             const typeLabels = { cash_in: 'ورود به صندوق', cash_out: 'خروج از صندوق', transfer_box: 'انتقال صندوق', bank_deposit: 'واریز بانک', bank_withdraw: 'برداشت بانک', transfer_account: 'انتقال حساب', income: 'درآمد', expense: 'هزینه', buy: 'خرید', sell: 'فروش' };
@@ -1883,7 +1888,7 @@
             list.innerHTML = t('loading');
             const res = await apiFetch('/api/services');
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             const data = (res.data && res.data.data) || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هنوز سرویسی تعریف نشده. با دکمه افزودن سرویس اضافه کنید.' : 'No services yet. Add one with the button above.') + '</div>'; return; }
             list.innerHTML = data.map(function(s) {
@@ -3628,7 +3633,7 @@
             list.innerHTML = t('loading');
             const res = await apiFetch('/api/announcements/for-me');
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             announcementsData = (res.data && res.data.data) || [];
             renderAnnouncementsList();
             // mark همه اعلان‌های خوانده‌نشده به عنوان خوانده‌شده
@@ -4918,7 +4923,7 @@
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
             const res = await apiFetch('/api/conversations' + q);
             if (res.needLogin) return;
-            if (!res.ok) { const ce = document.getElementById('convListCount'); if (ce) ce.textContent = ''; list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + (res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
+            if (!res.ok) { const ce = document.getElementById('convListCount'); if (ce) ce.textContent = ''; list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + escapeHtml(res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
             const data = res.data;
             const totalCount = data.total != null ? data.total : (data.data || []).length;
             // آمار از total واقعی سرور گرفته می‌شه نه فقط صفحه جاری
@@ -5182,7 +5187,7 @@
             if (search && String(search).trim()) q += '&search=' + encodeURIComponent(String(search).trim());
             const res = await apiFetch('/api/customers' + q);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data;
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
             list.innerHTML = data.data.map(function(c) {
@@ -5351,7 +5356,7 @@
             // اگر مکالمه عوض شده بود نتیجه رو نادیده بگیر
             if (_currentMsgConvId !== thisConvId) return;
             if (res.needLogin) return;
-            if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data;
             if (!data.data || data.data.length === 0) { if (!loadOlder) el.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCAC</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
             // ذخیره قدیمی‌ترین id برای load older
@@ -5916,7 +5921,7 @@
             if (tlTab) tlTab.classList.add('active');
             const resDetail = await apiFetch('/api/customers/' + custId);
             if (resDetail.needLogin) return;
-            if (!resDetail.ok) { if (cardEl) cardEl.innerHTML = '<div class="empty">' + (resDetail.data && resDetail.data.error ? resDetail.data.error : '') + '</div>'; list.innerHTML = ''; return; }
+            if (!resDetail.ok) { if (cardEl) cardEl.innerHTML = '<div class="empty">' + escapeHtml(resDetail.data && resDetail.data.error ? resDetail.data.error : '') + '</div>'; list.innerHTML = ''; return; }
             currentCustomerData = resDetail.data;
             const c = currentCustomerData;
             const initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
@@ -5965,7 +5970,7 @@
             if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailProfilePic) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             const res = await apiFetch('/api/customers/' + custId + '/conversations');
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data;
             if (!data.data || data.data.length === 0) {
                 list.innerHTML = '<div class="cust-hist-empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" opacity="0.3"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg><p>' + (t('no_conv_history') || (LANG === 'fa' ? 'هیچ مکالمه‌ای ثبت نشده است.' : 'No conversation history.')) + '</p></div>';
@@ -6068,7 +6073,7 @@
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             const res = await apiFetch('/api/customers/' + custId + '/timeline');
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             const items = (res.data && res.data.data) || [];
             if (items.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📋</span><br>' + (LANG === 'fa' ? 'هنوز فعالیتی ثبت نشده.' : 'No activity yet.') + '</div>'; return; }
             const safeName = (currentCustomerData && currentCustomerData.name) ? (currentCustomerData.name || '').replace(/'/g, '&#39;') : '';
@@ -6117,7 +6122,7 @@
             if (params.length) url += '?' + params.join('&');
             const res = await apiFetch(url);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + ((res.data && res.data.error) || 'خطا در بارگذاری') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml((res.data && res.data.error) || 'خطا در بارگذاری') + '</div>'; return; }
             const docs = (res.data && res.data.data) || [];
             if (docs.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📁</span><br>هنوز سندی ثبت نشده.</div>'; }
             else {
@@ -6211,7 +6216,7 @@
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             const res = await apiFetch('/api/customers/' + custId + '/transactions');
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             const rows = (res.data && res.data.data) || [];
             if (rows.length === 0) {
                 list.innerHTML = '<div class="customer-transactions-empty"><div class="customer-transactions-empty-icon">\uD83D\uDCB0</div><p class="customer-transactions-empty-text">' + (LANG === 'fa' ? 'تراکنشی برای این مشتری ثبت نشده.' : 'No transactions for this customer.') + '</p><p class="customer-transactions-empty-hint">' + (LANG === 'fa' ? 'با دکمه\u200Cی «ثبت تراکنش» اولین تراکنش را ثبت کنید.' : 'Use «Register transaction» to add the first one.') + '</p></div>';
@@ -6251,7 +6256,7 @@
             list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             const res = await apiFetch('/api/customers/' + custId + '/notes');
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             const data = res.data;
             const notes = (data && data.data) ? data.data : [];
             if (notes.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'هنوز یادداشتی ثبت نشده.' : 'No notes yet.') + '</div>'; return; }
@@ -7441,7 +7446,7 @@
                 const res = await apiFetch('/api/tickets' + q);
                 const statsRes = await apiFetch('/api/tickets/stats');
                 if (res.needLogin) return;
-                if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+                if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
                 const data = res.data;
                 if (!data) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
                 const rows = Array.isArray(data.data) ? data.data : (Array.isArray(data.rows) ? data.rows : []);
@@ -7720,7 +7725,7 @@
             if (search) q += '&search=' + encodeURIComponent(search);
             const res = await apiFetch('/api/tasks' + q);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data;
             taskListTotal = data.total || 0;
             const countEl = document.getElementById('taskListCount');
@@ -8312,7 +8317,7 @@
             setLoading('userList', 4);
             const res = await apiFetch('/api/users');
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data;
             userListData = data.data || [];
             if (userListData.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">👤</span><br>' + t('empty_users') + '</div>'; return; }
@@ -9701,7 +9706,7 @@
             const list = document.getElementById('messageTemplatesList');
             if (!list) return;
             const res = await apiFetch('/api/message-templates');
-            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = (res.data && res.data.data) || [];
             chatTemplatesCache = data;
             const countEl = document.getElementById('textTemplatesCount');
@@ -9777,7 +9782,7 @@
             const search = (document.getElementById('fileTemplatesSearch') && document.getElementById('fileTemplatesSearch').value || '').trim();
             const q = search ? '?search=' + encodeURIComponent(search) : '';
             const res = await apiFetch('/api/file-templates' + q);
-            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = (res.data && res.data.data) || [];
             fileTemplatesCache = data;
             const countEl = document.getElementById('fileTemplatesCount');
@@ -9976,7 +9981,7 @@
             const q = canEdit ? '?all=1' : '';
             const res = await apiFetch('/api/departments' + q);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data;
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🏢</span><br>' + t('empty_dept') + '</div>'; return; }
             window._deptListData = data.data;
@@ -10013,7 +10018,7 @@
             setLoading('branchList', 4);
             const res = await apiFetch('/api/branches');
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data;
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">🏢</span><br>' + t('empty_branches') + '</div>'; return; }
             const role = (currentUser && currentUser.role) || '';
@@ -10104,7 +10109,7 @@
             el.className = 'empty';
             const res = await apiFetch('/api/supervision/performance');
             if (res.needLogin) return;
-            if (!res.ok) { el.innerHTML = t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : ''); return; }
+            if (!res.ok) { el.innerHTML = t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : ''); return; }
             const d = res.data;
             const summary = d.summary || {};
             let html = '<div class="sup-stat-cards stat-cards">';
@@ -10152,7 +10157,7 @@
             if (unassigned) q += '&unassigned=1';
             const res = await apiFetch('/api/supervision/conversations' + q);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data.data || [];
             const total = res.data.total || data.length;
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_conv') + '</div>'; return; }
@@ -10253,7 +10258,7 @@
             if (to) q += 'to=' + encodeURIComponent(to) + '&';
             const res = await apiFetch('/api/supervision/attendance-report' + q);
             if (res.needLogin) return;
-            if (!res.ok) { el.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
+            if (!res.ok) { el.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('err_generic')) + '</div>'; return; }
             const d = res.data;
             const summary = d.summary || [];
             const sessions = d.sessions || [];
@@ -10295,7 +10300,7 @@
                 const res = await apiFetch('/api/supervision/user/' + encodeURIComponent(userId) + '/detail');
                 loading.style.display = 'none';
                 content.style.display = 'block';
-                if (res.needLogin || !res.ok) { content.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('loading_err')) + '</div>'; return; }
+                if (res.needLogin || !res.ok) { content.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('loading_err')) + '</div>'; return; }
                 const d = res.data;
                 const u = d.user || {};
                 const s = d.stats || {};
@@ -10358,7 +10363,7 @@
             if (action) q += '&action=' + encodeURIComponent(action);
             const res = await apiFetch('/api/supervision/activity' + q);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + (res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data.data || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + t('no_data') + '</div>'; return; }
             list.innerHTML = '<table class="sup-table sup-responsive-table"><thead><tr><th>' + t('th_time') + '</th><th>' + t('th_user') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_action') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + data.map(function(a) {
@@ -10378,7 +10383,7 @@
             if (userId) q += '&userId=' + encodeURIComponent(userId);
             const res = await apiFetch('/api/supervision/internal-chats' + q);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + (res.data && res.data.error ? res.data.error : t('loading_err')) + '</div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : t('loading_err')) + '</div>'; return; }
             const data = res.data.data || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'چت داخلی‌ای یافت نشد.' : 'No internal chats.') + '</div>'; return; }
             list.innerHTML = '<table class="sup-table sup-responsive-table"><thead><tr><th>' + (LANG === 'fa' ? 'شرکت‌کنندگان' : 'Participants') + '</th><th>' + (LANG === 'fa' ? 'آخرین پیام' : 'Last message') + '</th><th>' + (LANG === 'fa' ? 'عملیات' : 'Action') + '</th></tr></thead><tbody>' + data.map(function(t) {
@@ -10397,7 +10402,7 @@
             content.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             (async function() {
                 const res = await apiFetch('/api/supervision/internal-chats/' + encodeURIComponent(threadId) + '/messages');
-                if (res.needLogin || !res.ok) { content.innerHTML = '<div class="empty">' + (res.data && res.data.error || t('loading_err')) + '</div>'; return; }
+                if (res.needLogin || !res.ok) { content.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('loading_err')) + '</div>'; return; }
                 const messages = res.data.data || [];
                 const thread = res.data.thread || {};
                 const partNames = (thread.participants || []).map(function(p) { return p.name || p.email; }).join(', ');
@@ -10815,6 +10820,24 @@
             window.toggleInternalChatFloating = toggleInternalChatFloating;
         })();
 
+        /** مقداردهی بعد از تأیید /api/auth/me — ناو، تنظیمات، رویدادها، سوکت، نرخ، حضور، TOTP. قابل استخراج به ماژول auth. */
+        async function runAfterAuthReady() {
+            applyNavByRole();
+            await loadPanelSettingsAndApply();
+            applyHashRoute();
+            loadGeneralAnnouncementsMarquee();
+            removeAllInlineHandlers();
+            setupGlobalDelegatedHandlers();
+            setupLoginEventHandlers();
+            setupGlobalEventHandlers();
+            checkAnnouncementMarqueeVisibility();
+            startRatesInterval();
+            startPresenceInterval();
+            connectSocket();
+            startNavBadgeRefresh();
+            showTotpPromptIfNeeded();
+        }
+
         if (token) {
             apiFetch('/api/auth/me').then(async function(res) {
                 if (res.needLogin || !res.ok) { logout(); return; }
@@ -10826,20 +10849,7 @@
                     document.getElementById('loginBox').style.display = 'none';
                     document.getElementById('app').classList.add('show');
                     try {
-                        applyNavByRole();
-                        await loadPanelSettingsAndApply();
-                        applyHashRoute();
-                        loadGeneralAnnouncementsMarquee();
-                        removeAllInlineHandlers();
-                        setupGlobalDelegatedHandlers();
-                        setupLoginEventHandlers();
-                        setupGlobalEventHandlers();
-                        checkAnnouncementMarqueeVisibility();
-                        startRatesInterval();
-                        startPresenceInterval();
-                        connectSocket();
-                        startNavBadgeRefresh();
-                        showTotpPromptIfNeeded();
+                        await runAfterAuthReady();
                     } catch (e) { console.error('Post-me init:', e); }
                     const appEl = document.getElementById('app');
                     if (appEl) { appEl.classList.remove('app-loading'); appEl.classList.add('app-ready'); }

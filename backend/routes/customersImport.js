@@ -48,7 +48,7 @@ async function parseExcelBuffer(buffer) {
     return result;
 }
 
-router.post('/upload', upload.single('file'), async (req, res) => {
+router.post('/upload', upload.single('file'), async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!req.file) return res.status(400).json({ error: 'فایلی انتخاب نشده است' });
@@ -58,11 +58,11 @@ router.post('/upload', upload.single('file'), async (req, res) => {
         if (rows.length === 0) return res.status(400).json({ error: 'هیچ ردیف معتبری در فایل یافت نشد. ستون‌های name و phone الزامی‌اند.' });
         res.json({ rows, total: rows.length });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.post('/import', async (req, res) => {
+router.post('/import', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         const { rows } = req.body;
@@ -106,7 +106,7 @@ router.post('/import', async (req, res) => {
         });
         res.json({ ok: true, created, updated, skipped });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

@@ -5,7 +5,7 @@ const { Branch, User, Department } = require('../models');
 const { isMainAdmin } = require('../lib/permissions');
 const { isValidUUID } = require('../lib/validation');
 
-async function list(req, res) {
+async function list(req, res, next) {
     try {
         if (!req.canAccess('branches')) {
             return res.status(403).json({ error: 'دسترسی به بخش شعب ندارید' });
@@ -35,11 +35,11 @@ async function list(req, res) {
         });
         res.json({ data: branches });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function getById(req, res) {
+async function getById(req, res, next) {
     if (!isValidUUID(req.params.id)) {
         return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
     }
@@ -59,11 +59,11 @@ async function getById(req, res) {
         }
         res.json(branch);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function create(req, res) {
+async function create(req, res, next) {
     try {
         const { name, city, country, timezone } = req.body;
         if (!name || !name.trim()) {
@@ -90,11 +90,11 @@ async function create(req, res) {
         });
         res.status(201).json(branch);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function update(req, res) {
+async function update(req, res, next) {
     if (!isValidUUID(req.params.id)) {
         return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
     }
@@ -133,7 +133,7 @@ async function update(req, res) {
         await branch.save();
         res.json(branch);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 

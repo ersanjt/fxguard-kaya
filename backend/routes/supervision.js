@@ -19,7 +19,7 @@ function canViewStaffActivity(req, res, next) {
 }
 
 // لاگ ورود کارکنان — برای مدیر و بالاتر (شامل IP و کشور)
-router.get('/logins', canViewStaffActivity, async (req, res) => {
+router.get('/logins', canViewStaffActivity, async (req, res, next) => {
     try {
         const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
         const { rows, count } = await ActivityLog.findAndCountAll({
@@ -42,12 +42,12 @@ router.get('/logins', canViewStaffActivity, async (req, res) => {
         });
         res.json({ data, total: count, page });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // لیست کارکنان آنلاین — برای مدیر و بالاتر (شامل IP و کشور آخرین ورود)
-router.get('/online', canViewStaffActivity, async (req, res) => {
+router.get('/online', canViewStaffActivity, async (req, res, next) => {
     try {
         const users = await User.findAll({
             where: { isActive: true, status: ['online', 'away', 'busy'] },
@@ -80,12 +80,12 @@ router.get('/online', canViewStaffActivity, async (req, res) => {
         });
         res.json({ data });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // جزئیات فعالیت کاربر — ورود/خروج، ساعات آنلاین، چت‌ها، تیکت‌ها، تسک‌ها (بدون اطلاع به کاربر)
-router.get('/user/:userId/detail', canViewStaffActivity, async (req, res) => {
+router.get('/user/:userId/detail', canViewStaffActivity, async (req, res, next) => {
     if (!isValidUUID(req.params.userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
     try {
         const { userId } = req.params;
@@ -165,14 +165,14 @@ router.get('/user/:userId/detail', canViewStaffActivity, async (req, res) => {
             conversations: conversationsWithCustomers
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 router.use(ownerOnly);
 
 // همه مکالمات با جزئیات شعبه، دپارتمان، کارمند — برای نظارت مالک
-router.get('/conversations', async (req, res) => {
+router.get('/conversations', async (req, res, next) => {
     try {
         const { branchId, departmentId, userId, status, unassigned } = req.query;
         const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
@@ -201,12 +201,12 @@ router.get('/conversations', async (req, res) => {
         });
         res.json({ data: rows, total: count, page });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // لاگ فعالیت‌ها — چه کسی چه عملی انجام داده
-router.get('/activity', async (req, res) => {
+router.get('/activity', async (req, res, next) => {
     try {
         const { branchId, userId, action } = req.query;
         const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 200);
@@ -229,12 +229,12 @@ router.get('/activity', async (req, res) => {
         });
         res.json({ data: rows, total: count, page });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // لیست چت‌های داخلی — برای مالک/ادمین (مشاهده کی با کی صحبت کرده)
-router.get('/internal-chats', async (req, res) => {
+router.get('/internal-chats', async (req, res, next) => {
     try {
         const { userId } = req.query;
         const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
@@ -279,12 +279,12 @@ router.get('/internal-chats', async (req, res) => {
         });
         res.json({ data: list, total: count, page });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // پیام‌های یک چت داخلی — برای مالک/ادمین
-router.get('/internal-chats/:threadId/messages', async (req, res) => {
+router.get('/internal-chats/:threadId/messages', async (req, res, next) => {
     if (!isValidUUID(req.params.threadId)) return res.status(400).json({ error: 'شناسه ترد نامعتبر است' });
     try {
         const messages = await InternalMessage.findAll({
@@ -297,12 +297,12 @@ router.get('/internal-chats/:threadId/messages', async (req, res) => {
         });
         res.json({ data: messages, thread: thread ? { id: thread.id, participants: thread.participants } : null });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // خلاصه عملکرد به تفکیک شعبه و کاربر — برای مالک
-router.get('/performance', async (req, res) => {
+router.get('/performance', async (req, res, next) => {
     try {
         const todayStart = new Date(new Date().setHours(0, 0, 0, 0));
 
@@ -486,12 +486,12 @@ router.get('/performance', async (req, res) => {
             users: usersWithStats
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // گزارش حضور و غیاب — بر اساس ActivityLog (user_login, user_logout)
-router.get('/attendance-report', canViewStaffActivity, async (req, res) => {
+router.get('/attendance-report', canViewStaffActivity, async (req, res, next) => {
     try {
         const { branchId, userId, from, to } = req.query;
         if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
@@ -546,7 +546,7 @@ router.get('/attendance-report', canViewStaffActivity, async (req, res) => {
 
         res.json({ sessions, summary, from: fromDate, to: toDate });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

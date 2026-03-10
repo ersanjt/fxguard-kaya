@@ -8,7 +8,7 @@ const { logActivity } = require('../services/activityLog');
 const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
 const { normalizePhone } = require('../lib/phoneUtils');
-const { isValidUUID, parsePagination } = require('../lib/validation');
+const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 
 // آپلود اسناد مشتری
 const docStorage = multer.diskStorage({
@@ -34,7 +34,7 @@ const docUpload = multer({
     }
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         const { page = 1, limit = 100, search, status } = req.query;
@@ -99,11 +99,11 @@ router.get('/', async (req, res) => {
         });
         res.json({ data: enriched, total: count, page: p, stats: stats || null });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -115,11 +115,11 @@ router.get('/:id', async (req, res) => {
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         res.json(customer);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.get('/:id/conversations', async (req, res) => {
+router.get('/:id/conversations', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -164,11 +164,11 @@ router.get('/:id/conversations', async (req, res) => {
         });
         res.json({ data: withCount });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.get('/:id/timeline', async (req, res) => {
+router.get('/:id/timeline', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -231,11 +231,11 @@ router.get('/:id/timeline', async (req, res) => {
         items.sort((a, b) => new Date(b.date) - new Date(a.date));
         res.json({ data: items });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         const { name, phone, email, notes, status, customFields, source, profilePic, tagIds,
@@ -275,11 +275,11 @@ router.post('/', async (req, res) => {
         });
         res.status(201).json(created || customer);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -304,12 +304,12 @@ router.put('/:id', async (req, res) => {
         await customer.update(updateData);
         res.json(customer);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // حذف مشتری — فقط ادمین یا مدیر (یا مالک)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!req.canDeleteCustomer()) return res.status(403).json({ error: 'فقط ادمین یا مدیر می‌توانند مشتری را حذف کنند' });
@@ -348,12 +348,12 @@ router.delete('/:id', async (req, res) => {
         });
         res.json({ message: 'مشتری حذف شد' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— گزارش/یادداشت کارمند درباره مشتری (تاریخچه هر کارمند)
-router.get('/:id/transactions', async (req, res) => {
+router.get('/:id/transactions', async (req, res, next) => {
     try {
         if (!req.canAccess('customers') && !req.canAccess('services')) return res.status(403).json({ error: 'دسترسی ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -376,11 +376,11 @@ router.get('/:id/transactions', async (req, res) => {
         } catch (_) { transactions = []; }
         res.json({ data: transactions });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.get('/:id/notes', async (req, res) => {
+router.get('/:id/notes', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -393,11 +393,11 @@ router.get('/:id/notes', async (req, res) => {
         });
         res.json({ data: notes });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.post('/:id/notes', async (req, res) => {
+router.post('/:id/notes', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -405,9 +405,8 @@ router.post('/:id/notes', async (req, res) => {
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
         const allowed = await canAccessCustomer(req, customer.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
-        const content = (req.body.content || '').trim();
+        const content = safeString(req.body.content, 5000);
         if (!content) return res.status(400).json({ error: 'متن گزارش/یادداشت الزامی است' });
-        if (content.length > 5000) return res.status(400).json({ error: 'متن یادداشت بیش از ۵,۰۰۰ کاراکتر مجاز نیست' });
         const note = await CustomerNote.create({
             customerId: req.params.id,
             userId: req.userId,
@@ -428,12 +427,12 @@ router.post('/:id/notes', async (req, res) => {
         });
         res.status(201).json(withUser);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— تگ‌های مشتری
-router.get('/:id/tags', async (req, res) => {
+router.get('/:id/tags', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -445,11 +444,11 @@ router.get('/:id/tags', async (req, res) => {
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
         res.json({ data: customer.tags || [] });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.put('/:id/tags', async (req, res) => {
+router.put('/:id/tags', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -465,12 +464,12 @@ router.put('/:id/tags', async (req, res) => {
         });
         res.json({ data: updated.tags || [] });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— اسناد و مدیا مشتری
-router.get('/:id/documents', async (req, res) => {
+router.get('/:id/documents', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -488,11 +487,11 @@ router.get('/:id/documents', async (req, res) => {
         });
         res.json({ data: docs });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.post('/:id/documents', docUpload.single('file'), async (req, res) => {
+router.post('/:id/documents', docUpload.single('file'), async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -530,11 +529,11 @@ router.post('/:id/documents', docUpload.single('file'), async (req, res) => {
         });
         res.status(201).json(withUser);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.put('/:id/documents/:docId', async (req, res) => {
+router.put('/:id/documents/:docId', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی ندارید' });
         if (!isValidUUID(req.params.id) || !isValidUUID(req.params.docId)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -552,11 +551,11 @@ router.put('/:id/documents/:docId', async (req, res) => {
         await doc.update(upd);
         res.json(doc);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.delete('/:id/documents/:docId', async (req, res) => {
+router.delete('/:id/documents/:docId', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی ندارید' });
         if (!isValidUUID(req.params.id) || !isValidUUID(req.params.docId)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -574,7 +573,7 @@ router.delete('/:id/documents/:docId', async (req, res) => {
         await doc.destroy();
         res.json({ message: 'سند حذف شد' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

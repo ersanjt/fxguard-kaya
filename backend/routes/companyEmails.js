@@ -11,7 +11,7 @@ function canAccess(req) {
 }
 
 // لیست ایمیل‌های شرکتی
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', authMiddleware, async (req, res, next) => {
     try {
         if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی به ایمیل‌های شرکتی ندارید.' });
         const list = await CompanyEmail.findAll({
@@ -26,12 +26,12 @@ router.get('/', authMiddleware, async (req, res) => {
         });
         res.json({ data: out });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // جزئیات یک ایمیل شرکتی (برای ویرایش)
-router.get('/:id', authMiddleware, async (req, res) => {
+router.get('/:id', authMiddleware, async (req, res, next) => {
     try {
         if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی به ایمیل‌های شرکتی ندارید.' });
         const id = parseInt(req.params.id, 10);
@@ -45,12 +45,12 @@ router.get('/:id', authMiddleware, async (req, res) => {
         j.hasPassword = !!row.passwordEnc;
         res.json(j);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ایجاد ایمیل شرکتی
-router.post('/', authMiddleware, async (req, res) => {
+router.post('/', authMiddleware, async (req, res, next) => {
     try {
         if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی به ایمیل‌های شرکتی ندارید.' });
         const email = (req.body.email || '').toString().trim().toLowerCase();
@@ -85,12 +85,12 @@ router.post('/', authMiddleware, async (req, res) => {
         j.hasPassword = !!row.passwordEnc;
         res.status(201).json(j);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // به‌روزرسانی
-router.put('/:id', authMiddleware, async (req, res) => {
+router.put('/:id', authMiddleware, async (req, res, next) => {
     try {
         if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی به ایمیل‌های شرکتی ندارید.' });
         const id = parseInt(req.params.id, 10);
@@ -120,12 +120,12 @@ router.put('/:id', authMiddleware, async (req, res) => {
         j.hasPassword = !!row.passwordEnc;
         res.json(j);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // حذف
-router.delete('/:id', authMiddleware, async (req, res) => {
+router.delete('/:id', authMiddleware, async (req, res, next) => {
     try {
         if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی به ایمیل‌های شرکتی ندارید.' });
         const id = parseInt(req.params.id, 10);
@@ -135,12 +135,12 @@ router.delete('/:id', authMiddleware, async (req, res) => {
         await row.destroy();
         res.json({ ok: true, message: 'حذف شد.' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ارسال اطلاعات ورود (ایمیل + رمز) به کاربر اختصاص‌داده‌شده
-router.post('/:id/send-credentials', authMiddleware, async (req, res) => {
+router.post('/:id/send-credentials', authMiddleware, async (req, res, next) => {
     try {
         if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی به ایمیل‌های شرکتی ندارید.' });
         const id = parseInt(req.params.id, 10);
@@ -188,12 +188,12 @@ router.post('/:id/send-credentials', authMiddleware, async (req, res) => {
             res.status(500).json({ error: 'ارسال ایمیل ناموفق بود. تنظیمات SMTP را بررسی کنید.' });
         }
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // تست اتصال SMTP
-router.post('/test/connection', authMiddleware, async (req, res) => {
+router.post('/test/connection', authMiddleware, async (req, res, next) => {
     try {
         if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی ندارید.' });
         const { host, port, user, pass, secure, allowSelfSigned } = req.body;
@@ -206,12 +206,12 @@ router.post('/test/connection', authMiddleware, async (req, res) => {
             res.status(400).json({ error: result.error || 'اتصال SMTP ناموفق بود.' });
         }
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // تست ارسال ایمیل
-router.post('/test/send', authMiddleware, async (req, res) => {
+router.post('/test/send', authMiddleware, async (req, res, next) => {
     try {
         if (!canAccess(req)) return res.status(403).json({ error: 'دسترسی ندارید.' });
         const { host, port, user, pass, from, fromName, secure, allowSelfSigned, testEmail } = req.body;
@@ -229,7 +229,7 @@ router.post('/test/send', authMiddleware, async (req, res) => {
             res.status(400).json({ error: result.error || 'ارسال ایمیل تست ناموفق بود.' });
         }
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

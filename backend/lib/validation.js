@@ -13,4 +13,18 @@ function parsePagination(page, limit, maxLimit = 200) {
     return { page: p, limit: l, offset: (p - 1) * l };
 }
 
-module.exports = { isValidUUID, parsePagination };
+/**
+ * رشتهٔ ورودی را برای ذخیره/نمایش امن می‌کند: trim و محدودیت طول
+ * @param {*} value - مقدار ورودی (معمولاً از req.body)
+ * @param {number} maxLength - حداکثر طول مجاز (پیش‌فرض ۱۰۰۰۰)
+ * @returns {string|null} - رشتهٔ امن یا null اگر ورودی معتبر نبود
+ */
+function safeString(value, maxLength = 10000) {
+    if (value == null) return null;
+    const s = String(value).trim();
+    if (s.length === 0) return null;
+    if (s.length > maxLength) return s.slice(0, maxLength);
+    return s;
+}
+
+module.exports = { isValidUUID, parsePagination, safeString };

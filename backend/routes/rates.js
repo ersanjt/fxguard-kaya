@@ -53,12 +53,12 @@ function applyAdjustment(rawNum, adj) {
 }
 
 // GET /api/rates/config-status — وضعیت تنظیمات (آیا API key دارد؟)
-router.get('/config-status', async (req, res) => {
+router.get('/config-status', async (req, res, next) => {
     res.json({ hasApiKey: !!NAVASAN_API_KEY });
 });
 
 // GET /api/rates — نرخ‌ها از API + اعمال تعدیلات؛ برای همه کاربران لاگین‌شده
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         const RATES_KEYS = await getRatesKeys();
         let raw = null;
@@ -159,7 +159,7 @@ const HISTORY_CACHE_TTL = 10 * 60 * 1000;
 function getHistoryCacheKey(key, days) { return `${key}_${days}`; }
 
 // GET /api/rates/history — داده تاریخی برای چارت (item یا key ارز، days تعداد روز)
-router.get('/history', async (req, res) => {
+router.get('/history', async (req, res, next) => {
     try {
         const key = (req.query.key || req.query.currency || 'usd').toLowerCase();
         const days = Math.min(90, Math.max(1, parseInt(req.query.days, 10) || 30));
@@ -217,12 +217,12 @@ router.get('/history', async (req, res) => {
 
         res.json(responseData);
     } catch (err) {
-        res.status(500).json({ error: err.message || 'خطا در دریافت داده تاریخی' });
+        next(err);
     }
 });
 
 // GET /api/rates/health — تست دسترسی به API خارجی (نیاز به auth دارد)
-router.get('/health', async (req, res) => {
+router.get('/health', async (req, res, next) => {
     try {
         const r = await axios.get(NAVASAN_LATEST, { timeout: 8000 });
         const hasData = r.data && typeof r.data === 'object' && Object.keys(r.data).length > 0;
@@ -233,7 +233,7 @@ router.get('/health', async (req, res) => {
 });
 
 // GET /api/rates/adjustments — لیست تعدیلات (فقط برای کسی که دسترسی نرخ ارز دارد)
-router.get('/adjustments', async (req, res) => {
+router.get('/adjustments', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const RATES_KEYS = await getRatesKeys();
@@ -243,12 +243,12 @@ router.get('/adjustments', async (req, res) => {
         RATES_KEYS.forEach(({ key }) => { if (!map[key]) map[key] = { currencyKey: key, adjustmentType: 'none', value: null }; });
         res.json({ data: Object.values(map) });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // PUT /api/rates/adjustments — ذخیره تعدیلات
-router.put('/adjustments', async (req, res) => {
+router.put('/adjustments', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const RATES_KEYS = await getRatesKeys();
@@ -273,24 +273,24 @@ router.put('/adjustments', async (req, res) => {
         RATES_KEYS.forEach(({ key }) => { if (!map[key]) map[key] = { currencyKey: key, adjustmentType: 'none', value: null }; });
         res.json({ data: Object.values(map) });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // GET /api/rates/ticker-config — ارزهای قابل نمایش در نوار قیمت
-router.get('/ticker-config', async (req, res) => {
+router.get('/ticker-config', async (req, res, next) => {
     try {
         const RATES_KEYS = await getRatesKeys();
         const cfg = await TickerConfig.findByPk('default');
         const visibleKeys = (cfg && cfg.visibleKeys && Array.isArray(cfg.visibleKeys)) ? cfg.visibleKeys : RATES_KEYS.map(r => r.key);
         res.json({ visibleKeys, availableKeys: RATES_KEYS.map(r => ({ key: r.key, label: r.label })) });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // PUT /api/rates/ticker-config — ذخیره ارزهای قابل نمایش (فقط با دسترسی rates)
-router.put('/ticker-config', async (req, res) => {
+router.put('/ticker-config', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const RATES_KEYS = await getRatesKeys();
@@ -302,14 +302,14 @@ router.put('/ticker-config', async (req, res) => {
         await cfg.update({ visibleKeys: valid.length > 0 ? valid : null });
         res.json({ visibleKeys: valid.length > 0 ? valid : RATES_KEYS.map(r => r.key) });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ————— مدیریت ارزها (فقط با دسترسی rates) —————
 
 // GET /api/rates/currencies — لیست ارزهای قابل ویرایش
-router.get('/currencies', async (req, res) => {
+router.get('/currencies', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const list = await RateCurrency.findAll({ order: [['sortOrder', 'ASC'], ['key', 'ASC']] });
@@ -318,12 +318,12 @@ router.get('/currencies', async (req, res) => {
             : defaultRateCurrencies.map(({ key, label, apiKeys, sortOrder }) => ({ key, label, apiKeys: apiKeys || [], sortOrder: sortOrder != null ? sortOrder : 0 }));
         res.json({ data });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // POST /api/rates/currencies — افزودن ارز
-router.post('/currencies', async (req, res) => {
+router.post('/currencies', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const key = (req.body.key || '').trim().toLowerCase();
@@ -339,12 +339,12 @@ router.post('/currencies', async (req, res) => {
         const list = await RateCurrency.findAll({ order: [['sortOrder', 'ASC'], ['key', 'ASC']] });
         res.json({ data: list.map(r => ({ key: r.key, label: r.label, apiKeys: r.apiKeys || [], sortOrder: r.sortOrder })) });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // PUT /api/rates/currencies/:key — ویرایش ارز
-router.put('/currencies/:key', async (req, res) => {
+router.put('/currencies/:key', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const key = (req.params.key || '').trim().toLowerCase();
@@ -363,12 +363,12 @@ router.put('/currencies/:key', async (req, res) => {
         const list = await RateCurrency.findAll({ order: [['sortOrder', 'ASC'], ['key', 'ASC']] });
         res.json({ data: list.map(r => ({ key: r.key, label: r.label, apiKeys: r.apiKeys || [], sortOrder: r.sortOrder })) });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // DELETE /api/rates/currencies/:key — حذف ارز
-router.delete('/currencies/:key', async (req, res) => {
+router.delete('/currencies/:key', async (req, res, next) => {
     try {
         if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی به بخش نرخ ارز ندارید' });
         const key = (req.params.key || '').trim().toLowerCase();
@@ -385,7 +385,7 @@ router.delete('/currencies/:key', async (req, res) => {
         const list = await RateCurrency.findAll({ order: [['sortOrder', 'ASC'], ['key', 'ASC']] });
         res.json({ data: list.map(r => ({ key: r.key, label: r.label, apiKeys: r.apiKeys || [], sortOrder: r.sortOrder })) });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

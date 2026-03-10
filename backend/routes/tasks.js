@@ -5,7 +5,7 @@ const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
 const notificationService = require('../services/notificationService');
 const logger = require('../config/logger');
-const { isValidUUID, parsePagination } = require('../lib/validation');
+const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 
 const VALID_TASK_STATUSES = new Set(['pending', 'in_progress', 'done', 'cancelled']);
 const VALID_TASK_PRIORITIES = new Set(['low', 'normal', 'high', 'urgent']);
@@ -68,7 +68,7 @@ const includeList = [
 ];
 
 // لیست تسک‌ها با فیلتر
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         const accessWhere = await taskAccessWhere(req);
         const { status, assignedTo, assignedToDepartmentId, branchId, createdBy, search } = req.query;
@@ -101,12 +101,12 @@ router.get('/', async (req, res) => {
         });
         res.json({ data: rows, total: count, page });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // خلاصه برای نمایش به تفکیک کارمند/دپارتمان (برای مدیر کل و مدیر دپارتمان)
-router.get('/summary', async (req, res) => {
+router.get('/summary', async (req, res, next) => {
     try {
         const accessWhere = await taskAccessWhere(req);
         const tasks = await Task.findAll({
@@ -133,12 +133,12 @@ router.get('/summary', async (req, res) => {
         });
         res.json({ byUser: Object.values(byUser), byDepartment: Object.values(byDept) });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // جزئیات یک تسک + بروزرسانی‌های پیگیری
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تسک نامعتبر است' });
     try {
         const { ok, status, task } = await canAccessTask(req, req.params.id);
@@ -151,12 +151,12 @@ router.get('/:id', async (req, res) => {
         });
         res.json(full);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ایجاد تسک
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
     try {
         const { title, description, assignedTo, assignedToDepartmentId, dueDate, priority, branchId } = req.body;
         if (!title || !title.trim()) return res.status(400).json({ error: 'عنوان تسک الزامی است' });
@@ -193,12 +193,12 @@ router.post('/', async (req, res) => {
         
         res.status(201).json(withIncludes);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ویرایش تسک (وضعیت، تخصیص، عنوان، توضیحات، مهلت)
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تسک نامعتبر است' });
     try {
         const { ok, status, task } = await canAccessTask(req, req.params.id);
@@ -242,21 +242,20 @@ router.put('/:id', async (req, res) => {
         
         res.json(updated);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // افزودن بروزرسانی/پیگیری به تسک
-router.post('/:id/updates', async (req, res) => {
+router.post('/:id/updates', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تسک نامعتبر است' });
     try {
         const { ok, status, task } = await canAccessTask(req, req.params.id);
         if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
 
-        const content = (req.body.content || '').trim();
+        const content = safeString(req.body.content, 5000);
         const statusChange = req.body.statusChange || null;
         if (!content && !statusChange) return res.status(400).json({ error: 'متن پیگیری یا تغییر وضعیت الزامی است' });
-        if (content.length > 5000) return res.status(400).json({ error: 'متن پیگیری بیش از ۵,۰۰۰ کاراکتر مجاز نیست' });
         if (statusChange && !VALID_TASK_STATUSES.has(statusChange)) return res.status(400).json({ error: 'وضعیت تسک نامعتبر است' });
         if (statusChange && VALID_TASK_STATUSES.has(statusChange)) {
             task.status = statusChange;
@@ -276,7 +275,7 @@ router.post('/:id/updates', async (req, res) => {
         const withUser = await TaskUpdate.findByPk(update.id, { include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }] });
         res.status(201).json(withUser);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

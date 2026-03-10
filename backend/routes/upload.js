@@ -77,26 +77,26 @@ function handleUploadError(err, req, res, next) {
     if (!err) return next();
     if (err.code === 'LIMIT_FILE_SIZE') return res.status(400).json({ error: 'حجم فایل بیش از ۱۵ مگابایت است' });
     if (err.code === 'LIMIT_FILE_COUNT') return res.status(400).json({ error: 'تعداد فایل‌ها بیش از حد مجاز است' });
-    res.status(500).json({ error: err.message || 'خطا در آپلود' });
+    next(err);
 }
 
-router.post('/', upload.single('file'), handleUploadError, (req, res) => {
+router.post('/', upload.single('file'), handleUploadError, (req, res, next) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'فایلی انتخاب نشده است' });
         const url = '/uploads/' + req.file.filename;
         res.json({ url, name: req.file.originalname || req.file.filename, size: req.file.size });
     } catch (err) {
-        res.status(500).json({ error: err.message || 'خطا در آپلود' });
+        next(err);
     }
 });
 
-router.post('/multiple', upload.array('files', 5), handleUploadError, (req, res) => {
+router.post('/multiple', upload.array('files', 5), handleUploadError, (req, res, next) => {
     try {
         if (!req.files || !req.files.length) return res.status(400).json({ error: 'فایلی انتخاب نشده است' });
         const files = req.files.map(f => ({ url: '/uploads/' + f.filename, name: f.originalname || f.filename, size: f.size }));
         res.json({ files });
     } catch (err) {
-        res.status(500).json({ error: err.message || 'خطا در آپلود' });
+        next(err);
     }
 });
 

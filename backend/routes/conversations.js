@@ -10,7 +10,7 @@ const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { canAccessCustomer } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
-const { isValidUUID, parsePagination } = require('../lib/validation');
+const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const logger = require('../config/logger');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
@@ -35,7 +35,7 @@ function canManageConversation(req) {
 }
 
 // ——— ایجاد مکالمه جدید (با مشتری)
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const { customerId } = req.body;
@@ -74,12 +74,12 @@ router.post('/', async (req, res) => {
         }
         res.status(201).json(conversation);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— همگام‌سازی گروه‌های واتساپ — همه گروه‌ها را در CRM نمایش می‌دهد
-router.post('/sync-groups', async (req, res) => {
+router.post('/sync-groups', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const { gatewayGet, GATEWAY_URL } = require('../lib/gatewayClient');
@@ -154,12 +154,12 @@ router.post('/sync-groups', async (req, res) => {
         }
         res.json({ ok: true, groupsCount: groups.length, synced, message: `${synced} گروه همگام شد` });
     } catch (err) {
-        res.status(500).json({ error: err.message || 'خطا در همگام‌سازی گروه‌ها' });
+        next(err);
     }
 });
 
 // ——— لیست مکالمات (با فیلتر و سیاست دسترسی)
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const { status, priority, assignedTo, unread, unassigned, unanswered, branchId, departmentId, search, archived, isGroup, page = 1, limit = 20 } = req.query;
@@ -229,12 +229,12 @@ router.get('/', async (req, res) => {
         });
         res.json({ data: rows, total: count, page: p });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— جزئیات یک مکالمه
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -253,12 +253,12 @@ router.get('/:id', async (req, res) => {
         }
         res.json(conversation);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— پیام‌های مکالمه (شامل کاربر ارسال‌کننده برای پیام‌های خروجی)
-router.get('/:id/messages', async (req, res) => {
+router.get('/:id/messages', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -318,12 +318,12 @@ router.get('/:id/messages', async (req, res) => {
         const oldestId = messages.length > 0 ? messages[0].id : null;
         res.json({ data: messages, total, hasMore: messages.length === pageLimit, oldestId });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— آمار مکالمه برای نظارت مدیر (زمان اولین پاسخ، پاسخ‌دهندگان، خوانده‌شدن)
-router.get('/:id/stats', async (req, res) => {
+router.get('/:id/stats', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -398,12 +398,12 @@ router.get('/:id/stats', async (req, res) => {
             unreadCount: conversation.unreadCount || 0
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— به‌روزرسانی مکالمه (تخصیص، وضعیت، اولویت، بستن، موضوع، خوانده‌شدن)
-router.patch('/:id', async (req, res) => {
+router.patch('/:id', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -505,12 +505,12 @@ router.patch('/:id', async (req, res) => {
         });
         res.json(updated);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— حذف مکالمه (فقط مالک)
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
     try {
         if (!canArchiveOrDeleteConversation(req)) return res.status(403).json({ error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند مکالمه را حذف کند' });
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
@@ -521,12 +521,12 @@ router.delete('/:id', async (req, res) => {
         await conversation.destroy();
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— علامت‌گذاری به‌عنوان خوانده‌شده
-router.post('/:id/read', async (req, res) => {
+router.post('/:id/read', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -536,12 +536,12 @@ router.post('/:id/read', async (req, res) => {
         await conversation.update({ unreadCount: 0 });
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ——— ارسال پیام (متن یا فایل/عکس)
-router.post('/:id/send', async (req, res) => {
+router.post('/:id/send', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
@@ -549,11 +549,10 @@ router.post('/:id/send', async (req, res) => {
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
         if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         if (conversation.status === 'archived') return res.status(400).json({ error: 'امکان ارسال پیام به مکالمه آرشیو شده وجود ندارد. ابتدا وضعیت را تغییر دهید.' });
-        const content = (req.body.content || '').trim();
+        const content = safeString(req.body.content, 10000);
         const media = req.body.media || null;
         const replyTo = req.body.replyTo || null;
         if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
-        if (content.length > 10000) return res.status(400).json({ error: 'متن پیام بیش از ۱۰,۰۰۰ کاراکتر مجاز نیست' });
         // معرفی کارمند قبل از اولین پاسخ او
         if (req.userId) {
             const user = await User.findByPk(req.userId, { include: [{ model: Department, as: 'department', required: false }] });
@@ -693,7 +692,7 @@ router.post('/:id/send', async (req, res) => {
         });
         res.json(msg);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

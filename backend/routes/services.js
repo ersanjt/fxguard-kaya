@@ -3,7 +3,7 @@ const router = express.Router();
 const { ExchangeService } = require('../models');
 const { isValidUUID } = require('../lib/validation');
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         if (!req.canAccess('services')) return res.status(403).json({ error: 'دسترسی به بخش خدمات صرافی ندارید' });
         const list = await ExchangeService.findAll({
@@ -11,11 +11,11 @@ router.get('/', async (req, res) => {
         });
         res.json({ data: list });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه سرویس نامعتبر است' });
     try {
         if (!req.canAccess('services')) return res.status(403).json({ error: 'دسترسی به بخش خدمات صرافی ندارید' });
@@ -23,11 +23,11 @@ router.get('/:id', async (req, res) => {
         if (!item) return res.status(404).json({ error: 'سرویس یافت نشد' });
         res.json(item);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
     try {
         if (!req.canAccess('services')) return res.status(403).json({ error: 'دسترسی به بخش خدمات صرافی ندارید' });
         const { name, code, description, category, isActive, sortOrder } = req.body;
@@ -42,11 +42,11 @@ router.post('/', async (req, res) => {
         });
         res.status(201).json(item);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه سرویس نامعتبر است' });
     try {
         if (!req.canAccess('services')) return res.status(403).json({ error: 'دسترسی به بخش خدمات صرافی ندارید' });
@@ -62,11 +62,11 @@ router.put('/:id', async (req, res) => {
         await item.save();
         res.json(item);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه سرویس نامعتبر است' });
     try {
         if (!req.canAccess('services')) return res.status(403).json({ error: 'دسترسی به بخش خدمات صرافی ندارید' });
@@ -75,7 +75,7 @@ router.delete('/:id', async (req, res) => {
         await item.destroy();
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

@@ -10,7 +10,7 @@ async function getSettings() {
 }
 
 // عمومی — برای صفحه ورود و اعمال ظاهر برای همه کاربران (بدون احراز هویت)
-router.get('/public/branding', async (req, res) => {
+router.get('/public/branding', async (req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     try {
         const s = await getSettings();
@@ -31,29 +31,29 @@ router.get('/public/branding', async (req, res) => {
             sidebarOrder: s.sidebarOrder
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // عمومی — زبان‌های فعال سایت (برای نمایش سوئیچ زبان در صفحه ورود و داخل پنل)
-router.get('/public/languages', async (req, res) => {
+router.get('/public/languages', async (req, res, next) => {
     try {
         const s = await getSettings();
         const supportedLanguages = getSupportedLanguages(s);
         const defaultLanguage = supportedLanguages.indexOf(s.defaultLanguage) >= 0 ? s.defaultLanguage : supportedLanguages[0] || 'fa';
         res.json({ languageMode: s.languageMode, supportedLanguages, defaultLanguage });
     } catch (err) {
-        res.status(500).json({ error: err.message, languageMode: 'trilingual', supportedLanguages: ['fa', 'en', 'tr'], defaultLanguage: 'fa' });
+        next(err);
     }
 });
 
 // عمومی — لیست بخش‌های مخفی برای مخفی کردن در منو و جلوگیری از دسترسی
-router.get('/public/visibility', async (req, res) => {
+router.get('/public/visibility', async (req, res, next) => {
     try {
         const s = await getSettings();
         res.json({ hiddenSections: s.hiddenSections || [] });
     } catch (err) {
-        res.status(500).json({ error: err.message, hiddenSections: [] });
+        next(err);
     }
 });
 
@@ -68,11 +68,11 @@ router.get('/', authMiddleware, async (req, res) => {
         delete out.smtpPass;
         res.json(out);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.put('/', authMiddleware, async (req, res) => {
+router.put('/', authMiddleware, async (req, res, next) => {
     try {
         if (!req.canAccess || !req.canAccess('panel_settings')) {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
@@ -128,7 +128,7 @@ router.put('/', authMiddleware, async (req, res) => {
         delete s.smtpPass;
         res.json(s);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
@@ -145,7 +145,7 @@ setInterval(() => {
 
 // ارسال ایمیل تست — برای اطمینان از صحت تنظیمات SMTP
 // اگر smtpHost و smtpPort در body ارسال شوند، از آن‌ها استفاده می‌شود (تست قبل از ذخیره)
-router.post('/test-email', authMiddleware, async (req, res) => {
+router.post('/test-email', authMiddleware, async (req, res, next) => {
     try {
         if (!req.canAccess || !req.canAccess('panel_settings')) {
             return res.status(403).json({ error: 'دسترسی به تنظیمات پنل ندارید.' });
@@ -222,7 +222,7 @@ router.post('/test-email', authMiddleware, async (req, res) => {
             res.status(500).json({ error: result.error || 'ارسال ایمیل ناموفق بود. Host، پورت و احراز هویت را بررسی کنید.' });
         }
     } catch (err) {
-        res.status(500).json({ error: err.message || 'خطای سرور' });
+        next(err);
     }
 });
 

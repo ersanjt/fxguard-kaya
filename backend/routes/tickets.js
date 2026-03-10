@@ -4,7 +4,7 @@ const { Op, literal } = require('sequelize');
 const { canManageTickets, isMainAdmin } = require('../lib/permissions');
 const notificationService = require('../services/notificationService');
 const logger = require('../config/logger');
-const { isValidUUID, parsePagination } = require('../lib/validation');
+const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 
 const VALID_TICKET_STATUSES = new Set(['open', 'in_progress', 'resolved', 'closed', 'archived']);
 const VALID_TICKET_PRIORITIES = new Set(['low', 'normal', 'high', 'urgent']);
@@ -36,7 +36,7 @@ function canAccessTicket(req, ticket) {
 function createTicketsRouter(io) {
 const router = express.Router();
 
-router.get('/stats', async (req, res) => {
+router.get('/stats', async (req, res, next) => {
     try {
         const accessWhere = ticketAccessWhere(req);
         const rows = await Ticket.findAll({ where: accessWhere, attributes: ['status'], raw: true });
@@ -44,11 +44,11 @@ router.get('/stats', async (req, res) => {
         rows.forEach(t => { if (stats[t.status] !== undefined) stats[t.status]++; });
         res.json(stats);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         const { status, priority, assignedTo, createdBy, departmentId, search, sort = 'newest' } = req.query;
         const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
@@ -93,11 +93,11 @@ router.get('/', async (req, res) => {
         });
         res.json({ data: rows, total: count, page });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تیکت نامعتبر است' });
     try {
         const ticket = await Ticket.findByPk(req.params.id, {
@@ -112,19 +112,18 @@ router.get('/:id', async (req, res) => {
         if (!canAccessTicket(req, ticket)) return res.status(403).json({ error: 'دسترسی به این تیکت ندارید' });
         res.json(ticket);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
-router.post('/:id/replies', async (req, res) => {
+router.post('/:id/replies', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تیکت نامعتبر است' });
     try {
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
         if (!canAccessTicket(req, ticket)) return res.status(403).json({ error: 'دسترسی به این تیکت ندارید' });
-        const content = (req.body.content || '').trim();
+        const content = safeString(req.body.content, 10000);
         const attachments = Array.isArray(req.body.attachments) ? req.body.attachments : (req.body.attachments ? [req.body.attachments] : []);
         if (!content && attachments.length === 0) return res.status(400).json({ error: 'متن پاسخ یا حداقل یک پیوست الزامی است' });
-        if (content.length > 10000) return res.status(400).json({ error: 'متن پاسخ بیش از ۱۰,۰۰۰ کاراکتر مجاز نیست' });
         const reply = await TicketReply.create({
             ticketId: ticket.id,
             userId: req.userId,
@@ -152,10 +151,10 @@ router.post('/:id/replies', async (req, res) => {
         }
         res.status(201).json(withUser);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
     try {
         if (!req.canAccess('tickets')) return res.status(403).json({ error: 'دسترسی به بخش تیکت‌ها ندارید' });
         const { title, description, assignedTo, departmentId, priority, dueDate } = req.body;
@@ -194,11 +193,11 @@ router.post('/', async (req, res) => {
         
         res.status(201).json(withIncludes);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تیکت نامعتبر است' });
     try {
         const ticket = await Ticket.findByPk(req.params.id);
@@ -243,11 +242,11 @@ router.put('/:id', async (req, res) => {
         
         res.json(ticket);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تیکت نامعتبر است' });
     try {
         if (!canManageTicket(req)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند تیکت را حذف کند' });
@@ -258,7 +257,7 @@ router.delete('/:id', async (req, res) => {
         await ticket.destroy();
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

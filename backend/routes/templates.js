@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const { Template } = require('../models');
-const { isValidUUID } = require('../lib/validation');
+const { isValidUUID, safeString } = require('../lib/validation');
 
 // لیست تمپلیت‌ها
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const { category, isActive } = req.query;
@@ -17,33 +17,35 @@ router.get('/', async (req, res) => {
         });
         res.json({ data: templates });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ایجاد تمپلیت
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی ندارید' });
-        const { name, content, category, variables, isActive } = req.body;
-        if (!name || !String(name).trim()) return res.status(400).json({ error: 'نام تمپلیت الزامی است' });
-        if (!content || !String(content).trim()) return res.status(400).json({ error: 'محتوا الزامی است' });
+        const name = safeString(req.body.name, 255);
+        const content = safeString(req.body.content, 50000);
+        if (!name) return res.status(400).json({ error: 'نام تمپلیت الزامی است' });
+        if (!content) return res.status(400).json({ error: 'محتوا الزامی است' });
+        const { category, variables, isActive } = req.body;
         const vars = Array.isArray(variables) ? variables : (variables ? [variables] : []);
         const template = await Template.create({
-            name: String(name).trim(),
-            content: String(content).trim(),
+            name,
+            content,
             category: category ? String(category).trim() : null,
             variables: vars,
             isActive: isActive !== false
         });
         res.status(201).json(template);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // دریافت یک تمپلیت
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تمپلیت نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -51,32 +53,34 @@ router.get('/:id', async (req, res) => {
         if (!template) return res.status(404).json({ error: 'تمپلیت یافت نشد' });
         res.json(template);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ویرایش تمپلیت
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تمپلیت نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const template = await Template.findByPk(req.params.id);
         if (!template) return res.status(404).json({ error: 'تمپلیت یافت نشد' });
-        const { name, content, category, variables, isActive } = req.body;
-        if (name !== undefined) template.name = String(name).trim();
-        if (content !== undefined) template.content = String(content).trim();
+        const { category, variables, isActive } = req.body;
+        const nameVal = safeString(req.body.name, 255);
+        const contentVal = safeString(req.body.content, 50000);
+        if (req.body.name !== undefined) template.name = nameVal != null ? nameVal : template.name;
+        if (req.body.content !== undefined) template.content = contentVal != null ? contentVal : template.content;
         if (category !== undefined) template.category = category ? String(category).trim() : null;
         if (variables !== undefined) template.variables = Array.isArray(variables) ? variables : [];
         if (isActive !== undefined) template.isActive = !!isActive;
         await template.save();
         res.json(template);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // حذف تمپلیت
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تمپلیت نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -85,12 +89,12 @@ router.delete('/:id', async (req, res) => {
         await template.destroy();
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // افزایش شمارنده استفاده
-router.post('/:id/use', async (req, res) => {
+router.post('/:id/use', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تمپلیت نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -100,7 +104,7 @@ router.post('/:id/use', async (req, res) => {
         await template.reload();
         res.json(template);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

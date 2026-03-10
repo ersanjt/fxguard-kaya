@@ -47,7 +47,7 @@ function replaceTemplateVariables(text, customer) {
 }
 
 /** ارسال پیام انبوه — POST /api/bulk/send */
-router.post('/send', async (req, res) => {
+router.post('/send', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const enableBulk = process.env.ENABLE_BULK_MESSAGING !== 'false';
@@ -186,7 +186,7 @@ router.post('/send', async (req, res) => {
             jobState.errors.push({ error: err.message });
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

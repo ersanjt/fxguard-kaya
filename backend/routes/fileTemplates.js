@@ -60,7 +60,7 @@ const upload = multer({
 });
 
 // لیست فایل‌های قالب
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) {
             return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -109,12 +109,12 @@ router.get('/', async (req, res) => {
         res.json({ data: result });
     } catch (err) {
         logger.error('Error loading file templates', { error: err.message });
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // آپلود فایل قالب جدید
-router.post('/', upload.single('file'), async (req, res) => {
+router.post('/', upload.single('file'), async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) {
             return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -165,12 +165,12 @@ router.post('/', upload.single('file'), async (req, res) => {
         if (req.file && req.file.path) {
             await fs.unlink(req.file.path).catch(() => {});
         }
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // دریافت یک فایل قالب
-router.get('/:id', async (req, res) => {
+router.get('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) {
@@ -195,12 +195,12 @@ router.get('/:id', async (req, res) => {
         res.json(plain);
     } catch (err) {
         logger.error('Error getting file template', { error: err.message });
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // دانلود فایل قالب
-router.get('/:id/download', async (req, res) => {
+router.get('/:id/download', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) {
@@ -223,12 +223,12 @@ router.get('/:id/download', async (req, res) => {
         res.download(fileTemplate.filepath, fileTemplate.filename);
     } catch (err) {
         logger.error('Error downloading file template', { error: err.message });
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ویرایش فایل قالب (فقط متادیتا)
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) {
@@ -275,12 +275,12 @@ router.put('/:id', async (req, res) => {
         res.json(plain2);
     } catch (err) {
         logger.error('Error updating file template', { error: err.message });
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // حذف فایل قالب
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) {
@@ -304,12 +304,12 @@ router.delete('/:id', async (req, res) => {
         res.json({ ok: true });
     } catch (err) {
         logger.error('Error deleting file template', { error: err.message });
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // افزایش شمارنده استفاده
-router.post('/:id/use', async (req, res) => {
+router.post('/:id/use', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
     try {
         if (!req.canAccess('conversations')) {
@@ -328,12 +328,12 @@ router.post('/:id/use', async (req, res) => {
         res.json(fileTemplate);
     } catch (err) {
         logger.error('Error incrementing file template usage', { error: err.message });
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // دریافت دسته‌بندی‌های موجود
-router.get('/meta/categories', async (req, res) => {
+router.get('/meta/categories', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) {
             return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -351,7 +351,7 @@ router.get('/meta/categories', async (req, res) => {
         res.json({ data: categories });
     } catch (err) {
         logger.error('Error getting file template categories', { error: err.message });
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

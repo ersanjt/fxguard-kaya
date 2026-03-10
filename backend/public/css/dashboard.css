@@ -402,7 +402,8 @@
         .sidebar a.nav-link,
         .sidebar .nav-link { display: flex; align-items: center; gap: 14px; padding: 11px 16px; color: var(--text-secondary); text-decoration: none; border-radius: 10px; transition: all 0.2s ease; font-size: 0.9375rem; margin: 0 8px 2px; min-width: 0; position: relative; }
         .sidebar a.nav-link > span:last-of-type,
-        .sidebar .nav-link > span:last-of-type { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
+        .sidebar .nav-link > span:last-of-type,
+        .sidebar .nav-link-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 1; }
         .sidebar a:hover { background: rgba(255,255,255,0.08); color: var(--text-primary); }
         @media (hover: hover) {
             .sidebar a:hover { transform: translateX(-2px); }
@@ -446,6 +447,7 @@
             .sidebar.sidebar-collapsed .nav-subsection .nav-subsection { margin-bottom: 4px; padding-inline-start: 0; border-inline-start: none; }
             .sidebar.sidebar-collapsed a.nav-link { justify-content: center; padding: 12px; margin: 0 4px 2px; }
             .sidebar.sidebar-collapsed a.nav-link > span:last-of-type { display: none; }
+            .sidebar.sidebar-collapsed a.nav-link .nav-link-label { display: none !important; }
             /* در حالت جمع‌شده فقط آیکون روشن شود — ظاهر تمیزتر */
             .sidebar.sidebar-collapsed a:hover { background: transparent; }
             .sidebar.sidebar-collapsed a.active { background: transparent; border: none; margin: 0 4px 2px; padding: 12px; box-shadow: none; }

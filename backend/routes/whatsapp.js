@@ -5,7 +5,7 @@ const { invalidateCache } = require('../lib/whatsappConnectionLoader');
 const { isValidUUID } = require('../lib/validation');
 const { clearOpenAIApiKeyCache } = require('../lib/getOpenAIApiKey');
 
-router.get('/config', async (req, res) => {
+router.get('/config', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
         const [cfg] = await WhatsappConfig.findOrCreate({
@@ -37,11 +37,11 @@ router.get('/config', async (req, res) => {
                 employeeIntroMessage: ''
             });
         }
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.put('/config', async (req, res) => {
+router.put('/config', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
         const { welcomeMessage, welcomeEnabled, alertUnansweredAfterMinutes, escalateUnansweredAfterMinutes, escalationDepartmentId, aiAnswerEnabled, openaiApiKey, deptAssignedMessage, employeeIntroMessage } = req.body || {};
@@ -97,12 +97,12 @@ router.put('/config', async (req, res) => {
         if (/no such column|SQLITE_ERROR|column.*does not exist/i.test(err.message)) {
             return res.status(500).json({ error: 'لطفاً اسکریپت‌های migration را اجرا کنید: node scripts/add-unanswered-columns.js و node scripts/add-auto-messages-columns.js' });
         }
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // تنظیمات اتصال واتساپ (Cloud API و Gateway)
-router.get('/connection', async (req, res) => {
+router.get('/connection', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
         const [row] = await WhatsappConnection.findOrCreate({
@@ -132,11 +132,11 @@ router.get('/connection', async (req, res) => {
                 gatewayApiSecretSet: false,
             });
         }
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
-router.put('/connection', async (req, res) => {
+router.put('/connection', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
         if (req.user.role !== 'admin' && req.user.role !== 'owner') {
@@ -179,7 +179,7 @@ router.put('/connection', async (req, res) => {
         if (/no such table|relation .* does not exist/i.test(err.message)) {
             return res.status(500).json({ error: 'لطفاً ابتدا اسکریپت add-whatsapp-connection-table را اجرا کنید: node scripts/add-whatsapp-connection-table.js' });
         }
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 

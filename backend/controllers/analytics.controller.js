@@ -23,7 +23,7 @@ function conversationWhere(req) {
     return { [Op.or]: orConditions };
 }
 
-async function dashboard(req, res) {
+async function dashboard(req, res, next) {
     try {
         if (!req.canAccess('dashboard')) {
             return res.status(403).json({ error: 'دسترسی به داشبورد ندارید' });
@@ -142,7 +142,7 @@ async function dashboard(req, res) {
             ratedConversationsCount: ratedCount ?? 0,
         });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 

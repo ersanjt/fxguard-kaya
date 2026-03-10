@@ -6,7 +6,7 @@ const { Department, User, Branch } = require('../models');
 const { normalizeKeywords, normalizeDescription } = require('../lib/keywordUtils');
 const { isValidUUID } = require('../lib/validation');
 
-async function list(req, res) {
+async function list(req, res, next) {
     try {
         if (!req.canAccess('departments')) {
             return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
@@ -35,11 +35,11 @@ async function list(req, res) {
         });
         res.json({ data: departments });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function getById(req, res) {
+async function getById(req, res, next) {
     if (!isValidUUID(req.params.id)) {
         return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
     }
@@ -53,11 +53,11 @@ async function getById(req, res) {
         if (!dept) return res.status(404).json({ error: 'دپارتمان یافت نشد' });
         res.json(dept);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function create(req, res) {
+async function create(req, res, next) {
     try {
         if (!req.canAccess('departments')) {
             return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
@@ -74,11 +74,11 @@ async function create(req, res) {
         }
         res.status(201).json(dept);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function update(req, res) {
+async function update(req, res, next) {
     if (!isValidUUID(req.params.id)) {
         return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
     }
@@ -104,7 +104,7 @@ async function update(req, res) {
         await dept.save();
         res.json(dept);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 

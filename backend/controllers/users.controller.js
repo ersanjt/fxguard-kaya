@@ -27,7 +27,7 @@ const { validatePassword } = require('../lib/passwordValidation');
 const { isValidUUID } = require('../lib/validation');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 
-async function list(req, res) {
+async function list(req, res, next) {
     try {
         if (!req.canAccess('users')) {
             return res.status(403).json({ error: 'دسترسی به بخش کاربران ندارید' });
@@ -54,7 +54,7 @@ async function list(req, res) {
         });
         res.json({ data: list });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
@@ -88,7 +88,7 @@ function me(req, res) {
     res.json(out);
 }
 
-async function patchMe(req, res) {
+async function patchMe(req, res, next) {
     try {
         const user = req.user;
         const { username, firstName, lastName, dateOfBirth, name, phone, password, avatar, email } = req.body;
@@ -147,11 +147,11 @@ async function patchMe(req, res) {
         delete u.password;
         res.json(u);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function getById(req, res) {
+async function getById(req, res, next) {
     try {
         if (!req.canAccess('users')) {
             return res.status(403).json({ error: 'دسترسی به بخش کاربران ندارید' });
@@ -173,11 +173,11 @@ async function getById(req, res) {
         if (!req.canManageUsers() && user.id !== req.userId) j.email = undefined;
         res.json(j);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function create(req, res) {
+async function create(req, res, next) {
     try {
         if (!req.canManageUsers()) {
             return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر جدید بسازد' });
@@ -236,11 +236,11 @@ async function create(req, res) {
         u.permissions = getPermissions(user);
         res.status(201).json(u);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function update(req, res) {
+async function update(req, res, next) {
     try {
         if (!req.canManageUsers()) {
             return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر را ویرایش کند' });
@@ -330,11 +330,11 @@ async function update(req, res) {
         u.permissions = getPermissions(user);
         res.json(u);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function deleteWithTransfer(req, res) {
+async function deleteWithTransfer(req, res, next) {
     try {
         if (!req.canDeleteUser()) {
             return res.status(403).json({ error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند کاربر را حذف کند' });
@@ -368,11 +368,11 @@ async function deleteWithTransfer(req, res) {
         delete u.password;
         res.json({ message: 'کاربر غیرفعال شد و داده‌ها منتقل شد', user: u });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
-async function permanentDelete(req, res) {
+async function permanentDelete(req, res, next) {
     try {
         if (!req.canDeleteUser()) {
             return res.status(403).json({ error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند کاربر را حذف کند' });
@@ -415,7 +415,7 @@ async function permanentDelete(req, res) {
         }
         res.json({ message: 'کاربر به‌طور دائمی از سیستم حذف شد' });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 }
 
