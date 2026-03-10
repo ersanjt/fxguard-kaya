@@ -4052,6 +4052,16 @@
                     if (typeof insertTemplateIntoChat === 'function') { e.preventDefault(); e.stopPropagation(); insertTemplateIntoChat(c, tid); var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('msgTemplateBtn'); if (dd) dd.style.display = 'none'; if (btn) btn.setAttribute('aria-expanded', 'false'); }
                     return;
                 }
+                // کلیک روی آیتم تاریخچه مکالمات یا تاریخچه کامل در کارت مشتری — باز کردن مکالمه
+                const custHistItem = target.closest('.cust-hist-item[data-convid]');
+                const timelineConvItem = target.closest('.customer-timeline-conv[data-convid], .customer-timeline-item.customer-timeline-conv[data-convid]');
+                const historyItem = custHistItem || timelineConvItem;
+                if (historyItem && typeof openChatFromHistory === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openChatFromHistory(historyItem);
+                    return;
+                }
                 // Handle elements whose onclick was moved to data-onclick-backup (CSP compliance)
                 const backupEl = target.closest('[data-onclick-backup]');
                 if (backupEl) {
