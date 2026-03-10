@@ -4,6 +4,7 @@
 const { validateEnv } = require('./config/env');
 const { MAIN_ADMIN_EMAIL, MAIN_ADMIN_PASSWORD } = validateEnv();
 
+require('express-async-errors');
 const express = require('express');
 const path = require('path');
 const http = require('http');

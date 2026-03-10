@@ -147,7 +147,7 @@
         document.querySelectorAll('[data-i18n]').forEach(function(el) {
             var key = el.getAttribute('data-i18n');
             var val = t[key] || ct[key];
-            if (val != null) el.innerHTML = val;
+            if (val != null) el.textContent = val;
         });
         document.querySelectorAll('.lang-switch button').forEach(function(btn) {
             btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);

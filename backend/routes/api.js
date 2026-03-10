@@ -135,7 +135,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         }
     });
 
-    apiRouter.post('/webhook/message-status', webhookAuth, async (req, res) => {
+    apiRouter.post('/webhook/message-status', webhookAuth, async (req, res, next) => {
         try {
             const { messageId, status } = req.body || {};
             if (!messageId) return res.json({ ok: true });
@@ -155,7 +155,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             res.json({ ok: true });
         } catch (err) {
             logger.error('Message status webhook error:', err);
-            res.status(500).json({ error: err.message });
+            next(err);
         }
     });
 

@@ -3263,7 +3263,8 @@
             const res = await apiFetch('/api/auth/totp/setup');
             if (res.needLogin || !res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
             const d = res.data;
-            document.getElementById('totpSetupQr').innerHTML = d.qrCode ? '<img src="' + d.qrCode + '" alt="QR" style="max-width:220px; height:auto;">' : '';
+            var safeQr = (d.qrCode && (String(d.qrCode).startsWith('data:') || String(d.qrCode).startsWith('https:'))) ? d.qrCode : '';
+            document.getElementById('totpSetupQr').innerHTML = safeQr ? '<img src="' + safeQr.replace(/"/g, '&quot;') + '" alt="QR" style="max-width:220px; height:auto;">' : '';
             document.getElementById('totpSetupSecret').textContent = d.secret ? t('modal_totp_secret') + ' ' + d.secret : '';
             document.getElementById('totpSetupCode').value = '';
             document.getElementById('totpSetupModal').style.display = 'flex';

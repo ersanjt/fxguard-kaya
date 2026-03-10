@@ -6,7 +6,7 @@ const { canAccessCustomer } = require('../lib/customerAccess');
 const { isValidUUID } = require('../lib/validation');
 
 // لیست همه تگ‌ها
-router.get('/', async (req, res) => {
+router.get('/', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         const tags = await Tag.findAll({
@@ -15,12 +15,12 @@ router.get('/', async (req, res) => {
         });
         res.json({ data: tags });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ایجاد تگ جدید
-router.post('/', async (req, res) => {
+router.post('/', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         const { name, color, description } = req.body;
@@ -33,12 +33,12 @@ router.post('/', async (req, res) => {
         res.status(201).json(tag);
     } catch (err) {
         if (err.name === 'SequelizeUniqueConstraintError') return res.status(400).json({ error: 'تگ با این نام قبلاً وجود دارد' });
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // ویرایش تگ
-router.put('/:id', async (req, res) => {
+router.put('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تگ نامعتبر است' });
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
@@ -52,12 +52,12 @@ router.put('/:id', async (req, res) => {
         res.json(tag);
     } catch (err) {
         if (err.name === 'SequelizeUniqueConstraintError') return res.status(400).json({ error: 'تگ با این نام قبلاً وجود دارد' });
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
 // حذف تگ
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تگ نامعتبر است' });
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
@@ -68,7 +68,7 @@ router.delete('/:id', async (req, res) => {
         await tag.destroy();
         res.json({ ok: true });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        next(err);
     }
 });
 
