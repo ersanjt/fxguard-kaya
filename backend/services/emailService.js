@@ -18,6 +18,10 @@ const MAX_RETRIES = parseInt(process.env.EMAIL_MAX_RETRIES || '3', 10);
 const RETRY_DELAY_MS = parseInt(process.env.EMAIL_RETRY_DELAY_MS || '2000', 10);
 const RATE_LIMIT_REQUESTS = parseInt(process.env.EMAIL_RATE_LIMIT_REQUESTS || '100', 10);
 const RATE_LIMIT_WINDOW_MS = parseInt(process.env.EMAIL_RATE_LIMIT_WINDOW_MS || '3600000', 10); // 1 hour
+// زمان‌انتظار اتصال SMTP (میلی‌ثانیه) — در صورت timeout افزایش دهید
+const CONNECTION_TIMEOUT_MS = parseInt(process.env.EMAIL_CONNECTION_TIMEOUT_MS || '25000', 10);
+const GREETING_TIMEOUT_MS = parseInt(process.env.EMAIL_GREETING_TIMEOUT_MS || '15000', 10);
+const SOCKET_TIMEOUT_MS = parseInt(process.env.EMAIL_SOCKET_TIMEOUT_MS || '25000', 10);
 
 let transporter = null;
 const emailStats = { count: 0, resetAt: Date.now() };
@@ -57,21 +61,24 @@ function checkRateLimit() {
 function getTransporter() {
     if (transporter) return transporter;
     if (!isEnabled()) return null;
-    const secure = process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1' || String(process.env.SMTP_PORT) === '465';
+    const port = parseInt(process.env.SMTP_PORT, 10) || 587;
+    const secure = process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1' || port === 465;
     const host = (process.env.SMTP_HOST || '').replace(/\.+$/, '').trim();
-    transporter = nodemailer.createTransport({
+    const opts = {
         host,
-        port: parseInt(process.env.SMTP_PORT, 10) || 587,
+        port,
         secure,
         auth: process.env.SMTP_USER && process.env.SMTP_PASS
             ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
             : undefined,
-        connectionTimeout: 15000,
-        greetingTimeout: 10000,
-        socketTimeout: 15000,
+        connectionTimeout: CONNECTION_TIMEOUT_MS,
+        greetingTimeout: GREETING_TIMEOUT_MS,
+        socketTimeout: SOCKET_TIMEOUT_MS,
         maxConnections: 5,
         maxMessages: 100
-    });
+    };
+    if (port === 587 && !secure) opts.requireTLS = true;
+    transporter = nodemailer.createTransport(opts);
     return transporter;
 }
 
@@ -199,15 +206,18 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
     try {
         const nodemailer_local = require('nodemailer');
         const host = normalizeHost(config.host);
+        const port = parseInt(config.port, 10) || 587;
+        const secure = !!config.secure;
         const opts = {
             host,
-            port: parseInt(config.port, 10) || 587,
-            secure: !!config.secure,
+            port,
+            secure,
             auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
-            connectionTimeout: 15000,
-            greetingTimeout: 10000,
-            socketTimeout: 15000
+            connectionTimeout: CONNECTION_TIMEOUT_MS,
+            greetingTimeout: GREETING_TIMEOUT_MS,
+            socketTimeout: SOCKET_TIMEOUT_MS
         };
+        if (port === 587 && !secure) opts.requireTLS = true;
         if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
         
         const transport = nodemailer_local.createTransport(opts);
@@ -412,15 +422,18 @@ async function testSmtpConnection(config) {
     try {
         const nodemailer_test = require('nodemailer');
         const host = normalizeHost(config.host);
+        const port = parseInt(config.port, 10) || 587;
+        const secure = !!config.secure;
         const opts = {
             host,
-            port: parseInt(config.port, 10) || 587,
-            secure: !!config.secure,
+            port,
+            secure,
             auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
-            connectionTimeout: 10000,
-            greetingTimeout: 5000,
-            socketTimeout: 10000
+            connectionTimeout: CONNECTION_TIMEOUT_MS,
+            greetingTimeout: GREETING_TIMEOUT_MS,
+            socketTimeout: SOCKET_TIMEOUT_MS
         };
+        if (port === 587 && !secure) opts.requireTLS = true;
         if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
         
         const transport = nodemailer_test.createTransport(opts);

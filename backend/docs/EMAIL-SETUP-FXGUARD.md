@@ -122,3 +122,8 @@ SMTP_SECURE=true
 - **خطای احراز هویت:** رمز عبور ایمیل را دقیقاً همان‌طور که در cPanel یا GoDaddy تنظیم کرده‌اید وارد کنید.
 - **ایمیل در اسپم:** DKIM/SPF/PTR شما تأیید شده‌اند. محتوای ایمیل را کم‌حجم و بدون لینک مشکوک نگه دارید.
 - **پورت بسته:** اگر ۵۸۷ کار نکرد، پورت ۴۶۵ را با SSL فعال امتحان کنید.
+- **Connection timeout (روی سرور):**  
+  - از سرور خروجی به پورت ۴۶۵ یا ۵۸۷ ممکن است بسته باشد. با `telnet mail.fxguard.io 587` یا `openssl s_client -connect mail.fxguard.io:465 -brief` تست کنید.  
+  - در پنل یا `.env` ابتدا **پورت ۴۶۵** با **SSL/TLS فعال** امتحان کنید (اغلب پایدارتر از ۵۸۷).  
+  - در `backend/.env` می‌توانید زمان انتظار را افزایش دهید: `EMAIL_CONNECTION_TIMEOUT_MS=30000` و `EMAIL_SOCKET_TIMEOUT_MS=30000`.  
+  - اگر از پنل تنظیم کرده‌اید و Host اول جواب نداد، در `.env` مقدار `SMTP_FALLBACK_HOSTS=smtpout.secureserver.net,143.182.205.92.host.secureserver.net` بگذارید تا ارسال تست hostهای جایگزین را امتحان کند.

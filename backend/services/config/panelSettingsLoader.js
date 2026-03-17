@@ -120,6 +120,7 @@ function getSupportedLanguages(settings) {
 function getPanelEmailConfig(settings) {
     if (!settings || !settings.smtpHost || !settings.smtpPort) return null;
     const host = (settings.smtpHost || '').replace(/\.+$/, '').trim();
+    const secure = !!settings.smtpSecure;
     return {
         host,
         port: settings.smtpPort,
@@ -127,9 +128,9 @@ function getPanelEmailConfig(settings) {
         pass: settings.smtpPass || null,
         from: settings.smtpFrom || settings.smtpUser || null,
         fromName: settings.smtpFromName || null,
-        secure: !!settings.smtpSecure,
+        secure,
         allowSelfSigned:
-            host.includes('host.secureserver.net') || host === 'mail.fxguard.io',
+            host.includes('secureserver.net') || host === 'mail.fxguard.io',
     };
 }
 

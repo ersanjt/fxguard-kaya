@@ -8532,7 +8532,8 @@
         let internalCallCameraOff = false;
         let internalCallStartedAt = null;
         let internalCallDurationInterval = null;
-        var INTERNAL_CALL_ICE_SERVERS = [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }];
+        // STUN: non-Google first so WebRTC can work when Google is unreachable (e.g. from Iran without VPN)
+        var INTERNAL_CALL_ICE_SERVERS = [{ urls: 'stun:stun.stunprotocol.org:3478' }, { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }];
         function getSocket() { return socket; }
         function getInternalCallOtherDisplay() {
             const id = currentInternalThreadOtherUserId || (internalCallPendingInvite && internalCallPendingInvite.fromUserId) || (internalCallPendingOffer && internalCallPendingOffer.fromUserId);
