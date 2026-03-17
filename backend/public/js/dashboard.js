@@ -10532,6 +10532,10 @@
             window.updatePanelLivePreview = updatePanelLivePreview;
             window.userPermsSelectAll = userPermsSelectAll;
             window.userPermsSelectGroup = userPermsSelectGroup;
+            window.openUserEdit = openUserEdit;
+            window.closeUserEditModal = closeUserEditModal;
+            window.openStaffDetailModal = openStaffDetailModal;
+            window.closeStaffDetailModal = closeStaffDetailModal;
             window.verifyTotpLogin = verifyTotpLogin;
             window.backToLoginStep1 = backToLoginStep1;
             window.closeSidebarMobile = closeSidebarMobile;
