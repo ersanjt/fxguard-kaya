@@ -3813,6 +3813,29 @@
             // Global document-level click handler to catch dynamically generated buttons with onclick
             document.addEventListener('click', function(e) {
                 const target = e.target;
+                const targetEl = (target && target.nodeType === 1) ? target : (target && target.parentElement);
+                // تب‌های مودال ویرایش کاربر (اطلاعات پایه / دسترسی‌ها) — delegation تا همیشه کار کند
+                const userEditTabEl = targetEl && targetEl.closest && targetEl.closest('#userEditModal .user-edit-tab[data-tab]');
+                if (userEditTabEl) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    document.querySelectorAll('#userEditModal .user-edit-tab').forEach(function(b) {
+                        const on = b === userEditTabEl;
+                        b.classList.toggle('active', on);
+                        b.setAttribute('aria-selected', on ? 'true' : 'false');
+                    });
+                    document.querySelectorAll('#userEditModal .user-edit-tab-panel').forEach(function(p) {
+                        p.classList.remove('active');
+                        p.style.display = 'none';
+                    });
+                    const panelId = userEditTabEl.getAttribute('aria-controls');
+                    const pan = panelId && document.getElementById(panelId);
+                    if (pan) {
+                        pan.classList.add('active');
+                        pan.style.display = 'block';
+                    }
+                    return;
+                }
                 // کلیک روی اسم فرستنده در گروه → باز کردن مکالمه خصوصی
                 const senderEl = target.closest('.msg-sender-clickable');
                 if (senderEl) {
