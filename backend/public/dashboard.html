@@ -1298,6 +1298,12 @@
                             <a href="#conversations" class="whatsapp-stat-link" data-stat="unanswered" data-i18n="whatsapp_view">مشاهده</a>
                         </article>
                     </section>
+                    <nav class="whatsapp-pro-nav" role="tablist" aria-label="WhatsApp sections">
+                        <button type="button" class="whatsapp-pro-tab active" role="tab" aria-selected="true" data-wa-tab="channels" id="waTabChannels" data-i18n="whatsapp_tab_channels">اتصال و کانال‌ها</button>
+                        <button type="button" class="whatsapp-pro-tab" role="tab" aria-selected="false" data-wa-tab="automation" id="waTabAutomation" data-i18n="whatsapp_tab_automation">پیام‌رسانی و هوش مصنوعی</button>
+                        <button type="button" class="whatsapp-pro-tab" role="tab" aria-selected="false" data-wa-tab="routing" id="waTabRouting" data-i18n="whatsapp_tab_routing">مسیریابی و صف</button>
+                    </nav>
+                    <div id="whatsappPanelChannels" class="whatsapp-pro-panel whatsapp-pro-panel--active" role="tabpanel" aria-labelledby="waTabChannels" aria-hidden="false">
                     <div class="whatsapp-page-layout">
                         <aside class="whatsapp-col whatsapp-col-connection">
                             <div class="whatsapp-card whatsapp-connection-card">
@@ -1324,7 +1330,7 @@
                                 <div class="whatsapp-actions">
                                     <button type="button" id="btnStartGateway" class="btn-primary" style="display:none;" data-i18n="whatsapp_start_btn">شروع Gateway واتساپ</button>
                                     <button type="button" id="btnStartWhatsApp" class="btn-primary" style="display:none;" data-i18n="whatsapp_start_client_btn">شروع واتساپ</button>
-                                    <button type="button" id="btnRefreshStatus" class="btn-secondary" style="display:inline-flex; align-items:center; gap:6px;" data-i18n="whatsapp_refresh_status" title="">بروزرسانی وضعیت</button>
+                                    <button type="button" id="btnRefreshStatus" class="btn-secondary" style="display:inline-flex; align-items:center; gap:8px;" data-i18n="whatsapp_refresh_status" title=""><span class="wa-refresh-ico" aria-hidden="true">↻</span><span class="wa-refresh-label" data-i18n="whatsapp_refresh_status">بروزرسانی وضعیت</span></button>
                                     <button type="button" id="btnDisconnectWhatsApp" class="btn-secondary" disabled title="" data-i18n="whatsapp_disconnect_btn">قطع اتصال واتساپ</button>
                                     <a href="https://web.whatsapp.com" target="_blank" rel="noopener" class="btn-secondary whatsapp-link-btn" data-i18n="whatsapp_open_web">باز کردن واتساپ وب</a>
                                     <a href="#conversations" class="btn-secondary whatsapp-link-btn" id="whatsappManageConvsLink" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
@@ -1367,17 +1373,22 @@
                                     <div class="whatsapp-form-row"><label for="whatsappGatewayUrl" data-i18n="whatsapp_gateway_url">آدرس Gateway</label><input type="text" id="whatsappGatewayUrl" class="whatsapp-input" placeholder="http://localhost:3001"></div>
                                     <div class="whatsapp-form-row"><label for="whatsappGatewayApiSecret" data-i18n="whatsapp_gateway_secret">API Secret</label><input type="password" id="whatsappGatewayApiSecret" class="whatsapp-input" placeholder="اختیاری" autocomplete="off"></div>
                                 </div>
-                                <button type="button" class="btn-primary" id="btnSaveWhatsappConnection" data-i18n="btn_save">ذخیره</button>
+                                <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappConnection" data-i18n="btn_save">ذخیره</button>
                             </div>
-                            <div id="whatsappWelcomeBox" class="whatsapp-card form-box">
-                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_welcome_title">پاسخ خودکار به اولین پیام</h3>
+                        </div>
+                    </div>
+                    </div>
+                    <div id="whatsappPanelAutomation" class="whatsapp-pro-panel" role="tabpanel" aria-labelledby="waTabAutomation" aria-hidden="true">
+                        <div class="whatsapp-automation-grid">
+                            <div id="whatsappWelcomeBox" class="whatsapp-card form-box whatsapp-card--pro">
+                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">💬</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_welcome_title">پاسخ خودکار به اولین پیام</h3></div>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_welcome_hint">هر کسی که برای اولین بار به شما پیام می‌دهد، این متن به‌صورت خودکار برایش ارسال می‌شود. خالی = غیرفعال</p>
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappWelcomeEnabled" checked> <span data-i18n="whatsapp_welcome_enabled">فعال</span></label>
                                 <textarea id="whatsappWelcomeMessage" rows="4" data-i18n-ph="whatsapp_welcome_ph" placeholder="سلام! به صرافی کایا خوش آمدید. در خدمت شما هستیم." class="whatsapp-textarea"></textarea>
-                                <button type="button" class="btn-primary" id="btnSaveWhatsappWelcome" data-i18n="btn_save">ذخیره</button>
+                                <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappWelcome" data-i18n="btn_save">ذخیره</button>
                             </div>
-                            <div id="whatsappAIBox" class="whatsapp-card form-box">
-                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی (OpenAI)</h3>
+                            <div id="whatsappAIBox" class="whatsapp-card form-box whatsapp-card--pro">
+                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">✨</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی (OpenAI)</h3></div>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون پاسخ خودکار (کلمات کلیدی) جواب ندهد، هوش مصنوعی به پیام مشتری پاسخ می‌دهد. مسیریابی به دپارتمان مناسب هم با AI انجام می‌شود.</p>
                                 <div class="whatsapp-openai-key-row">
                                     <label for="whatsappOpenAIApiKey" data-i18n="whatsapp_openai_key_label">کلید API اوپن‌ای‌آی</label>
@@ -1388,10 +1399,10 @@
                                     <span id="whatsappOpenAIKeyStatus" class="whatsapp-key-status"></span>
                                 </div>
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAIEnabled" checked> <span data-i18n="whatsapp_ai_enabled">فعال</span></label>
-                                <button type="button" class="btn-primary" id="btnSaveWhatsappAI" data-i18n="btn_save">ذخیره</button>
+                                <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappAI" data-i18n="btn_save">ذخیره</button>
                             </div>
-                            <div id="whatsappAutoMessagesBox" class="whatsapp-card form-box">
-                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_auto_messages_title">پیام‌های خودکار تخصیص و معرفی</h3>
+                            <div id="whatsappAutoMessagesBox" class="whatsapp-card form-box whatsapp-card--pro whatsapp-card--wide">
+                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">📋</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_auto_messages_title">پیام‌های خودکار تخصیص و معرفی</h3></div>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_auto_messages_hint">متن پیام‌هایی که هنگام تخصیص به دپارتمان یا معرفی کارمند ارسال می‌شوند. از {{deptName}} و {{name}} برای جایگزینی استفاده کنید. خالی = پیش‌فرض.</p>
                                 <div class="whatsapp-auto-messages-grid">
                                     <div class="whatsapp-auto-message-field">
@@ -1403,21 +1414,22 @@
                                         <textarea id="whatsappEmployeeIntroMessage" rows="2" class="whatsapp-textarea" data-i18n-ph="whatsapp_employee_intro_ph" placeholder="من {{name}} از دپارتمان {{deptName}} هستم."></textarea>
                                     </div>
                                 </div>
-                                <button type="button" class="btn-primary" id="btnSaveWhatsappAutoMessages" data-i18n="btn_save">ذخیره</button>
+                                <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappAutoMessages" data-i18n="btn_save">ذخیره</button>
                             </div>
-                            <div id="whatsappUnansweredBox" class="whatsapp-card form-box">
-                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3>
+                            <div id="whatsappUnansweredBox" class="whatsapp-card form-box whatsapp-card--pro whatsapp-card--wide">
+                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">⏱</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3></div>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_unanswered_hint">وقتی مشتری پیام می‌دهد و کسی جواب نمی‌دهد، بعد از مدت مشخص اعلان ارسال می‌شود و در صورت ادامه، مکالمه به دپارتمان پشتیبانی برگردانده می‌شود.</p>
                                 <div class="whatsapp-unanswered-grid">
-                                    <div><label data-i18n="whatsapp_alert_after">اعلان بعد از (دقیقه)</label><input type="number" id="whatsappAlertMinutes" min="1" max="120" value="5"></div>
-                                    <div><label data-i18n="whatsapp_escalate_after">Escalation بعد از (دقیقه)</label><input type="number" id="whatsappEscalateMinutes" min="1" max="240" value="15"></div>
+                                    <div><label data-i18n="whatsapp_alert_after">اعلان بعد از (دقیقه)</label><input type="number" id="whatsappAlertMinutes" min="1" max="120" value="5" class="whatsapp-input-num"></div>
+                                    <div><label data-i18n="whatsapp_escalate_after">Escalation بعد از (دقیقه)</label><input type="number" id="whatsappEscalateMinutes" min="1" max="240" value="15" class="whatsapp-input-num"></div>
                                 </div>
-                                <div class="whatsapp-dept-row"><label data-i18n="whatsapp_escalation_dept">دپارتمان مقصد (خالی = پشتیبانی پیش‌فرض)</label><select id="whatsappEscalationDept"><option value="">پشتیبانی (پیش‌فرض)</option></select></div>
-                                <button type="button" class="btn-primary" id="btnSaveWhatsappUnanswered" data-i18n="btn_save">ذخیره</button>
+                                <div class="whatsapp-dept-row"><label data-i18n="whatsapp_escalation_dept">دپارتمان مقصد (خالی = پشتیبانی پیش‌فرض)</label><select id="whatsappEscalationDept" class="whatsapp-select-full"><option value="">پشتیبانی (پیش‌فرض)</option></select></div>
+                                <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappUnanswered" data-i18n="btn_save">ذخیره</button>
                             </div>
                         </div>
                     </div>
-                    <div id="whatsappDeptRouting" class="whatsapp-card form-box whatsapp-dept-routing" style="margin-top:24px; display:none;">
+                    <div id="whatsappPanelRouting" class="whatsapp-pro-panel" role="tabpanel" aria-labelledby="waTabRouting" aria-hidden="true">
+                    <div id="whatsappDeptRouting" class="whatsapp-card form-box whatsapp-dept-routing whatsapp-card--pro" style="display:none;">
                         <div class="whatsapp-dept-routing-header">
                             <h3 class="whatsapp-card-title" data-i18n="whatsapp_dept_routing">تخصیص خودکار به دپارتمان</h3>
                             <a href="#departments" class="btn-secondary btn-sm whatsapp-edit-depts" id="whatsappEditDeptsLink" data-i18n="whatsapp_edit_depts">ویرایش دپارتمان‌ها و کلمات کلیدی</a>
@@ -1425,11 +1437,12 @@
                         <p class="text-muted whatsapp-hint" data-i18n="whatsapp_dept_routing_hint">بر اساس کلمات کلیدی در متن پیام، مکالمه به دپارتمان مربوطه هدایت می‌شود.</p>
                         <div id="whatsappDeptList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
                     </div>
-                    <div id="whatsappUnassignedBox" class="whatsapp-card form-box" style="margin-top:24px; display:none;">
+                    <div id="whatsappUnassignedBox" class="whatsapp-card form-box whatsapp-card--pro" style="display:none;">
                         <h3 class="whatsapp-card-title" data-i18n="whatsapp_unassigned">مکالمات بدون تخصیص</h3>
                         <p class="text-muted whatsapp-hint" data-i18n="whatsapp_unassigned_hint">این مکالمات نیاز به تخصیص دپارتمان یا مسئول دارند.</p>
                         <div id="whatsappUnassignedList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
                         <a href="#conversations" class="btn-secondary" id="whatsappUnassignedManageLink" style="margin-top:12px; display:inline-block; text-decoration:none;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
+                    </div>
                     </div>
                 </div>
                 <div id="pageMessageTemplates" class="page message-templates-page">

@@ -1786,6 +1786,68 @@
         .whatsapp-meta-list dt { margin: 0; color: var(--text-muted); font-weight: 500; }
         .whatsapp-meta-list dd { margin: 0; color: var(--text-primary); }
         .whatsapp-cloud-api-info { line-height: 1.5; }
+        /* —— واتساپ حرفه‌ای: تب‌ها و پنل‌ها —— */
+        .whatsapp-pro-nav {
+            display: flex; flex-wrap: wrap; gap: 8px; padding: 6px;
+            background: var(--bg-secondary); border: 1px solid var(--border);
+            border-radius: 14px; margin-bottom: 8px;
+        }
+        .whatsapp-pro-tab {
+            flex: 1; min-width: 140px; padding: 12px 16px; border: none; border-radius: 10px;
+            font-family: var(--font); font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            color: var(--text-secondary); background: transparent; transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+        }
+        .whatsapp-pro-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+        .whatsapp-pro-tab.active {
+            color: #fff; background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            box-shadow: 0 4px 14px rgba(34, 197, 94, 0.35);
+        }
+        .whatsapp-pro-panel { display: none; animation: waPanelIn 0.28s ease; }
+        .whatsapp-pro-panel.whatsapp-pro-panel--active { display: block; }
+        @keyframes waPanelIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .whatsapp-automation-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; align-items: start;
+        }
+        .whatsapp-card--wide { grid-column: 1 / -1; }
+        @media (max-width: 960px) { .whatsapp-automation-grid { grid-template-columns: 1fr; } .whatsapp-card--wide { grid-column: auto; } }
+        .whatsapp-card--pro {
+            margin-bottom: 0 !important; border-radius: 14px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06); transition: box-shadow 0.25s, border-color 0.25s;
+        }
+        .whatsapp-card--pro:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.08); border-color: rgba(34, 197, 94, 0.25); }
+        .whatsapp-card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+        .whatsapp-card-head .whatsapp-card-title { margin: 0; font-size: 1.05rem; }
+        .whatsapp-card-icon {
+            width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;
+            font-size: 1.25rem; background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04));
+            border-radius: 12px; border: 1px solid rgba(34,197,94,0.2);
+        }
+        .whatsapp-input-num, .whatsapp-select-full {
+            width: 100%; padding: 10px 12px; margin-top: 6px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary);
+            font-family: var(--font); box-sizing: border-box;
+        }
+        .whatsapp-input-num:focus, .whatsapp-select-full:focus { outline: none; border-color: var(--accent); }
+        .whatsapp-stat-value.whatsapp-stat-skel { min-height: 1.35rem; min-width: 2rem; border-radius: 6px; display: inline-block; }
+        .btn-primary.whatsapp-save-btn.is-loading, .btn-primary.is-loading-wa {
+            position: relative; pointer-events: none; opacity: 0.88;
+        }
+        .btn-primary.whatsapp-save-btn.is-loading::after, .btn-primary.is-loading-wa::after {
+            content: ''; display: inline-block; width: 16px; height: 16px; margin-inline-start: 8px;
+            vertical-align: middle; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff;
+            border-radius: 50%; animation: waSpin 0.65s linear infinite;
+        }
+        @keyframes waSpin { to { transform: rotate(360deg); } }
+        #btnRefreshStatus.is-refreshing { opacity: 0.75; pointer-events: none; }
+        #btnRefreshStatus .wa-refresh-ico { display: inline-block; transition: transform 0.5s ease; }
+        #btnRefreshStatus.is-refreshing .wa-refresh-ico { animation: waSpin 0.8s linear infinite; }
+        .whatsapp-connection-card { position: relative; overflow: hidden; }
+        .whatsapp-connection-card::before {
+            content: ''; position: absolute; inset: 0 0 auto 0; height: 3px;
+            background: linear-gradient(90deg, #22c55e, #3b82f6, #22c55e); opacity: 0.35;
+        }
+        .whatsapp-status-badge.whatsapp-status-checking { animation: waPulseSoft 1.5s ease-in-out infinite; }
+        @keyframes waPulseSoft { 0%, 100% { opacity: 1; } 50% { opacity: 0.65; } }
         .btn-primary { padding: 12px 24px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-weight: 600; cursor: pointer; }
         .btn-primary:hover { background: var(--accent-hover); }
         .btn-secondary { padding: 10px 20px; background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); font-family: var(--font); cursor: pointer; margin-bottom: 16px; }

@@ -3195,7 +3195,7 @@
                 // دکمه‌های اتصال واتساپ
                 if (target.closest('#btnStartGateway') && typeof startGateway === 'function') { e.preventDefault(); e.stopPropagation(); startGateway(); return; }
                 if (target.closest('#btnStartWhatsApp') && typeof startWhatsAppClient === 'function') { e.preventDefault(); e.stopPropagation(); startWhatsAppClient(); return; }
-                if (target.closest('#btnRefreshStatus') && typeof loadWhatsappStatus === 'function') { e.preventDefault(); e.stopPropagation(); loadWhatsappStatus(true); return; }
+                if (target.closest('#btnRefreshStatus') && typeof refreshWhatsappStatusDebounced === 'function') { e.preventDefault(); e.stopPropagation(); refreshWhatsappStatusDebounced(); return; }
                 if (target.closest('#btnDisconnectWhatsApp') && typeof disconnectWhatsApp === 'function') { e.preventDefault(); e.stopPropagation(); disconnectWhatsApp(); return; }
                 if (target.closest('#whatsappManageConvsLink') || target.closest('#whatsappUnassignedManageLink')) { e.preventDefault(); e.stopPropagation(); if (typeof showPage === 'function') showPage('conversations'); return; }
                 if (target.closest('#whatsappEditDeptsLink')) { e.preventDefault(); e.stopPropagation(); if (typeof showPage === 'function') showPage('departments'); return; }
@@ -6611,7 +6611,14 @@
             if (page === 'tickets') { loadTicketFiltersInit(); loadTickets(); }
             if (page === 'tasks') { loadTasksFilters(); loadTasks(); loadTasksSummary(); initTaskSearchDebounce(); const ta = document.getElementById('taskAssignType'); if (ta && !ta._bound) { ta._bound = true; ta.addEventListener('change', toggleTaskAssignTarget); } }
             if (page === 'processes') { initProcessTabs(); loadProcessTemplates(); loadProcessInstances(); loadProcessTemplateSelect(); }
-            if (page === 'whatsapp') { loadWhatsappStatus(); loadWhatsappConnectionSettings(); loadWhatsappWelcomeConfig(); loadWhatsappStats(); }
+            if (page === 'whatsapp') {
+                initWhatsappProTabs();
+                switchWhatsappMainTab(_whatsappActiveTab || 'channels', true);
+                loadWhatsappStatus();
+                loadWhatsappConnectionSettings();
+                loadWhatsappWelcomeConfig();
+                loadWhatsappStats();
+            }
             if (page === 'message-templates') { initMessageTemplatesTabs(); loadMessageTemplates(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); }
             if (page === 'rates-charts') loadRatesCharts();
@@ -8470,6 +8477,69 @@
         let isWhatsappPolling = false;
         const WHATSAPP_POLL_MS = 4000;
         const WHATSAPP_QR_RETRY_MS = 1800;
+        let _whatsappStatusSeq = 0;
+        let _whatsappActiveTab = 'channels';
+        let _whatsappRefreshBusyUntil = 0;
+
+        function initWhatsappProTabs() {
+            var nav = document.querySelector('.whatsapp-pro-nav');
+            if (!nav || nav._waProBound) return;
+            nav._waProBound = true;
+            nav.addEventListener('click', function (e) {
+                var tab = e.target.closest('.whatsapp-pro-tab');
+                if (!tab) return;
+                e.preventDefault();
+                switchWhatsappMainTab(tab.getAttribute('data-wa-tab') || 'channels');
+            });
+        }
+        function switchWhatsappMainTab(name, silent) {
+            name = (name === 'automation' || name === 'routing') ? name : 'channels';
+            _whatsappActiveTab = name;
+            document.querySelectorAll('.whatsapp-pro-tab').forEach(function (b) {
+                var on = (b.getAttribute('data-wa-tab') || '') === name;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            var map = { channels: 'whatsappPanelChannels', automation: 'whatsappPanelAutomation', routing: 'whatsappPanelRouting' };
+            Object.keys(map).forEach(function (key) {
+                var el = document.getElementById(map[key]);
+                if (!el) return;
+                var act = key === name;
+                el.classList.toggle('whatsapp-pro-panel--active', act);
+                el.setAttribute('aria-hidden', act ? 'false' : 'true');
+            });
+            if (name === 'routing') {
+                loadWhatsappDeptRouting();
+                loadWhatsappUnassigned();
+            }
+            if (!silent) {
+                try {
+                    var h = (location.hash || '').replace(/^#/, '');
+                    if (h.indexOf('whatsapp') === 0) location.hash = 'whatsapp';
+                } catch (_) {}
+            }
+        }
+        function waBtnLoading(btn, on) {
+            if (!btn) return;
+            btn.disabled = !!on;
+            btn.classList.toggle('is-loading', !!on);
+        }
+        function refreshWhatsappStatusDebounced() {
+            var now = Date.now();
+            if (now < _whatsappRefreshBusyUntil) {
+                toast(LANG === 'fa' ? 'چند ثانیه صبر کنید و دوباره تلاش کنید.' : 'Please wait a few seconds before refreshing again.', true);
+                return;
+            }
+            _whatsappRefreshBusyUntil = now + 2200;
+            var b = document.getElementById('btnRefreshStatus');
+            if (b) { b.classList.add('is-refreshing'); b.setAttribute('aria-busy', 'true'); }
+            loadWhatsappStatus(true).finally(function () {
+                setTimeout(function () {
+                    _whatsappRefreshBusyUntil = Math.max(_whatsappRefreshBusyUntil, Date.now() + 400);
+                    if (b) { b.classList.remove('is-refreshing'); b.removeAttribute('aria-busy'); }
+                }, 300);
+            });
+        }
 
         function setWhatsappStatusBadge(status) {
             const badge = document.getElementById('whatsappStatusBadge');
@@ -8494,6 +8564,8 @@
         }
 
         async function loadWhatsappStatus(isInitial) {
+            const mySeq = ++_whatsappStatusSeq;
+            function waAlive() { return mySeq === _whatsappStatusSeq; }
             const perms = (currentUser && currentUser.permissions) || {};
             if (!token || perms.whatsapp === false) return;
             const st = document.getElementById('gatewayStatus');
@@ -8505,6 +8577,7 @@
             const btnStartClient = document.getElementById('btnStartWhatsApp');
             const btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
             const lastCard = document.getElementById('whatsappLastConnectionCard');
+            if (!st || !qrBox || !qrImg) return;
             if (qrRetryTimeout) { clearTimeout(qrRetryTimeout); qrRetryTimeout = null; }
             if (qrRefreshInterval) { clearInterval(qrRefreshInterval); qrRefreshInterval = null; }
             if (isInitial !== false) {
@@ -8522,6 +8595,7 @@
             }
             let ping;
             try { ping = await apiFetch('/api/ping', { auth: false }); } catch (e) { ping = { needLogin: true }; }
+            if (!waAlive()) return;
             if (ping.needLogin || (ping.data && !ping.data.ok)) {
                 st.className = 'whatsapp-status-line empty';
                 st.textContent = t('whatsapp_server_err');
@@ -8529,6 +8603,7 @@
                 return;
             }
             const res = await apiFetch('/api/gateway/status');
+            if (!waAlive()) return;
             if (res.needLogin) return;
             const data = res.data;
             if (data && data.error) {
@@ -8539,6 +8614,7 @@
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
                 return;
             }
+            if (!waAlive()) return;
             st.className = 'whatsapp-status-line';
             const phase = data && data.phase;
             var isCloudApi = !!(data && data.cloudApi);
@@ -8590,10 +8666,10 @@
                         cloudApiInfo.style.display = isCloudApi ? 'block' : 'none';
                     }
                 }
-                loadWhatsappDeptRouting();
-                loadWhatsappUnassigned();
+                if (waAlive()) { loadWhatsappDeptRouting(); loadWhatsappUnassigned(); }
                 return;
             }
+            if (!waAlive()) return;
             setWhatsappStatusBadge(data && data.starting ? 'starting' : 'disconnected');
             if (lastCard) lastCard.style.display = 'none';
             if (btnDisconnect) { btnDisconnect.disabled = true; btnDisconnect.style.display = 'inline-flex'; }
@@ -8601,8 +8677,9 @@
             if (openWebBtnEl) openWebBtnEl.style.display = 'inline-flex';
             const cloudApiInfoEl = document.getElementById('whatsappCloudApiInfo');
             if (cloudApiInfoEl) cloudApiInfoEl.style.display = 'none';
-            loadWhatsappDeptRouting();
+            if (waAlive()) loadWhatsappDeptRouting();
             const qrRes = await apiFetch('/api/gateway/qr');
+            if (!waAlive()) return;
             if (qrRes.needLogin) return;
             const qrData = qrRes.data;
             if (qrData && qrData.qr) {
@@ -8716,6 +8793,8 @@
             if (gwSecret) { gwSecret.value = ''; gwSecret.placeholder = d.gatewayApiSecretSet ? (LANG === 'fa' ? 'ذخیره شده ✓' : 'Saved ✓') : (LANG === 'fa' ? 'اختیاری' : 'Optional'); }
         }
         async function saveWhatsappConnectionSettings() {
+            var saveBtn = document.getElementById('btnSaveWhatsappConnection');
+            waBtnLoading(saveBtn, true);
             var cloudToken = document.getElementById('whatsappCloudAccessToken');
             var cloudPhone = document.getElementById('whatsappCloudPhoneNumberId');
             var cloudVerify = document.getElementById('whatsappCloudVerifyToken');
@@ -8731,9 +8810,12 @@
             };
             if (cloudToken && cloudToken.value.trim()) body.cloudAccessToken = cloudToken.value.trim();
             if (gwSecret && gwSecret.value.trim()) body.gatewayApiSecret = gwSecret.value.trim();
-            var res = await apiFetch('/api/whatsapp/connection', { method: 'PUT', body: JSON.stringify(body) });
-            if (res.needLogin) return;
-            if (res.ok) { toast(t('done_msg')); loadWhatsappConnectionSettings(); loadWhatsappStatus(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+            try {
+                var res = await apiFetch('/api/whatsapp/connection', { method: 'PUT', body: JSON.stringify(body) });
+                if (res.needLogin) return;
+                if (res.ok) { toast(t('done_msg')); loadWhatsappConnectionSettings(); loadWhatsappStatus(); }
+                else toast((res.data && res.data.error) || t('err_generic'), true);
+            } finally { waBtnLoading(saveBtn, false); }
         }
         async function loadWhatsappWelcomeConfig() {
             const ta = document.getElementById('whatsappWelcomeMessage');
@@ -8773,28 +8855,38 @@
             const alertIn = document.getElementById('whatsappAlertMinutes');
             const escalateIn = document.getElementById('whatsappEscalateMinutes');
             const deptSel = document.getElementById('whatsappEscalationDept');
+            const btn = document.getElementById('btnSaveWhatsappUnanswered');
             if (!alertIn || !escalateIn) return;
-            const res = await apiFetch('/api/whatsapp/config', {
-                method: 'PUT',
-                body: JSON.stringify({
-                    alertUnansweredAfterMinutes: parseInt(alertIn.value) || 5,
-                    escalateUnansweredAfterMinutes: parseInt(escalateIn.value) || 15,
-                    escalationDepartmentId: (deptSel && deptSel.value) || null
-                })
-            });
-            if (res.needLogin) return;
-            toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
+            waBtnLoading(btn, true);
+            try {
+                const res = await apiFetch('/api/whatsapp/config', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        alertUnansweredAfterMinutes: parseInt(alertIn.value, 10) || 5,
+                        escalateUnansweredAfterMinutes: parseInt(escalateIn.value, 10) || 15,
+                        escalationDepartmentId: (deptSel && deptSel.value) || null
+                    })
+                });
+                if (res.needLogin) return;
+                if (res.ok) toast(t('done_msg'));
+                else toast((res.data && res.data.error) || t('err_generic'), true);
+            } finally { waBtnLoading(btn, false); }
         }
         async function saveWhatsappWelcomeConfig() {
             const ta = document.getElementById('whatsappWelcomeMessage');
             const cb = document.getElementById('whatsappWelcomeEnabled');
+            const btn = document.getElementById('btnSaveWhatsappWelcome');
             if (!ta || !cb) return;
-            const res = await apiFetch('/api/whatsapp/config', {
-                method: 'PUT',
-                body: JSON.stringify({ welcomeMessage: ta.value.trim(), welcomeEnabled: cb.checked })
-            });
-            if (res.needLogin) return;
-            toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
+            waBtnLoading(btn, true);
+            try {
+                const res = await apiFetch('/api/whatsapp/config', {
+                    method: 'PUT',
+                    body: JSON.stringify({ welcomeMessage: ta.value.trim(), welcomeEnabled: cb.checked })
+                });
+                if (res.needLogin) return;
+                if (res.ok) toast(t('done_msg'));
+                else toast((res.data && res.data.error) || t('err_generic'), true);
+            } finally { waBtnLoading(btn, false); }
         }
         async function clearWhatsappOpenAIKey() {
             const res = await apiFetch('/api/whatsapp/config', { method: 'PUT', body: JSON.stringify({ openaiApiKey: '' }) });
@@ -8804,30 +8896,45 @@
         async function saveWhatsappAIConfig() {
             const aiCb = document.getElementById('whatsappAIEnabled');
             const openaiInput = document.getElementById('whatsappOpenAIApiKey');
+            const btn = document.getElementById('btnSaveWhatsappAI');
             if (!aiCb) return;
-            const body = { aiAnswerEnabled: aiCb.checked };
-            if (openaiInput && openaiInput.value.trim()) body.openaiApiKey = openaiInput.value.trim();
-            const res = await apiFetch('/api/whatsapp/config', {
-                method: 'PUT',
-                body: JSON.stringify(body)
-            });
-            if (res.needLogin) return;
-            if (res.ok && openaiInput && openaiInput.value.trim()) { openaiInput.value = ''; openaiInput.placeholder = LANG === 'fa' ? 'کلید ذخیره شد ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change'; const st = document.getElementById('whatsappOpenAIKeyStatus'); if (st) { st.textContent = LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set'; st.classList.add('set'); } }
-            toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
+            waBtnLoading(btn, true);
+            try {
+                const body = { aiAnswerEnabled: aiCb.checked };
+                if (openaiInput && openaiInput.value.trim()) body.openaiApiKey = openaiInput.value.trim();
+                const res = await apiFetch('/api/whatsapp/config', {
+                    method: 'PUT',
+                    body: JSON.stringify(body)
+                });
+                if (res.needLogin) return;
+                if (res.ok && openaiInput && openaiInput.value.trim()) {
+                    openaiInput.value = '';
+                    openaiInput.placeholder = LANG === 'fa' ? 'کلید ذخیره شد ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change';
+                    const st = document.getElementById('whatsappOpenAIKeyStatus');
+                    if (st) { st.textContent = LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set'; st.classList.add('set'); }
+                }
+                if (res.ok) toast(t('done_msg'));
+                else toast((res.data && res.data.error) || t('err_generic'), true);
+            } finally { waBtnLoading(btn, false); }
         }
         async function saveWhatsappAutoMessagesConfig() {
             const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
             const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+            const btn = document.getElementById('btnSaveWhatsappAutoMessages');
             if (!deptMsg || !empMsg) return;
-            const res = await apiFetch('/api/whatsapp/config', {
-                method: 'PUT',
-                body: JSON.stringify({
-                    deptAssignedMessage: deptMsg.value.trim(),
-                    employeeIntroMessage: empMsg.value.trim()
-                })
-            });
-            if (res.needLogin) return;
-            toast(res.ok ? t('done_msg') : (res.data && res.data.error) || t('err_generic'));
+            waBtnLoading(btn, true);
+            try {
+                const res = await apiFetch('/api/whatsapp/config', {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                        deptAssignedMessage: deptMsg.value.trim(),
+                        employeeIntroMessage: empMsg.value.trim()
+                    })
+                });
+                if (res.needLogin) return;
+                if (res.ok) toast(t('done_msg'));
+                else toast((res.data && res.data.error) || t('err_generic'), true);
+            } finally { waBtnLoading(btn, false); }
         }
         async function loadWhatsappStats() {
             const perms = (currentUser && currentUser.permissions) || {};
@@ -8836,15 +8943,33 @@
             const unassignedEl = document.getElementById('whatsappStatUnassigned');
             const unansweredEl = document.getElementById('whatsappStatUnanswered');
             if (!openEl && !unassignedEl && !unansweredEl) return;
+            [openEl, unassignedEl, unansweredEl].forEach(function (el) {
+                if (!el) return;
+                el.classList.add('whatsapp-stat-skel', 'loading-skeleton');
+                el.textContent = '\u00a0';
+            });
             try {
                 const resOpen = apiFetch('/api/conversations?status=open&limit=1');
                 const resUnassigned = apiFetch('/api/conversations?unassigned=1&limit=1');
                 const resUnanswered = apiFetch('/api/conversations?unanswered=1&limit=1');
                 const arr = await Promise.all([resOpen, resUnassigned, resUnanswered]);
-                if (openEl) openEl.textContent = (arr[0].ok && arr[0].data && arr[0].data.total != null) ? arr[0].data.total : '—';
-                if (unassignedEl) unassignedEl.textContent = (arr[1].ok && arr[1].data && arr[1].data.total != null) ? arr[1].data.total : '—';
-                if (unansweredEl) unansweredEl.textContent = (arr[2].ok && arr[2].data && arr[2].data.total != null) ? arr[2].data.total : '—';
-            } catch (e) { if (openEl) openEl.textContent = '—'; if (unassignedEl) unassignedEl.textContent = '—'; if (unansweredEl) unansweredEl.textContent = '—'; }
+                if (openEl) {
+                    openEl.classList.remove('whatsapp-stat-skel', 'loading-skeleton');
+                    openEl.textContent = (arr[0].ok && arr[0].data && arr[0].data.total != null) ? String(arr[0].data.total) : '—';
+                }
+                if (unassignedEl) {
+                    unassignedEl.classList.remove('whatsapp-stat-skel', 'loading-skeleton');
+                    unassignedEl.textContent = (arr[1].ok && arr[1].data && arr[1].data.total != null) ? String(arr[1].data.total) : '—';
+                }
+                if (unansweredEl) {
+                    unansweredEl.classList.remove('whatsapp-stat-skel', 'loading-skeleton');
+                    unansweredEl.textContent = (arr[2].ok && arr[2].data && arr[2].data.total != null) ? String(arr[2].data.total) : '—';
+                }
+            } catch (e) {
+                [openEl, unassignedEl, unansweredEl].forEach(function (el) {
+                    if (el) { el.classList.remove('whatsapp-stat-skel', 'loading-skeleton'); el.textContent = '—'; }
+                });
+            }
         }
         async function loadWhatsappDeptRouting() {
             const box = document.getElementById('whatsappDeptRouting');
