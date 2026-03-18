@@ -15,3 +15,7 @@
 
 - روی سرور: `pm2 logs crm-gateway --lines 50`
 - مطمئن شوید فقط **یک** نمونه Gateway در حال اجراست.
+
+## لاگ بک‌اند: `Gateway request failed` با status **429**
+
+یعنی سقف **rate limit** سراسری Gateway برای مسیر `/api/*` پر شده. مسیرهای **`/api/status`** و **`/api/qr`** (پولینگ پنل) از این سقف معاف هستند؛ در نسخه‌های قدیمی به‌خاطر اشتباه مسیر در `skip` همهٔ درخواست‌ها شمرده می‌شد و 429 می‌داد. بعد از به‌روزرسانی `gateway/src/index.js`، روی سرور: `pm2 reload crm-gateway`. در صورت نیاز `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW_MS` را در `.env` Gateway بالا ببرید.

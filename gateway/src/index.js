@@ -64,13 +64,18 @@ app.use(express.json({ limit: '25mb' }));
 app.use(express.urlencoded({ extended: true, limit: '25mb' }));
 
 // Rate limiting (configurable) — وضعیت و QR برای پولینگ پنل محدود نمی‌شوند
+// توجه: با app.use('/api/', limiter) مقدار req.path اینجا «بعد از mount» است → /status نه /api/status
+function skipPanelPollingPaths(req) {
+    const p = (req.path || '').split('?')[0];
+    return p === '/status' || p === '/qr' || p === '/api/status' || p === '/api/qr';
+}
 const apiLimiter = rateLimit({
     windowMs: CONFIG.rateLimitWindowMs,
     max: CONFIG.rateLimitMax,
     message: { error: 'Too many requests' },
     standardHeaders: true,
     legacyHeaders: false,
-    skip: (req) => ['/api/status', '/api/qr'].includes(req.path),
+    skip: (req) => skipPanelPollingPaths(req),
 });
 app.use('/api/', apiLimiter);
 
