@@ -2,8 +2,7 @@ require('dotenv').config();
 const path = require('path');
 
 const useSqlite = process.env.USE_SQLITE === 'true' || process.env.USE_SQLITE === '1';
-// DATABASE_URL برای Railway, Render, Neon و غیره — در models/index.js استفاده می‌شود
-const databaseUrl = process.env.DATABASE_URL;
+// DATABASE_URL برای Railway, Render, Neon — در models/index.js از process.env خوانده می‌شود
 // مسیر ثابت نسبت به پوشه backend تا seed و سرور هر دو همان فایل را استفاده کنند
 const sqliteStorage = path.join(__dirname, '..', 'database.sqlite');
 

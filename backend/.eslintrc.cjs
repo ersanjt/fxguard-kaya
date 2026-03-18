@@ -17,6 +17,7 @@ module.exports = {
     sourceType: 'script',
   },
   rules: {
+    'no-empty': ['error', { allowEmptyCatch: true }],
     'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
     'no-console': 'off',
     'prefer-const': 'warn',
@@ -38,5 +39,11 @@ module.exports = {
     'uploads/',
     'logs/',
     '*.min.js',
+    // Legacy browser bundles — IIFE و globals؛ استاندارد در FRONTEND-ARCHITECTURE.md
+    'public/js/dashboard.js',
+    'public/js/i18n-fa.js',
+    'public/js/i18n-en.js',
+    'public/js/i18n-tr.js',
+    'public/js/landing.js',
   ],
 };

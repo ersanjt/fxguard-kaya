@@ -39,7 +39,8 @@ async function checkUnansweredConversations(io, logger) {
         let offset = 0;
         let unanswered = [];
         // Process in batches to avoid hard limit of 500 conversations
-        while (true) {
+        let hasMoreBatches = true;
+        while (hasMoreBatches) {
             const batch = await Conversation.findAll({
                 where: {
                     status: { [Op.in]: ['open', 'pending'] },
@@ -58,8 +59,8 @@ async function checkUnansweredConversations(io, logger) {
                 offset
             });
             unanswered = unanswered.concat(batch);
-            if (batch.length < BATCH_SIZE) break;
-            offset += BATCH_SIZE;
+            if (batch.length < BATCH_SIZE) hasMoreBatches = false;
+            else offset += BATCH_SIZE;
         }
 
         for (const conv of unanswered) {

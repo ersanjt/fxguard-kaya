@@ -5,7 +5,6 @@
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
 const path = require('path');
-const fs = require('fs');
 const logger = require('../config/logger');
 
 ffmpeg.setFfmpegPath(ffmpegPath);

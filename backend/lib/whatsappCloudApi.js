@@ -61,7 +61,7 @@ async function sendText(to, text) {
 
     const msgId = res.data?.messages?.[0]?.id || null;
     if (!msgId) throw new Error('No message ID in response');
-    return { messageId };
+    return { messageId: msgId };
 }
 
 /**
@@ -122,7 +122,7 @@ async function sendMedia(to, media, caption = '') {
 
     const msgId = res.data?.messages?.[0]?.id || null;
     if (!msgId) throw new Error('No message ID in response');
-    return { messageId };
+    return { messageId: msgId };
 }
 
 /**

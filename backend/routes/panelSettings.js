@@ -58,7 +58,7 @@ router.get('/public/visibility', async (req, res, next) => {
 });
 
 // فقط با احراز هویت و دسترسی «ظاهر پنل» (panel_settings)
-router.get('/', authMiddleware, async (req, res) => {
+router.get('/', authMiddleware, async (req, res, next) => {
     try {
         if (!req.canAccess || !req.canAccess('panel_settings')) {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });

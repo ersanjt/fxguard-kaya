@@ -7,10 +7,10 @@
 (function() {
             let LANG = localStorage.getItem('crm_lang') || 'fa';
             const I18N = { fa: {}, en: {}, tr: {} };
-            if (window.__I18N_FA) { for (var k in window.__I18N_FA) I18N.fa[k] = window.__I18N_FA[k]; }
-            if (window.__I18N_EN) { for (var k in window.__I18N_EN) I18N.en[k] = window.__I18N_EN[k]; }
-            if (window.__I18N_TR) { for (var k in window.__I18N_TR) I18N.tr[k] = window.__I18N_TR[k]; }
-                        window.LANG = LANG;
+            if (window.__I18N_FA) Object.assign(I18N.fa, window.__I18N_FA);
+            if (window.__I18N_EN) Object.assign(I18N.en, window.__I18N_EN);
+            if (window.__I18N_TR) Object.assign(I18N.tr, window.__I18N_TR);
+            window.LANG = LANG;
             window.t = function(k) {
                 if (LANG === 'fa' && window.__I18N_FA && window.__I18N_FA[k] !== undefined) return window.__I18N_FA[k];
                 if (LANG === 'en' && window.__I18N_EN && window.__I18N_EN[k] !== undefined) return window.__I18N_EN[k];
@@ -39,8 +39,8 @@
                 });
                 const lbl = document.getElementById('langDropdownLabel');
                 if (lbl) lbl.textContent = (l === 'fa' ? 'FA' : l === 'tr' ? 'TR' : 'EN');
-                if (typeof applyTranslations === 'function') applyTranslations();
-                try { document.title = t('page_title'); } catch (_) {}
+                if (typeof window.applyTranslations === 'function') window.applyTranslations();
+                try { document.title = window.t('page_title'); } catch (_e) { /* ignore */ }
             };
             window.applyTranslations = function() {
                 document.querySelectorAll('[data-i18n]').forEach(function(el) {
@@ -251,17 +251,6 @@
             return n.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
         }
 
-        function getLocalHour() {
-            try {
-                const tz = window.APP_TIMEZONE || 'Europe/Istanbul';
-                const h = new Intl.DateTimeFormat('en', { timeZone: tz, hour: 'numeric', hour12: false }).format(new Date());
-                return parseInt(h, 10);
-            } catch (e) { return 12; }
-        }
-        function isRatesWindow() {
-            const h = getLocalHour();
-            return h >= 6 && h < 20;
-        }
         function formatChange(ch) {
             if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatChange === 'function') return window.CRM.Utils.formatChange(ch);
             if (ch == null || ch === '') return '';
@@ -272,7 +261,7 @@
             const out = s.replace(/\d/g, function(d) { return fa[d]; });
             return (num > 0 ? '+' : '−') + out;
         }
-        function formatTickerDateTime(updatedAtStr, timestampSec) {
+        function formatTickerDateTime(_updatedAtStr, _timestampSec) {
             const d = new Date();
             const opts = { hour: '2-digit', minute: '2-digit', hour12: false };
             const iran = new Intl.DateTimeFormat('en-GB', Object.assign({}, opts, { timeZone: 'Asia/Tehran' })).format(d);
@@ -408,6 +397,7 @@
         function refreshRatesTicker() {
             fetchRates(true);
         }
+        window.refreshRatesTicker = refreshRatesTicker;
         let ratesChartInstance = null;
         let ratesChartCurrentCurrency = 'usd';
         function setRatesChartCurrency(key) {
@@ -415,6 +405,7 @@
             document.querySelectorAll('.rates-chart-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-currency') === key) b.classList.add('active'); });
             loadRatesCharts();
         }
+        window.setRatesChartCurrency = setRatesChartCurrency;
         async function loadRatesCharts() {
             const canvas = document.getElementById('ratesChartCanvas');
             const summaryEl = document.getElementById('ratesChartsSummary');
@@ -537,6 +528,7 @@
                 console.error('loadRatesCharts error:', err);
             }
         }
+        window.loadRatesCharts = loadRatesCharts;
 
         function updateTickerTimeOnly() {
             const timesEl = document.getElementById('tickerTimes');
