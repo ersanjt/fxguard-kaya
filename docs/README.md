@@ -9,6 +9,7 @@
 | [DEPLOY-SERVER.md](DEPLOY-SERVER.md) / [DEPLOY-SETUP.md](DEPLOY-SETUP.md) | استقرار |
 | [DEPLOY-GITHUB-SECRETS.md](DEPLOY-GITHUB-SECRETS.md) | Secrets دیپلوی (اجباری بعد از به‌روزرسانی workflow) |
 | [PRODUCTION-PUSH-CHECKLIST.md](PRODUCTION-PUSH-CHECKLIST.md) | قبل از push به master |
+| [WHATSAPP-GATEWAY.md](WHATSAPP-GATEWAY.md) | عیب‌یابی Gateway واتساپ (QR) |
 | [IRAN_ACCESS.md](IRAN_ACCESS.md) | دسترسی از ایران |
 | [SERVER-STATUS-COMMANDS.md](SERVER-STATUS-COMMANDS.md) | دستورات وضعیت سرور |
 | [CONSOLE-FIXES.md](CONSOLE-FIXES.md) | رفع خطاهای کنسول |

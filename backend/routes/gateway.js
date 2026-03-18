@@ -10,7 +10,8 @@ const { gatewayGet, gatewayPost, isCloudApiConfigured, getWhatsappConnectionConf
 const { getPhoneNumberId } = require('../lib/whatsappCloudApi');
 const { authMiddleware, requireSection } = require('../middleware/auth');
 
-const GATEWAY_START_COOLDOWN_MS = 15000;
+/** فاصلهٔ مجدد بین spawn دستی Gateway (کمتر = دکمه زودتر جواب می‌دهد) */
+const GATEWAY_START_COOLDOWN_MS = 6000;
 
 /**
  * @param {object} logger
@@ -40,7 +41,7 @@ function createGatewayRouter(logger) {
                 number: phoneId ? ('••••' + String(phoneId).slice(-8) + ' (Cloud API)') : null,
             });
         }
-        gatewayGet('/api/status', { timeout: 5000 })
+        gatewayGet('/api/status', { timeout: 12000 })
             .then((r) => res.json(r.data))
             .catch((e) => {
                 const status = e.response?.status;
@@ -68,7 +69,7 @@ function createGatewayRouter(logger) {
         const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
         const useCloud = (cfg.connectionMode === 'cloud' || cfg.connectionMode === 'cloud_first') && cloudOk;
         if (useCloud) return res.json({ qr: null });
-        gatewayGet('/api/qr', { timeout: 5000 })
+        gatewayGet('/api/qr', { timeout: 10000 })
             .then((r) => res.json(r.data))
             .catch((e) => {
                 if (e.response?.status === 401) {
@@ -88,7 +89,7 @@ function createGatewayRouter(logger) {
             const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
             const useCloud = (cfg.connectionMode === 'cloud' || cfg.connectionMode === 'cloud_first') && cloudOk;
             if (useCloud) return res.json({ ok: true, status: 'ready', message: 'Cloud API فعال است' });
-            gatewayPost('/api/start', {}, { timeout: 10000 })
+            gatewayPost('/api/start', {}, { timeout: 25000 })
                 .then((r) => res.json(r.data))
                 .catch((e) =>
                     res.status(503).json({
@@ -108,7 +109,7 @@ function createGatewayRouter(logger) {
             const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
             const useCloud = (cfg.connectionMode === 'cloud' || cfg.connectionMode === 'cloud_first') && cloudOk;
             if (useCloud) return res.json({ ok: true, status: 'stopped', message: 'Cloud API فعال است' });
-            gatewayPost('/api/stop', {}, { timeout: 10000 })
+            gatewayPost('/api/stop', {}, { timeout: 20000 })
                 .then((r) => res.json(r.data))
                 .catch((e) =>
                     res.status(503).json({

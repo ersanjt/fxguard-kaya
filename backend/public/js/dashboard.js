@@ -8469,7 +8469,7 @@
         let qrRetryTimeout = null;
         let isWhatsappPolling = false;
         const WHATSAPP_POLL_MS = 4000;
-        const WHATSAPP_QR_RETRY_MS = 3000;
+        const WHATSAPP_QR_RETRY_MS = 1800;
 
         function setWhatsappStatusBadge(status) {
             const badge = document.getElementById('whatsappStatusBadge');
@@ -8611,7 +8611,7 @@
                 if (qrUnavailable) qrUnavailable.style.display = 'none';
                 if (phase === 'authenticated' && qrWaitingMsg) { qrWaitingMsg.style.display = 'block'; qrWaitingMsg.textContent = t('whatsapp_syncing'); } else if (qrWaitingMsg) qrWaitingMsg.style.display = 'none';
                 isWhatsappPolling = true;
-                const pollMs = 2000;
+                const pollMs = 1500;
                 qrRefreshInterval = setInterval(function() { loadWhatsappStatus(false); }, pollMs);
             } else {
                 qrBox.style.display = 'none';
@@ -8630,19 +8630,32 @@
             }
         }
 
+        var _whatsappBurstT = [];
+        function clearWhatsappStatusBurst() {
+            _whatsappBurstT.forEach(function(id) { try { clearTimeout(id); } catch (_e) {} });
+            _whatsappBurstT = [];
+        }
+        /** بعد از شروع/قطع واتساپ چند بار سریع وضعیت را می‌گیرد تا UI زود به‌روز شود */
+        function scheduleWhatsappStatusBurst() {
+            clearWhatsappStatusBurst();
+            [400, 1200, 2800, 5500, 10000, 18000].forEach(function(ms) {
+                _whatsappBurstT.push(setTimeout(function() { loadWhatsappStatus(false); }, ms));
+            });
+        }
+
         async function startGateway() {
             const res = await apiFetch('/api/admin/start-gateway', { method: 'POST' });
             if (res.needLogin) return;
             const msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
             toast(msg);
-            if (res.ok) setTimeout(loadWhatsappStatus, 3000);
+            if (res.ok) scheduleWhatsappStatusBurst();
         }
         async function startWhatsAppClient() {
             const res = await apiFetch('/api/gateway/start', { method: 'POST' });
             if (res.needLogin) return;
             const msg = (res.data && (res.data.message || res.data.error)) || t('done_msg');
             toast(msg);
-            if (res.ok) setTimeout(loadWhatsappStatus, 3000);
+            if (res.ok) scheduleWhatsappStatusBurst();
         }
         async function disconnectWhatsApp() {
             const btnDisconnect = document.getElementById('btnDisconnectWhatsApp');
@@ -8666,7 +8679,7 @@
                     toast(LANG === 'fa' ? 'خطا در شروع مجدد واتساپ' : 'Error restarting WhatsApp', true);
                     if (btnDisconnect) btnDisconnect.disabled = false;
                 }
-                setTimeout(loadWhatsappStatus, 3000);
+                scheduleWhatsappStatusBurst();
             } catch (e) {
                 toast((e && e.message) || t('err_generic'), true);
                 if (btnDisconnect) btnDisconnect.disabled = false;
