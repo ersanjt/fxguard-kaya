@@ -1,8 +1,8 @@
 # Secrets برای GitHub Actions (دیپلوی خودکار)
 
-> **قبل از اولین push بعد از این تغییر:** حتماً سه Secret زیر را در GitHub بسازید؛ وگرنه deploy خطا می‌دهد.
+**وضعیت فعلی workflow:** `host` و `username` SSH دوباره در `deploy.yml` ثابت هستند تا دیپلوی قطع نشود. فقط **`SSH_PRIVATE_KEY`** باید در Secrets باشد.
 
-بعد از تغییر workflow، **آدرس و نام کاربری SSH دیگر داخل کد نیستند** و باید در GitHub تعریف شوند.
+اگر بخواهی host/user را از repo حذف کنی: در workflow مقدار `host`/`username` را به `${{ secrets.DEPLOY_HOST }}` و `${{ secrets.DEPLOY_USER }}` عوض کن و همان Secrets را در GitHub بساز.
 
 ## مسیر
 

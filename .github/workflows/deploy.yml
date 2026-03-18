@@ -11,12 +11,12 @@ jobs:
 
     steps:
       # اگر خطای dial tcp ... i/o timeout دیدید: سرور از شبکهٔ GitHub در دسترس نیست (فایروال/پورت ۲۲). دیپلوی دستی را ببینید: docs/DEPLOY-SERVER.md
-      # DEPLOY_HOST و DEPLOY_USER را در GitHub → Settings → Secrets تعریف کنید (docs/DEPLOY-GITHUB-SECRETS.md)
+      # host/user ثابت — اگر خواستی از Secrets استفاده کنی: docs/DEPLOY-GITHUB-SECRETS.md
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
+          host: 92.205.58.83
+          username: fxguard
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           timeout: 60s
           command_timeout: 15m
