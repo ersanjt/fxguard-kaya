@@ -17,4 +17,4 @@
 | [REFACTORING-PLAN.md](REFACTORING-PLAN.md) | طرح بازسازی |
 | [SECURITY-UPDATE-GUIDE.md](SECURITY-UPDATE-GUIDE.md) | به‌روزرسانی امنیتی |
 
-مستندات فنی backend: پوشهٔ `../backend/docs/` — از جمله [CODEBASE-LAYOUT.md](../backend/docs/CODEBASE-LAYOUT.md)
+مستندات فنی backend: پوشهٔ `../backend/docs/` — از جمله [CODEBASE-LAYOUT.md](../backend/docs/CODEBASE-LAYOUT.md) · اسکریپت‌های یک‌باره: [backend/scripts/README.md](../backend/scripts/README.md)

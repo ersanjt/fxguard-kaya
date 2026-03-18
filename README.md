@@ -48,10 +48,15 @@ docker-compose -f docker-compose.simple.yml up -d
 
 ## 🎯 پیش‌نیازها
 
-### نرم‌افزارهای مورد نیاز:
+| حالت | نیازمندی‌ها |
+|------|-------------|
+| **شروع سریع / توسعه محلی** (مطابق بخش Quick Start بالا) | فقط **Node.js 18+**. با `USE_SQLITE=true` دیتابیس SQLite فایلی است؛ MongoDB/Redis/RabbitMQ اختیاری یا غیرفعال می‌شوند تا بتوانید سریع بالا بیایید. |
+| **Production / چندکاربره** | **PostgreSQL**، ترجیحاً **MongoDB** (لاگ تحلیلی)، **Redis**، **RabbitMQ** طبق معماری پایین و `.env` واقعی. |
+
+### نرم‌افزارها (حالت production کامل):
 - **Node.js** >= 18.x
 - **PostgreSQL** >= 14.x
-- **MongoDB** >= 5.x
+- **MongoDB** >= 5.x (اختیاری اگر لاگ تحلیلی لازم نباشد)
 - **Redis** >= 7.x
 - **RabbitMQ** >= 3.11.x
 - **Docker** (اختیاری)

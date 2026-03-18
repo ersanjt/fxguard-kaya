@@ -64,21 +64,6 @@ async function connectDatabases(logger) {
             logger.warn('Conversations branchId migration:', migErr.message);
         }
 
-        // Auto-migrate: firstReplyAt, metadata for Conversations
-        try {
-            const convDesc = await sequelize.getQueryInterface().describeTable('Conversations').catch(() => null);
-            if (!convDesc || !convDesc.firstReplyAt) {
-                await sequelize.getQueryInterface().addColumn('Conversations', 'firstReplyAt', { type: require('sequelize').DataTypes.DATE, allowNull: true });
-                logger.info('✅ Conversations.firstReplyAt column added (auto-migration)');
-            }
-            if (!convDesc || !convDesc.metadata) {
-                await sequelize.getQueryInterface().addColumn('Conversations', 'metadata', { type: require('sequelize').DataTypes.JSON, allowNull: true });
-                logger.info('✅ Conversations.metadata column added (auto-migration)');
-            }
-        } catch (migErr) {
-            logger.warn('Conversations firstReplyAt migration:', migErr.message);
-        }
-
         if (sequelize.getDialect() === 'postgres') {
             try {
                 await sequelize.query("ALTER TYPE \"enum_Tickets_status\" ADD VALUE IF NOT EXISTS 'archived';");
@@ -94,7 +79,7 @@ async function connectDatabases(logger) {
             }
         }
 
-        // Auto-migrate Conversations: new columns (lastOutgoingMessageAt, firstReplyAt, lastMessagePreview, unansweredAlertSentAt, escalatedAt)
+        // Auto-migrate Conversations: optional columns (single pass — avoids duplicate firstReplyAt/metadata logic)
         try {
             const { DataTypes } = require('sequelize');
             const qi = sequelize.getQueryInterface();
@@ -102,6 +87,7 @@ async function connectDatabases(logger) {
             try { convDesc = await qi.describeTable('Conversations'); } catch (_) { convDesc = null; }
             if (convDesc) {
                 const convCols = [
+                    ['metadata',              { type: DataTypes.JSON, allowNull: true }],
                     ['lastOutgoingMessageAt', { type: DataTypes.DATE, allowNull: true }],
                     ['firstReplyAt',          { type: DataTypes.DATE, allowNull: true }],
                     ['lastMessagePreview',    { type: DataTypes.STRING(500), allowNull: true }],

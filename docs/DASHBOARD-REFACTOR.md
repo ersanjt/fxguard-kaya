@@ -11,6 +11,10 @@
 3. **کلیدهای گم‌شده در `i18n-fa.js`**  
    مثلاً `nav_panel_settings`, `voice_record`, `save_changes`, … اضافه شدند تا UI فارسی کامل بماند.
 
+## بک‌اند (۲۰۲۶)
+
+- **مایگریشن Conversations:** منطق تکراری `firstReplyAt` / `metadata` در `services/core/database.js` در یک حلقهٔ واحد ادغام شد.
+
 ## مسیر بعدی (طبق `FRONTEND-ARCHITECTURE.md`)
 
 | مرحله | توضیح |
