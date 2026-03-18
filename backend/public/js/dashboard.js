@@ -1,806 +1,20 @@
 /**
  * Dashboard SPA — پنل اصلی CRM (ورود، ناو، مکالمات، مشتریان، تیکت، تسک، نرخ، صرافی، تنظیمات و …).
- * وابستگی‌ها: CRM.Constants, CRM.Utils, CRM.Api (پس از init), i18n-fa/en/tr.
+ * ترجمه‌ها فقط از i18n-fa.js / i18n-en.js / i18n-tr.js (قبل از این فایل).
+ * وابستگی‌ها: CRM.Constants, CRM.Utils, CRM.Api (پس از init).
  * برای نقشهٔ تفکیک به ماژول‌های feature و قراردادهای توسعهٔ چندنفره: backend/docs/FRONTEND-ARCHITECTURE.md
  */
 (function() {
             let LANG = localStorage.getItem('crm_lang') || 'fa';
-            const I18N = {
-                fa: {
-                    page_title: 'پ��رتا� کارک� ا�  کا�Rا | صراف�R کا�Rا',
-                    login_title: 'پ��رتا� کارک� ا�  کا�Rا',
-                    login_sub: '��ر��د ب�! پ��رتا� از سراسر د� �Rا',
-                    login_email: 'ا�R�&�R�',
-                    login_password: 'ر�&ز عب��ر',
-                    login_btn: '��ر��د',
-                    login_loading: 'در حا� ��ر��د...',
-                    login_totp_title: 'احراز �!���Rت د�� �&رح��!�Rا�R',
-                    login_totp_sub: 'کد شش�Rر��&�R اپ��Rک�Rش�  Google Authenticator را ��ارد ک� �Rد.',
-                    login_totp_code_ph: 'کد ۶ ر��&�R',
-                    login_totp_verify: 'تأ�R�Rد �� ��ر��د',
-                    login_back: 'بازگشت',
-                    login_err_connect: 'اتصا� ب�! سر��ر بر�رار � شد. �&ط�&ئ�  ش���Rد backend (node server.js) در حا� اجراست �� پ� � را از �!�&ا�  آدرس باز کرد�!�Rا�Rد (�&ث�ا�9 http://localhost:3002).',
-                    login_err_server_html: 'سر��ر ب�! جا�R JSON پاسخ داد. از پ��ش�! backend دست��ر node server.js را اجرا ک� �Rد.',
-                    login_err_invalid: 'پاسخ سر��ر � ا�&عتبر است.',
-                    login_err_429: 'تعداد درخ��است�R�!ا ز�Rاد شد�!. �Rک تا د�� د��R��! صبر ک� �Rد �� د��بار�! ��ر��د را بز� �Rد.',
-                    login_err_fail: '��ر��د � ا�&��ف�',
-                    login_totp_for: 'کد شش�Rر��&�R Google Authenticator را برا�R',
-                    login_totp_enter: '��ارد ک� �Rد.',
-                    login_totp_code_required: 'کد شش�Rر��&�R را ��ارد ک� �Rد',
-                    login_totp_retry: '�طفا�9 د��بار�! از �&رح��!� ا��� ��ارد ش���Rد',
-                    login_totp_bad: 'کد اشتبا�! �Rا �&� �ض�R است',
-                    login_cant_signin: 'نمی‌توانید وارد شوید؟',
-                    login_contact_support: 'با پشتیبانی تماس بگیرید',
-                    lang_fa: 'فارس�R',
-                    lang_en: 'English',
-                    lang_label: 'زبان',
-                    nav_communications: 'ارتباطات',
-                    nav_conversations: '�&کا��&ات',
-                    nav_customers: '�&شتر�Rا� ',
-                    nav_tickets: 'ت�Rکت�R�!ا�R داخ��R',
-                    nav_organization: 'ساز�&ا� ',
-                    nav_tasks: '��ظا�Rف �� تسک�R�!ا',
-                    nav_processes: 'فرا�R� د�!ا�R کسب�R��کار',
-                    nav_departments: 'دپارت�&ا� �R�!ا',
-                    nav_users: 'کاربرا� ',
-                    nav_branches: 'شعب',
-                    nav_supervision: '� ظارت (�&ا�ک)',
-                    nav_staff_activity: '��ر��د�!ا �� ��ضع�Rت آ� �ا�R� ',
-                    nav_settings: 'ت� ظ�R�&ات',
-                    nav_profile: 'پر��فا�R� �&� ',
-                    nav_internal_chat: '� ت داخ��R',
-                    nav_announcements: 'اع�ا� �R�!ا',
-                    nav_whatsapp: 'اتصا� ��اتساپ',
-                    nav_rates: '� رخ ارز�!ا',
-                    nav_more: 'بیشتر',
-                    skip_to_content: 'پرش به محتوا',
-                    loading_panel: 'در حال بارگذاری پنل...',
-                    nav_panel_settings: 'ظاهر پنل',
-                    page_panel_settings: 'ظاهر پنل',
-                    panel_settings_intro: 'نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.',
-                    panel_site_name: 'نام سایت',
-                    panel_logo_url: 'آدرس لوگو (URL)',
-                    panel_favicon_url: 'آدرس فاویکون (URL)',
-                    panel_login_title: 'عنوان صفحه ورود',
-                    panel_page_title: 'عنوان تب مرورگر',
-                    panel_footer_text: 'متن فوتر',
-                    panel_live_preview: 'پیش‌نمایش زنده',
-                    panel_section_branding: 'برندینگ',
-                    panel_section_titles: 'عنوان‌ها',
-                    panel_section_footer: 'فوتر',
-                    panel_footer_style: 'طراحی فوتر',
-                    panel_footer_style_accent: 'نوار اکسن (پیش‌فرض)',
-                    panel_footer_style_minimal: 'مینیمال',
-                    panel_footer_style_compact: 'فشرده',
-                    panel_footer_style_line: 'خط ساده',
-                    panel_footer_style_hint: 'ظاهر نوار پایین صفحه را انتخاب کنید.',
-                    panel_hide_footer: 'عدم نمایش فوتر (مخفی کردن متن پایین صفحه)',
-                    panel_section_email: 'تنظیمات ایمیل (SMTP)',
-                    panel_email_desc: 'ارسال ایمیل خوش‌آمدگویی، بازیابی رمز و اعلان ورود. در صورت خالی بودن از متغیرهای محیط سرور استفاده می‌شود.',
-                    panel_smtp_host: 'آدرس سرور (Host)',
-                    panel_smtp_port: 'پورت',
-                    panel_smtp_user: 'نام کاربری',
-                    panel_smtp_pass: 'رمز عبور',
-                    panel_smtp_from: 'آدرس فرستنده (From)',
-                    panel_smtp_from_name: 'نام فرستنده',
-                    panel_smtp_secure: 'استفاده از SSL/TLS (پورت ۴۶۵)',
-                    panel_email_login_notification: 'ارسال اعلان ورود به ایمیل کاربر',
-                    panel_test_email_label: 'ارسال ایمیل تست',
-                    panel_test_email_btn: 'ارسال تست',
-                    panel_section_company_emails: 'ایمیل‌های شرکتی',
-                    panel_company_emails_desc: 'ثبت و مدیریت ایمیل‌های شرکتی (مثل support@، info@). می‌توانید به هر ایمیل یک کاربر اختصاص دهید و اطلاعات ورود را برایش ارسال کنید.',
-                    panel_company_email_add: 'افزودن ایمیل شرکتی',
-                    panel_company_email_address: 'آدرس ایمیل',
-                    panel_company_email_label: 'عنوان / کاربرد',
-                    panel_company_email_assigned: 'اختصاص به کاربر',
-                    panel_company_email_password: 'رمز عبور',
-                    panel_company_email_password_hint: 'خالی = بدون تغییر (در ویرایش)',
-                    panel_company_email_notes: 'یادداشت',
-                    panel_company_email_active: 'فعال',
-                    panel_company_email_has_pass: 'رمز',
-                    panel_company_email_actions: 'عملیات',
-                    panel_company_emails_empty: 'هنوز ایمیل شرکتی ثبت نشده است.',
-                    panel_company_email_send_creds: 'ارسال اطلاعات ورود',
-                    btn_cancel: 'انصراف',
-                    panel_section_languages: 'زبان‌های سایت',
-                    panel_section_languages_desc: 'زبان‌های در دسترس برای صفحه ورود و منوی پنل. در حالت تک‌زبانه سوئیچ زبان مخفی است؛ در حالت چندزبانگی کاربران می‌توانند زبان را عوض کنند.',
-                    panel_language_mode: 'حالت زبان',
-                    panel_language_mode_single: 'تک‌زبانه (فقط فارسی)',
-                    panel_language_mode_single_en: 'تک‌زبانه (فقط انگلیسی)',
-                    panel_language_mode_single_tr: 'تک‌زبانه (فقط ترکی)',
-                    panel_language_mode_bilingual: 'دو زبانه (فارسی + انگلیسی)',
-                    panel_language_mode_bilingual_fa_tr: 'دو زبانه (فارسی + ترکی)',
-                    panel_language_mode_bilingual_en_tr: 'دو زبانه (انگلیسی + ترکی)',
-                    panel_language_mode_trilingual: 'سه زبانه (فارسی + انگلیسی + ترکی)',
-                    panel_default_language: 'زبان پیش‌فرض',
-                    panel_default_language_desc: 'زبان اولیه برای کاربران جدید یا وقتی زبان انتخاب نشده است.',
-                    lang_fa: 'فارسی',
-                    lang_en: 'English',
-                    lang_tr: 'Türkçe',
-                    panel_language_hint_single: 'فقط فارسی در منو و صفحه ورود نمایش داده می‌شود.',
-                    panel_language_hint_single_en: 'فقط انگلیسی در منو و صفحه ورود نمایش داده می‌شود.',
-                    panel_language_hint_single_tr: 'فقط ترکی در منو و صفحه ورود نمایش داده می‌شود.',
-                    panel_language_hint_bilingual: 'فارسی و انگلیسی؛ کاربران می‌توانند زبان را عوض کنند.',
-                    panel_language_hint_bilingual_fa_tr: 'فارسی و ترکی؛ کاربران می‌توانند زبان را عوض کنند.',
-                    panel_language_hint_bilingual_en_tr: 'انگلیسی و ترکی؛ کاربران می‌توانند زبان را عوض کنند.',
-                    panel_language_hint_trilingual: 'فارسی، انگلیسی و ترکی؛ کاربران می‌توانند زبان را عوض کنند.',
-                    panel_section_visibility: 'نمایش بخش‌ها در سایت',
-                    panel_section_theme: 'رنگ و ظاهر پنل',
-                    panel_primary_color: 'رنگ اصلی (اکسن)',
-                    panel_font_family: 'فونت',
-                    panel_font_default: 'پیش‌فرض (Vazirmatn)',
-                    panel_font_size: 'سایز فونت',
-                    panel_font_size_small: 'کوچک',
-                    panel_font_size_medium: 'متوسط',
-                    panel_font_size_large: 'بزرگ',
-                    panel_font_weight: 'وزن فونت',
-                    panel_font_weight_normal: 'معمولی',
-                    panel_font_weight_medium: 'متوسط',
-                    panel_font_weight_bold: 'ضخیم',
-                    panel_ui_theme: 'قالب ظاهری (بوت استایل)',
-                    panel_theme_default: 'پیش‌فرض',
-                    panel_theme_minimal: 'مینیمال',
-                    panel_theme_dark: 'تیره',
-                    panel_theme_light: 'روشن',
-                    panel_theme_ocean: 'اقیانوسی',
-                    panel_theme_warm: 'گرم',
-                    panel_theme_hint: 'سبک کلی دکمه‌ها، کارت‌ها و نوارها',
-                    panel_sidebar_order: 'ترتیب بخش‌های منو',
-                    panel_sidebar_order_desc: 'رتبه هر بخش را وارد کنید. اعداد کوچک‌تر بالاتر نمایش داده می‌شوند. خالی = پیش‌فرض.',
-                    panel_visibility_desc: 'بخش‌هایی که مخفی می‌کنید در منو و در کل وب‌سایت نمایش داده نمی‌شوند. تیک خورده = نمایش داده شود.',
-                    panel_tab_branding: 'برندینگ و ظاهر',
-                    panel_tab_email: 'ایمیل',
-                    panel_tab_sections: 'بخش‌ها و نمایش',
-                    panel_unsaved: 'تغییرات ذخیره نشده',
-                    panel_visibility_search: 'جستجو در بخش‌ها...',
-                    user_perms_select_all: 'همه دسترسی‌ها',
-                    user_perms_select_none: 'هیچ‌کدام',
-                    user_perms_group_communications: 'ارتباطات',
-                    user_perms_group_organization: 'سازمان',
-                    user_perms_group_settings: 'تنظیمات',
-                    user_perms_group_special: 'دسترسی‌های ویژه',
-                    user_perms_all: 'همه',
-                    user_perms_none: 'هیچ‌کدام',
-                    section_manage_tickets: 'مدیریت تیکت‌ها (حذف/آرشیو)',
-                    header_search: 'جستج�� در �&کا��&ات�R �&شتر�Rا� ...',
-                    header_search_aria: 'جستج�� در �&کا��&ات �� �&شتر�Rا� ',
-                    header_logout: 'خروج',
-                    header_dropdown_avatar: 'تغییر عکس پروفایل',
-                    header_dropdown_password: 'تغییر رمز عبور',
-                    header_dropdown_2fa: 'احراز دو مرحله‌ای',
-                    notify_pending: 'در انتظار',
-                    notify_see_all_tickets: 'مشاهده همه تیکت‌ها',
-                    logo_kaya: 'صراف�R کا�Rا',
-                    page_conversations: '�&کا��&ات',
-                    page_customers: '�&شتر�Rا� ',
-                    page_departments: 'دپارت�&ا� �R�!ا',
-                    page_users: 'کاربرا� ',
-                    page_tickets: 'ت�Rکت�R�!ا�R داخ��R',
-                    page_tasks: '��ظا�Rف �� تسک�R�!ا',
-                    page_processes: '�&د�Rر فرا�R� د�!ا�R کسب�R��کار',
-                    page_profile: 'پر��فا�R� �&� ',
-                    page_announcements: 'اع�ا� �R�!ا',
-                    page_internal_chat: '� ت داخ��R',
-                    page_branches: 'شعب',
-                    page_staff_activity: '��ر��د�!ا �� ��ضع�Rت آ� �ا�R�  کارک� ا� ',
-                    page_supervision: '� ظارت �� �&��� �Rت��ر�R� گ (�&ا�ک)',
-                    page_whatsapp: 'اتصا� ��اتساپ',
-                    page_rates: 'ت� ظ�R�& � رخ ارز�!ا',
-                    page_panel_settings: 'ظاهر پنل',
-                    panel_settings_intro: 'نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.',
-                    panel_site_name: 'نام سایت',
-                    panel_logo_url: 'آدرس لوگو (URL)',
-                    panel_favicon_url: 'آدرس فاویکون (URL)',
-                    panel_login_title: 'عنوان صفحه ورود',
-                    panel_page_title: 'عنوان تب مرورگر',
-                    panel_footer_text: 'متن فوتر',
-                    panel_preview: 'پیش‌نمایش',
-                    page_customer_detail: 'تار�Rخ� �! �&شتر�R',
-                    btn_send: 'ارسا�',
-                    btn_save: 'ذخ�Rر�!',
-                    btn_back: 'بازگشت',
-                    btn_apply: 'اعمال',
-                    btn_edit: 'ویرایش',
-                    btn_delete: 'حذف',
-                    msg_placeholder: 'پ�Rا�& خ��د را ب� ���Rس�Rد...',
-                    back_to_customers: '� � بازگشت ب�! �&شتر�Rا� ',
-                    back_to_list: '� � بازگشت ب�! ��Rست',
-                    loading: 'در حا� بارگذار�R...',
-                    empty_conv: '�!� ��ز �&کا��&�!�Rا�R � �Rست.',
-                    empty_customers: '�&شتر�R�R �Rافت � شد.',
-                    empty_dept: 'دپارت�&ا� �R �Rافت � شد.',
-                    empty_users: 'کاربر�R �Rافت � شد.',
-                    empty_tickets: 'ت�Rکت�R �Rافت � شد.',
-                    empty_tasks: 'تسک�R �Rافت � شد.',
-                    empty_branches: 'شعب�!�Rا�R ثبت � شد�!.',
-                    totp_banner: 'برا�R ا�&� �Rت ب�Rشتر احراز �!���Rت د�� �&رح��!�Rا�R (Google Authenticator) را فعا� ک� �Rد.',
-                    totp_enable: 'فعا��Rساز�R',
-                    totp_later: 'بعدا�9',
-                    profile_intro: '� ا�&�R ت�ف�  �� ر�&ز عب��ر �اب� ���Rرا�Rش است. ا�R�&�R� �� دپارت�&ا�  ت��سط �&د�Rر ت� ظ�R�& �&�R�Rش��د.',
-                    profile_avatar: 'عکس پر��فا�R� (آدرس URL)',
-                    profile_name: '� ا�&',
-                    profile_email_readonly: 'ا�R�&�R� (غ�Rر�اب� تغ�R�Rر)',
-                    profile_dept_readonly: 'دپارت�&ا�  (غ�Rر�اب� تغ�R�Rر)',
-                    profile_phone: 'ت�ف� ',
-                    profile_password_new: 'ر�&ز عب��ر جد�Rد (در ص��رت ت�&ا�R� ب�! تغ�R�Rر)',
-                    profile_password_ph: 'خا��R بگذار�Rد اگر � �&�R�Rخ��ا�!�Rد تغ�R�Rر ک� د',
-                    profile_save: 'ذخ�Rر�! تغ�R�Rرات',
-                    profile_totp_title: 'احراز �!���Rت د�� �&رح��!�Rا�R (Google Authenticator)',
-                    profile_totp_desc: '��ر��د ا�&� �Rتر با اپ��Rک�Rش�  Google Authenticator. �&�R�Rت��ا� �Rد از داخ� پ� � آ�  را فعا� �Rا غ�Rرفعا� ک� �Rد.',
-                    totp_active: 'فعا�',
-                    totp_inactive: 'غ�Rرفعا�',
-                    totp_disable_btn: 'غ�Rرفعا� کرد� ',
-                    totp_setup_btn: 'فعا��Rساز�R با Google Authenticator',
-                    modal_totp_setup: 'فعا��Rساز�R Google Authenticator',
-                    modal_totp_scan: 'با اپ��Rک�Rش�  Google Authenticator QR ز�Rر را اسک�  ک� �Rد (�Rا ک��Rد را دست�R ��ارد ک� �Rد):',
-                    modal_totp_secret: 'ک��Rد دست�R:',
-                    modal_totp_confirm: 'تأ�R�Rد �� فعا��Rساز�R',
-                    modal_totp_disable: 'غ�Rرفعا� کرد�  احراز د�� �&رح��!�Rا�R',
-                    modal_totp_enter_pw: 'ر�&ز عب��ر خ��د را ��ارد ک� �Rد:',
-                    modal_totp_password_ph: 'ر�&ز عب��ر',
-                    modal_user_edit: '���Rرا�Rش دسترس�R �� ��ضع�Rت کاربر',
-                    modal_user_active: 'حساب فعا� (غ�Rرفعا� = �&سد��د)',
-                    modal_user_perms: 'دسترس�R ب�! بخش�R�!ا:',
-                    modal_ann_title: 'اع�ا�  �&�!�&',
-                    modal_ann_gotit: '�&ت��ج�! شد�&',
-                    footer_text: 'صرافی کایا — پورتال کارکنان',
-                    section_conversations: '�&کا��&ات',
-                    section_customers: '�&شتر�Rا� ',
-                    section_tickets: 'ت�Rکت�R�!ا',
-                    section_tasks: '��ظا�Rف �� تسک�R�!ا',
-                    section_departments: 'دپارت�&ا� �R�!ا',
-                    section_users: 'کاربرا� ',
-                    section_branches: 'شعب',
-                    section_supervision: '� ظارت (�&ا�ک)',
-                    section_staff_activity: '��ر��د�!ا �� آ� �ا�R� ',
-                    section_announcements: 'اع�ا� �R�!ا',
-                    section_internal_chat: '� ت داخ��R',
-                    section_whatsapp: 'اتصا� ��اتساپ',
-                    section_rates: '� رخ ارز�!ا (ت� ظ�R�& � ��ار ��R�&ت)',
-                    section_processes: 'فرا�R� د�!ا�R کسب�R��کار',
-                    section_manage_users: '�&د�Rر�Rت کاربرا�  (���Rرا�Rش/�&سد��د)',
-                    status_online: 'آ� �ا�R� ',
-                    status_away: 'د��ر',
-                    status_busy: '�&شغ���',
-                    status_offline: 'آف�ا�R� ',
-                    err_generic: 'خطا',
-                    saved: 'ذخ�Rر�! شد', save_changes: 'ذخ�Rر�! تغ�R�Rرات',
-                    toast_ticket_created: 'ت�Rکت ثبت شد',
-                    toast_dept_added: 'دپارت�&ا�  اضاف�! شد',
-                    toast_user_added: 'کاربر اضاف�! شد',
-                    toast_branch_added: 'شعب�! اضاف�! شد',
-                    toast_branch_updated: 'شعب�! ب�!�Rر��ز شد',
-                    toast_reply_sent: 'پاسخ ثبت شد',
-                    toast_task_created: 'تسک ثبت شد',
-                    toast_status_updated: '��ضع�Rت ب�!�Rر��ز شد',
-                    toast_update_added: 'پ�Rگ�Rر�R ثبت شد',
-                    toast_totp_enabled: 'احراز د�� �&رح��!�Rا�R فعا� شد',
-                    toast_totp_disabled: 'احراز د�� �&رح��!�Rا�R غ�Rرفعا� شد',
-                    toast_rates_saved: 'تعد�R�ات ذخ�Rر�! شد.',
-                    no_branch: 'بد���  شعب�!',
-                    no_dept: 'بد���  دپارت�&ا� ',
-                    no_user: 'ا� تخاب کار�&� د',
-                    no_user_filter: '�!�&�! کار�&� دا� ',
-                    all_branches: '�!�&�! شعب',
-                    all_statuses: '�!�&�! ��ضع�Rت�R�!ا',
-                    all_depts: '�!�&�! دپارت�&ا� �R�!ا',
-                    ticker_loading: 'در حا� بارگذار�R ��R�&ت�R�!ا...',
-                    ticker_updated: 'آخر�R�  بر��زرسا� �R:',
-                    ticker_outside_hours: 'بر��زرسا� �R � رخ ف�ط ۶ تا ۲۰ ب�! ���ت ت�!را�  � �!ر ۱۰ د��R��!',
-                    ticker_last: 'آخر�R�  بر��زرسا� �R:',
-                    dept_branch: 'شعبه', dept_name: 'نام دپارتمان', dept_desc: 'توضیحات', dept_keywords: 'کلمات کلیدی (با کاما)', add_dept: 'افزودن دپارتمان', dept_intro: 'دپارتمان‌ها برای تخصیص خودکار مکالمات بر اساس کلمات کلیدی استفاده می‌شوند.',
-                    dept_color: 'رنگ', dept_is_default: 'پیش‌فرض (مکالمات بدون تطابق)', dept_edit_hint: 'فیلدها را ویرایش کنید و روی «ذخیره» بزنید.', toast_dept_updated: 'دپارتمان به‌روز شد', dept_list_title: 'دپارتمان‌ها',
-                    dept_ph_name: '�&ثا�: پشت�Rبا� �R ف� �R', dept_ph_optional: 'اخت�Rار�R', dept_ph_keywords: '�&ثا�: �&شک��R خراب�R�R پشت�Rبا� �R',
-                    users_intro: 'ف�ط �&د�Rر �&ج�&��ع�! �Rا کس�R ک�! دسترس�R «�&د�Rر�Rت کاربرا� » دارد �&�R�Rت��ا� د کاربر جد�Rد بسازد.',
-                    label_name: '� ا�&', label_email: 'ا�R�&�R�', label_password: 'ر�&ز عب��ر', label_role: '� �ش', label_position: 'سمت', position_ph: 'مثلاً مدیر فروش، حسابدار', label_dept: 'دپارت�&ا� ', label_branch: 'شعب�!',
-                    user_ph_name: '� ا�& کا�&�', user_ph_pass: 'حدا�� ۶ کاراکتر', add_user: 'افز��د�  کاربر', role_agent: 'کار�&� د', role_manager: '�&د�Rر', role_admin: 'اد�&�R� ',
-                    ticket_title: 'ع� ��ا�  ت�Rکت', ticket_desc: 'ت��ض�Rحات', ticket_priority: 'ا������Rت', create_ticket: 'ثبت ت�Rکت', ticket_ph_subject: '�&��ض��ع',
-                    reply_to_ticket: 'پاسخ ب�! ت�Rکت', reply_ph: '�&ت�  پاسخ...', file_attach: 'پ�R��ست فا�R� (اخت�Rار�R)', send_reply: 'ارسا� پاسخ',
-                    priority_normal: 'عاد�R', priority_high: '�&�!�&', priority_low: 'ک�&', priority_urgent: 'ف��ر�R',
-                    tasks_intro: 'پ�Rگ�Rر�R کار�!ا�R اختصاص�R�Rافت�! ب�! کار�&� د �Rا دپارت�&ا� .',
-                    new_task: 'تسک جد�Rد', label_title: 'ع� ��ا� ', task_ph_title: 'ع� ��ا�  ��ظ�Rف�!', task_ph_desc: 'شرح کار', assign_to: 'اختصاص ب�!',
-                    assign_user: 'کار�&� د', assign_dept: 'دپارت�&ا� ', select_dept: 'ا� تخاب دپارت�&ا� ', due_date: '�&�!�ت (اخت�Rار�R)', filter: 'ف�R�تر',
-                    all_statuses: '�!�&�! ��ضع�Rت�R�!ا', status_pending: 'در ا� تظار', status_in_progress: 'در حا� ا� جا�&', status_done: 'ا� جا�& شد�!', status_cancelled: '�غ��',
-                    add_task: 'ثبت تسک', add_update: 'افز��د�  پ�Rگ�Rر�R / گزارش', update_ph: '��ضع�Rت �Rا گزارش خ��د را ب� ���Rس�Rد...', save_update: 'ثبت پ�Rگ�Rر�R',
-                    change_status: 'تغ�R�Rر ��ضع�Rت', creator: 'ساز� د�!', updates: 'پ�Rگ�Rر�R�R�!ا', no_updates: '�!� ��ز پ�Rگ�Rر�R ثبت � شد�!.',
-                    ann_send_title: 'ارسا� اع�ا�  ب�! کارک� ا� ', ann_recipient: 'گ�Rر� د�!', ann_all: '�!�&�! کارک� ا� ', ann_one_dept: '�Rک دپارت�&ا� ', ann_one_user: '�Rک � فر',
-                    ann_select: 'ا� تخاب ک� �Rد', ann_title: 'ع� ��ا� ', ann_body: '�&ت� ', ann_ph_title: 'ع� ��ا�  اع�ا� ', ann_ph_body: '�&ت�  پ�Rا�&...',
-                    ann_important: 'پ�Rا�& �&�!�& (پاپ�Rآپ �� صدا برا�R گ�Rر� د�!)', send_ann: 'ارسا� اع�ا� ',
-                    new_chat: 'گفتگ���R جد�Rد', select_conversation: 'ا� تخاب گفتگ��', msg_ph_short: 'پ�Rا�&...', attach_file: 'پ�R��ست فا�R�', msg_template: 'تمپلیت پیام',
-                    start_chat_with: 'شر��ع گفتگ�� با', start_chat: 'شر��ع � ت', internal_chat_open_full: 'باز کردن چت کامل', cancel: 'ا� صراف',
-                    branch_intro: 'شعب برای تفکیک جغرافیایی و تخصیص کاربران و مکالمات استفاده می‌شوند.', branch_name: 'نام شعبه', branch_city: 'شهر', branch_country: 'کشور', branch_ph_name: 'مثال: دفتر تهران', branch_ph_city: 'مثال: تهران', branch_ph_country: 'مثال: ایران', add_branch: 'افزودن شعبه', edit: 'ویرایش',
-                    staff_online: 'کارک� ا�  آ� �ا�R� ', staff_intro: 'آخر�R�  ��ر��د�!ا �� ��Rست کارک� ا�  آ� �ا�R�  � برا�R �&د�Rر �� با�اتر', last_logins: 'آخر�R�  ��ر��د�!ا',
-                    sup_performance: 'خ�اص�! ع�&�کرد', sup_conversations: '�&کا��&ات', sup_activity: '�اگ فعا��Rت', sup_branch_status: 'شعب�! / دپارت�&ا�  / ��ضع�Rت', apply_filter: 'اع�&ا� ف�R�تر',
-                    sup_by_branch: 'ب�! تفک�Rک شعب�!', sup_by_user: 'ع�&�کرد کاربرا�  (پ�Rا�& ارسا��R)', total_conversations: 'ک� �&کا��&ات', outgoing_messages: 'پ�Rا�& ارسا��R (خر��ج�R)',
-                    th_branch: 'شعب�!', th_city_country: 'ش�!ر/کش��ر', th_conv_count: 'تعداد �&کا��&�!', th_user: 'کاربر', th_email: 'ا�R�&�R�', th_status: '��ضع�Rت', th_last_login: 'آخر�R�  ��ر��د',
-                    th_customer: '�&شتر�R', th_dept: 'دپارت�&ا� ', th_assignee: 'کار�&� د', th_time: 'ز�&ا� ', th_action: 'ع�&��Rات', th_summary: 'خ�اص�!', th_login_time: 'ز�&ا�  ��ر��د',
-                    all_actions: '�!�&�! ع�&��Rات', action_message_sent: 'ارسا� پ�Rا�&', action_conv_assigned: 'تخص�Rص �&کا��&�!', status_open: 'باز', status_closed: 'بست�!', status_resolved: 'ح� شد�!',
-                    whatsapp_checking: 'در حا� بررس�R...', whatsapp_scan_qr: 'QR را با اپ��Rک�Rش�  ��اتساپ �&��با�R� اسک�  ک� �Rد', whatsapp_start_btn: 'شر��ع Gateway ��اتساپ',
-                    whatsapp_server_err: 'سر��ر Backend پاسخ درست � �&�R�Rد�!د.', whatsapp_gateway_off: 'Gateway ر��ش�  � �Rست. ر���R دک�&�! ز�Rر ک��Rک ک� �Rد.',
-                    whatsapp_status: '��ضع�Rت ��اتساپ:', whatsapp_connected: '�&تص� �S', whatsapp_disconnected: '�طع', redis: 'Redis', active: 'فعا�', inactive: 'غ�Rرفعا�', done_msg: 'ا� جا�& شد',
-                    rates_intro: '��R�&ت�R�!ا از API در�Rافت �&�R�Rش��� د �� در � ��ار ز�Rر پ� � برا�R �!�&�! � �&ا�Rش داد�! �&�R�Rش��� د.', rates_adjust_type: '� ��ع تعد�R�',
-                    rates_none: 'بد���  تغ�R�Rر', rates_fixed: 'ثابت', rates_delta: '± ت���&ا� ', rates_percent: '± درصد', rates_currency: 'ارز', rates_current: '��R�&ت فع��R (� �&ا�Rش در � ��ار)', rates_value: '�&�دار',
-                    no_data: 'داد�!�Rا�R � �Rست.', loading_err: 'خطا در بارگذار�R.', select_user: 'ا� تخاب کاربر',
-                    empty_conv_list: 'گفتگ���R�R ��ج��د � دارد. ر���R «گفتگ���R جد�Rد» ک��Rک ک� �Rد.', chat: '� ت', empty_internal_msgs: '�!� ��ز پ�Rا�&�R � �Rست.', file: 'فا�R�',
-                    empty_no_logins: '�!� ��ز ��ر��د�R ثبت � شد�!.', no_staff_online: '�!�R�  کار�&� د آ� �ا�R� �R � �Rست.', login_err_load: 'خطا در بارگذار�R ��ر��د�!ا.',
-                    required_name_email_pass: '� ا�&�R ا�R�&�R� �� ر�&ز عب��ر ا�زا�&�R است', select_user_first: '�Rک کاربر ا� تخاب ک� �Rد', select_conversation_first: '�Rک گفتگ�� ا� تخاب ک� �Rد',
-                    enter_text_or_file: '�&ت�  �Rا �Rک فا�R� ��ارد ک� �Rد', manage_users_required: 'دسترس�R �&د�Rر�Rت کاربرا�  �از�& است',
-                    branch_name_required: '� ا�& شعب�! ا�زا�&�R است', edit_branch_hint: 'ف�R�د�!ا را ���Rرا�Rش ک� �Rد �� ر���R «افز��د�  شعب�!» بز� �Rد تا ب�!�Rر��زرسا� �R ش��د.',
-                    ticket_title_required: 'ع� ��ا�  ت�Rکت ا�زا�&�R است', reply_or_file_required: '�&ت�  پاسخ �Rا �Rک فا�R� ا�زا�&�R است', task_title_required: 'ع� ��ا�  تسک ا�زا�&�R است',
-                    select_assignee: 'کار�&� د �Rا دپارت�&ا�  را ا� تخاب ک� �Rد', task_update_required: '�&ت�  پ�Rگ�Rر�R ا�زا�&�R است', dept_name_required: '� ا�& دپارت�&ا�  ا�زا�&�R است',
-                    enter_password: 'ر�&ز عب��ر را ��ارد ک� �Rد', enter_6_digit: 'کد شش�Rر��&�R را ��ارد ک� �Rد',
-                    creator_label: 'ساز� د�!:', assignee_label: 'اختصاص ب�!:', due_label: '�&�!�ت:', no_reply: 'پاسخ�R ثبت � شد�!.', conversation: '�&کا��&�!', history: 'تار�Rخ� �!:',
-                    by_dept: 'ب�! تفک�Rک دپارت�&ا� ', by_user: 'ب�! تفک�Rک کار�&� د', pending_count: 'در ا� تظار', in_progress_count: 'در حا� ا� جا�&', done_count: 'ا� جا�& شد�!',
-                    customer: '�&شتر�R', no_conv_history: '�!� ��ز �&کا��&�!�Rا�R ثبت � شد�!.', blocked: '�&سد��د', edit_access: '���Rرا�Rش / دسترس�R',
-                    usd: 'د�ار', eur: '�R��ر��', gbp: 'پ��� د', try: '��Rر', aed: 'در�!�&', rub: 'ر��ب�', azn: '�&� ات', cny: '�R��ا� ', gold: 'ط�ا (گر�&)',
-                    processes_intro: '�ا�ب�R�!ا�R فرا�R� د را تعر�Rف ک� �Rد �� � �&��� �!�R�!ا�R در حا� اجرا را پ�Rگ�Rر�R ک� �Rد.',
-                    process_templates: '�ا�ب�R�!ا�R فرا�R� د',
-                    process_instances: '� �&��� �!�R�!ا�R در حا� اجرا',
-                    process_add_template: 'افز��د�  �ا�ب فرا�R� د',
-                    process_template_name: '� ا�& �ا�ب',
-                    process_template_desc: 'ت��ض�Rحات',
-                    process_stages: '�&راح� (ب�! ترت�Rب)',
-                    process_stage_name: '� ا�& �&رح��!',
-                    process_add_stage: 'افز��د�  �&رح��!',
-                    process_start_instance: 'شر��ع � �&��� �!',
-                    process_instance_title: 'ع� ��ا�  � �&��� �!',
-                    process_current_stage: '�&رح��! فع��R',
-                    process_advance: 'تک�&�R� �� رفت�  ب�! �&رح��! بعد',
-                    process_complete: 'پا�Rا�  فرا�R� د',
-                    process_notes: '�Rادداشت (اخت�Rار�R)',
-                    status_active: 'فعا�',
-                    empty_process_templates: '�ا�ب فرا�R� د�R تعر�Rف � شد�!.',
-                    empty_process_instances: '� �&��� �!�Rا�R در حا� اجرا � �Rست.',
-                    all_templates: '�!�&�! �ا�ب�R�!ا',
-                    process_min_one_stage: 'حدا�� �Rک �&رح��! ��ارد ک� �Rد.',
-                    process_start_from_ticket: 'شر��ع فرا�R� د برا�R ا�R�  ت�Rکت'
-                },
-                en: {
-                    page_title: 'Kaya Staff Portal | Kaya Exchange',
-                    login_title: 'Kaya Staff Portal',
-                    login_sub: 'Sign in to the portal from anywhere',
-                    login_email: 'Email',
-                    login_email_or_username: 'Email or username',
-                    login_password: 'Password',
-                    login_btn: 'Sign in',
-                    login_loading: 'Signing in...',
-                    login_totp_title: 'Two-Factor Authentication',
-                    login_totp_sub: 'Enter the 6-digit code from your Google Authenticator app.',
-                    login_totp_code_ph: '6-digit code',
-                    login_totp_verify: 'Verify & sign in',
-                    login_back: 'Back',
-                    login_err_connect: 'Could not connect to server. Ensure the backend (node server.js) is running and you opened the panel from the same URL (e.g. http://localhost:3002).',
-                    login_err_server_html: 'Server returned non-JSON. Run node server.js from the backend folder.',
-                    login_err_invalid: 'Invalid server response.',
-                    login_err_429: 'Too many requests. Please wait a minute and try again.',
-                    login_err_fail: 'Sign in failed',
-                    login_totp_for: 'Enter the 6-digit Google Authenticator code for',
-                    login_totp_enter: '',
-                    login_totp_code_required: 'Please enter the 6-digit code',
-                    login_totp_retry: 'Please sign in again from step 1',
-                    login_totp_bad: 'Invalid or expired code',
-                    login_cant_signin: "Can't sign in?",
-                    login_contact_support: 'Contact support',
-                    login_forgot_password: 'Forgot password',
-                    forgot_title: 'Reset password',
-                    forgot_sub: 'Enter your account email; if an account exists, a reset link will be sent.',
-                    forgot_send: 'Send reset link',
-                    forgot_success_msg: 'If an account exists with this email, a reset link has been sent.',
-                    reset_title: 'Set new password',
-                    reset_sub: 'Enter your new password and confirm it.',
-                    reset_new_password: 'New password',
-                    reset_confirm_password: 'Confirm password',
-                    reset_btn: 'Change password & sign in',
-                    reset_err_match: 'Password and confirmation do not match.',
-                    reset_err_length: 'Password must be at least 6 characters.',
-                    lang_fa: 'فارس�R',
-                    lang_en: 'English',
-                    lang_tr: 'Turkish',
-                    lang_label: 'Language',
-                    nav_main_menu: 'Main menu',
-                    nav_dashboard: 'Dashboard',
-                    nav_communications: 'Communications',
-                    nav_conversations: 'Conversations',
-                    nav_customers: 'Customers',
-                    nav_tickets: 'Internal tickets',
-                    nav_organization: 'Organization',
-                    nav_tasks: 'Tasks',
-                    nav_processes: 'Business processes',
-                    nav_departments: 'Departments',
-                    nav_users: 'Users',
-                    nav_branches: 'Branches',
-                    nav_supervision: 'Supervision (Owner)',
-                    nav_staff_activity: 'Logins & online status',
-                    nav_settings: 'Settings',
-                    nav_settings_account: 'Account',
-                    nav_settings_connections: 'Connections',
-                    nav_settings_finance: 'Finance & rates',
-                    nav_settings_appearance: 'Appearance',
-                    nav_profile: 'My profile',
-                    nav_internal_chat: 'Internal chat',
-                    nav_announcements: 'Announcements',
-                    nav_whatsapp: 'WhatsApp connection',
-                    nav_rates: 'Exchange rates',
-                    nav_rates_charts: 'Currency charts',
-                    nav_services: 'Exchange services',
-                    nav_more: 'More',
-                    nav_panel_settings: 'Panel appearance',
-                    skip_to_content: 'Skip to content',
-                    loading_panel: 'Loading panel...',
-                    header_search: 'Search conversations, customers...',
-                    header_search_aria: 'Search conversations and customers',
-                    header_logout: 'Log out',
-                    header_dropdown_avatar: 'Change Avatar',
-                    header_dropdown_password: 'Change Password',
-                    header_dropdown_2fa: '2-Step Verification',
-                    notify_pending: 'Pending',
-                    notify_see_all_tickets: 'See All Tickets',
-                    logo_kaya: 'Kaya Exchange',
-                    page_dashboard: 'Dashboard',
-                    dashboard_welcome: 'Key information and quick access to panel sections',
-                    dashboard_sections: 'Panel sections',
-                    dashboard_stat_online: 'Staff online',
-                    dashboard_stat_logins_today: 'Logins today',
-                    dashboard_stat_conversations: 'Open conversations',
-                    dashboard_stat_unread: 'Unread',
-                    dashboard_stat_tickets: 'Open tickets',
-                    dashboard_stat_customers: 'Customers',
-                    dashboard_stat_tasks: 'Tasks pending',
-                    dashboard_stat_messages_today: 'Messages today',
-                    dashboard_stat_announcements: 'Unread announcements',
-                    dashboard_quick_new_conv: 'New conversation',
-                    dashboard_quick_new_customer: 'Add customer',
-                    dashboard_quick_new_ticket: 'New ticket',
-                    dashboard_refresh: 'Refresh',
-                    page_conversations: 'Conversations',
-                    page_customers: 'Customers',
-                    page_departments: 'Departments',
-                    page_users: 'Users',
-                    page_tickets: 'Internal tickets',
-                    page_tasks: 'Tasks',
-                    page_processes: 'Business process manager',
-                    page_profile: 'My profile',
-                    page_announcements: 'Announcements',
-                    page_internal_chat: 'Internal chat',
-                    page_branches: 'Branches',
-                    page_staff_activity: 'Staff logins & online status',
-                    page_supervision: 'Supervision & monitoring (Owner)',
-                    page_whatsapp: 'WhatsApp connection',
-                    page_rates: 'Exchange rate settings',
-                    page_panel_settings: 'Panel appearance',
-                    panel_settings_intro: 'Set site name, logo, favicon and footer text. Only visible to admins.',
-                    panel_site_name: 'Site name',
-                    panel_logo_url: 'Logo URL',
-                    panel_favicon_url: 'Favicon URL',
-                    panel_login_title: 'Login page title',
-                    panel_page_title: 'Browser tab title',
-                    panel_footer_text: 'Footer text',
-                    panel_live_preview: 'Live preview',
-                    panel_section_branding: 'Branding',
-                    panel_section_titles: 'Titles',
-                    panel_section_footer: 'Footer',
-                    panel_footer_style: 'Footer style',
-                    panel_footer_style_accent: 'Accent bar (default)',
-                    panel_footer_style_minimal: 'Minimal',
-                    panel_footer_style_compact: 'Compact',
-                    panel_footer_style_line: 'Simple line',
-                    panel_footer_style_hint: 'Choose the appearance of the bottom bar.',
-                    panel_hide_footer: 'Hide footer (hide bottom bar text)',
-                    panel_section_email: 'Email (SMTP) settings',
-                    panel_email_desc: 'Welcome emails, password reset and login notifications. If empty, server env vars are used.',
-                    panel_smtp_host: 'Server (Host)',
-                    panel_smtp_port: 'Port',
-                    panel_smtp_user: 'Username',
-                    panel_smtp_pass: 'Password',
-                    panel_smtp_from: 'From address',
-                    panel_smtp_from_name: 'From name',
-                    panel_smtp_secure: 'Use SSL/TLS (port 465)',
-                    panel_email_login_notification: 'Send login notification email to user',
-                    panel_test_email_label: 'Send test email',
-                    panel_test_email_btn: 'Send test',
-                    panel_section_company_emails: 'Company emails',
-                    panel_company_emails_desc: 'Register and manage company emails (e.g. support@, info@). You can assign a user and send them login credentials.',
-                    panel_company_email_add: 'Add company email',
-                    panel_company_email_address: 'Email address',
-                    panel_company_email_label: 'Label / Purpose',
-                    panel_company_email_assigned: 'Assign to user',
-                    panel_company_email_password: 'Password',
-                    panel_company_email_password_hint: 'Leave empty = no change (when editing)',
-                    panel_company_email_notes: 'Notes',
-                    panel_company_email_active: 'Active',
-                    panel_company_email_has_pass: 'Pass',
-                    panel_company_email_actions: 'Actions',
-                    panel_company_emails_empty: 'No company emails yet.',
-                    panel_company_email_send_creds: 'Send credentials',
-                    btn_cancel: 'Cancel',
-                    panel_section_visibility: 'Section visibility',
-                    panel_visibility_desc: 'Hidden sections are not shown in the menu or anywhere on the site. Checked = visible.',
-                    panel_tab_branding: 'Branding & appearance',
-                    panel_tab_email: 'Email',
-                    panel_tab_sections: 'Sections & visibility',
-                    panel_unsaved: 'Unsaved changes',
-                    panel_visibility_search: 'Search sections...',
-                    user_perms_select_all: 'All access',
-                    user_perms_select_none: 'None',
-                    user_perms_group_communications: 'Communications',
-                    user_perms_group_organization: 'Organization',
-                    user_perms_group_settings: 'Settings',
-                    user_perms_group_special: 'Special access',
-                    user_perms_all: 'All',
-                    user_perms_none: 'None',
-                    section_manage_tickets: 'Manage tickets (delete/archive)',
-                    panel_preview: 'Preview',
-                    page_customer_detail: 'Customer history',
-                    btn_send: 'Send',
-                    btn_save: 'Save',
-                    btn_back: 'Back',
-                    btn_apply: 'Apply',
-                    btn_edit: 'Edit',
-                    btn_delete: 'Delete', btn_archive: 'Archive',
-                    msg_placeholder: 'Type your message...',
-                    voice_record: 'Voice message',
-                    voice_stop: 'Stop recording',
-                    voice_no_support: 'Voice recording not supported in this browser',
-                    voice_no_permission: 'Microphone access denied',
-                    back_to_customers: '� � Back to customers',
-                    back_to_list: '� � Back to list',
-                    loading: 'Loading...',
-                    empty_conv: 'No conversations yet.',
-                    empty_customers: 'No customers found.',
-                    empty_dept: 'No departments found.',
-                    empty_users: 'No users found.',
-                    empty_tickets: 'No tickets found.',
-                    empty_tasks: 'No tasks found.',
-                    empty_branches: 'No branches added yet.',
-                    totp_banner: 'Enable two-factor authentication (Google Authenticator) for better security.',
-                    totp_enable: 'Enable',
-                    totp_later: 'Later',
-                    profile_intro: 'Name, phone and password are editable. Email and department are set by admin.',
-                    profile_avatar: 'Profile image (URL)',
-                    profile_name: 'Name',
-                    profile_email: 'Email',
-                    profile_email_readonly: 'Email (read-only)',
-                    profile_dept_readonly: 'Department (read-only)',
-                    profile_phone: 'Phone',
-                    profile_password_new: 'New password (optional)',
-                    profile_password_ph: 'Leave blank to keep current',
-                    profile_save: 'Save changes',
-                    profile_editable_section: 'Editable information',
-                    profile_readonly_section: 'Read-only information',
-                    profile_phone_ph: 'Phone number',
-                    profile_username: 'Username',
-                    profile_first_name: 'First name',
-                    profile_last_name: 'Last name',
-                    profile_date_of_birth: 'Date of birth',
-                    login_email_or_username: 'Email or username',
-                    profile_totp_title: 'Two-Factor Authentication (Google Authenticator)',
-                    profile_totp_desc: 'Sign in more securely with Google Authenticator. You can enable or disable it from this panel.',
-                    totp_active: 'Enabled',
-                    totp_inactive: 'Disabled',
-                    totp_disable_btn: 'Disable',
-                    totp_setup_btn: 'Enable with Google Authenticator',
-                    modal_totp_setup: 'Enable Google Authenticator',
-                    modal_totp_scan: 'Scan the QR code below with Google Authenticator (or enter the key manually):',
-                    modal_totp_secret: 'Manual key:',
-                    modal_totp_confirm: 'Confirm & enable',
-                    modal_totp_disable: 'Disable two-factor authentication',
-                    modal_totp_enter_pw: 'Enter your password:',
-                    modal_totp_password_ph: 'Password',
-                    modal_user_edit: 'Edit user access & status',
-                    modal_user_active: 'Account active (uncheck = blocked)',
-                    user_delete_transfer: 'Delete & transfer data',
-                    user_delete_confirm_title: 'Delete user & transfer data',
-                    user_transfer_to: 'Transfer conversations, tasks, tickets and processes to:',
-                    user_delete_confirm_btn: 'Delete & transfer',
-                    user_deleted_transferred: 'User deactivated and data transferred',
-                    user_delete_permanent_label: 'Permanently delete from system (cannot be undone)',
-                    user_permanent_deleted: 'User permanently deleted',
-                    modal_user_perms: 'Section access:',
-                    modal_ann_title: 'Important notice',
-                    modal_ann_gotit: 'Got it',
-                    footer_text: 'Kaya Exchange — Staff Portal',
-                    section_conversations: 'Conversations',
-                    section_customers: 'Customers',
-                    section_tickets: 'Tickets',
-                    section_tasks: 'Tasks',
-                    section_departments: 'Departments',
-                    section_users: 'Users',
-                    section_branches: 'Branches',
-                    section_supervision: 'Supervision (Owner)',
-                    section_staff_activity: 'Logins & online',
-                    section_announcements: 'Announcements',
-                    section_internal_chat: 'Internal chat',
-                    section_whatsapp: 'WhatsApp connection',
-                    section_rates: 'Exchange rates (ticker)',
-                    section_services: 'Exchange services',
-                    customer_notes: 'Reports & notes',
-                    customer_notes_intro: 'Save a note or report about this customer to refer back later.',
-                    customer_note_add: 'Add report / note',
-                    customer_note_ph: 'Note or report text...',
-                    section_processes: 'Business processes',
-                    page_services: 'Exchange services',
-                    services_intro: 'Define services your exchange offers (buy/sell, transfer, etc.).',
-                    service_add: 'Add service',
-                    service_name: 'Service name',
-                    service_code: 'Code (optional)',
-                    service_category: 'Category (optional)',
-                    service_description: 'Description (optional)',
-                    service_active: 'Active',
-                    section_manage_users: 'User management (edit/block)',
-                    status_online: 'Online',
-                    status_away: 'Away',
-                    status_busy: 'Busy',
-                    status_offline: 'Offline',
-                    err_generic: 'Error',
-                    saved: 'Saved', save_changes: 'Save changes',
-                    toast_ticket_created: 'Ticket created',
-                    toast_dept_added: 'Department added',
-                    toast_user_added: 'User added',
-                    toast_branch_added: 'Branch added',
-                    toast_branch_updated: 'Branch updated',
-                    toast_reply_sent: 'Reply sent',
-                    toast_task_created: 'Task created',
-                    toast_status_updated: 'Status updated',
-                    toast_update_added: 'Update added',
-                    toast_totp_enabled: 'Two-factor authentication enabled',
-                    toast_totp_disabled: 'Two-factor authentication disabled',
-                    toast_rates_saved: 'Rate adjustments saved.',
-                    no_branch: 'No branch',
-                    no_dept: 'No department',
-                    no_user: 'Select user',
-                    no_user_filter: 'All staff',
-                    all_branches: 'All branches',
-                    all_statuses: 'All statuses',
-                    all_depts: 'All departments',
-                    ticker_loading: 'Loading prices...',
-                    ticker_empty: 'No exchange rates configured yet',
-                    ticker_last_updated: 'Last updated',
-                    ticker_refresh: 'Refresh rates',
-                    ticker_updated: 'Last updated:',
-                    ticker_outside_hours: 'Rates update 06:00�20:00 Tehran time � every 10 min',
-                    ticker_last: 'Last updated:', ticker_current_time: 'Current time',
-                    dept_branch: 'Branch', dept_name: 'Department name', dept_desc: 'Description', dept_keywords: 'Keywords (comma-separated)', add_dept: 'Add department', dept_intro: 'Departments are used for auto-assigning conversations based on keywords.',
-                    dept_color: 'Color', dept_is_default: 'Default (unmatched conversations)', dept_edit_hint: 'Edit the fields and click Save to update.', toast_dept_updated: 'Department updated', dept_list_title: 'Departments',
-                    dept_ph_name: 'e.g. Technical support', dept_ph_optional: 'Optional', dept_ph_keywords: 'e.g. issue, support',
-                    users_intro: 'Only the owner or users with "User management" access can create users and edit permissions.',
-                    label_name: 'Name', label_email: 'Email', label_password: 'Password', label_role: 'Role', label_position: 'Position', position_ph: 'e.g. Sales Manager, Accountant', label_dept: 'Department', label_branch: 'Branch',
-                    user_ph_name: 'Full name', user_ph_pass: 'At least 6 characters', add_user: 'Add user', role_agent: 'Agent', role_manager: 'Manager', role_admin: 'Admin',
-                    ticket_title: 'Ticket title', ticket_desc: 'Description', ticket_priority: 'Priority', create_ticket: 'Create ticket', ticket_ph_subject: 'Subject', ticket_ph_search: 'Search number or title...', tickets_intro: 'Official section for submitting and tracking requests. Each ticket has a unique number.', overdue: 'Overdue', filter_all_status: 'All statuses', filter_all_priority: 'All priorities', sort_newest: 'Newest', sort_oldest: 'Oldest', sort_priority: 'By priority', sort_by_name: 'By name', sort_by_last_contact: 'Last contact', customer_quick_chat: 'Start chat', customer_quick_edit: 'Edit customer', customer_delete: 'Delete customer',
-                    reply_to_ticket: 'Reply to ticket', reply_ph: 'Reply text...', file_attach: 'Attach file (optional)', send_reply: 'Send reply',
-                    priority_normal: 'Normal', priority_high: 'High', priority_low: 'Low', priority_urgent: 'Urgent',
-                    tasks_intro: 'Track tasks assigned to staff or departments.',
-                    new_task: 'New task', label_title: 'Title', task_ph_title: 'Task title', task_ph_desc: 'Description', assign_to: 'Assign to',
-                    assign_user: 'User', assign_dept: 'Department', select_dept: 'Select department', due_date: 'Due date (optional)', filter: 'Filter',
-                    all_statuses: 'All statuses', status_pending: 'Pending', status_in_progress: 'In progress', status_done: 'Done', status_cancelled: 'Cancelled',
-                    add_task: 'Create task', load_more: 'Load more', add_update: 'Add update / report', update_ph: 'Write your status or report...', save_update: 'Save update',
-                    change_status: 'Change status', creator: 'Creator', updates: 'Updates', no_updates: 'No updates yet.',
-                    ann_send_title: 'Send announcement to staff', ann_recipient: 'Recipient', ann_all: 'All staff', ann_one_dept: 'One department', ann_one_user: 'One user',
-                    ann_select: 'Select', ann_title: 'Title', ann_body: 'Message', ann_ph_title: 'Announcement title', ann_ph_body: 'Message text...',
-                    ann_important: 'Important (popup and sound for recipient)', send_ann: 'Send announcement',
-                    ann_intro: 'View and manage general, department and personal announcements.', ann_tab_all: 'All', ann_tab_general: 'General', ann_tab_department: 'Department', ann_tab_personal: 'Personal', ann_from: 'From', ann_to: 'To', ann_sent_at: 'Date & time:', ann_delete: 'Delete announcement', ann_delete_confirm: 'Delete this announcement?', ann_collapse: 'Collapse form', ann_expand: 'Show form', ann_reset: 'Clear', ann_search_ph: 'Search announcements...', ann_marquee_label: 'Announcements', ann_view_all: 'View all', ann_type_info: 'Info', ann_type_important: 'Important', ann_empty: 'No announcements.', ann_sort_newest: 'Newest', ann_sort_oldest: 'Oldest', ann_sort_important: 'Important first', ann_empty_hint: 'General announcements appear in the top bar.',
-                    new_chat: 'New conversation', select_conversation: 'Select conversation', msg_ph_short: 'Message...', attach_file: 'Attach file', msg_template: 'Message template',
-                    file_allow_download: 'Allow download and save', file_view_only: 'View only in chat',
-                    start_chat_with: 'Start conversation with', start_chat: 'Start chat', internal_chat_open_full: 'Open full chat', close: 'Close', chat_minimize: 'Minimize', chat_expand: 'Expand', quick_reply_hi: 'Hi', quick_reply_gotit: 'Got it', quick_reply_later: 'Will reply later', quick_reply_checking: 'Checking', start_chat_hint: 'Start the conversation', cancel: 'Cancel',
-                    voice_call: 'Voice call', video_call: 'Video call', incoming_voice_call: 'Incoming voice call...', incoming_video_call: 'Incoming video call...',
-                    calling_voice: 'Calling...', calling_video: 'Video calling...', in_call: 'In call', accept_call: 'Accept', reject_call: 'Reject', cancel_call: 'Cancel call', end_call: 'End call',
-                    call_rejected: 'Call rejected', user_offline: 'User is offline',
-                    call_mute: 'Mute mic', call_unmute: 'Unmute mic', call_camera_off: 'Turn off camera', call_camera_on: 'Turn on camera',
-                    call_connecting: 'Connecting...', call_connected: 'Connected', call_failed: 'Connection failed',
-                    add_to_call: 'Add to call', add_to_call_subtitle: 'Select one or more people to add to the voice or video call', add_to_call_search: 'Search name...', add_to_call_select_all: 'All', add_to_call_invite_selected: 'Invite selected', invite_to_call: 'Invite to call',
-                    select_multiple_hint: 'For group chat, select multiple users',
-                    branch_intro: 'Branches are used for geographic separation and assigning users and conversations.', branch_name: 'Branch name', branch_city: 'City', branch_country: 'Country', branch_ph_name: 'e.g. Tehran office', branch_ph_city: 'e.g. Tehran', branch_ph_country: 'e.g. Iran', add_branch: 'Add branch', edit: 'Edit',
-                    staff_online: 'Staff online', staff_intro: 'Recent logins and online staff � for managers and above', last_logins: 'Recent logins', staff_logins_today: 'Logins today', staff_online_hint: 'Click for activity details', staff_logins_hint: 'Last 50 logins', refresh: 'Refresh',
-                    sup_performance: 'Performance summary', sup_conversations: 'Conversations', sup_internal_chats: 'Internal chats', sup_internal_chats_filter: 'Filter internal chats', sup_internal_chat_detail: 'Internal chat detail', sup_activity: 'Activity log', sup_branch_status: 'Branch / status', apply_filter: 'Apply filter',
-                    sup_by_branch: 'By branch', sup_by_user: 'User performance (outgoing messages)', total_conversations: 'Total conversations', outgoing_messages: 'Outgoing messages',
-                    th_branch: 'Branch', th_city_country: 'City/Country', th_conv_count: 'Conversations', th_user: 'User', th_email: 'Email', th_status: 'Status', th_last_login: 'Last login',
-                    th_customer: 'Customer', th_dept: 'Department', th_assignee: 'Assignee', th_time: 'Time', th_action: 'Action', th_summary: 'Summary', th_login_time: 'Login time',
-                    all_actions: 'All actions', action_message_sent: 'Message sent', action_conv_assigned: 'Conversation assigned', status_open: 'Open', status_closed: 'Closed', status_resolved: 'Resolved', status_archived: 'Archived',
-                    whatsapp_checking: 'Checking...', whatsapp_scan_qr: 'Scan QR code with WhatsApp mobile app', whatsapp_start_btn: 'Start WhatsApp Gateway', whatsapp_start_client_btn: 'Start WhatsApp',
-                    whatsapp_server_err: 'Backend server is not responding correctly.', whatsapp_gateway_off: 'Gateway is not running. Click the button below to start it.',
-                    whatsapp_status: 'WhatsApp status:', whatsapp_connected: 'Connected �S', whatsapp_disconnected: 'Disconnected', redis: 'Redis', active: 'Active', inactive: 'Inactive', done_msg: 'Done',
-                    whatsapp_intro: 'WhatsApp messages are automatically saved in conversations. Auto-assignment to departments is based on keywords.',
-                    whatsapp_open_web: 'Open WhatsApp Web', whatsapp_manage_convs: 'Manage conversations', whatsapp_disconnect_btn: 'Disconnect WhatsApp',
-                    whatsapp_connection_title: 'Connection status', whatsapp_qr_expiry: 'Code valid ~60s. After scanning, wait 10–60 seconds; page will update automatically.', whatsapp_scan_waiting: 'Checking connection... Please wait.', whatsapp_syncing: 'Scanned. Syncing with WhatsApp… wait a few seconds.', whatsapp_after_scan_trouble: 'If nothing happens after scan: check server internet/WhatsApp access; check Gateway logs (error.log) on server.', whatsapp_qr_not_ready: 'QR not ready yet. Click "Start WhatsApp" and wait a few seconds.', whatsapp_phone_cannot_connect_title: 'If your phone shows "New device cannot be connected" or "Try again later":', whatsapp_phone_cannot_connect_hint: 'This is a WhatsApp limit, not the panel. After each disconnect, WhatsApp often blocks new device links for 1–5 minutes. Wait, check internet and VPN; in WhatsApp mobile see Linked devices (max 4) and remove one if needed. Then refresh the QR and scan again.', whatsapp_refresh_status: 'Refresh status', whatsapp_last_connection: 'Last connection info', whatsapp_status_label: 'Status', whatsapp_number_label: 'Number', whatsapp_connection_result: 'Connection',
-                    whatsapp_welcome_title: 'Auto-reply to first message', whatsapp_welcome_hint: 'When someone messages you for the first time, this text is sent automatically. Empty = disabled', whatsapp_welcome_enabled: 'Enabled', whatsapp_welcome_ph: 'Hello! Welcome to Kaya Exchange. How can we help you?', ai_assistant: 'AI assistant', whatsapp_ai_title: 'AI Auto-Reply (OpenAI)', whatsapp_ai_hint: 'When no keyword rule matches, AI replies. Department routing uses AI.', whatsapp_ai_enabled: 'Enabled',
-                    whatsapp_dept_routing: 'Auto-assign to department', whatsapp_dept_routing_hint: 'Based on keywords in the message, the conversation is routed to the relevant department.', whatsapp_unassigned: 'Unassigned conversations', whatsapp_unassigned_hint: 'These conversations need department or assignee assignment.',
-                    rates_intro: 'Prices are fetched from API and shown in the bottom bar for everyone.', rates_adjust_type: 'Adjustment type',
-                    rates_none: 'No change', rates_none_desc: 'API rate is shown without change.', rates_fixed: 'Fixed', rates_fixed_desc: 'Your fixed rate replaces the API rate.', rates_delta: '± Amount', rates_delta_desc: 'An amount is added to or subtracted from the API rate.', rates_percent: '± Percent', rates_percent_desc: 'A percentage is added to or subtracted from the API rate.', rates_adjustments: 'Rate adjustments', rates_currency: 'Currency', rates_current: 'Current price (bar)', rates_value: 'Value', rates_ph_percent: 'e.g. 2 or -1', rates_ph_delta: 'e.g. 500 or -200', rates_ph_fixed: 'Fixed price', rates_no_access: 'You do not have access to this section.', rates_manage_currencies: 'Manage currencies', rates_manage_currencies_hint: 'Add, edit or remove currencies shown in rates and ticker. Only for users with rates permission.', rates_add_currency: 'Add currency', rates_edit_currency: 'Edit currency', rates_currency_key: 'Currency key (e.g. usd)', rates_currency_key_hint: 'Lowercase letters and numbers only; read-only when editing.', rates_currency_label: 'Display name', rates_currency_apikeys: 'API keys (comma-separated)', rates_currency_apikeys_ph: 'e.g. usd_sell, usd_buy', rates_currency_apikeys_hint: 'Field names from Navasan API response.', rates_currency_key_required: 'Currency key is required', rates_no_currencies: 'No currencies defined. Add one with «Add currency».', rates_delete_currency_confirm: 'Delete this currency? Its adjustments and ticker visibility will be removed too.',
-                    no_data: 'No data.', loading_err: 'Error loading.', select_user: 'Select user',
-                    empty_conv_list: 'No conversations. Click "New conversation".', chat: 'Chat', empty_internal_msgs: 'No messages yet.', file: 'File',
-                    conv_new: 'New conversation', conv_select_customer: 'Select customer', conv_assign_me: 'Assign to me', conv_supervision_title: 'Manager oversight',
-                    conv_page_desc: 'Manage customer conversations, respond and assign to departments.',
-                    conv_search_ph: 'Search name or phone...', conv_list_title: 'Conversations', more_filters: 'More filters',
-                    filter_all: 'All', filter_active_only: 'Active only', filter_blocked_only: 'Blocked only', filter_unread: 'Unread', filter_unanswered: 'Unanswered', filter_open: 'Open', filter_archived: 'Archived', conv_tab_mine: 'Assigned to me',
-                    whatsapp_unanswered_title: 'Unanswered alert & escalation', whatsapp_unanswered_hint: 'When a customer messages and no one replies, an alert is sent after the specified time. If still unanswered, the conversation is escalated to support.',
-                    whatsapp_alert_after: 'Alert after (minutes)', whatsapp_escalate_after: 'Escalate after (minutes)', whatsapp_escalation_dept: 'Target department (empty = default support)',
-                    empty_no_logins: 'No logins recorded yet.', no_staff_online: 'No staff online.', login_err_load: 'Error loading logins.',
-                    required_name_email_pass: 'Name, email and password are required', select_user_first: 'Please select a user', select_conversation_first: 'Please select a conversation',
-                    enter_text_or_file: 'Enter text or attach a file', manage_users_required: 'User management access required',
-                    branch_name_required: 'Branch name is required', edit_branch_hint: 'Edit the fields and click "Add branch" to update.',
-                    ticket_title_required: 'Ticket title is required', reply_or_file_required: 'Reply text or a file is required', task_title_required: 'Task title is required',
-                    select_assignee: 'Select user or department', task_update_required: 'Update text is required', dept_name_required: 'Department name is required',
-                    enter_password: 'Enter password', enter_6_digit: 'Enter the 6-digit code',
-                    creator_label: 'Creator:', assignee_label: 'Assigned to:', due_label: 'Due:', no_reply: 'No replies yet.', conversation: 'Conversation', history: 'History:',
-                    by_dept: 'By department', by_user: 'By user', pending_count: 'Pending', in_progress_count: 'In progress', done_count: 'Done',
-                    customer: 'Customer', no_conv_history: 'No conversations yet.', blocked: 'Blocked', edit_access: 'Edit / access', view_activity: 'View activity',
-                    usd: 'USD', eur: 'EUR', gbp: 'GBP', try: 'TRY', aed: 'AED', rub: 'RUB', azn: 'AZN', cny: 'CNY', gold: 'Gold (g)',
-                    processes_intro: 'Define process templates and track running instances.',
-                    process_templates: 'Process templates',
-                    process_instances: 'Running instances',
-                    process_add_template: 'Add process template',
-                    process_template_name: 'Template name',
-                    process_template_desc: 'Description',
-                    process_stages: 'Stages (in order)',
-                    process_stage_name: 'Stage name',
-                    process_add_stage: 'Add stage',
-                    process_start_instance: 'Start instance',
-                    process_instance_title: 'Instance title',
-                    process_current_stage: 'Current stage',
-                    process_advance: 'Complete & go to next stage',
-                    process_complete: 'Complete process',
-                    process_notes: 'Notes (optional)',
-                    status_active: 'Active',
-                    empty_process_templates: 'No process templates defined.',
-                    empty_process_instances: 'No running instances.',
-                    all_templates: 'All templates',
-                    process_min_one_stage: 'Add at least one stage.',
-                    process_start_from_ticket: 'Start process for this ticket',
-                    panel_section_languages: 'Site languages',
-                    panel_section_languages_desc: 'Languages available on the login page and panel menu. In single-language mode the language switcher is hidden; with multiple languages users can switch.',
-                    panel_language_mode: 'Language mode',
-                    panel_language_mode_single: 'Single (Persian only)',
-                    panel_language_mode_single_en: 'Single (English only)',
-                    panel_language_mode_single_tr: 'Single (Turkish only)',
-                    panel_language_mode_bilingual: 'Two (Persian + English)',
-                    panel_language_mode_bilingual_fa_tr: 'Two (Persian + Turkish)',
-                    panel_language_mode_bilingual_en_tr: 'Two (English + Turkish)',
-                    panel_language_mode_trilingual: 'Three (Persian + English + Turkish)',
-                    panel_default_language: 'Default language',
-                    panel_default_language_desc: 'Initial language for new users or when no language is selected.',
-                    lang_fa: 'فارسی',
-                    lang_en: 'English',
-                    lang_tr: 'Türkçe',
-                    panel_language_hint_single: 'Only Persian is shown on login and in the menu.',
-                    panel_language_hint_single_en: 'Only English is shown on login and in the menu.',
-                    panel_language_hint_single_tr: 'Only Turkish is shown on login and in the menu.',
-                    panel_language_hint_bilingual: 'Persian and English; users can switch language.',
-                    panel_language_hint_bilingual_fa_tr: 'Persian and Turkish; users can switch language.',
-                    panel_language_hint_bilingual_en_tr: 'English and Turkish; users can switch language.',
-                    panel_language_hint_trilingual: 'Persian, English and Turkish; users can switch language.',
-                    panel_section_visibility: 'Section visibility',
-                    panel_section_theme: 'Color & panel appearance',
-                    panel_primary_color: 'Primary (accent) color',
-                    panel_font_family: 'Font',
-                    panel_font_default: 'Default (Vazirmatn)',
-                    panel_font_size: 'Font size',
-                    panel_font_size_small: 'Small',
-                    panel_font_size_medium: 'Medium',
-                    panel_font_size_large: 'Large',
-                    panel_font_weight: 'Font weight',
-                    panel_font_weight_normal: 'Normal',
-                    panel_font_weight_medium: 'Medium',
-                    panel_font_weight_bold: 'Bold',
-                    panel_ui_theme: 'UI theme (Bootstrap style)',
-                    panel_theme_default: 'Default',
-                    panel_theme_minimal: 'Minimal',
-                    panel_theme_dark: 'Dark',
-                    panel_theme_light: 'Light',
-                    panel_theme_ocean: 'Ocean',
-                    panel_theme_warm: 'Warm',
-                    panel_theme_hint: 'Overall style for buttons, cards and bars',
-                    panel_sidebar_order: 'Menu section order',
-                    panel_sidebar_order_desc: 'Enter rank for each section. Lower numbers appear higher. Empty = default.',
-                    panel_visibility_desc: 'Sections you hide are not shown in the menu or anywhere on the site. Checked = visible.'
-                },
-                tr: {}
-            };
-            if (window.__I18N_FA) { I18N.fa = {}; for (var k in window.__I18N_FA) I18N.fa[k] = window.__I18N_FA[k]; }
+            const I18N = { fa: {}, en: {}, tr: {} };
+            if (window.__I18N_FA) { for (var k in window.__I18N_FA) I18N.fa[k] = window.__I18N_FA[k]; }
             if (window.__I18N_EN) { for (var k in window.__I18N_EN) I18N.en[k] = window.__I18N_EN[k]; }
             if (window.__I18N_TR) { for (var k in window.__I18N_TR) I18N.tr[k] = window.__I18N_TR[k]; }
-            window.LANG = LANG;
+                        window.LANG = LANG;
             window.t = function(k) {
                 if (LANG === 'fa' && window.__I18N_FA && window.__I18N_FA[k] !== undefined) return window.__I18N_FA[k];
                 if (LANG === 'en' && window.__I18N_EN && window.__I18N_EN[k] !== undefined) return window.__I18N_EN[k];
+                if (LANG === 'tr' && window.__I18N_TR && window.__I18N_TR[k] !== undefined) return window.__I18N_TR[k];
                 return (I18N[LANG] && I18N[LANG][k]) || (I18N.fa && I18N.fa[k]) || (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || k;
             };
             window.setLang = function(l) {

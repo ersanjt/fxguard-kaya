@@ -8,8 +8,8 @@ try {
     redis = null;
 }
 
-function createRedisClient(logger) {
-    let redisClient = {
+function createStubRedisClient() {
+    return {
         isStub: true,
         quit: () => Promise.resolve(),
         connect: () => Promise.resolve(),
@@ -25,6 +25,15 @@ function createRedisClient(logger) {
         exists: () => Promise.resolve(0),
         sendCommand: () => Promise.reject(new Error('Redis not available')),
     };
+}
+
+function createRedisClient(logger) {
+    /** تست و محیط بدون Redis: بدون اتصال TCP = بدون spam لاگ و سریع‌تر */
+    if (process.env.NODE_ENV === 'test' || process.env.SKIP_REDIS === '1') {
+        return createStubRedisClient();
+    }
+
+    let redisClient = createStubRedisClient();
 
     if (redis) {
         try {
@@ -51,4 +60,4 @@ function createRedisClient(logger) {
     return redisClient;
 }
 
-module.exports = { createRedisClient };
+module.exports = { createRedisClient, createStubRedisClient };

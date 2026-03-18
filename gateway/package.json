@@ -5,7 +5,11 @@
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",
-    "dev": "nodemon src/index.js"
+    "dev": "nodemon src/index.js",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --check \"src/**/*.js\"",
+    "format:write": "prettier --write \"src/**/*.js\""
   },
   "dependencies": {
     "amqplib": "^0.10.3",
@@ -24,6 +28,9 @@
     "winston": "^3.11.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.3"
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "nodemon": "^3.0.3",
+    "prettier": "^3.3.3"
   }
 }

@@ -1,0 +1,19 @@
+{
+  "name": "kaya-crm",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kaya WhatsApp CRM — backend (API + dashboard SPA), gateway, docs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "lint": "npm run lint --prefix backend && npm run lint --prefix gateway",
+    "lint:backend": "npm run lint --prefix backend",
+    "lint:gateway": "npm run lint --prefix gateway",
+    "lint:fix": "npm run lint:fix --prefix backend && npm run lint:fix --prefix gateway",
+    "format": "npm run format --prefix backend && npm run format --prefix gateway",
+    "format:write": "npm run format:write --prefix backend && npm run format:write --prefix gateway",
+    "test": "npm test --prefix backend",
+    "test:all": "npm run test:all --prefix backend"
+  }
+}

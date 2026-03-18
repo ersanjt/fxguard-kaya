@@ -3,6 +3,9 @@
 > **شروع سریع (بدون Docker):** فقط Node.js لازم است. از پوشه پروژه اجرا کنید: `.\start-all.ps1` (ویندوز) یا `./start-all.sh` (لینوکس/مک). سپس در مرورگر باز کنید: **http://localhost:3002/** — ورود: `admin@company.com` / `Admin@123`.  
 > راهنمای تحویل به مشتری و استفاده روزمره: **[README-تحویل-مشتری.md](README-تحویل-مشتری.md)** | خلاصه راه‌اندازی: **[راه‌اندازی-سریع.md](راه‌اندازی-سریع.md)**
 
+**ساختار مخزن:** `backend/` (API + داشبورد در `public/`) · `gateway/` (واتساپ) · `docs/`  
+**استاندارد توسعه:** از ریشهٔ پروژه — `npm run lint` · `npm test` · [docs/PROJECT-STANDARDS.md](docs/PROJECT-STANDARDS.md) · [docs/README.md](docs/README.md) · [CONTRIBUTING.md](CONTRIBUTING.md)
+
 ---
 
 ## ⚡ شروع سریع (Quick Start)
@@ -201,16 +204,9 @@ npm run seed
 npm start
 ```
 
-#### D. نصب Frontend Dashboard
+#### D. داشبورد وب (همان Backend)
 
-```bash
-cd frontend
-npm install
-cp .env.example .env
-# ویرایش .env
-npm run build
-npm start
-```
+رابط کاربری اصلی داخل **`backend/public`** (مثلاً `dashboard.html`) سرو می‌شود؛ پوشهٔ جداگانهٔ `frontend` در این مخزن **وجود ندارد**. پس از `npm install` و `npm start` در backend، آدرس پنل همان `http://localhost:3002/` است.
 
 ---
 
@@ -312,13 +308,9 @@ npm install -g pm2
 cd gateway
 pm2 start src/index.js --name "whatsapp-gateway"
 
-# راه‌اندازی Backend
+# راه‌اندازی Backend (داشبورد از همین سرویس روی پورت 3002)
 cd ../backend
 pm2 start server.js --name "crm-backend"
-
-# راه‌اندازی Frontend
-cd ../frontend
-pm2 start npm --name "crm-frontend" -- start
 
 # ذخیره تنظیمات
 pm2 save
@@ -340,12 +332,8 @@ docker-compose up -d
 cd gateway
 npm run dev
 
-# Terminal 2: Backend
+# Terminal 2: Backend (پنل در /dashboard همان سرور)
 cd backend
-npm run dev
-
-# Terminal 3: Frontend
-cd frontend
 npm run dev
 ```
 

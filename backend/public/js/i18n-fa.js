@@ -849,5 +849,17 @@ window.__I18N_FA = {
     template_content: 'محتوا',
     template_active: 'فعال',
     page_message_templates: 'تمپلیت‌های پیام',
-    message_templates_intro: 'پیام‌های پرکاربرد با متغیرهای داینامیک ({name}, {date}, ...) برای ارسال سریع‌تر.'
+    message_templates_intro: 'پیام‌های پرکاربرد با متغیرهای داینامیک ({name}, {date}, ...) برای ارسال سریع‌تر.',
+    nav_panel_settings: 'ظاهر پنل',
+    panel_test_email_btn: 'ارسال تست',
+    no_access: 'دسترسی ندارید',
+    save_changes: 'ذخیره تغییرات',
+    dept_edit_hint: 'فیلدها را ویرایش کنید و ذخیره را بزنید.',
+    toast_dept_updated: 'دپارتمان به‌روز شد',
+    user_perms_all: 'همه',
+    user_perms_none: 'هیچ‌کدام',
+    voice_record: 'ضبط پیام صوتی',
+    voice_stop: 'توقف ضبط',
+    voice_no_support: 'ضبط صدا در این مرورگر پشتیبانی نمی‌شود',
+    voice_no_permission: 'دسترسی به میکروفون داده نشد'
 };

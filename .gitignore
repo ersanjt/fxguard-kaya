@@ -55,5 +55,3 @@ ios-app/DerivedData/
 
 # runtime uploads
 gateway/src/uploads/
-
-cript (WAL checkpoint + VACUUM INTO) and bind services to localhost"

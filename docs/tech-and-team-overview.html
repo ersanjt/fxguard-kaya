@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kayaCRM — Technology & Team Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #3b82f6;
+      --accent-soft: rgba(59, 130, 246, 0.15);
+      --border: #30363d;
+      --success: #3fb950;
+      --font-fa: 'Vazirmatn', 'Tahoma', sans-serif;
+      --font-en: 'Inter', 'Segoe UI', sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-fa);
+      font-size: 16px;
+      line-height: 1.65;
+    }
+    body.lang-en { font-family: var(--font-en); direction: ltr; }
+    body.lang-en .wrap { text-align: left; }
+    .wrap { max-width: 900px; margin: 0 auto; padding: 24px 20px 48px; }
+    header {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    h1 { margin: 0; font-size: 1.75rem; font-weight: 700; color: var(--text); }
+    .lang-switch {
+      display: flex;
+      gap: 8px;
+    }
+    .lang-switch button {
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+    }
+    .lang-switch button:hover { background: var(--surface2); border-color: var(--accent); }
+    .lang-switch button.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    [data-lang]:not(.active-lang) { display: none; }
+    [data-lang].active-lang { display: block; }
+    h2 {
+      font-size: 1.35rem;
+      font-weight: 600;
+      margin: 28px 0 14px;
+      color: var(--text);
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    h3 { font-size: 1.1rem; font-weight: 600; margin: 18px 0 10px; color: var(--accent); }
+    p { margin: 0 0 12px; color: var(--text-muted); }
+    ul, ol { margin: 0 0 14px; padding-left: 1.5em; color: var(--text-muted); }
+    body.lang-en ul, body.lang-en ol { padding-left: 1.5em; padding-right: 0; }
+    li { margin-bottom: 6px; }
+    strong { color: var(--text); font-weight: 600; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .card h3 { margin-top: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      margin: 12px 0;
+      background: var(--surface);
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    th, td { padding: 10px 14px; text-align: right; border-bottom: 1px solid var(--border); }
+    body.lang-en th, body.lang-en td { text-align: left; }
+    th { background: var(--surface2); color: var(--text); font-weight: 600; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .tag-row td:first-child { color: var(--accent); font-weight: 500; }
+    .summary-table td { color: var(--text-muted); }
+    .summary-table td:first-child { color: var(--text); font-weight: 500; width: 28%; }
+    footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-muted); text-align: center; }
+    footer code { background: var(--surface2); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+    .intro { font-size: 1.05rem; color: var(--text-muted); margin-bottom: 24px; }
+  </style>
+</head>
+<body class="lang-fa" id="body">
+  <div class="wrap">
+    <header>
+      <h1>kayaCRM — Technology & Team Overview</h1>
+      <div class="lang-switch">
+        <button type="button" class="active" data-set-lang="fa" aria-pressed="true">فارسی</button>
+        <button type="button" data-set-lang="en" aria-pressed="false">English</button>
+      </div>
+    </header>
+
+    <!-- ========== FA ========== -->
+    <div data-lang="fa" class="active-lang">
+      <p class="intro">این سند توضیح می‌دهد <strong>چطور سیستم ساخته شده</strong>، <strong>همهٔ تکنولوژی‌ها</strong> و <strong>چه متخصص‌هایی روی آن کار کرده‌اند</strong>.</p>
+
+      <h2>۱. روش توسعه</h2>
+      <h3>سبک معماری</h3>
+      <ul>
+        <li><strong>Backend مونولیتیک:</strong> یک اپ Node.js (Express) که API، احراز هویت، دیتابیس و سرو استاتیک را با هم اجرا می‌کند.</li>
+        <li><strong>Gateway جدا:</strong> سرویس جدا برای واتساپ (whatsapp-web.js) برای scale جدا.</li>
+        <li><strong>پنل وب بدون فریمورک:</strong> فرانت با Vanilla JavaScript (بدون React/Vue)، SPA با روتینگ هش.</li>
+        <li><strong>اپ موبایل native:</strong> اندروید (Kotlin) و iOS (Swift/SwiftUI)؛ هر دو به همان API وصل می‌شوند.</li>
+      </ul>
+      <p>ترکیب: <strong>سرور یکپارچه + Gateway واتساپ + فرانت ساده + اپ native</strong>.</p>
+
+      <h2>۲. تکنولوژی‌ها به تفکیک بخش</h2>
+
+      <h3>۲.۱ Backend</h3>
+      <table>
+        <thead><tr><th>دسته</th><th>تکنولوژی</th><th>نسخه/توضیح</th></tr></thead>
+        <tbody>
+          <tr class="tag-row"><td>زبان و Runtime</td><td>Node.js</td><td>18+</td></tr>
+          <tr><td>فریمورک وب</td><td>Express</td><td>4.x</td></tr>
+          <tr><td>دیتابیس</td><td>Sequelize, pg / sqlite3</td><td>PostgreSQL یا SQLite</td></tr>
+          <tr><td>NoSQL (اختیاری)</td><td>Mongoose (MongoDB)</td><td>لاگ</td></tr>
+          <tr><td>کش / صف</td><td>Redis, amqplib (RabbitMQ)</td><td>اختیاری</td></tr>
+          <tr><td>احراز هویت</td><td>JWT, bcrypt, otplib (TOTP)</td><td>—</td></tr>
+          <tr><td>Real-time</td><td>socket.io</td><td>4.x</td></tr>
+          <tr><td>امنیت</td><td>helmet, express-rate-limit</td><td>—</td></tr>
+          <tr><td>ایمیل / آپلود</td><td>nodemailer, multer</td><td>—</td></tr>
+          <tr><td>لاگ</td><td>winston</td><td>—</td></tr>
+        </tbody>
+      </table>
+
+      <h3>۲.۲ Gateway واتساپ</h3>
+      <table>
+        <thead><tr><th>دسته</th><th>تکنولوژی</th><th>توضیح</th></tr></thead>
+        <tbody>
+          <tr><td>Runtime</td><td>Node.js</td><td>18+</td></tr>
+          <tr><td>اتصال واتساپ</td><td>whatsapp-web.js</td><td>1.26.x</td></tr>
+          <tr><td>وضعیت / QR</td><td>socket.io, qrcode</td><td>—</td></tr>
+        </tbody>
+      </table>
+
+      <h3>۲.۳ پنل وب (Frontend)</h3>
+      <table>
+        <thead><tr><th>دسته</th><th>تکنولوژی</th><th>توضیح</th></tr></thead>
+        <tbody>
+          <tr><td>زبان</td><td>JavaScript (Vanilla)</td><td>بدون React/Vue</td></tr>
+          <tr><td>ساختار</td><td>SPA با Hash Routing</td><td>یک HTML، یک JS بزرگ</td></tr>
+          <tr><td>نمودار</td><td>Chart.js</td><td>از CDN</td></tr>
+          <tr><td>زبان‌ها</td><td>i18n دستی</td><td>فا، انگلیسی، ترکی</td></tr>
+        </tbody>
+      </table>
+
+      <h3>۲.۴ اندروید و iOS</h3>
+      <table>
+        <thead><tr><th>لایه</th><th>تکنولوژی</th></tr></thead>
+        <tbody>
+          <tr><td>اندروید</td><td>Kotlin, Android SDK, Hilt, Gradle</td></tr>
+          <tr><td>iOS</td><td>Swift, SwiftUI, Xcode</td></tr>
+        </tbody>
+      </table>
+
+      <h2>۳. متخصص‌های درگیر</h2>
+
+      <div class="card">
+        <h3>Backend / Node.js Developer</h3>
+        <p>API، Sequelize، احراز هویت (JWT, TOTP)، سرویس پیام، Gateway، Socket.IO.</p>
+        <p><strong>تکنولوژی:</strong> Node.js, Express, Sequelize, Redis, RabbitMQ, JWT, Socket.IO.</p>
+      </div>
+      <div class="card">
+        <h3>Frontend (وب) Developer</h3>
+        <p>پنل SPA با Vanilla JS، روتینگ، API، Socket.IO، i18n، Chart.js.</p>
+        <p><strong>تکنولوژی:</strong> JavaScript, HTML, CSS, Chart.js, REST API.</p>
+      </div>
+      <div class="card">
+        <h3>توسعه‌دهنده Gateway / واتساپ</h3>
+        <p>سرویس whatsapp-web.js، QR، webhook به Backend، RabbitMQ/Redis.</p>
+        <p><strong>تکنولوژی:</strong> Node.js, whatsapp-web.js, Socket.IO, Webhook.</p>
+      </div>
+      <div class="card">
+        <h3>توسعه‌دهنده اندروید (Kotlin)</h3>
+        <p>اپ native، ViewModel، همان API Backend.</p>
+        <p><strong>تکنولوژی:</strong> Kotlin, Android SDK, Hilt, REST API.</p>
+      </div>
+      <div class="card">
+        <h3>توسعه‌دهنده iOS (Swift)</h3>
+        <p>اپ native با SwiftUI، همان API، پشتیبانی RTL.</p>
+        <p><strong>تکنولوژی:</strong> Swift, SwiftUI, Xcode, REST API.</p>
+      </div>
+      <div class="card">
+        <h3>طراح UI/UX و DevOps</h3>
+        <p>طراحی layout و لندینگ؛ استقرار Docker، PM2، دیتابیس و مستندات.</p>
+      </div>
+
+      <h2>۴. خلاصه یک نگاه</h2>
+      <table class="summary-table">
+        <tbody>
+          <tr><td>Backend</td><td>Node.js, Express, Sequelize, PostgreSQL/SQLite, Redis, JWT, Socket.IO, Helmet, Winston</td></tr>
+          <tr><td>Gateway</td><td>Node.js, Express, whatsapp-web.js, Socket.IO</td></tr>
+          <tr><td>پنل وب</td><td>Vanilla JS, HTML5, CSS3, Chart.js, i18n</td></tr>
+          <tr><td>اندروید</td><td>Kotlin, Android SDK, Hilt, Gradle</td></tr>
+          <tr><td>iOS</td><td>Swift, SwiftUI, Xcode</td></tr>
+          <tr><td>زیرساخت</td><td>Docker, PM2, Bash/PowerShell</td></tr>
+        </tbody>
+      </table>
+
+      <h2>۵. جمع‌بندی</h2>
+      <p><strong>روش توسعه:</strong> Backend مونولیتیک + Gateway جدا + پنل Vanilla JS + اپ‌های native اندروید و iOS.</p>
+      <p><strong>متخصص‌ها:</strong> Backend، Frontend وب، Gateway/واتساپ، اندروید، iOS، UI/UX، DevOps و در صورت وجود QA و مترجم.</p>
+    </div>
+
+    <!-- ========== EN ========== -->
+    <div data-lang="en">
+      <p class="intro">This document explains <strong>how the system was built</strong>, <strong>all technologies used</strong>, and <strong>which specialists worked on it</strong>.</p>
+
+      <h2>1. Development Approach</h2>
+      <h3>Architecture Style</h3>
+      <ul>
+        <li><strong>Monolithic Backend:</strong> A single Node.js (Express) app running API, auth, database, and static files.</li>
+        <li><strong>Separate Gateway:</strong> Dedicated service for WhatsApp (whatsapp-web.js) for independent scaling.</li>
+        <li><strong>Framework-free Web Panel:</strong> Frontend with Vanilla JavaScript (no React/Vue), SPA with hash routing.</li>
+        <li><strong>Native Mobile Apps:</strong> Android (Kotlin) and iOS (Swift/SwiftUI), both using the same API.</li>
+      </ul>
+      <p>Combination: <strong>unified server + WhatsApp gateway + simple frontend + native apps</strong>.</p>
+
+      <h2>2. Technologies by Component</h2>
+
+      <h3>2.1 Backend</h3>
+      <table>
+        <thead><tr><th>Category</th><th>Technology</th><th>Version / Notes</th></tr></thead>
+        <tbody>
+          <tr class="tag-row"><td>Language & Runtime</td><td>Node.js</td><td>18+</td></tr>
+          <tr><td>Web framework</td><td>Express</td><td>4.x</td></tr>
+          <tr><td>Database</td><td>Sequelize, pg / sqlite3</td><td>PostgreSQL or SQLite</td></tr>
+          <tr><td>NoSQL (optional)</td><td>Mongoose (MongoDB)</td><td>Logging</td></tr>
+          <tr><td>Cache / Queue</td><td>Redis, amqplib (RabbitMQ)</td><td>Optional</td></tr>
+          <tr><td>Auth</td><td>JWT, bcrypt, otplib (TOTP)</td><td>—</td></tr>
+          <tr><td>Real-time</td><td>socket.io</td><td>4.x</td></tr>
+          <tr><td>Security</td><td>helmet, express-rate-limit</td><td>—</td></tr>
+          <tr><td>Email / Upload</td><td>nodemailer, multer</td><td>—</td></tr>
+          <tr><td>Logging</td><td>winston</td><td>—</td></tr>
+        </tbody>
+      </table>
+
+      <h3>2.2 WhatsApp Gateway</h3>
+      <table>
+        <thead><tr><th>Category</th><th>Technology</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Runtime</td><td>Node.js</td><td>18+</td></tr>
+          <tr><td>WhatsApp connection</td><td>whatsapp-web.js</td><td>1.26.x</td></tr>
+          <tr><td>Status / QR</td><td>socket.io, qrcode</td><td>—</td></tr>
+        </tbody>
+      </table>
+
+      <h3>2.3 Web Panel (Frontend)</h3>
+      <table>
+        <thead><tr><th>Category</th><th>Technology</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>Language</td><td>JavaScript (Vanilla)</td><td>No React/Vue</td></tr>
+          <tr><td>Structure</td><td>SPA with hash routing</td><td>Single HTML, large JS</td></tr>
+          <tr><td>Charts</td><td>Chart.js</td><td>From CDN</td></tr>
+          <tr><td>Languages</td><td>Manual i18n</td><td>FA, EN, TR</td></tr>
+        </tbody>
+      </table>
+
+      <h3>2.4 Android & iOS</h3>
+      <table>
+        <thead><tr><th>Layer</th><th>Technology</th></tr></thead>
+        <tbody>
+          <tr><td>Android</td><td>Kotlin, Android SDK, Hilt, Gradle</td></tr>
+          <tr><td>iOS</td><td>Swift, SwiftUI, Xcode</td></tr>
+        </tbody>
+      </table>
+
+      <h2>3. Specialists Involved</h2>
+
+      <div class="card">
+        <h3>Backend / Node.js Developer</h3>
+        <p>API, Sequelize, auth (JWT, TOTP), message services, Gateway, Socket.IO.</p>
+        <p><strong>Tech:</strong> Node.js, Express, Sequelize, Redis, RabbitMQ, JWT, Socket.IO.</p>
+      </div>
+      <div class="card">
+        <h3>Frontend (Web) Developer</h3>
+        <p>SPA panel with Vanilla JS, routing, API, Socket.IO, i18n, Chart.js.</p>
+        <p><strong>Tech:</strong> JavaScript, HTML, CSS, Chart.js, REST API.</p>
+      </div>
+      <div class="card">
+        <h3>Gateway / WhatsApp Developer</h3>
+        <p>whatsapp-web.js service, QR, webhook to Backend, RabbitMQ/Redis.</p>
+        <p><strong>Tech:</strong> Node.js, whatsapp-web.js, Socket.IO, Webhook.</p>
+      </div>
+      <div class="card">
+        <h3>Android (Kotlin) Developer</h3>
+        <p>Native app, ViewModel, same Backend API.</p>
+        <p><strong>Tech:</strong> Kotlin, Android SDK, Hilt, REST API.</p>
+      </div>
+      <div class="card">
+        <h3>iOS (Swift) Developer</h3>
+        <p>Native app with SwiftUI, same API, RTL support.</p>
+        <p><strong>Tech:</strong> Swift, SwiftUI, Xcode, REST API.</p>
+      </div>
+      <div class="card">
+        <h3>UI/UX Designer & DevOps</h3>
+        <p>Layout and landing design; deployment with Docker, PM2, database, and docs.</p>
+      </div>
+
+      <h2>4. Summary at a Glance</h2>
+      <table class="summary-table">
+        <tbody>
+          <tr><td>Backend</td><td>Node.js, Express, Sequelize, PostgreSQL/SQLite, Redis, JWT, Socket.IO, Helmet, Winston</td></tr>
+          <tr><td>Gateway</td><td>Node.js, Express, whatsapp-web.js, Socket.IO</td></tr>
+          <tr><td>Web Panel</td><td>Vanilla JS, HTML5, CSS3, Chart.js, i18n</td></tr>
+          <tr><td>Android</td><td>Kotlin, Android SDK, Hilt, Gradle</td></tr>
+          <tr><td>iOS</td><td>Swift, SwiftUI, Xcode</td></tr>
+          <tr><td>Infrastructure</td><td>Docker, PM2, Bash/PowerShell</td></tr>
+        </tbody>
+      </table>
+
+      <h2>5. Conclusion</h2>
+      <p><strong>Development approach:</strong> Monolithic backend + separate gateway + Vanilla JS panel + native Android & iOS apps.</p>
+      <p><strong>Specialists:</strong> Backend, Web frontend, Gateway/WhatsApp, Android, iOS, UI/UX, DevOps, and optionally QA and translators.</p>
+    </div>
+
+    <footer>
+      <p data-lang="fa" class="active-lang">kayaCRM — سند تکنولوژی و تیم · منبع: <code>TECH-AND-TEAM-OVERVIEW.md</code></p>
+      <p data-lang="en">kayaCRM — Technology & Team overview · Source: <code>TECH-AND-TEAM-OVERVIEW.md</code></p>
+    </footer>
+  </div>
+
+  <script>
+    (function() {
+      var body = document.getElementById('body');
+      var langBlocks = document.querySelectorAll('[data-lang]');
+      var buttons = document.querySelectorAll('.lang-switch button');
+      function setLang(lang) {
+        body.classList.remove('lang-fa', 'lang-en');
+        body.classList.add('lang-' + lang);
+        body.setAttribute('dir', lang === 'fa' ? 'rtl' : 'ltr');
+        langBlocks.forEach(function(block) {
+          block.classList.toggle('active-lang', block.getAttribute('data-lang') === lang);
+        });
+        buttons.forEach(function(btn) {
+          var active = btn.getAttribute('data-set-lang') === lang;
+          btn.classList.toggle('active', active);
+          btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+        });
+        try { localStorage.setItem('tech_overview_lang', lang); } catch (e) {}
+      }
+      buttons.forEach(function(btn) {
+        btn.addEventListener('click', function() { setLang(btn.getAttribute('data-set-lang')); });
+      });
+      try {
+        var saved = localStorage.getItem('tech_overview_lang');
+        if (saved === 'fa' || saved === 'en') setLang(saved);
+      } catch (e) {}
+    })();
+  </script>
+</body>
+</html>
