@@ -936,6 +936,12 @@ window.__I18N_EN = {
     template_category: 'Category',
     template_content: 'Content',
     template_active: 'Active',
-    page_message_templates: 'Message templates',
-    message_templates_intro: 'Frequently used messages with dynamic variables ({name}, {date}, ...) for faster sending.'
+    page_message_templates: 'Message & file templates',
+    message_templates_intro: 'Ready-to-send text and files for WhatsApp chats — organized with search and categories.',
+    tpl_link_conversations: '→ Conversations',
+    tpl_stat_text: 'Text templates',
+    tpl_stat_files: 'Quick files',
+    tpl_vars_title: 'Variables in template text',
+    tpl_vars_hint: 'Click a variable to copy; they are replaced when sending in chat.',
+    tpl_search_text: 'Search name, category or body…'
 };

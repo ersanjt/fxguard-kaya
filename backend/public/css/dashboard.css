@@ -2357,6 +2357,113 @@
         .chat-file-tpl-item:hover { background: var(--bg-hover); }
         /* ========== تمپلیت‌های پیام — طراحی جدید ========== */
         .message-templates-page { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+        .tpl-pro-page { gap: 22px; }
+        .tpl-pro-hero {
+            display: flex; align-items: flex-start; gap: 18px; padding: 22px 24px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(16, 185, 129, 0.06) 50%, var(--bg-card) 100%);
+            border: 1px solid var(--border); border-radius: 16px;
+            box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+        }
+        .tpl-pro-hero-badge {
+            width: 56px; height: 56px; min-width: 56px; border-radius: 14px;
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+        }
+        .tpl-pro-hero-badge svg { width: 28px; height: 28px; stroke: #fff; }
+        .tpl-pro-hero-main { flex: 1; min-width: 0; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px; }
+        .tpl-pro-hero-text h2 { margin: 0 0 8px; font-size: 1.45rem; font-weight: 800; color: var(--text-primary); letter-spacing: -0.02em; }
+        .tpl-pro-hero-text p { margin: 0; font-size: 0.92rem; color: var(--text-secondary); line-height: 1.65; max-width: 520px; }
+        .tpl-pro-hero-link {
+            display: inline-flex; align-items: center; gap: 6px; padding: 10px 16px; border-radius: 10px;
+            font-size: 0.88rem; font-weight: 600; text-decoration: none; color: var(--accent);
+            background: var(--accent-soft); border: 1px solid rgba(16,185,129,0.25); transition: transform 0.15s, box-shadow 0.2s;
+        }
+        .tpl-pro-hero-link:hover { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(16,185,129,0.2); color: var(--accent); }
+        .tpl-pro-stats { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+        .tpl-pro-stat {
+            display: flex; align-items: center; gap: 14px; padding: 18px 20px; border-radius: 14px; border: 1px solid var(--border);
+            background: var(--bg-card); transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .tpl-pro-stat:hover { border-color: rgba(59, 130, 246, 0.35); box-shadow: 0 6px 20px rgba(59, 130, 246, 0.08); }
+        .tpl-pro-stat--file:hover { border-color: rgba(16, 185, 129, 0.35); box-shadow: 0 6px 20px rgba(16, 185, 129, 0.08); }
+        .tpl-pro-stat-icon {
+            width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+            background: rgba(59, 130, 246, 0.12); color: #3b82f6;
+        }
+        .tpl-pro-stat--file .tpl-pro-stat-icon { background: rgba(16, 185, 129, 0.15); color: var(--accent); }
+        .tpl-pro-stat-icon svg { width: 24px; height: 24px; }
+        .tpl-pro-stat-body { display: flex; flex-direction: column; gap: 2px; }
+        .tpl-pro-stat-value { font-size: 1.65rem; font-weight: 800; color: var(--text-primary); line-height: 1.1; font-variant-numeric: tabular-nums; }
+        .tpl-pro-stat-label { font-size: 0.82rem; color: var(--text-muted); font-weight: 500; }
+        .tpl-pro-vars {
+            padding: 16px 18px; border-radius: 14px; border: 1px solid var(--border);
+            background: var(--bg-secondary);
+        }
+        .tpl-pro-vars-title { display: block; font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 4px; }
+        .tpl-pro-vars-hint { margin: 0 0 12px; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; }
+        .tpl-pro-vars-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+        .tpl-var-pill {
+            padding: 8px 14px; border-radius: 999px; border: 1px solid var(--border); background: var(--bg-card);
+            cursor: pointer; font-family: ui-monospace, monospace; transition: all 0.18s;
+        }
+        .tpl-var-pill code { font-size: 0.82rem; color: var(--accent); background: none; border: none; }
+        .tpl-var-pill:hover { border-color: var(--accent); background: var(--accent-soft); transform: translateY(-1px); }
+        .tpl-pro-nav {
+            display: flex; gap: 10px; padding: 6px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; flex-wrap: wrap;
+        }
+        .tpl-pro-tab {
+            flex: 1; min-width: 160px; padding: 0; border: none; border-radius: 10px; background: transparent; cursor: pointer;
+            font-family: var(--font); transition: background 0.2s, box-shadow 0.2s;
+        }
+        .tpl-pro-tab-inner {
+            display: flex; align-items: center; justify-content: center; gap: 10px; padding: 14px 18px; border-radius: 10px;
+            color: var(--text-secondary); font-size: 0.92rem; font-weight: 600;
+        }
+        .tpl-pro-tab:hover .tpl-pro-tab-inner { color: var(--text-primary); background: var(--bg-hover); }
+        .tpl-pro-tab.active .tpl-pro-tab-inner {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #fff;
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+        }
+        .tpl-pro-tab[data-tab="file"].active .tpl-pro-tab-inner {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.3);
+        }
+        .tpl-pro-tab-ico { display: flex; opacity: 0.85; }
+        .tpl-pro-tab.active .tpl-pro-tab-ico { opacity: 1; }
+        .tpl-pro-count { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 11px; font-size: 0.72rem; font-weight: 800; }
+        .tpl-pro-tab.active .tpl-pro-count { background: rgba(255,255,255,0.25); color: #fff; }
+        .tpl-pro-tab:not(.active) .tpl-pro-count { background: var(--accent-soft); color: var(--accent); }
+        .tpl-pro-panel { display: none; padding: 4px 0 8px; animation: tplPanelIn 0.3s ease; }
+        .tpl-pro-panel.tpl-pro-panel--active { display: block; }
+        @keyframes tplPanelIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+        .tpl-pro-toolbar {
+            display: flex; flex-wrap: wrap; align-items: stretch; gap: 12px; margin-bottom: 16px;
+        }
+        .tpl-pro-search-wrap { flex: 1; min-width: 220px; position: relative; }
+        .tpl-pro-search-ico { position: absolute; top: 50%; transform: translateY(-50%); right: 16px; color: var(--text-muted); pointer-events: none; }
+        [dir="ltr"] .tpl-pro-search-ico { right: auto; left: 16px; }
+        .tpl-pro-search {
+            width: 100%; height: 48px; padding: 0 48px 0 16px; border-radius: 12px; border: 1px solid var(--border);
+            background: var(--bg-card); color: var(--text-primary); font-family: var(--font); font-size: 0.92rem;
+            box-sizing: border-box; transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        [dir="ltr"] .tpl-pro-search { padding: 0 16px 0 48px; }
+        .tpl-pro-search:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+        .tpl-pro-btn-add { display: inline-flex; align-items: center; gap: 8px; padding: 0 22px; height: 48px; border-radius: 12px; font-weight: 700; white-space: nowrap; }
+        .tpl-pro-cat-bar { margin-bottom: 16px; }
+        .tpl-pro-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 18px; }
+        .tpl-pro-grid--files { grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); }
+        .tpl-pro-grid .tpl-card { border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .tpl-pro-grid .tpl-card-name { max-width: none; }
+        .tpl-pro-grid .ft-card { border-radius: 14px; padding: 20px 22px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .tpl-pro-grid .ft-card-icon { width: 52px; height: 52px; min-width: 52px; border-radius: 14px; }
+        .tpl-pro-skel-card { min-height: 155px; border-radius: 14px; }
+        @media (max-width: 640px) {
+            .tpl-pro-hero { flex-direction: column; padding: 18px; }
+            .tpl-pro-toolbar { flex-direction: column; }
+            .tpl-pro-btn-add { width: 100%; justify-content: center; }
+        }
 
         /* هدر صفحه */
         .tpl-page-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }

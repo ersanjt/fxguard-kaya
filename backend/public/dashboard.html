@@ -1445,74 +1445,93 @@
                     </div>
                     </div>
                 </div>
-                <div id="pageMessageTemplates" class="page message-templates-page">
-                    <!-- هدر صفحه -->
-                    <div class="tpl-page-header">
-                        <div class="tpl-page-header-text">
-                            <h2 data-i18n="page_message_templates">تمپلیت‌های پیام و فایل</h2>
-                            <p data-i18n="message_templates_intro">پیام‌های پرکاربرد با متغیرهای داینامیک <code>{name}</code>، <code>{date}</code> برای ارسال سریع‌تر.</p>
+                <div id="pageMessageTemplates" class="page message-templates-page tpl-pro-page">
+                    <header class="tpl-pro-hero">
+                        <div class="tpl-pro-hero-badge" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                        </div>
+                        <div class="tpl-pro-hero-main">
+                            <div class="tpl-pro-hero-text">
+                                <h2 data-i18n="page_message_templates">تمپلیت‌های پیام و فایل</h2>
+                                <p data-i18n="message_templates_intro">پیام‌های پرکاربرد با متغیرهای داینامیک برای ارسال سریع در مکالمات.</p>
+                            </div>
+                            <a href="#conversations" class="tpl-pro-hero-link" data-i18n="tpl_link_conversations">مکالمات ←</a>
+                        </div>
+                    </header>
+
+                    <section class="tpl-pro-stats" aria-label="Summary">
+                        <article class="tpl-pro-stat tpl-pro-stat--text">
+                            <div class="tpl-pro-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                            <div class="tpl-pro-stat-body">
+                                <span class="tpl-pro-stat-value" id="tplStatTextCount">—</span>
+                                <span class="tpl-pro-stat-label" data-i18n="tpl_stat_text">تمپلیت متنی</span>
+                            </div>
+                        </article>
+                        <article class="tpl-pro-stat tpl-pro-stat--file">
+                            <div class="tpl-pro-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div>
+                            <div class="tpl-pro-stat-body">
+                                <span class="tpl-pro-stat-value" id="tplStatFileCount">—</span>
+                                <span class="tpl-pro-stat-label" data-i18n="tpl_stat_files">فایل پرکاربرد</span>
+                            </div>
+                        </article>
+                    </section>
+
+                    <div class="tpl-pro-vars" role="region" aria-label="Variables">
+                        <span class="tpl-pro-vars-title" data-i18n="tpl_vars_title">متغیرها در متن تمپلیت</span>
+                        <p class="tpl-pro-vars-hint" data-i18n="tpl_vars_hint">کلیک = کپی در حافظه — در مکالمه هنگام ارسال جایگزین می‌شوند.</p>
+                        <div class="tpl-pro-vars-chips" id="tplProVarChips">
+                            <button type="button" class="tpl-var-pill" data-tpl-copy="{name}" title="{name}"><code>{name}</code></button>
+                            <button type="button" class="tpl-var-pill" data-tpl-copy="{phone}" title="{phone}"><code>{phone}</code></button>
+                            <button type="button" class="tpl-var-pill" data-tpl-copy="{email}" title="{email}"><code>{email}</code></button>
+                            <button type="button" class="tpl-var-pill" data-tpl-copy="{date}" title="{date}"><code>{date}</code></button>
+                            <button type="button" class="tpl-var-pill" data-tpl-copy="{time}" title="{time}"><code>{time}</code></button>
                         </div>
                     </div>
 
-                    <!-- تب‌بار -->
-                    <div class="tpl-tabbar">
-                        <button type="button" class="tpl-tab active" data-tab="text" id="templatesTabText">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                                <polyline points="14 2 14 8 20 8"/>
-                                <line x1="16" y1="13" x2="8" y2="13"/>
-                                <line x1="16" y1="17" x2="8" y2="17"/>
-                            </svg>
-                            <span data-i18n="text_templates">تمپلیت‌های متنی</span>
-                            <span class="tpl-tab-count" id="textTemplatesCount"></span>
+                    <nav class="tpl-pro-nav" role="tablist" aria-label="Templates">
+                        <button type="button" class="tpl-pro-tab active" role="tab" aria-selected="true" data-tab="text" id="templatesTabText">
+                            <span class="tpl-pro-tab-inner">
+                                <span class="tpl-pro-tab-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+                                <span data-i18n="text_templates">تمپلیت‌های متنی</span>
+                                <span class="tpl-tab-count tpl-pro-count" id="textTemplatesCount"></span>
+                            </span>
                         </button>
-                        <button type="button" class="tpl-tab" data-tab="file" id="templatesTabFile">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/>
-                                <polyline points="13 2 13 9 20 9"/>
-                            </svg>
-                            <span data-i18n="file_templates">فایل‌های پرکاربرد</span>
-                            <span class="tpl-tab-count" id="fileTemplatesCount"></span>
+                        <button type="button" class="tpl-pro-tab" role="tab" aria-selected="false" data-tab="file" id="templatesTabFile">
+                            <span class="tpl-pro-tab-inner">
+                                <span class="tpl-pro-tab-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+                                <span data-i18n="file_templates">فایل‌های پرکاربرد</span>
+                                <span class="tpl-tab-count tpl-pro-count" id="fileTemplatesCount"></span>
+                            </span>
                         </button>
+                    </nav>
+
+                    <div id="textTemplatesContent" class="tpl-pro-panel tpl-pro-panel--active" role="tabpanel" aria-labelledby="templatesTabText">
+                        <div class="tpl-pro-toolbar">
+                            <div class="tpl-pro-search-wrap">
+                                <svg class="tpl-pro-search-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="search" id="textTemplatesSearch" class="tpl-pro-search" data-i18n-ph="tpl_search_text" placeholder="جستجو در نام، دسته یا متن…" autocomplete="off">
+                            </div>
+                            <button type="button" class="btn-primary tpl-pro-btn-add" id="btnAddTextTemplate">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span data-i18n="template_add">افزودن تمپلیت</span>
+                            </button>
+                        </div>
+                        <div id="textTemplatesCategoryFilter" class="tpl-category-filter tpl-pro-cat-bar"></div>
+                        <div id="messageTemplatesList" class="tpl-grid tpl-pro-grid"></div>
                     </div>
 
-                    <!-- محتوای تمپلیت‌های متنی -->
-                    <div id="textTemplatesContent" class="tpl-content active">
-                        <div class="tpl-toolbar">
-                            <div class="tpl-toolbar-right">
-                                <button type="button" class="btn-primary" id="btnAddTextTemplate">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                    <span data-i18n="template_add">افزودن تمپلیت</span>
-                                </button>
+                    <div id="fileTemplatesContent" class="tpl-pro-panel" role="tabpanel" aria-labelledby="templatesTabFile" aria-hidden="true">
+                        <div class="tpl-pro-toolbar">
+                            <div class="tpl-pro-search-wrap">
+                                <svg class="tpl-pro-search-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="search" id="fileTemplatesSearch" class="tpl-pro-search" data-i18n-ph="search_files" placeholder="جستجو در فایل‌ها…" autocomplete="off">
                             </div>
-                            <div class="tpl-toolbar-left">
-                                <div class="tpl-search-wrap">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                    <input type="text" id="textTemplatesSearch" class="tpl-search" placeholder="جستجو در تمپلیت‌ها...">
-                                </div>
-                            </div>
+                            <button type="button" class="btn-primary tpl-pro-btn-add" id="btnAddFileTemplate">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <span data-i18n="upload_file">بارگذاری فایل</span>
+                            </button>
                         </div>
-                        <div id="textTemplatesCategoryFilter" class="tpl-category-filter"></div>
-                        <div id="messageTemplatesList" class="tpl-grid"></div>
-                    </div>
-
-                    <!-- محتوای فایل‌های پرکاربرد -->
-                    <div id="fileTemplatesContent" class="tpl-content" style="display:none;">
-                        <div class="tpl-toolbar">
-                            <div class="tpl-toolbar-right">
-                                <button type="button" class="btn-primary" id="btnAddFileTemplate">
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                                    <span data-i18n="upload_file">بارگذاری فایل</span>
-                                </button>
-                            </div>
-                            <div class="tpl-toolbar-left">
-                                <div class="tpl-search-wrap">
-                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                                    <input type="text" id="fileTemplatesSearch" class="tpl-search" placeholder="جستجو در فایل‌ها..." data-i18n-ph="search_files">
-                                </div>
-                            </div>
-                        </div>
-                        <div id="fileTemplatesList" class="tpl-grid"></div>
+                        <div id="fileTemplatesList" class="tpl-grid tpl-pro-grid tpl-pro-grid--files"></div>
                     </div>
                 </div>
                 <div id="pageRates" class="page rates-page">

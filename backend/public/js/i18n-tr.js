@@ -891,5 +891,18 @@ window.__I18N_TR = {
     panel_tab_email: 'E-posta',
     panel_tab_sections: 'Bölümler ve görünürlük',
     panel_unsaved: 'Kaydedilmemiş değişiklikler',
-    panel_visibility_search: 'Bölümlerde ara...'
+    panel_visibility_search: 'Bölümlerde ara...',
+    page_message_templates: 'Mesaj ve dosya şablonları',
+    message_templates_intro: 'WhatsApp sohbetlerinde hızlı gönderim için hazır metin ve dosyalar.',
+    text_templates: 'Metin şablonları',
+    file_templates: 'Sık kullanılan dosyalar',
+    template_add: 'Şablon ekle',
+    upload_file: 'Dosya yükle',
+    search_files: 'Dosyalarda ara…',
+    tpl_link_conversations: 'Sohbetler →',
+    tpl_stat_text: 'Metin şablonu',
+    tpl_stat_files: 'Hızlı dosya',
+    tpl_vars_title: 'Şablon metnindeki değişkenler',
+    tpl_vars_hint: 'Kopyalamak için tıklayın; gönderimde otomatik doldurulur.',
+    tpl_search_text: 'Ad, kategori veya içerikte ara…'
 };

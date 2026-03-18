@@ -6619,7 +6619,7 @@
                 loadWhatsappWelcomeConfig();
                 loadWhatsappStats();
             }
-            if (page === 'message-templates') { initMessageTemplatesTabs(); loadMessageTemplates(); }
+            if (page === 'message-templates') { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); }
             if (page === 'rates-charts') loadRatesCharts();
             if (page === 'services') { initServicesTabs(); loadServicesPage(); }
@@ -9008,16 +9008,41 @@
 
         var chatTemplatesCache = [];
         let _tplActiveCat = 'all';
+        function initTplVarPills() {
+            var wrap = document.getElementById('tplProVarChips');
+            if (!wrap || wrap._tplVarBound) return;
+            wrap._tplVarBound = true;
+            wrap.addEventListener('click', function (e) {
+                var b = e.target.closest('[data-tpl-copy]');
+                if (!b) return;
+                var v = b.getAttribute('data-tpl-copy') || '';
+                if (v && navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(v).then(function () {
+                        toast((LANG === 'fa' ? 'کپی شد: ' : 'Copied: ') + v);
+                    }).catch(function () { toast(t('err_generic'), true); });
+                }
+            });
+        }
         function initMessageTemplatesTabs() {
-            document.querySelectorAll('.tpl-tab').forEach(function(btn) {
-                btn.onclick = function() {
-                    const tab = btn.getAttribute('data-tab');
-                    document.querySelectorAll('.tpl-tab').forEach(function(b) { b.classList.remove('active'); });
+            document.querySelectorAll('.tpl-pro-tab').forEach(function (btn) {
+                btn.onclick = function () {
+                    var tab = btn.getAttribute('data-tab');
+                    document.querySelectorAll('.tpl-pro-tab').forEach(function (b) {
+                        b.classList.remove('active');
+                        b.setAttribute('aria-selected', 'false');
+                    });
                     btn.classList.add('active');
-                    const textContent = document.getElementById('textTemplatesContent');
-                    const fileContent = document.getElementById('fileTemplatesContent');
-                    if (textContent) textContent.style.display = (tab === 'text' ? 'block' : 'none');
-                    if (fileContent) fileContent.style.display = (tab === 'file' ? 'block' : 'none');
+                    btn.setAttribute('aria-selected', 'true');
+                    var textContent = document.getElementById('textTemplatesContent');
+                    var fileContent = document.getElementById('fileTemplatesContent');
+                    if (textContent) {
+                        textContent.classList.toggle('tpl-pro-panel--active', tab === 'text');
+                        textContent.setAttribute('aria-hidden', tab !== 'text');
+                    }
+                    if (fileContent) {
+                        fileContent.classList.toggle('tpl-pro-panel--active', tab === 'file');
+                        fileContent.setAttribute('aria-hidden', tab !== 'file');
+                    }
                     if (tab === 'file') loadFileTemplates();
                 };
             });
@@ -9091,15 +9116,32 @@
                 };
             });
         }
+        function tplProSkeletonCells(n) {
+            var sk = '';
+            for (var i = 0; i < (n || 6); i++) sk += '<div class="tpl-pro-skel-card loading-skeleton"></div>';
+            return sk;
+        }
         async function loadMessageTemplates() {
             const list = document.getElementById('messageTemplatesList');
             if (!list) return;
+            list.innerHTML = tplProSkeletonCells(6);
             const res = await apiFetch('/api/message-templates');
-            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            if (res.needLogin || !res.ok) {
+                list.innerHTML = '<div class="empty">' + escapeHtml((res.data && res.data.error) || t('err_generic')) + '</div>';
+                return;
+            }
             const data = (res.data && res.data.data) || [];
             chatTemplatesCache = data;
-            const countEl = document.getElementById('textTemplatesCount');
-            if (countEl) countEl.textContent = data.length || '';
+            var countEl = document.getElementById('textTemplatesCount');
+            if (countEl) countEl.textContent = data.length ? String(data.length) : '';
+            var statT = document.getElementById('tplStatTextCount');
+            if (statT) statT.textContent = String(data.length);
+            apiFetch('/api/file-templates').then(function (fr) {
+                if (fr.ok && fr.data && fr.data.data) {
+                    var statF = document.getElementById('tplStatFileCount');
+                    if (statF) statF.textContent = String(fr.data.data.length);
+                }
+            }).catch(function () {});
             renderTextTemplatesCategoryFilter(data);
             renderMessageTemplates();
         }
@@ -9168,14 +9210,20 @@
         async function loadFileTemplates() {
             const list = document.getElementById('fileTemplatesList');
             if (!list) return;
+            list.innerHTML = tplProSkeletonCells(5);
             const search = (document.getElementById('fileTemplatesSearch') && document.getElementById('fileTemplatesSearch').value || '').trim();
             const q = search ? '?search=' + encodeURIComponent(search) : '';
             const res = await apiFetch('/api/file-templates' + q);
-            if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
+            if (res.needLogin || !res.ok) {
+                list.innerHTML = '<div class="empty">' + escapeHtml((res.data && res.data.error) || t('err_generic')) + '</div>';
+                return;
+            }
             const data = (res.data && res.data.data) || [];
             fileTemplatesCache = data;
             const countEl = document.getElementById('fileTemplatesCount');
-            if (countEl) countEl.textContent = data.length || '';
+            if (countEl) countEl.textContent = data.length ? String(data.length) : '';
+            var statF = document.getElementById('tplStatFileCount');
+            if (statF && !search) statF.textContent = String(data.length);
             if (data.length === 0) {
                 list.innerHTML = '<div class="tpl-empty"><div class="tpl-empty-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div><h4>' + (LANG === 'fa' ? 'فایلی وجود ندارد' : 'No files yet') + '</h4><p>' + (search ? (LANG === 'fa' ? 'جستجوی دیگری امتحان کنید.' : 'Try a different search.') : (LANG === 'fa' ? 'بارگذاری فایل را بزنید تا اولین فایل را اضافه کنید.' : 'Click Upload file to add your first file.')) + '</p></div>';
                 return;
