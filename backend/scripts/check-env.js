@@ -17,6 +17,11 @@ const checks = [
         desc: 'کلید احراز هویت webhook واتساپ'
     },
     {
+        key: 'WEBHOOK_BODY_LIMIT',
+        required: false,
+        desc: 'سقف بدنه POST /api/webhook/incoming-message (فقط مثل 25mb یا 40mb؛ حداکثر 50mb)'
+    },
+    {
         key: 'ENCRYPT_SECRET',
         required: false,
         minLength: 32,

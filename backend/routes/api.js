@@ -76,7 +76,8 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.use('/panel-settings', require('./panelSettings'));
     apiRouter.use('/company-emails', authMiddleware, require('./companyEmails'));
 
-    apiRouter.post('/webhook/incoming-message', webhookAuth, express.json({ limit: '20mb' }), (req, res) => {
+    // بدنه با express.json در server.js (WEBHOOK_BODY_LIMIT، پیش‌فرض 25mb) پارس شده
+    apiRouter.post('/webhook/incoming-message', webhookAuth, (req, res) => {
         const body = req.body;
         if (!body || typeof body !== 'object') {
             return res.status(400).json({ error: 'Invalid payload' });
@@ -135,7 +136,8 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         }
     });
 
-    apiRouter.post('/webhook/message-status', webhookAuth, async (req, res, next) => {
+    // بدنهٔ JSON؛ مسیرهای /webhook از json سراسری معافند
+    apiRouter.post('/webhook/message-status', webhookAuth, express.json({ limit: '512kb' }), async (req, res, next) => {
         try {
             const { messageId, status } = req.body || {};
             if (!messageId) return res.json({ ok: true });

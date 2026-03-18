@@ -40,4 +40,28 @@ function createWebhookAuth(logger) {
     };
 }
 
-module.exports = { createWebhookAuth };
+/**
+ * قبل از express.json با حد بالا — جلوگیری از ارسال بدنهٔ حجیم بدون secret معتبر
+ * @returns {boolean} true ادامهٔ زنجیره، false اگر res ارسال شده
+ */
+function assertWebhookSecretBeforeBody(req, res, logger) {
+    const isProduction = process.env.NODE_ENV === 'production';
+    const secret = process.env.WEBHOOK_SECRET;
+    if (!secret) {
+        if (isProduction) {
+            logger.error('WEBHOOK_SECRET در production تنظیم نشده — webhook مسدود است');
+            res.status(503).json({ error: 'Webhook temporarily unavailable' });
+            return false;
+        }
+        return true;
+    }
+    const provided = req.headers['x-webhook-secret'];
+    if (!provided || !timingSafeEqual(provided, secret)) {
+        logger.warn('Webhook auth failed — invalid or missing secret', { ip: req.ip });
+        res.status(401).json({ error: 'Unauthorized' });
+        return false;
+    }
+    return true;
+}
+
+module.exports = { createWebhookAuth, assertWebhookSecretBeforeBody };

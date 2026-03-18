@@ -19,3 +19,7 @@
 ## لاگ بک‌اند: `Gateway request failed` با status **429**
 
 یعنی سقف **rate limit** سراسری Gateway برای مسیر `/api/*` پر شده. مسیرهای **`/api/status`** و **`/api/qr`** (پولینگ پنل) از این سقف معاف هستند؛ در نسخه‌های قدیمی به‌خاطر اشتباه مسیر در `skip` همهٔ درخواست‌ها شمرده می‌شد و 429 می‌داد. بعد از به‌روزرسانی `gateway/src/index.js`، روی سرور: `pm2 reload crm-gateway`. در صورت نیاز `RATE_LIMIT_MAX` / `RATE_LIMIT_WINDOW_MS` را در `.env` Gateway بالا ببرید.
+
+## لاگ بک‌اند: **413** روی `POST /api/webhook/incoming-message` (`PayloadTooLargeError`)
+
+پیام با رسانهٔ بزرگ (base64) از سقف بدنه عبور می‌کند. در بک‌اند ابتدا **`X-Webhook-Secret`** بررسی می‌شود، سپس بدنه با **`WEBHOOK_BODY_LIMIT`** (پیش‌فرض **25mb**، حداکثر **50mb**) پارس می‌شود. بعد از `git pull`: `pm2 reload crm-backend`. اگر 413 از **nginx** است، `client_max_body_size` را (مثلاً در `server` یا `location /api`) بالا ببرید.

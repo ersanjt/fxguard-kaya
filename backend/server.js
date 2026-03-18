@@ -30,6 +30,7 @@ const socketAuth = require('./middleware/socketAuth');
 const models = require('./models');
 const { sequelize } = models;
 const errorHandler = require('./middleware/errorHandler');
+const { assertWebhookSecretBeforeBody } = require('./middleware/webhookAuth');
 
 // ==================== Express Setup ====================
 const app = express();
@@ -99,8 +100,39 @@ app.use(cors({
 }));
 app.use(compression());
 app.use(cookieParser());
-// Webhook needs larger limit for base64 media — apply per-route in api.js
-// All other routes get 512kb limit
+
+/** مسیر یکتا برای تطبیق دیپلوی (با یا بدون پیشوند، اسلش تکراری) */
+function normalizedRequestPath(req) {
+    try {
+        let u = String(req.originalUrl || req.url || req.path || '');
+        u = u.split('?')[0].replace(/\/+/g, '/');
+        if (u.length > 1 && u.endsWith('/')) u = u.slice(0, -1);
+        return u;
+    } catch (_) {
+        return '';
+    }
+}
+function isPostIncomingMessageWebhook(req) {
+    return req.method === 'POST' && /\/webhook\/incoming-message$/i.test(normalizedRequestPath(req));
+}
+/** سقف بدنه وب‌هوک؛ حداکثر 50mb تا سوءاستفاده کمتر شود */
+function resolveWebhookIncomingBodyLimit() {
+    const raw = String(process.env.WEBHOOK_BODY_LIMIT || '25mb').trim().toLowerCase();
+    const m = raw.match(/^(\d+)\s*mb$/);
+    if (!m) return '25mb';
+    const n = Math.min(50, Math.max(1, parseInt(m[1], 10)));
+    return `${n}mb`;
+}
+const webhookIncomingBodyLimit = resolveWebhookIncomingBodyLimit();
+
+// وب‌هوک پیام Gateway — احراز هویت قبل از پارس بدنه؛ سپس JSON تا 25mb (قابل تنظیم)
+app.use((req, res, next) => {
+    if (!isPostIncomingMessageWebhook(req)) return next();
+    if (!assertWebhookSecretBeforeBody(req, res, logger)) return;
+    return express.json({ limit: webhookIncomingBodyLimit })(req, res, next);
+});
+// Webhookهای دیگر در api.js — اینجا از json سراسری عبور می‌کنند
+// بقیهٔ مسیرها 512kb
 app.use((req, res, next) => {
     if (req.path && req.path.includes('/webhook/')) {
         return next();
