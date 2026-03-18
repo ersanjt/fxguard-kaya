@@ -1590,6 +1590,7 @@
         .user-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 0; display: flex; flex-direction: column; align-items: stretch; transition: border-color 0.2s, background 0.2s, box-shadow 0.2s; overflow: hidden; }
         .user-card:hover { border-color: var(--accent); box-shadow: 0 8px 24px rgba(0,0,0,0.25); }
         .user-card.inactive { opacity: 0.72; }
+        .user-card-clickable { cursor: pointer; }
         .user-card-header { padding: 28px 24px 20px; text-align: center; }
         .user-card-avatar { width: 72px; height: 72px; border-radius: 50%; background: linear-gradient(145deg, var(--accent-soft) 0%, rgba(16,185,129,0.2) 100%); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.5rem; margin: 0 auto 14px; overflow: hidden; position: relative; flex-shrink: 0; border: 2px solid rgba(16,185,129,0.3); }
         .user-card-avatar .avatar-fallback { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }

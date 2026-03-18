@@ -17,7 +17,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=41">
+    <link rel="stylesheet" href="/css/dashboard.css?v=42">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -685,7 +685,7 @@
                             <div class="user-form-field-wide"><label data-i18n="user_skills_keywords">تخصص (کلمات کلیدی)</label><input type="text" id="userSkillsAdd" data-i18n-ph="user_skills_ph" placeholder="امارات، حواله، دلار — برای تخصیص هوشمند"></div>
                         </div>
                         <div id="userAddPermsBox" style="display:none;"><strong data-i18n="modal_user_perms">دسترسی به بخش‌ها:</strong><div id="userAddPerms"></div></div>
-                        <button type="button" class="btn-primary" onclick="addUser()" style="margin-top:16px;" data-i18n="user_submit">ثبت کاربر</button>
+                        <button type="button" class="btn-primary" id="btnSubmitNewUser" onclick="addUser()" style="margin-top:16px;" data-i18n="user_submit">ثبت کاربر</button>
                     </div>
                     <div id="userList" class="user-list"></div>
                 </div>
@@ -3183,7 +3183,7 @@
     <script src="/js/i18n-fa.js?v=3" charset="utf-8"></script>
     <script src="/js/i18n-en.js?v=1" charset="utf-8"></script>
     <script src="/js/i18n-tr.js?v=3" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=21" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=22" charset="utf-8"></script>
     <script>
     (function() {
         function updateMobileHeaderHeight() {

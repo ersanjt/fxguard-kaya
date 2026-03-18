@@ -4017,6 +4017,16 @@
                 if (target.closest('.internal-call-btn[data-call-type="video"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('video'); return; }
                 // Handle internal chat popup header click (minimize)
                 if (target.closest('.internal-chat-popup-header-compact') && !target.closest('.internal-chat-popup-actions') && typeof toggleInternalChatPopupMinimize === 'function') { e.preventDefault(); e.stopPropagation(); toggleInternalChatPopupMinimize(); return; }
+                // صفحه کاربران — CSP / حذف onclick (backup به toggleUserForm/addUser نیاز به window دارد)
+                if (target.closest('#btnAddUser') && typeof toggleUserForm === 'function') { e.preventDefault(); e.stopPropagation(); toggleUserForm(); return; }
+                if (target.closest('#btnCancelUserForm') && typeof toggleUserForm === 'function') { e.preventDefault(); e.stopPropagation(); toggleUserForm(); return; }
+                if (target.closest('#btnSubmitNewUser') && typeof addUser === 'function') { e.preventDefault(); e.stopPropagation(); addUser(); return; }
+                const ueBtn = target.closest('#userList .btn-user-list-edit[data-user-id]');
+                if (ueBtn && typeof openUserEdit === 'function') { e.preventDefault(); e.stopPropagation(); openUserEdit(ueBtn.getAttribute('data-user-id')); return; }
+                const usBtn = target.closest('#userList .btn-user-list-staff[data-user-id]');
+                if (usBtn && typeof openStaffDetailModal === 'function') { e.preventDefault(); e.stopPropagation(); openStaffDetailModal(usBtn.getAttribute('data-user-id')); return; }
+                const uCard = target.closest('#userList .user-card[data-user-id].user-card-clickable');
+                if (uCard && !target.closest('.user-card-actions') && typeof openStaffDetailModal === 'function') { e.preventDefault(); e.stopPropagation(); openStaffDetailModal(uCard.getAttribute('data-user-id')); return; }
                 // احراز دو مرحله‌ای — دکمه‌های پروفایل
                 if (target.closest('#totpSetupBtnDynamic') && typeof openTotpSetup === 'function') { e.preventDefault(); e.stopPropagation(); openTotpSetup(); return; }
                 if (target.closest('#totpDisableBtnDynamic') && typeof openTotpDisableModal === 'function') { e.preventDefault(); e.stopPropagation(); openTotpDisableModal(); return; }
@@ -8293,12 +8303,13 @@
                 const roleBadge = '<span class="badge" style="background:var(--accent-soft);color:var(--accent);">' + escapeHtml(roleLabels[u.role] || u.role) + '</span>';
                 const statusBadge = '<span class="status-dot ' + statusClass + '" title="' + escapeHtml(statusLabel) + '"></span>';
                 const btns = [];
-                if (canViewActivity) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openStaffDetailModal(\'' + u.id + '\')">' + t('view_activity') + '</button>');
-                if (canManage) btns.push('<button type="button" class="btn-secondary btn-sm" onclick="event.stopPropagation();openUserEdit(\'' + u.id + '\')">' + (u.isProtectedAdmin ? (LANG === 'fa' ? 'مشاهده' : 'View') : t('edit_access')) + '</button>');
+                if (canViewActivity) btns.push('<button type="button" class="btn-secondary btn-sm btn-user-list-staff" data-user-id="' + escapeHtml(u.id) + '">' + t('view_activity') + '</button>');
+                if (canManage) btns.push('<button type="button" class="btn-secondary btn-sm btn-user-list-edit" data-user-id="' + escapeHtml(u.id) + '">' + (u.isProtectedAdmin ? (LANG === 'fa' ? 'مشاهده' : 'View') : t('edit_access')) + '</button>');
                 const btn = btns.join(' ');
-                const cardClick = canViewActivity ? 'onclick="openStaffDetailModal(\'' + u.id + '\')" style="cursor:pointer;"' : '';
+                const cardClickClass = canViewActivity ? ' user-card-clickable' : '';
+                const cardDataId = ' data-user-id="' + escapeHtml(u.id) + '"';
                 const positionLine = u.position ? '<div class="user-card-meta" style="color:var(--accent);font-weight:500;">' + escapeHtml(u.position) + '</div>' : '';
-                return '<div class="user-card' + inactiveClass + '" ' + cardClick + '><div class="user-card-header"><div class="user-card-avatar">' + avatarHtml + '</div><div class="user-card-name">' + statusBadge + ' ' + escapeHtml(u.name) + ' ' + blockedBadge + ' ' + protectedBadge + '</div></div><div class="user-card-body">' + positionLine + '<div class="user-card-email">' + escapeHtml(u.email || '') + '</div><div class="user-card-meta">' + (deptBranch.length ? deptBranch.join(' · ') : '') + '</div><div class="user-card-meta">' + (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLoginStr + '</div><div class="user-card-badges">' + roleBadge + '</div></div><div class="user-card-actions" onclick="event.stopPropagation();">' + btn + '</div></div>';
+                return '<div class="user-card' + inactiveClass + cardClickClass + '"' + cardDataId + '><div class="user-card-header"><div class="user-card-avatar">' + avatarHtml + '</div><div class="user-card-name">' + statusBadge + ' ' + escapeHtml(u.name) + ' ' + blockedBadge + ' ' + protectedBadge + '</div></div><div class="user-card-body">' + positionLine + '<div class="user-card-email">' + escapeHtml(u.email || '') + '</div><div class="user-card-meta">' + (deptBranch.length ? deptBranch.join(' · ') : '') + '</div><div class="user-card-meta">' + (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLoginStr + '</div><div class="user-card-badges">' + roleBadge + '</div></div><div class="user-card-actions" onclick="event.stopPropagation();">' + btn + '</div></div>';
             }).join('');
         }
         function toggleUserForm() {
@@ -10534,6 +10545,12 @@
             window.userPermsSelectGroup = userPermsSelectGroup;
             window.openUserEdit = openUserEdit;
             window.closeUserEditModal = closeUserEditModal;
+            window.toggleUserForm = toggleUserForm;
+            window.addUser = addUser;
+            window.saveUserEdit = saveUserEdit;
+            window.openDeleteUserModal = openDeleteUserModal;
+            window.closeDeleteUserModal = closeDeleteUserModal;
+            window.confirmDeleteUser = confirmDeleteUser;
             window.openStaffDetailModal = openStaffDetailModal;
             window.closeStaffDetailModal = closeStaffDetailModal;
             window.verifyTotpLogin = verifyTotpLogin;
