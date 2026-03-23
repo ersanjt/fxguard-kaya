@@ -694,6 +694,7 @@ window.__I18N_EN = {
     whatsapp_edit_depts: 'Edit departments & keywords',
     whatsapp_auto_messages_title: 'Auto messages: department & employee intro',
     whatsapp_auto_messages_hint: 'Text sent when assigning to department or when employee introduces themselves. Use {{deptName}} and {{name}} as placeholders. Empty = default.',
+    whatsapp_auto_messages_enabled: 'Send assignment and intro messages',
     whatsapp_dept_assigned_msg: 'Department assignment message',
     whatsapp_dept_assigned_ph: 'You have been connected to {{deptName}} department. We will respond soon.',
     whatsapp_employee_intro_msg: 'Employee intro message',

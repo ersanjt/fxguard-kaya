@@ -716,6 +716,7 @@ window.__I18N_FA = {
     whatsapp_edit_depts: 'ویرایش دپارتمان‌ها و کلمات کلیدی',
     whatsapp_auto_messages_title: 'پیام‌های خودکار تخصیص و معرفی',
     whatsapp_auto_messages_hint: 'متن پیام‌هایی که هنگام تخصیص به دپارتمان یا معرفی کارمند ارسال می‌شوند. از {{deptName}} و {{name}} برای جایگزینی استفاده کنید. خالی = پیش‌فرض.',
+    whatsapp_auto_messages_enabled: 'ارسال پیام‌های تخصیص و معرفی',
     whatsapp_dept_assigned_msg: 'پیام تخصیص به دپارتمان',
     whatsapp_dept_assigned_ph: 'شما به دپارتمان {{deptName}} وصل شدید. به زودی پاسخگوی شما خواهیم بود.',
     whatsapp_employee_intro_msg: 'پیام معرفی کارمند',

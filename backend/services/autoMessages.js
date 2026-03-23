@@ -12,6 +12,16 @@ const DEFAULT_EMPLOYEE_INTRO = 'من {{name}} از دپارتمان {{deptName}}
 
 let rabbitChannel = null;
 
+async function isAutoAssignmentMessagesEnabled() {
+    try {
+        const cfg = await WhatsappConfig.findByPk('default', { attributes: ['autoAssignmentMessagesEnabled'] });
+        return !cfg || cfg.autoAssignmentMessagesEnabled !== false;
+    } catch (err) {
+        if (/no such column|SQLITE_ERROR|column.*does not exist/i.test(err.message)) return true;
+        throw err;
+    }
+}
+
 function setRabbitChannel(ch) {
     rabbitChannel = ch;
 }
@@ -59,6 +69,7 @@ async function sendOutgoingAutoMessage(conversation, text) {
 /** پیام خودکار: شما به دپارتمان X وصل شدید — فقط یک‌بار هنگام تخصیص/تغییر دپارتمان */
 async function sendDeptAssignedMessage(conversation, department) {
     try {
+        if (!(await isAutoAssignmentMessagesEnabled())) return;
         const conv = await Conversation.findByPk(conversation.id, { attributes: ['id', 'customerId', 'metadata', 'firstReplyAt'] });
         if (!conv) return;
         const meta = conv.metadata || {};
@@ -96,6 +107,7 @@ async function sendDeptAssignedMessage(conversation, department) {
 /** پیام خودکار: من [نام] از دپارتمان X هستم — فقط قبل از اولین پاسخ کارمند */
 async function maybeSendEmployeeIntro(conversation, userId, user, department) {
     try {
+        if (!(await isAutoAssignmentMessagesEnabled())) return;
         if (!userId) return;
         const prevCount = await Message.count({
             where: { conversationId: conversation.id, userId, direction: 'outgoing' }

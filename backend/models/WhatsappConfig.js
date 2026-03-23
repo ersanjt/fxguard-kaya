@@ -53,6 +53,11 @@ module.exports = (sequelize) => {
             type: DataTypes.TEXT,
             allowNull: true,
             comment: 'پیام معرفی کارمند — {{name}} و {{deptName}}. خالی = پیش‌فرض'
+        },
+        autoAssignmentMessagesEnabled: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+            comment: 'فعال بودن پیام‌های خودکار تخصیص دپارتمان و معرفی کارمند'
         }
     }, {
         timestamps: true,

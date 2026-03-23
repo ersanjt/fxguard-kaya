@@ -670,6 +670,7 @@ window.__I18N_TR = {
     whatsapp_edit_depts: 'Departmanları ve anahtar kelimeleri düzenle',
     whatsapp_auto_messages_title: 'Otomatik mesajlar: departman ve çalışan tanıtımı',
     whatsapp_auto_messages_hint: 'Departmana atama veya çalışan tanıtımında gönderilen metin. {{deptName}} ve {{name}} yer tutucu olarak kullanılır. Boş = varsayılan.',
+    whatsapp_auto_messages_enabled: 'Atama ve tanıtım mesajlarını gönder',
     whatsapp_dept_assigned_msg: 'Departman atama mesajı',
     whatsapp_dept_assigned_ph: '{{deptName}} departmanına bağlandınız. En kısa sürede yanıt vereceğiz.',
     whatsapp_employee_intro_msg: 'Çalışan tanıtım mesajı',
