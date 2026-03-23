@@ -2470,7 +2470,11 @@
                 setDashboardError(container, cardsTitleEl, LANG === 'fa' ? 'لطفاً وارد شوید.' : 'Please sign in.');
                 return;
             }
-            const stats = res.ok && res.data ? res.data : {};
+            if (!res.ok) {
+                setDashboardError(container, cardsTitleEl, getApiError(res));
+                return;
+            }
+            const stats = res.data || {};
             const n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
             if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
                 const parts = [];
@@ -2600,14 +2604,12 @@
                 toggleBtn.style.display = 'none';
             }
         }
-        function marqueeAnnouncementClick(id) {
-            if (id) {
-                showPage('announcements');
-                setTimeout(function() {
-                    const el = document.querySelector('.announcement-item[data-id="' + id + '"]');
-                    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('highlight'); }
-                }, 300);
-            }
+        function handleMarqueeItemClick(e) {
+            const item = e.target.closest('.announcement-marquee-item');
+            if (!item) return;
+            const id = item.getAttribute('data-id');
+            if (!id) return;
+            marqueeAnnouncementClick(id);
         }
         function pauseTickerRatesMarquee() { const el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.add('paused'); }
         function resumeTickerRatesMarquee() { const el = document.getElementById('ratesMarqueeInner'); if (el) el.classList.remove('paused'); }
@@ -2618,7 +2620,19 @@
         }
         function marqueeAnnouncementClick(id) {
             const a = (window._marqueeAnnouncements || []).find(function(x) { return String(x.id) === String(id); });
-            if (a) { apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() { loadGeneralAnnouncementsMarquee(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); }); showAnnouncementModal(a); }
+            if (a) {
+                apiFetch('/api/announcements/' + id + '/read', { method: 'POST' }).then(function() {
+                    loadGeneralAnnouncementsMarquee();
+                    apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){});
+                });
+                showAnnouncementModal(a);
+            } else {
+                showPage('announcements');
+                setTimeout(function() {
+                    const el = document.querySelector('.announcement-item[data-id="' + id + '"]');
+                    if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('highlight'); }
+                }, 300);
+            }
         }
         async function loadGeneralAnnouncementsMarquee() {
             const banner = document.getElementById('announcementMarquee');

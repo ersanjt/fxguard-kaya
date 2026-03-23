@@ -1,7 +1,7 @@
 /**
  * Analytics controller — dashboard stats and metrics
  */
-const { Op, literal } = require('sequelize');
+const { Op, literal, fn, col } = require('sequelize');
 const {
     Conversation,
     Message,
@@ -45,7 +45,6 @@ async function dashboard(req, res, next) {
             unreadAnnouncements,
             staffOnline,
             loginsToday,
-            responseAndRating,
         ] = await Promise.all([
             Conversation.count({ where: convWhere }),
             Conversation.count({ where: { ...convWhere, status: 'open' } }),
@@ -70,7 +69,7 @@ async function dashboard(req, res, next) {
                 if (ids.length === 0) return 0;
                 return Customer.count({ where: { id: { [Op.in]: ids } } });
             })(),
-            Ticket.count({ where: { status: { [Op.in]: ['open', 'in_progress', 'resolved'] } } }),
+            Ticket.count({ where: { status: { [Op.in]: ['open', 'in_progress'] } } }),
             Task.count({ where: { status: { [Op.in]: ['pending', 'in_progress'] } } }),
             Announcement.count(),
             Announcement.count({
@@ -86,42 +85,57 @@ async function dashboard(req, res, next) {
                 where: { isActive: true, status: { [Op.in]: ['online', 'away', 'busy'] } },
             }),
             User.count({ where: { isActive: true, lastLoginAt: { [Op.gte]: today } } }),
-            Conversation.findAll({
-                where: {
-                    ...convWhere,
-                    lastIncomingMessageAt: { [Op.ne]: null },
-                    lastOutgoingMessageAt: { [Op.ne]: null },
-                },
-                attributes: ['lastIncomingMessageAt', 'lastOutgoingMessageAt', 'rating'],
-                raw: true,
-            }),
         ]);
 
         let avgResponseTimeMinutes = null;
         let avgRating = null;
         let ratedCount = 0;
-        if (Array.isArray(responseAndRating)) {
-            const diffs = responseAndRating
-                .map((c) => {
-                    const inc = new Date(c.lastIncomingMessageAt).getTime();
-                    const out = new Date(c.lastOutgoingMessageAt).getTime();
-                    if (out >= inc) return (out - inc) / 60000;
-                    return null;
-                })
-                .filter((x) => x != null && x >= 0 && x < 10080);
+
+        const [ratedRows, convsWithReply] = await Promise.all([
+            Conversation.findAll({
+                where: { ...convWhere, rating: { [Op.ne]: null } },
+                attributes: ['rating'],
+                raw: true,
+            }),
+            Conversation.findAll({
+                where: { ...convWhere, firstReplyAt: { [Op.ne]: null } },
+                attributes: ['id', 'firstReplyAt'],
+                raw: true,
+            }),
+        ]);
+
+        ratedCount = ratedRows.length;
+        if (ratedCount > 0) {
+            avgRating =
+                Math.round(
+                    (ratedRows.reduce((a, c) => a + (c.rating || 0), 0) / ratedCount) * 10
+                ) / 10;
+        }
+
+        if (convsWithReply.length > 0) {
+            const convIds = convsWithReply.map((c) => c.id);
+            const minIncomingRows = await Message.findAll({
+                attributes: ['conversationId', [fn('MIN', col('timestamp')), 'firstIncoming']],
+                where: { conversationId: { [Op.in]: convIds }, direction: 'incoming' },
+                group: ['conversationId'],
+                raw: true,
+            });
+            const minMap = new Map(
+                minIncomingRows.map((r) => [r.conversationId, new Date(r.firstIncoming).getTime()])
+            );
+            const replyMap = new Map(
+                convsWithReply.map((c) => [c.id, new Date(c.firstReplyAt).getTime()])
+            );
+            const diffs = [];
+            for (const [id, replyT] of replyMap) {
+                const incT = minMap.get(id);
+                if (incT == null) continue;
+                const diffMin = (replyT - incT) / 60000;
+                if (diffMin >= 0 && diffMin < 10080) diffs.push(diffMin);
+            }
             if (diffs.length > 0) {
                 avgResponseTimeMinutes =
-                    Math.round(
-                        (diffs.reduce((a, b) => a + b, 0) / diffs.length) * 10
-                    ) / 10;
-            }
-            const rated = responseAndRating.filter((c) => c.rating != null);
-            ratedCount = rated.length;
-            if (ratedCount > 0) {
-                avgRating =
-                    Math.round(
-                        (rated.reduce((a, c) => a + (c.rating || 0), 0) / ratedCount) * 10
-                    ) / 10;
+                    Math.round((diffs.reduce((a, b) => a + b, 0) / diffs.length) * 10) / 10;
             }
         }
 
