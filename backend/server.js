@@ -278,7 +278,7 @@ app.get('/contact', (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 app.use('/uploads', (req, res, next) => {
     const ext = path.extname(req.path).toLowerCase();
-    const inlineExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.mp4', '.webm', '.ogg', '.mp3', '.wav', '.aac', '.pdf'];
+    const inlineExts = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.mp4', '.webm', '.ogg', '.oga', '.opus', '.mp3', '.wav', '.aac', '.m4a', '.pdf'];
     const isInline = inlineExts.includes(ext);
     res.setHeader('Content-Disposition', isInline ? 'inline' : 'attachment');
     res.setHeader('X-Content-Type-Options', 'nosniff');

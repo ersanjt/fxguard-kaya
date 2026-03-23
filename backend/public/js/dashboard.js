@@ -4583,16 +4583,26 @@
                 }
                 if (mediaUrl && m.hasMedia && m.mediaData) {
                     const mediaType = inferMediaType(m);
+                    const mdMime = ((m.mediaData && m.mediaData.mimetype) || '').split(';')[0].trim();
                     if (mediaType === 'image') {
                         const imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
                         const fn = escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'تصویر' : 'Image'));
                         mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\';var s=this.parentNode.querySelector(\'.msg-media-filename\');if(s)s.style.display=\'inline\';">' + '<span class="msg-media-filename" style="display:none;">📎 ' + fn + '</span></a></div>';
                     } else if (mediaType === 'video') {
-                        mediaHtml = '<div class="msg-media"><video src="' + escapeHtml(mediaUrl) + '" controls preload="metadata"></video><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">' + (LANG === 'fa' ? 'پخش ویدیو' : 'Play video') + '</a></div>';
+                        mediaHtml = '<div class="msg-media msg-media-video"><video src="' + escapeHtml(mediaUrl) + '" controls preload="metadata" playsinline></video><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">' + (LANG === 'fa' ? 'پخش ویدیو' : 'Play video') + '</a></div>';
                     } else if (mediaType === 'audio') {
                         const isPtt = (m.type || '').toLowerCase() === 'ptt' || /voice|\.ogg|\.webm|پیام صوتی|ptt/i.test(m.mediaData.filename || m.content || '');
-                        const voiceClass = isPtt ? ' msg-media-voice' : '';
-                        mediaHtml = '<div class="msg-media' + voiceClass + '"><audio src="' + escapeHtml(mediaUrl) + '" controls preload="metadata"></audio><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">' + (LANG === 'fa' ? 'دانلود' : 'Download') + '</a></div>';
+                        const voiceClass = isPtt ? ' msg-media-voice' : ' msg-media-audio';
+                        const typeAttr = mdMime ? ' type="' + escapeHtml(mdMime) + '"' : '';
+                        const errHint = LANG === 'fa' ? 'پخش در مرورگر ممکن نیست — از دانلود استفاده کنید.' : 'Playback failed — try download.';
+                        mediaHtml =
+                            '<div class="msg-media' + voiceClass + '">' +
+                            '<audio class="msg-audio-el" controls preload="auto" playsinline onerror="var w=this.closest(\'.msg-media\');if(w){w.classList.add(\'msg-media-error\');}">' +
+                            '<source src="' + escapeHtml(mediaUrl) + '"' + typeAttr + '>' +
+                            '</audio>' +
+                            '<p class="msg-media-audio-err" role="alert">' + escapeHtml(errHint) + '</p>' +
+                            '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-dl" data-open="1">' + (LANG === 'fa' ? 'دانلود فایل صوتی' : 'Download audio') + '</a>' +
+                            '</div>';
                     } else {
                         mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-file-link msg-media-link" data-open="1">📎 ' + escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'فایل' : 'File')) + '</a></div>';
                     }
