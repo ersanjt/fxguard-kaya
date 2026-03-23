@@ -1,0 +1,544 @@
+                    <div class="services-page-header">
+                        <h2 data-i18n="page_services">خدمات صرافی</h2>
+                        <p class="services-intro text-muted" data-i18n="services_intro_full">مدیریت سرویس‌ها، صندوق‌ها، حساب‌های بانکی و تراکنش‌های مالی صرافی.</p>
+                    </div>
+                    <div class="services-tabs-wrap">
+                        <div class="services-tabs" role="tablist">
+                            <button type="button" class="services-tab active" data-tab="summary" role="tab" aria-selected="true" data-i18n="tab_summary">خلاصه موجودی</button>
+                            <button type="button" class="services-tab" data-tab="statement" role="tab" aria-selected="false" data-i18n="tab_statement">صورت حساب</button>
+                            <button type="button" class="services-tab" data-tab="services" role="tab" aria-selected="false" data-i18n="tab_services">سرویس‌ها</button>
+                            <button type="button" class="services-tab" data-tab="cashboxes" role="tab" aria-selected="false" data-i18n="tab_cashboxes">صندوق‌ها</button>
+                            <button type="button" class="services-tab" data-tab="bankaccounts" role="tab" aria-selected="false" data-i18n="tab_bankaccounts">حساب‌های بانکی</button>
+                            <button type="button" class="services-tab" data-tab="transactions" role="tab" aria-selected="false" data-i18n="tab_transactions">تراکنش‌ها</button>
+                            <button type="button" class="services-tab" data-tab="reports" role="tab" aria-selected="false" data-i18n="tab_reports">گزارش‌ها</button>
+                        </div>
+                    </div>
+                    <div id="servicesSummaryPanel" class="services-panel show" role="tabpanel">
+                        <div class="exchange-summary-cards">
+                            <div class="exchange-summary-card"><div class="label" data-i18n="total_cash">مجموع صندوق‌ها</div><div class="value" id="summaryTotalCash">۰</div></div>
+                            <div class="exchange-summary-card"><div class="label" data-i18n="total_bank">مجموع حساب‌های بانکی</div><div class="value" id="summaryTotalBank">۰</div></div>
+                            <div class="exchange-summary-card accent"><div class="label" data-i18n="total_balance">مجموع کل</div><div class="value" id="summaryTotal">۰</div></div>
+                        </div>
+                        <div class="exchange-summary-grid">
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="tab_cashboxes">صندوق‌ها</h4>
+                                <div id="summaryCashBoxes" class="exchange-summary-list"></div>
+                            </div>
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="tab_bankaccounts">حساب‌های بانکی</h4>
+                                <div id="summaryBankAccounts" class="exchange-summary-list"></div>
+                            </div>
+                        </div>
+                        <div class="exchange-summary-grid" style="margin-top:24px;">
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="currency_position">وضعیت ارزی</h4>
+                                <div id="summaryCurrencyPosition" class="exchange-summary-list"></div>
+                            </div>
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="outstanding_balance">مانده حساب‌ها</h4>
+                                <div id="summaryOutstandingBalance" class="exchange-summary-list"></div>
+                            </div>
+                        </div>
+                        <div class="exchange-summary-grid" style="margin-top:24px;">
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="pending_inward">دریافت‌های در انتظار</h4>
+                                <div id="summaryPendingInward" class="exchange-summary-list"></div>
+                            </div>
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="pending_outward">پرداخت‌های در انتظار</h4>
+                                <div id="summaryPendingOutward" class="exchange-summary-list"></div>
+                            </div>
+                        </div>
+                        <div class="commitment-summary-wrap" style="margin-top:24px;">
+                            <h4 data-i18n="commitment_summary">خلاصه تعهدات <button type="button" class="btn-icon-sm" onclick="loadServicesSummary()" title="بروزرسانی">&#8635;</button></h4>
+                            <div class="commitment-table-wrap">
+                                <table class="commitment-table" id="commitmentTable">
+                                    <thead>
+                                        <tr>
+                                            <th data-i18n="currency">ارز</th>
+                                            <th class="stmt-num" data-i18n="col_cash_pos">صندوق</th>
+                                            <th class="stmt-num" data-i18n="col_bank_pos">بانک</th>
+                                            <th class="stmt-num" data-i18n="col_total">مجموع</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="commitmentBody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="exchange-summary-grid" style="margin-top:24px;">
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="bank_position">وضعیت حساب‌های بانکی</h4>
+                                <div class="bank-position-table-wrap">
+                                    <table class="bank-position-table" id="bankPositionTable">
+                                        <thead><tr><th data-i18n="bankaccount_name">حساب</th><th data-i18n="currency">ارز</th><th class="stmt-num" data-i18n="col_fc_amount">موجودی</th></tr></thead>
+                                        <tbody id="bankPositionBody"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <div class="exchange-summary-section">
+                                <h4 data-i18n="report_links">دسترسی سریع گزارش‌ها</h4>
+                                <div class="quick-reports-grid">
+                                    <div class="quick-report-group">
+                                        <h5 data-i18n="accounts_reports">گزارش‌های حساب</h5>
+                                        <a href="#" onclick="switchToReport('statement'); return false;" data-i18n="rpt_statement">صورت حساب</a>
+                                        <a href="#" onclick="switchToReport('turnover'); return false;" data-i18n="rpt_turnover">گردش حساب</a>
+                                        <a href="#" onclick="switchToReport('expense-journal'); return false;" data-i18n="rpt_expense_journal">دفتر هزینه</a>
+                                    </div>
+                                    <div class="quick-report-group">
+                                        <h5 data-i18n="financials">مالی</h5>
+                                        <a href="#" onclick="switchToReport('profit-loss'); return false;" data-i18n="rpt_profit_loss">سود و زیان</a>
+                                        <a href="#" onclick="switchToReport('cash-bank'); return false;" data-i18n="rpt_cash_bank">وضعیت صندوق و بانک</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="servicesStatementPanel" class="services-panel" role="tabpanel">
+                        <div class="statement-toolbar">
+                            <button type="button" class="btn-primary btn-sm" onclick="openStatementFilters()" data-i18n="btn_search">جستجو</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="exportStatementPDF()" data-i18n="export_pdf">خروجی PDF</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="exportStatementExcel()" data-i18n="export_excel">خروجی Excel</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="showAccountBalance()" data-i18n="account_balance_btn">موجودی حساب</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="loadStatement()" data-i18n="btn_refresh">بروزرسانی</button>
+                            <div class="statement-toolbar-right">
+                                <input type="color" id="stmtChooseColor" value="#ffeb3b" title="انتخاب رنگ">
+                                <button type="button" class="btn-secondary btn-sm" onclick="stmtUnmarkAll()" data-i18n="unmark_all">حذف علامت‌ها</button>
+                            </div>
+                        </div>
+                        <div id="statementCustomerTitle" class="statement-customer-title" style="display:none;"></div>
+                        <div id="statementTableWrap" class="statement-table-wrap">
+                            <table class="statement-table" id="statementTable">
+                                <thead>
+                                    <tr>
+                                        <th class="stmt-col-sel"></th>
+                                        <th class="stmt-col-act"></th>
+                                        <th data-i18n="col_date">تاریخ</th>
+                                        <th data-i18n="col_type">نوع</th>
+                                        <th data-i18n="col_number">شماره</th>
+                                        <th data-i18n="col_narration">شرح</th>
+                                        <th data-i18n="currency">ارز</th>
+                                        <th class="stmt-num" data-i18n="col_debit">بدهکار</th>
+                                        <th class="stmt-num" data-i18n="col_credit">بستانکار</th>
+                                        <th class="stmt-num" data-i18n="col_balance">مانده</th>
+                                        <th data-i18n="col_sign">نوع</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="statementBody"></tbody>
+                            </table>
+                        </div>
+                        <div id="statementEmpty" class="empty" style="display:none;"></div>
+                    </div>
+                    <div id="servicesServicesPanel" class="services-panel" role="tabpanel">
+                        <div class="services-panel-toolbar">
+                            <button type="button" class="btn-primary" onclick="openServiceModal()" data-i18n="service_add">افزودن سرویس</button>
+                        </div>
+                        <div id="serviceList" class="services-list"></div>
+                    </div>
+                    <div id="servicesCashboxesPanel" class="services-panel" role="tabpanel">
+                        <div class="services-panel-toolbar">
+                            <button type="button" class="btn-primary" onclick="openCashBoxModal()" data-i18n="cashbox_add">افزودن صندوق</button>
+                        </div>
+                        <div id="cashBoxList" class="services-list"></div>
+                    </div>
+                    <div id="servicesBankaccountsPanel" class="services-panel" role="tabpanel">
+                        <div class="services-panel-toolbar">
+                            <button type="button" class="btn-primary" onclick="openBankAccountModal()" data-i18n="bankaccount_add">افزودن حساب بانکی</button>
+                        </div>
+                        <div id="bankAccountList" class="services-list"></div>
+                    </div>
+                    <div id="servicesTransactionsPanel" class="services-panel" role="tabpanel">
+                        <div class="transaction-toolbar">
+                            <button type="button" class="btn-primary" onclick="openTransactionModal()" data-i18n="transaction_add">ثبت تراکنش</button>
+                            <div class="transaction-filters">
+                                <input type="date" id="txFromDate" data-i18n-ph="from_date" aria-label="از تاریخ">
+                                <input type="date" id="txToDate" data-i18n-ph="to_date" aria-label="تا تاریخ">
+                                <select id="txTypeFilter" aria-label="نوع تراکنش"><option value="" data-i18n="filter_all">همه</option><option value="cash_in">ورود به صندوق</option><option value="cash_out">خروج از صندوق</option><option value="transfer_box">انتقال بین صندوق‌ها</option><option value="bank_deposit">واریز به بانک</option><option value="bank_withdraw">برداشت از بانک</option><option value="transfer_account">انتقال بین حساب‌ها</option><option value="income">درآمد</option><option value="expense">هزینه</option><option value="buy">خرید</option><option value="sell">فروش</option></select>
+                                <select id="txStatusFilter" aria-label="وضعیت"><option value="">همه وضعیت‌ها</option><option value="pending">در انتظار تأیید</option><option value="approved">تأیید شده</option><option value="rejected">رد شده</option></select>
+                                <select id="txCustomerFilter" aria-label="مشتری"><option value="">همه مشتریان</option></select>
+                                <button type="button" class="btn-secondary" onclick="loadTransactions()" data-i18n="apply_filter">اعمال</button>
+                            </div>
+                        </div>
+                        <div id="transactionList" class="transaction-list"></div>
+                    </div>
+                    <div id="servicesReportsPanel" class="services-panel" role="tabpanel">
+                        <div class="reports-page-header">
+                            <h3 data-i18n="tab_reports">گزارش‌ها</h3>
+                            <p class="text-muted" data-i18n="reports_intro">انتخاب نوع گزارش و مشاهده اطلاعات مالی صرافی</p>
+                        </div>
+                        <div class="reports-nav">
+                            <button type="button" class="report-nav-btn active" data-report="turnover" onclick="showReport('turnover')" data-i18n="rpt_turnover">گردش حساب</button>
+                            <button type="button" class="report-nav-btn" data-report="profit-loss" onclick="showReport('profit-loss')" data-i18n="rpt_profit_loss">سود و زیان</button>
+                            <button type="button" class="report-nav-btn" data-report="expense-journal" onclick="showReport('expense-journal')" data-i18n="rpt_expense_journal">دفتر هزینه</button>
+                            <button type="button" class="report-nav-btn" data-report="cash-bank" onclick="showReport('cash-bank')" data-i18n="rpt_cash_bank">وضعیت صندوق و بانک</button>
+                        </div>
+                        <div class="reports-filter-bar">
+                            <label data-i18n="from_date">از تاریخ</label>
+                            <input type="date" id="reportFromDate">
+                            <label data-i18n="to_date">تا تاریخ</label>
+                            <input type="date" id="reportToDate">
+                            <label data-i18n="currency">ارز</label>
+                            <select id="reportCurrency">
+                                <option value="">همه</option>
+                                <option value="IRR">تومان</option><option value="TMN">TMN</option>
+                                <option value="USD">دلار</option><option value="EUR">یورو</option>
+                                <option value="DHS">درهم</option><option value="GBP">پوند</option>
+                                <option value="TRY">لیر</option><option value="USDT">تتر</option>
+                            </select>
+                            <button type="button" class="btn-primary btn-sm" onclick="loadCurrentReport()" data-i18n="btn_generate">تولید گزارش</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="exportCurrentReportExcel()" data-i18n="export_excel">Excel</button>
+                        </div>
+                        <div id="reportTurnover" class="report-content show">
+                            <div id="turnoverContent"></div>
+                        </div>
+                        <div id="reportProfitLoss" class="report-content">
+                            <div id="profitLossContent"></div>
+                        </div>
+                        <div id="reportExpenseJournal" class="report-content">
+                            <div id="expenseJournalContent"></div>
+                        </div>
+                        <div id="reportCashBank" class="report-content">
+                            <div id="cashBankContent"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="pagePanelSettings" class="page page-panel-settings">
+                    <header class="panel-settings-page-header">
+                        <div class="panel-settings-header-content">
+                            <div class="panel-settings-header-badge panel-settings-header-branding">
+                                <img id="panelSettingsHeaderLogo" class="panel-settings-header-logo" src="" alt="" style="display:none" onerror="this.style.display='none'; var f=document.getElementById('panelSettingsHeaderIconFallback'); if(f)f.style.display='block';">
+                                <img id="panelSettingsHeaderFavicon" class="panel-settings-header-favicon" src="" alt="" style="display:none" onerror="this.style.display='none';">
+                                <svg id="panelSettingsHeaderIconFallback" class="panel-settings-header-icon-fallback" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                            </div>
+                            <div>
+                                <h2 class="panel-settings-page-title" data-i18n="page_panel_settings">ظاهر پنل</h2>
+                                <p class="panel-settings-intro" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
+                            </div>
+                        </div>
+                        <div class="panel-settings-header-actions">
+                            <span id="panelSettingsUnsavedBadge" class="panel-settings-unsaved-badge" style="display:none;" data-i18n="panel_unsaved">تغییرات ذخیره نشده</span>
+                            <button type="button" id="panelSettingsSaveBtn" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </header>
+                    <div id="panelSettingsLoading" class="panel-settings-loading" style="display:none;">
+                        <span class="loading-spinner" aria-hidden="true"></span>
+                        <span data-i18n="loading">در حال بارگذاری...</span>
+                    </div>
+                    <div id="panelSettingsContent" class="panel-settings-content" style="display:none;">
+                        <nav class="panel-settings-tabs" role="tablist">
+                            <button type="button" class="panel-settings-tab active" data-tab="branding" role="tab" aria-selected="true">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
+                                <span data-i18n="panel_tab_branding">برندینگ و ظاهر</span>
+                            </button>
+                            <button type="button" class="panel-settings-tab" data-tab="email" role="tab" aria-selected="false">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                                <span data-i18n="panel_tab_email">ایمیل</span>
+                            </button>
+                            <button type="button" class="panel-settings-tab" data-tab="visibility" role="tab" aria-selected="false">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                                <span data-i18n="panel_tab_sections">بخش‌ها و نمایش</span>
+                            </button>
+                        </nav>
+
+                        <div class="panel-settings-tab-panels">
+                            <div id="panelTabBranding" class="panel-settings-tab-panel active" role="tabpanel">
+                                <div class="panel-settings-panel-layout">
+                                    <div class="panel-settings-form-col">
+                                        <div class="panel-settings-sections">
+                                            <section class="panel-settings-section panel-settings-section-collapsible">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                                    <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg></span><span data-i18n="panel_section_branding">برندینگ</span></h3>
+                                                    <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                                </button>
+                                                <div class="panel-settings-section-body">
+                                                    <div class="form-group">
+                                                        <label for="panelSettingSiteName" data-i18n="panel_site_name">نام سایت</label>
+                                                        <input type="text" id="panelSettingSiteName" placeholder="مثال: صرافی کایا" oninput="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">آدرس لوگو (URL)</label>
+                                                        <div class="input-with-preview">
+                                                            <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png" oninput="previewPanelLogo(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <div class="panel-setting-preview" id="panelLogoPreview" style="display:none;">
+                                                                <img id="panelLogoPreviewImg" src="" alt="" class="panel-logo-preview-img" onerror="this.style.display='none'">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">آدرس فاویکون (URL)</label>
+                                                        <div class="input-with-preview">
+                                                            <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico" oninput="previewPanelFavicon(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <div class="panel-setting-preview" id="panelFaviconPreview" style="display:none;">
+                                                                <img id="panelFaviconPreviewImg" src="" alt="" class="panel-favicon-preview-img" onerror="this.style.display='none'">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </section>
+                                            <section class="panel-settings-section panel-settings-section-collapsible">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                                    <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg></span><span data-i18n="panel_section_theme">رنگ و ظاهر پنل</span></h3>
+                                                    <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                                </button>
+                                                <div class="panel-settings-section-body">
+                                                    <div class="form-group">
+                                                        <label for="panelSettingPrimaryColor" data-i18n="panel_primary_color">رنگ اصلی (اکسن)</label>
+                                                        <div class="color-input-wrap">
+                                                            <input type="color" id="panelSettingPrimaryColor" value="#10b981" onchange="syncPanelColorInput(); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <input type="text" id="panelSettingPrimaryColorText" placeholder="#10b981" maxlength="7" class="color-text-input" oninput="syncPanelColorFromText(); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="panelSettingFontFamily" data-i18n="panel_font_family">فونت</label>
+                                                        <select id="panelSettingFontFamily" onchange="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <option value="" data-i18n="panel_font_default">پیش‌فرض (Vazirmatn)</option>
+                                                            <option value="Vazirmatn, 'Segoe UI', sans-serif">Vazirmatn</option>
+                                                            <option value="Inter, 'Segoe UI', sans-serif">Inter</option>
+                                                            <option value="Tahoma, sans-serif">Tahoma</option>
+                                                            <option value="'Segoe UI', sans-serif">Segoe UI</option>
+                                                            <option value="system-ui, -apple-system, sans-serif">سیستم</option>
+                                                            <option value="'B Yekan', Tahoma, sans-serif">ایران‌سلکشن (BYekan)</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="form-row-2">
+                                                        <div class="form-group">
+                                                            <label for="panelSettingFontSize" data-i18n="panel_font_size">سایز فونت</label>
+                                                            <select id="panelSettingFontSize" onchange="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                                <option value="small" data-i18n="panel_font_size_small">کوچک</option>
+                                                                <option value="medium" selected data-i18n="panel_font_size_medium">متوسط</option>
+                                                                <option value="large" data-i18n="panel_font_size_large">بزرگ</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="panelSettingFontWeight" data-i18n="panel_font_weight">وزن فونت</label>
+                                                            <select id="panelSettingFontWeight" onchange="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                                <option value="normal" selected data-i18n="panel_font_weight_normal">معمولی</option>
+                                                                <option value="medium" data-i18n="panel_font_weight_medium">متوسط</option>
+                                                                <option value="bold" data-i18n="panel_font_weight_bold">ضخیم</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="panelSettingUiTheme" data-i18n="panel_ui_theme">قالب ظاهری (بوت استایل)</label>
+                                                        <select id="panelSettingUiTheme" onchange="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <option value="default" selected data-i18n="panel_theme_default">پیش‌فرض</option>
+                                                            <option value="minimal" data-i18n="panel_theme_minimal">مینیمال</option>
+                                                            <option value="dark" data-i18n="panel_theme_dark">تیره</option>
+                                                            <option value="light" data-i18n="panel_theme_light">روشن</option>
+                                                            <option value="ocean" data-i18n="panel_theme_ocean">اقیانوسی</option>
+                                                            <option value="warm" data-i18n="panel_theme_warm">گرم</option>
+                                                        </select>
+                                                        <span class="form-hint" data-i18n="panel_theme_hint">سبک کلی دکمه‌ها، کارت‌ها و نوارها</span>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label data-i18n="panel_sidebar_order">ترتیب بخش‌های منو</label>
+                                                        <p class="panel-settings-section-desc" data-i18n="panel_sidebar_order_desc">رتبه هر بخش را وارد کنید. اعداد کوچک‌تر بالاتر نمایش داده می‌شوند. خالی = پیش‌فرض.</p>
+                                                        <div id="panelSidebarOrderList" class="sidebar-order-list"></div>
+                                                    </div>
+                                                </div>
+                                            </section>
+                                            <section class="panel-settings-section panel-settings-section-collapsible">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                                    <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/></svg></span><span data-i18n="panel_section_titles">عنوان‌ها</span></h3>
+                                                    <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                                </button>
+                                                <div class="panel-settings-section-body">
+                                                    <div class="form-group">
+                                                        <label for="panelSettingLoginTitle" data-i18n="panel_login_title">عنوان صفحه ورود</label>
+                                                        <input type="text" id="panelSettingLoginTitle" placeholder="پورتال کارکنان کایا" oninput="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="panelSettingPageTitle" data-i18n="panel_page_title">عنوان تب مرورگر</label>
+                                                        <input type="text" id="panelSettingPageTitle" placeholder="پورتال کارکنان | صرافی کایا" oninput="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                    </div>
+                                                </div>
+                                            </section>
+                                            <section class="panel-settings-section panel-settings-section-collapsible">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                                    <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="4"/><path d="M4 4h16"/></svg></span><span data-i18n="panel_section_footer">فوتر</span></h3>
+                                                    <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                                </button>
+                                                <div class="panel-settings-section-body">
+                                                    <div class="form-group">
+                                                        <label for="panelSettingFooterStyle" data-i18n="panel_footer_style">طراحی فوتر</label>
+                                                        <select id="panelSettingFooterStyle" onchange="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <option value="accent" data-i18n="panel_footer_style_accent">نوار اکسن (پیش‌فرض)</option>
+                                                            <option value="minimal" data-i18n="panel_footer_style_minimal">مینیمال</option>
+                                                            <option value="compact" data-i18n="panel_footer_style_compact">فشرده</option>
+                                                            <option value="line" data-i18n="panel_footer_style_line">خط ساده</option>
+                                                        </select>
+                                                        <span class="form-hint" data-i18n="panel_footer_style_hint">ظاهر نوار پایین صفحه را انتخاب کنید.</span>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="panelSettingFooterText" data-i18n="panel_footer_text">متن فوتر</label>
+                                                        <input type="text" id="panelSettingFooterText" placeholder="صرافی کایا — پورتال کارکنان" oninput="updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                    </div>
+                                                    <div class="form-group form-group-checkbox">
+                                                        <label class="checkbox-label">
+                                                            <input type="checkbox" id="panelSettingHideFooter" value="1" onchange="markPanelSettingsChanged();">
+                                                            <span data-i18n="panel_hide_footer">عدم نمایش فوتر (مخفی کردن متن پایین صفحه)</span>
+                                                        </label>
+                                                    </div>
+                                                </div>
+                                            </section>
+                                            <section class="panel-settings-section panel-settings-section-languages panel-settings-section-collapsible">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                                    <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span data-i18n="panel_section_languages">زبان‌های سایت</span></h3>
+                                                    <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+                                                </button>
+                                                <div class="panel-settings-section-body">
+                                                    <p class="panel-settings-section-desc" data-i18n="panel_section_languages_desc">زبان‌های در دسترس برای صفحه ورود و منوی پنل. در حالت تک‌زبانه سوئیچ زبان مخفی است؛ در حالت چندزبانگی کاربران می‌توانند زبان را عوض کنند.</p>
+                                                    <div class="form-group">
+                                                        <label for="panelSettingLanguageMode" data-i18n="panel_language_mode">حالت زبان</label>
+                                                        <select id="panelSettingLanguageMode" aria-describedby="panelLanguageModeDesc" onchange="updatePanelLanguageHint(); toggleDefaultLanguageVisibility(); markPanelSettingsChanged();">
+                                                            <option value="single" data-i18n="panel_language_mode_single">تک‌زبانه (فقط فارسی)</option>
+                                                            <option value="single_en" data-i18n="panel_language_mode_single_en">تک‌زبانه (فقط انگلیسی)</option>
+                                                            <option value="single_tr" data-i18n="panel_language_mode_single_tr">تک‌زبانه (فقط ترکی)</option>
+                                                            <option value="bilingual" data-i18n="panel_language_mode_bilingual">دو زبانه (فارسی + انگلیسی)</option>
+                                                            <option value="bilingual_fa_tr" data-i18n="panel_language_mode_bilingual_fa_tr">دو زبانه (فارسی + ترکی)</option>
+                                                            <option value="bilingual_en_tr" data-i18n="panel_language_mode_bilingual_en_tr">دو زبانه (انگلیسی + ترکی)</option>
+                                                            <option value="trilingual" data-i18n="panel_language_mode_trilingual">سه زبانه (فارسی + انگلیسی + ترکی)</option>
+                                                        </select>
+                                                        <span id="panelLanguageModeDesc" class="form-hint form-hint-language" aria-live="polite"></span>
+                                                    </div>
+                                                    <div class="form-group panel-default-language-wrap" id="panelDefaultLanguageWrap" style="display:none;">
+                                                        <label for="panelSettingDefaultLanguage" data-i18n="panel_default_language">زبان پیش‌فرض</label>
+                                                        <select id="panelSettingDefaultLanguage" aria-describedby="panelDefaultLanguageDesc" onchange="markPanelSettingsChanged();">
+                                                            <option value="fa" data-i18n="lang_fa">فارسی</option>
+                                                            <option value="en" data-i18n="lang_en">English</option>
+                                                            <option value="tr" data-i18n="lang_tr">Türkçe</option>
+                                                        </select>
+                                                        <span id="panelDefaultLanguageDesc" class="form-hint" data-i18n="panel_default_language_desc">زبان اولیه برای کاربران جدید یا وقتی زبان انتخاب نشده است.</span>
+                                                    </div>
+                                                </div>
+                                            </section>
+                                        </div>
+                                    </div>
+                                    <div class="panel-settings-preview-col">
+                                        <div class="panel-settings-preview-card">
+                                            <div class="panel-settings-preview-label">
+                                                <span class="panel-settings-preview-dot"></span>
+                                                <span class="panel-settings-preview-dot"></span>
+                                                <span class="panel-settings-preview-dot"></span>
+                                                <span data-i18n="panel_live_preview">پیش‌نمایش زنده</span>
+                                            </div>
+                                            <div class="panel-settings-preview-body">
+                                                <div class="panel-preview-tab">
+                                                    <img id="panelPreviewFavicon" class="panel-preview-tab-favicon" src="" alt="" onerror="this.style.display='none'">
+                                                    <span id="panelPreviewPageTitle" class="panel-preview-tab-title">پورتال کارکنان | صرافی کایا</span>
+                                                </div>
+                                                <div class="panel-preview-header">
+                                                    <span class="panel-preview-logo-wrap">
+                                                        <img id="panelPreviewLogo" class="panel-preview-logo-img" src="" alt="" onerror="this.style.display='none'">
+                                                        <span id="panelPreviewLogoPlaceholder" class="panel-preview-logo-placeholder">◫</span>
+                                                    </span>
+                                                    <span id="panelPreviewSiteName" class="panel-preview-site-name">صرافی کایا</span>
+                                                </div>
+                                                <div id="panelPreviewFooter" class="panel-preview-footer">
+                                                    <span id="panelPreviewFooterText" class="panel-preview-footer-text">صرافی کایا — پورتال کارکنان</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="panelTabEmail" class="panel-settings-tab-panel" role="tabpanel" hidden>
+                                <div class="panel-settings-sections">
+                                    <section class="panel-settings-section">
+                                        <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span><span data-i18n="panel_section_email">تنظیمات ایمیل (SMTP)</span></h3>
+                                        <p class="panel-settings-section-desc" data-i18n="panel_email_desc">ارسال ایمیل خوش‌آمدگویی، بازیابی رمز و اعلان ورود. در صورت خالی بودن از متغیرهای محیط سرور استفاده می‌شود.</p>
+                                        <p class="panel-settings-hint" style="margin-bottom:0.75rem;font-size:0.85em;color:var(--text-muted);">Host: <code>mail.fxguard.io</code> یا <code>smtpout.secureserver.net</code> یا <code>143.182.205.92.host.secureserver.net</code> — پورت ۴۶۵ با SSL ✓، پورت ۵۸۷ بدون SSL</p>
+                                        <div class="form-row-2">
+                                            <div class="form-group">
+                                                <label for="panelSettingSmtpHost" data-i18n="panel_smtp_host">آدرس سرور (Host)</label>
+                                                <input type="text" id="panelSettingSmtpHost" placeholder="mail.fxguard.io" oninput="markPanelSettingsChanged();" onblur="var el=this; if(el&&el.value&&el.value.endsWith('.')){ el.value=el.value.replace(/\.+$/,'').trim(); markPanelSettingsChanged(); }">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="panelSettingSmtpPort" data-i18n="panel_smtp_port">پورت</label>
+                                                <input type="text" id="panelSettingSmtpPort" placeholder="587" oninput="markPanelSettingsChanged(); syncSmtpPortWithSecure();">
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                                <label for="panelSettingSmtpUser" data-i18n="panel_smtp_user">نام کاربری</label>
+                                            <input type="text" id="panelSettingSmtpUser" placeholder="noreply@fxguard.io" autocomplete="off" oninput="markPanelSettingsChanged();">
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="panelSettingSmtpPass" data-i18n="panel_smtp_pass">رمز عبور</label>
+                                            <input type="password" id="panelSettingSmtpPass" placeholder="••••••••" autocomplete="new-password" oninput="markPanelSettingsChanged();">
+                                        </div>
+                                        <div class="form-row-2">
+                                            <div class="form-group">
+                                                <label for="panelSettingSmtpFrom" data-i18n="panel_smtp_from">آدرس فرستنده (From)</label>
+                                                <input type="text" id="panelSettingSmtpFrom" placeholder="noreply@fxguard.io" oninput="markPanelSettingsChanged();">
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="panelSettingSmtpFromName" data-i18n="panel_smtp_from_name">نام فرستنده</label>
+                                                <input type="text" id="panelSettingSmtpFromName" placeholder="پورتال کارکنان" oninput="markPanelSettingsChanged();">
+                                            </div>
+                                        </div>
+                                        <div class="form-group form-group-checkbox">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" id="panelSettingSmtpSecure" value="1" onchange="markPanelSettingsChanged(); syncSmtpSecureWithPort();">
+                                                <span data-i18n="panel_smtp_secure">استفاده از SSL/TLS (پورت ۴۶۵)</span>
+                                            </label>
+                                        </div>
+                                        <div class="form-group form-group-checkbox">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" id="panelSettingEmailLoginNotification" value="1" onchange="markPanelSettingsChanged();">
+                                                <span data-i18n="panel_email_login_notification">ارسال اعلان ورود به ایمیل کاربر</span>
+                                            </label>
+                                        </div>
+                                        <div class="form-group panel-test-email-row">
+                                            <label for="panelTestEmailTo" data-i18n="panel_test_email_label">ارسال ایمیل تست</label>
+                                            <div class="panel-test-email-inline">
+                                                <input type="email" id="panelTestEmailTo" placeholder="email@example.com" class="panel-test-email-input">
+                                                <button type="button" id="panelTestEmailBtn" class="btn-secondary panel-test-email-btn" onclick="typeof sendPanelTestEmail==='function'&&sendPanelTestEmail()" data-i18n="panel_test_email_btn">ارسال تست</button>
+                                            </div>
+                                            <span id="panelTestEmailStatus" class="panel-test-email-status" style="display:none;"></span>
+                                        </div>
+                                    </section>
+                                    <section class="panel-settings-section panel-settings-section-company-emails">
+                                        <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span><span data-i18n="panel_section_company_emails">ایمیل‌های شرکتی</span></h3>
+                                        <p class="panel-settings-section-desc" data-i18n="panel_company_emails_desc">ثبت و مدیریت ایمیل‌های شرکتی (مثل support@، info@). می‌توانید به هر ایمیل یک کاربر اختصاص دهید و اطلاعات ورود را برایش ارسال کنید.</p>
+                                        <div class="company-emails-toolbar">
+                                            <button type="button" id="btnAddCompanyEmail" class="btn-primary btn-sm" data-i18n="panel_company_email_add">افزودن ایمیل شرکتی</button>
+                                        </div>
+                                        <div id="companyEmailFormBox" class="company-email-form-box" style="display:none;">
+                                            <input type="hidden" id="companyEmailId" value="">
+                                            <div class="form-row-2">
+                                                <div class="form-group">
+                                                    <label for="companyEmailAddress" data-i18n="panel_company_email_address">آدرس ایمیل</label>
+                                                    <input type="email" id="companyEmailAddress" placeholder="support@company.com">
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="companyEmailLabel" data-i18n="panel_company_email_label">عنوان / کاربرد</label>
+                                                    <input type="text" id="companyEmailLabel" placeholder="پشتیبانی، فروش، ...">
+                                                </div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="companyEmailAssignedUser" data-i18n="panel_company_email_assigned">اختصاص به کاربر</label>
+                                                <select id="companyEmailAssignedUser">
+                                                    <option value="">— بدون اختصاص —</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-row-2">
+                                                <div class="form-group">
+                                                    <label for="companyEmailPassword" data-i18n="panel_company_email_password">رمز عبور</label>
+                                                    <input type="password" id="companyEmailPassword" placeholder="••••••••" autocomplete="new-password">
+                                                    <span class="form-hint" data-i18n="panel_company_email_password_hint">خالی = بدون تغییر (در ویرایش)</span>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="companyEmailNotes" data-i18n="panel_company_email_notes">یادداشت</label>
+                                                    <input type="text" id="companyEmailNotes" placeholder="">
+                                                </div>
+                                            </div>
+                                            <div class="form-group form-group-checkbox">
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="companyEmailActive" checked>
+                                                    <span data-i18n="panel_company_email_active">فعال</span>
+                                                </label>
+                                            </div>
+                                            <div class="company-email-form-actions">
+                                                <button type="button" id="companyEmailSaveBtn" class="btn-primary" data-i18n="btn_save">ذخیره</button>
+                                                <button type="button" id="companyEmailCancelBtn" class="btn-secondary" data-i18n="btn_cancel">انصراف</button>
+                                            </div>

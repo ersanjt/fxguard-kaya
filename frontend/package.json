@@ -1,0 +1,15 @@
+{
+  "name": "@kaya-crm/dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "داشبورد CRM — Vite + ES modules (مهاجرت تدریجی از dashboard.js)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0"
+  }
+}

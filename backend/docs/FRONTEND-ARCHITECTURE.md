@@ -16,6 +16,10 @@
   6. `js/i18n-fa.js`, `i18n-en.js`, `i18n-tr.js` — ترجمه‌ها
   7. `js/dashboard.js` — منطق اصلی پنل (حجم زیاد)
 
+**منبع ویرایش (تفکیک فایل):** کد واقعی در `public/js/dashboard/src/chunk-01.js` … `chunk-06.js` نگه‌داری می‌شود؛ `dashboard.js` با `npm run build:dashboard` از ادغام این قطعه‌ها ساخته می‌شود (اسکریپت کلاسیک؛ `let`/`const` بین چند تگ `<script>` جدا دیده نمی‌شوند، بنابراین خروجی یک فایل است). جزئیات: `public/js/dashboard/README.md`.
+
+**مسیر صنعتی (Vite + ES modules):** پوشهٔ `frontend/` در ریشهٔ مخزن — `npm run dashboard:dev` / `npm run dashboard:build` از ریشه. سند `docs/FRONTEND-MODERNIZATION.md`.
+
 - **نام فضای سراسری:** `window.CRM`  
   - `CRM.Constants` — از constants.js  
   - `CRM.Utils` — از utils.js  

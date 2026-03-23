@@ -14,6 +14,8 @@
     "format": "npm run format --prefix backend && npm run format --prefix gateway",
     "format:write": "npm run format:write --prefix backend && npm run format:write --prefix gateway",
     "test": "npm test --prefix backend",
-    "test:all": "npm run test:all --prefix backend"
+    "test:all": "npm run test:all --prefix backend",
+    "dashboard:dev": "npm run dev --prefix frontend",
+    "dashboard:build": "npm run build --prefix frontend"
   }
 }

@@ -1,0 +1,544 @@
+                                    <option value="active" data-i18n="status_active">فعال</option>
+                                    <option value="inactive" data-i18n="status_inactive">غیرفعال</option>
+                                    <option value="blocked" data-i18n="status_blocked">مسدود</option>
+                                </select>
+                                <select id="customerSort" class="customer-toolbar-select" aria-label="مرتب‌سازی">
+                                    <option value="newest" data-i18n="sort_newest">جدیدترین</option>
+                                    <option value="oldest" data-i18n="sort_oldest">قدیمی‌ترین</option>
+                                    <option value="name" data-i18n="sort_by_name">بر اساس نام</option>
+                                    <option value="last_contact" data-i18n="sort_by_last_contact">آخرین تماس</option>
+                                </select>
+                            </div>
+                            <div class="customer-filters-actions">
+                                <button type="button" class="btn-secondary btn-sm customer-filters-reset" onclick="resetCustomerFilters && resetCustomerFilters()">پاک کردن</button>
+                                <button type="button" class="btn-primary customer-filters-apply" onclick="applyCustomerFilters(); document.getElementById('customerFilterToggle').click()" data-i18n="apply_filter">اعمال فیلتر</button>
+                            </div>
+                        </div>
+                        <div class="customer-filters-backdrop" id="customerFiltersBackdrop" onclick="document.getElementById('customerFilterToggle').click()"></div>
+                    </div>
+                    <!-- هدر لیست: شمارنده + refresh — فقط desktop -->
+                    <div class="customer-list-header">
+                        <span class="customer-list-title" data-i18n="conv_list_title">مشتریان</span>
+                        <div class="customer-list-header-right">
+                            <button type="button" class="btn-icon-text" id="customerRefreshBtn" onclick="loadCustomers()" title="تازه‌سازی" aria-label="تازه‌سازی">&#8635;</button>
+                            <span class="customer-list-count" id="customerListCount"></span>
+                        </div>
+                    </div>
+                    <div id="customerBulkBar" class="customer-bulk-bar" style="display:none;">
+                        <span id="customerBulkBarCount" class="customer-bulk-bar-count">۰ انتخاب شده</span>
+                        <button type="button" class="btn-primary btn-sm" onclick="openBulkSendModal()" data-i18n="bulk_send">ارسال انبوه</button>
+                        <button type="button" class="btn-secondary btn-sm" onclick="bulkClearSelection()" data-i18n="bulk_clear">پاک کردن</button>
+                    </div>
+                    <div id="customerList" class="customer-list-grid"></div>
+                </div>
+                <div id="pageDepartments" class="page dept-page">
+                    <div class="dept-page-header">
+                        <h2 data-i18n="page_departments">دپارتمان‌ها</h2>
+                        <p class="dept-intro" data-i18n="dept_intro">دپارتمان‌ها برای تخصیص خودکار مکالمات استفاده می‌شوند. سیستم به‌صورت هوشمند پیام مشتری را می‌فهمد و به دپارتمان مناسب وصل می‌کند.</p>
+                        <div class="dept-help-box" data-i18n="dept_help_flow">
+                            <strong>جریان کار:</strong> مشتری پیام می‌فرستد → سیستم بر اساس کلمات کلیدی دپارتمان تشخیص می‌دهد → مکالمه به دپارتمان و کارمند مناسب وصل می‌شود.
+                        </div>
+                    </div>
+                    <div class="dept-form-box form-box">
+                        <h3 class="dept-form-title" data-i18n="add_dept">افزودن دپارتمان</h3>
+                        <div class="dept-form-grid">
+                            <div class="dept-form-field">
+                                <label data-i18n="dept_branch">شعبه</label>
+                                <select id="deptBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
+                            </div>
+                            <div class="dept-form-field dept-form-field-wide">
+                                <label data-i18n="dept_name">نام دپارتمان</label>
+                                <input id="deptName" data-i18n-ph="dept_ph_name" placeholder="مثال: پشتیبانی فنی">
+                            </div>
+                            <div class="dept-form-field dept-form-field-wide">
+                                <label data-i18n="dept_desc">توضیحات</label>
+                                <input id="deptDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری">
+                            </div>
+                            <div class="dept-form-field dept-form-field-wide">
+                                <label data-i18n="dept_keywords">کلمات کلیدی (با کاما جدا کنید)</label>
+                                <div class="dept-keywords-wrap">
+                                    <input id="deptKeywords" data-i18n-ph="dept_ph_keywords" placeholder="مثال: دلار، حواله، امارات، قیمت — یا: مشکل، پشتیبانی">
+                                    <button type="button" class="btn-keywords-format" onclick="formatDeptKeywords()" title="اصلاح و مرتب‌سازی" data-i18n="dept_format_btn">مرتب‌سازی</button>
+                                </div>
+                                <span class="field-hint" data-i18n="dept_keywords_hint">هرچه کلمات بیشتر و مرتبط‌تر، مسیریابی دقیق‌تر می‌شود.</span>
+                            </div>
+                            <div class="dept-form-field dept-form-options">
+                                <label data-i18n="dept_color">رنگ</label>
+                                <div class="dept-color-wrap">
+                                    <input type="color" id="deptColor" value="#10b981" class="dept-color-input" aria-label="رنگ دپارتمان">
+                                </div>
+                            </div>
+                            <div class="dept-form-field dept-form-checks">
+                                <label class="dept-check-wrap" title="">
+                                    <input type="checkbox" id="deptIsDefault">
+                                    <span data-i18n="dept_is_default">پیش‌فرض — وقتی هیچ دپارتمانی با پیام تطابق نداشت</span>
+                                </label>
+                                <label class="dept-check-wrap">
+                                    <input type="checkbox" id="deptIsActive" checked>
+                                    <span data-i18n="status_active">فعال</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="dept-form-actions">
+                            <button type="button" class="btn-primary" id="btnDeptSave" onclick="saveDepartment()" data-i18n="add_dept">افزودن دپارتمان</button>
+                            <button type="button" class="btn-secondary" id="btnDeptCancel" onclick="cancelDeptEdit()" style="display:none;" data-i18n="cancel">انصراف</button>
+                        </div>
+                    </div>
+                    <div class="dept-list-section">
+                        <h3 class="dept-list-title" data-i18n="page_departments">دپارتمان‌ها</h3>
+                        <div id="deptList" class="dept-list dept-cards"></div>
+                    </div>
+                </div>
+                <div id="pageUsers" class="page users-page">
+                    <header class="users-page-header">
+                        <h2 class="users-page-title" data-i18n="page_users">کاربران</h2>
+                        <p class="users-page-intro text-muted" data-i18n="users_intro">فقط مدیر مجموعه یا کسی که دسترسی «مدیریت کاربران» دارد می‌تواند کاربر جدید بسازد.</p>
+                        <p class="users-page-hint text-muted" data-i18n="users_skills_hint">برای تخصیص هوشمند: «تخصص» هر کارمند را پر کنید (مثلاً امارات، حواله، دلار). مکالمات مرتبط به او وصل می‌شوند.</p>
+                    </header>
+                    <div class="users-toolbar">
+                        <div class="users-toolbar-primary">
+                            <button type="button" class="btn-primary" id="btnAddUser" onclick="toggleUserForm()" data-i18n="add_user">افزودن کاربر</button>
+                            <button type="button" class="btn-secondary" id="btnCancelUserForm" onclick="toggleUserForm()" style="display:none;" data-i18n="cancel">انصراف</button>
+                        </div>
+                        <div class="users-toolbar-filters">
+                            <div class="users-search-wrap">
+                                <input type="text" id="userSearchInput" class="users-search-input" placeholder="" data-i18n-ph="user_search_ph" aria-label="جستجوی کاربر">
+                            </div>
+                            <select id="userFilterStatus" class="users-filter-select">
+                                <option value="active" data-i18n="filter_active_only">فقط فعال</option>
+                                <option value="" data-i18n="filter_all">همه</option>
+                                <option value="blocked" data-i18n="filter_blocked_only">فقط مسدود</option>
+                            </select>
+                            <select id="userFilterRole" class="users-filter-select" style="display:none;">
+                                <option value="" data-i18n="all_roles">همه نقش‌ها</option>
+                                <option value="owner" data-i18n="role_owner">مالک</option>
+                                <option value="admin" data-i18n="role_admin">ادمین</option>
+                                <option value="manager" data-i18n="role_manager">مدیر</option>
+                                <option value="supervisor" data-i18n="role_supervisor">ناظر</option>
+                                <option value="agent" data-i18n="role_agent">کارمند</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="userRolePills" class="user-role-pills">
+                        <span class="pill active" data-role="" data-i18n="all_roles">همه نقش‌ها</span>
+                        <span class="pill" data-role="owner" data-i18n="role_owner">مالک</span>
+                        <span class="pill" data-role="admin" data-i18n="role_admin">ادمین</span>
+                        <span class="pill" data-role="manager" data-i18n="role_manager">مدیر</span>
+                        <span class="pill" data-role="supervisor" data-i18n="role_supervisor">ناظر</span>
+                        <span class="pill" data-role="agent" data-i18n="role_agent">کارمند</span>
+                    </div>
+                    <div id="userFormBox" class="form-box user-add-form users-add-form" style="display:none;">
+                        <h3 class="users-add-form-title" data-i18n="user_add_title">کاربر جدید</h3>
+                        <div class="user-form-grid">
+                            <div><label data-i18n="label_name">نام کامل</label><input id="userName" data-i18n-ph="user_ph_name" placeholder="نام کامل"></div>
+                            <div><label data-i18n="profile_username">نام کاربری (اختیاری)</label><input id="userUsernameAdd" type="text" placeholder="username" autocomplete="username"></div>
+                            <div><label data-i18n="label_email">ایمیل</label><input id="userEmailAdd" type="email" placeholder="email@company.com"></div>
+                            <div><label data-i18n="label_password">رمز عبور</label><input id="userPass" type="password" data-i18n-ph="user_ph_pass" placeholder="حداقل ۶ کاراکتر"></div>
+                            <div><label data-i18n="label_role">نقش</label><select id="userRole"><option value="agent" data-i18n="role_agent">کارمند</option><option value="supervisor" data-i18n="role_supervisor">ناظر</option><option value="manager" data-i18n="role_manager">مدیر</option><option value="admin" data-i18n="role_admin">ادمین</option><option value="owner" data-i18n="role_owner">مالک</option></select></div>
+                            <div><label data-i18n="label_position">سمت</label><input id="userPositionAdd" type="text" data-i18n-ph="position_ph" placeholder="مثلاً مدیر فروش، حسابدار"></div>
+                            <div><label data-i18n="label_dept">دپارتمان</label><select id="userDept"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select></div>
+                            <div><label data-i18n="label_branch">شعبه</label><select id="userBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select></div>
+                            <div class="user-form-field-wide"><label data-i18n="user_skills_keywords">تخصص (کلمات کلیدی)</label><input type="text" id="userSkillsAdd" data-i18n-ph="user_skills_ph" placeholder="امارات، حواله، دلار — برای تخصیص هوشمند"></div>
+                        </div>
+                        <div id="userAddPermsBox" style="display:none;"><strong data-i18n="modal_user_perms">دسترسی به بخش‌ها:</strong><div id="userAddPerms"></div></div>
+                        <button type="button" class="btn-primary" id="btnSubmitNewUser" onclick="addUser()" style="margin-top:16px;" data-i18n="user_submit">ثبت کاربر</button>
+                    </div>
+                    <div id="userList" class="user-list"></div>
+                </div>
+                <div id="pageTickets" class="page ticket-page">
+                    <div class="ticket-page-header">
+                        <div class="ticket-page-header-text">
+                            <h2 data-i18n="page_tickets">تیکت‌های داخلی</h2>
+                            <p class="ticket-page-desc" data-i18n="tickets_intro">بخش رسمی ثبت و پیگیری درخواست‌ها و مشکلات. هر تیکت دارای شماره رسمی است.</p>
+                        </div>
+                        <button type="button" class="btn-primary ticket-create-btn" onclick="toggleTicketForm()" id="btnTicketCreate" data-i18n="create_ticket">ثبت تیکت</button>
+                    </div>
+                    <div id="ticketStats" class="ticket-stats-cards" style="display:none;"></div>
+                    <div class="ticket-filters-wrap">
+                        <div class="ticket-filters">
+                            <input type="text" id="ticketSearch" class="ticket-search-input" data-i18n-ph="ticket_ph_search" placeholder="جستجو شماره یا عنوان..." onkeypress="if(event.key==='Enter')applyTicketFilters()">
+                            <select id="ticketFilterStatus" class="ticket-filter-select"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open" data-i18n="status_open">باز</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option><option value="closed" data-i18n="status_closed">بسته</option><option value="archived" data-i18n="status_archived">آرشیو</option></select>
+                            <select id="ticketFilterPriority" class="ticket-filter-select"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
+                            <select id="ticketFilterAssignee" class="ticket-filter-select"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
+                            <select id="ticketFilterDept" class="ticket-filter-select"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
+                            <select id="ticketFilterSort" class="ticket-filter-select" title="مرتب‌سازی">
+                                <option value="newest" data-i18n="sort_newest">جدیدترین</option>
+                                <option value="oldest" data-i18n="sort_oldest">قدیمی‌ترین</option>
+                                <option value="priority" data-i18n="sort_priority">بر اساس اولویت</option>
+                            </select>
+                            <button type="button" class="btn-primary ticket-filter-btn" onclick="applyTicketFilters()" data-i18n="apply_filter">اعمال فیلتر</button>
+                        </div>
+                    </div>
+                    <div id="ticketFormBox" class="ticket-create-form form-box" style="display:none;">
+                        <h3 class="ticket-form-title" data-i18n="create_ticket">ثبت تیکت</h3>
+                        <div class="ticket-form-grid">
+                            <div class="ticket-form-field ticket-form-field-wide">
+                                <label data-i18n="ticket_title">عنوان تیکت</label>
+                                <input id="ticketTitle" data-i18n-ph="ticket_ph_subject" placeholder="موضوع">
+                            </div>
+                            <div class="ticket-form-field ticket-form-field-wide">
+                                <label data-i18n="ticket_desc">توضیحات</label>
+                                <textarea id="ticketDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری" rows="3"></textarea>
+                            </div>
+                            <div class="ticket-form-field">
+                                <label data-i18n="ticket_priority">اولویت</label>
+                                <select id="ticketPriority"><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option><option value="low" data-i18n="priority_low">کم</option></select>
+                            </div>
+                            <div class="ticket-form-field">
+                                <label data-i18n="due_date">مهلت (اختیاری)</label>
+                                <input type="date" id="ticketDueDate">
+                            </div>
+                            <div class="ticket-form-field">
+                                <label data-i18n="assignee_label">مسئول</label>
+                                <select id="ticketAssignee"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
+                            </div>
+                            <div class="ticket-form-field">
+                                <label data-i18n="label_dept">دپارتمان</label>
+                                <select id="ticketDept"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
+                            </div>
+                        </div>
+                        <div class="ticket-form-actions">
+                            <button type="button" class="btn-primary" onclick="addTicket()" data-i18n="create_ticket">ثبت تیکت</button>
+                            <button type="button" class="btn-secondary" onclick="toggleTicketForm()" data-i18n="cancel">انصراف</button>
+                        </div>
+                    </div>
+                    <div id="ticketList" class="ticket-list"></div>
+                    <div id="ticketDetail" class="ticket-detail-view" style="display:none;">
+                        <button type="button" class="ticket-back-btn btn-secondary" onclick="showTicketList()" data-i18n="back_to_list">← بازگشت به لیست</button>
+                        <div class="ticket-detail-toolbar">
+                            <button type="button" class="btn-secondary" onclick="startProcessFromTicket()" data-i18n="process_start_from_ticket">شروع فرایند</button>
+                            <div class="ticket-detail-controls">
+                                <select id="ticketDetailStatus"><option value="open" data-i18n="status_open">باز</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option><option value="closed" data-i18n="status_closed">بسته</option><option value="archived" data-i18n="status_archived">آرشیو</option></select>
+                                <select id="ticketDetailAssignee"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
+                                <select id="ticketDetailPriority"><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
+                                <input type="date" id="ticketDetailDueDate" class="ticket-detail-due" title="مهلت">
+                                <button type="button" class="btn-primary btn-sm" onclick="updateTicketFromDetail()" data-i18n="btn_apply">اعمال</button>
+                                <button type="button" class="btn-secondary btn-sm" id="ticketEditBtn" onclick="toggleTicketEditMode()" data-i18n="btn_edit">ویرایش</button>
+                                <button type="button" class="btn-secondary btn-sm" id="ticketArchiveBtn" onclick="archiveTicket()" data-i18n="btn_archive" style="display:none;">ارسال به آرشیو</button>
+                                <button type="button" class="btn-danger btn-sm" id="ticketDeleteBtn" onclick="deleteTicketConfirm()" data-i18n="btn_delete" style="display:none;">حذف</button>
+                            </div>
+                        </div>
+                        <div class="ticket-detail-card">
+                            <div class="ticket-detail-header">
+                                <span id="ticketDetailNumber" class="ticket-detail-number"></span>
+                                <h3 id="ticketDetailTitle" class="ticket-detail-title"></h3>
+                                <div id="ticketDetailTitleEdit" class="ticket-detail-edit-row" style="display:none;">
+                                    <input type="text" id="ticketDetailTitleInput" class="ticket-detail-title-input" data-i18n-ph="ticket_ph_subject" placeholder="عنوان تیکت">
+                                </div>
+                                <p id="ticketDetailOverdue" class="ticket-overdue-badge" style="display:none;" data-i18n="overdue">مهلت گذشته</p>
+                            </div>
+                            <p id="ticketDetailMeta" class="ticket-detail-meta"></p>
+                            <div id="ticketDetailDesc" class="ticket-detail-desc" style="display:none;"></div>
+                            <div id="ticketDetailDescEdit" class="ticket-detail-edit-row" style="display:none;">
+                                <textarea id="ticketDetailDescInput" class="ticket-detail-desc-input" rows="3" data-i18n-ph="dept_ph_optional" placeholder="توضیحات"></textarea>
+                            </div>
+                        </div>
+                        <div id="ticketReplies" class="ticket-replies"></div>
+                        <div class="ticket-reply-form form-box">
+                            <label data-i18n="reply_to_ticket">پاسخ به تیکت</label>
+                            <textarea id="ticketReplyContent" rows="3" data-i18n-ph="reply_ph" placeholder="متن پاسخ..."></textarea>
+                            <div class="ticket-reply-attach-row">
+                                <label class="ticket-reply-file-label">
+                                    <input type="file" id="ticketReplyFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" class="ticket-reply-file-input" onchange="var f=this.files&&this.files[0]; document.getElementById('ticketReplyAttachments').textContent=f?f.name:'';">
+                                    <span class="ticket-reply-file-btn"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-file-plus"/></svg> <span data-i18n="file_attach">پیوست فایل (اختیاری)</span></span>
+                                </label>
+                                <span id="ticketReplyAttachments" class="ticket-reply-attachments"></span>
+                            </div>
+                            <button type="button" class="btn-primary" onclick="submitTicketReply()" data-i18n="send_reply">ارسال پاسخ</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="pageTasks" class="page task-page">
+                    <div class="task-page-header">
+                        <div class="task-page-header-text">
+                            <h2 data-i18n="page_tasks">وظایف و تسک‌ها</h2>
+                            <p class="task-page-desc" data-i18n="tasks_intro">پیگیری کارهای اختصاص‌یافته به کارمند یا دپارتمان.</p>
+                        </div>
+                        <button type="button" class="btn-primary task-create-btn" id="btnTaskCreate" data-i18n="new_task">تسک جدید</button>
+                    </div>
+                    <div id="tasksSummaryBox" class="task-summary-cards" style="display:none;"></div>
+                    <div id="taskFormBox" class="task-create-form form-box" style="display:none;">
+                        <h3 class="task-form-title" data-i18n="new_task">تسک جدید</h3>
+                        <div class="task-form-grid">
+                            <div class="task-form-field task-form-field-wide">
+                                <label data-i18n="label_title">عنوان</label>
+                                <input id="taskTitle" data-i18n-ph="task_ph_title" placeholder="عنوان وظیفه">
+                            </div>
+                            <div class="task-form-field task-form-field-wide">
+                                <label data-i18n="dept_desc">توضیحات (اختیاری)</label>
+                                <textarea id="taskDesc" rows="2" data-i18n-ph="task_ph_desc" placeholder="شرح کار"></textarea>
+                            </div>
+                            <div class="task-form-field">
+                                <label data-i18n="assign_to">اختصاص به</label>
+                                <div class="task-assign-row">
+                                    <select id="taskAssignType" onchange="toggleTaskAssignTarget()"><option value="user" data-i18n="assign_user">کارمند</option><option value="department" data-i18n="assign_dept">دپارتمان</option></select>
+                                    <select id="taskAssignUser"><option value="" data-i18n="select_user_task">انتخاب کارمند</option></select>
+                                    <select id="taskAssignDept" style="display:none;"><option value="" data-i18n="select_dept">انتخاب دپارتمان</option></select>
+                                </div>
+                            </div>
+                            <div class="task-form-field">
+                                <label data-i18n="th_branch">شعبه</label>
+                                <select id="taskBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select>
+                            </div>
+                            <div class="task-form-field">
+                                <label data-i18n="due_date">مهلت (اختیاری)</label>
+                                <input id="taskDueDate" type="datetime-local">
+                            </div>
+                            <div class="task-form-field">
+                                <label data-i18n="ticket_priority">اولویت</label>
+                                <select id="taskPriority"><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option><option value="low" data-i18n="priority_low">کم</option></select>
+                            </div>
+                        </div>
+                        <div class="task-form-actions">
+                            <button type="button" class="btn-primary" id="btnTaskSubmit" data-i18n="add_task">ثبت تسک</button>
+                            <button type="button" class="btn-secondary" id="btnTaskCancel" data-i18n="cancel">انصراف</button>
+                        </div>
+                    </div>
+                    <div class="task-quick-tabs" role="tablist">
+                        <button type="button" class="task-tab active" data-tab="all" data-i18n="filter_all">همه</button>
+                        <button type="button" class="task-tab" data-tab="pending" data-i18n="status_pending">در انتظار</button>
+                        <button type="button" class="task-tab" data-tab="in_progress" data-i18n="status_in_progress">در حال انجام</button>
+                        <button type="button" class="task-tab" data-tab="done" data-i18n="status_done">انجام شده</button>
+                        <button type="button" class="task-tab" data-tab="cancelled" data-i18n="status_cancelled">لغو</button>
+                    </div>
+                    <div class="task-filters-wrap">
+                        <div class="task-filters">
+                            <input type="text" id="taskSearch" class="task-search-input" data-i18n-ph="header_search" placeholder="جستجو عنوان یا توضیحات..." onkeypress="if(event.key==='Enter')loadTasks()">
+                            <select id="taskFilterStatus"><option value="" data-i18n="all_statuses">همه وضعیت‌ها</option><option value="pending" data-i18n="status_pending">در انتظار</option><option value="in_progress" data-i18n="status_in_progress">در حال انجام</option><option value="done" data-i18n="status_done">انجام شده</option><option value="cancelled" data-i18n="status_cancelled">لغو</option></select>
+                            <select id="taskFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
+                            <select id="taskFilterUser"><option value="" data-i18n="filter_all_users">همه کارمندان</option></select>
+                            <select id="taskFilterBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                            <button type="button" class="btn-primary task-filter-btn" id="btnApplyTaskFilters" data-i18n="apply_filter">اعمال فیلتر</button>
+                        </div>
+                    </div>
+                    <div id="taskListCount" class="task-list-count" style="display:none;"></div>
+                    <div id="taskList" class="task-list empty" data-i18n="loading">در حال بارگذاری...</div>
+                    <div id="taskListLoadMore" style="display:none; text-align:center; margin-top:16px;">
+                        <button type="button" class="btn-secondary" id="btnLoadMoreTasks" data-i18n="load_more">بارگذاری بیشتر</button>
+                    </div>
+                    <div id="taskDetailBox" class="task-detail-view" style="display:none;">
+                        <button type="button" class="btn-secondary task-back-btn" data-i18n="back_to_list">← بازگشت به لیست</button>
+                        <div id="taskDetailContent" class="task-detail-content"></div>
+                        <div id="taskUpdatesList" class="task-updates-list"></div>
+                        <div class="task-update-form form-box">
+                            <label data-i18n="add_update">افزودن پیگیری / گزارش</label>
+                            <label data-i18n="change_status_optional">تغییر وضعیت (اختیاری)</label>
+                            <select id="taskUpdateStatusChange" class="task-update-status-select">
+                                <option value="">— بدون تغییر —</option>
+                                <option value="pending" data-i18n="status_pending">در انتظار</option>
+                                <option value="in_progress" data-i18n="status_in_progress">در حال انجام</option>
+                                <option value="done" data-i18n="status_done">انجام شده</option>
+                                <option value="cancelled" data-i18n="status_cancelled">لغو</option>
+                            </select>
+                            <textarea id="taskUpdateContent" rows="3" data-i18n-ph="update_ph" placeholder="وضعیت یا گزارش خود را بنویسید..."></textarea>
+                            <button type="button" class="btn-primary" id="btnTaskUpdateSubmit" data-i18n="save_update">ثبت پیگیری</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="pageProcesses" class="page">
+                    <h2 data-i18n="page_processes">مدیر فرایندهای کسب‌وکار</h2>
+                    <p class="text-muted" style="color:var(--text-secondary); font-size:0.9rem; margin:0 0 16px;" data-i18n="processes_intro">قالب‌های فرایند را تعریف کنید و نمونه‌های در حال اجرا را پیگیری کنید.</p>
+                    <div class="process-tabs" style="display:flex; gap:8px; margin-bottom:20px; border-bottom:1px solid var(--border);">
+                        <button type="button" class="process-tab active" data-tab="templates" data-i18n="process_templates">قالب‌های فرایند</button>
+                        <button type="button" class="process-tab" data-tab="instances" data-i18n="process_instances">نمونه‌های در حال اجرا</button>
+                    </div>
+                    <div id="processTemplatesPanel" class="process-panel show">
+                        <div class="form-box" style="max-width:100%; margin-bottom:16px;">
+                            <button type="button" class="btn-primary" onclick="openProcessTemplateModal()" data-i18n="process_add_template">افزودن قالب فرایند</button>
+                        </div>
+                        <div id="processTemplatesList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    </div>
+                    <div id="processInstancesPanel" class="process-panel" style="display:none;">
+                        <div class="form-box" style="max-width:100%; margin-bottom:16px; display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; justify-content:space-between;">
+                            <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+                                <button type="button" class="btn-primary" onclick="openProcessStartInstanceModal()" data-i18n="process_start_instance">شروع نمونه</button>
+                                <label data-i18n="filter" style="margin:0;">فیلتر</label>
+                                <select id="processInstanceStatus"><option value="" data-i18n="all_statuses">همه وضعیت‌ها</option><option value="active" data-i18n="status_active">فعال</option><option value="completed" data-i18n="status_done">انجام شده</option><option value="cancelled" data-i18n="status_cancelled">لغو</option></select>
+                                <select id="processInstanceTemplate"><option value="" data-i18n="all_templates">همه قالب‌ها</option></select>
+                                <button type="button" onclick="loadProcessInstances()" data-i18n="btn_apply">اعمال</button>
+                            </div>
+                        </div>
+                        <div id="processInstancesList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                        <div id="processInstanceDetailBox" style="display:none; margin-top:20px;">
+                            <button type="button" class="btn-secondary" onclick="showProcessInstancesList()" data-i18n="back_to_list">← بازگشت به لیست</button>
+                            <div id="processInstanceDetailContent" style="margin:12px 0;"></div>
+                            <div id="processInstanceAdvanceBox" class="form-box" style="max-width:560px; margin-top:16px;"></div>
+                        </div>
+                    </div>
+                </div>
+                <div id="pageProfile" class="page profile-page">
+                    <div class="profile-page-head">
+                        <h2 data-i18n="page_profile">پروفایل من</h2>
+                        <p class="profile-intro text-muted" data-i18n="profile_intro">نام کاربری، نام، نام خانوادگی، تاریخ تولد، تلفن و تصویر پروفایل را می‌توانید ویرایش کنید. ورود با ایمیل یا نام کاربری امکان‌پذیر است. ایمیل و دپارتمان توسط مدیر تنظیم می‌شود.</p>
+                    </div>
+                    <div class="profile-page-body">
+                    <div class="profile-card">
+                        <div class="profile-header">
+                            <div class="profile-avatar-wrap">
+                                <div id="profileAvatarPreview" class="profile-avatar-preview"></div>
+                            </div>
+                            <div class="profile-meta">
+                                <div id="profileDisplayName" class="profile-display-name">—</div>
+                                <div id="profileDisplayUsername" class="profile-display-username">—</div>
+                                <div id="profileDisplayEmail" class="profile-display-email">—</div>
+                                <div class="profile-badges">
+                                    <span id="profileRoleBadge" class="profile-badge profile-badge-role">—</span>
+                                    <span id="profileBranchBadge" class="profile-badge profile-badge-branch">—</span>
+                                </div>
+                                <div id="profileDepartmentText" class="profile-meta-text">—</div>
+                                <div id="profileLastLogin" class="profile-meta-text profile-last-login">—</div>
+                            </div>
+                        </div>
+                        <div class="profile-form-section">
+                            <h3 class="profile-section-title" data-i18n="profile_editable_section">اطلاعات قابل ویرایش</h3>
+                            <div class="profile-form-grid">
+                                <div class="profile-form-group">
+                                    <label data-i18n="profile_username">نام کاربری</label>
+                                    <input id="profileUsername" type="text" placeholder="" autocomplete="username">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label data-i18n="profile_first_name">نام</label>
+                                    <input id="profileFirstName" type="text" placeholder="" autocomplete="given-name">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label data-i18n="profile_last_name">نام خانوادگی</label>
+                                    <input id="profileLastName" type="text" placeholder="" autocomplete="family-name">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label data-i18n="profile_date_of_birth">تاریخ تولد</label>
+                                    <input id="profileDateOfBirth" type="date" placeholder="">
+                                </div>
+                                <div class="profile-form-group" id="profileEmailGroup" style="display:none;">
+                                    <label data-i18n="profile_email">ایمیل</label>
+                                    <input id="profileEmailInput" type="email" placeholder="email@example.com" autocomplete="email" dir="ltr">
+                                </div>
+                                <div class="profile-form-group">
+                                    <label data-i18n="profile_phone">تلفن ثابت یا همراه</label>
+                                    <input id="profilePhone" type="tel" placeholder="" autocomplete="tel" dir="ltr">
+                                </div>
+                                <div class="profile-form-group profile-form-group-full">
+                                    <label data-i18n="profile_avatar">تصویر پروفایل (بارگذاری یا آدرس URL)</label>
+                                    <div class="profile-avatar-edit">
+                                        <input type="file" id="profileAvatarFile" accept="image/*" style="max-width:240px;">
+                                        <input id="profileAvatar" type="url" placeholder="https://..." autocomplete="off" class="profile-avatar-url" dir="ltr">
+                                    </div>
+                                </div>
+                                <div class="profile-form-group profile-form-group-full">
+                                    <label data-i18n="profile_password_new">رمز عبور جدید (در صورت تمایل به تغییر)</label>
+                                    <input id="profilePassword" type="password" data-i18n-ph="profile_password_ph" placeholder="" autocomplete="new-password">
+                                </div>
+                            </div>
+                            <div class="profile-form-actions">
+                                <button type="button" id="profileSaveBtn" class="btn-primary" data-i18n="profile_save">ذخیره تغییرات</button>
+                            </div>
+                        </div>
+                        <div class="profile-readonly-section">
+                            <h3 class="profile-section-title" data-i18n="profile_readonly_section">اطلاعات فقط‌خواندنی</h3>
+                            <div class="profile-readonly-grid">
+                                <div class="profile-readonly-item" id="profileEmailReadonlyRow">
+                                    <span class="profile-readonly-label" data-i18n="profile_email_readonly">ایمیل (غیرقابل تغییر)</span>
+                                    <span id="profileEmail" class="profile-readonly-value">—</span>
+                                </div>
+                                <div class="profile-readonly-item">
+                                    <span class="profile-readonly-label" data-i18n="profile_dept_readonly">دپارتمان</span>
+                                    <span id="profileDepartment" class="profile-readonly-value">—</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="profileTotpSection" class="profile-card profile-totp-card">
+                        <h3 class="profile-section-title" data-i18n="profile_totp_title">احراز هویت دو مرحله‌ای (Google Authenticator)</h3>
+                        <p class="profile-totp-desc text-muted" data-i18n="profile_totp_desc">ورود امن‌تر با اپلیکیشن Google Authenticator. می‌توانید از داخل پنل آن را فعال یا غیرفعال کنید.</p>
+                        <div id="profileTotpStatus" class="profile-totp-status"></div>
+                        <div id="profileTotpActions" class="profile-totp-actions"></div>
+                    </div>
+                    </div>
+                </div>
+                <div id="pageAnnouncements" class="page announcements-page">
+                    <div class="announcements-page-header">
+                        <div class="announcements-header-top">
+                            <div class="announcements-header-icon"><svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg></div>
+                            <div class="announcements-header-text">
+                                <h2 data-i18n="page_announcements">اعلان‌ها</h2>
+                                <p class="announcements-intro" data-i18n="ann_intro">اعلان‌های عمومی، دپارتمانی و اختصاصی را مشاهده و مدیریت کنید.</p>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-outline announcements-refresh" id="announcementsRefreshBtn" onclick="loadAnnouncements()" title="به‌روزرسانی" aria-label="به‌روزرسانی"><span class="refresh-icon">↻</span> <span data-i18n="refresh">به‌روزرسانی</span></button>
+                        </div>
+                    </div>
+                    <div id="announcementSendBox" class="announcements-send-section" style="display:none;">
+                        <div class="announcements-send-header">
+                            <h3 class="announcements-section-title" data-i18n="ann_send_title">ارسال اعلان به کارکنان</h3>
+                            <button type="button" class="announcements-send-toggle" id="annSendFormToggle" onclick="toggleAnnouncementSendForm()" aria-expanded="true">
+                                <span class="ann-send-toggle-text" data-i18n="ann_collapse">بستن فرم</span>
+                                <svg class="ann-send-toggle-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 15l-6-6-6 6"/></svg>
+                            </button>
+                        </div>
+                        <div id="announcementSendForm" class="announcements-send-form">
+                            <div class="announcements-send-grid">
+                                <div class="announcements-send-field">
+                                    <label for="annTargetType" data-i18n="ann_recipient">گیرنده</label>
+                                    <select id="annTargetType" class="ann-select"><option value="all" data-i18n="ann_all">همه کارکنان</option><option value="department" data-i18n="ann_one_dept">یک دپارتمان</option><option value="user" data-i18n="ann_one_user">یک نفر</option></select>
+                                </div>
+                                <div id="annTargetIdWrap" class="announcements-send-field ann-target-select-wrap" style="display:none;">
+                                    <label for="annTargetId" data-i18n="ann_select">انتخاب کنید</label>
+                                    <select id="annTargetId" class="ann-select"><option value="" data-i18n="ann_select">انتخاب کنید</option></select>
+                                </div>
+                                <div class="announcements-send-field announcements-send-field-wide">
+                                    <label for="annTitle" data-i18n="ann_title">عنوان</label>
+                                    <input id="annTitle" type="text" class="ann-input" data-i18n-ph="ann_ph_title" placeholder="عنوان اعلان" required>
+                                </div>
+                                <div class="announcements-send-field announcements-send-field-wide">
+                                    <label for="annBody" data-i18n="ann_body">متن</label>
+                                    <textarea id="annBody" class="ann-textarea" rows="4" data-i18n-ph="ann_ph_body" placeholder="متن پیام..." required></textarea>
+                                </div>
+                                <div class="announcements-send-field announcements-send-field-wide">
+                                    <label class="announcements-check-wrap"><input type="checkbox" id="annImportant" class="ann-checkbox"> <span data-i18n="ann_important">پیام مهم (پاپ‌آپ و صدا برای گیرنده)</span></label>
+                                    <p class="ann-important-hint text-muted" id="annImportantHint" style="display:none; margin:8px 0 0; font-size:0.85rem;" data-i18n="ann_important_hint">مثال صحیح: برای امنیت بیشتر، رمز عبور خود را از بخش پروفایل من تغییر دهید.</p>
+                                </div>
+                            </div>
+                            <div class="announcements-send-actions">
+                                <button type="button" class="btn-primary" id="annSendBtn" onclick="sendAnnouncement()" data-i18n="send_ann">ارسال اعلان</button>
+                                <button type="button" class="btn-secondary" onclick="resetAnnouncementForm()" data-i18n="ann_reset">پاک کردن</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="announcements-content-wrap">
+                        <div class="announcements-toolbar">
+                            <div class="announcements-tabs" role="tablist">
+                                <button type="button" class="announcements-tab active" data-tab="all" onclick="setAnnouncementsTab('all')" data-i18n="ann_tab_all">همه</button>
+                                <button type="button" class="announcements-tab" data-tab="general" onclick="setAnnouncementsTab('general')" data-i18n="ann_tab_general">عمومی</button>
+                                <button type="button" class="announcements-tab" data-tab="department" onclick="setAnnouncementsTab('department')" data-i18n="ann_tab_department">دپارتمانی</button>
+                                <button type="button" class="announcements-tab" data-tab="personal" onclick="setAnnouncementsTab('personal')" data-i18n="ann_tab_personal">اختصاصی</button>
+                            </div>
+                            <div class="announcements-toolbar-right">
+                                <div class="announcements-search-wrap">
+                                    <span class="announcements-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
+                                    <input type="text" id="announcementSearch" class="announcements-search-input" data-i18n-ph="ann_search_ph" placeholder="جستجو در اعلان‌ها..." oninput="filterAnnouncementsBySearch(this.value)">
+                                </div>
+                                <select id="announcementSort" class="announcements-sort-select" onchange="setAnnouncementsSort(this.value)" title="مرتب‌سازی">
+                                    <option value="newest" data-i18n="ann_sort_newest">جدیدترین</option>
+                                    <option value="oldest" data-i18n="ann_sort_oldest">قدیمی‌ترین</option>
+                                    <option value="important" data-i18n="ann_sort_important">مهم‌ها اول</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="announcementList" class="announcements-list empty" data-i18n="loading">در حال بارگذاری...</div>
+                    </div>
+                </div>
+                <div id="pageInternalChat" class="page internal-chat-page">
+                    <h2 data-i18n="page_internal_chat">چت داخلی</h2>
+                    <div id="internalChatLayoutWrap" class="internal-chat-layout-wrap internal-chat-box">
+                        <div class="internal-chat-thread-col">
+                            <div class="internal-chat-list-header">
+                                <input type="text" id="internalChatSearch" class="internal-chat-search" data-i18n-ph="search_or_start" placeholder="جستجو یا گفتگوی جدید...">
+                                <button type="button" class="internal-chat-new-btn" title="گفتگوی جدید" aria-label="گفتگوی جدید"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+                            </div>
+                            <div id="internalThreadList" class="empty internal-chat-thread-list" data-i18n="loading">در حال بارگذاری...</div>
+                        </div>
+                        <div id="internalChatPane" class="internal-chat-pane" style="display:none;">
+                            <div class="internal-chat-header-compact">
+                                <button type="button" class="internal-chat-back-btn" aria-label="بازگشت" data-i18n-title="back_to_list"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                                <div class="internal-chat-header-avatar" id="internalChatHeaderAvatar"><span class="avatar-fallback">💬</span></div>
+                                <div class="internal-chat-header-info">
+                                    <span id="internalChatHeader" class="internal-chat-header-title" data-i18n="select_conversation">انتخاب گفتگو</span>
+                                    <span id="internalChatHeaderStatus" class="internal-chat-header-status" data-i18n="last_seen">آخرین بازدید</span>

@@ -1,0 +1,1707 @@
+                btnForgotSubmit.removeEventListener('click', window.submitForgotPassword);
+                btnForgotSubmit.addEventListener('click', window.submitForgotPassword);
+            }
+            
+            // Back to login from forgot
+            const btnBackFromForgot = document.querySelectorAll('[onclick="backToLoginFromForgot()"]')[0];
+            if (btnBackFromForgot) {
+                btnBackFromForgot.removeEventListener('click', window.backToLoginFromForgot);
+                btnBackFromForgot.addEventListener('click', window.backToLoginFromForgot);
+            }
+            
+            // Reset password submit button
+            const btnResetSubmit = document.getElementById('btnResetSubmit');
+            if (btnResetSubmit) {
+                btnResetSubmit.removeEventListener('click', window.submitResetPassword);
+                btnResetSubmit.addEventListener('click', window.submitResetPassword);
+            }
+            
+            // Back to login from reset
+            const btnBackFromReset = document.querySelectorAll('[onclick="backToLoginFromReset(); return false;"]')[0];
+            if (btnBackFromReset) {
+                btnBackFromReset.removeEventListener('click', function(e) { e.preventDefault(); window.backToLoginFromReset(); });
+                btnBackFromReset.addEventListener('click', function(e) { e.preventDefault(); window.backToLoginFromReset(); });
+            }
+            
+            // Language buttons in forgot/reset modal
+            const forgotLangButtons = document.querySelectorAll('.forgot-langs button[data-lang]');
+            if (forgotLangButtons) {
+                forgotLangButtons.forEach(function(btn) {
+                    btn.removeEventListener('click', function handleLangClick(e) { 
+                        const lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
+                    btn.addEventListener('click', function handleLangClick(e) { 
+                        const lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
+                });
+            }
+            
+            // Skip to content link
+            const skipLink = document.getElementById('skipLink');
+            if (skipLink) {
+                skipLink.removeEventListener('click', function(e) { 
+                    e.preventDefault(); 
+                    const m = document.getElementById('mainContent');
+                    if (m) m.focus(); 
+                });
+                skipLink.addEventListener('click', function(e) { 
+                    e.preventDefault(); 
+                    const m = document.getElementById('mainContent');
+                    if (m) m.focus(); 
+                });
+            }
+        }
+
+        /* ========== Global Event Handlers Setup ========== */
+        function setupGlobalEventHandlers() {
+            // Header menu button
+            const menuBtn = document.getElementById('headerMenuBtn');
+            if (menuBtn) {
+                menuBtn.removeEventListener('click', toggleSidebarMobile);
+                menuBtn.addEventListener('click', toggleSidebarMobile);
+            }
+            
+            // Sidebar overlay
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            if (sidebarOverlay) {
+                sidebarOverlay.removeEventListener('click', closeSidebarMobile);
+                sidebarOverlay.addEventListener('click', closeSidebarMobile);
+            }
+            
+            // Header announcement toggle button
+            const annToggleBtn = document.getElementById('headerAnnToggleBtn');
+            if (annToggleBtn) {
+                annToggleBtn.removeEventListener('click', toggleAnnouncementMarquee);
+                annToggleBtn.addEventListener('click', toggleAnnouncementMarquee);
+            }
+            
+            // Header notify buttons — use onclick from HTML only (avoid duplicate handlers)
+            
+            // Header search triggers
+            const searchTrigger = document.getElementById('headerSearchTrigger');
+            if (searchTrigger) {
+                searchTrigger.removeEventListener('click', openHeaderSearchPopup);
+                searchTrigger.addEventListener('click', openHeaderSearchPopup);
+            }
+            
+            const searchTriggerDesktop = document.getElementById('headerSearchTriggerDesktop');
+            if (searchTriggerDesktop) {
+                searchTriggerDesktop.removeEventListener('click', openHeaderSearchPopup);
+                searchTriggerDesktop.addEventListener('click', openHeaderSearchPopup);
+            }
+            
+            // Header search modal overlay - close on background click
+            const headerSearchModal = document.getElementById('headerSearchModal');
+            if (headerSearchModal) {
+                const searchModalCloseHandler = function(e) {
+                    if (e.target === headerSearchModal) closeHeaderSearchPopup();
+                };
+                headerSearchModal.removeEventListener('click', searchModalCloseHandler);
+                headerSearchModal.addEventListener('click', searchModalCloseHandler);
+            }
+            
+            // Header search modal close button
+            const headerSearchClose = document.querySelector('#headerSearchModal .modal-close');
+            if (headerSearchClose) {
+                headerSearchClose.removeEventListener('click', closeHeaderSearchPopup);
+                headerSearchClose.addEventListener('click', closeHeaderSearchPopup);
+            }
+            
+            // Header search modal input - Enter key
+            const headerSearchModalInput = document.getElementById('headerSearchModalInput');
+            if (headerSearchModalInput) {
+                const searchInputHandler = function(e) {
+                    if (e.key === 'Enter') doHeaderSearchFromModal();
+                };
+                headerSearchModalInput.removeEventListener('keyup', searchInputHandler);
+                headerSearchModalInput.addEventListener('keyup', searchInputHandler);
+            }
+            
+            // Header user dropdown triggers (mobile + desktop)
+            const userDropdownHandler = function(e) { toggleUserDropdown(e); };
+            const userDropdownMobile = document.getElementById('userDropdownTriggerMobile');
+            if (userDropdownMobile) {
+                userDropdownMobile.removeEventListener('click', userDropdownHandler);
+                userDropdownMobile.addEventListener('click', userDropdownHandler);
+            }
+            const userDropdownDesktop = document.getElementById('userDropdownTrigger');
+            if (userDropdownDesktop) {
+                userDropdownDesktop.removeEventListener('click', userDropdownHandler);
+                userDropdownDesktop.addEventListener('click', userDropdownHandler);
+            }
+            
+            // Header logo
+            const headerLogo = document.getElementById('headerLogo');
+            if (headerLogo) {
+                const logoHandler = function(e) {
+                    e.preventDefault();
+                    showPage('dashboard');
+                    closeSidebarMobile();
+                    return false;
+                };
+                headerLogo.removeEventListener('click', logoHandler);
+                headerLogo.addEventListener('click', logoHandler);
+            }
+            // Chat back button (mobile) — bind globally so it works when chat is open
+            const chatBackBtn = document.getElementById('chatBackBtn');
+            if (chatBackBtn && typeof closeChatMobile === 'function') {
+                chatBackBtn.removeEventListener('click', closeChatMobile);
+                chatBackBtn.addEventListener('click', closeChatMobile);
+            }
+            
+            // Header search input - Enter key
+            const headerSearch = document.getElementById('headerSearch');
+            if (headerSearch) {
+                const searchHandler = function(e) {
+                    if (e.key === 'Enter') doHeaderSearch();
+                };
+                headerSearch.removeEventListener('keyup', searchHandler);
+                headerSearch.addEventListener('keyup', searchHandler);
+            }
+            
+            // Header quick action buttons (Show conversations, add customer, add ticket)
+            const headerQuickBtns = document.querySelectorAll('.header-quick-btn');
+            if (headerQuickBtns) {
+                headerQuickBtns.forEach(function(btn) {
+                    btn.removeEventListener('click', function handleQuickBtnClick(e) { handleHeaderQuickBtnClick(e, btn); });
+                    btn.addEventListener('click', function handleQuickBtnClick(e) { handleHeaderQuickBtnClick(e, btn); });
+                });
+            }
+            
+            // Header notification button (desktop) — use onclick from HTML only
+            
+            // Header language buttons
+            const headerLangBtns = document.querySelectorAll('.header-lang-btn');
+            if (headerLangBtns) {
+                headerLangBtns.forEach(function(btn) {
+                    btn.removeEventListener('click', function handleLangClick(e) { 
+                        const lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
+                    btn.addEventListener('click', function handleLangClick(e) { 
+                        const lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
+                });
+            }
+            
+            // Header language dropdown items (in languageDropdown)
+            const langDropdownItems = document.querySelectorAll('.language-dropdown button[data-lang]');
+            if (langDropdownItems) {
+                langDropdownItems.forEach(function(btn) {
+                    btn.removeEventListener('click', function handleLangDropdownClick(e) {
+                        e.preventDefault();
+                        const lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang);
+                    });
+                    btn.addEventListener('click', function handleLangDropdownClick(e) {
+                        e.preventDefault();
+                        const lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang);
+                    });
+                });
+            }
+            
+            // User dropdown items
+            const userDropdownItems = document.querySelectorAll('.user-dropdown a, .user-dropdown button');
+            if (userDropdownItems) {
+                userDropdownItems.forEach(function(item) {
+                    const dataset = item.getAttribute('data-action');
+                    if (dataset === 'logout') {
+                        item.removeEventListener('click', function handleLogout(e) { 
+                            e.preventDefault(); 
+                            logout(); 
+                        });
+                        item.addEventListener('click', function handleLogout(e) { 
+                            e.preventDefault(); 
+                            logout(); 
+                        });
+                    } else if (dataset === 'profile') {
+                        item.removeEventListener('click', function handleProfile(e) { 
+                            e.preventDefault(); 
+                            showPage('profile'); 
+                        });
+                        item.addEventListener('click', function handleProfile(e) { 
+                            e.preventDefault(); 
+                            showPage('profile'); 
+                        });
+                    }
+                });
+            }
+        }
+        
+        function handleHeaderQuickBtnClick(e, btn) {
+            const onclick = btn.getAttribute('data-onclick-backup') || btn.getAttribute('data-onclick') || '';
+            if (onclick === "showPage('conversations'); openNewConvModal();") {
+                showPage('conversations');
+                setTimeout(openNewConvModal, 100);
+            } else if (onclick === "showPage('customers'); openCustomerModal();") {
+                showPage('customers');
+                setTimeout(openCustomerModal, 100);
+            } else if (onclick === "showPage('tickets'); setTimeout(function(){ toggleTicketForm(); }, 350);") {
+                showPage('tickets');
+                setTimeout(toggleTicketForm, 350);
+            }
+        }
+        
+        /* ========== Conversation Event Handlers Setup ========== */
+        let convListClickHandler = null;
+        
+        function setupConversationEventHandlers() {
+            // Conversation list items - event delegation
+            const convList = document.getElementById('convList');
+            
+            if (convList) {
+                // Remove old handler
+                if (convListClickHandler) {
+                    convList.removeEventListener('click', convListClickHandler);
+                }
+                
+                // Create new handler
+                convListClickHandler = function(e) {
+                    const item = e.target.closest('.conv-list-item');
+                    if (!item) return;
+                    
+                    const id = item.getAttribute('data-id');
+                    const name = item.getAttribute('data-name');
+                    const phone = item.getAttribute('data-phone');
+                    const profilePic = item.getAttribute('data-profile-pic');
+                    const isGroup = item.getAttribute('data-is-group') === '1';
+                    
+                    if (id) {
+                        openChat(id, name || '', phone || '', profilePic || '', isGroup);
+                    }
+                };
+                
+                convList.addEventListener('click', convListClickHandler);
+            }
+            // Close button handlers
+            const annCloseBtn = document.getElementById('annMarqueeCloseBtn');
+            if (annCloseBtn) {
+                annCloseBtn.removeEventListener('click', closeAnnouncementMarquee);
+                annCloseBtn.addEventListener('click', closeAnnouncementMarquee);
+            }
+            
+            const annMoreBtn = document.getElementById('annMarqueeMoreBtn');
+            if (annMoreBtn) {
+                annMoreBtn.removeEventListener('click', handleAnnMoreClick);
+                annMoreBtn.addEventListener('click', handleAnnMoreClick);
+            }
+            
+            const annTrack = document.getElementById('annMarqueeTrack');
+            if (annTrack) {
+                annTrack.removeEventListener('mouseenter', pauseAnnouncementMarquee);
+                annTrack.removeEventListener('mouseleave', resumeAnnouncementMarquee);
+                annTrack.addEventListener('mouseenter', pauseAnnouncementMarquee);
+                annTrack.addEventListener('mouseleave', resumeAnnouncementMarquee);
+            }
+            const annImportantEl = document.getElementById('annImportant');
+            if (annImportantEl && !annImportantEl._hintBound) {
+                annImportantEl._hintBound = true;
+                annImportantEl.addEventListener('change', toggleAnnImportantHint);
+            }
+            
+            // Marquee items delegation
+            const marqueeInner = document.querySelector('.announcement-marquee-inner');
+            if (marqueeInner) {
+                marqueeInner.removeEventListener('click', handleMarqueeItemClick);
+                marqueeInner.addEventListener('click', handleMarqueeItemClick);
+            }
+            
+            // Sync groups button
+            const syncBtn = document.getElementById('btnSyncGroups');
+            if (syncBtn) {
+                syncBtn.removeEventListener('click', syncWhatsAppGroups);
+                syncBtn.addEventListener('click', syncWhatsAppGroups);
+            }
+            
+            // New conversation button
+            const newConvBtn = document.getElementById('btnNewConv');
+            if (newConvBtn) {
+                newConvBtn.removeEventListener('click', openNewConvModal);
+                newConvBtn.addEventListener('click', openNewConvModal);
+            }
+            
+            // Quick tab buttons
+            document.querySelectorAll('.conv-quick-tabs .conv-tab').forEach(function(btn) {
+                btn.removeEventListener('click', handleQuickTabClick);
+                btn.addEventListener('click', handleQuickTabClick);
+            });
+            
+            // Search input
+            const searchInput = document.getElementById('convSearch');
+            if (searchInput) {
+                searchInput.removeEventListener('keypress', handleSearchKeyPress);
+                searchInput.addEventListener('keypress', handleSearchKeyPress);
+            }
+            
+            // Filter toggle
+            const filterToggle = document.getElementById('convFilterToggle');
+            if (filterToggle) {
+                filterToggle.removeEventListener('click', toggleConvAdvancedFilters);
+                filterToggle.addEventListener('click', toggleConvAdvancedFilters);
+            }
+            
+            // Apply filters button
+            const applyBtn = document.getElementById('btnApplyConvFilters');
+            if (applyBtn) {
+                applyBtn.removeEventListener('click', applyConvFilters);
+                applyBtn.addEventListener('click', applyConvFilters);
+            }
+            
+            // Filter selects - change events
+            ['convFilterStatus', 'convFilterPriority', 'convFilterBranch', 'convFilterDept', 'convFilterAssignee'].forEach(function(id) {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.removeEventListener('change', applyConvFilters);
+                    select.addEventListener('change', applyConvFilters);
+                }
+            });
+            
+            // Chat back button
+            const backBtn = document.getElementById('chatBackBtn');
+            if (backBtn) {
+                backBtn.removeEventListener('click', closeChatMobile);
+                backBtn.addEventListener('click', closeChatMobile);
+            }
+            
+            // Chat detail toggle
+            const detailToggle = document.getElementById('chatDetailToggle');
+            if (detailToggle) {
+                detailToggle.removeEventListener('click', toggleChatDetailBar);
+                detailToggle.addEventListener('click', toggleChatDetailBar);
+            }
+            
+            // New conversation modal close button
+            const newConvModalClose = document.querySelector('#newConvModal .modal-close');
+            if (newConvModalClose) {
+                newConvModalClose.removeEventListener('click', closeNewConvModal);
+                newConvModalClose.addEventListener('click', closeNewConvModal);
+            }
+            
+            // Conversation detail delete/archive buttons
+            const convDeleteBtn = document.getElementById('btnConvDelete');
+            if (convDeleteBtn) {
+                convDeleteBtn.removeEventListener('click', deleteConversation);
+                convDeleteBtn.addEventListener('click', deleteConversation);
+            }
+            
+            const convArchiveBtn = document.getElementById('btnConvArchive');
+            if (convArchiveBtn) {
+                convArchiveBtn.removeEventListener('click', archiveConversation);
+                convArchiveBtn.addEventListener('click', archiveConversation);
+            }
+            
+            const assignBtn = document.getElementById('btnAssignToMe');
+            if (assignBtn) {
+                assignBtn.removeEventListener('click', assignConvToMe);
+                assignBtn.addEventListener('click', assignConvToMe);
+            }
+        }
+        
+        // Setup Profile page event handlers
+        function setupProfileEventHandlers() {
+            // Save profile button
+            const saveBtn = document.getElementById('profileSaveBtn');
+            if (saveBtn) {
+                saveBtn.removeEventListener('click', saveProfile);
+                saveBtn.addEventListener('click', saveProfile);
+            }
+            
+            // TOTP setup button (dynamically created)
+            const totpSetupBtn = document.getElementById('totpSetupBtnDynamic');
+            if (totpSetupBtn) {
+                totpSetupBtn.removeEventListener('click', openTotpSetup);
+                totpSetupBtn.addEventListener('click', openTotpSetup);
+            }
+            
+            // TOTP disable button (dynamically created)
+            const totpDisableBtn = document.getElementById('totpDisableBtnDynamic');
+            if (totpDisableBtn) {
+                totpDisableBtn.removeEventListener('click', openTotpDisableModal);
+                totpDisableBtn.addEventListener('click', openTotpDisableModal);
+            }
+        }
+        
+        // Setup Staff Activity event handlers
+        function setupStaffActivityEventHandlers() {
+            // Refresh button
+            const refreshBtn = document.getElementById('staffActivityRefresh');
+            if (refreshBtn) {
+                refreshBtn.removeEventListener('click', loadStaffActivity);
+                refreshBtn.addEventListener('click', loadStaffActivity);
+            }
+            
+            // Attendance apply button
+            const applyBtn = document.getElementById('attendanceApplyBtn');
+            if (applyBtn) {
+                applyBtn.removeEventListener('click', loadAttendanceReport);
+                applyBtn.addEventListener('click', loadAttendanceReport);
+            }
+            
+            // Conversation detail update button
+            let updateConvBtn = document.querySelector('[onclick*="updateConvFromDetail"]');
+            if (!updateConvBtn) {
+                updateConvBtn = document.querySelector('.conv-detail-bar button[data-i18n="btn_apply"]');
+            }
+            if (updateConvBtn) {
+                updateConvBtn.removeEventListener('click', updateConvFromDetail);
+                updateConvBtn.addEventListener('click', updateConvFromDetail);
+            }
+            
+            // Conversation detail selects - change handlers
+            ['convDetailStatus', 'convDetailPriority', 'convDetailAssignee', 'convDetailDept'].forEach(function(id) {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.removeEventListener('change', function() {});
+                    select.addEventListener('change', function() {});
+                }
+            });
+            
+            // Chat message handlers
+            const msgAttachBtn = document.getElementById('msgAttachBtn');
+            if (msgAttachBtn) {
+                msgAttachBtn.removeEventListener('click', function() {
+                    document.getElementById('msgFileInput').click();
+                });
+                msgAttachBtn.addEventListener('click', function() {
+                    document.getElementById('msgFileInput').click();
+                });
+            }
+
+            const msgFileInput = document.getElementById('msgFileInput');
+            if (msgFileInput) {
+                const _prevFileHandler = msgFileInput._previewHandler;
+                if (_prevFileHandler) msgFileInput.removeEventListener('change', _prevFileHandler);
+                msgFileInput._previewHandler = function() {
+                    const f = this.files && this.files[0];
+                    if (f) showFilePreview(f);
+                    else clearFilePreview();
+                };
+                msgFileInput.addEventListener('change', msgFileInput._previewHandler);
+            }
+
+            const filePreviewRemove = document.getElementById('chatFilePreviewRemove');
+            if (filePreviewRemove) {
+                filePreviewRemove.onclick = function() { clearFilePreview(); };
+            }
+            
+            const msgTemplateBtn = document.getElementById('msgTemplateBtn');
+            if (msgTemplateBtn) {
+                msgTemplateBtn.removeEventListener('click', toggleTemplateDropdown);
+                msgTemplateBtn.addEventListener('click', toggleTemplateDropdown);
+            }
+            
+            const chatReplyCancelBtn = document.querySelector('.chat-reply-cancel');
+            if (chatReplyCancelBtn) {
+                chatReplyCancelBtn.removeEventListener('click', cancelReply);
+                chatReplyCancelBtn.addEventListener('click', cancelReply);
+            }
+            
+            // Chat rating stars
+            document.querySelectorAll('.conv-rating-star').forEach(function(star) {
+                star.removeEventListener('click', function() {
+                    const newRating = parseInt(this.getAttribute('data-rating'), 10);
+                    updateConvRating(currentConvId, newRating);
+                });
+                star.addEventListener('click', function() {
+                    const newRating = parseInt(this.getAttribute('data-rating'), 10);
+                    updateConvRating(currentConvId, newRating);
+                });
+            });
+            
+            // Dashboard refresh button
+            const dashRefreshBtn = document.getElementById('dashboardRefreshBtn');
+            if (dashRefreshBtn) {
+                dashRefreshBtn.removeEventListener('click', refreshDashboard);
+                dashRefreshBtn.addEventListener('click', refreshDashboard);
+            }
+            
+            // Sidebar toggle (desktop)
+            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            if (sidebarToggleBtn) {
+                sidebarToggleBtn.removeEventListener('click', toggleSidebarDesktop);
+                sidebarToggleBtn.addEventListener('click', toggleSidebarDesktop);
+            }
+            
+            // Language buttons - all instances
+            document.querySelectorAll('[data-lang]').forEach(function(btn) {
+                // Skip the sidebar and dropdown buttons since they have other logic
+                if (btn.classList.contains('lang-switch')) return;
+                btn.removeEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    if (lang) setLang(lang);
+                });
+                btn.addEventListener('click', function() {
+                    const lang = this.getAttribute('data-lang');
+                    if (lang) setLang(lang);
+                });
+            });
+            
+            // Language dropdown
+            const langDropdownBtn = document.getElementById('langDropdownBtn');
+            if (langDropdownBtn) {
+                langDropdownBtn.removeEventListener('click', toggleLangDropdown);
+                langDropdownBtn.addEventListener('click', toggleLangDropdown);
+            }
+            
+            // Language dropdown menu items
+            document.querySelectorAll('.lang-dropdown-menu button').forEach(function(btn) {
+                const langHandler = function() {
+                    const lang = this.getAttribute('data-lang');
+                    if (lang) {
+                        setLang(lang);
+                        if (typeof closeLangDropdown === 'function') closeLangDropdown();
+                    }
+                };
+                btn.removeEventListener('click', langHandler);
+                btn.addEventListener('click', langHandler);
+            });
+            
+            // Mobile footer navigation
+            document.querySelectorAll('.mobile-tab-item').forEach(function(tab) {
+                tab.removeEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = this.getAttribute('data-page');
+                    if (page) {
+                        showPage(page);
+                        closeSidebarMobile();
+                    }
+                    return false;
+                });
+                tab.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const page = this.getAttribute('data-page');
+                    if (page) {
+                        showPage(page);
+                        closeSidebarMobile();
+                    }
+                    return false;
+                });
+            });
+        }
+        
+        function handleQuickTabClick(e) {
+            if (e && e.target && e.target.getAttribute) {
+                const tab = e.target.getAttribute('data-tab');
+                if (tab) setConvQuickTab(tab);
+            }
+        }
+        
+        function handleSearchKeyPress(e) {
+            if (e && e.key === 'Enter') {
+                applyConvFilters();
+            }
+        }
+        
+        const convPageSize = 50;
+        function setConvQuickTab(tab) {
+            convQuickTab = tab || 'all';
+            convCurrentPage = 1;
+            document.querySelectorAll('.conv-tab').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-tab') === convQuickTab); });
+            applyConvFilters();
+        }
+        function toggleConvAdvancedFilters() {
+            const el = document.getElementById('convAdvancedFilters');
+            const btn = document.getElementById('convFilterToggle');
+            if (el && btn) { el.classList.toggle('show'); btn.setAttribute('aria-expanded', el.classList.contains('show')); }
+        }
+        function canViewArchivedConversations() { const r = (currentUser && currentUser.role) || ''; return ['owner','admin','manager'].indexOf(r) >= 0; }
+        function canManageConversations() { const r = (currentUser && currentUser.role) || ''; return r === 'owner'; }
+        async function loadConvFiltersInit() {
+            await loadConvAssignees();
+            loadBranchesForSelect(['convFilterBranch']);
+            const res = await apiFetch('/api/departments');
+            if (res.ok && res.data && res.data.data) {
+                const sel = document.getElementById('convFilterDept');
+                if (sel) {
+                    var opt = '<option value="">' + (LANG === 'fa' ? 'همه دپارتمان‌ها' : 'All departments') + '</option>' + res.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+                    sel.innerHTML = opt;
+                }
+            }
+            const tabArchived = document.getElementById('convTabArchived');
+            if (tabArchived) tabArchived.style.display = canViewArchivedConversations() ? '' : 'none';
+            const statusFilter = document.getElementById('convFilterStatus');
+            if (statusFilter && canViewArchivedConversations()) {
+                const hasArchived = Array.from(statusFilter.options).some(function(o){ return o.value === 'archived'; });
+                if (!hasArchived) { var opt = document.createElement('option'); opt.value = 'archived'; opt.textContent = t('filter_archived') || t('status_archived') || 'آرشیو'; statusFilter.appendChild(opt); }
+            }
+        }
+        async function syncWhatsAppGroups() {
+            const btn = document.getElementById('btnSyncGroups');
+            const textSpan = btn && btn.querySelector('.conv-sync-text');
+            const syncText = t('conv_sync_groups') || (LANG === 'fa' ? 'همگام‌سازی گروه‌ها' : 'Sync groups');
+            if (btn) { btn.disabled = true; if (textSpan) textSpan.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); else btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); }
+            try {
+                const res = await apiFetch('/api/conversations/sync-groups', { method: 'POST' });
+                if (res.needLogin) return;
+                if (res.ok) {
+                    toast((res.data && res.data.message) || (LANG === 'fa' ? 'گروه‌ها همگام شدند' : 'Groups synced'));
+                    setConvQuickTab('groups');
+                    loadConversations();
+                } else {
+                    let errMsg = (res.data && res.data.error) || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed');
+                    if (errMsg.indexOf('503') !== -1 || errMsg.indexOf('not ready') !== -1) {
+                        errMsg = LANG === 'fa' ? 'واتساپ متصل نیست. ابتدا اتصال را برقرار کنید.' : 'WhatsApp not connected. Connect first.';
+                    }
+                    toast(errMsg, true);
+                }
+            } finally {
+                if (btn) { btn.disabled = false; if (textSpan) textSpan.textContent = syncText; else btn.textContent = '👥 ' + syncText; }
+            }
+        }
+        async function loadConversations(appendMode) {
+            const list = document.getElementById('convList');
+            const statsEl = document.getElementById('convStats');
+            if (!appendMode) setLoading('convList', 4);
+            let q = '?limit=' + convPageSize + '&page=' + convCurrentPage;
+            const statusEl = document.getElementById('convFilterStatus');
+            const priorityEl = document.getElementById('convFilterPriority');
+            const branchEl = document.getElementById('convFilterBranch');
+            const deptEl = document.getElementById('convFilterDept');
+            const assigneeEl = document.getElementById('convFilterAssignee');
+            const searchEl = document.getElementById('convSearch');
+            if (convQuickTab === 'unread') q += '&unread=true';
+            else if (convQuickTab === 'unanswered') q += '&unanswered=true';
+            else if (convQuickTab === 'unassigned') q += '&unassigned=true';
+            else if (convQuickTab === 'open') q += '&status=open';
+            else if (convQuickTab === 'archived') q += '&status=archived';
+            else if (convQuickTab === 'groups') q += '&isGroup=true';
+            else if (convQuickTab === 'mine' && currentUser && currentUser.id) q += '&assignedTo=' + encodeURIComponent(currentUser.id);
+            if (convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'archived' || convQuickTab === 'groups') { if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value); }
+            if (priorityEl && priorityEl.value) q += '&priority=' + encodeURIComponent(priorityEl.value);
+            if (branchEl && branchEl.value) q += '&branchId=' + encodeURIComponent(branchEl.value);
+            if (deptEl && deptEl.value) q += '&departmentId=' + encodeURIComponent(deptEl.value);
+            if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open' || convQuickTab === 'archived' || convQuickTab === 'groups') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
+            if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
+            const res = await apiFetch('/api/conversations' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { const ce = document.getElementById('convListCount'); if (ce) ce.textContent = ''; list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + escapeHtml(res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
+            const data = res.data;
+            const totalCount = data.total != null ? data.total : (data.data || []).length;
+            // آمار از total واقعی سرور گرفته می‌شه نه فقط صفحه جاری
+            if (statsEl && data.total != null) {
+                const openCount = data.openCount != null ? data.openCount : (data.data || []).filter(function(c){ return c.status === 'open'; }).length;
+                const unreadCount = data.unreadCount != null ? data.unreadCount : (data.data || []).reduce(function(s,c){ return s + (c.unreadCount || 0); }, 0);
+                statsEl.innerHTML = '<span class="conv-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</span><span class="conv-stat"><strong>' + openCount + '</strong> ' + (LANG === 'fa' ? 'باز' : 'open') + '</span><span class="conv-stat"><strong>' + unreadCount + '</strong> ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread') + '</span>';
+                statsEl.style.display = 'flex';
+            }
+            const countEl = document.getElementById('convListCount');
+            if (countEl) countEl.textContent = totalCount > 0 ? '(' + totalCount + ')' : '';
+            if (!data.data || data.data.length === 0) {
+                if (!appendMode) list.innerHTML = '<div class="empty conv-empty"><span class="empty-icon">💬</span><p>' + t('empty_conv') + '</p><button type="button" class="btn-primary" id="emptyConvNewBtn">' + (t('conv_new') || (LANG === 'fa' ? 'مکالمه جدید' : 'New conversation')) + '</button></div>';
+                // دکمه load more رو مخفی کن
+                var lmBtn = document.getElementById('convLoadMoreBtn');
+                if (lmBtn) lmBtn.style.display = 'none';
+                // Bind empty state button
+                setTimeout(function() {
+                    const emptyBtn = document.getElementById('emptyConvNewBtn');
+                    if (emptyBtn) {
+                        emptyBtn.removeEventListener('click', openNewConvModal);
+                        emptyBtn.addEventListener('click', openNewConvModal);
+                    }
+                }, 50);
+                return;
+            }
+            const newItems = data.data.map(function(c) {
+                const cust = c.customer || {};
+                const isGroup = !!(c.metadata && c.metadata.isGroup);
+                const name = (isGroup && (c.metadata && (c.metadata.groupName || c.metadata.name))) || cust.name || cust.phone || (isGroup ? (LANG === 'fa' ? 'گروه' : 'Group') : t('customer'));
+                const phone = cust.phone || '';
+                const metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
+                const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
+                let profilePic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
+                if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
+                profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
+                const avatarHtml = (isGroup || !profilePic || profilePic.indexOf('http') !== 0) ? '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (profilePic && profilePic.indexOf('http') === 0 ? '<img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : '') : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">';
+                const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
+                const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
+                const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
+                const priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
+                const unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
+                const preview = (c.lastMessagePreview || '').trim();
+                const timeStr = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'time') : '';
+                let unansweredBadge = '';
+                if (c.lastIncomingMessageAt && (!c.lastOutgoingMessageAt || new Date(c.lastIncomingMessageAt) > new Date(c.lastOutgoingMessageAt))) {
+                    const mins = Math.floor((Date.now() - new Date(c.lastIncomingMessageAt).getTime()) / 60000);
+                    const waitStr = mins < 60 ? (mins + (LANG === 'fa' ? ' دقیقه' : ' min')) : (mins < 1440 ? (Math.floor(mins / 60) + (LANG === 'fa' ? ' ساعت' : ' hr')) : (Math.floor(mins / 1440) + (LANG === 'fa' ? ' روز' : ' days')));
+                    unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + waitStr + '</span>';
+                }
+                const activeClass = (c.id === currentConvId) ? ' active' : '';
+                // نام و شماره در data-* ذخیره می‌شن — event handler میتواند کلیک رو handle کند
+                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+            }).join('');
+            if (appendMode) {
+                // آیتم‌های جدید به انتهای لیست اضافه می‌شن
+                var lmBtn = document.getElementById('convLoadMoreBtn');
+                if (lmBtn) lmBtn.insertAdjacentHTML('beforebegin', newItems);
+                else list.insertAdjacentHTML('beforeend', newItems);
+            } else {
+                list.innerHTML = newItems;
+            }
+            // نمایش/مخفی کردن دکمه load more
+            const loadedSoFar = convCurrentPage * convPageSize;
+            var lmBtn = document.getElementById('convLoadMoreBtn');
+            if (!lmBtn) {
+                lmBtn = document.createElement('div');
+                lmBtn.id = 'convLoadMoreBtn';
+                lmBtn.style.cssText = 'text-align:center;padding:10px;';
+                lmBtn.innerHTML = '<button type="button" class="btn-secondary" id="convLoadMoreBtnInner">' + (LANG === 'fa' ? 'بارگذاری بیشتر' : 'Load more') + '</button>';
+                setTimeout(function() {
+                    const loadBtn = document.getElementById('convLoadMoreBtnInner');
+                    if (loadBtn) {
+                        loadBtn.removeEventListener('click', function() { convCurrentPage++; loadConversations(true); });
+                        loadBtn.addEventListener('click', function() { convCurrentPage++; loadConversations(true); });
+                    }
+                }, 50);
+                list.appendChild(lmBtn);
+            }
+            lmBtn.style.display = loadedSoFar < totalCount ? '' : 'none';
+        }
+
+        let currentConvDetail = null;
+        function toggleChatDetailBar() {
+            const bar = document.getElementById('convDetailBar');
+            const btn = document.getElementById('chatDetailToggle');
+            if (bar && btn) {
+                const isCollapsed = bar.classList.contains('collapsed');
+                if (isCollapsed) {
+                    bar.style.display = '';
+                    bar.classList.remove('collapsed');
+                    btn.classList.add('active');
+                } else {
+                    bar.classList.add('collapsed');
+                    btn.classList.remove('active');
+                }
+            }
+        }
+        function closeChatMobile() {
+            const chatArea = document.getElementById('chatArea');
+            const layout = chatArea && chatArea.closest('.conv-layout');
+            if (chatArea) chatArea.classList.remove('show');
+            if (layout) layout.classList.remove('chat-open');
+            const btn = document.querySelector('.chat-back-btn');
+            if (btn) btn.style.display = 'none';
+            const pm = document.getElementById('headerMobileTitle');
+            if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = t('nav_conversations');
+        }
+        function updateChatBackBtn() {
+            const btn = document.querySelector('.chat-back-btn');
+            const chatArea = document.getElementById('chatArea');
+            if (btn && chatArea && chatArea.classList.contains('show')) {
+                btn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
+            }
+        }
+        if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
+        let currentConvIsGroup = false;
+        function openChat(id, name, phone, profilePic, isGroup) {
+            currentConvId = id;
+            currentConvDetail = null;
+            currentConvIsGroup = !!isGroup;
+            cancelReply();
+            if (chatTemplatesCache.length === 0) { apiFetch('/api/message-templates').then(function(res) { if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data; }).catch(function(){}); }
+            const headerEl = document.getElementById('chatHeader');
+            const avatarEl = document.getElementById('chatHeaderAvatar');
+            const barEl = document.getElementById('convDetailBar');
+            const badgesEl = document.getElementById('convDetailBadges');
+            const actionsEl = document.getElementById('convDetailActions');
+            const supPanel = document.getElementById('convSupervisionPanel');
+            const supStats = document.getElementById('convSupervisionStats');
+            if (headerEl) headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
+            if (avatarEl) {
+                let pic = (profilePic || '').trim();
+                if (pic && pic.indexOf('/') === 0) pic = (window.location.origin || '') + pic;
+                pic = pic ? ensureHttpsUrl(pic) : '';
+                const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
+                if (pic && pic.indexOf('http') === 0) {
+                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'">';
+                } else {
+                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                }
+            }
+            const chatArea = document.getElementById('chatArea');
+            const layout = chatArea && chatArea.closest('.conv-layout');
+            if (chatArea) chatArea.classList.add('show');
+            if (layout) layout.classList.add('chat-open');
+            const backBtn = document.querySelector('.chat-back-btn');
+            if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
+            const pm = document.getElementById('headerMobileTitle');
+            if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = name || phone || t('customer');
+            if (barEl) barEl.style.display = 'none';
+            apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
+            loadMessages(id);
+            const canViewSupervision = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
+            if (canViewSupervision && supPanel && supStats) { loadConvStats(id, supStats); supPanel.style.display = 'block'; } else if (supPanel) supPanel.style.display = 'none';
+            apiFetch('/api/conversations/' + id).then(function(res) {
+                if (!res.ok || !res.data) return;
+                currentConvDetail = res.data;
+                if (!barEl || !badgesEl) return;
+                const d = res.data;
+                const assigneeName = userDisplay(d.assignee) || (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned');
+                const deptName = (d.department && d.department.name) ? d.department.name : '';
+                const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
+                const prioT = LANG === 'fa' ? { low: 'کم', normal: 'عادی', high: 'مهم', urgent: 'فوری' } : { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
+                badgesEl.innerHTML = '<span class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</span>' + (statusT[d.status] || d.status) + '</span><span class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'اولویت' : 'Priority') + '</span>' + (prioT[d.priority] || d.priority) + '</span><span class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + (LANG === 'fa' ? 'مسئول' : 'Assignee') + '</span>' + escapeHtml(assigneeName) + '</span>' + (deptName ? '<span class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + (LANG === 'fa' ? 'دپارتمان' : 'Dept') + '</span>' + escapeHtml(deptName) + '</span>' : '');
+                barEl.style.display = '';
+                barEl.classList.add('collapsed');
+                const toggleBtn = document.getElementById('chatDetailToggle');
+                if (toggleBtn) { toggleBtn.style.display = 'flex'; toggleBtn.classList.remove('active'); }
+                const canManage = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager'));
+                const isAssignedToMe = d.assignedTo === (currentUser && currentUser.id);
+                if (actionsEl) {
+                    actionsEl.style.display = 'flex';
+                    const assignBtn = document.getElementById('btnAssignToMe');
+                    if (assignBtn) assignBtn.style.display = (canManage || !isAssignedToMe) ? '' : 'none';
+                    actionsEl.querySelectorAll('select').forEach(function(el){ el.style.display = canManage ? '' : 'none'; });
+                    var deptSel = document.getElementById('convDetailDept');
+                    if (deptSel) deptSel.style.display = canManage ? '' : 'none';
+                    const applyBtn = actionsEl.querySelector('[onclick="updateConvFromDetail()"]');
+                    if (applyBtn) applyBtn.style.display = canManage ? '' : 'none';
+                }
+                if (canManage) {
+                    const statusSel = document.getElementById('convDetailStatus');
+                    const prioritySel = document.getElementById('convDetailPriority');
+                    const assigneeSel = document.getElementById('convDetailAssignee');
+                    var deptSel = document.getElementById('convDetailDept');
+                    if (statusSel) {
+                        const hasArchivedOpt = Array.from(statusSel.options).some(function(o){ return o.value === 'archived'; });
+                        if (canManageConversations() && !hasArchivedOpt) { const o = document.createElement('option'); o.value = 'archived'; o.textContent = t('status_archived') || 'آرشیو'; statusSel.appendChild(o); }
+                        statusSel.value = d.status || 'open';
+                    }
+                    if (prioritySel) prioritySel.value = d.priority || 'normal';
+                    loadConvAssignees().then(function() {
+                        if (assigneeSel) assigneeSel.value = d.assignedTo || '';
+                        if (deptSel) deptSel.value = d.departmentId || '';
+                    });
+                }
+                const archBtn = document.getElementById('btnConvArchive');
+                const delBtn = document.getElementById('btnConvDelete');
+                if (archBtn) archBtn.style.display = (canManageConversations() && d.status !== 'archived') ? '' : 'none';
+                if (delBtn) delBtn.style.display = canManageConversations() ? '' : 'none';
+                const chatSend = document.querySelector('.chat-send');
+                if (chatSend) chatSend.style.display = (d.status === 'archived') ? 'none' : '';
+                const ratingSection = document.getElementById('convRatingSection');
+                if (ratingSection) {
+                    ratingSection.style.display = 'block';
+                    const stars = ratingSection.querySelectorAll('.conv-rating-star');
+                    const r = d.rating || 0;
+                    stars.forEach(function(s) {
+                        const v = parseInt(s.getAttribute('data-rating'), 10);
+                        s.classList.toggle('active', v <= r);
+                        s.onclick = function() {
+                            const newR = parseInt(this.getAttribute('data-rating'), 10);
+                            stars.forEach(function(x) { x.classList.toggle('active', parseInt(x.getAttribute('data-rating'), 10) <= newR); });
+                            apiFetch('/api/conversations/' + id, { method: 'PATCH', body: JSON.stringify({ rating: newR }) }).then(function(res) { if (res.ok && currentConvDetail) currentConvDetail.rating = newR; });
+                        };
+                    });
+                    const feedbackEl = document.getElementById('convFeedback');
+                    if (feedbackEl) {
+                        feedbackEl.value = d.feedback || '';
+                        feedbackEl.onblur = function() {
+                            const v = (feedbackEl.value || '').trim();
+                            if (v !== (d.feedback || '')) apiFetch('/api/conversations/' + id, { method: 'PATCH', body: JSON.stringify({ feedback: v }) }).then(function(res) { if (res.ok && currentConvDetail) currentConvDetail.feedback = v; });
+                        };
+                    }
+                }
+            });
+        }
+        async function loadConvAssignees() {
+            const selFilter = document.getElementById('convFilterAssignee');
+            const selDetail = document.getElementById('convDetailAssignee');
+            const selDetailDept = document.getElementById('convDetailDept');
+            if (!selFilter && !selDetail && !selDetailDept) return;
+            const res = await apiFetch('/api/users');
+            if (!res.ok || !res.data || !res.data.data) return;
+            const users = res.data.data;
+            const opt = '<option value="">' + (LANG === 'fa' ? 'هر مسئول' : 'Any assignee') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            if (selFilter) selFilter.innerHTML = opt;
+            const optDetail = '<option value="">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            if (selDetail) selDetail.innerHTML = optDetail;
+            if (selDetailDept) {
+                const deptRes = await apiFetch('/api/departments');
+                if (deptRes.ok && deptRes.data && deptRes.data.data) {
+                    const depts = deptRes.data.data;
+                    selDetailDept.innerHTML = '<option value="">' + (LANG === 'fa' ? 'بدون دپارتمان' : 'No department') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+                }
+            }
+        }
+        function applyConvFilters() { convCurrentPage = 1; loadConversations(); }
+        function openNewConvModal() {
+            document.getElementById('newConvModal').style.display = 'flex';
+            document.getElementById('newConvCustomerSearch').value = '';
+            loadNewConvCustomers();
+        }
+        function closeNewConvModal() { document.getElementById('newConvModal').style.display = 'none'; }
+        async function loadNewConvCustomers(search) {
+            const list = document.getElementById('newConvCustomerList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            let q = '?limit=30';
+            if (search && String(search).trim()) q += '&search=' + encodeURIComponent(String(search).trim());
+            const res = await apiFetch('/api/customers' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            const data = res.data;
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
+            list.innerHTML = data.data.map(function(c) {
+                const name = c.name || c.phone || t('customer');
+                const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
+                let profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
+                profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
+                const avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" onerror="this.style.display=\'none\'">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                return '<div class="new-conv-customer-item" onclick="startNewConversation(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
+            }).join('');
+        }
+        async function startNewConversation(customerId, name) {
+            closeNewConvModal();
+            const res = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customerId }) });
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            const conv = res.data;
+            const phone = (conv.customer && conv.customer.phone) || '';
+            const pic = (conv.customer && conv.customer.profilePic) || '';
+            openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone, pic);
+            loadConversations();
+        }
+
+        // باز کردن مکالمه خصوصی با عضو گروه از طریق شماره تلفن
+        window.openPrivateChatFromGroup = async function(phone, name) {
+            if (!phone) return;
+            // نرمال‌سازی شماره: اگر با 0 شروع شد → 98 اضافه کن
+            let normalized = String(phone).replace(/\D/g, '');
+            if (normalized.startsWith('0')) normalized = '98' + normalized.slice(1);
+            // جستجوی مشتری با این شماره
+            const searchRes = await apiFetch('/api/customers?search=' + encodeURIComponent(normalized) + '&limit=5');
+            let customer = null;
+            if (searchRes.ok && searchRes.data) {
+                const rows = searchRes.data.data || searchRes.data.rows || [];
+                customer = rows.find(function(c) {
+                    const cp = String(c.phone || '').replace(/\D/g, '');
+                    return cp === normalized || cp === phone.replace(/\D/g, '');
+                }) || null;
+            }
+            if (!customer) {
+                // ساخت مشتری جدید
+                const createRes = await apiFetch('/api/customers', { method: 'POST', body: JSON.stringify({ name: name || phone, phone: normalized }) });
+                if (!createRes.ok) { toast((createRes.data && createRes.data.error) || t('err_generic'), true); return; }
+                customer = createRes.data;
+            }
+            // باز کردن مکالمه
+            const convRes = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customer.id }) });
+            if (!convRes.ok) { toast((convRes.data && convRes.data.error) || t('err_generic'), true); return; }
+            const conv = convRes.data;
+            const cPhone = (conv.customer && conv.customer.phone) || normalized;
+            const cPic = (conv.customer && conv.customer.profilePic) || '';
+            openChat(conv.id, name || (conv.customer && conv.customer.name) || cPhone, cPhone, cPic, false);
+            loadConversations();
+            toast(LANG === 'fa' ? 'مکالمه خصوصی باز شد' : 'Private chat opened');
+        };
+        async function assignConvToMe() {
+            if (!currentConvId || !currentUser) return;
+            const assigneeSel = document.getElementById('convDetailAssignee');
+            if (assigneeSel) assigneeSel.value = currentUser.id;
+            await updateConvFromDetail();
+        }
+        async function updateConvFromDetail() {
+            if (!currentConvId) return;
+            const statusSel = document.getElementById('convDetailStatus');
+            const prioritySel = document.getElementById('convDetailPriority');
+            const assigneeSel = document.getElementById('convDetailAssignee');
+            const deptSel = document.getElementById('convDetailDept');
+            const body = {};
+            if (statusSel) body.status = statusSel.value;
+            if (prioritySel) body.priority = prioritySel.value;
+            if (assigneeSel) body.assignedTo = assigneeSel.value || null;
+            if (deptSel) body.departmentId = deptSel.value || null;
+            const ratingStars = document.querySelectorAll('#convRatingSection .conv-rating-star.active');
+            const lastActive = ratingStars.length > 0 ? Math.max.apply(null, Array.from(ratingStars).map(function(s) { return parseInt(s.getAttribute('data-rating'), 10); })) : null;
+            if (lastActive) body.rating = lastActive;
+            const feedbackEl = document.getElementById('convFeedback');
+            if (feedbackEl) body.feedback = (feedbackEl.value || '').trim() || null;
+            const res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; const h = document.getElementById('chatHeader'); const activeItem = document.querySelector('.conv-list-item.active[data-id="' + currentConvId + '"]'); const pic = (activeItem && activeItem.getAttribute('data-profile-pic')) || (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.profilePic) || ''; const ig = (activeItem && activeItem.getAttribute('data-is-group') === '1') || (res.data && res.data.metadata && res.data.metadata.isGroup); openChat(currentConvId, (currentConvDetail && (currentConvDetail.customer && currentConvDetail.customer.name)) || (h ? h.textContent.replace(/^👥\s*/, '') : ''), (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.phone) || '', pic, ig); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+        async function archiveConversation() {
+            if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را آرشیو کند' : 'Only owner can archive', true); return; }
+            if (!confirm(LANG === 'fa' ? 'آیا از آرشیو کردن این مکالمه مطمئن هستید؟' : 'Archive this conversation?')) return;
+            const res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify({ status: 'archived' }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast(LANG === 'fa' ? 'مکالمه به آرشیو ارسال شد' : 'Conversation archived'); closeChatMobile(); loadConversations(); currentConvId = null; } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+        async function deleteConversation() {
+            if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را حذف کند' : 'Only owner can delete', true); return; }
+            if (!confirm(LANG === 'fa' ? 'آیا از حذف دائمی این مکالمه و تمام پیام‌های آن مطمئن هستید؟ این عمل قابل بازگشت نیست.' : 'Permanently delete this conversation and all messages? This cannot be undone.')) return;
+            const res = await apiFetch('/api/conversations/' + currentConvId, { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (res.ok) { toast(LANG === 'fa' ? 'مکالمه حذف شد' : 'Conversation deleted'); closeChatMobile(); loadConversations(); currentConvId = null; } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+
+        function openChatFromHistory(el) {
+            const convId = el.getAttribute('data-convid');
+            const name = el.getAttribute('data-customername') || '';
+            const isGrp = el.getAttribute('data-is-group') === '1';
+            if (!convId) return;
+            // نمایش صفحه مکالمات
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+            const convPage = document.getElementById('pageConversations');
+            if (convPage) { convPage.style.display = 'flex'; convPage.classList.add('show'); }
+            const content = document.querySelector('.content');
+            if (content) content.classList.add('page-conversations');
+            // آپدیت sidebar active link
+            document.querySelectorAll('.sidebar .nav-link[data-page]').forEach(function(l) { l.classList.remove('active'); });
+            const convLink = document.querySelector('.sidebar .nav-link[data-page="conversations"]');
+            if (convLink) convLink.classList.add('active');
+            // اطلاعات مکالمه را مستقیم از API بگیر و باز کن
+            apiFetch('/api/conversations/' + convId).then(function(res) {
+                if (res.needLogin) return;
+                const convData = (res.ok && res.data) ? res.data : null;
+                const finalName = (convData && convData.customer && convData.customer.name) ? convData.customer.name : name;
+                const finalPhone = (convData && convData.customer && convData.customer.phone) ? convData.customer.phone : '';
+                const finalPic = (convData && convData.customer && convData.customer.profilePic) ? convData.customer.profilePic : '';
+                const finalIsGrp = convData ? !!(convData.metadata && convData.metadata.isGroup) : isGrp;
+                // اگر لیست مکالمات هنوز بارگذاری نشده، بارگذاری کن
+                const convList = document.getElementById('conversationsList');
+                const needsLoad = !convList || convList.children.length === 0;
+                if (needsLoad) {
+                    loadConvFiltersInit();
+                    loadConversations();
+                }
+                removeAllInlineHandlers();
+                setupConversationEventHandlers();
+                openChat(convId, finalName, finalPhone, finalPic, finalIsGrp);
+            }).catch(function() {
+                // در صورت خطا با اطلاعات موجود باز کن
+                const convList = document.getElementById('conversationsList');
+                const needsLoad = !convList || convList.children.length === 0;
+                if (needsLoad) {
+                    loadConvFiltersInit();
+                    loadConversations();
+                }
+                removeAllInlineHandlers();
+                setupConversationEventHandlers();
+                openChat(convId, name, '', '', isGrp);
+            });
+        }
+
+        let _loadMessagesController = null;
+        let _currentMsgConvId = null;
+        let _currentMsgOldestId = null;
+        async function loadMessages(id, loadOlder) {
+            // لغو درخواست قبلی در صورت تغییر مکالمه
+            if (_loadMessagesController) { _loadMessagesController.abort(); _loadMessagesController = null; }
+            if (!loadOlder) {
+                _currentMsgConvId = id;
+                _currentMsgOldestId = null;
+            }
+            // اگر مکالمه عوض شده باشه، نتیجه قدیمی رو نشون نده
+            const thisConvId = id;
+            _loadMessagesController = typeof AbortController !== 'undefined' ? new AbortController() : null;
+            const el = document.getElementById('chatMessages');
+            if (!loadOlder) {
+                el.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
+            }
+            let url = '/api/conversations/' + id + '/messages';
+            if (loadOlder && _currentMsgOldestId) url += '?before=' + encodeURIComponent(_currentMsgOldestId);
+            const fetchOpts = _loadMessagesController ? { signal: _loadMessagesController.signal } : {};
+            const res = await apiFetch(url, fetchOpts);
+            // اگر مکالمه عوض شده بود نتیجه رو نادیده بگیر
+            if (_currentMsgConvId !== thisConvId) return;
+            if (res.needLogin) return;
+            if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            const data = res.data;
+            if (!data.data || data.data.length === 0) { if (!loadOlder) el.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCAC</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
+            // ذخیره قدیمی‌ترین id برای load older
+            if (data.oldestId) _currentMsgOldestId = data.oldestId;
+            const list = data.data.filter(function(m) {
+                if (m.direction === 'outgoing') return true;
+                const hasContent = (m.content && String(m.content).trim()) || (m.hasMedia && m.mediaData && (m.mediaData.url || m.mediaData.filename));
+                return !!hasContent;
+            });
+            const newMsgs = list.map(function(m) {
+                const isOut = m.direction === 'outgoing';
+                const time = m.timestamp ? fmtTZ(m.timestamp, 'time') : '';
+                let senderLabel = '';
+                if (isOut && m.isAutoReply) {
+                    senderLabel = '<div class="msg-sender">' + escapeHtml(t('ai_assistant') || 'AI assistant') + '</div>';
+                } else if (isOut && m.user && (m.user.name || m.user.username)) {
+                    senderLabel = '<div class="msg-sender">' + escapeHtml(m.user.name || m.user.username) + '</div>';
+                } else if (!isOut && currentConvIsGroup) {
+                    const sn = (m.metadata && m.metadata.senderName) || null;
+                    const sid = (m.metadata && m.metadata.senderId) || null;
+                    let displayName = sn;
+                    // استخراج شماره تلفن از senderId (مثلاً 989123456789@c.us)
+                    let senderPhone = null;
+                    if (sid) {
+                        const rawPhone = String(sid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, '');
+                        if (rawPhone) senderPhone = rawPhone;
+                        if (!displayName) displayName = rawPhone ? (rawPhone.replace(/^98/, '0') || rawPhone) : null;
+                    }
+                    if (!displayName) displayName = LANG === 'fa' ? 'عضو گروه' : 'Group member';
+                    const senderPhoneAttr = senderPhone ? ' data-sender-phone="' + escapeHtml(senderPhone) + '"' : '';
+                    const senderNameAttr = ' data-sender-name="' + escapeHtml(displayName) + '"';
+                    senderLabel = '<div class="msg-sender msg-sender-group msg-sender-clickable"' + senderPhoneAttr + senderNameAttr + ' title="' + (LANG === 'fa' ? 'کلیک برای پیام خصوصی' : 'Click to send private message') + '">' + escapeHtml(displayName) + '</div>';
+                }
+                let mediaHtml = '';
+                const baseUrl = (API && String(API).length) ? String(API).replace(/\/$/, '') : (typeof window !== 'undefined' && window.location && window.location.origin ? window.location.origin : '');
+                function inferMediaType(msg) {
+                    const t = (msg.type || 'document').toLowerCase();
+                    if (t === 'image' || t === 'video' || t === 'audio' || t === 'ptt') return (t === 'ptt' ? 'audio' : t);
+                    const md = msg.mediaData || {};
+                    const mime = (md.mimetype || '').toLowerCase();
+                    const name = (md.filename || msg.content || '').toLowerCase();
+                    if (mime.indexOf('image/') === 0 || /\.(jpe?g|png|gif|webp|bmp)$/.test(name)) return 'image';
+                    if (mime.indexOf('video/') === 0 || /\.(mp4|webm|mov|avi)$/.test(name)) return 'video';
+                    if (mime.indexOf('audio/') === 0 || /\.(mp3|ogg|wav|m4a|opus|oga)$/.test(name)) return 'audio';
+                    return 'document';
+                }
+                let mediaUrl = '';
+                if (m.hasMedia && m.mediaData) {
+                    const md = m.mediaData;
+                    if (md.url && String(md.url).trim()) {
+                        const rawUrl = String(md.url).trim();
+                        const mediaBase = (rawUrl.startsWith('http')) ? '' : (window.location.origin || baseUrl);
+                        mediaUrl = rawUrl.startsWith('http') ? rawUrl : (mediaBase + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
+                        mediaUrl = ensureHttpsUrl(mediaUrl);
+                    } else if (md.data && (inferMediaType(m) === 'image' || (md.mimetype || '').toLowerCase().indexOf('image/') === 0)) {
+                        const mime = (md.mimetype || 'image/jpeg').split(';')[0].trim();
+                        mediaUrl = 'data:' + mime + ';base64,' + md.data;
+                    } else if (md.data && (inferMediaType(m) === 'audio' || (md.mimetype || '').toLowerCase().indexOf('audio/') === 0)) {
+                        const mimeAudio = (md.mimetype || 'audio/ogg').split(';')[0].trim();
+                        mediaUrl = 'data:' + mimeAudio + ';base64,' + md.data;
+                    }
+                }
+                if (mediaUrl && m.hasMedia && m.mediaData) {
+                    const mediaType = inferMediaType(m);
+                    const mdMime = ((m.mediaData && m.mediaData.mimetype) || '').split(';')[0].trim();
+                    if (mediaType === 'image') {
+                        const imgAlt = escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'تصویر' : 'Image'));
+                        const fn = escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'تصویر' : 'Image'));
+                        mediaHtml = '<div class="msg-media msg-media-image"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1"><img src="' + escapeHtml(mediaUrl) + '" alt="' + imgAlt + '" loading="lazy" onerror="this.onerror=null;this.style.display=\'none\';var s=this.parentNode.querySelector(\'.msg-media-filename\');if(s)s.style.display=\'inline\';">' + '<span class="msg-media-filename" style="display:none;">📎 ' + fn + '</span></a></div>';
+                    } else if (mediaType === 'video') {
+                        mediaHtml = '<div class="msg-media msg-media-video"><video src="' + escapeHtml(mediaUrl) + '" controls preload="metadata" playsinline></video><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link" data-open="1">' + (LANG === 'fa' ? 'پخش ویدیو' : 'Play video') + '</a></div>';
+                    } else if (mediaType === 'audio') {
+                        const isPtt = (m.type || '').toLowerCase() === 'ptt' || /voice|\.ogg|\.webm|پیام صوتی|ptt/i.test(m.mediaData.filename || m.content || '');
+                        const voiceClass = isPtt ? ' msg-media-voice' : ' msg-media-audio';
+                        const typeAttr = mdMime ? ' type="' + escapeHtml(mdMime) + '"' : '';
+                        const errHint = LANG === 'fa' ? 'پخش در مرورگر ممکن نیست — از دانلود استفاده کنید.' : 'Playback failed — try download.';
+                        mediaHtml =
+                            '<div class="msg-media' + voiceClass + '">' +
+                            '<audio class="msg-audio-el" controls preload="auto" playsinline onerror="var w=this.closest(\'.msg-media\');if(w){w.classList.add(\'msg-media-error\');}">' +
+                            '<source src="' + escapeHtml(mediaUrl) + '"' + typeAttr + '>' +
+                            '</audio>' +
+                            '<p class="msg-media-audio-err" role="alert">' + escapeHtml(errHint) + '</p>' +
+                            '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-dl" data-open="1">' + (LANG === 'fa' ? 'دانلود فایل صوتی' : 'Download audio') + '</a>' +
+                            '</div>';
+                    } else {
+                        mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-file-link msg-media-link" data-open="1">📎 ' + escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'فایل' : 'File')) + '</a></div>';
+                    }
+                } else if (m.hasMedia && (m.content || (m.mediaData && m.mediaData.filename))) {
+                    const fileName = (m.mediaData && m.mediaData.filename) || m.content || (LANG === 'fa' ? 'فایل' : 'File');
+                    const isImageName = /\.(jpe?g|png|gif|webp|bmp)$/i.test(fileName);
+                    mediaHtml = '<div class="msg-media msg-media-placeholder">' + (isImageName ? '🖼 ' : '📎 ') + escapeHtml(fileName) + '</div>';
+                }
+                let contentHtml = '';
+                let displayContent = (m.content || '').trim();
+                if (isOut && (displayContent.indexOf('🤖 ') === 0)) displayContent = displayContent.slice(2).trim();
+                else if (isOut && displayContent.indexOf('AI KAYA: ') === 0) displayContent = displayContent.slice(9).trim();
+                if (m.hasMedia && m.mediaData && m.mediaData.url && m.content) contentHtml = '<div class="msg-caption">' + escapeHtml(displayContent || m.content) + '</div>';
+                else if ((displayContent || m.content) && !(m.hasMedia && !(m.mediaData && m.mediaData.url))) contentHtml = '<div>' + escapeHtml(displayContent || m.content) + '</div>';
+                let preview = (m.content || '').slice(0, 50) || (m.hasMedia ? '📎' : '');
+                if ((m.content || '').length > 50) preview += '…';
+                // اضافه کردن اسم فرستنده به preview برای گروه
+                let replyPreviewSender = '';
+                if (!isOut && currentConvIsGroup) {
+                    let rSn = (m.metadata && m.metadata.senderName) || null;
+                    const rSid = (m.metadata && m.metadata.senderId) || null;
+                    if (!rSn && rSid) { const rRaw = String(rSid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, ''); rSn = rRaw ? rRaw.replace(/^98/, '0') : null; }
+                    if (rSn) replyPreviewSender = rSn + ': ';
+                }
+                const replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeHtml(m.whatsappId) + '" data-preview="' + escapeHtml(replyPreviewSender + preview) + '" onclick="event.stopPropagation();var b=this;setReplyTo(b.getAttribute(\'data-wa-id\'), b.getAttribute(\'data-preview\'))" title="' + (LANG === 'fa' ? 'پاسخ' : 'Reply') + '">↩</button>' : '';
+                const statusHtml = (isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + (m.status === 'read' ? '✓✓' : m.status === 'delivered' || m.status === 'sent' ? '✓' : m.status === 'failed' ? '!' : '') + '</span>' : '';
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
+            }).join('');
+            if (loadOlder) {
+                // اضافه کردن پیام‌های قدیمی‌تر به ابتدای لیست با حفظ scroll position
+                const prevScrollHeight = el.scrollHeight;
+                const loadOlderBtn = el.querySelector('.load-older-btn');
+                if (loadOlderBtn) loadOlderBtn.insertAdjacentHTML('afterend', newMsgs);
+                else el.insertAdjacentHTML('afterbegin', newMsgs);
+                el.scrollTop = el.scrollHeight - prevScrollHeight;
+            } else {
+                el.innerHTML = newMsgs;
+                scrollChatToEnd(el);
+            }
+            // نمایش/مخفی کردن دکمه بارگذاری پیام‌های قدیمی‌تر
+            const existingBtn = el.querySelector('.load-older-btn');
+            if (data.hasMore) {
+                if (!existingBtn) {
+                    const olderBtn = document.createElement('div');
+                    olderBtn.className = 'load-older-btn';
+                    olderBtn.style.cssText = 'text-align:center;padding:8px;';
+                    olderBtn.innerHTML = '<button type="button" class="btn-secondary" style="font-size:0.8rem;" id="loadOlderBtn_' + id + '" data-msg-id="' + id + '">' + (LANG === 'fa' ? 'پیام‌های قدیمی‌تر' : 'Load older messages') + '</button>';
+                    setTimeout(function() {
+                        const btn = document.getElementById('loadOlderBtn_' + id);
+                        if (btn) {
+                            btn.removeEventListener('click', function() { loadMessages(id, true); });
+                            btn.addEventListener('click', function() { loadMessages(id, true); });
+                        }
+                    }, 50);
+                    el.insertBefore(olderBtn, el.firstChild);
+                }
+            } else if (existingBtn) {
+                existingBtn.remove();
+            }
+        }
+        function scrollChatToEnd(el) {
+            if (!el) return;
+            function doScroll() {
+                el.scrollTop = el.scrollHeight;
+                const last = el.lastElementChild;
+                if (last && last.scrollIntoView) last.scrollIntoView({ block: 'end' });
+            }
+            doScroll();
+            requestAnimationFrame(doScroll);
+            setTimeout(doScroll, 50);
+            setTimeout(doScroll, 200);
+        }
+        async function loadConvStats(convId, el) {
+            if (!el) return;
+            el.innerHTML = '<span class="loading-skeleton" style="display:inline-block;width:120px;height:20px;border-radius:4px;"></span>';
+            const res = await apiFetch('/api/conversations/' + convId + '/stats');
+            if (res.needLogin || !res.ok) { el.innerHTML = ''; return; }
+            const s = res.data;
+            const parts = [];
+            if (s.firstResponseTimeMin != null) {
+                const timeLabel = s.firstResponseTimeMin < 60 ? (s.firstResponseTimeMin + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')) : (Math.floor(s.firstResponseTimeMin / 60) + ' ' + (LANG === 'fa' ? 'ساعت' : 'hr'));
+                parts.push('<span class="conv-stat-item"><span class="conv-stat-label">' + (LANG === 'fa' ? 'اولین پاسخ' : 'First response') + '</span>' + timeLabel + '</span>');
+            }
+            if (s.responders && s.responders.length > 0) {
+                parts.push('<span class="conv-stat-item"><span class="conv-stat-label">' + (LANG === 'fa' ? 'پاسخ‌دهندگان' : 'Responders') + '</span>' + s.responders.map(function(r){ return escapeHtml(r.name); }).join(', ') + '</span>');
+            }
+            if (s.unreadCount > 0) {
+                parts.push('<span class="conv-stat-item conv-stat-unread"><span class="conv-stat-label">' + (LANG === 'fa' ? 'خوانده‌نشده' : 'Unread') + '</span>' + s.unreadCount + '</span>');
+            }
+            parts.push('<span class="conv-stat-item"><span class="conv-stat-label">' + (LANG === 'fa' ? 'پیام‌ها' : 'Messages') + '</span>' + (s.messageCount || 0) + '</span>');
+            el.innerHTML = parts.length ? parts.join('') : (LANG === 'fa' ? '—' : '—');
+        }
+
+        window._replyingTo = null;
+        function setReplyTo(whatsappId, preview) {
+            window._replyingTo = { whatsappId: whatsappId, preview: preview || '' };
+            const el = document.getElementById('chatReplyPreview');
+            const textEl = document.getElementById('chatReplyText');
+            if (el && textEl) { textEl.textContent = (preview || '').slice(0, 60) + (preview && preview.length > 60 ? '…' : ''); el.style.display = 'flex'; }
+        }
+        function cancelReply() {
+            window._replyingTo = null;
+            const el = document.getElementById('chatReplyPreview');
+            if (el) el.style.display = 'none';
+        }
+
+        function clearFilePreview() {
+            const bar = document.getElementById('chatFilePreview');
+            const thumb = document.getElementById('chatFilePreviewThumb');
+            const nameEl = document.getElementById('chatFilePreviewName');
+            const sizeEl = document.getElementById('chatFilePreviewSize');
+            if (bar) bar.style.display = 'none';
+            if (thumb) thumb.innerHTML = '';
+            if (nameEl) nameEl.textContent = '';
+            if (sizeEl) sizeEl.textContent = '';
+            const fi = document.getElementById('msgFileInput');
+            if (fi) fi.value = '';
+        }
+
+        function showFilePreview(file) {
+            if (!file) { clearFilePreview(); return; }
+            const bar = document.getElementById('chatFilePreview');
+            const thumb = document.getElementById('chatFilePreviewThumb');
+            const nameEl = document.getElementById('chatFilePreviewName');
+            const sizeEl = document.getElementById('chatFilePreviewSize');
+            if (!bar) return;
+
+            if (nameEl) nameEl.textContent = file.name;
+            if (sizeEl) {
+                const sz = file.size;
+                const sizeStr = sz < 1024 ? sz + ' B' : sz < 1024*1024 ? (sz/1024).toFixed(1) + ' KB' : (sz/(1024*1024)).toFixed(1) + ' MB';
+                sizeEl.textContent = sizeStr;
+            }
+            if (thumb) {
+                thumb.innerHTML = '';
+                const mime = file.type || '';
+                if (mime.startsWith('image/')) {
+                    const img = document.createElement('img');
+                    img.alt = file.name;
+                    const reader = new FileReader();
+                    reader.onload = function(e) { img.src = e.target.result; };
+                    reader.readAsDataURL(file);
+                    thumb.appendChild(img);
+                } else if (mime.startsWith('video/')) {
+                    const vid = document.createElement('video');
+                    vid.muted = true;
+                    const reader2 = new FileReader();
+                    reader2.onload = function(e) { vid.src = e.target.result; };
+                    reader2.readAsDataURL(file);
+                    thumb.appendChild(vid);
+                } else {
+                    const iconMap = { 'application/pdf': '📄', 'audio/': '🎵', 'text/': '📝', 'application/zip': '🗜️', 'application/x-rar': '🗜️', 'application/msword': '📝', 'application/vnd.openxmlformats': '📝', 'application/vnd.ms-excel': '📊' };
+                    let icon = '📎';
+                    for (const k in iconMap) { if (mime.startsWith(k)) { icon = iconMap[k]; break; } }
+                    const span = document.createElement('span');
+                    span.className = 'file-icon';
+                    span.textContent = icon;
+                    thumb.appendChild(span);
+                }
+            }
+            bar.style.display = 'block';
+        }
+
+        async function sendMsg() {
+            const input = document.getElementById('msgInput');
+            const fileInput = document.getElementById('msgFileInput');
+            const content = (input.value || '').trim();
+            const file = fileInput && fileInput.files && fileInput.files[0];
+            if ((!content && !file) || !currentConvId) return;
+            let media = null;
+            if (file) {
+                const fd = new FormData();
+                fd.append('file', file);
+                const uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+                const uploadData = await uploadRes.json().catch(function() { return {}; });
+                if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
+                media = { url: uploadData.url, filename: uploadData.name || file.name, mimetype: file.type };
+                fileInput.value = '';
+                clearFilePreview();
+            }
+            input.value = '';
+            const body = { content: content || '', media: media };
+            if (window._replyingTo && window._replyingTo.whatsappId) { body.replyTo = window._replyingTo.whatsappId; cancelReply(); }
+            const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify(body) });
+            if (res.needLogin) return;
+            if (res.ok) loadMessages(currentConvId);
+            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+        }
+
+        const voiceRecorderState = { active: false, recorder: null, chunks: [] };
+        function updateVoiceBtn() {
+            const btn = document.getElementById('msgVoiceBtn');
+            if (!btn) return;
+            btn.classList.toggle('recording', voiceRecorderState.active);
+            btn.setAttribute('title', voiceRecorderState.active ? (t('voice_stop') || (LANG === 'fa' ? 'توقف ضبط' : 'Stop recording')) : (t('voice_record') || (LANG === 'fa' ? 'ضبط پیام صوتی' : 'Voice message')));
+            btn.setAttribute('aria-label', btn.getAttribute('title'));
+        }
+        function startVoiceRecord() {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                toast(t('voice_no_support') || (LANG === 'fa' ? 'ضبط صدا در این مرورگر پشتیبانی نمی‌شود' : 'Voice recording not supported'), true);
+                return;
+            }
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+                const mime = (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) ? 'audio/webm;codecs=opus' : (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) ? 'audio/webm' : 'audio/ogg';
+                try {
+                    var recorder = new MediaRecorder(stream, { mimeType: mime });
+                } catch (e) {
+                    recorder = new MediaRecorder(stream);
+                }
+                voiceRecorderState.chunks = [];
+                recorder.ondataavailable = function(e) { if (e.data && e.data.size) voiceRecorderState.chunks.push(e.data); };
+                recorder.onstop = function() {
+                    stream.getTracks().forEach(function(t) { t.stop(); });
+                    const blob = new Blob(voiceRecorderState.chunks, { type: recorder.mimeType || 'audio/webm' });
+                    voiceRecorderState.chunks = [];
+                    if (blob.size > 0) sendVoiceMessage(blob);
+                };
+                recorder.start(200);
+                voiceRecorderState.recorder = recorder;
+                voiceRecorderState.active = true;
+                updateVoiceBtn();
+            }).catch(function() {
+                toast(t('voice_no_permission') || (LANG === 'fa' ? 'دسترسی به میکروفون داده نشد' : 'Microphone access denied'), true);
+            });
+        }
+        function stopVoiceRecord() {
+            if (!voiceRecorderState.recorder) return;
+            voiceRecorderState.recorder.stop();
+            voiceRecorderState.recorder = null;
+            voiceRecorderState.active = false;
+            updateVoiceBtn();
+        }
+        function toggleVoiceRecord() {
+            if (!currentConvId) { toast(LANG === 'fa' ? 'ابتدا یک مکالمه باز کنید' : 'Open a conversation first', true); return; }
+            if (voiceRecorderState.active) stopVoiceRecord();
+            else startVoiceRecord();
+        }
+        async function sendVoiceMessage(blob) {
+            if (!currentConvId || !blob || blob.size === 0) return;
+            const fd = new FormData();
+            const rawType = blob.type || '';
+            const baseMime = rawType.split(';')[0].trim() || 'audio/webm';
+            const ext = baseMime.indexOf('ogg') >= 0 ? '.ogg' : baseMime.indexOf('mp4') >= 0 ? '.m4a' : '.webm';
+            // Create new blob with clean MIME type so server accepts it
+            const cleanBlob = new Blob([blob], { type: baseMime });
+            fd.append('file', cleanBlob, 'voice' + ext);
+            const uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+            const uploadData = await uploadRes.json().catch(function() { return {}; });
+            if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
+            const media = { url: uploadData.url, filename: uploadData.name || 'voice' + ext, mimetype: baseMime };
+            const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
+            if (res.needLogin) return;
+            if (res.ok) loadMessages(currentConvId);
+            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+        }
+
+        function sortCustomerList(arr, sortBy) {
+            if (!arr || !arr.length) return arr;
+            const key = sortBy || 'newest';
+            return arr.slice().sort(function(a, b) {
+                if (key === 'newest' || key === 'last_contact') {
+                    var ta = a.lastContactAt ? new Date(a.lastContactAt).getTime() : 0;
+                    var tb = b.lastContactAt ? new Date(b.lastContactAt).getTime() : 0;
+                    return tb - ta;
+                }
+                if (key === 'oldest') {
+                    var ta = a.lastContactAt ? new Date(a.lastContactAt).getTime() : 0;
+                    var tb = b.lastContactAt ? new Date(b.lastContactAt).getTime() : 0;
+                    return ta - tb;
+                }
+                if (key === 'name') {
+                    const na = (a.name || a.phone || '').toLowerCase();
+                    const nb = (b.name || b.phone || '').toLowerCase();
+                    return na.localeCompare(nb, 'fa');
+                }
+                return 0;
+            });
+        }
+        async function loadCustomers() {
+            const list = document.getElementById('customerList');
+            const statsEl = document.getElementById('customerStats');
+            const countEl = document.getElementById('customerListCount');
+            if (!list) return;
+            setLoading('customerList', 5);
+            let q = '?limit=200';
+            const searchEl = document.getElementById('customerSearch');
+            const statusEl = document.getElementById('customerFilterStatus');
+            if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
+            if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value);
+            const res = await apiFetch('/api/customers' + q);
+            if (res.needLogin) { list.innerHTML = '<div class="empty"><span class="empty-icon">&#128101;</span><p>' + (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please log in again') + '</p></div>'; return; }
+            if (!res.ok) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128101;</span><p>' + (res.data && res.data.error ? escapeHtml(res.data.error) : (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load failed')) + '</p><button type="button" class="btn-primary" id="customerRetryBtn">' + (LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>'; return; }
+            const data = res.data;
+            if (statsEl && data.stats) { statsEl.style.display = 'flex'; statsEl.innerHTML = '<span class="customer-stat"><strong>' + data.stats.total + '</strong> ' + (LANG === 'fa' ? 'مشتری' : 'customers') + '</span><span class="customer-stat"><strong>' + data.stats.active + '</strong> ' + (LANG === 'fa' ? 'فعال' : 'active') + '</span><span class="customer-stat"><strong>' + data.stats.inactive + '</strong> ' + (LANG === 'fa' ? 'غیرفعال' : 'inactive') + '</span><span class="customer-stat"><strong>' + data.stats.blocked + '</strong> ' + (LANG === 'fa' ? 'مسدود' : 'blocked') + '</span>'; }
+            if (countEl) countEl.textContent = (data.total || 0) + ' ' + (LANG === 'fa' ? 'مشتری' : '');
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + t('empty_customers') + '</p><button type="button" class="btn-primary" id="emptyCustomerAddBtn">' + escapeHtml(t('customer_add')) + '</button></div>'; return; }
+            const sortEl = document.getElementById('customerSort');
+            const sortVal = sortEl ? sortEl.value : 'newest';
+            const sorted = sortCustomerList(data.data, sortVal);
+            window._currentCustomerListData = sorted;
+            const bulkIds = window._bulkSelectedIds || [];
+            list.innerHTML = sorted.map(function(c) {
+                const name = c.name || c.phone || t('customer');
+                const initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+                let profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                if (profilePic && profilePic.indexOf('/') === 0) profilePic = (window.location.origin || '') + profilePic;
+                profilePic = profilePic ? ensureHttpsUrl(profilePic) : '';
+                const avatarHtml = profilePic && profilePic.indexOf('http') === 0 ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-card-avatar-fallback\');if(f)f.style.display=\'flex\'">' : escapeHtml(initial);
+                const statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
+                const statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
+                const lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
+                const loc = c.lastOpenConv;
+                const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
+                const safeName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                const checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
+                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main"><div class="customer-card-avatar">' + avatarHtml + '</div><div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" data-i18n="btn_send">ارسال</button></div>';
+            }).join('');
+            updateBulkSelectedCount();
+        }
+        async function startCustomerChat(customerId, name, phone) {
+            const res = await apiFetch('/api/conversations', { method: 'POST', body: JSON.stringify({ customerId: customerId }) });
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            const conv = res.data;
+            const pic = (conv.customer && conv.customer.profilePic) || '';
+            showPage('conversations');
+            setTimeout(function() { openChat(conv.id, name || (conv.customer && conv.customer.name) || phone, phone || '', pic); loadConversations(); }, 100);
+        }
+
+        function applyCustomerFilters() { loadCustomers(); }
+        function initCustomerFilters() {
+            if (window._customerFiltersInited) return;
+            window._customerFiltersInited = true;
+            const searchEl = document.getElementById('customerSearch');
+            const clearBtn = document.getElementById('customerSearchClear');
+            const statusEl = document.getElementById('customerFilterStatus');
+            const sortEl = document.getElementById('customerSort');
+            try {
+                const saved = localStorage.getItem('crm_customer_filters');
+                if (saved) {
+                    const o = JSON.parse(saved);
+                    if (searchEl && o.search != null) searchEl.value = o.search;
+                    if (statusEl && o.status != null) statusEl.value = o.status;
+                    if (sortEl && o.sort != null) sortEl.value = o.sort;
+                }
+            } catch (_) {}
+            function saveFilters() {
+                try {
+                    localStorage.setItem('crm_customer_filters', JSON.stringify({
+                        search: searchEl ? searchEl.value : '',
+                        status: statusEl ? statusEl.value : '',
+                        sort: sortEl ? sortEl.value : 'newest'
+                    }));
+                } catch (_) {}
+            }
+            function updateClearBtn() {
+                if (clearBtn) clearBtn.style.display = (searchEl && searchEl.value.trim()) ? 'flex' : 'none';
+            }
+            if (searchEl) {
+                searchEl.addEventListener('input', function() {
+                    clearTimeout(window._custSearchT);
+                    window._custSearchT = setTimeout(function() { applyCustomerFilters(); saveFilters(); updateClearBtn(); }, 400);
+                    updateClearBtn();
+                });
+                searchEl.addEventListener('keypress', function(e) { if (e.key === 'Enter') { applyCustomerFilters(); saveFilters(); } });
+            }
+            if (clearBtn) clearBtn.addEventListener('click', function() {
+                if (searchEl) { searchEl.value = ''; searchEl.focus(); applyCustomerFilters(); saveFilters(); updateClearBtn(); }
+            });
+            if (statusEl) statusEl.addEventListener('change', function() { applyCustomerFilters(); saveFilters(); });
+            if (sortEl) sortEl.addEventListener('change', function() { applyCustomerFilters(); saveFilters(); });
+            updateClearBtn();
+        }
+
+        window._bulkSelectedIds = window._bulkSelectedIds || [];
+        function toggleBulkSelect(el) {
+            const id = el && el.getAttribute('data-customer-id');
+            if (!id) return;
+            const arr = window._bulkSelectedIds;
+            const idx = arr.indexOf(id);
+            if (idx >= 0) arr.splice(idx, 1); else arr.push(id);
+            updateBulkSelectedCount();
+        }
+        function updateBulkSelectedCount() {
+            const n = window._bulkSelectedIds.length || 0;
+            const el = document.getElementById('bulkSelectedCount');
+            if (el) el.textContent = n + ' ' + (LANG === 'fa' ? 'مشتری انتخاب شده' : 'customers selected');
+            const bar = document.getElementById('customerBulkBar');
+            const barCount = document.getElementById('customerBulkBarCount');
+            if (bar) bar.style.display = n > 0 ? 'flex' : 'none';
+            if (barCount) barCount.textContent = n + ' ' + (LANG === 'fa' ? 'انتخاب شده' : 'selected');
+            const submitBtn = document.getElementById('bulkSendSubmitBtn');
+            if (submitBtn) { submitBtn.disabled = n === 0; submitBtn.title = n === 0 ? (LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer') : ''; }
+        }
+        function bulkSelectFiltered() {
+            const data = window._currentCustomerListData || [];
+            window._bulkSelectedIds = data.map(function(c) { return c.id; });
+            document.querySelectorAll('.bulk-customer-check').forEach(function(cb) { cb.checked = true; });
+            updateBulkSelectedCount();
+            toast((LANG === 'fa' ? 'همه مشتریان فیلترشده انتخاب شدند' : 'All filtered customers selected'));
+        }
+        function bulkClearSelection() {
+            window._bulkSelectedIds = [];
+            document.querySelectorAll('.bulk-customer-check').forEach(function(cb) { cb.checked = false; });
+            updateBulkSelectedCount();
+        }
+        function openBulkSendModal() {
+            if (!can('conversations')) { toast(t('no_access') || 'دسترسی ندارید', true); return; }
+            document.getElementById('modalBulkSend').style.display = 'flex';
+            document.getElementById('bulkMessageContent').value = '';
+            document.getElementById('bulkDelaySec').value = 5;
+            updateBulkSelectedCount();
+            if ((window._bulkSelectedIds || []).length === 0) toast(LANG === 'fa' ? 'ابتدا مشتریان را از لیست انتخاب کنید' : 'Select customers from the list first', false);
+        }
+        function closeBulkSendModal() { document.getElementById('modalBulkSend').style.display = 'none'; }
+        async function submitBulkSend() {
+            const ids = window._bulkSelectedIds || [];
+            if (ids.length === 0) { toast(LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer', true); return; }
+            const content = (document.getElementById('bulkMessageContent') && document.getElementById('bulkMessageContent').value || '').trim();
+            if (!content) { toast(LANG === 'fa' ? 'متن پیام الزامی است' : 'Message text required', true); return; }
+            const delaySec = parseInt(document.getElementById('bulkDelaySec').value, 10) || 5;
+            const delayMs = Math.min(60, Math.max(2, delaySec)) * 1000;
+            const res = await apiFetch('/api/bulk/send', { method: 'POST', body: JSON.stringify({ customerIds: ids, message: content, delayMs: delayMs }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast((LANG === 'fa' ? 'ارسال شروع شد. ' : 'Sending started. ') + (res.data && res.data.message ? res.data.message : '')); closeBulkSendModal(); bulkClearSelection(); loadCustomers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        window._importFileRows = null;
+        function openImportCustomersModal() {
+            document.getElementById('modalImportCustomers').style.display = 'flex';
+            document.getElementById('importExcelFile').value = '';
+            document.getElementById('importPreview').style.display = 'none';
+            document.getElementById('btnImportSubmit').disabled = true;
+            window._importFileRows = null;
+        }
+        function closeImportCustomersModal() { document.getElementById('modalImportCustomers').style.display = 'none'; }
+        (function bindImportFileInput() {
+            const inp = document.getElementById('importExcelFile');
+            if (inp && !inp._importBound) {
+                inp._importBound = true;
+                inp.addEventListener('change', async function() {
+                const file = this.files && this.files[0];
+                if (!file) return;
+                const fd = new FormData();
+                fd.append('file', file);
+                const res = await fetch(API + '/api/customers/import/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('crm_token') || '') }, body: fd });
+                const data = await res.json().catch(function() { return {}; });
+                if (data.rows && data.rows.length > 0) {
+                    window._importFileRows = data.rows;
+                    document.getElementById('importPreview').style.display = 'block';
+                    document.getElementById('importPreview').innerHTML = (LANG === 'fa' ? 'پیش‌نمایش: ' : 'Preview: ') + data.rows.length + ' ' + (LANG === 'fa' ? 'ردیف آماده ورود' : 'rows ready');
+                    document.getElementById('btnImportSubmit').disabled = false;
+                } else { toast((data.error || (LANG === 'fa' ? 'فایل نامعتبر یا خالی است' : 'Invalid or empty file')), true); }
+                });
+            }
+        })();
+        async function submitImportCustomers() {
+            const rows = window._importFileRows;
+            if (!rows || rows.length === 0) { toast(LANG === 'fa' ? 'ابتدا فایل را انتخاب کنید' : 'Select file first', true); return; }
+            const res = await apiFetch('/api/customers/import/import', { method: 'POST', body: JSON.stringify({ rows: rows }) });
+            if (res.needLogin) return;
+            if (res.ok) { toast((LANG === 'fa' ? 'ورود انجام شد: ' : 'Import done: ') + (res.data.created || 0) + ' ' + (LANG === 'fa' ? 'ایجاد' : 'created') + ', ' + (res.data.updated || 0) + ' ' + (LANG === 'fa' ? 'بروزرسانی' : 'updated')); closeImportCustomersModal(); loadCustomers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        var currentCustomerId = null;
+        let currentCustomerData = null;
+        async function showCustomerHistory(custId, name) {
+            currentCustomerId = custId;
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+            document.getElementById('pageCustomerDetail').style.display = 'block';
+            document.getElementById('pageCustomerDetail').classList.add('show');
+            document.querySelectorAll('.sidebar .nav-link[data-page]').forEach(function(l) { l.classList.remove('active'); });
+            const custLink = document.querySelector('.sidebar .nav-link[data-page="customers"]');
+            if (custLink) custLink.classList.add('active');
+            const cardEl = document.getElementById('customerDetailCard');
+            const list = document.getElementById('customerHistoryList');
+            const timelineEl = document.getElementById('customerTimelineList');
+            const quickActionsEl = document.getElementById('customerDetailQuickActions');
+            if (quickActionsEl) quickActionsEl.innerHTML = '';
+            if (cardEl) cardEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            if (list) list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            if (timelineEl) timelineEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            document.querySelectorAll('.customer-detail-panel').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+            const tlPanel = document.getElementById('customerTimelinePanel');
+            if (tlPanel) { tlPanel.style.display = 'block'; tlPanel.classList.add('show'); }
+            document.querySelectorAll('.customer-detail-tab').forEach(function(b) { b.classList.remove('active'); });
+            const tlTab = document.querySelector('.customer-detail-tab[data-tab="timeline"]');
+            if (tlTab) tlTab.classList.add('active');
+            const resDetail = await apiFetch('/api/customers/' + custId);
+            if (resDetail.needLogin) return;
+            if (!resDetail.ok) { if (cardEl) cardEl.innerHTML = '<div class="empty">' + escapeHtml(resDetail.data && resDetail.data.error ? resDetail.data.error : '') + '</div>'; list.innerHTML = ''; return; }
+            currentCustomerData = resDetail.data;
+            const c = currentCustomerData;
+            const initial = (c.name && c.name[0]) ? c.name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+            const statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
+            const firstContact = c.firstContactAt ? fmtTZ(c.firstContactAt, 'date') : '—';
+            const lastContact = c.lastContactAt ? fmtTZ(c.lastContactAt, 'datetime') : '—';
+            if (quickActionsEl) {
+                const qName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                const qPhone = (c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                const delBtn = (currentUser && currentUser.canDeleteCustomer) ? '<button type="button" class="btn-danger btn-danger-outline customer-detail-action-btn" id="custDeleteBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_delete') || (LANG === 'fa' ? 'حذف مشتری' : 'Delete customer')) + '</button>' : '';
+                quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" id="custChatBtn" data-cust-id="' + c.id + '" data-cust-name="' + qName + '" data-cust-phone="' + qPhone + '">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custEditBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custTransBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('transaction_add')) + '</button>' + delBtn;
+                setTimeout(function() {
+                    const chatBtn = document.getElementById('custChatBtn');
+                    const editBtn = document.getElementById('custEditBtn');
+                    const transBtn = document.getElementById('custTransBtn');
+                    const delBtnEl = document.getElementById('custDeleteBtn');
+                    if (chatBtn) {
+                        chatBtn.removeEventListener('click', function() {});

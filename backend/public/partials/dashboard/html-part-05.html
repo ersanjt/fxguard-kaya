@@ -1,0 +1,544 @@
+                                        </div>
+                                        <div id="companyEmailsTableWrap" class="company-emails-table-wrap">
+                                            <table class="data-table company-emails-table" id="companyEmailsTable">
+                                                <thead>
+                                                    <tr>
+                                                        <th data-i18n="panel_company_email_address">آدرس ایمیل</th>
+                                                        <th data-i18n="panel_company_email_label">عنوان</th>
+                                                        <th data-i18n="panel_company_email_assigned">اختصاص به</th>
+                                                        <th data-i18n="panel_company_email_has_pass">رمز</th>
+                                                        <th data-i18n="th_status">وضعیت</th>
+                                                        <th data-i18n="panel_company_email_actions">عملیات</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="companyEmailsTableBody"></tbody>
+                                            </table>
+                                            <p id="companyEmailsEmpty" class="company-emails-empty" style="display:none;" data-i18n="panel_company_emails_empty">هنوز ایمیل شرکتی ثبت نشده است.</p>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+
+                            <div id="panelTabVisibility" class="panel-settings-tab-panel" role="tabpanel" hidden>
+                                <section class="panel-settings-section panel-settings-section-visibility">
+                                    <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span data-i18n="panel_section_visibility">نمایش بخش‌ها در سایت</span></h3>
+                                    <p class="panel-settings-section-desc" data-i18n="panel_visibility_desc">بخش‌هایی که مخفی می‌کنید در منوی sidebar و در کل وب‌سایت نمایش داده نمی‌شوند.</p>
+                                    <div class="panel-visibility-search-wrap">
+                                        <input type="search" id="panelVisibilitySearch" class="panel-visibility-search" placeholder="جستجو در بخش‌ها..." data-i18n-ph="panel_visibility_search">
+                                    </div>
+                                    <div id="panelVisibilityToggles" class="panel-visibility-toggles"></div>
+                                </section>
+                            </div>
+                        </div>
+
+                        <div class="panel-settings-footer">
+                            <span id="panelSettingsSaveStatus" class="panel-settings-save-status" style="display:none;"></span>
+                            <button type="button" id="panelSettingsSaveBtnFooter" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="serviceModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box">
+                        <div class="modal-header"><h3 id="serviceModalTitle" data-i18n="service_add">افزودن سرویس</h3><button type="button" class="modal-close" onclick="closeServiceModal()">&times;</button></div>
+                        <div class="modal-body">
+                            <input type="hidden" id="serviceModalId" value="">
+                            <label data-i18n="service_name">نام سرویس</label>
+                            <input type="text" id="serviceModalName" placeholder="مثال: خرید دلار نقد" required>
+                            <label data-i18n="service_code">کد (اختیاری)</label>
+                            <input type="text" id="serviceModalCode" placeholder="مثال: buy-usd">
+                            <label data-i18n="service_category">دسته‌بندی (اختیاری)</label>
+                            <input type="text" id="serviceModalCategory" placeholder="مثال: نقد، حواله">
+                            <label data-i18n="service_description">توضیح (اختیاری)</label>
+                            <textarea id="serviceModalDescription" rows="2" placeholder="توضیح کوتاه..."></textarea>
+                            <label><input type="checkbox" id="serviceModalActive" checked> <span data-i18n="service_active">فعال</span></label>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeServiceModal()" data-i18n="btn_cancel">انصراف</button>
+                            <button type="button" class="btn-primary" onclick="saveServiceFromModal()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="cashBoxModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box">
+                        <div class="modal-header"><h3 id="cashBoxModalTitle" data-i18n="cashbox_add">افزودن صندوق</h3><button type="button" class="modal-close" onclick="closeCashBoxModal()">&times;</button></div>
+                        <div class="modal-body">
+                            <input type="hidden" id="cashBoxModalId" value="">
+                            <label data-i18n="cashbox_name">نام صندوق</label>
+                            <input type="text" id="cashBoxModalName" placeholder="مثال: صندوق ۱" required>
+                            <label data-i18n="branch">شعبه</label>
+                            <select id="cashBoxModalBranch"><option value="">بدون شعبه</option></select>
+                            <label data-i18n="currency">واحد پول</label>
+                            <select id="cashBoxModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
+                            <label data-i18n="balance">موجودی اولیه</label>
+                            <input type="number" id="cashBoxModalBalance" placeholder="0" step="0.01" value="0">
+                            <label data-i18n="description">توضیح</label>
+                            <textarea id="cashBoxModalDescription" rows="2"></textarea>
+                            <label><input type="checkbox" id="cashBoxModalActive" checked> <span data-i18n="active">فعال</span></label>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeCashBoxModal()" data-i18n="btn_cancel">انصراف</button>
+                            <button type="button" class="btn-primary" onclick="saveCashBoxFromModal()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="bankAccountModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box">
+                        <div class="modal-header"><h3 id="bankAccountModalTitle" data-i18n="bankaccount_add">افزودن حساب بانکی</h3><button type="button" class="modal-close" onclick="closeBankAccountModal()">&times;</button></div>
+                        <div class="modal-body">
+                            <input type="hidden" id="bankAccountModalId" value="">
+                            <label data-i18n="bankaccount_name">نام حساب</label>
+                            <input type="text" id="bankAccountModalName" placeholder="مثال: حساب تجاری بانک ملی" required>
+                            <label data-i18n="bank_name">نام بانک</label>
+                            <input type="text" id="bankAccountModalBankName" placeholder="مثال: بانک ملی">
+                            <label data-i18n="account_number">شماره حساب</label>
+                            <input type="text" id="bankAccountModalAccountNumber" placeholder="شماره حساب">
+                            <label data-i18n="iban">شماره شبا</label>
+                            <input type="text" id="bankAccountModalIban" placeholder="IR..." dir="ltr">
+                            <label data-i18n="branch">شعبه</label>
+                            <select id="bankAccountModalBranch"><option value="">بدون شعبه</option></select>
+                            <label data-i18n="currency">واحد پول</label>
+                            <select id="bankAccountModalCurrency"><option value="IRR">تومان (IRR)</option><option value="TMN">تومان (TMN)</option><option value="USD">دلار (USD)</option><option value="EUR">یورو (EUR)</option><option value="GBP">پوند (GBP)</option><option value="DHS">درهم (DHS)</option><option value="TRY">لیر (TRY)</option><option value="RUB">روبل (RUB)</option><option value="USDT">تتر (USDT)</option></select>
+                            <label data-i18n="balance">موجودی اولیه</label>
+                            <input type="number" id="bankAccountModalBalance" placeholder="0" step="0.01" value="0">
+                            <label data-i18n="description">توضیح</label>
+                            <textarea id="bankAccountModalDescription" rows="2"></textarea>
+                            <label><input type="checkbox" id="bankAccountModalActive" checked> <span data-i18n="active">فعال</span></label>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeBankAccountModal()" data-i18n="btn_cancel">انصراف</button>
+                            <button type="button" class="btn-primary" onclick="saveBankAccountFromModal()" data-i18n="btn_save">ذخیره</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="transactionModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box tx-modal-box">
+                        <input type="hidden" id="txModalId" value="">
+                        <div class="tx-modal-header">
+                            <div class="tx-modal-header-icon">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            </div>
+                            <div class="tx-modal-header-text">
+                                <h3 id="txModalTitle" data-i18n="transaction_add">ثبت تراکنش</h3>
+                                <p class="tx-modal-subtitle" data-i18n="transaction_modal_subtitle">اطلاعات تراکنش مالی را وارد کنید</p>
+                            </div>
+                            <button type="button" class="tx-modal-close" onclick="closeTransactionModal()" aria-label="Close">&times;</button>
+                        </div>
+                        <div class="tx-modal-body">
+                            <div class="tx-modal-section">
+                                <div class="tx-modal-section-title" data-i18n="tx_section_basic">اطلاعات اصلی</div>
+                                <div class="tx-modal-grid">
+                                    <div class="tx-modal-field tx-modal-field-full">
+                                        <label data-i18n="transaction_type">نوع تراکنش</label>
+                                        <select id="txModalType">
+                                            <option value="cash_in">ورود به صندوق</option>
+                                            <option value="cash_out">خروج از صندوق</option>
+                                            <option value="transfer_box">انتقال بین صندوق‌ها</option>
+                                            <option value="bank_deposit">واریز به بانک</option>
+                                            <option value="bank_withdraw">برداشت از بانک</option>
+                                            <option value="transfer_account">انتقال بین حساب‌ها</option>
+                                            <option value="income">درآمد</option>
+                                            <option value="expense">هزینه</option>
+                                            <option value="buy">خرید</option>
+                                            <option value="sell">فروش</option>
+                                        </select>
+                                    </div>
+                                    <div class="tx-modal-field">
+                                        <label data-i18n="amount">مبلغ</label>
+                                        <input type="number" id="txModalAmount" placeholder="0" step="0.01" required>
+                                    </div>
+                                    <div class="tx-modal-field">
+                                        <label data-i18n="currency">واحد پول</label>
+                                        <select id="txModalCurrency">
+                                            <option value="IRR">تومان (IRR)</option>
+                                            <option value="TMN">تومان (TMN)</option>
+                                            <option value="USD">دلار (USD)</option>
+                                            <option value="EUR">یورو (EUR)</option>
+                                            <option value="GBP">پوند (GBP)</option>
+                                            <option value="DHS">درهم (DHS)</option>
+                                            <option value="TRY">لیر (TRY)</option>
+                                            <option value="RUB">روبل (RUB)</option>
+                                            <option value="USDT">تتر (USDT)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="tx-modal-section tx-modal-section-dynamic">
+                                <div id="txModalFromBoxWrap" class="tx-field-wrap tx-modal-field">
+                                    <label>از صندوق</label>
+                                    <select id="txModalFromCashBox"><option value="">انتخاب صندوق</option></select>
+                                </div>
+                                <div id="txModalToBoxWrap" class="tx-field-wrap tx-modal-field">
+                                    <label>به صندوق</label>
+                                    <select id="txModalToCashBox"><option value="">انتخاب صندوق</option></select>
+                                </div>
+                                <div id="txModalFromBankWrap" class="tx-field-wrap tx-modal-field" style="display:none;">
+                                    <label>از حساب بانکی</label>
+                                    <select id="txModalFromBankAccount"><option value="">انتخاب حساب</option></select>
+                                </div>
+                                <div id="txModalToBankWrap" class="tx-field-wrap tx-modal-field" style="display:none;">
+                                    <label>به حساب بانکی</label>
+                                    <select id="txModalToBankAccount"><option value="">انتخاب حساب</option></select>
+                                </div>
+                            </div>
+                            <div class="tx-modal-section">
+                                <div class="tx-modal-section-title" data-i18n="tx_section_details">جزئیات</div>
+                                <div class="tx-modal-grid">
+                                    <div class="tx-modal-field tx-modal-field-full">
+                                        <label data-i18n="tx_customer_label">مشتری (اختیاری)</label>
+                                        <select id="txModalCustomer"><option value="">بدون مشتری</option></select>
+                                    </div>
+                                    <div class="tx-modal-field tx-modal-field-full">
+                                        <label data-i18n="description">توضیحات</label>
+                                        <input type="text" id="txModalDescription" placeholder="شرح تراکنش">
+                                    </div>
+                                    <div class="tx-modal-field">
+                                        <label data-i18n="reference">شماره مرجع / رسید</label>
+                                        <input type="text" id="txModalReference" placeholder="اختیاری">
+                                    </div>
+                                    <div class="tx-modal-field">
+                                        <label data-i18n="transaction_date">تاریخ</label>
+                                        <input type="date" id="txModalDate">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tx-modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeTransactionModal()" data-i18n="btn_cancel">انصراف</button>
+                            <button type="button" class="btn-primary tx-modal-save" onclick="saveTransactionFromModal()" data-i18n="btn_save">ثبت</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="statementFiltersModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box" style="max-width:520px;">
+                        <div class="modal-header"><h3 data-i18n="statement_filters">فیلترهای صورت حساب</h3><button type="button" class="modal-close" onclick="closeStatementFilters()">&times;</button></div>
+                        <div class="modal-body">
+                            <label data-i18n="stmt_account">حساب / مشتری</label>
+                            <select id="stmtFilterCustomer"><option value="">همه</option></select>
+                            <div class="stmt-filter-row">
+                                <div class="stmt-filter-col">
+                                    <label data-i18n="from_date">از تاریخ</label>
+                                    <input type="date" id="stmtFilterFromDate">
+                                </div>
+                                <div class="stmt-filter-col">
+                                    <label data-i18n="to_date">تا تاریخ</label>
+                                    <input type="date" id="stmtFilterToDate">
+                                </div>
+                            </div>
+                            <label data-i18n="currency">ارز</label>
+                            <select id="stmtFilterCurrency">
+                                <option value="">همه ارزها</option>
+                                <option value="IRR">تومان (IRR)</option>
+                                <option value="TMN">تومان (TMN)</option>
+                                <option value="USD">دلار (USD)</option>
+                                <option value="EUR">یورو (EUR)</option>
+                                <option value="GBP">پوند (GBP)</option>
+                                <option value="DHS">درهم (DHS)</option>
+                                <option value="TRY">لیر (TRY)</option>
+                                <option value="RUB">روبل (RUB)</option>
+                                <option value="USDT">تتر (USDT)</option>
+                            </select>
+                            <label data-i18n="col_narration">شرح</label>
+                            <input type="text" id="stmtFilterNarration" placeholder="جستجو در شرح...">
+                            <label data-i18n="amount">مبلغ</label>
+                            <input type="number" id="stmtFilterAmount" placeholder="مبلغ دقیق" step="0.01">
+                            <label data-i18n="debit_credit">بدهکار / بستانکار</label>
+                            <select id="stmtFilterDebitCredit">
+                                <option value="">همه</option>
+                                <option value="debit">بدهکار (Debit)</option>
+                                <option value="credit">بستانکار (Credit)</option>
+                            </select>
+                            <label data-i18n="transaction_type">نوع تراکنش</label>
+                            <select id="stmtFilterType">
+                                <option value="">همه</option>
+                                <option value="cash_in">ورود به صندوق</option>
+                                <option value="cash_out">خروج از صندوق</option>
+                                <option value="transfer_box">انتقال صندوق</option>
+                                <option value="bank_deposit">واریز بانک</option>
+                                <option value="bank_withdraw">برداشت بانک</option>
+                                <option value="transfer_account">انتقال حساب</option>
+                                <option value="income">درآمد</option>
+                                <option value="expense">هزینه</option>
+                                <option value="buy">خرید</option>
+                                <option value="sell">فروش</option>
+                            </select>
+                            <label data-i18n="stmt_user">کاربر</label>
+                            <select id="stmtFilterUser"><option value="">همه</option></select>
+                            <div class="stmt-filter-checks">
+                                <label><input type="checkbox" id="stmtFilterGroupCurrency"> <span data-i18n="stmt_group_currency">گروه‌بندی بر اساس ارز</span></label>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-primary" onclick="applyStatementFilters()" data-i18n="btn_generate">تولید گزارش</button>
+                            <button type="button" class="btn-secondary" onclick="closeStatementFilters()" data-i18n="btn_cancel">انصراف</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="accountBalanceModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box" style="max-width:500px;">
+                        <div class="modal-header"><h3 data-i18n="account_balance_title">موجودی حساب</h3><button type="button" class="modal-close" onclick="closeAccountBalance()">&times;</button></div>
+                        <div class="modal-body">
+                            <div id="accountBalanceContent"></div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-secondary" onclick="closeAccountBalance()" data-i18n="btn_close">بستن</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="pageCustomerDetail" class="page page-customer-detail">
+                    <div class="customer-detail-header">
+                        <button type="button" class="btn-secondary customer-detail-back" onclick="showPage('customers')" data-i18n="back_to_customers">← بازگشت به مشتریان</button>
+                        <div id="customerDetailQuickActions" class="customer-detail-quick-actions"></div>
+                    </div>
+                    <div id="customerDetailCard" class="customer-detail-card"></div>
+                    <div class="customer-detail-tabs">
+                        <button type="button" class="customer-detail-tab active" data-tab="timeline" data-i18n="customer_timeline">تاریخچه کامل</button>
+                        <button type="button" class="customer-detail-tab" data-tab="conversations" data-i18n="customer_history">مکالمات</button>
+                        <button type="button" class="customer-detail-tab" data-tab="transactions" data-i18n="customer_transactions">تراکنش‌ها</button>
+                        <button type="button" class="customer-detail-tab" data-tab="notes" data-i18n="customer_notes">گزارش‌ها و یادداشت‌ها</button>
+                        <button type="button" class="customer-detail-tab" data-tab="documents">📁 اسناد و مدیا</button>
+                    </div>
+                    <div id="customerTimelinePanel" class="customer-detail-panel show">
+                        <div id="customerTimelineList" class="customer-timeline-list"></div>
+                    </div>
+                    <div id="customerConversationsPanel" class="customer-detail-panel">
+                        <div id="customerHistoryList"></div>
+                    </div>
+                    <div id="customerTransactionsPanel" class="customer-detail-panel">
+                        <div class="customer-transactions-header">
+                            <button type="button" class="btn-primary" id="btnCustomerAddTransaction" data-i18n="transaction_add">ثبت تراکنش</button>
+                            <button type="button" class="btn-secondary" id="btnViewInServices" onclick="goToServicesWithCustomerFilter()" data-i18n="view_in_services">مشاهده در خدمات صرافی</button>
+                            <button type="button" class="btn-secondary" id="btnRefreshCustomerTransactions" title="تازه‌سازی" aria-label="تازه‌سازی">&#8635;</button>
+                        </div>
+                        <div id="customerTransactionsList" class="customer-transactions-list"></div>
+                    </div>
+                    <div id="customerNotesPanel" class="customer-detail-panel">
+                        <p class="customer-detail-meta" data-i18n="customer_notes_intro">یادداشت یا گزارش مربوط به این مشتری را ذخیره کنید تا بعداً مراجعه کنید.</p>
+                        <div class="customer-notes-add">
+                            <textarea id="customerNoteContent" rows="3" placeholder="" style="width:100%; max-width:600px; margin-bottom:8px;"></textarea>
+                            <button type="button" class="btn-primary" id="customerNoteAddBtn" data-i18n="customer_note_add">افزودن گزارش / یادداشت</button>
+                        </div>
+                        <div id="customerNotesList"></div>
+                    </div>
+                    <div id="customerDocumentsPanel" class="customer-detail-panel">
+                        <div class="customer-docs-toolbar">
+                            <div class="customer-docs-filters">
+                                <select id="customerDocsFilterCat" class="customer-docs-filter-select">
+                                    <option value="">همه دسته‌ها</option>
+                                    <option value="identity">مدارک هویتی</option>
+                                    <option value="contract">قرارداد</option>
+                                    <option value="financial">مالی</option>
+                                    <option value="media">رسانه (مکالمات)</option>
+                                    <option value="other">سایر</option>
+                                </select>
+                                <select id="customerDocsFilterType" class="customer-docs-filter-select">
+                                    <option value="">همه انواع</option>
+                                    <option value="image">تصویر</option>
+                                    <option value="video">ویدیو</option>
+                                    <option value="audio">صدا</option>
+                                    <option value="document">سند</option>
+                                    <option value="other">سایر</option>
+                                </select>
+                            </div>
+                            <button type="button" class="btn-primary btn-sm" id="btnCustomerUploadDoc">+ آپلود سند / فایل</button>
+                        </div>
+                        <div id="customerDocsList" class="customer-docs-list"></div>
+                        <!-- فرم آپلود سند -->
+                        <div id="customerDocUploadForm" class="customer-doc-upload-form" style="display:none;">
+                            <h4>آپلود سند جدید</h4>
+                            <div class="customer-doc-upload-grid">
+                                <div>
+                                    <label>عنوان سند</label>
+                                    <input type="text" id="docUploadTitle" placeholder="عنوان سند">
+                                </div>
+                                <div>
+                                    <label>دسته‌بندی</label>
+                                    <select id="docUploadCategory">
+                                        <option value="other">سایر</option>
+                                        <option value="identity">مدارک هویتی</option>
+                                        <option value="contract">قرارداد</option>
+                                        <option value="financial">مالی</option>
+                                        <option value="media">رسانه</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>تاریخ انقضا (اختیاری)</label>
+                                    <input type="date" id="docUploadExpiry">
+                                </div>
+                                <div>
+                                    <label>توضیحات</label>
+                                    <input type="text" id="docUploadDesc" placeholder="توضیح اختیاری">
+                                </div>
+                            </div>
+                            <div class="customer-doc-upload-file-wrap">
+                                <input type="file" id="docUploadFile" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar">
+                            </div>
+                            <div class="customer-doc-upload-actions">
+                                <button type="button" class="btn-secondary btn-sm" id="btnDocUploadCancel">انصراف</button>
+                                <button type="button" class="btn-primary btn-sm" id="btnDocUploadSave">ذخیره</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="customerModal" class="modal-overlay" style="display:none;">
+                    <div class="modal-box customer-modal-box">
+                        <div class="customer-modal-header">
+                            <div class="customer-modal-header-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                            <div class="customer-modal-header-text">
+                                <h3 id="customerModalTitle" data-i18n="customer_add">افزودن مشتری</h3>
+                                <p class="customer-modal-subtitle" id="customerModalSubtitle" data-i18n="customer_modal_subtitle">اطلاعات تماس و وضعیت مشتری را وارد کنید</p>
+                            </div>
+                            <button type="button" class="modal-close customer-modal-close" onclick="closeCustomerModal()" aria-label="بستن">&times;</button>
+                        </div>
+                        <div class="customer-modal-body">
+                            <input type="hidden" id="customerModalId" value="">
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title" data-i18n="customer_contact_info">اطلاعات تماس</h4>
+                                <div class="customer-modal-grid">
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalName" data-i18n="customer_name">نام</label>
+                                        <input type="text" id="customerModalName" data-i18n-ph="customer_name_ph" placeholder="نام مشتری" required>
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalPhone" data-i18n="customer_phone">تلفن</label>
+                                        <input type="text" id="customerModalPhone" data-i18n-ph="customer_phone_ph" placeholder="مثال: 09121234567">
+                                    </div>
+                                    <div class="customer-modal-field customer-modal-field-full">
+                                        <label for="customerModalEmail" data-i18n="customer_email">ایمیل</label>
+                                        <input type="email" id="customerModalEmail" data-i18n-ph="customer_email_ph" placeholder="email@example.com">
+                                    </div>
+                                    <div class="customer-modal-field customer-modal-field-full customer-modal-profile-pic">
+                                        <label data-i18n="customer_profile_pic">تصویر پروفایل</label>
+                                        <div class="customer-modal-avatar-wrap">
+                                            <div class="customer-modal-avatar-preview" id="customerModalAvatarPreview"></div>
+                                            <div class="customer-modal-avatar-actions">
+                                                <input type="file" id="customerModalAvatarFile" accept="image/*" style="display:none;">
+                                                <button type="button" class="btn-secondary btn-sm" id="btnCustomerModalAvatarUpload" data-i18n="upload">آپلود</button>
+                                                <input type="hidden" id="customerModalProfilePic" value="">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title">اطلاعات شخصی</h4>
+                                <div class="customer-modal-grid">
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalBirthDate">تاریخ تولد</label>
+                                        <input type="date" id="customerModalBirthDate" placeholder="YYYY-MM-DD">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalNationalId">کد ملی / شناسه</label>
+                                        <input type="text" id="customerModalNationalId" placeholder="کد ملی یا شناسه">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalNationality">ملیت</label>
+                                        <input type="text" id="customerModalNationality" placeholder="مثال: ایرانی">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalGender">جنسیت</label>
+                                        <select id="customerModalGender">
+                                            <option value="">— انتخاب —</option>
+                                            <option value="male">مرد</option>
+                                            <option value="female">زن</option>
+                                            <option value="other">سایر</option>
+                                        </select>
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalOccupation">شغل</label>
+                                        <input type="text" id="customerModalOccupation" placeholder="شغل مشتری">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalCompanyName">نام شرکت</label>
+                                        <input type="text" id="customerModalCompanyName" placeholder="نام شرکت یا سازمان">
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title">آدرس</h4>
+                                <div class="customer-modal-grid">
+                                    <div class="customer-modal-field customer-modal-field-full">
+                                        <label for="customerModalAddress">آدرس</label>
+                                        <input type="text" id="customerModalAddress" placeholder="آدرس کامل">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalCity">شهر</label>
+                                        <input type="text" id="customerModalCity" placeholder="شهر">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalCountry">کشور</label>
+                                        <input type="text" id="customerModalCountry" placeholder="کشور">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalPostalCode">کد پستی</label>
+                                        <input type="text" id="customerModalPostalCode" placeholder="کد پستی">
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title">شبکه‌های اجتماعی</h4>
+                                <div class="customer-modal-grid">
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalInstagram">اینستاگرام</label>
+                                        <input type="text" id="customerModalInstagram" placeholder="@username">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalTelegram">تلگرام</label>
+                                        <input type="text" id="customerModalTelegram" placeholder="@username">
+                                    </div>
+                                    <div class="customer-modal-field">
+                                        <label for="customerModalWebsite">وب‌سایت</label>
+                                        <input type="text" id="customerModalWebsite" placeholder="https://...">
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title" data-i18n="customer_tags">تگ‌ها</h4>
+                                <div class="customer-modal-tags-wrap">
+                                    <div id="customerModalTagsList" class="customer-modal-tags-list"></div>
+                                    <div class="customer-modal-tags-actions">
+                                        <select id="customerModalTagSelect" class="customer-modal-tag-select">
+                                            <option value="">— افزودن تگ —</option>
+                                        </select>
+                                        <button type="button" class="btn-secondary btn-sm" id="btnCustomerModalAddTag" data-i18n="add_tag">افزودن تگ</button>
+                                        <button type="button" class="btn-secondary btn-sm" id="btnCustomerModalNewTag" data-i18n="new_tag">تگ جدید</button>
+                                    </div>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title" data-i18n="customer_custom_fields">فیلدهای سفارشی</h4>
+                                <div id="customerModalCustomFields" class="customer-modal-custom-fields"></div>
+                                <button type="button" class="btn-secondary btn-sm" id="btnCustomerModalAddCustomField" data-i18n="add_custom_field">+ افزودن فیلد</button>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title" data-i18n="customer_status">وضعیت</h4>
+                                <div class="customer-modal-status-wrap">
+                                    <select id="customerModalStatus" class="customer-modal-status-select">
+                                        <option value="active" data-i18n="status_active">فعال</option>
+                                        <option value="inactive" data-i18n="status_inactive">غیرفعال</option>
+                                        <option value="blocked" data-i18n="status_blocked">مسدود</option>
+                                    </select>
+                                    <span class="customer-modal-status-hint" data-i18n="customer_status_hint">وضعیت تعیین می‌کند آیا مشتری می‌تواند با شما ارتباط برقرار کند</span>
+                                </div>
+                            </section>
+                            <section class="customer-modal-section">
+                                <h4 class="customer-modal-section-title" data-i18n="customer_notes">یادداشت</h4>
+                                <textarea id="customerModalNotes" class="customer-modal-notes" rows="3" data-i18n-ph="customer_notes_ph" placeholder="یادداشت درباره مشتری..."></textarea>
+                            </section>
+                        </div>
+                        <div class="customer-modal-footer">
+                            <div class="customer-modal-footer-left" id="customerModalDeleteWrap" style="display:none;">
+                                <button type="button" class="btn-danger btn-danger-outline" id="btnCustomerModalDelete" data-i18n="customer_delete">حذف مشتری</button>
+                            </div>
+                            <div class="customer-modal-footer-right">
+                                <button type="button" class="btn-secondary" onclick="closeCustomerModal()" data-i18n="btn_cancel">انصراف</button>
+                                <button type="button" class="btn-primary customer-modal-save" onclick="saveCustomerFromModal()" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+        <div class="bottom-bar" id="bottomBar">
+            <div class="price-ticker rates-marquee" id="priceTicker" aria-live="polite" dir="rtl">
+                <div class="rates-marquee-bar">

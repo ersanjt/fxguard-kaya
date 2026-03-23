@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<!-- منبع: public/partials/dashboard/*.html — بعد از ویرایش: npm run build:dashboard -->
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, user-scalable=yes, minimum-scale=0.5">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#0c1222">
+    <meta name="apple-mobile-web-app-title" content="کایا CRM">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="description" content="پورتال کارکنان صرافی کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
+    <title>پورتال کارکنان کایا | صرافی کایا</title>
+    <link rel="icon" id="favicon" href="/favicon-kaya.svg">
+    <!-- Fonts loaded async so page does not hang when Google is unreachable (e.g. from Iran without VPN) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
+    <link rel="stylesheet" href="/css/dashboard.css?v=44">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
+</head>
+<body>
+    <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
+        <defs>
+            <symbol id="icon-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></symbol>
+            <symbol id="icon-users" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></symbol>
+            <symbol id="icon-ticket" viewBox="0 0 24 24"><path d="M2 9a3 3 0 0 1 0 6v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2a3 3 0 0 1 0-6V7a2 2 0 0 0-2-2H4a2 2 0 0 0-2 2Z"/><path d="M13 5v2"/><path d="M13 17v2"/><path d="M13 11v2"/></symbol>
+            <symbol id="icon-building" viewBox="0 0 24 24"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/></symbol>
+            <symbol id="icon-user" viewBox="0 0 24 24"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></symbol>
+            <symbol id="icon-building-2" viewBox="0 0 24 24"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9v.01"/><path d="M9 12v.01"/><path d="M9 15v.01"/><path d="M9 18v.01"/></symbol>
+            <symbol id="icon-chart" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></symbol>
+            <symbol id="icon-phone" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></symbol>
+            <symbol id="icon-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></symbol>
+            <symbol id="icon-login" viewBox="0 0 24 24"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></symbol>
+            <symbol id="icon-user-online" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></symbol>
+            <symbol id="icon-logo" viewBox="0 0 24 24"><path fill="currentColor" d="M12 4L15 8 13 8 12 6 11 8 9 8zM12 6l2 3h-2v11h-2V9H8l4-3zm0 3l5 0-5 6v5h2l6-11h-3z"/></symbol>
+            <symbol id="icon-task" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></symbol>
+            <symbol id="icon-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></symbol>
+            <symbol id="icon-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></symbol>
+            <symbol id="icon-paperclip" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></symbol>
+            <symbol id="icon-file-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></symbol>
+            <symbol id="icon-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></symbol>
+            <symbol id="icon-expand" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></symbol>
+            <symbol id="icon-user-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></symbol>
+            <symbol id="icon-megaphone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></symbol>
+            <symbol id="icon-trending-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></symbol>
+            <symbol id="icon-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+            <symbol id="icon-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></symbol>
+            <symbol id="icon-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
+            <symbol id="icon-monitor" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></symbol>
+            <symbol id="icon-edit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></symbol>
+            <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
+        </defs>
+    </svg>
+    <div id="loginBox" class="login-wrap">
+        <div class="login-box" id="loginStep1">
+            <div class="login-logo" id="loginLogo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
+            <div class="lang-switch login-lang">
+                <button type="button" id="langFa" data-lang="fa" onclick="setLang('fa')" class="active">فارسی</button>
+                <button type="button" id="langEn" data-lang="en" onclick="setLang('en')">English</button>
+                <button type="button" id="langTr" data-lang="tr" onclick="setLang('tr')" data-i18n="lang_tr">Türkçe</button>
+            </div>
+            <h1 id="loginTitle" data-i18n="login_title">پورتال کارکنان کایا</h1>
+            <p class="sub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
+            <input type="text" id="email" data-i18n-ph="login_email_or_username" placeholder="ایمیل یا نام کاربری" autocomplete="username">
+            <div class="password-wrap">
+                <input type="password" id="pass" data-i18n-ph="login_password" placeholder="رمز عبور" autocomplete="current-password">
+                <button type="button" id="loginTogglePass" class="toggle-password" title="نمایش رمز" aria-label="نمایش رمز عبور" aria-pressed="false">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-eye"/></svg>
+                </button>
+            </div>
+            <button type="button" id="btnLogin" onclick="login()" data-i18n="login_btn">ورود</button>
+            <p class="login-forgot-wrap"><a href="#" id="linkForgotPassword" onclick="showForgotStep(); return false;" data-i18n="login_forgot_password">فراموشی رمز عبور</a></p>
+            <div id="loginErr" class="login-err"></div>
+            <p class="login-support" id="loginSupportWrap">
+                <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
+                <a href="#" id="loginSupportLink" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
+            </p>
+        </div>
+        <div class="login-box" id="loginStepTotp" style="display:none;">
+            <div class="login-logo" id="loginLogoTotp"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
+            <div class="lang-switch login-lang">
+                <button type="button" data-lang="fa" onclick="setLang('fa')" data-i18n="lang_fa">فارسی</button>
+                <button type="button" data-lang="en" onclick="setLang('en')" data-i18n="lang_en">English</button>
+                <button type="button" data-lang="tr" onclick="setLang('tr')" data-i18n="lang_tr">Türkçe</button>
+            </div>
+            <h1 data-i18n="login_totp_title">احراز هویت دو مرحله‌ای</h1>
+            <p class="sub" id="totpStepEmail">کد شش‌رقمی اپلیکیشن Google Authenticator را وارد کنید.</p>
+            <input type="text" id="totpCode" data-i18n-ph="login_totp_code_ph" placeholder="کد ۶ رقمی" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code">
+            <button type="button" id="btnTotpVerify" onclick="verifyTotpLogin()" data-i18n="login_totp_verify">تأیید و ورود</button>
+            <button type="button" class="btn-secondary" onclick="backToLoginStep1()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
+            <div id="totpErr" class="login-err"></div>
+            <p class="login-support" id="loginSupportWrapTotp">
+                <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
+                <a href="#" id="loginSupportLinkTotp" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
+            </p>
+        </div>
+        <div class="login-box" id="loginStepForgot" style="display:none;">
+            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
+            <h1 data-i18n="forgot_title">بازیابی رمز عبور</h1>
+            <p class="sub" data-i18n="forgot_sub">ایمیل حساب خود را وارد کنید؛ در صورت وجود حساب، لینک بازیابی ارسال می‌شود.</p>
+            <input type="email" id="forgotEmail" data-i18n-ph="login_email" placeholder="ایمیل" autocomplete="email">
+            <button type="button" id="btnForgotSubmit" onclick="submitForgotPassword()" data-i18n="forgot_send">ارسال لینک بازیابی</button>
+            <button type="button" class="btn-secondary" onclick="backToLoginFromForgot()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
+            <div id="forgotErr" class="login-err"></div>
+            <div id="forgotSuccess" class="login-success" style="display:none;"></div>
+        </div>
+        <div class="login-box" id="loginStepReset" style="display:none;">
+            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
+            <h1 data-i18n="reset_title">تعیین رمز عبور جدید</h1>
+            <p class="sub" data-i18n="reset_sub">رمز عبور جدید و تکرار آن را وارد کنید.</p>
+            <input type="password" id="resetNewPass" data-i18n-ph="reset_new_password" placeholder="رمز عبور جدید" autocomplete="new-password">
+            <input type="password" id="resetConfirmPass" data-i18n-ph="reset_confirm_password" placeholder="تکرار رمز عبور" autocomplete="new-password">
+            <button type="button" id="btnResetSubmit" onclick="submitResetPassword()" data-i18n="reset_btn">تغییر رمز و ورود</button>
+            <a href="#" class="btn-secondary" style="display:inline-block;margin-top:8px;text-align:center;" onclick="backToLoginFromReset(); return false;" data-i18n="login_back">بازگشت به ورود</a>
+            <div id="resetErr" class="login-err"></div>
+        </div>
+    </div>
+    <div id="app" class="app"><script>(function(){if(document.documentElement.classList.contains('auth-has-token')){document.getElementById('app').classList.add('app-loading');}})();</script>
+        <a href="#mainContent" class="skip-link" id="skipLink" data-i18n="skip_to_content" onclick="var m=document.getElementById('mainContent');if(m){m.focus();}">پرش به محتوا</a>
+        <div class="header-sticky-wrap" id="headerStickyWrap">
+        <header class="header" role="banner">
+            <!-- موبایل: هدر سبک اپلیکیشن -->
+            <div class="header-mobile-bar">
+                <button type="button" class="header-menu-btn" id="headerMenuBtn" aria-label="منو" aria-expanded="false" aria-controls="sidebar" title="منو" onclick="toggleSidebarMobile()"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+                <h1 class="header-mobile-title" id="headerMobileTitle">داشبورد</h1>
+                <div class="header-mobile-actions">
+                    <button type="button" class="header-ann-toggle-btn" id="headerAnnToggleBtn" style="display:none;" aria-label="نمایش اعلان‌ها" title="نمایش اعلان‌ها" onclick="toggleAnnouncementMarquee()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M6 17h12v2H6z"/></svg></button>
+                    <button type="button" class="header-notify-btn header-mobile-notify" id="headerNotifyBtnMobile" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها">
+                        <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                        <span class="header-notify-badge" id="headerNotifyBadgeMobile" style="display:none;">0</span>
+                    </button>
+                    <button type="button" class="header-search-trigger header-mobile-search" id="headerSearchTrigger" aria-label="جستجو" title="جستجو" onclick="openHeaderSearchPopup()"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
+                    <button type="button" class="header-mobile-profile" id="userDropdownTriggerMobile" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو" onclick="toggleUserDropdown(event)"><span class="user-avatar" id="userAvatarMobile" aria-hidden="true">?</span></button>
+                </div>
+            </div>
+            <!-- دسکتاپ: هدر حرفه‌ای -->
+            <div class="header-desktop">
+                <div class="header-left">
+                    <a href="#dashboard" class="logo" id="headerLogo" aria-label="صرافی کایا — بازگشت به داشبورد">
+                        <span class="logo-icon" id="headerLogoIcon" aria-hidden="true"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></span>
+                        <span class="logo-text"><span class="logo-dot"></span> <span id="headerLogoText" data-i18n="logo_kaya">صرافی کایا</span></span>
+                    </a>
+                    <div class="header-page-info">
+                        <span class="header-breadcrumb" id="headerBreadcrumb">داشبورد</span>
+                        <span class="header-page-title" id="headerPageTitle" data-i18n="nav_dashboard">داشبورد</span>
+                    </div>
+                    <div class="search-wrap header-search-wrap">
+                        <button type="button" class="header-search-trigger" id="headerSearchTriggerDesktop" aria-label="جستجو" title="جستجو" style="display:none;"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></button>
+                        <label class="header-search-field" for="headerSearch">
+                            <span class="header-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
+                            <input type="text" id="headerSearch" data-i18n-ph="header_search" data-i18n-aria-label="header_search_aria" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو در مکالمات و مشتریان" autocomplete="off">
+                        </label>
+                    </div>
+                </div>
+                <div class="header-quick-actions">
+                    <button type="button" class="header-quick-btn" data-perm="conversations" onclick="showPage('conversations'); openNewConvModal();" title="مکالمه جدید" aria-label="مکالمه جدید"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg><span data-i18n="dashboard_quick_new_conv">مکالمه جدید</span></button>
+                    <button type="button" class="header-quick-btn" data-perm="customers" onclick="showPage('customers'); openCustomerModal();" title="مشتری جدید" aria-label="مشتری جدید"><svg viewBox="0 0 24 24"><use href="#icon-user-plus"/></svg><span data-i18n="dashboard_quick_new_customer">مشتری جدید</span></button>
+                    <button type="button" class="header-quick-btn" data-perm="tickets" onclick="showPage('tickets'); setTimeout(function(){ toggleTicketForm(); }, 350);" title="تیکت جدید" aria-label="تیکت جدید"><svg viewBox="0 0 24 24"><use href="#icon-ticket"/></svg><span data-i18n="dashboard_quick_new_ticket">تیکت جدید</span></button>
+                </div>
+                <div class="header-right">
+                    <div class="header-status-wrap">
+                        <span class="header-whatsapp-status" id="headerWhatsappStatus" data-perm="whatsapp" title="وضعیت واتساپ"><span class="status-dot"></span><span class="status-label" data-i18n="nav_whatsapp">واتساپ</span></span>
+                        <div class="header-notify-wrap" id="headerNotifyWrap">
+                            <button type="button" class="header-notify-btn" id="headerNotifyBtn" data-action="toggle-notify" aria-haspopup="true" aria-expanded="false" aria-label="اعلان‌ها و تیکت‌ها" title="اعلان‌ها و تیکت‌ها">
+                                <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                <span class="header-notify-badge" id="headerNotifyBadge" style="display:none;">0</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="lang-switch" role="group" data-i18n-aria-label="lang_label" aria-label="زبان">
+                        <button type="button" id="headerLangFa" data-lang="fa" onclick="setLang('fa')" aria-pressed="true" aria-label="فارسی">فارسی</button>
+                        <button type="button" id="headerLangEn" data-lang="en" onclick="setLang('en')" aria-pressed="false" aria-label="English">English</button>
+                        <button type="button" id="headerLangTr" data-lang="tr" onclick="setLang('tr')" aria-pressed="false" aria-label="Türkçe" data-i18n="lang_tr">Türkçe</button>
+                        <div class="lang-dropdown-wrap">
+                            <button type="button" class="lang-dropdown-btn" id="langDropdownBtn" onclick="toggleLangDropdown()" aria-haspopup="listbox" aria-expanded="false" aria-label="زبان"><span id="langDropdownLabel">FA</span><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></button>
+                            <div class="lang-dropdown-menu" id="langDropdownMenu" role="listbox" aria-hidden="true">
+                                <button type="button" role="option" data-lang="fa" onclick="setLang('fa');closeLangDropdown();">فارسی</button>
+                                <button type="button" role="option" data-lang="en" onclick="setLang('en');closeLangDropdown();">English</button>
+                                <button type="button" role="option" data-lang="tr" onclick="setLang('tr');closeLangDropdown();" data-i18n="lang_tr">Türkçe</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="user-dropdown-wrap" id="userDropdownWrap">
+                        <button type="button" class="user-dropdown-trigger" id="userDropdownTrigger" onclick="toggleUserDropdown(event)" aria-haspopup="true" aria-expanded="false" aria-label="پروفایل و منو">
+                            <span class="user-avatar" id="userAvatar" aria-hidden="true">?</span>
+                            <span id="userEmail" class="user-dropdown-name"></span>
+                            <svg class="user-dropdown-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="user-dropdown-menu" id="userDropdownMenu" role="menu" aria-hidden="true">
+                <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg><span data-i18n="nav_profile">پروفایل</span></a>
+                <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); document.getElementById('profileAvatar')&&document.getElementById('profileAvatar').focus(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-image"/></svg><span data-i18n="header_dropdown_avatar">تغییر عکس پروفایل</span></a>
+                <a href="#staff-activity" class="user-dropdown-item nav-staff-activity" role="menuitem" data-perm="staff_activity" onclick="showPage('staff-activity'); closeUserDropdown(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-monitor"/></svg><span data-i18n="nav_staff_activity">ورودها و وضعیت آنلاین</span></a>
+                <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); document.getElementById('profilePassword')&&document.getElementById('profilePassword').focus(); return false;"><svg viewBox="0 0 24 24"><use href="#icon-lock"/></svg><span data-i18n="header_dropdown_password">تغییر رمز عبور</span></a>
+                <a href="#profile" class="user-dropdown-item" role="menuitem" onclick="showPage('profile'); closeUserDropdown(); var s=document.getElementById('profileTotpSection'); if(s)s.scrollIntoView({behavior:'smooth'}); return false;"><svg viewBox="0 0 24 24"><use href="#icon-shield"/></svg><span data-i18n="header_dropdown_2fa">احراز دو مرحله‌ای</span></a>
+                <div class="user-dropdown-divider"></div>
+                <button type="button" class="user-dropdown-item user-dropdown-logout" role="menuitem" onclick="closeUserDropdown(); logout();"><svg viewBox="0 0 24 24"><use href="#icon-login"/></svg><span data-i18n="header_logout">خروج</span></button>
+            </div>
+            <div class="header-notify-dropdown" id="headerNotifyDropdown" role="dialog" aria-hidden="true">
+                <!-- هدر پنل -->
+                <div class="notify-panel-header">
+                    <span class="notify-panel-title" data-i18n="nav_announcements_and_tickets">اعلان‌ها</span>
+                    <button type="button" class="notify-panel-close" data-action="close-notify" aria-label="بستن">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <div class="notify-dropdown-inner">
+                    <!-- بخش اعلان‌ها -->
+                    <div class="notify-section notify-section-announcements" data-perm="announcements">
+                        <div class="notify-section-header">
+                            <div class="notify-section-header-left">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                                <h4 class="notify-section-title" data-i18n="nav_announcements">اعلان‌ها</h4>
+                            </div>
+                            <span class="notify-pending-badge" id="notifyAnnPending" style="display:none;"><span id="notifyAnnCount">0</span> <span data-i18n="notify_pending">جدید</span></span>
+                        </div>
+                        <div class="notify-section-list" id="notifyAnnList">
+                            <div class="notify-skeleton"><div class="notify-skeleton-line w70"></div><div class="notify-skeleton-line w45"></div></div>
+                            <div class="notify-skeleton"><div class="notify-skeleton-line w85"></div><div class="notify-skeleton-line w55"></div></div>
+                        </div>
+                        <a href="#announcements" class="notify-see-all" data-action="see-all-ann" data-i18n="ann_view_all">مشاهده همه اعلان‌ها</a>
+                    </div>
+                    <!-- بخش تیکت‌ها -->
+                    <div class="notify-section notify-section-tickets" data-perm="tickets">
+                        <div class="notify-section-header">
+                            <div class="notify-section-header-left">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/></svg>
+                                <h4 class="notify-section-title" data-i18n="nav_tickets">تیکت‌ها</h4>
+                            </div>
+                            <span class="notify-pending-badge notify-pending-badge-warn" id="notifyTicketsPending" style="display:none;"><span id="notifyTicketsCount">0</span> <span data-i18n="notify_pending">باز</span></span>
+                        </div>
+                        <div class="notify-section-list" id="notifyTicketsList">
+                            <div class="notify-skeleton"><div class="notify-skeleton-line w75"></div><div class="notify-skeleton-line w40"></div></div>
+                        </div>
+                        <a href="#tickets" class="notify-see-all" data-action="see-all-tickets" data-i18n="notify_see_all_tickets">مشاهده همه تیکت‌ها</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+        <div id="announcementMarquee" class="announcement-marquee" style="display:none;" dir="rtl">
+            <div class="announcement-marquee-bar">
+                <div class="announcement-marquee-label">
+                    <svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg>
+                    <span data-i18n="ann_marquee_label">اعلان‌ها</span>
+                    <span id="annMarqueeCount" class="ann-marquee-count" style="display:none;"></span>
+                </div>
+                <div class="announcement-marquee-track" id="annMarqueeTrack">
+                    <div class="announcement-marquee-inner"></div>
+                </div>
+                <button type="button" class="announcement-marquee-more" id="annMarqueeMoreBtn" title="مشاهده همه اعلان‌ها" aria-label="مشاهده همه اعلان‌ها">
+                    <span data-i18n="ann_view_all">مشاهده همه</span>
+                    <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+                </button>
+                <button type="button" class="announcement-marquee-close" id="annMarqueeCloseBtn" title="بستن اعلان‌ها" aria-label="بستن">
+                    <svg viewBox="0 0 24 24"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+        </div>
+        </div><!-- /header-sticky-wrap -->
+        <div id="headerSearchModal" class="modal-overlay header-search-modal" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="headerSearchModalTitle" onclick="if(event.target===this) closeHeaderSearchPopup();">
+            <div class="modal-box header-search-modal-box">
+                <div class="modal-header">
+                    <h3 id="headerSearchModalTitle" data-i18n="header_search">جستجو</h3>
+                    <button type="button" class="modal-close" onclick="closeHeaderSearchPopup()" aria-label="بستن">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <label class="search-wrap search-wrap-in-modal" for="headerSearchModalInput">
+                        <span class="header-search-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-search"/></svg></span>
+                        <input type="text" id="headerSearchModalInput" data-i18n-ph="header_search" placeholder="جستجو در مکالمات، مشتریان..." aria-label="جستجو" onkeyup="if(event.key==='Enter') doHeaderSearchFromModal();" autocomplete="off">
+                    </label>
+                    <button type="button" class="btn-primary" onclick="doHeaderSearchFromModal()" data-i18n="header_search">جستجو</button>
+                </div>
+            </div>
+        </div>
+        <div class="main-wrap">
+        <div id="totpPromptBanner" style="display:none; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: var(--radius-sm); padding: 12px 20px; margin: 12px 24px 0; color: var(--text-primary); font-size: 0.9rem;">
+            <span data-i18n="totp_banner">برای امنیت بیشتر احراز هویت دو مرحله‌ای (Google Authenticator) را فعال کنید.</span>
+            <button type="button" class="btn-primary" onclick="showPage('profile'); document.getElementById('totpPromptBanner').style.display='none'; localStorage.setItem('totp_prompt_dismissed', '1');" style="margin-right:12px; padding:6px 14px;" data-i18n="totp_enable">فعال‌سازی</button>
+            <button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="document.getElementById('totpPromptBanner').style.display='none'; localStorage.setItem('totp_prompt_dismissed', '1');" data-i18n="totp_later">بعداً</button>
+        </div>
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebarMobile()" aria-hidden="true"></div>
+        <div class="main" id="mainContent" tabindex="-1">
+            <nav class="sidebar" id="sidebar" role="navigation" aria-label="منوی اصلی" data-i18n-aria-label="nav_main_menu">
+                <div class="sidebar-inner">
+                <div class="nav-section nav-section-collapsible" data-section="dashboard">
+                    <button type="button" class="nav-section-title" aria-expanded="true" aria-controls="nav-section-dashboard" id="navToggleDashboard"><span class="nav-section-title-text" data-i18n="nav_dashboard">داشبورد</span><span class="nav-section-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></button>
+                    <div class="nav-section-body" id="nav-section-dashboard">
+                        <a href="#dashboard" class="nav-link active" data-page="dashboard" data-section="dashboard" data-i18n-title="nav_dashboard"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span class="nav-link-label" data-i18n="nav_dashboard">داشبورد</span></a>
+                    </div>
+                </div>
+                <div class="nav-section nav-section-collapsible" data-section="communications">
+                    <button type="button" class="nav-section-title" aria-expanded="true" aria-controls="nav-section-communications" id="navToggleCommunications"><span class="nav-section-title-text" data-i18n="nav_communications">ارتباطات</span><span class="nav-section-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></button>
+                    <div class="nav-section-body" id="nav-section-communications">
+                        <a href="#conversations" class="nav-link" data-page="conversations" data-section="conversations" data-i18n-title="nav_conversations"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg></span> <span class="nav-link-label" data-i18n="nav_conversations">مکالمات</span></a>
+                        <a href="#customers" class="nav-link" data-page="customers" data-section="customers" data-i18n-title="nav_customers"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-users"/></svg></span> <span class="nav-link-label" data-i18n="nav_customers">مشتریان</span></a>
+                        <a href="#tickets" class="nav-link" data-page="tickets" data-section="tickets" data-i18n-title="nav_tickets"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-ticket"/></svg></span> <span class="nav-link-label" data-i18n="nav_tickets">تیکت‌های داخلی</span></a>
+                    </div>
+                </div>
+                <div class="nav-section nav-section-collapsible" data-section="organization">
+                    <button type="button" class="nav-section-title" aria-expanded="true" aria-controls="nav-section-organization" id="navToggleOrganization"><span class="nav-section-title-text" data-i18n="nav_organization">سازمان</span><span class="nav-section-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></button>
+                    <div class="nav-section-body" id="nav-section-organization">
+                        <a href="#tasks" class="nav-link" data-page="tasks" data-section="tasks" data-i18n-title="nav_tasks"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-task"/></svg></span> <span class="nav-link-label" data-i18n="nav_tasks">وظایف و تسک‌ها</span></a>
+                        <a href="#processes" class="nav-link" data-page="processes" data-section="processes" data-i18n-title="nav_processes"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-expand"/></svg></span> <span class="nav-link-label" data-i18n="nav_processes">فرایندهای کسب‌وکار</span></a>
+                        <a href="#users" class="nav-link" data-page="users" data-section="users" data-i18n-title="nav_users"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></span> <span class="nav-link-label" data-i18n="nav_users">کاربران</span></a>
+                        <div class="nav-subsection">
+                            <span class="nav-subsection-title" data-i18n="nav_branches_group">مجموعه شعب</span>
+                            <a href="#branches" class="nav-link nav-branches" data-page="branches" data-section="branches" data-i18n-title="nav_branches"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building-2"/></svg></span> <span class="nav-link-label" data-i18n="nav_branches">شعب</span></a>
+                            <a href="#departments" class="nav-link" data-page="departments" data-section="departments" data-i18n-title="nav_departments"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building"/></svg></span> <span class="nav-link-label" data-i18n="nav_departments">دپارتمان‌ها</span></a>
+                        </div>
+                        <a href="#supervision" class="nav-link nav-supervision" data-page="supervision" data-section="supervision" style="display:none;" data-i18n-title="nav_supervision"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span class="nav-link-label" data-i18n="nav_supervision">نظارت (مالک)</span></a>
+                        <a href="#staff-activity" class="nav-link nav-staff-activity" data-page="staff-activity" data-section="staff_activity" style="display:none;" data-i18n-title="nav_staff_activity"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user-online"/></svg></span> <span class="nav-link-label" data-i18n="nav_staff_activity">ورودها و وضعیت آنلاین</span></a>
+                    </div>
+                </div>
+                <div class="nav-section nav-section-collapsible" data-section="settings">
+                    <button type="button" class="nav-section-title" aria-expanded="true" aria-controls="nav-section-settings" id="navToggleSettings"><span class="nav-section-title-text" data-i18n="nav_settings">تنظیمات</span><span class="nav-section-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg></span></button>
+                    <div class="nav-section-body" id="nav-section-settings">
+                        <div class="nav-subsection">
+                            <span class="nav-subsection-title" data-i18n="nav_settings_account">حساب کاربری</span>
+                            <a href="#profile" class="nav-link" data-page="profile" data-section="profile" data-i18n-title="nav_profile"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user"/></svg></span> <span class="nav-link-label" data-i18n="nav_profile">پروفایل من</span></a>
+                            <a href="#internal-chat" class="nav-link" data-page="internal-chat" data-section="internal_chat" data-i18n-title="nav_internal_chat"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg></span> <span class="nav-link-label" data-i18n="nav_internal_chat">چت داخلی</span></a>
+                            <a href="#announcements" class="nav-link" data-page="announcements" data-section="announcements" data-i18n-title="nav_announcements"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg></span> <span class="nav-link-label" data-i18n="nav_announcements">اعلان‌ها</span></a>
+                        </div>
+                        <div class="nav-subsection">
+                            <span class="nav-subsection-title" data-i18n="nav_settings_connections">اتصالات</span>
+                            <a href="#whatsapp" class="nav-link" data-page="whatsapp" data-section="whatsapp" data-i18n-title="nav_whatsapp"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-phone"/></svg></span> <span class="nav-link-label" data-i18n="nav_whatsapp">اتصال واتساپ</span></a>
+                            <a href="#message-templates" class="nav-link" data-page="message-templates" data-section="conversations" data-i18n-title="nav_message_templates"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></span> <span class="nav-link-label" data-i18n="nav_message_templates">تمپلیت‌های پیام</span></a>
+                        </div>
+                        <div class="nav-subsection">
+                            <span class="nav-subsection-title" data-i18n="nav_settings_finance">مالی و ارز</span>
+                            <div class="nav-subsection">
+                                <span class="nav-subsection-title" data-i18n="nav_rates">نرخ ارزها</span>
+                                <a href="#rates" class="nav-link" data-page="rates" data-section="rates" data-i18n-title="nav_rates"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span class="nav-link-label" data-i18n="nav_rates_settings">تنظیم نرخ</span></a>
+                                <a href="#rates-charts" class="nav-link" data-page="rates-charts" data-section="rates_charts" data-i18n-title="nav_rates_charts"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-trending-up"/></svg></span> <span class="nav-link-label" data-i18n="nav_rates_charts">چارت ارزها</span></a>
+                            </div>
+                            <a href="#services" class="nav-link" data-page="services" data-section="services" data-i18n-title="nav_services"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-file-plus"/></svg></span> <span class="nav-link-label" data-i18n="nav_services">خدمات صرافی</span></a>
+                        </div>
+                        <div class="nav-subsection">
+                            <span class="nav-subsection-title" data-i18n="nav_settings_appearance">ظاهر</span>
+                            <a href="#panel-settings" class="nav-link" data-page="panel-settings" data-section="panel_settings" data-i18n-title="nav_panel_settings"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span> <span class="nav-link-label" data-i18n="nav_panel_settings">ظاهر پنل</span></a>
+                        </div>
+                    </div>
+                </div>
+                </div>
+                <div class="sidebar-footer sidebar-desktop-only">
+                    <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebarDesktop()" aria-label="جمع کردن منو" aria-expanded="true" aria-controls="sidebar" title="جمع کردن منو" data-i18n-title="sidebar_toggle_collapse"><span class="sidebar-toggle-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></span><span class="sidebar-toggle-text" data-i18n="sidebar_toggle_collapse">جمع کردن منو</span></button>
+                </div>
+            </nav>
+            <div class="content">
+                <div id="pageDashboard" class="page show">
+                    <div class="dashboard-header-row">
+                        <div>
+                            <h2 data-i18n="page_dashboard">داشبورد</h2>
+                            <p class="dashboard-sub" data-i18n="dashboard_welcome">خلاصه مهم‌ترین اطلاعات و دسترسی سریع به بخش‌های پنل</p>
+                        </div>
+                        <button type="button" class="dashboard-refresh-btn" id="dashboardRefreshBtn" onclick="refreshDashboard()" title="به‌روزرسانی" aria-label="به‌روزرسانی داشبورد"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="dashboard_refresh">به‌روزرسانی</span></button>
+                    </div>
+                    <div id="dashboardAttention" class="dashboard-attention" aria-live="polite" style="display:none;"></div>
+                    <div id="dashboardSummary" class="dashboard-summary" aria-label="خلاصه آمار"></div>
+                    <div id="dashboardQuickActions" class="dashboard-quick-actions" aria-label="دسترسی سریع"></div>
+                    <div id="dashboardCardsWrap" class="dashboard-cards-wrap">
+                        <h3 class="dashboard-cards-title" id="dashboardCardsTitle" data-i18n="dashboard_sections">بخش‌های پنل</h3>
+                        <div id="dashboardCards" class="dashboard-cards"></div>
+                    </div>
+                </div>
+                <div id="pageConversations" class="page">
+                    <!-- دکمه شناور مکالمه جدید — فقط موبایل -->
+                    <button type="button" class="conv-fab-btn" id="convFabBtn" onclick="openNewConvModal()" aria-label="مکالمه جدید" title="مکالمه جدید">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                    <div class="conv-page-header">
+                        <div>
+                            <h2 data-i18n="page_conversations">مکالمات</h2>
+                            <p class="conv-page-desc" data-i18n="conv_page_desc">مدیریت مکالمات با مشتریان، پاسخ‌دهی و تخصیص به دپارتمان‌ها.</p>
+                        </div>
+                        <div class="conv-header-actions">
+                            <button type="button" class="btn-secondary conv-sync-groups-btn" id="btnSyncGroups" data-i18n-title="conv_sync_groups" title="همگام‌سازی گروه‌های واتساپ" aria-label="همگام‌سازی گروه‌ها"><span class="conv-sync-icon" aria-hidden="true">👥</span><span class="conv-sync-text" data-i18n="conv_sync_groups">همگام‌سازی گروه‌ها</span></button>
+                            <button type="button" class="btn-primary" id="btnNewConv" data-i18n="conv_new">مکالمه جدید</button>
+                        </div>
+                    </div>
+                    <div id="convStats" class="conv-stats" style="display:none;"></div>
+                    <div class="conv-quick-tabs" role="tablist">
+                        <button type="button" class="conv-tab active" data-tab="all" data-i18n="filter_all">همه</button>
+                        <button type="button" class="conv-tab" data-tab="unread" data-i18n="filter_unread">خوانده‌نشده</button>
+                        <button type="button" class="conv-tab" data-tab="unanswered" data-i18n="filter_unanswered">بدون پاسخ</button>
+                        <button type="button" class="conv-tab" data-tab="open" data-i18n="filter_open">باز</button>
+                        <button type="button" class="conv-tab" data-tab="mine" data-i18n="conv_tab_mine">مشخص‌شده به من</button>
+                        <button type="button" class="conv-tab" data-tab="groups" data-i18n="conv_tab_groups">👥 گروه‌ها</button>
+                        <button type="button" class="conv-tab" id="convTabArchived" data-tab="archived" data-i18n="filter_archived" style="display:none;">آرشیو</button>
+                    </div>
+                    <div class="conv-toolbar">
+                        <div class="conv-search-bar">
+                            <span class="conv-search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+                            <input type="text" id="convSearch" data-i18n-ph="conv_search_ph" placeholder="جستجو نام یا شماره مشتری..." class="conv-filter-input conv-search-input">
+                            <button type="button" class="conv-filter-chip" id="convFilterToggle" aria-expanded="false" title="فیلترها">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                                <span class="conv-filter-chip-label" data-i18n="more_filters">فیلتر</span>
+                                <span class="conv-filter-active-dot" id="convFilterActiveDot" style="display:none;"></span>
+                            </button>
+                        </div>
+                        <!-- فیلترهای پیشرفته — desktop inline / mobile bottom-sheet -->
+                        <div class="conv-advanced-filters" id="convAdvancedFilters">
+                            <div class="conv-filters-sheet-handle"></div>
+                            <div class="conv-filters-sheet-title">
+                                <span data-i18n="more_filters">فیلترها</span>
+                                <button type="button" class="conv-filters-sheet-close" onclick="document.getElementById('convFilterToggle').click()" aria-label="بستن">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                            <div class="conv-filters-grid">
+                                <select id="convFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
+                                <select id="convFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                                <select id="convFilterBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                                <select id="convFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
+                                <select id="convFilterAssignee"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
+                            </div>
+                            <div class="conv-filters-actions">
+                                <button type="button" class="btn-secondary btn-sm conv-filters-reset" id="btnResetConvFilters" data-i18n="reset_filter" onclick="resetConvFilters && resetConvFilters()">پاک کردن</button>
+                                <button type="button" class="btn-primary conv-filters-apply" id="btnApplyConvFilters" data-i18n="apply_filter">اعمال فیلتر</button>
+                            </div>
+                        </div>
+                        <div class="conv-filters-backdrop" id="convFiltersBackdrop" onclick="document.getElementById('convFilterToggle').click()"></div>
+                    </div>
+                    <div class="conv-layout">
+                        <div class="conv-list-wrap">
+                            <div class="conv-list-header">
+                                <span class="conv-list-title" data-i18n="conv_list_title">مکالمات</span>
+                                <span class="conv-list-count" id="convListCount"></span>
+                            </div>
+                            <div id="convList" class="conv-list-pane"></div>
+                        </div>
+                        <div id="chatArea" class="chat-area">
+                        <div class="chat-header-wrap">
+                            <div class="chat-header-main">
+                                <button type="button" class="chat-back-btn" id="chatBackBtn" aria-label="بازگشت به لیست" data-i18n-title="back_to_list" title="بازگشت به لیست" onclick="closeChatMobile()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+                                <div class="chat-header-avatar" id="chatHeaderAvatar"></div>
+                                <div class="chat-header" id="chatHeader"></div>
+                                <button type="button" class="chat-detail-toggle" id="chatDetailToggle" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                            </div>
+                            <div id="convDetailBar" class="conv-detail-bar" style="display:none;">
+                                <div class="conv-detail-badges" id="convDetailBadges"></div>
+                                <div id="convSupervisionPanel" class="conv-supervision-panel" style="display:none;">
+                                    <div class="conv-supervision-title" data-i18n="conv_supervision_title">نظارت مدیر</div>
+                                    <div id="convSupervisionStats" class="conv-supervision-stats"></div>
+                                </div>
+                                <div id="convRatingSection" class="conv-rating-section" style="display:none;">
+                                    <label data-i18n="conv_rating">رتبه‌دهی / نظرسنجی</label>
+                                    <div class="conv-rating-stars" id="convRatingStars">
+                                        <button type="button" class="conv-rating-star" data-rating="1" aria-label="1">★</button>
+                                        <button type="button" class="conv-rating-star" data-rating="2" aria-label="2">★</button>
+                                        <button type="button" class="conv-rating-star" data-rating="3" aria-label="3">★</button>
+                                        <button type="button" class="conv-rating-star" data-rating="4" aria-label="4">★</button>
+                                        <button type="button" class="conv-rating-star" data-rating="5" aria-label="5">★</button>
+                                    </div>
+                                    <textarea id="convFeedback" class="conv-feedback-input" rows="2" placeholder="" data-i18n-ph="conv_feedback_ph"></textarea>
+                                </div>
+                                <div id="convDetailActions" class="conv-detail-actions" style="display:none;">
+                                    <button type="button" id="btnAssignToMe" class="btn-secondary btn-sm" onclick="assignConvToMe()" data-i18n="conv_assign_me">تخصیص به من</button>
+                                    <select id="convDetailStatus"><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
+                                    <select id="convDetailPriority"><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                                    <select id="convDetailDept" data-i18n-title="label_dept" title="دپارتمان"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
+                                    <select id="convDetailAssignee"><option value="">بدون تخصیص</option></select>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="updateConvFromDetail()" data-i18n="btn_apply">اعمال</button>
+                                    <button type="button" id="btnConvArchive" class="btn-secondary btn-sm" onclick="archiveConversation()" data-i18n="btn_archive" style="display:none;">ارسال به آرشیو</button>
+                                    <button type="button" id="btnConvDelete" class="btn-danger btn-sm" onclick="deleteConversation()" data-i18n="btn_delete" style="display:none;">حذف</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="chat-messages" id="chatMessages"></div>
+                        <div id="chatReplyPreview" class="chat-reply-preview" style="display:none;">
+                            <span class="chat-reply-label" data-i18n="replying_to">پاسخ به:</span>
+                            <span id="chatReplyText" class="chat-reply-text"></span>
+                            <button type="button" class="chat-reply-cancel" id="cancelReplyBtn" aria-label="لغو">×</button>
+                        </div>
+                        <div id="chatFilePreview" class="chat-file-preview" style="display:none;">
+                            <div class="chat-file-preview-inner">
+                                <div class="chat-file-preview-thumb" id="chatFilePreviewThumb"></div>
+                                <div class="chat-file-preview-info">
+                                    <span class="chat-file-preview-name" id="chatFilePreviewName"></span>
+                                    <span class="chat-file-preview-size" id="chatFilePreviewSize"></span>
+                                </div>
+                                <button type="button" class="chat-file-preview-remove" id="chatFilePreviewRemove" aria-label="حذف فایل">×</button>
+                            </div>
+                        </div>
+                        <div class="chat-send">
+                            <input type="file" id="msgFileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" style="display:none;">
+                            <button type="button" class="chat-attach-btn" id="msgAttachBtn" onclick="document.getElementById('msgFileInput').click()" title="پیوست فایل" aria-label="پیوست فایل"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-paperclip"/></svg></button>
+                            <div class="chat-template-wrap">
+                                <button type="button" class="chat-attach-btn" id="msgTemplateBtn" data-i18n-title="msg_template" title="تمپلیت پیام" aria-label="تمپلیت پیام" aria-haspopup="true" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#icon-file-text"/></svg></button>
+                                <div id="chatTemplateDropdown" class="chat-template-dropdown" style="display:none;"></div>
+                            </div>
+                            <button type="button" class="chat-voice-btn" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+                            <input type="text" id="msgInput" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off">
+                            <button type="button" class="chat-send-btn" onclick="sendMsg()" data-i18n="btn_send">ارسال</button>
+                        </div>
+                    </div>
+                    </div>
+                </div>
+                <div id="pageCustomers" class="page">
+                    <!-- هدر صفحه — فقط desktop -->
+                    <div class="customer-page-header">
+                        <div>
+                            <h2 data-i18n="page_customers_club">باشگاه مشتریان</h2>
+                            <p class="customer-page-desc" data-i18n="customers_club_intro">مدیریت مشتریان، تاریخچه مکالمات، گزارش‌ها و فعالیت‌های انجام‌شده برای هر مشتری.</p>
+                        </div>
+                        <div class="customer-header-actions">
+                            <button type="button" class="btn-secondary" onclick="openBulkSendModal()" data-perm="conversations" data-i18n="bulk_send">ارسال انبوه</button>
+                            <button type="button" class="btn-secondary" onclick="openImportCustomersModal()" data-perm="customers" data-i18n="import_customers">ورود از Excel</button>
+                            <button type="button" class="btn-primary" onclick="openCustomerModal()" data-i18n="customer_add">افزودن مشتری</button>
+                        </div>
+                    </div>
+                    <!-- دکمه FAB موبایل — افزودن مشتری -->
+                    <button type="button" class="customer-fab-btn" id="customerFabBtn" onclick="openCustomerModal()" aria-label="افزودن مشتری" title="افزودن مشتری">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                    </button>
+                    <div id="customerStats" class="customer-stats" style="display:none;"></div>
+                    <!-- نوار جستجو + فیلتر -->
+                    <div class="customer-toolbar">
+                        <div class="customer-search-bar">
+                            <span class="customer-search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
+                            <input type="text" id="customerSearch" class="customer-search conv-filter-input customer-search-input" data-i18n-ph="customer_search_ph" placeholder="جستجو نام، تلفن یا ایمیل...">
+                            <button type="button" class="customer-search-clear" id="customerSearchClear" style="display:none;" title="پاک کردن" aria-label="پاک کردن">&times;</button>
+                            <button type="button" class="customer-filter-chip" id="customerFilterToggle" aria-expanded="false" title="فیلترها">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/></svg>
+                                <span class="customer-filter-chip-label">فیلتر</span>
+                                <span class="customer-filter-active-dot" id="customerFilterActiveDot" style="display:none;"></span>
+                            </button>
+                        </div>
+                        <!-- فیلترهای پیشرفته — desktop inline / mobile bottom-sheet -->
+                        <div class="customer-advanced-filters" id="customerAdvancedFilters">
+                            <div class="customer-filters-sheet-handle"></div>
+                            <div class="customer-filters-sheet-title">
+                                <span>فیلترها</span>
+                                <button type="button" class="customer-filters-sheet-close" onclick="document.getElementById('customerFilterToggle').click()" aria-label="بستن">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                            <div class="customer-filters-grid">
+                                <select id="customerFilterStatus" class="customer-toolbar-select" aria-label="وضعیت">
+                                    <option value="" data-i18n="filter_all">همه</option>

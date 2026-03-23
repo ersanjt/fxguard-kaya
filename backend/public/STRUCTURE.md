@@ -6,9 +6,9 @@
 
 | فایل | نقش |
 |------|-----|
-| **dashboard.html** | فقط ساختار (Layout): ورود، هدر، سایدبار، ناحیه محتوا، فوتر، نوار قیمت، مودال‌ها. بدون CSS و JS داخلی. |
+| **dashboard.html** | خروجی نهایی layout (ورود، هدر، سایدبار، صفحات، مودال‌ها، اسکریپت‌ها). **منبع ویرایش:** `partials/dashboard/html-part-01.html` … `html-part-06.html` — بعد از تغییر: `npm run build:dashboard` |
 | **css/dashboard.css** | تمام استایل‌های پنل (متغیرها، ریسپانسیو، کامپوننت‌ها). |
-| **js/dashboard.js** | تمام منطق فرانت‌اند: i18n، API، auth، و منطق هر صفحه (مکالمات، تیکت، تسک، فرایندها و غیره). |
+| **js/dashboard.js** | خروجی نهایی منطق پنل (auth، مکالمات، تیکت، …). **منبع ویرایش:** `js/dashboard/src/chunk-01.js` … `chunk-06.js` — بعد از تغییر: `npm run build:dashboard` |
 
 ## مزایای این ساختار
 
@@ -23,12 +23,16 @@
 - مسیر فایل‌ها نسبی به `dashboard.html` است: `css/dashboard.css` و `js/dashboard.js`.
 - سرور باید این فایل‌ها را با `Content-Type` مناسب (مثلاً `text/css` و `application/javascript`) سرو کند؛ Express با `express.static('public')` این کار را انجام می‌دهد.
 
-## پیشنهاد برای تفکیک بیشتر (آینده)
+## تفکیک فعلی (منبع ↔ خروجی)
 
-اگر بخواهید ساختار را باز هم استانداردتر کنید:
+- اسکریپت **`backend/scripts/bundle-dashboard.js`** partialهای HTML و قطعه‌های JS را ادغام می‌کند.
+- دستور **`npm run build:dashboard`** (از پوشه `backend`) همان اسکریپت را اجرا می‌کند.
+- جزئیات: `public/partials/dashboard/README.md` و `public/js/dashboard/README.md`.
 
-1. **صفحه‌ها به صورت Partial**: به‌جای همهٔ `<div id="pageX">` داخل یک HTML، هر صفحه یک فایل جدا (مثلاً `partials/conversations.html`) و لود با `fetch()` در زمان کلیک منو.
-2. **JS به ماژول‌های صفحه‌ای**: مثلاً `js/pages/conversations.js`، `js/pages/tickets.js` و یک `js/app.js` برای مسیریابی و مقداردهی اولیه.
-3. **استفاده از ابزار بیلد (مثل Vite یا Webpack)** برای باندل کردن و minify در محیط production.
+## پیشنهاد برای مرحلهٔ بعد (آینده)
 
-برای پروژهٔ فعلی، تفکیک **HTML + CSS + JS** کافی و استاندارد است.
+1. **Partial معنادارتر برای HTML**: گروه‌بندی بر اساس `pageConversations`، `pageCustomers`، … به‌جای تقسیم مساوی خطوط.
+2. **JS با import/export**: استفاده از **Vite** (یا Webpack) و ماژول ES برای وابستگی‌های صریح بین فایل‌ها.
+3. **لود تنبل صفحه**: `fetch()` برای HTML یک صفحه فقط هنگام ورود به آن منو (نیاز به تغییر مسیریابی).
+
+برای پروژهٔ فعلی، منبع‌های کوچک + یک `build:dashboard` ساده، تعادل خوبی بین خوانایی و بدون وابستگی به bundler است.

@@ -2,6 +2,8 @@
  * Dashboard SPA — پنل اصلی CRM (ورود، ناو، مکالمات، …).
  * زبان و t() در js/modules/dashboard-i18n.js (قبل از این فایل).
  * وابستگی‌ها: CRM.Constants, CRM.Utils, CRM.Api — backend/docs/FRONTEND-ARCHITECTURE.md
+ *
+ * منبع: public/js/dashboard/src/chunk-NN.js — بعد از ویرایش: npm run build:dashboard
  */
         const API = '';
         let token = localStorage.getItem('crm_token');
