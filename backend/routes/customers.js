@@ -9,6 +9,7 @@ const { Op } = require('sequelize');
 const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customerAccess');
 const { normalizePhone } = require('../lib/phoneUtils');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
+const { persistRemoteAvatarIfNeeded } = require('../lib/customerAvatar');
 
 // آپلود اسناد مشتری
 const docStorage = multer.diskStorage({
@@ -267,6 +268,12 @@ router.post('/', async (req, res, next) => {
             website: website || null,
         };
         const customer = await Customer.create(customerData);
+        if (customerData.profilePic && String(customerData.profilePic).trim()) {
+            try {
+                const persisted = await persistRemoteAvatarIfNeeded(customer.id, String(customerData.profilePic).trim());
+                if (persisted && persisted !== customer.profilePic) await customer.update({ profilePic: persisted });
+            } catch (_) {}
+        }
         if (tagIds && Array.isArray(tagIds) && tagIds.length) {
             await customer.setTags(tagIds);
         }
@@ -295,6 +302,12 @@ router.put('/:id', async (req, res, next) => {
         if (notes !== undefined) updateData.notes = notes;
         if (customFields !== undefined) updateData.customFields = customFields;
         if (req.body.profilePic !== undefined) updateData.profilePic = req.body.profilePic;
+        if (updateData.profilePic !== undefined && updateData.profilePic) {
+            try {
+                const persisted = await persistRemoteAvatarIfNeeded(customer.id, String(updateData.profilePic).trim());
+                if (persisted) updateData.profilePic = persisted;
+            } catch (_) {}
+        }
         // فیلدهای شخصی
         const personalFields = ['birthDate', 'nationalId', 'nationality', 'gender', 'occupation', 'companyName', 'address', 'city', 'country', 'postalCode', 'instagram', 'telegram', 'website'];
         personalFields.forEach(f => { if (req.body[f] !== undefined) updateData[f] = req.body[f] || null; });

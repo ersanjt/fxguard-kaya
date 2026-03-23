@@ -13,6 +13,7 @@ const { normalizePhone, getSendTarget } = require('../lib/phoneUtils');
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessages');
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
+const { persistRemoteAvatarIfNeeded } = require('../lib/customerAvatar');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
@@ -422,12 +423,28 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
 
         if (customerCreated) {
             logger.info(isGroup ? `✨ New group conversation: ${groupNameFromChat || phone}` : `✨ New customer created: ${phone}`);
+            if (!isGroup && profilePic) {
+                try {
+                    const persisted = await persistRemoteAvatarIfNeeded(customer.id, profilePic);
+                    if (persisted && persisted !== customer.profilePic) await customer.update({ profilePic: persisted });
+                } catch (e) {
+                    logger.warn('Avatar persist (new customer)', { err: String(e && e.message ? e.message : e) });
+                }
+            }
         } else {
             const tsContact = timestamp ? new Date((timestamp < 1e12 ? timestamp * 1000 : timestamp)) : new Date();
             const updatedContactName = isGroup ? groupNameFromChat : (contact && (contact.name || contact.pushname)) || null;
             const updates = { lastContactAt: tsContact };
             if (updatedContactName && String(updatedContactName).trim() && String(customer.name || '').trim() !== String(updatedContactName).trim()) updates.name = String(updatedContactName).trim();
             if (!isGroup && contact && contact.profilePicUrl && contact.profilePicUrl !== customer.profilePic) updates.profilePic = contact.profilePicUrl;
+            if (updates.profilePic) {
+                try {
+                    const persisted = await persistRemoteAvatarIfNeeded(customer.id, updates.profilePic);
+                    if (persisted) updates.profilePic = persisted;
+                } catch (e) {
+                    logger.warn('Avatar persist', { err: String(e && e.message ? e.message : e) });
+                }
+            }
             await customer.update(updates);
         }
 

@@ -722,6 +722,21 @@
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
+        /** آواتار مشتری/چت: // و مسیر نسبی و data: را برای نمایش درست تبدیل می‌کند */
+        function normalizeProfilePicUrl(url) {
+            if (!url || typeof url !== 'string') return '';
+            var u = url.trim();
+            if (!u) return '';
+            if (u.indexOf('data:') === 0) return u;
+            if (u.indexOf('//') === 0) u = 'https:' + u;
+            if (u.indexOf('/') === 0) u = (window.location.origin || '') + u;
+            return ensureHttpsUrl(u);
+        }
+        function profilePicShowsImage(url) {
+            if (!url || typeof url !== 'string') return false;
+            var u = url.trim();
+            return /^https?:\/\//i.test(u) || u.indexOf('data:') === 0;
+        }
         function resolveAvatarUrl(avatar) { if (!avatar || typeof avatar !== 'string') return ''; const s = avatar.trim(); if (!s) return ''; if (s.indexOf('http') === 0) return ensureHttpsUrl(s); const origin = window.location.origin || ''; if (s.indexOf('/') === 0) return origin + s; return origin + '/' + s; }
         function internalMsgAvatarHtml(fromUser) { const u = fromUser || {}; const name = (u.name || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'"></span>'; return '<span class="msg-avatar">' + escapeHtml(initial) + '</span>'; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
