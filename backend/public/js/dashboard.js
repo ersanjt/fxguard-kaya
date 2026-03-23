@@ -3315,6 +3315,13 @@
                 // چت داخلی — Enter برای ارسال پیام
                 if (active.id === 'internalChatInput' && e.key === 'Enter' && !e.shiftKey && typeof sendInternalMessage === 'function') { e.preventDefault(); sendInternalMessage(); return; }
                 if (active.id === 'internalChatPopupInput' && typeof handlePopupChatKeydown === 'function') { handlePopupChatKeydown(e); return; }
+                // مکالمات واتساپ — Enter برای ارسال (inline onkeypress با CSP حذف می‌شود)
+                if (active.id === 'msgInput' && e.key === 'Enter' && !e.shiftKey && typeof sendMsg === 'function') {
+                    if (e.isComposing || (active && active.isComposing)) return;
+                    e.preventDefault();
+                    sendMsg();
+                    return;
+                }
             }, true);
             document.addEventListener('input', function(e) {
                 if (e.target.id === 'internalChatSearch' && typeof filterInternalThreads === 'function') filterInternalThreads(e.target.value);
