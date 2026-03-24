@@ -8793,8 +8793,8 @@
                 if (openaiInput) { openaiInput.value = ''; openaiInput.placeholder = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید ذخیره شده ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change') : (LANG === 'fa' ? 'کلید API را از platform.openai.com وارد کنید' : 'Enter API key from platform.openai.com'); }
                 if (openaiStatus) openaiStatus.textContent = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set') : ''; if (openaiStatus && res.data.openaiApiKeySet) openaiStatus.classList.add('set'); else if (openaiStatus) openaiStatus.classList.remove('set');
                 const clearLink = document.getElementById('whatsappOpenAIClearKey'); if (clearLink) clearLink.style.display = res.data.openaiApiKeySet ? 'inline' : 'none';
-                if (alertIn) alertIn.value = res.data.alertUnansweredAfterMinutes ?? 5;
-                if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
+                if (alertIn) alertIn.value = (res.data.alertUnansweredAfterMinutes !== null && res.data.alertUnansweredAfterMinutes !== undefined) ? res.data.alertUnansweredAfterMinutes : 5;
+                if (escalateIn) escalateIn.value = (res.data.escalateUnansweredAfterMinutes !== null && res.data.escalateUnansweredAfterMinutes !== undefined) ? res.data.escalateUnansweredAfterMinutes : 15;
                 const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
                 const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
                 const autoAsgCb = document.getElementById('whatsappAutoAssignmentMessagesEnabled');
@@ -9151,7 +9151,15 @@
             const method = id ? 'PUT' : 'POST';
             const res = await apiFetch(url, { method: method, body: JSON.stringify({ name: name, category: category || null, content: content, isActive: isActive }) });
             if (res.needLogin) return;
-            if (res.ok) { closeTemplateModal(); loadMessageTemplates(); chatTemplatesCache = (await apiFetch('/api/message-templates')).data?.data || chatTemplatesCache; toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) {
+                closeTemplateModal();
+                loadMessageTemplates();
+                const _tplRes = await apiFetch('/api/message-templates');
+                chatTemplatesCache = (_tplRes && _tplRes.data && _tplRes.data.data) ? _tplRes.data.data : chatTemplatesCache;
+                toast(t('btn_save'));
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
         }
         function editTemplate(id) { openTemplateModal(id); }
         async function deleteTemplate(id) {
