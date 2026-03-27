@@ -11,6 +11,7 @@ const { sequelize, Customer, Conversation, Message, User, Department, AutoRespon
 const { Op } = require('sequelize');
 const { normalizePhone, getSendTarget } = require('../lib/phoneUtils');
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
+const { gatewayGet } = require('../lib/gatewayClient');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessages');
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
 const { persistRemoteAvatarIfNeeded } = require('../lib/customerAvatar');
@@ -28,6 +29,30 @@ const AI_MESSAGE_PREFIX = '🤖 ';
 let _wcCache = null;
 let _wcCacheAt = 0;
 const WC_CACHE_TTL_MS = 30 * 1000;
+
+// Cache avatar lookups to avoid hitting gateway on every message.
+const AVATAR_LOOKUP_TTL_MS = 5 * 60 * 1000;
+const _avatarLookupCache = new Map();
+
+async function tryFetchProfilePicFromGateway(phone, logger) {
+    const p = String(phone || '').trim();
+    if (!p) return null;
+    const now = Date.now();
+    const cached = _avatarLookupCache.get(p);
+    if (cached && (now - cached.at) < AVATAR_LOOKUP_TTL_MS) {
+        return cached.url || null;
+    }
+    try {
+        const res = await gatewayGet('/api/contacts/profile-pic?phone=' + encodeURIComponent(p), { timeout: 4500 });
+        const url = (res && res.data && res.data.profilePicUrl) ? String(res.data.profilePicUrl).trim() : '';
+        _avatarLookupCache.set(p, { at: now, url: url || null });
+        return url || null;
+    } catch (err) {
+        _avatarLookupCache.set(p, { at: now, url: null });
+        logger.warn('profile pic lookup failed', { phone: p.slice(-6), error: err?.message });
+        return null;
+    }
+}
 
 async function getCachedWhatsappConfig() {
     const now = Date.now();
@@ -404,7 +429,10 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
 
         const groupNameFromChat = isGroup ? (chat?.name || chat?.subject || chat?.formattedTitle || '').toString().trim() : '';
         const contactName = isGroup ? (groupNameFromChat || `گروه ${phone}`) : ((contact && (contact.name || contact.pushname)) || `مشتری ${phone}`);
-        const profilePic = isGroup ? null : (contact && contact.profilePicUrl) || null;
+        let profilePic = isGroup ? null : (contact && contact.profilePicUrl) || null;
+        if (!isGroup && !profilePic) {
+            profilePic = await tryFetchProfilePicFromGateway(phone, logger);
+        }
 
         let customer;
         let customerCreated = false;
@@ -436,7 +464,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             const updatedContactName = isGroup ? groupNameFromChat : (contact && (contact.name || contact.pushname)) || null;
             const updates = { lastContactAt: tsContact };
             if (updatedContactName && String(updatedContactName).trim() && String(customer.name || '').trim() !== String(updatedContactName).trim()) updates.name = String(updatedContactName).trim();
-            if (!isGroup && contact && contact.profilePicUrl && contact.profilePicUrl !== customer.profilePic) updates.profilePic = contact.profilePicUrl;
+            if (!isGroup && profilePic && profilePic !== customer.profilePic) updates.profilePic = profilePic;
             if (updates.profilePic) {
                 try {
                     const persisted = await persistRemoteAvatarIfNeeded(customer.id, updates.profilePic);

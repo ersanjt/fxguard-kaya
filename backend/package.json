@@ -13,6 +13,7 @@
     "test:integration": "node tests/integration.test.js",
     "test:unit": "node tests/api-customers-notes.test.js",
     "test:all": "node tests/suite.test.js && node tests/integration.test.js",
+    "avatars:backfill": "node scripts/backfill-customer-avatars.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --check .",

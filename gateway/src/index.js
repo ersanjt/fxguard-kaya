@@ -625,6 +625,16 @@ function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function normalizePhoneToChatId(phoneOrJid) {
+    if (!phoneOrJid || typeof phoneOrJid !== 'string') return null;
+    const v = phoneOrJid.trim();
+    if (!v) return null;
+    if (v.includes('@c.us') || v.includes('@g.us') || v.includes('@s.whatsapp.net')) return v;
+    const digits = v.replace(/\D/g, '');
+    if (!digits) return null;
+    return `${digits}@c.us`;
+}
+
 // SSRF protection + optional whitelist
 function isSafeMediaUrl(url) {
     if (!url || typeof url !== 'string') return false;
@@ -904,6 +914,33 @@ app.get('/api/chats/groups/:groupId/participants', async (req, res) => {
     } catch (error) {
         logger.error('Get group participants error', { error: error?.message });
         return res.status(500).json({ error: error?.message || 'get_participants_failed' });
+    }
+});
+
+// دریافت عکس پروفایل مخاطب (برای مواقعی که در رویداد پیام null می‌آید)
+app.get('/api/contacts/profile-pic', async (req, res) => {
+    try {
+        if (!client) return res.status(503).json({ error: 'WhatsApp client not initialized' });
+        const q = String(req.query.phone || req.query.chatId || req.query.jid || '').trim();
+        const chatId = normalizePhoneToChatId(q);
+        if (!chatId) return res.status(400).json({ error: 'phone/chatId/jid is required' });
+
+        let profilePicUrl = null;
+        try {
+            profilePicUrl = await client.getProfilePicUrl(chatId);
+        } catch (_) {}
+        if (!profilePicUrl) {
+            try {
+                const c = await client.getContactById(chatId);
+                if (c && typeof c.getProfilePicUrl === 'function') {
+                    profilePicUrl = await c.getProfilePicUrl().catch(() => null);
+                }
+            } catch (_) {}
+        }
+        return res.json({ ok: true, chatId, profilePicUrl: profilePicUrl || null });
+    } catch (error) {
+        logger.error('Get contact profile pic error', { error: error?.message });
+        return res.status(500).json({ error: error?.message || 'get_profile_pic_failed' });
     }
 });
 

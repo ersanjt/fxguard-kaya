@@ -3396,8 +3396,9 @@
                 if (!el || typeof handler !== 'function') return;
                 if (!el._crmTapBound) el._crmTapBound = {};
                 if (el._crmTapBound[handler.name || 'handler']) return;
-                el.addEventListener('click', handler, { passive: false });
-                el.addEventListener('touchend', handler, { passive: false });
+                // pointerup is more reliable than touchend across mobile Safari/Chrome
+                el.addEventListener('pointerup', handler, { passive: true });
+                el.addEventListener('click', handler, { passive: true });
                 el._crmTapBound[handler.name || 'handler'] = true;
             }
 
@@ -3406,7 +3407,6 @@
             if (loginLangButtons) {
                 loginLangButtons.forEach(function(btn) {
                     const handleLangClick = function handleLangClick(e) {
-                        e.preventDefault();
                         const lang = btn.getAttribute('data-lang');
                         if (lang) window.setLang(lang);
                     };
@@ -3480,7 +3480,6 @@
             if (forgotLangButtons) {
                 forgotLangButtons.forEach(function(btn) {
                     const handleLangClick = function handleLangClick(e) {
-                        e.preventDefault();
                         const lang = btn.getAttribute('data-lang');
                         if (lang) window.setLang(lang);
                     };
@@ -3501,6 +3500,31 @@
                     const m = document.getElementById('mainContent');
                     if (m) m.focus(); 
                 });
+            }
+
+            // Safety fallback: delegated handlers in case direct bindings are stripped/overridden
+            if (!window._crmLoginDelegatedBound) {
+                window._crmLoginDelegatedBound = true;
+                document.addEventListener('click', function(e) {
+                    const loginBox = document.getElementById('loginBox');
+                    if (!loginBox || loginBox.style.display === 'none') return;
+                    const target = e.target && e.target.closest ? e.target.closest('#btnLogin, #btnTotpVerify, #btnForgotSubmit, #btnResetSubmit, .login-lang button[data-lang], #linkForgotPassword') : null;
+                    if (!target) return;
+                    if (target.matches('.login-lang button[data-lang]')) {
+                        const lang = target.getAttribute('data-lang');
+                        if (lang && typeof window.setLang === 'function') window.setLang(lang);
+                        return;
+                    }
+                    if (target.id === 'linkForgotPassword') {
+                        e.preventDefault();
+                        if (typeof window.showForgotStep === 'function') window.showForgotStep();
+                        return;
+                    }
+                    if (target.id === 'btnLogin' && typeof window.login === 'function') return window.login();
+                    if (target.id === 'btnTotpVerify' && typeof window.verifyTotpLogin === 'function') return window.verifyTotpLogin();
+                    if (target.id === 'btnForgotSubmit' && typeof window.submitForgotPassword === 'function') return window.submitForgotPassword();
+                    if (target.id === 'btnResetSubmit' && typeof window.submitResetPassword === 'function') return window.submitResetPassword();
+                }, true);
             }
         }
 
