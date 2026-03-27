@@ -10,6 +10,7 @@ const { logActivity } = require('../services/activityLog');
 const { getCountryFromIp } = require('../lib/geoip');
 const emailService = require('../services/emailService');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
+const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
@@ -129,6 +130,18 @@ router.post('/login', async (req, res, next) => {
                 summary: `ورود ناموفق برای: ${identifier}`,
                 metadata: { ip: clientIp, identifier }
             }).catch(() => {});
+            setImmediate(async () => {
+                try {
+                    const settings = await getPanelSettings();
+                    const emailConfig = getPanelEmailConfig(settings);
+                    await sendAdminSecurityAlert('login_failed', {
+                        identifier,
+                        ip: clientIp,
+                        country: getCountryFromIp(clientIp),
+                        userAgent: (req.get && req.get('user-agent')) || null
+                    }, { siteName: settings.siteName, emailConfig });
+                } catch (_) {}
+            });
             return sendJson(401, { error: 'ایمیل/نام کاربری یا رمز عبور اشتباه است' });
         }
         if (user.totpEnabled) {
@@ -167,6 +180,13 @@ router.post('/login', async (req, res, next) => {
                 const settings = await getPanelSettings();
                 const emailConfig = getPanelEmailConfig(settings);
                 await emailService.sendLoginNotification(user, clientIp, (req.get && req.get('user-agent')) || '', { emailConfig, loginNotificationEnabled: settings.emailLoginNotification });
+                await sendAdminSecurityAlert('login_success', {
+                    userEmail: user.email,
+                    username: user.username,
+                    ip: clientIp,
+                    country: getCountryFromIp(clientIp),
+                    userAgent: (req.get && req.get('user-agent')) || null
+                }, { siteName: settings.siteName, emailConfig });
             } catch (_) {}
         });
         sendJson(200, {
@@ -298,6 +318,13 @@ router.post('/totp/verify-login', async (req, res, next) => {
                 const settings = await getPanelSettings();
                 const emailConfig = getPanelEmailConfig(settings);
                 await emailService.sendLoginNotification(user, clientIp2fa, (req.get && req.get('user-agent')) || '', { emailConfig, loginNotificationEnabled: settings.emailLoginNotification });
+                await sendAdminSecurityAlert('login_success', {
+                    userEmail: user.email,
+                    username: user.username,
+                    ip: clientIp2fa,
+                    country: getCountryFromIp(clientIp2fa),
+                    userAgent: (req.get && req.get('user-agent')) || null
+                }, { siteName: settings.siteName, emailConfig });
             } catch (_) {}
         });
         res.json({
@@ -404,6 +431,20 @@ router.post('/logout', authMiddleware, async (req, res, next) => {
             entityId: user.id,
             summary: 'خروج از پورتال',
             metadata: { email: user.email }
+        });
+        setImmediate(async () => {
+            try {
+                const clientIp = getRealIp(req);
+                const settings = await getPanelSettings();
+                const emailConfig = getPanelEmailConfig(settings);
+                await sendAdminSecurityAlert('logout', {
+                    userEmail: user.email,
+                    username: user.username,
+                    ip: clientIp,
+                    country: getCountryFromIp(clientIp),
+                    userAgent: (req.get && req.get('user-agent')) || null
+                }, { siteName: settings.siteName, emailConfig });
+            } catch (_) {}
         });
         res.json({ ok: true, message: 'خروج انجام شد' });
     } catch (err) {

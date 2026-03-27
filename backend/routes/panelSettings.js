@@ -194,23 +194,11 @@ router.post('/test-email', authMiddleware, async (req, res, next) => {
         let result = { ok: false };
         if (emailConfig && emailConfig.host && emailConfig.port) {
             result = await emailService.sendMailWithConfigDetailed(emailConfig, mailOpts);
-            // اگر با host فعلی شکست خورد، hostهای جایگزین را امتحان کن (fxguard.io روی GoDaddy)
-            const smtpFallbackHosts = (process.env.SMTP_FALLBACK_HOSTS || '').split(',').map(h => h.trim()).filter(Boolean);
-            if (!result.ok && emailConfig.user && emailConfig.pass && smtpFallbackHosts.length > 0) {
-                const currentHost = (emailConfig.host || '').replace(/\.+$/, '').trim();
-                for (const h of smtpFallbackHosts) {
-                    if (currentHost === h) continue;
-                    const fb = { ...emailConfig, host: h };
-                    const r = await emailService.sendMailWithConfigDetailed(fb, mailOpts);
-                    if (r.ok) { result = { ok: true, usedFallback: h }; break; }
-                }
-            }
         } else {
             if (!emailService.isEnabled()) {
                 return res.status(400).json({ error: 'تنظیمات SMTP وجود ندارد. Host و پورت را در فرم وارد کنید و ذخیره کنید، یا متغیرهای SMTP_HOST و SMTP_PORT را در فایل .env تنظیم کنید.' });
             }
-            const sent = await emailService.sendMail(mailOpts);
-            result = sent ? { ok: true } : { ok: false, error: 'ارسال ناموفق بود.' };
+            result = await emailService.sendMailWithRetry(mailOpts);
         }
         if (result.ok) {
             if (userId) testEmailCooldown.set(userId, Date.now());

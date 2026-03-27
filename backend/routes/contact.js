@@ -48,7 +48,11 @@ function createContactRouter(logger) {
 
         try {
             const emailService = require('../services/emailService');
-            if (!emailService.isEnabled()) {
+            const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
+            const panelSettings = await getPanelSettings();
+            const panelEmailConfig = getPanelEmailConfig(panelSettings);
+            const envEnabled = emailService.isEnabled();
+            if (!panelEmailConfig && !envEnabled) {
                 logger.warn('Contact form: email disabled, skipping send');
                 return res.json({
                     ok: true,
@@ -61,6 +65,7 @@ function createContactRouter(logger) {
                 email: emailStr,
                 phone: phone ? String(phone).trim().slice(0, 50) : '',
                 message: messageStr,
+                emailConfig: panelEmailConfig
             });
             res.json({ ok: true, message: 'پیام ارسال شد. به زودی با شما تماس می‌گیریم.' });
         } catch (err) {

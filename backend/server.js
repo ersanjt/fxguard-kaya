@@ -30,6 +30,7 @@ const socketAuth = require('./middleware/socketAuth');
 const models = require('./models');
 const { sequelize } = models;
 const errorHandler = require('./middleware/errorHandler');
+const { sendAdminSecurityAlert } = require('./services/adminAlertService');
 const { assertWebhookSecretBeforeBody } = require('./middleware/webhookAuth');
 
 // ==================== Express Setup ====================
@@ -362,10 +363,27 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('uncaughtException', (err) => {
     logger.error('Uncaught exception', { error: err.message, stack: err.stack });
+    setImmediate(async () => {
+        try {
+            await sendAdminSecurityAlert('backend_error', {
+                path: 'process:uncaughtException',
+                errorMessage: `${err.message || 'uncaughtException'}\n${err.stack || ''}`
+            });
+        } catch (_) {}
+    });
     gracefulShutdown('uncaughtException');
 });
 process.on('unhandledRejection', (reason) => {
     logger.error('Unhandled promise rejection', { reason: String(reason) });
+    setImmediate(async () => {
+        try {
+            const msg = reason && reason.stack ? `${reason.message || 'Unhandled rejection'}\n${reason.stack}` : String(reason);
+            await sendAdminSecurityAlert('backend_error', {
+                path: 'process:unhandledRejection',
+                errorMessage: msg
+            });
+        } catch (_) {}
+    });
 });
 
 module.exports = { app, server, io, getRabbitChannel, ready: _startPromise };

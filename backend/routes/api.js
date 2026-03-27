@@ -11,6 +11,7 @@ const models = require('../models');
 const { Message } = models;
 const { createContactRouter } = require('./contact');
 const { createGatewayRouter } = require('./gateway');
+const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 
 const authRoutes = require('./auth');
 const userRoutes = require('./users');
@@ -45,6 +46,34 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
             supportUrl: supportLink,
         });
+    });
+
+    // گزارش خطاهای فرانت‌اند (landing/dashboard)
+    apiRouter.post('/client-errors', async (req, res) => {
+        try {
+            const enabled = process.env.CLIENT_ERROR_REPORTING_ENABLED !== 'false';
+            if (!enabled) return res.json({ ok: true, disabled: true });
+            const body = req.body || {};
+            const message = (body.message || '').toString().trim();
+            if (!message) return res.status(400).json({ error: 'message is required' });
+            const pageUrl = (body.pageUrl || '').toString().slice(0, 500);
+            const source = (body.source || '').toString().slice(0, 500);
+            const stack = (body.stack || '').toString().slice(0, 3000);
+            const eventType = (body.eventType || 'error').toString().slice(0, 80);
+            const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim();
+            const ua = (req.get && req.get('user-agent')) || null;
+
+            await sendAdminSecurityAlert('frontend_error', {
+                ip: clientIp,
+                userAgent: ua,
+                pageUrl,
+                path: source || pageUrl,
+                errorMessage: `${eventType}: ${message}${stack ? '\n' + stack : ''}`
+            });
+            return res.json({ ok: true });
+        } catch (_) {
+            return res.json({ ok: true });
+        }
     });
 
     apiRouter.use('/', createContactRouter(logger));

@@ -7,7 +7,6 @@
  * ✓ محدودیت میزان ارسال
  */
 
-const nodemailer = require('nodemailer');
 const logger = require('../config/logger');
 
 const FROM_NAME = process.env.SMTP_FROM_NAME || 'پورتال کارکنان';
@@ -23,8 +22,14 @@ const CONNECTION_TIMEOUT_MS = parseInt(process.env.EMAIL_CONNECTION_TIMEOUT_MS |
 const GREETING_TIMEOUT_MS = parseInt(process.env.EMAIL_GREETING_TIMEOUT_MS || '15000', 10);
 const SOCKET_TIMEOUT_MS = parseInt(process.env.EMAIL_SOCKET_TIMEOUT_MS || '25000', 10);
 
-let transporter = null;
 const emailStats = { count: 0, resetAt: Date.now() };
+
+function parseFallbackHosts(raw) {
+    return String(raw || '')
+        .split(',')
+        .map(h => h.trim().toLowerCase())
+        .filter(Boolean);
+}
 
 function isEnabled() {
     const host = process.env.SMTP_HOST;
@@ -58,28 +63,71 @@ function checkRateLimit() {
     return true;
 }
 
-function getTransporter() {
-    if (transporter) return transporter;
+function getEnvEmailConfig() {
     if (!isEnabled()) return null;
+    const host = normalizeHost(process.env.SMTP_HOST || '');
     const port = parseInt(process.env.SMTP_PORT, 10) || 587;
     const secure = process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1' || port === 465;
-    const host = (process.env.SMTP_HOST || '').replace(/\.+$/, '').trim();
-    const opts = {
+    return {
         host,
         port,
+        user: process.env.SMTP_USER || null,
+        pass: process.env.SMTP_PASS || null,
+        from: process.env.SMTP_FROM || process.env.SMTP_USER || null,
+        fromName: process.env.SMTP_FROM_NAME || FROM_NAME || null,
         secure,
-        auth: process.env.SMTP_USER && process.env.SMTP_PASS
-            ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-            : undefined,
-        connectionTimeout: CONNECTION_TIMEOUT_MS,
-        greetingTimeout: GREETING_TIMEOUT_MS,
-        socketTimeout: SOCKET_TIMEOUT_MS,
-        maxConnections: 5,
-        maxMessages: 100
+        allowSelfSigned: parseFallbackHosts(process.env.SMTP_ALLOW_SELF_SIGNED_HOSTS || '').some(h => host.includes(h) || host === h),
+        fallbackHosts: parseFallbackHosts(process.env.SMTP_FALLBACK_HOSTS || '')
     };
-    if (port === 587 && !secure) opts.requireTLS = true;
-    transporter = nodemailer.createTransport(opts);
-    return transporter;
+}
+
+function isRetryableError(err) {
+    const msg = (err && err.message ? err.message : '').toLowerCase();
+    return err.code === 'ECONNREFUSED' ||
+        err.code === 'ETIMEDOUT' ||
+        err.code === 'EHOSTUNREACH' ||
+        err.code === 'ECONNECTION' ||
+        msg.includes('smtp') ||
+        msg.includes('timeout') ||
+        msg.includes('connection');
+}
+
+function getCandidateHosts(config) {
+    const baseHost = normalizeHost(config.host);
+    const envFallback = parseFallbackHosts(process.env.SMTP_FALLBACK_HOSTS || '');
+    const cfgFallback = Array.isArray(config.fallbackHosts)
+        ? config.fallbackHosts.map(h => normalizeHost(h)).filter(Boolean)
+        : [];
+    const out = [baseHost];
+    for (const h of [...cfgFallback, ...envFallback]) {
+        if (!h) continue;
+        if (!out.includes(h)) out.push(h);
+    }
+    return out;
+}
+
+function buildMailOpts(config, { to, subject, text, html, attachments = [] }) {
+    const emails = Array.isArray(to) ? to : [to];
+    const fromAddr = (config.from || config.user || FROM_EMAIL || 'noreply@localhost').trim();
+    const from = config.fromName ? `"${config.fromName}" <${fromAddr}>` : fromAddr;
+    const unsubscribeUrl = `${PANEL_URL}?unsubscribe=1`;
+    return {
+        from,
+        to: emails.join(', '),
+        subject: subject || '(بدون موضوع)',
+        text: text || '',
+        html: html || (text ? text.replace(/\n/g, '<br>') : ''),
+        attachments: attachments || [],
+        headers: {
+            'X-Mailer': 'KayaCRM',
+            'Reply-To': fromAddr,
+            'List-Unsubscribe': `<${unsubscribeUrl}>`,
+            'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+            'X-Priority': '3',
+            'X-MSMail-Priority': 'Normal',
+            'Precedence': 'bulk'
+        }
+    };
 }
 
 function getFrom() {
@@ -91,70 +139,12 @@ function getFrom() {
  * @returns {Promise<{ok: boolean, error?: string, retries?: number}>}
  */
 async function sendMailWithRetry({ to, subject, text, html, attachments = [] }, attempt = 1) {
-    if (!isEnabled()) {
+    const envConfig = getEnvEmailConfig();
+    if (!envConfig) {
         logger.warn('Email service disabled: SMTP not configured');
         return { ok: false, error: 'SMTP not configured' };
     }
-
-    if (!checkRateLimit()) {
-        return { ok: false, error: 'Rate limit exceeded' };
-    }
-
-    // اعتبارسنجی آدرس ایمیل
-    const emails = Array.isArray(to) ? to : [to];
-    for (const email of emails) {
-        if (!isValidEmail(email)) {
-            logger.warn('Invalid email address', { email });
-            return { ok: false, error: `Invalid email: ${email}` };
-        }
-    }
-
-    try {
-        const transport = getTransporter();
-        if (!transport) return { ok: false, error: 'Transporter not initialized' };
-
-        const fromAddr = FROM_EMAIL.trim();
-        const unsubscribeUrl = `${PANEL_URL}?unsubscribe=1`;
-        
-        const mailOpts = {
-            from: getFrom(),
-            to: emails.join(', '),
-            subject: subject || '(بدون موضوع)',
-            text: text || '',
-            html: html || (text ? text.replace(/\n/g, '<br>') : ''),
-            attachments: attachments || [],
-            headers: {
-                'X-Mailer': 'KayaCRM',
-                'Reply-To': fromAddr,
-                'List-Unsubscribe': `<${unsubscribeUrl}>`,
-                'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-                'X-Priority': '3',
-                'X-MSMail-Priority': 'Normal',
-                'Precedence': 'bulk'
-            }
-        };
-
-        await transport.sendMail(mailOpts);
-        logger.info('Email sent successfully', { to: emails.join(', ') });
-        return { ok: true };
-    } catch (err) {
-        const isRetryable = err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || 
-                           err.code === 'EHOSTUNREACH' || err.message.includes('SMTP');
-        
-        if (isRetryable && attempt < MAX_RETRIES) {
-            const delay = RETRY_DELAY_MS * attempt;
-            logger.warn(`Email send failed, retrying`, { attempt, maxRetries: MAX_RETRIES, delay, error: err.message });
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return sendMailWithRetry({ to, subject, text, html, attachments }, attempt + 1);
-        }
-
-        const errorMsg = err.message || String(err);
-        if (err.response) {
-            return { ok: false, error: `SMTP Error: ${errorMsg}` };
-        }
-        logger.error('Email send failed', { attempt, error: errorMsg });
-        return { ok: false, error: errorMsg, retries: attempt };
-    }
+    return sendMailWithConfigDetailed(envConfig, { to, subject, text, html, attachments }, attempt);
 }
 
 /**
@@ -203,63 +193,50 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
         }
     }
 
-    try {
-        const nodemailer_local = require('nodemailer');
-        const host = normalizeHost(config.host);
-        const port = parseInt(config.port, 10) || 587;
-        const secure = !!config.secure;
-        const opts = {
-            host,
-            port,
-            secure,
-            auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
-            connectionTimeout: CONNECTION_TIMEOUT_MS,
-            greetingTimeout: GREETING_TIMEOUT_MS,
-            socketTimeout: SOCKET_TIMEOUT_MS
-        };
-        if (port === 587 && !secure) opts.requireTLS = true;
-        if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
-        
-        const transport = nodemailer_local.createTransport(opts);
-        const fromAddr = (config.from || config.user || 'noreply@localhost').trim();
-        const from = config.fromName ? `"${config.fromName}" <${fromAddr}>` : fromAddr;
-        const unsubscribeUrl = `${PANEL_URL}?unsubscribe=1`;
-        
-        const mailOpts = {
-            from,
-            to: emails.join(', '),
-            subject: subject || '(بدون موضوع)',
-            text: text || '',
-            html: html || (text ? text.replace(/\n/g, '<br>') : ''),
-            attachments: attachments || [],
-            headers: {
-                'X-Mailer': 'KayaCRM',
-                'Reply-To': fromAddr,
-                'List-Unsubscribe': `<${unsubscribeUrl}>`,
-                'X-Priority': '3',
-                'Precedence': 'bulk'
-            }
-        };
-        
-        await transport.sendMail(mailOpts);
-        logger.info('Email sent successfully (custom config)', { to: emails.join(', ') });
-        return { ok: true };
-    } catch (err) {
-        const isRetryable = err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || 
-                           err.code === 'EHOSTUNREACH' || err.message.includes('SMTP');
-        
-        if (isRetryable && attempt < MAX_RETRIES) {
-            const delay = RETRY_DELAY_MS * attempt;
-            logger.warn('Email send failed (custom config), retrying', { attempt, maxRetries: MAX_RETRIES, delay, error: err.message });
-            await new Promise(resolve => setTimeout(resolve, delay));
-            return sendMailWithConfigDetailed(config, { to, subject, text, html, attachments }, attempt + 1);
-        }
+    const nodemailer_local = require('nodemailer');
+    const basePort = parseInt(config.port, 10) || 587;
+    const baseSecure = !!config.secure;
+    const mailOpts = buildMailOpts(config, { to, subject, text, html, attachments });
+    const hostCandidates = getCandidateHosts(config);
+    let lastError = null;
 
-        let msg = err.message || String(err);
-        if (err.response) msg += ' — ' + (typeof err.response === 'string' ? err.response : JSON.stringify(err.response));
-        logger.error('Email send error (custom config)', { error: msg });
-        return { ok: false, error: msg };
+    for (const host of hostCandidates) {
+        for (let i = Math.max(1, attempt); i <= MAX_RETRIES; i++) {
+            try {
+                const opts = {
+                    host,
+                    port: basePort,
+                    secure: baseSecure,
+                    auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
+                    connectionTimeout: CONNECTION_TIMEOUT_MS,
+                    greetingTimeout: GREETING_TIMEOUT_MS,
+                    socketTimeout: SOCKET_TIMEOUT_MS
+                };
+                if (basePort === 587 && !baseSecure) opts.requireTLS = true;
+                if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
+
+                const transport = nodemailer_local.createTransport(opts);
+                await transport.sendMail(mailOpts);
+                logger.info('Email sent successfully (custom config)', { to: emails.join(', '), host });
+                return { ok: true, usedHost: host };
+            } catch (err) {
+                lastError = err;
+                const retryable = isRetryableError(err);
+                if (retryable && i < MAX_RETRIES) {
+                    const delay = RETRY_DELAY_MS * i;
+                    logger.warn('Email send failed (custom config), retrying', { attempt: i, maxRetries: MAX_RETRIES, delay, host, error: err.message });
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    continue;
+                }
+                break;
+            }
+        }
     }
+
+    let msg = (lastError && (lastError.message || String(lastError))) || 'Email send failed';
+    if (lastError && lastError.response) msg += ' — ' + (typeof lastError.response === 'string' ? lastError.response : JSON.stringify(lastError.response));
+    logger.error('Email send error (custom config)', { error: msg });
+    return { ok: false, error: msg };
 }
 
 /** قالب HTML پایه با پشتیبانی RTL */
@@ -368,7 +345,7 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
  * ارسال فرم تماس لندینگ — به ایمیل فروش/پشتیبانی
  * toEmail: ایمیل گیرنده (از env: CONTACT_EMAIL یا sales@fxguard.io)
  */
-async function sendContactForm({ purpose, name, email, phone, message }) {
+async function sendContactForm({ purpose, name, email, phone, message, emailConfig = null }) {
     if (!isValidEmail(email)) {
         logger.warn('Invalid email in contact form', { email });
         return { ok: false, error: 'Invalid email address' };
@@ -402,7 +379,12 @@ async function sendContactForm({ purpose, name, email, phone, message }) {
       <p class="muted">Reply directly to ${esc(email) || 'the sender'}.</p>
     `);
     
-    const result = await sendMailWithRetry({ to: toEmail, subject, text, html });
+    let result;
+    if (emailConfig && emailConfig.host) {
+        result = await sendMailWithConfigDetailed(emailConfig, { to: toEmail, subject, text, html });
+    } else {
+        result = await sendMailWithRetry({ to: toEmail, subject, text, html });
+    }
     if (!result.ok) {
         logger.error('Contact form email failed', { error: result.error });
         return result;

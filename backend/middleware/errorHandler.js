@@ -5,6 +5,7 @@
  * - Handles known error types (Sequelize, JWT, Multer, etc.)
  */
 const logger = require('../config/logger');
+const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 
 const isDev = process.env.NODE_ENV !== 'production';
 
@@ -62,6 +63,20 @@ function errorHandler(err, req, res, next) {
         errorMessage: err.message,
         ...(isDev && { stack: err.stack })
     });
+
+    if (status >= 500) {
+        setImmediate(async () => {
+            try {
+                await sendAdminSecurityAlert('backend_error', {
+                    userEmail: req.user && req.user.email ? req.user.email : null,
+                    ip: (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim(),
+                    userAgent: (req.get && req.get('user-agent')) || null,
+                    path: req.originalUrl || req.path,
+                    errorMessage: err.message || 'Internal server error'
+                });
+            } catch (_) {}
+        });
+    }
 
     res.status(status).json({
         error: message,
