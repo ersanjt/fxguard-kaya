@@ -3391,26 +3391,33 @@
 
         /* ========== Login Page Event Handlers Setup ========== */
         function setupLoginEventHandlers() {
+            // Bind click + touchend for mobile browsers where click can be unreliable
+            function bindTapAndClick(el, handler) {
+                if (!el || typeof handler !== 'function') return;
+                if (!el._crmTapBound) el._crmTapBound = {};
+                if (el._crmTapBound[handler.name || 'handler']) return;
+                el.addEventListener('click', handler, { passive: false });
+                el.addEventListener('touchend', handler, { passive: false });
+                el._crmTapBound[handler.name || 'handler'] = true;
+            }
+
             // Language buttons on login page
-            const loginLangButtons = document.querySelectorAll('.login-langs button[data-lang]');
+            const loginLangButtons = document.querySelectorAll('.login-lang button[data-lang]');
             if (loginLangButtons) {
                 loginLangButtons.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleLangClick(e) { 
+                    const handleLangClick = function handleLangClick(e) {
+                        e.preventDefault();
                         const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
-                    });
-                    btn.addEventListener('click', function handleLangClick(e) { 
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
-                    });
+                        if (lang) window.setLang(lang);
+                    };
+                    bindTapAndClick(btn, handleLangClick);
                 });
             }
             
             // Login button
             const btnLogin = document.getElementById('btnLogin');
             if (btnLogin) {
-                btnLogin.removeEventListener('click', window.login);
-                btnLogin.addEventListener('click', window.login);
+                bindTapAndClick(btnLogin, window.login);
             }
             
             // Forgot password link
@@ -3469,17 +3476,15 @@
             }
             
             // Language buttons in forgot/reset modal
-            const forgotLangButtons = document.querySelectorAll('.forgot-langs button[data-lang]');
+            const forgotLangButtons = document.querySelectorAll('.login-lang button[data-lang]');
             if (forgotLangButtons) {
                 forgotLangButtons.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleLangClick(e) { 
+                    const handleLangClick = function handleLangClick(e) {
+                        e.preventDefault();
                         const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
-                    });
-                    btn.addEventListener('click', function handleLangClick(e) { 
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
-                    });
+                        if (lang) window.setLang(lang);
+                    };
+                    bindTapAndClick(btn, handleLangClick);
                 });
             }
             
@@ -10274,4 +10279,6 @@
             }).catch(function() { logout(); });
         } else {
             fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
+            // Ensure login controls work even if inline handlers are blocked
+            setupLoginEventHandlers();
         }
