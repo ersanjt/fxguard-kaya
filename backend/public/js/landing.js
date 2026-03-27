@@ -32,7 +32,11 @@
             form_name: 'Name *', form_email: 'Email *', form_phone: 'Phone / WhatsApp', form_message: 'Message *', form_submit: 'Send Message', form_success: 'Thank you! We will contact you soon.', form_wa: 'Or contact via WhatsApp +90 501 067 6486',
             cta_title: 'Ready to Get Started?', cta_desc: 'Choose a plan, request a demo, or ask for a custom quote. We\'re here to help.', cta_plans: 'View Plans', cta_wa: 'WhatsApp', cta_form: 'Contact Form',
             trust_demo: 'Free demo', trust_24h: '24h response', trust_secure: 'Secure & reliable',
-            footer_contact: 'Contact', footer_support: 'Support'
+            footer_contact: 'Contact', footer_support: 'Support',
+            a2hs_title: 'Install app on your phone',
+            a2hs_desc: 'Add this page to Home Screen for faster access.',
+            a2hs_btn_install: 'Add to Home Screen',
+            a2hs_btn_later: 'Later'
         },
         fa: {
             logo: 'WhatsApp CRM',
@@ -65,7 +69,11 @@
             form_name: 'نام *', form_email: 'ایمیل *', form_phone: 'تلفن / واتساپ', form_message: 'پیام *', form_submit: 'ارسال', form_success: 'متشکریم! به زودی با شما تماس می‌گیریم.', form_wa: 'یا واتساپ: ۰۰۹۰۵۰۱۰۶۷۶۴۸۶',
             cta_title: 'آماده شروع هستید؟', cta_desc: 'پلن انتخاب کنید، دمو بخواهید یا پیشنهاد سفارشی. ما اینجا هستیم.', cta_plans: 'پلن‌ها', cta_wa: 'واتساپ', cta_form: 'فرم تماس',
             trust_demo: 'دمو رایگان', trust_24h: 'پاسخ ۲۴ ساعته', trust_secure: 'امن و قابل اعتماد',
-            footer_contact: 'تماس', footer_support: 'پشتیبانی'
+            footer_contact: 'تماس', footer_support: 'پشتیبانی',
+            a2hs_title: 'نصب روی گوشی',
+            a2hs_desc: 'برای دسترسی سریع‌تر، این صفحه را به هوم اسکرین اضافه کنید.',
+            a2hs_btn_install: 'افزودن به هوم اسکرین',
+            a2hs_btn_later: 'بعدا'
         },
         tr: {
             logo: 'WhatsApp CRM',
@@ -98,7 +106,11 @@
             form_name: 'Ad *', form_email: 'E-posta *', form_phone: 'Telefon / WhatsApp', form_message: 'Mesaj *', form_submit: 'Gönder', form_success: 'Teşekkürler! Yakında sizinle iletişime geçeceğiz.', form_wa: 'Veya WhatsApp: +90 501 067 6486',
             cta_title: 'Başlamaya Hazır mısınız?', cta_desc: 'Plan seçin, demo isteyin veya özel teklif alın. Yardımcı olmaya hazırız.', cta_plans: 'Planlar', cta_wa: 'WhatsApp', cta_form: 'İletişim Formu',
             trust_demo: 'Ücretsiz demo', trust_24h: '24 saat yanıt', trust_secure: 'Güvenli ve güvenilir',
-            footer_contact: 'İletişim', footer_support: 'Destek'
+            footer_contact: 'İletişim', footer_support: 'Destek',
+            a2hs_title: 'Uygulamayi telefonuna ekle',
+            a2hs_desc: 'Daha hizli erisim icin bu sayfayi ana ekrana ekleyin.',
+            a2hs_btn_install: 'Ana Ekrana Ekle',
+            a2hs_btn_later: 'Sonra'
         }
     };
 
@@ -177,6 +189,92 @@
                 form.style.display = 'none';
                 return false;
             }
+        });
+    }
+
+    /* Add to Home Screen prompt (Android + iOS fallback) */
+    const a2hsBanner = document.getElementById('a2hsBanner');
+    const a2hsInstallBtn = document.getElementById('a2hsInstallBtn');
+    const a2hsLaterBtn = document.getElementById('a2hsLaterBtn');
+    let deferredPrompt = null;
+    const A2HS_DISMISSED_KEY = 'a2hs_banner_dismissed';
+
+    function isMobile() {
+        return window.matchMedia('(max-width: 900px)').matches;
+    }
+
+    function isIos() {
+        return /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+    }
+
+    function isInStandaloneMode() {
+        return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    }
+
+    function showA2hsBanner() {
+        if (!a2hsBanner) return;
+        if (!isMobile()) return;
+        if (isInStandaloneMode()) return;
+        if (localStorage.getItem(A2HS_DISMISSED_KEY) === '1') return;
+        a2hsBanner.hidden = false;
+    }
+
+    function hideA2hsBanner(remember) {
+        if (!a2hsBanner) return;
+        a2hsBanner.hidden = true;
+        if (remember) localStorage.setItem(A2HS_DISMISSED_KEY, '1');
+    }
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        showA2hsBanner();
+    });
+
+    if (a2hsInstallBtn) {
+        a2hsInstallBtn.addEventListener('click', async function() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                const result = await deferredPrompt.userChoice;
+                if (result && result.outcome !== 'accepted') {
+                    showA2hsBanner();
+                } else {
+                    hideA2hsBanner(true);
+                }
+                deferredPrompt = null;
+                return;
+            }
+
+            if (isIos()) {
+                alert(LANG === 'fa'
+                    ? 'در Safari روی Share بزنید و Add to Home Screen را انتخاب کنید.'
+                    : (LANG === 'tr'
+                        ? 'Safari\'de Paylas\'a dokunun ve Ana Ekrana Ekle\'yi secin.'
+                        : 'In Safari, tap Share and choose Add to Home Screen.'));
+                return;
+            }
+
+            hideA2hsBanner(true);
+        });
+    }
+
+    if (a2hsLaterBtn) {
+        a2hsLaterBtn.addEventListener('click', function() {
+            hideA2hsBanner(true);
+        });
+    }
+
+    window.addEventListener('appinstalled', function() {
+        hideA2hsBanner(true);
+    });
+
+    if (isIos() && !isInStandaloneMode()) {
+        showA2hsBanner();
+    }
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function() {
+            navigator.serviceWorker.register('/service-worker.js').catch(function() {});
         });
     }
 })();
