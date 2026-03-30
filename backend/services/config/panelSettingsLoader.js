@@ -20,6 +20,12 @@ const DEFAULT = {
     smtpFromName: null,
     smtpSecure: false,
     emailLoginNotification: false,
+    adminAlertsEnabled: true,
+    adminAlertEmails: null,
+    telegramBotToken: null,
+    telegramChatIds: null,
+    telegramTimeoutMs: 12000,
+    clientErrorReportingEnabled: true,
     hiddenSections: [],
     languageMode: 'trilingual',
     defaultLanguage: 'fa',
@@ -92,6 +98,12 @@ async function getPanelSettings() {
         smtpFromName: row.smtpFromName || null,
         smtpSecure: row.smtpSecure === true,
         emailLoginNotification: row.emailLoginNotification === true,
+        adminAlertsEnabled: row.adminAlertsEnabled !== false,
+        adminAlertEmails: row.adminAlertEmails || null,
+        telegramBotToken: row.telegramBotToken || null,
+        telegramChatIds: row.telegramChatIds || null,
+        telegramTimeoutMs: Number.isFinite(Number(row.telegramTimeoutMs)) ? Math.max(1000, Number(row.telegramTimeoutMs)) : DEFAULT.telegramTimeoutMs,
+        clientErrorReportingEnabled: row.clientErrorReportingEnabled !== false,
         hiddenSections: parseHiddenSections(row.hiddenSections),
         languageMode: MODE_TO_LANGUAGES[row.languageMode]
             ? row.languageMode
@@ -134,9 +146,53 @@ function getPanelEmailConfig(settings) {
     };
 }
 
+function parseBool(v, fallback = false) {
+    if (v === true || v === false) return v;
+    if (v == null) return fallback;
+    const s = String(v).trim().toLowerCase();
+    if (s === 'true' || s === '1' || s === 'yes' || s === 'on') return true;
+    if (s === 'false' || s === '0' || s === 'no' || s === 'off') return false;
+    return fallback;
+}
+
+function parseEmails(raw) {
+    return String(raw || '')
+        .split(',')
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean);
+}
+
+function parseChatIds(raw) {
+    return String(raw || '')
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean);
+}
+
+function getPanelAlertConfig(settings) {
+    const s = settings || {};
+    const envAdminEmails = process.env.ADMIN_ALERT_EMAILS || process.env.MAIN_ADMIN_EMAIL || '';
+    const alertEmailsRaw = s.adminAlertEmails || envAdminEmails;
+    const tgChatIdsRaw = s.telegramChatIds || process.env.TELEGRAM_CHAT_IDS || '';
+    const tgTimeoutRaw = s.telegramTimeoutMs != null ? s.telegramTimeoutMs : process.env.TELEGRAM_TIMEOUT_MS;
+    const timeoutMs = Number.isFinite(Number(tgTimeoutRaw)) ? Math.max(1000, Number(tgTimeoutRaw)) : 12000;
+    return {
+        adminAlertsEnabled: parseBool(s.adminAlertsEnabled, parseBool(process.env.ADMIN_ALERTS_ENABLED, false)),
+        adminAlertEmails: parseEmails(alertEmailsRaw),
+        telegramBotToken: String(s.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '').trim(),
+        telegramChatIds: parseChatIds(tgChatIdsRaw),
+        telegramTimeoutMs: timeoutMs,
+        clientErrorReportingEnabled: parseBool(
+            s.clientErrorReportingEnabled,
+            parseBool(process.env.CLIENT_ERROR_REPORTING_ENABLED, true)
+        ),
+    };
+}
+
 module.exports = {
     getPanelSettings,
     getPanelEmailConfig,
+    getPanelAlertConfig,
     getSupportedLanguages,
     getSupportedLanguagesFromMode,
     DEFAULT,

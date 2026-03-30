@@ -51,8 +51,6 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     // گزارش خطاهای فرانت‌اند (landing/dashboard)
     apiRouter.post('/client-errors', async (req, res) => {
         try {
-            const enabled = process.env.CLIENT_ERROR_REPORTING_ENABLED !== 'false';
-            if (!enabled) return res.json({ ok: true, disabled: true });
             const body = req.body || {};
             const message = (body.message || '').toString().trim();
             if (!message) return res.status(400).json({ error: 'message is required' });

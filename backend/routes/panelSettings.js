@@ -4,6 +4,7 @@ const { authMiddleware } = require('../middleware/auth');
 const { PanelSetting } = require('../models');
 const { getPanelSettings, getSupportedLanguages, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 const emailService = require('../services/emailService');
+const telegramService = require('../services/telegramService');
 
 async function getSettings() {
     return getPanelSettings();
@@ -66,6 +67,8 @@ router.get('/', authMiddleware, async (req, res, next) => {
         const s = await getSettings();
         const out = { ...s };
         delete out.smtpPass;
+        delete out.telegramBotToken;
+        out.telegramBotTokenSet = !!(s && s.telegramBotToken);
         res.json(out);
     } catch (err) {
         next(err);
@@ -78,7 +81,7 @@ router.put('/', authMiddleware, async (req, res, next) => {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const body = req.body || {};
-        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder } = body;
+        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, adminAlertsEnabled, adminAlertEmails, telegramBotToken, telegramChatIds, telegramTimeoutMs, clientErrorReportingEnabled, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder } = body;
         if (logoUrl && !/^https?:\/\//i.test(String(logoUrl).trim()) && !String(logoUrl).trim().startsWith('/uploads/')) {
             return res.status(400).json({ error: 'آدرس لوگو باید یک URL معتبر یا مسیر /uploads/ باشد' });
         }
@@ -91,6 +94,18 @@ router.put('/', authMiddleware, async (req, res, next) => {
         }
         if (smtpFrom && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(smtpFrom).trim())) {
             return res.status(400).json({ error: 'آدرس ایمیل فرستنده SMTP نامعتبر است' });
+        }
+        if (adminAlertEmails && String(adminAlertEmails).trim().length > 2000) {
+            return res.status(400).json({ error: 'لیست ایمیل مدیران بیش از حد طولانی است' });
+        }
+        if (telegramChatIds && String(telegramChatIds).trim().length > 1000) {
+            return res.status(400).json({ error: 'لیست Chat ID تلگرام بیش از حد طولانی است' });
+        }
+        if (telegramTimeoutMs !== undefined && telegramTimeoutMs !== '') {
+            const timeout = parseInt(telegramTimeoutMs, 10);
+            if (isNaN(timeout) || timeout < 1000 || timeout > 120000) {
+                return res.status(400).json({ error: 'Telegram timeout باید بین 1000 تا 120000 میلی‌ثانیه باشد' });
+            }
         }
         const [row] = await PanelSetting.findOrCreate({
             where: { id: 'default' },
@@ -112,6 +127,12 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (smtpFromName !== undefined) row.smtpFromName = smtpFromName === '' ? null : smtpFromName;
         if (smtpSecure !== undefined) row.smtpSecure = !!smtpSecure;
         if (emailLoginNotification !== undefined) row.emailLoginNotification = !!emailLoginNotification;
+        if (adminAlertsEnabled !== undefined) row.adminAlertsEnabled = !!adminAlertsEnabled;
+        if (adminAlertEmails !== undefined) row.adminAlertEmails = adminAlertEmails === '' ? null : String(adminAlertEmails).trim();
+        if (telegramBotToken !== undefined && String(telegramBotToken).trim() !== '') row.telegramBotToken = String(telegramBotToken).trim();
+        if (telegramChatIds !== undefined) row.telegramChatIds = telegramChatIds === '' ? null : String(telegramChatIds).trim();
+        if (telegramTimeoutMs !== undefined) row.telegramTimeoutMs = telegramTimeoutMs === '' ? null : parseInt(telegramTimeoutMs, 10);
+        if (clientErrorReportingEnabled !== undefined) row.clientErrorReportingEnabled = !!clientErrorReportingEnabled;
         if (hiddenSections !== undefined) row.hiddenSections = Array.isArray(hiddenSections) ? JSON.stringify(hiddenSections) : (hiddenSections === '' ? null : row.hiddenSections);
         if (languageMode !== undefined) row.languageMode = languageMode === '' ? null : languageMode;
         if (defaultLanguage !== undefined && (defaultLanguage === 'fa' || defaultLanguage === 'en' || defaultLanguage === 'tr')) row.defaultLanguage = defaultLanguage;
@@ -126,6 +147,8 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (footerStyle !== undefined) s.footerStyle = (footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(footerStyle) >= 0) ? footerStyle : 'accent';
         s.supportedLanguages = getSupportedLanguages(s);
         delete s.smtpPass;
+        delete s.telegramBotToken;
+        s.telegramBotTokenSet = !!(row.telegramBotToken && String(row.telegramBotToken).trim());
         res.json(s);
     } catch (err) {
         next(err);
@@ -209,6 +232,37 @@ router.post('/test-email', authMiddleware, async (req, res, next) => {
         } else {
             res.status(500).json({ error: result.error || 'ارسال ایمیل ناموفق بود. Host، پورت و احراز هویت را بررسی کنید.' });
         }
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ارسال پیام تست تلگرام — برای اطمینان از صحت تنظیمات Bot
+router.post('/test-telegram', authMiddleware, async (req, res, next) => {
+    try {
+        if (!req.canAccess || !req.canAccess('panel_settings')) {
+            return res.status(403).json({ error: 'دسترسی به تنظیمات پنل ندارید.' });
+        }
+        const settings = await getPanelSettings();
+        const tokenInput = (req.body.telegramBotToken || '').toString().trim();
+        const chatIdsInput = (req.body.telegramChatIds || '').toString().trim();
+        const timeoutInput = (req.body.telegramTimeoutMs || '').toString().trim();
+        const token = tokenInput || settings.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '';
+        const chatIds = chatIdsInput || settings.telegramChatIds || process.env.TELEGRAM_CHAT_IDS || '';
+        const timeoutMs = timeoutInput ? parseInt(timeoutInput, 10) : (settings.telegramTimeoutMs || process.env.TELEGRAM_TIMEOUT_MS || 12000);
+
+        if (!token || !chatIds) {
+            return res.status(400).json({ error: 'توکن و Chat ID تلگرام الزامی است.' });
+        }
+        const customText = (req.body.text || '').toString().trim();
+        const message = customText || `✅ Telegram test from Kaya CRM\nTime: ${new Date().toISOString()}`;
+        const result = await telegramService.sendMessage(message, {
+            botToken: token,
+            chatIds,
+            timeoutMs
+        });
+        if (result.ok) return res.json({ ok: true, message: 'پیام تست تلگرام ارسال شد.' });
+        return res.status(500).json({ error: result.error || 'ارسال پیام تلگرام ناموفق بود.' });
     } catch (err) {
         next(err);
     }

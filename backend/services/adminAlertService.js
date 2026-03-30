@@ -1,18 +1,13 @@
 const emailService = require('./emailService');
 const telegramService = require('./telegramService');
 const logger = require('../config/logger');
+const { getPanelSettings, getPanelAlertConfig } = require('./config/panelSettingsLoader');
 
-function getAdminEmails() {
-    const raw = (process.env.ADMIN_ALERT_EMAILS || process.env.MAIN_ADMIN_EMAIL || '').trim();
-    if (!raw) return [];
-    return raw
-        .split(',')
-        .map(s => s.trim().toLowerCase())
-        .filter(Boolean);
-}
-
-function isEnabled() {
-    return process.env.ADMIN_ALERTS_ENABLED === 'true' || process.env.ADMIN_ALERTS_ENABLED === '1';
+async function resolveAlertConfig(options = {}) {
+    if (options.alertConfig) return options.alertConfig;
+    if (options.settings) return getPanelAlertConfig(options.settings);
+    const settings = await getPanelSettings();
+    return getPanelAlertConfig(settings);
 }
 
 function fmtNow() {
@@ -85,11 +80,16 @@ function buildBody(eventType, data) {
 }
 
 async function sendAdminSecurityAlert(eventType, data = {}, options = {}) {
-    if (!isEnabled()) return { ok: false, skipped: true, reason: 'alerts_disabled' };
+    const alertConfig = await resolveAlertConfig(options);
+    if (!alertConfig.adminAlertsEnabled) return { ok: false, skipped: true, reason: 'alerts_disabled' };
+    const isErrorEvent = eventType === 'frontend_error' || eventType === 'backend_error';
+    if (isErrorEvent && alertConfig.clientErrorReportingEnabled === false) {
+        return { ok: false, skipped: true, reason: 'error_reporting_disabled' };
+    }
 
     const body = buildBody(eventType, data);
     const subject = buildSubject(eventType, options.siteName);
-    const adminEmails = getAdminEmails();
+    const adminEmails = Array.isArray(alertConfig.adminAlertEmails) ? alertConfig.adminAlertEmails : [];
 
     let emailOk = false;
     if (adminEmails.length > 0) {
@@ -117,9 +117,14 @@ async function sendAdminSecurityAlert(eventType, data = {}, options = {}) {
     }
 
     let telegramOk = false;
-    if (telegramService.isEnabled()) {
+    const tgConfig = {
+        botToken: alertConfig.telegramBotToken,
+        chatIds: alertConfig.telegramChatIds,
+        timeoutMs: alertConfig.telegramTimeoutMs
+    };
+    if (telegramService.isEnabled(tgConfig)) {
         try {
-            const r = await telegramService.sendMessage(body.tg);
+            const r = await telegramService.sendMessage(body.tg, tgConfig);
             telegramOk = !!r.ok;
         } catch (err) {
             logger.warn('Admin alert telegram failed', { error: err.message || String(err) });

@@ -3391,33 +3391,26 @@
 
         /* ========== Login Page Event Handlers Setup ========== */
         function setupLoginEventHandlers() {
-            // Bind click + touchend for mobile browsers where click can be unreliable
-            function bindTapAndClick(el, handler) {
-                if (!el || typeof handler !== 'function') return;
-                if (!el._crmTapBound) el._crmTapBound = {};
-                if (el._crmTapBound[handler.name || 'handler']) return;
-                // pointerup is more reliable than touchend across mobile Safari/Chrome
-                el.addEventListener('pointerup', handler, { passive: true });
-                el.addEventListener('click', handler, { passive: true });
-                el._crmTapBound[handler.name || 'handler'] = true;
-            }
-
             // Language buttons on login page
-            const loginLangButtons = document.querySelectorAll('.login-lang button[data-lang]');
+            const loginLangButtons = document.querySelectorAll('.login-langs button[data-lang]');
             if (loginLangButtons) {
                 loginLangButtons.forEach(function(btn) {
-                    const handleLangClick = function handleLangClick(e) {
+                    btn.removeEventListener('click', function handleLangClick(e) { 
                         const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang);
-                    };
-                    bindTapAndClick(btn, handleLangClick);
+                        if (lang) window.setLang(lang); 
+                    });
+                    btn.addEventListener('click', function handleLangClick(e) { 
+                        const lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
                 });
             }
             
             // Login button
             const btnLogin = document.getElementById('btnLogin');
             if (btnLogin) {
-                bindTapAndClick(btnLogin, window.login);
+                btnLogin.removeEventListener('click', window.login);
+                btnLogin.addEventListener('click', window.login);
             }
             
             // Forgot password link
@@ -3476,14 +3469,17 @@
             }
             
             // Language buttons in forgot/reset modal
-            const forgotLangButtons = document.querySelectorAll('.login-lang button[data-lang]');
+            const forgotLangButtons = document.querySelectorAll('.forgot-langs button[data-lang]');
             if (forgotLangButtons) {
                 forgotLangButtons.forEach(function(btn) {
-                    const handleLangClick = function handleLangClick(e) {
+                    btn.removeEventListener('click', function handleLangClick(e) { 
                         const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang);
-                    };
-                    bindTapAndClick(btn, handleLangClick);
+                        if (lang) window.setLang(lang); 
+                    });
+                    btn.addEventListener('click', function handleLangClick(e) { 
+                        const lang = btn.getAttribute('data-lang');
+                        if (lang) window.setLang(lang); 
+                    });
                 });
             }
             
@@ -3500,31 +3496,6 @@
                     const m = document.getElementById('mainContent');
                     if (m) m.focus(); 
                 });
-            }
-
-            // Safety fallback: delegated handlers in case direct bindings are stripped/overridden
-            if (!window._crmLoginDelegatedBound) {
-                window._crmLoginDelegatedBound = true;
-                document.addEventListener('click', function(e) {
-                    const loginBox = document.getElementById('loginBox');
-                    if (!loginBox || loginBox.style.display === 'none') return;
-                    const target = e.target && e.target.closest ? e.target.closest('#btnLogin, #btnTotpVerify, #btnForgotSubmit, #btnResetSubmit, .login-lang button[data-lang], #linkForgotPassword') : null;
-                    if (!target) return;
-                    if (target.matches('.login-lang button[data-lang]')) {
-                        const lang = target.getAttribute('data-lang');
-                        if (lang && typeof window.setLang === 'function') window.setLang(lang);
-                        return;
-                    }
-                    if (target.id === 'linkForgotPassword') {
-                        e.preventDefault();
-                        if (typeof window.showForgotStep === 'function') window.showForgotStep();
-                        return;
-                    }
-                    if (target.id === 'btnLogin' && typeof window.login === 'function') return window.login();
-                    if (target.id === 'btnTotpVerify' && typeof window.verifyTotpLogin === 'function') return window.verifyTotpLogin();
-                    if (target.id === 'btnForgotSubmit' && typeof window.submitForgotPassword === 'function') return window.submitForgotPassword();
-                    if (target.id === 'btnResetSubmit' && typeof window.submitResetPassword === 'function') return window.submitResetPassword();
-                }, true);
             }
         }
 
@@ -6058,6 +6029,21 @@
             if (smtpSecureEl) smtpSecureEl.checked = !!d.smtpSecure;
             const loginNotifEl = document.getElementById('panelSettingEmailLoginNotification');
             if (loginNotifEl) loginNotifEl.checked = !!d.emailLoginNotification;
+            set('panelSettingAdminAlertEmails', d.adminAlertEmails);
+            set('panelSettingTelegramChatIds', d.telegramChatIds);
+            set('panelSettingTelegramTimeoutMs', d.telegramTimeoutMs != null ? String(d.telegramTimeoutMs) : '');
+            const adminAlertsEl = document.getElementById('panelSettingAdminAlertsEnabled');
+            if (adminAlertsEl) adminAlertsEl.checked = d.adminAlertsEnabled !== false;
+            const clientErrEl = document.getElementById('panelSettingClientErrorReportingEnabled');
+            if (clientErrEl) clientErrEl.checked = d.clientErrorReportingEnabled !== false;
+            const tgTokenEl = document.getElementById('panelSettingTelegramBotToken');
+            if (tgTokenEl) tgTokenEl.value = '';
+            const tgTokenHint = document.getElementById('panelTelegramTokenHint');
+            if (tgTokenHint) {
+                tgTokenHint.textContent = d.telegramBotTokenSet
+                    ? (LANG === 'fa' ? 'توکن از قبل ذخیره شده است. برای تغییر، مقدار جدید وارد کنید.' : 'Token already saved. Enter a new one to replace it.')
+                    : (LANG === 'fa' ? 'توکنی ذخیره نشده است.' : 'No token saved yet.');
+            }
             const hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
             const container = document.getElementById('panelVisibilityToggles');
             if (container) {
@@ -6473,6 +6459,12 @@
                 smtpFromName: get('panelSettingSmtpFromName'),
                 smtpSecure: !!(document.getElementById('panelSettingSmtpSecure') && document.getElementById('panelSettingSmtpSecure').checked),
                 emailLoginNotification: !!(document.getElementById('panelSettingEmailLoginNotification') && document.getElementById('panelSettingEmailLoginNotification').checked),
+                adminAlertsEnabled: !!(document.getElementById('panelSettingAdminAlertsEnabled') && document.getElementById('panelSettingAdminAlertsEnabled').checked),
+                adminAlertEmails: get('panelSettingAdminAlertEmails'),
+                telegramBotToken: get('panelSettingTelegramBotToken'),
+                telegramChatIds: get('panelSettingTelegramChatIds'),
+                telegramTimeoutMs: get('panelSettingTelegramTimeoutMs'),
+                clientErrorReportingEnabled: !!(document.getElementById('panelSettingClientErrorReportingEnabled') && document.getElementById('panelSettingClientErrorReportingEnabled').checked),
                 hiddenSections: hiddenSections
             };
             const langModeEl = document.getElementById('panelSettingLanguageMode');
@@ -6542,6 +6534,38 @@
                 if (statusEl) { statusEl.textContent = errMsg; statusEl.className = 'panel-test-email-status error'; statusEl.style.display = 'inline'; }
             }
             if (btn) { btn.disabled = false; btn.textContent = t('panel_test_email_btn'); }
+        }
+        async function sendPanelTestTelegram() {
+            const btn = document.getElementById('panelTestTelegramBtn');
+            const statusEl = document.getElementById('panelTestTelegramStatus');
+            const get = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            const payload = {
+                telegramBotToken: get('panelSettingTelegramBotToken'),
+                telegramChatIds: get('panelSettingTelegramChatIds'),
+                telegramTimeoutMs: get('panelSettingTelegramTimeoutMs'),
+                text: get('panelTestTelegramText')
+            };
+            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ارسال...' : 'Sending...'); }
+            if (statusEl) statusEl.style.display = 'none';
+            const res = await apiFetch('/api/panel-settings/test-telegram', { method: 'POST', body: JSON.stringify(payload) });
+            if (res.ok && res.data && res.data.ok) {
+                toast(res.data.message || (LANG === 'fa' ? 'پیام تلگرام ارسال شد.' : 'Telegram message sent.'));
+                if (statusEl) {
+                    statusEl.textContent = (LANG === 'fa' ? 'ارسال شد' : 'Sent');
+                    statusEl.className = 'panel-test-email-status success';
+                    statusEl.style.display = 'inline';
+                }
+            } else {
+                const err = (res.data && res.data.error) || (LANG === 'fa' ? 'ارسال ناموفق' : 'Send failed');
+                toast(err, true);
+                if (statusEl) {
+                    statusEl.textContent = err;
+                    statusEl.className = 'panel-test-email-status error';
+                    statusEl.style.display = 'inline';
+                }
+            }
+            if (btn) btn.disabled = false;
+            if (btn) btn.textContent = (LANG === 'fa' ? 'ارسال تست' : 'Send test');
         }
         const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
         function applyHashRoute() {
@@ -8822,8 +8846,8 @@
                 if (openaiInput) { openaiInput.value = ''; openaiInput.placeholder = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید ذخیره شده ✓ — برای تغییر، کلید جدید وارد کنید' : 'Key saved ✓ — Enter new key to change') : (LANG === 'fa' ? 'کلید API را از platform.openai.com وارد کنید' : 'Enter API key from platform.openai.com'); }
                 if (openaiStatus) openaiStatus.textContent = res.data.openaiApiKeySet ? (LANG === 'fa' ? 'کلید API تنظیم شده است' : 'API key is set') : ''; if (openaiStatus && res.data.openaiApiKeySet) openaiStatus.classList.add('set'); else if (openaiStatus) openaiStatus.classList.remove('set');
                 const clearLink = document.getElementById('whatsappOpenAIClearKey'); if (clearLink) clearLink.style.display = res.data.openaiApiKeySet ? 'inline' : 'none';
-                if (alertIn) alertIn.value = (res.data.alertUnansweredAfterMinutes !== null && res.data.alertUnansweredAfterMinutes !== undefined) ? res.data.alertUnansweredAfterMinutes : 5;
-                if (escalateIn) escalateIn.value = (res.data.escalateUnansweredAfterMinutes !== null && res.data.escalateUnansweredAfterMinutes !== undefined) ? res.data.escalateUnansweredAfterMinutes : 15;
+                if (alertIn) alertIn.value = res.data.alertUnansweredAfterMinutes ?? 5;
+                if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
                 const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
                 const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
                 const autoAsgCb = document.getElementById('whatsappAutoAssignmentMessagesEnabled');
@@ -9180,15 +9204,7 @@
             const method = id ? 'PUT' : 'POST';
             const res = await apiFetch(url, { method: method, body: JSON.stringify({ name: name, category: category || null, content: content, isActive: isActive }) });
             if (res.needLogin) return;
-            if (res.ok) {
-                closeTemplateModal();
-                loadMessageTemplates();
-                const _tplRes = await apiFetch('/api/message-templates');
-                chatTemplatesCache = (_tplRes && _tplRes.data && _tplRes.data.data) ? _tplRes.data.data : chatTemplatesCache;
-                toast(t('btn_save'));
-            } else {
-                toast((res.data && res.data.error) || t('err_generic'), true);
-            }
+            if (res.ok) { closeTemplateModal(); loadMessageTemplates(); chatTemplatesCache = (await apiFetch('/api/message-templates')).data?.data || chatTemplatesCache; toast(t('btn_save')); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function editTemplate(id) { openTemplateModal(id); }
         async function deleteTemplate(id) {
@@ -10303,6 +10319,4 @@
             }).catch(function() { logout(); });
         } else {
             fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
-            // Ensure login controls work even if inline handlers are blocked
-            setupLoginEventHandlers();
         }

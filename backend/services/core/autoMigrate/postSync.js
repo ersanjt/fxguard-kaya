@@ -9,7 +9,7 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
 
     try {
         const desc = await qi.describeTable('panel_settings');
-        if (desc && !desc.smtpHost) {
+        if (desc) {
             const cols = [
                 ['smtpHost', { type: DataTypes.STRING(255), allowNull: true }],
                 ['smtpPort', { type: DataTypes.STRING(20), allowNull: true }],
@@ -19,17 +19,24 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
                 ['smtpFromName', { type: DataTypes.STRING(255), allowNull: true }],
                 ['smtpSecure', { type: DataTypes.BOOLEAN, allowNull: true }],
                 ['emailLoginNotification', { type: DataTypes.BOOLEAN, allowNull: true }],
+                ['adminAlertsEnabled', { type: DataTypes.BOOLEAN, allowNull: true }],
+                ['adminAlertEmails', { type: DataTypes.TEXT, allowNull: true }],
+                ['telegramBotToken', { type: DataTypes.TEXT, allowNull: true }],
+                ['telegramChatIds', { type: DataTypes.TEXT, allowNull: true }],
+                ['telegramTimeoutMs', { type: DataTypes.INTEGER, allowNull: true }],
+                ['clientErrorReportingEnabled', { type: DataTypes.BOOLEAN, allowNull: true }],
                 ['hiddenSections', { type: DataTypes.TEXT, allowNull: true }],
             ];
             for (const [name, def] of cols) {
+                if (desc[name] !== undefined) continue;
                 try {
                     await qi.addColumn('panel_settings', name, def);
+                    logger.info('✅ panel_settings: ' + name + ' column added (auto-migration)');
                 } catch (e) {
                     if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
                         logger.warn('panel_settings.' + name, e.message);
                 }
             }
-            logger.info('✅ panel_settings: email & visibility columns added (auto-migration)');
         }
         if (desc && !desc.languageMode) {
             try {

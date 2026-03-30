@@ -880,6 +880,21 @@
             if (smtpSecureEl) smtpSecureEl.checked = !!d.smtpSecure;
             const loginNotifEl = document.getElementById('panelSettingEmailLoginNotification');
             if (loginNotifEl) loginNotifEl.checked = !!d.emailLoginNotification;
+            set('panelSettingAdminAlertEmails', d.adminAlertEmails);
+            set('panelSettingTelegramChatIds', d.telegramChatIds);
+            set('panelSettingTelegramTimeoutMs', d.telegramTimeoutMs != null ? String(d.telegramTimeoutMs) : '');
+            const adminAlertsEl = document.getElementById('panelSettingAdminAlertsEnabled');
+            if (adminAlertsEl) adminAlertsEl.checked = d.adminAlertsEnabled !== false;
+            const clientErrEl = document.getElementById('panelSettingClientErrorReportingEnabled');
+            if (clientErrEl) clientErrEl.checked = d.clientErrorReportingEnabled !== false;
+            const tgTokenEl = document.getElementById('panelSettingTelegramBotToken');
+            if (tgTokenEl) tgTokenEl.value = '';
+            const tgTokenHint = document.getElementById('panelTelegramTokenHint');
+            if (tgTokenHint) {
+                tgTokenHint.textContent = d.telegramBotTokenSet
+                    ? (LANG === 'fa' ? 'توکن از قبل ذخیره شده است. برای تغییر، مقدار جدید وارد کنید.' : 'Token already saved. Enter a new one to replace it.')
+                    : (LANG === 'fa' ? 'توکنی ذخیره نشده است.' : 'No token saved yet.');
+            }
             const hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
             const container = document.getElementById('panelVisibilityToggles');
             if (container) {
@@ -1295,6 +1310,12 @@
                 smtpFromName: get('panelSettingSmtpFromName'),
                 smtpSecure: !!(document.getElementById('panelSettingSmtpSecure') && document.getElementById('panelSettingSmtpSecure').checked),
                 emailLoginNotification: !!(document.getElementById('panelSettingEmailLoginNotification') && document.getElementById('panelSettingEmailLoginNotification').checked),
+                adminAlertsEnabled: !!(document.getElementById('panelSettingAdminAlertsEnabled') && document.getElementById('panelSettingAdminAlertsEnabled').checked),
+                adminAlertEmails: get('panelSettingAdminAlertEmails'),
+                telegramBotToken: get('panelSettingTelegramBotToken'),
+                telegramChatIds: get('panelSettingTelegramChatIds'),
+                telegramTimeoutMs: get('panelSettingTelegramTimeoutMs'),
+                clientErrorReportingEnabled: !!(document.getElementById('panelSettingClientErrorReportingEnabled') && document.getElementById('panelSettingClientErrorReportingEnabled').checked),
                 hiddenSections: hiddenSections
             };
             const langModeEl = document.getElementById('panelSettingLanguageMode');
@@ -1364,6 +1385,38 @@
                 if (statusEl) { statusEl.textContent = errMsg; statusEl.className = 'panel-test-email-status error'; statusEl.style.display = 'inline'; }
             }
             if (btn) { btn.disabled = false; btn.textContent = t('panel_test_email_btn'); }
+        }
+        async function sendPanelTestTelegram() {
+            const btn = document.getElementById('panelTestTelegramBtn');
+            const statusEl = document.getElementById('panelTestTelegramStatus');
+            const get = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            const payload = {
+                telegramBotToken: get('panelSettingTelegramBotToken'),
+                telegramChatIds: get('panelSettingTelegramChatIds'),
+                telegramTimeoutMs: get('panelSettingTelegramTimeoutMs'),
+                text: get('panelTestTelegramText')
+            };
+            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ارسال...' : 'Sending...'); }
+            if (statusEl) statusEl.style.display = 'none';
+            const res = await apiFetch('/api/panel-settings/test-telegram', { method: 'POST', body: JSON.stringify(payload) });
+            if (res.ok && res.data && res.data.ok) {
+                toast(res.data.message || (LANG === 'fa' ? 'پیام تلگرام ارسال شد.' : 'Telegram message sent.'));
+                if (statusEl) {
+                    statusEl.textContent = (LANG === 'fa' ? 'ارسال شد' : 'Sent');
+                    statusEl.className = 'panel-test-email-status success';
+                    statusEl.style.display = 'inline';
+                }
+            } else {
+                const err = (res.data && res.data.error) || (LANG === 'fa' ? 'ارسال ناموفق' : 'Send failed');
+                toast(err, true);
+                if (statusEl) {
+                    statusEl.textContent = err;
+                    statusEl.className = 'panel-test-email-status error';
+                    statusEl.style.display = 'inline';
+                }
+            }
+            if (btn) btn.disabled = false;
+            if (btn) btn.textContent = (LANG === 'fa' ? 'ارسال تست' : 'Send test');
         }
         const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
         function applyHashRoute() {
