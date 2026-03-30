@@ -16,6 +16,18 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kaya.crm.data.ApiConfig
 
+private fun resolveAppLink(raw: String, base: String): String {
+    val s = raw.trim()
+    if (s.isEmpty()) return s
+    if (s.startsWith("http://", ignoreCase = true) ||
+        s.startsWith("https://", ignoreCase = true) ||
+        s.startsWith("itms-services://", ignoreCase = true) ||
+        s.startsWith("market://", ignoreCase = true) ||
+        s.startsWith("intent:", ignoreCase = true)
+    ) return s
+    return if (s.startsWith("/")) base.trimEnd('/') + s else s
+}
+
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
@@ -26,8 +38,11 @@ fun ProfileScreen(
     val publicBranding by viewModel.publicBranding.collectAsState()
     val savedServerUrl by viewModel.savedServerUrl.collectAsState(initial = null)
     var showServerDialog by remember { mutableStateOf(false) }
-    val iosUrl = publicBranding?.iosAppUrl?.trim().orEmpty()
-    val androidUrl = publicBranding?.androidAppUrl?.trim().orEmpty()
+    val iosUrlRaw = publicBranding?.iosAppUrl?.trim().orEmpty()
+    val androidUrlRaw = publicBranding?.androidAppUrl?.trim().orEmpty()
+    val baseForLinks = savedServerUrl?.trim()?.takeIf { it.isNotBlank() } ?: ApiConfig.BASE_URL
+    val iosUrl = iosUrlRaw.takeIf { it.isNotBlank() }?.let { resolveAppLink(it, baseForLinks) }.orEmpty()
+    val androidUrl = androidUrlRaw.takeIf { it.isNotBlank() }?.let { resolveAppLink(it, baseForLinks) }.orEmpty()
 
     Column(
         modifier = Modifier

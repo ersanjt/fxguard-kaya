@@ -93,13 +93,14 @@ router.put('/', authMiddleware, async (req, res, next) => {
         const validAppUrl = (v) => {
             if (!v || !String(v).trim()) return true;
             const s = String(v).trim();
+            if (s.startsWith('/uploads/')) return true;
             return /^(https?:\/\/|itms-services:\/\/|market:\/\/|intent:\/\/)/i.test(s);
         };
         if (!validAppUrl(iosAppUrl)) {
-            return res.status(400).json({ error: 'لینک اپ iOS معتبر نیست. از https:// یا itms-services:// استفاده کنید.' });
+            return res.status(400).json({ error: 'لینک اپ iOS معتبر نیست. از https://، /uploads/... یا itms-services:// استفاده کنید.' });
         }
         if (!validAppUrl(androidAppUrl)) {
-            return res.status(400).json({ error: 'لینک اپ Android معتبر نیست. از https:// یا market:// استفاده کنید.' });
+            return res.status(400).json({ error: 'لینک اپ Android معتبر نیست. از https://، /uploads/... یا market:// استفاده کنید.' });
         }
         if (smtpPort !== undefined && smtpPort !== '') {
             const port = parseInt(smtpPort, 10);

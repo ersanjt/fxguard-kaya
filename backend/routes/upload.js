@@ -4,6 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const logger = require('../config/logger');
+const { requireSection } = require('../middleware/auth');
 
 const ALLOWED_MIME_TYPES = new Set([
     // تصاویر
@@ -95,6 +96,54 @@ router.post('/multiple', upload.array('files', 5), handleUploadError, (req, res,
         if (!req.files || !req.files.length) return res.status(400).json({ error: 'فایلی انتخاب نشده است' });
         const files = req.files.map(f => ({ url: '/uploads/' + f.filename, name: f.originalname || f.filename, size: f.size }));
         res.json({ files });
+    } catch (err) {
+        next(err);
+    }
+});
+
+/** APK / IPA برای لینک مستقیم نصب (فقط مدیر «ظاهر پنل»). سقف بزرگ‌تر از آپلود عمومی. */
+const MOBILE_BUILD_MAX = parseInt(process.env.MOBILE_BUILD_UPLOAD_MAX_MB || '200', 10) * 1024 * 1024;
+const mobileBuildDir = path.join(uploadDir, 'mobile-builds');
+const mobileStorage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        try {
+            if (!fs.existsSync(mobileBuildDir)) fs.mkdirSync(mobileBuildDir, { recursive: true });
+            cb(null, mobileBuildDir);
+        } catch (e) {
+            cb(e);
+        }
+    },
+    filename: (req, file, cb) => {
+        const ext = (path.extname(file.originalname || '').toLowerCase() === '.ipa')
+            ? '.ipa'
+            : (path.extname(file.originalname || '').toLowerCase() === '.apk' ? '.apk' : '.bin');
+        cb(null, 'app-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10) + ext);
+    }
+});
+const mobileUpload = multer({
+    storage: mobileStorage,
+    limits: { fileSize: MOBILE_BUILD_MAX },
+    fileFilter: (req, file, cb) => {
+        const ext = path.extname(file.originalname || '').toLowerCase();
+        if (ext !== '.apk' && ext !== '.ipa') {
+            return cb(new Error('نوع فایل مجاز نیست. فقط APK یا IPA.'));
+        }
+        cb(null, true);
+    }
+});
+function handleMobileUploadError(err, req, res, next) {
+    if (!err) return next();
+    if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({ error: 'حجم فایل بیش از حد مجاز است (' + (MOBILE_BUILD_MAX / (1024 * 1024)) + ' مگابایت)' });
+    }
+    if (err.message && err.message.includes('نوع فایل')) return res.status(400).json({ error: err.message });
+    next(err);
+}
+router.post('/mobile-build', requireSection('panel_settings'), mobileUpload.single('file'), handleMobileUploadError, (req, res, next) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'فایلی انتخاب نشده است' });
+        const rel = '/uploads/mobile-builds/' + req.file.filename;
+        res.json({ url: rel, name: req.file.originalname || req.file.filename, size: req.file.size });
     } catch (err) {
         next(err);
     }

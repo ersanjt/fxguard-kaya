@@ -384,15 +384,17 @@
                                                     </div>
                                                     <div class="form-row-2">
                                                         <div class="form-group">
-                                                            <label for="panelSettingIosAppUrl">لینک دانلود اپ iOS</label>
-                                                            <input type="url" id="panelSettingIosAppUrl" placeholder="https://apps.apple.com/... یا itms-services://..." oninput="markPanelSettingsChanged();" dir="ltr">
+                                                            <label for="panelSettingIosAppUrl" data-i18n="panel_app_url_ios">لینک اپ iOS</label>
+                                                            <input type="text" id="panelSettingIosAppUrl" data-i18n-ph="panel_app_ph_ios" placeholder="https://apps.apple.com/..." oninput="markPanelSettingsChanged();" dir="ltr" style="margin-bottom:8px;">
+                                                            <button type="button" class="btn-secondary btn-sm" onclick="panelPickMobileBuildFile('ios'); return false;" data-i18n="panel_mobile_upload_ipa_btn">آپلود IPA</button>
                                                         </div>
                                                         <div class="form-group">
-                                                            <label for="panelSettingAndroidAppUrl">لینک دانلود اپ Android</label>
-                                                            <input type="url" id="panelSettingAndroidAppUrl" placeholder="https://play.google.com/... یا market://..." oninput="markPanelSettingsChanged();" dir="ltr">
+                                                            <label for="panelSettingAndroidAppUrl" data-i18n="panel_app_url_android">لینک اپ Android</label>
+                                                            <input type="text" id="panelSettingAndroidAppUrl" data-i18n-ph="panel_app_ph_android" placeholder="APK یا Play Store" oninput="markPanelSettingsChanged();" dir="ltr" style="margin-bottom:8px;">
+                                                            <button type="button" class="btn-secondary btn-sm" onclick="panelPickMobileBuildFile('android'); return false;" data-i18n="panel_mobile_upload_apk_btn">آپلود APK</button>
                                                         </div>
                                                     </div>
-                                                    <span class="form-hint">این لینک‌ها در صفحه پروفایل کاربران نمایش داده می‌شود تا مستقیم اپ را نصب کنند.</span>
+                                                    <span class="form-hint" data-i18n="panel_mobile_direct_hint">برای نصب مستقیم APK را آپلود کنید یا لینک HTTPS بگذارید؛ بعداً می‌توانید لینک استور را جایگزین کنید.</span>
                                                 </div>
                                             </section>
                                             <section class="panel-settings-section panel-settings-section-languages panel-settings-section-collapsible">

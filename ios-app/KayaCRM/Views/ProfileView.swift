@@ -58,7 +58,7 @@ struct ProfileView: View {
                     }
                     .buttonStyle(.plain)
 
-                    if (iosAppUrl?.isEmpty == false) || (androidAppUrl?.isEmpty == false) {
+                    if resolveAppLink(iosAppUrl) != nil || resolveAppLink(androidAppUrl) != nil {
                         VStack(alignment: .leading, spacing: 12) {
                             Text("دانلود اپ موبایل")
                                 .font(.headline)
@@ -66,7 +66,7 @@ struct ProfileView: View {
                                 .font(.caption)
                                 .foregroundColor(.secondary)
 
-                            if let ios = iosAppUrl, let url = URL(string: ios), !ios.isEmpty {
+                            if let url = resolveAppLink(iosAppUrl) {
                                 Link(destination: url) {
                                     HStack {
                                         Image(systemName: "iphone")
@@ -81,7 +81,7 @@ struct ProfileView: View {
                                 }
                             }
 
-                            if let android = androidAppUrl, let url = URL(string: android), !android.isEmpty {
+                            if let url = resolveAppLink(androidAppUrl) {
                                 Link(destination: url) {
                                     HStack {
                                         Image(systemName: "arrow.down.app")
@@ -134,6 +134,21 @@ struct ProfileView: View {
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
+    }
+
+    /// لینک کامل یا مسیر `/uploads/...` نسبت به آدرس سرور کاربر
+    private func resolveAppLink(_ raw: String?) -> URL? {
+        guard let s = raw?.trimmingCharacters(in: .whitespacesAndNewlines), !s.isEmpty else { return nil }
+        let lower = s.lowercased()
+        if lower.hasPrefix("http://") || lower.hasPrefix("https://") || lower.hasPrefix("itms-services://") {
+            return URL(string: s)
+        }
+        if s.hasPrefix("/") {
+            var base = (authStorage.baseUrl ?? ApiConfig.defaultBaseURL).trimmingCharacters(in: .whitespacesAndNewlines)
+            while base.hasSuffix("/") { base.removeLast() }
+            return URL(string: base + s)
+        }
+        return URL(string: s)
     }
 
     private func loadMobileAppLinks() async {

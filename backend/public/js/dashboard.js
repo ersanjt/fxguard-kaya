@@ -5901,6 +5901,15 @@
             if (Array.isArray(s.sidebarOrder) && s.sidebarOrder.length > 0) applySidebarOrder(s.sidebarOrder);
             renderProfileMobileAppLinks(s);
         }
+        function resolvePublicAppUrl(u) {
+            if (!u) return u;
+            const s = String(u).trim();
+            if (/^(https?:\/\/|itms-services:\/\/|market:\/\/|intent:\/\/)/i.test(s)) return s;
+            if (s.startsWith('/') && typeof window !== 'undefined' && window.location && window.location.origin) {
+                return String(window.location.origin).replace(/\/$/, '') + s;
+            }
+            return s;
+        }
         function renderProfileMobileAppLinks(settings) {
             const section = document.getElementById('profileMobileAppsSection');
             const iosLink = document.getElementById('profileIosAppLink');
@@ -5914,8 +5923,8 @@
             const hasIos = !!iosUrl;
             const hasAndroid = !!androidUrl;
             const hasAny = hasIos || hasAndroid;
-            if (hasIos) { iosLink.href = iosUrl; iosLink.style.display = ''; } else { iosLink.removeAttribute('href'); iosLink.style.display = 'none'; }
-            if (hasAndroid) { androidLink.href = androidUrl; androidLink.style.display = ''; } else { androidLink.removeAttribute('href'); androidLink.style.display = 'none'; }
+            if (hasIos) { iosLink.href = resolvePublicAppUrl(iosUrl); iosLink.style.display = ''; } else { iosLink.removeAttribute('href'); iosLink.style.display = 'none'; }
+            if (hasAndroid) { androidLink.href = resolvePublicAppUrl(androidUrl); androidLink.style.display = ''; } else { androidLink.removeAttribute('href'); androidLink.style.display = 'none'; }
             if (descEl) descEl.style.display = hasAny ? '' : 'none';
             if (emptyEl) emptyEl.style.display = hasAny ? 'none' : '';
             section.style.display = '';
@@ -6214,6 +6223,61 @@
         function clearPanelSettingsChanged() {
             const badge = document.getElementById('panelSettingsUnsavedBadge');
             if (badge) badge.style.display = 'none';
+        }
+        function panelPickMobileBuildFile(platform) {
+            var accept = platform === 'android' ? '.apk,application/vnd.android.package-archive' : '.ipa';
+            var inp = document.createElement('input');
+            inp.type = 'file';
+            inp.accept = accept;
+            inp.style.cssText = 'position:fixed;left:-9999px;width:0;height:0;opacity:0;pointer-events:none';
+            inp.onchange = function () {
+                if (!inp.files || !inp.files[0]) {
+                    if (inp.parentNode) inp.parentNode.removeChild(inp);
+                    return;
+                }
+                var f = inp.files[0];
+                if (inp.parentNode) inp.parentNode.removeChild(inp);
+                uploadPanelMobileBuild(f, platform);
+            };
+            document.body.appendChild(inp);
+            inp.click();
+        }
+        async function uploadPanelMobileBuild(file, platform) {
+            if (!file || !platform) return;
+            var name = (file.name || '').toLowerCase();
+            if (platform === 'android' && !name.endsWith('.apk')) {
+                toast(typeof t === 'function' ? t('panel_mobile_build_bad_ext') : 'Invalid file', true);
+                return;
+            }
+            if (platform === 'ios' && !name.endsWith('.ipa')) {
+                toast(typeof t === 'function' ? t('panel_mobile_build_bad_ext') : 'Invalid file', true);
+                return;
+            }
+            var formData = new FormData();
+            formData.append('file', file);
+            try {
+                var r = await fetch((typeof API !== 'undefined' && API ? API : '') + '/api/upload/mobile-build', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                var data = await r.json().catch(function () { return {}; });
+                if (!r.ok) {
+                    toast((data && data.error) || (typeof t === 'function' ? t('err_generic') : 'Error'), true);
+                    return;
+                }
+                if (!data.url) {
+                    toast(typeof t === 'function' ? t('err_generic') : 'Error', true);
+                    return;
+                }
+                var base = (typeof window !== 'undefined' && window.location && window.location.origin) ? String(window.location.origin).replace(/\/$/, '') : '';
+                var fullUrl = /^https?:\/\//i.test(data.url) ? data.url : (base + data.url);
+                var id = platform === 'android' ? 'panelSettingAndroidAppUrl' : 'panelSettingIosAppUrl';
+                var el = document.getElementById(id);
+                if (el) {
+                    el.value = fullUrl;
+                    markPanelSettingsChanged();
+                }
+                toast(typeof t === 'function' ? t('panel_mobile_build_uploaded') : 'Uploaded — save settings');
+            } catch (e) {
+                toast(typeof t === 'function' ? t('err_generic') : 'Error', true);
+            }
         }
         function initPanelSettingsTabs() {
             const tabs = document.querySelectorAll('.panel-settings-tab');
@@ -10017,6 +10081,7 @@
             window.showPage = showPage;
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
+            window.panelPickMobileBuildFile = panelPickMobileBuildFile;
             window.sendPanelTestEmail = sendPanelTestEmail;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
@@ -10317,6 +10382,7 @@
             };
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
+            window.panelPickMobileBuildFile = panelPickMobileBuildFile;
             window.sendPanelTestEmail = sendPanelTestEmail;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
