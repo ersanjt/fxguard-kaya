@@ -11,6 +11,7 @@ const { getCountryFromIp } = require('../lib/geoip');
 const emailService = require('../services/emailService');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
+const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
@@ -140,6 +141,11 @@ router.post('/login', async (req, res, next) => {
                         country: getCountryFromIp(clientIp),
                         userAgent: (req.get && req.get('user-agent')) || null
                     }, { siteName: settings.siteName, emailConfig });
+                    await notifySystemEvent('auth', 'Login Failed', {
+                        identifier,
+                        ip: clientIp,
+                        country: getCountryFromIp(clientIp)
+                    });
                 } catch (_) {}
             });
             return sendJson(401, { error: 'ایمیل/نام کاربری یا رمز عبور اشتباه است' });
@@ -187,6 +193,11 @@ router.post('/login', async (req, res, next) => {
                     country: getCountryFromIp(clientIp),
                     userAgent: (req.get && req.get('user-agent')) || null
                 }, { siteName: settings.siteName, emailConfig });
+                await notifySystemEvent('auth', 'Login Success', {
+                    userId: user.id,
+                    userEmail: user.email,
+                    ip: clientIp
+                });
             } catch (_) {}
         });
         sendJson(200, {
@@ -325,6 +336,11 @@ router.post('/totp/verify-login', async (req, res, next) => {
                     country: getCountryFromIp(clientIp2fa),
                     userAgent: (req.get && req.get('user-agent')) || null
                 }, { siteName: settings.siteName, emailConfig });
+                await notifySystemEvent('auth', 'Login Success (2FA)', {
+                    userId: user.id,
+                    userEmail: user.email,
+                    ip: clientIp2fa
+                });
             } catch (_) {}
         });
         res.json({
@@ -444,6 +460,11 @@ router.post('/logout', authMiddleware, async (req, res, next) => {
                     country: getCountryFromIp(clientIp),
                     userAgent: (req.get && req.get('user-agent')) || null
                 }, { siteName: settings.siteName, emailConfig });
+                await notifySystemEvent('auth', 'Logout', {
+                    userId: user.id,
+                    userEmail: user.email,
+                    ip: clientIp
+                });
             } catch (_) {}
         });
         res.json({ ok: true, message: 'خروج انجام شد' });

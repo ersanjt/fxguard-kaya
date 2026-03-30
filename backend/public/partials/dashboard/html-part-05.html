@@ -66,6 +66,55 @@
                                                 <span>گزارش خطاهای فرانت/بک‌اند فعال باشد</span>
                                             </label>
                                         </div>
+                                        <hr style="border-color:var(--border-color);opacity:.5;margin:12px 0;">
+                                        <div class="form-group form-group-checkbox">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" id="panelSettingTelegramNotifyAllEvents" value="1" onchange="markPanelSettingsChanged();">
+                                                <span>ارسال رویدادهای سیستم به تلگرام (سراسری)</span>
+                                            </label>
+                                        </div>
+                                        <div class="form-row-2">
+                                            <div class="form-group form-group-checkbox">
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="panelSettingTelegramNotifyApiRequests" value="1" onchange="markPanelSettingsChanged();">
+                                                    <span>رویداد API</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-group form-group-checkbox">
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="panelSettingTelegramNotifyAuthEvents" value="1" onchange="markPanelSettingsChanged();">
+                                                    <span>رویداد ورود/خروج</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="form-row-2">
+                                            <div class="form-group form-group-checkbox">
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="panelSettingTelegramNotifySocketEvents" value="1" onchange="markPanelSettingsChanged();">
+                                                    <span>رویداد Socket</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-group form-group-checkbox">
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="panelSettingTelegramNotifyIncomingMessages" value="1" onchange="markPanelSettingsChanged();">
+                                                    <span>رویداد پیام‌ها</span>
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="form-row-2">
+                                            <div class="form-group form-group-checkbox">
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="panelSettingTelegramNotifySystemEvents" value="1" onchange="markPanelSettingsChanged();">
+                                                    <span>رویدادهای سیستمی</span>
+                                                </label>
+                                            </div>
+                                            <div class="form-group form-group-checkbox">
+                                                <label class="checkbox-label">
+                                                    <input type="checkbox" id="panelSettingTelegramNotifyErrorEvents" value="1" onchange="markPanelSettingsChanged();">
+                                                    <span>خطاها</span>
+                                                </label>
+                                            </div>
+                                        </div>
                                     </section>
                                 </div>
                             </div>

@@ -6036,6 +6036,20 @@
             if (adminAlertsEl) adminAlertsEl.checked = d.adminAlertsEnabled !== false;
             const clientErrEl = document.getElementById('panelSettingClientErrorReportingEnabled');
             if (clientErrEl) clientErrEl.checked = d.clientErrorReportingEnabled !== false;
+            const tgAllEl = document.getElementById('panelSettingTelegramNotifyAllEvents');
+            if (tgAllEl) tgAllEl.checked = d.telegramNotifyAllEvents === true;
+            const tgApiEl = document.getElementById('panelSettingTelegramNotifyApiRequests');
+            if (tgApiEl) tgApiEl.checked = d.telegramNotifyApiRequests === true;
+            const tgAuthEl = document.getElementById('panelSettingTelegramNotifyAuthEvents');
+            if (tgAuthEl) tgAuthEl.checked = d.telegramNotifyAuthEvents !== false;
+            const tgSocketEl = document.getElementById('panelSettingTelegramNotifySocketEvents');
+            if (tgSocketEl) tgSocketEl.checked = d.telegramNotifySocketEvents === true;
+            const tgMsgEl = document.getElementById('panelSettingTelegramNotifyIncomingMessages');
+            if (tgMsgEl) tgMsgEl.checked = d.telegramNotifyIncomingMessages === true;
+            const tgSysEl = document.getElementById('panelSettingTelegramNotifySystemEvents');
+            if (tgSysEl) tgSysEl.checked = d.telegramNotifySystemEvents !== false;
+            const tgErrEl = document.getElementById('panelSettingTelegramNotifyErrorEvents');
+            if (tgErrEl) tgErrEl.checked = d.telegramNotifyErrorEvents !== false;
             const tgTokenEl = document.getElementById('panelSettingTelegramBotToken');
             if (tgTokenEl) tgTokenEl.value = '';
             const tgTokenHint = document.getElementById('panelTelegramTokenHint');
@@ -6465,6 +6479,13 @@
                 telegramChatIds: get('panelSettingTelegramChatIds'),
                 telegramTimeoutMs: get('panelSettingTelegramTimeoutMs'),
                 clientErrorReportingEnabled: !!(document.getElementById('panelSettingClientErrorReportingEnabled') && document.getElementById('panelSettingClientErrorReportingEnabled').checked),
+                telegramNotifyAllEvents: !!(document.getElementById('panelSettingTelegramNotifyAllEvents') && document.getElementById('panelSettingTelegramNotifyAllEvents').checked),
+                telegramNotifyApiRequests: !!(document.getElementById('panelSettingTelegramNotifyApiRequests') && document.getElementById('panelSettingTelegramNotifyApiRequests').checked),
+                telegramNotifyAuthEvents: !!(document.getElementById('panelSettingTelegramNotifyAuthEvents') && document.getElementById('panelSettingTelegramNotifyAuthEvents').checked),
+                telegramNotifySocketEvents: !!(document.getElementById('panelSettingTelegramNotifySocketEvents') && document.getElementById('panelSettingTelegramNotifySocketEvents').checked),
+                telegramNotifyIncomingMessages: !!(document.getElementById('panelSettingTelegramNotifyIncomingMessages') && document.getElementById('panelSettingTelegramNotifyIncomingMessages').checked),
+                telegramNotifySystemEvents: !!(document.getElementById('panelSettingTelegramNotifySystemEvents') && document.getElementById('panelSettingTelegramNotifySystemEvents').checked),
+                telegramNotifyErrorEvents: !!(document.getElementById('panelSettingTelegramNotifyErrorEvents') && document.getElementById('panelSettingTelegramNotifyErrorEvents').checked),
                 hiddenSections: hiddenSections
             };
             const langModeEl = document.getElementById('panelSettingLanguageMode');

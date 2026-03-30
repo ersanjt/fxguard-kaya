@@ -32,6 +32,7 @@ const { sequelize } = models;
 const errorHandler = require('./middleware/errorHandler');
 const { sendAdminSecurityAlert } = require('./services/adminAlertService');
 const { assertWebhookSecretBeforeBody } = require('./middleware/webhookAuth');
+const { notifySystemEvent } = require('./services/systemEventNotifier');
 
 // ==================== Express Setup ====================
 const app = express();
@@ -214,6 +215,24 @@ io.use(socketAuth);
 setupSocketHandlers(io, getRabbitChannel, logger);
 
 // ==================== API Routes ====================
+app.use('/api', (req, res, next) => {
+    const startedAt = Date.now();
+    res.on('finish', () => {
+        setImmediate(() => {
+            const status = res.statusCode || 0;
+            const category = status >= 500 ? 'error' : 'api';
+            notifySystemEvent(category, 'API Request', {
+                method: req.method,
+                path: req.originalUrl || req.url,
+                status,
+                durationMs: Date.now() - startedAt,
+                userId: req.user && req.user.id ? req.user.id : null,
+                ip: (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim()
+            }).catch(() => {});
+        });
+    });
+    next();
+});
 app.use('/api', createApiRouter(io, getRabbitChannel, redisClient, logger));
 
 // ==================== Static & Pages ====================
@@ -307,6 +326,7 @@ async function startServer() {
         await new Promise((resolve, reject) => {
             server.listen(PORT, () => {
                 logger.info(`🚀 CRM Backend running on port ${PORT}`);
+                notifySystemEvent('system', 'Backend Started', { port: PORT, pid: process.pid }).catch(() => {});
                 resolve();
             });
             server.on('error', (err) => {
@@ -334,6 +354,7 @@ async function gracefulShutdown(signal) {
     if (isShuttingDown) return;
     isShuttingDown = true;
     logger.info(`${signal} received — shutting down gracefully...`);
+    notifySystemEvent('system', 'Backend Shutdown', { signal }).catch(() => {});
 
     if (unansweredInterval) {
         clearInterval(unansweredInterval);
@@ -363,6 +384,7 @@ process.on('SIGINT', () => gracefulShutdown('SIGINT'));
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('uncaughtException', (err) => {
     logger.error('Uncaught exception', { error: err.message, stack: err.stack });
+    notifySystemEvent('error', 'Uncaught Exception', { error: err.message, where: 'process:uncaughtException' }).catch(() => {});
     setImmediate(async () => {
         try {
             await sendAdminSecurityAlert('backend_error', {
@@ -375,6 +397,7 @@ process.on('uncaughtException', (err) => {
 });
 process.on('unhandledRejection', (reason) => {
     logger.error('Unhandled promise rejection', { reason: String(reason) });
+    notifySystemEvent('error', 'Unhandled Rejection', { reason: String(reason) }).catch(() => {});
     setImmediate(async () => {
         try {
             const msg = reason && reason.stack ? `${reason.message || 'Unhandled rejection'}\n${reason.stack}` : String(reason);

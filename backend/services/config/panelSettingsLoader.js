@@ -26,6 +26,13 @@ const DEFAULT = {
     telegramChatIds: null,
     telegramTimeoutMs: 12000,
     clientErrorReportingEnabled: true,
+    telegramNotifyAllEvents: false,
+    telegramNotifyApiRequests: false,
+    telegramNotifyAuthEvents: true,
+    telegramNotifySocketEvents: false,
+    telegramNotifyIncomingMessages: true,
+    telegramNotifySystemEvents: true,
+    telegramNotifyErrorEvents: true,
     hiddenSections: [],
     languageMode: 'trilingual',
     defaultLanguage: 'fa',
@@ -104,6 +111,13 @@ async function getPanelSettings() {
         telegramChatIds: row.telegramChatIds || null,
         telegramTimeoutMs: Number.isFinite(Number(row.telegramTimeoutMs)) ? Math.max(1000, Number(row.telegramTimeoutMs)) : DEFAULT.telegramTimeoutMs,
         clientErrorReportingEnabled: row.clientErrorReportingEnabled !== false,
+        telegramNotifyAllEvents: row.telegramNotifyAllEvents === true,
+        telegramNotifyApiRequests: row.telegramNotifyApiRequests === true,
+        telegramNotifyAuthEvents: row.telegramNotifyAuthEvents !== false,
+        telegramNotifySocketEvents: row.telegramNotifySocketEvents === true,
+        telegramNotifyIncomingMessages: row.telegramNotifyIncomingMessages === true,
+        telegramNotifySystemEvents: row.telegramNotifySystemEvents !== false,
+        telegramNotifyErrorEvents: row.telegramNotifyErrorEvents !== false,
         hiddenSections: parseHiddenSections(row.hiddenSections),
         languageMode: MODE_TO_LANGUAGES[row.languageMode]
             ? row.languageMode
@@ -186,6 +200,13 @@ function getPanelAlertConfig(settings) {
             s.clientErrorReportingEnabled,
             parseBool(process.env.CLIENT_ERROR_REPORTING_ENABLED, true)
         ),
+        telegramNotifyAllEvents: parseBool(s.telegramNotifyAllEvents, false),
+        telegramNotifyApiRequests: parseBool(s.telegramNotifyApiRequests, false),
+        telegramNotifyAuthEvents: parseBool(s.telegramNotifyAuthEvents, true),
+        telegramNotifySocketEvents: parseBool(s.telegramNotifySocketEvents, false),
+        telegramNotifyIncomingMessages: parseBool(s.telegramNotifyIncomingMessages, true),
+        telegramNotifySystemEvents: parseBool(s.telegramNotifySystemEvents, true),
+        telegramNotifyErrorEvents: parseBool(s.telegramNotifyErrorEvents, true),
     };
 }
 

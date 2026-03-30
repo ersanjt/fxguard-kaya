@@ -25,6 +25,13 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
                 ['telegramChatIds', { type: DataTypes.TEXT, allowNull: true }],
                 ['telegramTimeoutMs', { type: DataTypes.INTEGER, allowNull: true }],
                 ['clientErrorReportingEnabled', { type: DataTypes.BOOLEAN, allowNull: true }],
+                ['telegramNotifyAllEvents', { type: DataTypes.BOOLEAN, allowNull: true }],
+                ['telegramNotifyApiRequests', { type: DataTypes.BOOLEAN, allowNull: true }],
+                ['telegramNotifyAuthEvents', { type: DataTypes.BOOLEAN, allowNull: true }],
+                ['telegramNotifySocketEvents', { type: DataTypes.BOOLEAN, allowNull: true }],
+                ['telegramNotifyIncomingMessages', { type: DataTypes.BOOLEAN, allowNull: true }],
+                ['telegramNotifySystemEvents', { type: DataTypes.BOOLEAN, allowNull: true }],
+                ['telegramNotifyErrorEvents', { type: DataTypes.BOOLEAN, allowNull: true }],
                 ['hiddenSections', { type: DataTypes.TEXT, allowNull: true }],
             ];
             for (const [name, def] of cols) {

@@ -81,7 +81,7 @@ router.put('/', authMiddleware, async (req, res, next) => {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const body = req.body || {};
-        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, adminAlertsEnabled, adminAlertEmails, telegramBotToken, telegramChatIds, telegramTimeoutMs, clientErrorReportingEnabled, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder } = body;
+        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, adminAlertsEnabled, adminAlertEmails, telegramBotToken, telegramChatIds, telegramTimeoutMs, clientErrorReportingEnabled, telegramNotifyAllEvents, telegramNotifyApiRequests, telegramNotifyAuthEvents, telegramNotifySocketEvents, telegramNotifyIncomingMessages, telegramNotifySystemEvents, telegramNotifyErrorEvents, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder } = body;
         if (logoUrl && !/^https?:\/\//i.test(String(logoUrl).trim()) && !String(logoUrl).trim().startsWith('/uploads/')) {
             return res.status(400).json({ error: 'آدرس لوگو باید یک URL معتبر یا مسیر /uploads/ باشد' });
         }
@@ -133,6 +133,13 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (telegramChatIds !== undefined) row.telegramChatIds = telegramChatIds === '' ? null : String(telegramChatIds).trim();
         if (telegramTimeoutMs !== undefined) row.telegramTimeoutMs = telegramTimeoutMs === '' ? null : parseInt(telegramTimeoutMs, 10);
         if (clientErrorReportingEnabled !== undefined) row.clientErrorReportingEnabled = !!clientErrorReportingEnabled;
+        if (telegramNotifyAllEvents !== undefined) row.telegramNotifyAllEvents = !!telegramNotifyAllEvents;
+        if (telegramNotifyApiRequests !== undefined) row.telegramNotifyApiRequests = !!telegramNotifyApiRequests;
+        if (telegramNotifyAuthEvents !== undefined) row.telegramNotifyAuthEvents = !!telegramNotifyAuthEvents;
+        if (telegramNotifySocketEvents !== undefined) row.telegramNotifySocketEvents = !!telegramNotifySocketEvents;
+        if (telegramNotifyIncomingMessages !== undefined) row.telegramNotifyIncomingMessages = !!telegramNotifyIncomingMessages;
+        if (telegramNotifySystemEvents !== undefined) row.telegramNotifySystemEvents = !!telegramNotifySystemEvents;
+        if (telegramNotifyErrorEvents !== undefined) row.telegramNotifyErrorEvents = !!telegramNotifyErrorEvents;
         if (hiddenSections !== undefined) row.hiddenSections = Array.isArray(hiddenSections) ? JSON.stringify(hiddenSections) : (hiddenSections === '' ? null : row.hiddenSections);
         if (languageMode !== undefined) row.languageMode = languageMode === '' ? null : languageMode;
         if (defaultLanguage !== undefined && (defaultLanguage === 'fa' || defaultLanguage === 'en' || defaultLanguage === 'tr')) row.defaultLanguage = defaultLanguage;

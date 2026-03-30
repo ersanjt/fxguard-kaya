@@ -12,6 +12,7 @@ const { Message } = models;
 const { createContactRouter } = require('./contact');
 const { createGatewayRouter } = require('./gateway');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
+const { notifySystemEvent } = require('../services/systemEventNotifier');
 
 const authRoutes = require('./auth');
 const userRoutes = require('./users');
@@ -67,6 +68,11 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
                 pageUrl,
                 path: source || pageUrl,
                 errorMessage: `${eventType}: ${message}${stack ? '\n' + stack : ''}`
+            });
+            await notifySystemEvent('error', 'Frontend Error Reported', {
+                eventType,
+                pageUrl: source || pageUrl,
+                ip: clientIp
             });
             return res.json({ ok: true });
         } catch (_) {

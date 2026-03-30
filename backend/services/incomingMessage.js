@@ -15,6 +15,7 @@ const { gatewayGet } = require('../lib/gatewayClient');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessages');
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
 const { persistRemoteAvatarIfNeeded } = require('../lib/customerAvatar');
+const { notifySystemEvent } = require('./systemEventNotifier');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
@@ -724,6 +725,12 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         }
 
         logger.info(`📩 Message processed: ${phone}`);
+        notifySystemEvent('message', 'Incoming Message Processed', {
+            phone,
+            conversationId: conversation.id,
+            customerId: customer.id,
+            type: msgType
+        }).catch(() => {});
     } catch (error) {
         logger.error('Error processing incoming message:', {
             error: error.message,
@@ -731,6 +738,11 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             from: messageData?.from,
             type: messageData?.type
         });
+        notifySystemEvent('error', 'Incoming Message Error', {
+            from: messageData?.from || null,
+            type: messageData?.type || null,
+            error: error.message || String(error)
+        }).catch(() => {});
         throw error;
     }
 }
