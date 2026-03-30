@@ -382,6 +382,17 @@
                                                             <span data-i18n="panel_hide_footer">عدم نمایش فوتر (مخفی کردن متن پایین صفحه)</span>
                                                         </label>
                                                     </div>
+                                                    <div class="form-row-2">
+                                                        <div class="form-group">
+                                                            <label for="panelSettingIosAppUrl">لینک دانلود اپ iOS</label>
+                                                            <input type="url" id="panelSettingIosAppUrl" placeholder="https://apps.apple.com/... یا itms-services://..." oninput="markPanelSettingsChanged();" dir="ltr">
+                                                        </div>
+                                                        <div class="form-group">
+                                                            <label for="panelSettingAndroidAppUrl">لینک دانلود اپ Android</label>
+                                                            <input type="url" id="panelSettingAndroidAppUrl" placeholder="https://play.google.com/... یا market://..." oninput="markPanelSettingsChanged();" dir="ltr">
+                                                        </div>
+                                                    </div>
+                                                    <span class="form-hint">این لینک‌ها در صفحه پروفایل کاربران نمایش داده می‌شود تا مستقیم اپ را نصب کنند.</span>
                                                 </div>
                                             </section>
                                             <section class="panel-settings-section panel-settings-section-languages panel-settings-section-collapsible">

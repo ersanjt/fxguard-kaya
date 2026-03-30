@@ -29,7 +29,9 @@ router.get('/public/branding', async (req, res, next) => {
             fontSize: s.fontSize || 'medium',
             fontWeight: s.fontWeight || 'normal',
             uiTheme: s.uiTheme || 'default',
-            sidebarOrder: s.sidebarOrder
+            sidebarOrder: s.sidebarOrder,
+            iosAppUrl: s.iosAppUrl || null,
+            androidAppUrl: s.androidAppUrl || null
         });
     } catch (err) {
         next(err);
@@ -81,12 +83,23 @@ router.put('/', authMiddleware, async (req, res, next) => {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const body = req.body || {};
-        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, adminAlertsEnabled, adminAlertEmails, telegramBotToken, telegramChatIds, telegramTimeoutMs, clientErrorReportingEnabled, telegramNotifyAllEvents, telegramNotifyApiRequests, telegramNotifyAuthEvents, telegramNotifySocketEvents, telegramNotifyIncomingMessages, telegramNotifySystemEvents, telegramNotifyErrorEvents, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder } = body;
+        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, adminAlertsEnabled, adminAlertEmails, telegramBotToken, telegramChatIds, telegramTimeoutMs, clientErrorReportingEnabled, telegramNotifyAllEvents, telegramNotifyApiRequests, telegramNotifyAuthEvents, telegramNotifySocketEvents, telegramNotifyIncomingMessages, telegramNotifySystemEvents, telegramNotifyErrorEvents, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder, iosAppUrl, androidAppUrl } = body;
         if (logoUrl && !/^https?:\/\//i.test(String(logoUrl).trim()) && !String(logoUrl).trim().startsWith('/uploads/')) {
             return res.status(400).json({ error: 'آدرس لوگو باید یک URL معتبر یا مسیر /uploads/ باشد' });
         }
         if (faviconUrl && !/^https?:\/\//i.test(String(faviconUrl).trim()) && !String(faviconUrl).trim().startsWith('/uploads/')) {
             return res.status(400).json({ error: 'آدرس فاویکون باید یک URL معتبر یا مسیر /uploads/ باشد' });
+        }
+        const validAppUrl = (v) => {
+            if (!v || !String(v).trim()) return true;
+            const s = String(v).trim();
+            return /^(https?:\/\/|itms-services:\/\/|market:\/\/|intent:\/\/)/i.test(s);
+        };
+        if (!validAppUrl(iosAppUrl)) {
+            return res.status(400).json({ error: 'لینک اپ iOS معتبر نیست. از https:// یا itms-services:// استفاده کنید.' });
+        }
+        if (!validAppUrl(androidAppUrl)) {
+            return res.status(400).json({ error: 'لینک اپ Android معتبر نیست. از https:// یا market:// استفاده کنید.' });
         }
         if (smtpPort !== undefined && smtpPort !== '') {
             const port = parseInt(smtpPort, 10);
@@ -149,6 +162,8 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (fontWeight !== undefined && ['normal', 'medium', 'bold'].indexOf(fontWeight) >= 0) row.fontWeight = fontWeight;
         if (uiTheme !== undefined && ['default', 'minimal', 'dark', 'light', 'ocean', 'warm'].indexOf(uiTheme) >= 0) row.uiTheme = uiTheme;
         if (sidebarOrder !== undefined) row.sidebarOrder = Array.isArray(sidebarOrder) ? JSON.stringify(sidebarOrder) : (sidebarOrder === '' ? null : row.sidebarOrder);
+        if (iosAppUrl !== undefined) row.iosAppUrl = iosAppUrl === '' ? null : String(iosAppUrl).trim();
+        if (androidAppUrl !== undefined) row.androidAppUrl = androidAppUrl === '' ? null : String(androidAppUrl).trim();
         await row.save();
         const s = await getSettings();
         if (footerStyle !== undefined) s.footerStyle = (footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(footerStyle) >= 0) ? footerStyle : 'accent';

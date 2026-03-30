@@ -42,6 +42,8 @@ const DEFAULT = {
     fontWeight: 'normal',
     uiTheme: 'default',
     sidebarOrder: null,
+    iosAppUrl: null,
+    androidAppUrl: null,
 };
 
 const MODE_TO_LANGUAGES = {
@@ -132,6 +134,8 @@ async function getPanelSettings() {
         fontWeight: ['normal', 'medium', 'bold'].indexOf(row.fontWeight) >= 0 ? row.fontWeight : DEFAULT.fontWeight,
         uiTheme: ['default', 'minimal', 'dark', 'light', 'ocean', 'warm'].indexOf(row.uiTheme) >= 0 ? row.uiTheme : DEFAULT.uiTheme,
         sidebarOrder: parseSidebarOrder(row.sidebarOrder),
+        iosAppUrl: row.iosAppUrl || null,
+        androidAppUrl: row.androidAppUrl || null,
     };
 }
 

@@ -79,7 +79,9 @@ module.exports = (sequelize) => {
         fontSize: { type: DataTypes.STRING(20), allowNull: true, defaultValue: 'medium', comment: 'سایز فونت: small | medium | large' },
         fontWeight: { type: DataTypes.STRING(20), allowNull: true, defaultValue: 'normal', comment: 'وزن فونت: normal | medium | bold' },
         uiTheme: { type: DataTypes.STRING(32), allowNull: true, defaultValue: 'default', comment: 'قالب ظاهری: default | minimal | dark | light | ocean | warm' },
-        sidebarOrder: { type: DataTypes.TEXT, allowNull: true, comment: 'ترتیب منو (JSON array از data-section)' }
+        sidebarOrder: { type: DataTypes.TEXT, allowNull: true, comment: 'ترتیب منو (JSON array از data-section)' },
+        iosAppUrl: { type: DataTypes.TEXT, allowNull: true, comment: 'لینک دانلود اپ iOS (App Store/TestFlight/itms-services)' },
+        androidAppUrl: { type: DataTypes.TEXT, allowNull: true, comment: 'لینک دانلود اپ Android (Play Store یا APK)' }
     }, {
         timestamps: true,
         tableName: 'panel_settings'

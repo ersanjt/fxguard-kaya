@@ -2319,6 +2319,7 @@
                 if (profileSaveBtn) profileSaveBtn.style.display = '';
                 const profileProtectedBanner = document.getElementById('profileProtectedBanner');
                 if (profileProtectedBanner) profileProtectedBanner.style.display = 'none';
+                renderProfileMobileAppLinks(window.__panelBranding || {});
             }
             const statusEl = document.getElementById('profileTotpStatus');
             const actionsEl = document.getElementById('profileTotpActions');
@@ -5837,6 +5838,7 @@
         }
         function applyBranding(s) {
             if (!s) return;
+            window.__panelBranding = s;
             const defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
             const defSite = (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
             const defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
@@ -5897,6 +5899,20 @@
             const fw = (s.fontWeight && ['normal', 'medium', 'bold'].indexOf(s.fontWeight) >= 0) ? s.fontWeight : 'normal';
             document.body.style.fontWeight = fw;
             if (Array.isArray(s.sidebarOrder) && s.sidebarOrder.length > 0) applySidebarOrder(s.sidebarOrder);
+            renderProfileMobileAppLinks(s);
+        }
+        function renderProfileMobileAppLinks(settings) {
+            const section = document.getElementById('profileMobileAppsSection');
+            const iosLink = document.getElementById('profileIosAppLink');
+            const androidLink = document.getElementById('profileAndroidAppLink');
+            if (!section || !iosLink || !androidLink) return;
+            const iosUrl = settings && settings.iosAppUrl ? String(settings.iosAppUrl).trim() : '';
+            const androidUrl = settings && settings.androidAppUrl ? String(settings.androidAppUrl).trim() : '';
+            const hasIos = !!iosUrl;
+            const hasAndroid = !!androidUrl;
+            if (hasIos) { iosLink.href = iosUrl; iosLink.style.display = ''; } else { iosLink.removeAttribute('href'); iosLink.style.display = 'none'; }
+            if (hasAndroid) { androidLink.href = androidUrl; androidLink.style.display = ''; } else { androidLink.removeAttribute('href'); androidLink.style.display = 'none'; }
+            section.style.display = (hasIos || hasAndroid) ? '' : 'none';
         }
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
@@ -5997,6 +6013,8 @@
             set('panelSettingLoginTitle', d.loginTitle);
             set('panelSettingPageTitle', d.pageTitle);
             set('panelSettingFooterText', d.footerText);
+            set('panelSettingIosAppUrl', d.iosAppUrl);
+            set('panelSettingAndroidAppUrl', d.androidAppUrl);
             const footerStyleEl = document.getElementById('panelSettingFooterStyle');
             if (footerStyleEl) footerStyleEl.value = (d.footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(d.footerStyle) >= 0) ? d.footerStyle : 'accent';
             const hideFooterEl = document.getElementById('panelSettingHideFooter');
@@ -6458,6 +6476,8 @@
                 loginTitle: get('panelSettingLoginTitle'),
                 pageTitle: get('panelSettingPageTitle'),
                 footerText: get('panelSettingFooterText'),
+                iosAppUrl: get('panelSettingIosAppUrl'),
+                androidAppUrl: get('panelSettingAndroidAppUrl'),
                 showFooter: !(document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked),
                 footerStyle: (function() { const el = document.getElementById('panelSettingFooterStyle'); const v = el ? el.value : 'accent'; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : 'accent'; })(),
                 primaryColor: (function() { const el = document.getElementById('panelSettingPrimaryColor'); const v = el ? el.value : ''; return /^#[0-9a-fA-F]{6}$/.test(v) ? v : null; })(),
