@@ -20,18 +20,12 @@ function isEnabled() {
     return !!(getBotToken() && getChatIds().length > 0);
 }
 
-function toSafeText(value) {
-    return String(value == null ? '' : value)
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;');
-}
-
 async function sendMessage(text) {
     const token = getBotToken();
     const chatIds = getChatIds();
     if (!token || chatIds.length === 0) return { ok: false, error: 'Telegram not configured' };
 
-    const payloadText = toSafeText(text || '');
+    const payloadText = String(text || '');
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
     const results = await Promise.allSettled(
         chatIds.map(chat_id =>
@@ -40,7 +34,6 @@ async function sendMessage(text) {
                 {
                     chat_id,
                     text: payloadText,
-                    parse_mode: 'HTML',
                     disable_web_page_preview: true
                 },
                 { timeout: TELEGRAM_TIMEOUT_MS }

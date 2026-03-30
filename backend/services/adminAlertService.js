@@ -72,14 +72,14 @@ function buildBody(eventType, data) {
              <p><strong>مرورگر/دستگاه:</strong> ${userAgent}</p>`
         ),
         tg: [
-            '🚨 <b>Security Alert</b>',
-            `<b>Event:</b> ${action}`,
-            `<b>Time:</b> ${fmtNow()}`,
-            `<b>User:</b> ${userLabel}`,
-            `<b>Path/Page:</b> ${requestPath}`,
-            `<b>Error:</b> ${errorMessage}`,
-            `<b>IP:</b> ${ip}`,
-            `<b>Country:</b> ${country}`
+            '🚨 Security Alert',
+            `Event: ${action}`,
+            `Time: ${fmtNow()}`,
+            `User: ${userLabel}`,
+            `Path/Page: ${requestPath}`,
+            `Error: ${errorMessage}`,
+            `IP: ${ip}`,
+            `Country: ${country}`
         ].join('\n')
     };
 }

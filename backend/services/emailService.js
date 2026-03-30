@@ -200,35 +200,77 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
     const hostCandidates = getCandidateHosts(config);
     let lastError = null;
 
-    for (const host of hostCandidates) {
-        for (let i = Math.max(1, attempt); i <= MAX_RETRIES; i++) {
-            try {
-                const opts = {
-                    host,
-                    port: basePort,
-                    secure: baseSecure,
-                    auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
-                    connectionTimeout: CONNECTION_TIMEOUT_MS,
-                    greetingTimeout: GREETING_TIMEOUT_MS,
-                    socketTimeout: SOCKET_TIMEOUT_MS
-                };
-                if (basePort === 587 && !baseSecure) opts.requireTLS = true;
-                if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
+    // If SSL/TLS mismatch happens (wrong version number), try alternate port/secure combos.
+    // This addresses errors like: "ssl3_get_record:wrong version number".
+    const connectionCandidates = (() => {
+        if (basePort === 587) {
+            // 587 typically means STARTTLS (secure=false), while 465 means SSL (secure=true).
+            return [
+                { port: 587, secure: false },
+                { port: 465, secure: true },
+                // also try the inverted secure flag on 587 (some providers behave differently)
+                { port: 587, secure: true }
+            ];
+        }
+        if (basePort === 465) {
+            return [
+                { port: 465, secure: true },
+                { port: 587, secure: false },
+                { port: 465, secure: false }
+            ];
+        }
+        return [{ port: basePort, secure: baseSecure }];
+    })();
 
-                const transport = nodemailer_local.createTransport(opts);
-                await transport.sendMail(mailOpts);
-                logger.info('Email sent successfully (custom config)', { to: emails.join(', '), host });
-                return { ok: true, usedHost: host };
-            } catch (err) {
-                lastError = err;
-                const retryable = isRetryableError(err);
-                if (retryable && i < MAX_RETRIES) {
-                    const delay = RETRY_DELAY_MS * i;
-                    logger.warn('Email send failed (custom config), retrying', { attempt: i, maxRetries: MAX_RETRIES, delay, host, error: err.message });
-                    await new Promise(resolve => setTimeout(resolve, delay));
-                    continue;
+    for (const host of hostCandidates) {
+        for (const conn of connectionCandidates) {
+            const trySecure = !!conn.secure;
+            const tryPort = parseInt(conn.port, 10) || basePort;
+
+            for (let i = Math.max(1, attempt); i <= MAX_RETRIES; i++) {
+                try {
+                    const opts = {
+                        host,
+                        port: tryPort,
+                        secure: trySecure,
+                        auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
+                        connectionTimeout: CONNECTION_TIMEOUT_MS,
+                        greetingTimeout: GREETING_TIMEOUT_MS,
+                        socketTimeout: SOCKET_TIMEOUT_MS
+                    };
+                    if (tryPort === 587 && !trySecure) opts.requireTLS = true;
+                    if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
+
+                    const transport = nodemailer_local.createTransport(opts);
+                    await transport.sendMail(mailOpts);
+                    logger.info('Email sent successfully (custom config)', {
+                        to: emails.join(', '),
+                        host,
+                        port: tryPort,
+                        secure: trySecure
+                    });
+                    return { ok: true, usedHost: host };
+                } catch (err) {
+                    lastError = err;
+                    const retryable = isRetryableError(err);
+                    if (retryable && i < MAX_RETRIES) {
+                        const delay = RETRY_DELAY_MS * i;
+                        logger.warn('Email send failed (custom config), retrying', {
+                            attempt: i,
+                            maxRetries: MAX_RETRIES,
+                            delay,
+                            host,
+                            port: tryPort,
+                            secure: trySecure,
+                            error: err.message
+                        });
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        continue;
+                    }
+
+                    // Try next connection candidate (e.g. switch 587<->465 or secure flag)
+                    break;
                 }
-                break;
             }
         }
     }
