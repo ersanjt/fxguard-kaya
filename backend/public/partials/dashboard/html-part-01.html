@@ -91,7 +91,7 @@
             <p class="sub" id="totpStepEmail">کد شش‌رقمی اپلیکیشن Google Authenticator را وارد کنید.</p>
             <input type="text" id="totpCode" data-i18n-ph="login_totp_code_ph" placeholder="کد ۶ رقمی" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code">
             <button type="button" id="btnTotpVerify" onclick="verifyTotpLogin()" data-i18n="login_totp_verify">تأیید و ورود</button>
-            <button type="button" class="btn-secondary" onclick="backToLoginStep1()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
+            <button type="button" id="btnBackToLoginStep1" class="btn-secondary" onclick="backToLoginStep1()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
             <div id="totpErr" class="login-err"></div>
             <p class="login-support" id="loginSupportWrapTotp">
                 <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
@@ -104,7 +104,7 @@
             <p class="sub" data-i18n="forgot_sub">ایمیل حساب خود را وارد کنید؛ در صورت وجود حساب، لینک بازیابی ارسال می‌شود.</p>
             <input type="email" id="forgotEmail" data-i18n-ph="login_email" placeholder="ایمیل" autocomplete="email">
             <button type="button" id="btnForgotSubmit" onclick="submitForgotPassword()" data-i18n="forgot_send">ارسال لینک بازیابی</button>
-            <button type="button" class="btn-secondary" onclick="backToLoginFromForgot()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
+            <button type="button" id="btnBackToLoginFromForgot" class="btn-secondary" onclick="backToLoginFromForgot()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
             <div id="forgotErr" class="login-err"></div>
             <div id="forgotSuccess" class="login-success" style="display:none;"></div>
         </div>
@@ -115,7 +115,7 @@
             <input type="password" id="resetNewPass" data-i18n-ph="reset_new_password" placeholder="رمز عبور جدید" autocomplete="new-password">
             <input type="password" id="resetConfirmPass" data-i18n-ph="reset_confirm_password" placeholder="تکرار رمز عبور" autocomplete="new-password">
             <button type="button" id="btnResetSubmit" onclick="submitResetPassword()" data-i18n="reset_btn">تغییر رمز و ورود</button>
-            <a href="#" class="btn-secondary" style="display:inline-block;margin-top:8px;text-align:center;" onclick="backToLoginFromReset(); return false;" data-i18n="login_back">بازگشت به ورود</a>
+            <a href="#" id="btnBackToLoginFromReset" class="btn-secondary" style="display:inline-block;margin-top:8px;text-align:center;" onclick="backToLoginFromReset(); return false;" data-i18n="login_back">بازگشت به ورود</a>
             <div id="resetErr" class="login-err"></div>
         </div>
     </div>

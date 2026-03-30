@@ -1682,17 +1682,34 @@
 
         /* ========== Login Page Event Handlers Setup ========== */
         function setupLoginEventHandlers() {
+            const bindTapSafe = function(el, handler) {
+                if (!el || typeof handler !== 'function') return;
+                if (el._tapSafeHandler) {
+                    el.removeEventListener('click', el._tapSafeHandler);
+                    el.removeEventListener('touchend', el._tapSafeHandler);
+                }
+                let touched = false;
+                const wrapped = function(e) {
+                    if (e.type === 'touchend') {
+                        touched = true;
+                        if (e.cancelable) e.preventDefault();
+                    } else if (e.type === 'click' && touched) {
+                        touched = false;
+                        return;
+                    }
+                    handler(e);
+                };
+                el._tapSafeHandler = wrapped;
+                el.addEventListener('touchend', wrapped, { passive: false });
+                el.addEventListener('click', wrapped);
+            };
             // Language buttons on login page
-            const loginLangButtons = document.querySelectorAll('.login-langs button[data-lang]');
+            const loginLangButtons = document.querySelectorAll('.login-lang button[data-lang]');
             if (loginLangButtons) {
                 loginLangButtons.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleLangClick(e) { 
+                    bindTapSafe(btn, function() {
                         const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
-                    });
-                    btn.addEventListener('click', function handleLangClick(e) { 
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
+                        if (lang) window.setLang(lang);
                     });
                 });
             }
@@ -1700,35 +1717,25 @@
             // Login button
             const btnLogin = document.getElementById('btnLogin');
             if (btnLogin) {
-                btnLogin.removeEventListener('click', window.login);
-                btnLogin.addEventListener('click', window.login);
+                bindTapSafe(btnLogin, window.login);
             }
             
             // Forgot password link
             const linkForgot = document.getElementById('linkForgotPassword');
             if (linkForgot) {
-                linkForgot.removeEventListener('click', function(e) { e.preventDefault(); window.showForgotStep(); });
-                linkForgot.addEventListener('click', function(e) { e.preventDefault(); window.showForgotStep(); });
+                bindTapSafe(linkForgot, function(e) { if (e && e.preventDefault) e.preventDefault(); window.showForgotStep(); });
             }
             
             // TOTP verify button
             const btnTotpVerify = document.getElementById('btnTotpVerify');
             if (btnTotpVerify) {
-                btnTotpVerify.removeEventListener('click', window.verifyTotpLogin);
-                btnTotpVerify.addEventListener('click', window.verifyTotpLogin);
+                bindTapSafe(btnTotpVerify, window.verifyTotpLogin);
             }
             
             // Back to login button (from TOTP)
-            let btnBackToLogin1 = document.querySelector('[onclick="backToLoginStep1()"]');
-            if (!btnBackToLogin1) {
-                try {
-                    const xpathResult = document.evaluate("//button[contains(text(), 'بازگشت')]", document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null);
-                    btnBackToLogin1 = xpathResult.singleNodeValue;
-                } catch(xe) { btnBackToLogin1 = null; }
-            }
+            const btnBackToLogin1 = document.getElementById('btnBackToLoginStep1');
             if (btnBackToLogin1) {
-                btnBackToLogin1.removeEventListener('click', window.backToLoginStep1);
-                btnBackToLogin1.addEventListener('click', window.backToLoginStep1);
+                bindTapSafe(btnBackToLogin1, window.backToLoginStep1);
             }
             
             // Forgot password submit button

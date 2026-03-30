@@ -3,10 +3,9 @@
             }
             
             // Back to login from forgot
-            const btnBackFromForgot = document.querySelectorAll('[onclick="backToLoginFromForgot()"]')[0];
+            const btnBackFromForgot = document.getElementById('btnBackToLoginFromForgot');
             if (btnBackFromForgot) {
-                btnBackFromForgot.removeEventListener('click', window.backToLoginFromForgot);
-                btnBackFromForgot.addEventListener('click', window.backToLoginFromForgot);
+                bindTapSafe(btnBackFromForgot, window.backToLoginFromForgot);
             }
             
             // Reset password submit button
@@ -17,23 +16,18 @@
             }
             
             // Back to login from reset
-            const btnBackFromReset = document.querySelectorAll('[onclick="backToLoginFromReset(); return false;"]')[0];
+            const btnBackFromReset = document.getElementById('btnBackToLoginFromReset');
             if (btnBackFromReset) {
-                btnBackFromReset.removeEventListener('click', function(e) { e.preventDefault(); window.backToLoginFromReset(); });
-                btnBackFromReset.addEventListener('click', function(e) { e.preventDefault(); window.backToLoginFromReset(); });
+                bindTapSafe(btnBackFromReset, function(e) { if (e && e.preventDefault) e.preventDefault(); window.backToLoginFromReset(); });
             }
             
             // Language buttons in forgot/reset modal
-            const forgotLangButtons = document.querySelectorAll('.forgot-langs button[data-lang]');
+            const forgotLangButtons = document.querySelectorAll('.login-lang button[data-lang]');
             if (forgotLangButtons) {
                 forgotLangButtons.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleLangClick(e) { 
+                    bindTapSafe(btn, function() {
                         const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
-                    });
-                    btn.addEventListener('click', function handleLangClick(e) { 
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
+                        if (lang) window.setLang(lang);
                     });
                 });
             }
