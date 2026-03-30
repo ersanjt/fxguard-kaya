@@ -148,6 +148,11 @@ final class ApiService {
     func getGatewayStatus() async throws -> WhatsAppStatus {
         try await request(path: "gateway/status")
     }
+
+    // MARK: - Panel Settings (public)
+    func getPublicBranding() async throws -> PublicBrandingResponse {
+        try await request(path: "panel-settings/public/branding")
+    }
 }
 
 // Helper for encoding any Encodable

@@ -25,6 +25,16 @@
 2. صبر کنید تا ساخت تمام شود
 3. APK در پوشه `app/build/outputs/apk/debug/` ساخته می‌شود
 
+### بیلد از خط فرمان (PowerShell / CMD)
+
+برای `gradlew.bat` لازم است **JDK 17** نصب باشد و متغیر **`JAVA_HOME`** به پوشه نصب JDK اشاره کند؛ در غیر این صورت با خطای `JAVA_HOME is not set` مواجه می‌شوید. پس از تنظیم، از پوشه `android-app` اجرا کنید:
+
+```powershell
+.\gradlew.bat assembleDebug
+```
+
+خروجی معمولاً: `app/build/outputs/apk/debug/app-debug.apk`
+
 ---
 
 ## ویژگی‌ها
@@ -39,7 +49,7 @@
 - **مشتریان** مشاهده لیست مشتریان
 - **تیکت‌ها** مدیریت تیکت‌های داخلی
 - **وظایف** لیست تسک‌ها و وظایف
-- **پروفایل** اطلاعات کاربر و خروج
+- **پروفایل** اطلاعات کاربر، تغییر آدرس سرور، لینک دانلود اپ‌های موبایل (از تنظیمات پنل) و خروج
 
 ## پیش‌نیازها
 
@@ -108,6 +118,7 @@ const val BASE_URL = "https://kaya.fxguard.io/"
 | POST auth/login | ورود |
 | POST auth/totp/verify-login | تأیید TOTP |
 | GET auth/me | پروفایل کاربر |
+| GET panel-settings/public/branding | لینک‌های دانلود اپ (iOS/Android) و برندینگ عمومی |
 | GET analytics/dashboard | آمار داشبورد |
 | GET conversations | لیست مکالمات |
 | GET conversations/:id/messages | پیام‌های مکالمه |

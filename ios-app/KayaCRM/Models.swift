@@ -274,3 +274,9 @@ struct WhatsAppStatus: Decodable {
 struct ApiErrorBody: Decodable {
     let error: String?
 }
+
+// MARK: - Panel Settings (public)
+struct PublicBrandingResponse: Decodable {
+    let iosAppUrl: String?
+    let androidAppUrl: String?
+}

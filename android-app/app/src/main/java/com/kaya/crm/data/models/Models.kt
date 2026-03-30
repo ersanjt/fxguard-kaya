@@ -274,3 +274,9 @@ data class WhatsAppStatus(
 ) {
     val isConnected: Boolean get() = connected == true || whatsapp == true || status == "connected"
 }
+
+// Panel Settings (public)
+data class PublicBrandingResponse(
+    @SerializedName("iosAppUrl") val iosAppUrl: String? = null,
+    @SerializedName("androidAppUrl") val androidAppUrl: String? = null
+)

@@ -1,5 +1,7 @@
 package com.kaya.crm.ui.main.profile
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -7,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -18,9 +21,13 @@ fun ProfileScreen(
     onLogout: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val user by viewModel.user.collectAsState()
+    val publicBranding by viewModel.publicBranding.collectAsState()
     val savedServerUrl by viewModel.savedServerUrl.collectAsState(initial = null)
     var showServerDialog by remember { mutableStateOf(false) }
+    val iosUrl = publicBranding?.iosAppUrl?.trim().orEmpty()
+    val androidUrl = publicBranding?.androidAppUrl?.trim().orEmpty()
 
     Column(
         modifier = Modifier
@@ -75,6 +82,51 @@ fun ProfileScreen(
                 }
                 TextButton(onClick = { showServerDialog = true }) {
                     Text("تغییر")
+                }
+            }
+        }
+
+        if (iosUrl.isNotBlank() || androidUrl.isNotBlank()) {
+            Spacer(modifier = Modifier.height(24.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("دانلود اپ موبایل", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        "نسخه‌های قابل نصب مستقیم:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    if (iosUrl.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = {
+                                runCatching {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(iosUrl)))
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("دانلود نسخه iOS")
+                        }
+                    }
+                    if (androidUrl.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Button(
+                            onClick = {
+                                runCatching {
+                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(androidUrl)))
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("دانلود نسخه Android")
+                        }
+                    }
                 }
             }
         }

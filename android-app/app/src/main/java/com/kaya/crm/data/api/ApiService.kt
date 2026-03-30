@@ -79,6 +79,10 @@ interface ApiService {
     @GET("gateway/status")
     suspend fun getGatewayStatus(): Response<WhatsAppStatus>
 
+    // Panel settings (public)
+    @GET("panel-settings/public/branding")
+    suspend fun getPublicBranding(): Response<PublicBrandingResponse>
+
     // چت داخلی سازمان
     @GET("internal/threads")
     suspend fun getInternalThreads(): Response<InternalThreadsResponse>
