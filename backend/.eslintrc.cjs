@@ -45,5 +45,9 @@ module.exports = {
     'public/js/i18n-en.js',
     'public/js/i18n-tr.js',
     'public/js/landing.js',
+    // قطعه‌های خروجی bundle-dashboard — به‌تنهایی برای پارسر JS معتبر نیستند
+    'public/js/dashboard/src/**',
+    // globals مرورگر (t، LANG)؛ با dashboard یکپارچه لود می‌شود
+    'public/js/modules/dashboard-i18n.js',
   ],
 };

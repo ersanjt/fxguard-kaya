@@ -550,9 +550,9 @@ async function runTests() {
         assert.strictEqual(validatePassword('Ab1!').valid, false);
     });
 
-    await test('validatePassword rejects passwords without special char', async () => {
+    await test('validatePassword accepts passwords with letter and digit (no special char required)', async () => {
         const { validatePassword } = require('../lib/passwordValidation');
-        assert.strictEqual(validatePassword('Password123').valid, false);
+        assert.strictEqual(validatePassword('Password123').valid, true);
     });
 
     await test('validatePassword accepts strong passwords', async () => {

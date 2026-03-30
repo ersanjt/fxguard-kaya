@@ -339,7 +339,9 @@ async function deleteWithTransfer(req, res, next) {
         if (!req.canDeleteUser()) {
             return res.status(403).json({ error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند کاربر را حذف کند' });
         }
+        const { isValidUUID } = require('../lib/validation');
         const userId = req.params.id;
+        if (!isValidUUID(userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
         const { transferToUserId } = req.body;
         if (!transferToUserId) return res.status(400).json({ error: 'انتخاب کاربر برای انتقال داده‌ها الزامی است' });
         const user = await User.findByPk(userId);
