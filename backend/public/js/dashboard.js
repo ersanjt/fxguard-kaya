@@ -5905,14 +5905,24 @@
             const section = document.getElementById('profileMobileAppsSection');
             const iosLink = document.getElementById('profileIosAppLink');
             const androidLink = document.getElementById('profileAndroidAppLink');
+            const descEl = document.getElementById('profileMobileAppsDesc');
+            const emptyEl = document.getElementById('profileMobileAppsEmpty');
+            const adminBtn = document.getElementById('profileMobileAppsOpenSettings');
             if (!section || !iosLink || !androidLink) return;
             const iosUrl = settings && settings.iosAppUrl ? String(settings.iosAppUrl).trim() : '';
             const androidUrl = settings && settings.androidAppUrl ? String(settings.androidAppUrl).trim() : '';
             const hasIos = !!iosUrl;
             const hasAndroid = !!androidUrl;
+            const hasAny = hasIos || hasAndroid;
             if (hasIos) { iosLink.href = iosUrl; iosLink.style.display = ''; } else { iosLink.removeAttribute('href'); iosLink.style.display = 'none'; }
             if (hasAndroid) { androidLink.href = androidUrl; androidLink.style.display = ''; } else { androidLink.removeAttribute('href'); androidLink.style.display = 'none'; }
-            section.style.display = (hasIos || hasAndroid) ? '' : 'none';
+            if (descEl) descEl.style.display = hasAny ? '' : 'none';
+            if (emptyEl) emptyEl.style.display = hasAny ? 'none' : '';
+            section.style.display = '';
+            if (adminBtn) {
+                var canPanel = !!(typeof currentUser !== 'undefined' && currentUser && currentUser.permissions && currentUser.permissions.panel_settings);
+                adminBtn.style.display = (canPanel && (!hasIos || !hasAndroid)) ? '' : 'none';
+            }
         }
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');

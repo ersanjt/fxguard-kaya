@@ -445,12 +445,14 @@
                                 </div>
                             </div>
                         </div>
-                        <div id="profileMobileAppsSection" class="profile-readonly-section" style="display:none;">
-                            <h3 class="profile-section-title">دانلود اپ موبایل</h3>
-                            <p class="profile-intro text-muted" style="margin-bottom:10px;">برای نصب مستقیم روی گوشی، یکی از نسخه‌های زیر را انتخاب کنید.</p>
+                        <div id="profileMobileAppsSection" class="profile-readonly-section">
+                            <h3 class="profile-section-title" data-i18n="profile_mobile_apps_title">اپ موبایل</h3>
+                            <p id="profileMobileAppsDesc" class="profile-intro text-muted" style="margin-bottom:10px; display:none;" data-i18n="profile_mobile_apps_desc">برای نصب روی گوشی یکی از دکمه‌های زیر را بزنید.</p>
+                            <p id="profileMobileAppsEmpty" class="profile-intro text-muted" style="margin-bottom:10px;" data-i18n="profile_mobile_apps_empty">هنوز لینک رسمی App Store / Play Store یا فایل نصب توسط مدیر در «ظاهر پنل» ثبت نشده است.</p>
                             <div class="profile-form-actions" style="justify-content:flex-start; gap:10px; flex-wrap:wrap;">
-                                <a id="profileIosAppLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display:none;">دانلود نسخه iOS</a>
-                                <a id="profileAndroidAppLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:none;">دانلود نسخه Android</a>
+                                <a id="profileIosAppLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display:none;" data-i18n="profile_mobile_ios_btn">دانلود iOS</a>
+                                <a id="profileAndroidAppLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:none;" data-i18n="profile_mobile_android_btn">دانلود Android</a>
+                                <button type="button" id="profileMobileAppsOpenSettings" class="btn-secondary" style="display:none;" data-i18n="profile_mobile_apps_settings" onclick="if(typeof showPage==='function'){showPage('panel-settings');} return false;">تنظیم لینک‌ها در ظاهر پنل</button>
                             </div>
                         </div>
                     </div>
