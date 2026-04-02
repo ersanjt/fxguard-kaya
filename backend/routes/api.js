@@ -169,6 +169,27 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         }
     });
 
+    // اطلاع‌رسانی از gateway هنگام قطع/وصل واتساپ → هشدار تلگرام به ادمین
+    apiRouter.post('/webhook/gateway-status', webhookAuth, express.json({ limit: '32kb' }), async (req, res) => {
+        try {
+            const { event, reason } = req.body || {};
+            if (event === 'disconnected') {
+                const msg = reason === 'logged_out'
+                    ? '❌ واتساپ Logout شد — سشن منقضی. وارد داشبورد شوید و QR جدید را اسکن کنید.'
+                    : `⚠️ واتساپ قطع شد (دلیل: ${reason || 'نامشخص'}). اتصال مجدد خودکار در حال اجرا.`;
+                notifySystemEvent('system', '🔌 WhatsApp Gateway Disconnected', {
+                    reason: reason || 'unknown',
+                    action: reason === 'logged_out' ? 'scan_new_qr' : 'auto_reconnect',
+                    message: msg,
+                }).catch(() => {});
+                logger.warn('Gateway status webhook: disconnected', { reason });
+            }
+            res.json({ ok: true });
+        } catch (e) {
+            res.json({ ok: true });
+        }
+    });
+
     // بدنهٔ JSON؛ مسیرهای /webhook از json سراسری معافند
     apiRouter.post('/webhook/message-status', webhookAuth, express.json({ limit: '512kb' }), async (req, res, next) => {
         try {

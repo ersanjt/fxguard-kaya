@@ -12,6 +12,7 @@ const redis = require('redis');
 const winston = require('winston');
 const multer = require('multer');
 const axios = require('axios');
+const cron = require('node-cron');
 const fs = require('fs').promises;
 const path = require('path');
 require('dotenv').config();
@@ -49,6 +50,8 @@ const CONFIG = {
 };
 
 let reconnectAttemptCount = 0;
+let lastMessageReceivedAt = 0;
+let healthCheckFailCount = 0;
 
 // ==================== App / Server ====================
 const app = express();
@@ -331,51 +334,60 @@ function attachClientEvents(c) {
         } catch (_) {}
     });
 
-    c.on('disconnected', (reason) => {
-        logger.warn('⚠️ WhatsApp Disconnected', { reason });
+    c.on('disconnected', async (reason) => {
+        const reasonStr = String(reason || '');
+        logger.warn('⚠️ WhatsApp Disconnected', { reason: reasonStr });
 
         isClientReady = false;
         isClientStarting = false;
         connectionPhase = null;
+        client = null;
 
-        io.emit('disconnected', { reason });
+        io.emit('disconnected', { reason: reasonStr });
         redisClient.set('whatsapp:status', 'disconnected').catch(() => {});
 
-        // Auto-reconnect با exponential backoff
-        const noReconnect = ['logged_out', 'stopped_by_api', 'CONFLICT'];
-        if (CONFIG.autoReconnect && !noReconnect.includes(String(reason))) {
-            if (reconnectAttemptCount >= CONFIG.reconnectMaxRetries) {
-                logger.warn('🔄 Auto-reconnect max retries reached', {
-                    attempts: reconnectAttemptCount,
-                });
-                reconnectAttemptCount = 0;
-                return;
-            }
-            const delay = Math.min(
-                CONFIG.reconnectDelayMs *
-                    Math.pow(CONFIG.reconnectBackoffMultiplier, reconnectAttemptCount),
-                300000
-            );
-            reconnectAttemptCount++;
-            logger.info('🔄 Auto-reconnect scheduled', {
-                attempt: reconnectAttemptCount,
-                delayMs: Math.round(delay),
-            });
+        // اطلاع به بکند برای ارسال هشدار ادمین
+        notifyBackendStatus('disconnected', reasonStr).catch(() => {});
+
+        if (reasonStr === 'stopped_by_api') {
+            reconnectAttemptCount = 0;
+            return;
+        }
+
+        if (reasonStr === 'logged_out') {
+            // واتساپ سشن را باطل کرده — فولدر سشن را پاک کن تا QR جدید بگیری
+            logger.warn('🔑 WhatsApp logged out — clearing session for fresh QR scan');
+            try {
+                const sessionPath = path.resolve(
+                    process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth')
+                );
+                await fs
+                    .rm(path.join(sessionPath, 'session'), { recursive: true, force: true })
+                    .catch(() => {});
+            } catch (_) {}
+            reconnectAttemptCount = 0;
+            // ۱۰ ثانیه صبر کن بعد restart برای QR جدید
             setTimeout(() => {
-                if (!client || isClientReady || isClientStarting) return;
-                logger.info('🔄 Attempting auto-reconnect...');
-                startWhatsApp()
-                    .then(() => {
-                        reconnectAttemptCount = 0;
-                    })
-                    .catch((e) => logger.error('Auto-reconnect failed', { error: e?.message }));
-            }, delay);
+                if (isClientReady || isClientStarting) return;
+                logger.info('🔄 Restarting WhatsApp after logout — scan new QR in dashboard');
+                startWhatsApp().catch((e) =>
+                    logger.error('Restart after logout failed', { error: e?.message })
+                );
+            }, 10000);
+            return;
+        }
+
+        // سایر دلایل (قطع شبکه، CONFLICT، ...) — اتصال مجدد خودکار
+        if (CONFIG.autoReconnect) {
+            scheduleReconnect();
         } else {
             reconnectAttemptCount = 0;
         }
     });
 
     c.on('message', async (msg) => {
+        lastMessageReceivedAt = Date.now();
+        healthCheckFailCount = 0;
         try {
             const chat = await msg.getChat();
             // برای گروه: getContact() با author فرستنده را برمی‌گرداند؛ برای چت مستقیم: contact فرستنده است
@@ -623,6 +635,65 @@ async function sendToBackendWithRetry(messageData) {
 
 function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** اطلاع‌رسانی به بکند هنگام قطع/وصل شدن واتساپ */
+async function notifyBackendStatus(event, reason) {
+    try {
+        const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
+        const webhookSecret = process.env.WEBHOOK_SECRET || '';
+        await axios.post(
+            `${backendUrl}/api/webhook/gateway-status`,
+            { event, reason: reason || null, timestamp: new Date().toISOString() },
+            {
+                timeout: 5000,
+                validateStatus: () => true,
+                headers: webhookSecret ? { 'x-webhook-secret': webhookSecret } : {},
+            }
+        );
+    } catch (_) {}
+}
+
+/** زمانبندی اتصال مجدد با exponential backoff — بی‌نهایت تلاش می‌کند */
+function scheduleReconnect() {
+    if (isClientReady || isClientStarting) return;
+
+    const maxBeforeLongWait = CONFIG.reconnectMaxRetries;
+    if (reconnectAttemptCount >= maxBeforeLongWait) {
+        // بعد از ۱۰ تلاش، هر ۱۰ دقیقه یکبار ادامه می‌دهد
+        logger.warn('🔄 Max quick retries reached — switching to 10-min interval retry', {
+            attempts: reconnectAttemptCount,
+        });
+        reconnectAttemptCount = 0;
+        setTimeout(() => {
+            if (isClientReady || isClientStarting) return;
+            logger.info('🔄 Long-interval reconnect attempt...');
+            client = null;
+            startWhatsApp().catch((e) =>
+                logger.error('Long-interval reconnect failed', { error: e?.message })
+            );
+        }, 10 * 60 * 1000);
+        return;
+    }
+
+    const delay = Math.min(
+        CONFIG.reconnectDelayMs * Math.pow(CONFIG.reconnectBackoffMultiplier, reconnectAttemptCount),
+        300000
+    );
+    reconnectAttemptCount++;
+    logger.info('🔄 Auto-reconnect scheduled', {
+        attempt: reconnectAttemptCount,
+        delayMs: Math.round(delay),
+    });
+    setTimeout(() => {
+        if (isClientReady || isClientStarting) return;
+        logger.info('🔄 Attempting auto-reconnect...');
+        startWhatsApp()
+            .then(() => {
+                reconnectAttemptCount = 0;
+            })
+            .catch((e) => logger.error('Auto-reconnect failed', { error: e?.message }));
+    }, delay);
 }
 
 function normalizePhoneToChatId(phoneOrJid) {
@@ -1031,6 +1102,52 @@ function startServer() {
             // auto-start WhatsApp (optional)
             startWhatsApp().catch(() => {});
         }, 300);
+
+        // ✅ Health check هر ۵ دقیقه — تشخیص قطع بی‌صدا و راه‌اندازی مجدد
+        cron.schedule('*/5 * * * *', async () => {
+            try {
+                if (isClientStarting) return; // در حال اتصال است — دست نزن
+
+                if (!isClientReady) {
+                    logger.warn('💉 Health check: WhatsApp not connected — scheduling reconnect');
+                    scheduleReconnect();
+                    return;
+                }
+
+                // تست ping به واتساپ با timeout ده ثانیه
+                const state = await Promise.race([
+                    client ? client.getState() : Promise.reject(new Error('no_client')),
+                    new Promise((_, rej) =>
+                        setTimeout(() => rej(new Error('ping_timeout')), 10000)
+                    ),
+                ]);
+
+                if (state === 'CONNECTED') {
+                    healthCheckFailCount = 0;
+                } else {
+                    healthCheckFailCount++;
+                    logger.warn('💉 Health check: unexpected state', { state, failCount: healthCheckFailCount });
+                    if (healthCheckFailCount >= 2) {
+                        healthCheckFailCount = 0;
+                        isClientReady = false;
+                        client = null;
+                        scheduleReconnect();
+                    }
+                }
+            } catch (e) {
+                healthCheckFailCount++;
+                logger.warn('💉 Health check ping failed', {
+                    error: e?.message,
+                    failCount: healthCheckFailCount,
+                });
+                if (healthCheckFailCount >= 2) {
+                    healthCheckFailCount = 0;
+                    isClientReady = false;
+                    client = null;
+                    scheduleReconnect();
+                }
+            }
+        });
     });
 }
 
