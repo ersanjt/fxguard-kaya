@@ -473,6 +473,27 @@ router.patch('/:id', async (req, res, next) => {
                 summary: `مکالمه به کاربر تخصیص داده شد`,
                 metadata: { conversationId: conversation.id, assignedTo: updateData.assignedTo, customerPhone: conversation.customer && conversation.customer.phone }
             });
+            // ارسال ایمیل اطلاع‌رسانی به کاربر تخصیص‌یافته
+            if (String(updateData.assignedTo) !== String(req.userId)) {
+                setImmediate(async () => {
+                    try {
+                        const emailService = require('../services/emailService');
+                        const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
+                        const { NotificationPreference } = require('../models');
+                        const assignee = await User.findByPk(updateData.assignedTo, { attributes: ['id', 'name', 'email'] });
+                        if (!assignee || !assignee.email) return;
+                        const [pref, settings] = await Promise.all([
+                            NotificationPreference.findOne({ where: { userId: assignee.id } }),
+                            getPanelSettings()
+                        ]);
+                        if (pref && pref.ticketAssignedEmailEnabled === false) return;
+                        const emailConfig = getPanelEmailConfig(settings);
+                        const customerName = conversation.customer ? conversation.customer.name || conversation.customer.phone : '';
+                        const assignerName = req.user ? req.user.name || req.user.email : null;
+                        await emailService.sendConversationAssigned(assignee, conversation, customerName, assignerName, emailConfig && emailConfig.host ? emailConfig : null);
+                    } catch (_) {}
+                });
+            }
         }
         if (departmentId !== undefined && updateData.departmentId !== undefined) {
             // فقط هنگام تغییر واقعی دپارتمان پیام خودکار ارسال شود (نه هر بار ذخیره فرم)

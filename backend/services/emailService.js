@@ -281,59 +281,150 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
     return { ok: false, error: msg };
 }
 
-/** قالب HTML پایه با پشتیبانی RTL */
-function baseHtml(title, body) {
+/** قالب HTML مدرن با پشتیبانی RTL و طراحی حرفه‌ای */
+function baseHtml(title, body, opts = {}) {
+    const accentColor = opts.accentColor || '#059669';
+    const accentDark  = opts.accentDark  || '#047857';
+    const siteName    = opts.siteName    || FROM_NAME || 'پورتال کارکنان';
+    const logoUrl     = opts.logoUrl     || '';
+    const footerText  = opts.footerText  || `این ایمیل به‌صورت خودکار از <strong>${siteName}</strong> ارسال شده است.`;
+    const unsubUrl    = `${PANEL_URL}?unsubscribe=1`;
+
     return `<!DOCTYPE html>
-<html dir="rtl" lang="fa">
+<html dir="rtl" lang="fa" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <title>${title}</title>
+  <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
   <style>
-    body { font-family: Tahoma, Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 24px; color: #333; line-height: 1.6; }
-    .container { max-width: 560px; margin: 0 auto; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
-    .header { background: linear-gradient(135deg, #059669 0%, #047857 100%); color: #fff; padding: 20px 24px; font-size: 1.2rem; font-weight: 600; }
-    .body { padding: 24px; }
-    .footer { padding: 16px 24px; font-size: 0.85rem; color: #666; border-top: 1px solid #eee; }
-    .btn { display: inline-block; padding: 12px 24px; background: #059669; color: #fff !important; text-decoration: none; border-radius: 8px; font-weight: 600; margin-top: 12px; }
-    .btn:hover { background: #047857; }
-    .muted { color: #666; font-size: 0.9rem; }
-    code, .cred { background: #f0f0f0; padding: 2px 8px; border-radius: 4px; font-family: monospace; }
+    @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Vazirmatn',Tahoma,Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;line-height:1.7;-webkit-font-smoothing:antialiased}
+    .wrapper{width:100%;background:#f0f2f5;padding:32px 16px}
+    .container{max-width:580px;margin:0 auto}
+    .brand-bar{background:linear-gradient(135deg,${accentColor} 0%,${accentDark} 100%);border-radius:16px 16px 0 0;padding:24px 32px;display:flex;align-items:center;gap:12px}
+    .brand-bar img{height:40px;width:auto;border-radius:6px}
+    .brand-name{color:#fff;font-size:1.15rem;font-weight:700;letter-spacing:.3px}
+    .card{background:#fff;border-radius:0 0 16px 16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.07)}
+    .card-header{background:linear-gradient(135deg,${accentColor}18 0%,${accentColor}08 100%);border-bottom:2px solid ${accentColor}22;padding:24px 32px}
+    .card-header h1{font-size:1.2rem;font-weight:700;color:${accentDark};line-height:1.4}
+    .card-body{padding:28px 32px}
+    .card-body p{margin-bottom:14px;font-size:.97rem;color:#2d3748}
+    .divider{border:none;border-top:1px solid #e8ecf0;margin:20px 0}
+    .info-box{background:#f8fafb;border:1px solid #e2e8f0;border-right:4px solid ${accentColor};border-radius:10px;padding:16px 20px;margin:18px 0}
+    .info-box .label{font-size:.82rem;color:#718096;margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+    .info-box .value{font-size:1rem;color:#1a202c;font-weight:600;word-break:break-all}
+    .cred-box{background:#1a202c;border-radius:10px;padding:16px 20px;margin:18px 0;direction:ltr;text-align:left}
+    .cred-box .cred-label{color:#68d391;font-size:.78rem;font-weight:600;margin-bottom:4px;letter-spacing:.5px;text-transform:uppercase}
+    .cred-box .cred-value{color:#f0fff4;font-size:1.05rem;font-weight:700;font-family:'Courier New',monospace;word-break:break-all}
+    .feature-grid{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0}
+    .feature-item{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:10px 14px;flex:1;min-width:140px;font-size:.88rem;color:#166534;font-weight:600}
+    .feature-item .icon{font-size:1.2rem;margin-bottom:4px;display:block}
+    .btn{display:inline-block;padding:13px 28px;background:linear-gradient(135deg,${accentColor},${accentDark});color:#fff !important;text-decoration:none !important;border-radius:10px;font-weight:700;font-size:.97rem;margin-top:8px;box-shadow:0 4px 12px ${accentColor}44;letter-spacing:.2px}
+    .btn-outline{display:inline-block;padding:11px 24px;background:transparent;color:${accentColor} !important;text-decoration:none !important;border:2px solid ${accentColor};border-radius:10px;font-weight:700;font-size:.9rem;margin-top:8px;margin-right:8px}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.8rem;font-weight:700}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-blue{background:#dbeafe;color:#1e40af}
+    .badge-red{background:#fee2e2;color:#991b1b}
+    .badge-yellow{background:#fef3c7;color:#92400e}
+    .alert-box{border-radius:10px;padding:14px 18px;margin:16px 0;display:flex;align-items:flex-start;gap:12px}
+    .alert-info{background:#eff6ff;border:1px solid #bfdbfe}
+    .alert-warn{background:#fffbeb;border:1px solid #fde68a}
+    .alert-icon{font-size:1.3rem;flex-shrink:0;margin-top:1px}
+    .alert-text{font-size:.92rem;color:#374151;line-height:1.5}
+    .muted{color:#718096;font-size:.88rem}
+    .text-center{text-align:center}
+    .mt-4{margin-top:16px}
+    .card-footer{background:#f8fafb;border-top:1px solid #e8ecf0;padding:18px 32px;text-align:center}
+    .card-footer p{font-size:.82rem;color:#a0aec0;line-height:1.6}
+    .card-footer a{color:${accentColor};text-decoration:none;font-weight:600}
+    @media(max-width:480px){
+      .wrapper{padding:16px 8px}
+      .brand-bar,.card-header,.card-body,.card-footer{padding-left:20px;padding-right:20px}
+      .feature-item{min-width:100px}
+    }
   </style>
 </head>
 <body>
+<div class="wrapper">
   <div class="container">
-    <div class="header">${title}</div>
-    <div class="body">${body}</div>
-    <div class="footer">این ایمیل به‌صورت خودکار از پورتال کارکنان ارسال شده است.</div>
+    <div class="brand-bar">
+      ${logoUrl ? `<img src="${logoUrl}" alt="${siteName}">` : ''}
+      <span class="brand-name">${siteName}</span>
+    </div>
+    <div class="card">
+      <div class="card-header"><h1>${title}</h1></div>
+      <div class="card-body">${body}</div>
+      <div class="card-footer">
+        <p>${footerText}</p>
+        <p class="mt-4"><a href="${unsubUrl}">لغو اشتراک</a> &nbsp;·&nbsp; <a href="${PANEL_URL}">ورود به پنل</a></p>
+      </div>
+    </div>
   </div>
+</div>
 </body>
 </html>`;
 }
 
 /**
- * ارسال اطلاعات ورود به کاربر تازه‌ساخته‌شده
- * panelConfig: اختیاری — تنظیمات SMTP از پنل؛ در صورت ارسال از آن استفاده می‌شود
+ * ارسال ایمیل خوش‌آمدگویی کامل به کاربر تازه‌ساخته‌شده
+ * شامل: اطلاعات ورود، معرفی سیستم، راهنمای شروع
  */
 async function sendWelcomeCredentials(user, plainPassword, siteName = 'پورتال کارکنان', panelConfig = null) {
     if (!user || !user.email) return false;
-    const title = `حساب کاربری شما در ${siteName} ایجاد شد`;
+    const roleLabels = { owner: 'مالک', admin: 'مدیر', manager: 'مدیر میانی', supervisor: 'سرپرست', agent: 'کارشناس' };
+    const roleName = roleLabels[user.role] || user.role || 'کارشناس';
+    const title = `خوش آمدید به ${siteName}`;
+    const body = `
+      <p>سلام <strong>${user.name || 'کاربر گرامی'}</strong>،</p>
+      <p>حساب کاربری شما در سیستم <strong>${siteName}</strong> با موفقیت ایجاد شد. 🎉</p>
+      <p>نقش شما در سیستم: <span class="badge badge-green">${roleName}</span></p>
+      <hr class="divider">
+      <p><strong>🔑 اطلاعات ورود به سیستم:</strong></p>
+      <div class="info-box">
+        <div class="label">آدرس پنل</div>
+        <div class="value"><a href="${PANEL_URL}" style="color:#059669">${PANEL_URL}</a></div>
+      </div>
+      <div class="info-box">
+        <div class="label">ایمیل ورود${user.username ? ' / نام کاربری' : ''}</div>
+        <div class="value">${user.email}${user.username ? ' · ' + user.username : ''}</div>
+      </div>
+      <div class="cred-box">
+        <div class="cred-label">🔒 رمز عبور موقت</div>
+        <div class="cred-value">${plainPassword}</div>
+      </div>
+      <div class="alert-box alert-warn">
+        <span class="alert-icon">⚠️</span>
+        <span class="alert-text">پس از اولین ورود، رمز عبور خود را از بخش <strong>«پروفایل من»</strong> تغییر دهید.</span>
+      </div>
+      <hr class="divider">
+      <p><strong>✨ امکانات سیستم:</strong></p>
+      <div class="feature-grid">
+        <div class="feature-item"><span class="icon">💬</span>مدیریت مکالمات واتساپ</div>
+        <div class="feature-item"><span class="icon">👥</span>مدیریت مشتریان</div>
+        <div class="feature-item"><span class="icon">🎫</span>سیستم تیکت‌ها</div>
+        <div class="feature-item"><span class="icon">✅</span>مدیریت وظایف</div>
+        <div class="feature-item"><span class="icon">📊</span>گزارش‌ها و آنالیز</div>
+        <div class="feature-item"><span class="icon">🔔</span>اعلان‌های لحظه‌ای</div>
+      </div>
+      <hr class="divider">
+      <p><strong>🚀 مراحل شروع:</strong></p>
+      <ol style="margin: 0 0 0 20px; padding: 0; font-size:.94rem; color:#2d3748">
+        <li style="margin-bottom:6px">وارد پنل شوید</li>
+        <li style="margin-bottom:6px">رمز عبور خود را تغییر دهید</li>
+        <li style="margin-bottom:6px">پروفایل خود را تکمیل کنید</li>
+        <li>شروع به کار با مکالمات و تیکت‌ها کنید</li>
+      </ol>
+      <div class="text-center mt-4">
+        <a href="${PANEL_URL}" class="btn">ورود به پنل →</a>
+      </div>`;
     const mailOpts = {
         to: user.email,
-        subject: title,
-        text: `حساب کاربری شما در ${siteName} ایجاد شد. آدرس پنل: ${PANEL_URL} — ایمیل: ${user.email} — رمز موقت: ${plainPassword}`,
-        html: baseHtml(title, `
-      <p>سلام ${user.name || 'کاربر'}،</p>
-      <p>یک حساب کاربری برای شما در <strong>${siteName}</strong> ایجاد شده است.</p>
-      <p><strong>اطلاعات ورود:</strong></p>
-      <ul>
-        <li>آدرس پنل: <a href="${PANEL_URL}">${PANEL_URL}</a></li>
-        <li>ایمیل / نام کاربری: <span class="cred">${user.email}${user.username ? ' یا ' + user.username : ''}</span></li>
-        <li>رمز عبور موقت: <span class="cred">${plainPassword}</span></li>
-      </ul>
-      <p class="muted">برای امنیت بیشتر پس از اولین ورود از بخش «پروفایل من» رمز عبور خود را تغییر دهید.</p>
-      <a href="${PANEL_URL}" class="btn">ورود به پنل</a>
-    `)
+        subject: `${title} — اطلاعات ورود`,
+        text: `سلام ${user.name || 'کاربر'}،\n\nحساب کاربری شما در ${siteName} ایجاد شد.\n\nآدرس پنل: ${PANEL_URL}\nایمیل: ${user.email}${user.username ? '\nنام کاربری: ' + user.username : ''}\nرمز موقت: ${plainPassword}\n\nپس از ورود رمز خود را تغییر دهید.`,
+        html: baseHtml(title, body, { siteName })
     };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
     return sendMail(mailOpts);
@@ -349,14 +440,29 @@ async function sendLoginNotification(user, ip = '', userAgent = '', options = nu
     if (!usePanel && (!LOGIN_NOTIFICATION_ENABLED || !user || !user.email)) return false;
     if (!user || !user.email) return false;
     const title = 'ورود به پورتال';
+    const now = new Date().toLocaleString('fa-IR', { dateStyle: 'short', timeStyle: 'short' });
     const body = `
-      <p>سلام ${user.name || 'کاربر'}،</p>
-      <p>ورود به پورتال با موفقیت انجام شد.</p>
-      ${ip || userAgent ? `<p class="muted">IP: ${ip || '—'} | مرورگر: ${userAgent ? userAgent.substring(0, 80) + (userAgent.length > 80 ? '…' : '') : '—'}</p>` : ''}
-      <p>در صورت عدم اطلاع از این ورود، رمز عبور خود را تغییر دهید.</p>
-      <a href="${PANEL_URL}#profile" class="btn">پروفایل و تغییر رمز</a>
-    `;
-    const mailOpts = { to: user.email, subject: 'ورود به پورتال انجام شد', text: `ورود به پورتال با موفقیت انجام شد. ${ip ? 'IP: ' + ip : ''}`, html: baseHtml(title, body) };
+      <p>سلام <strong>${user.name || 'کاربر'}</strong>،</p>
+      <p>ورود موفق به پورتال ثبت شد.</p>
+      <div class="info-box">
+        <div class="label">زمان ورود</div>
+        <div class="value">${now}</div>
+      </div>
+      ${ip ? `<div class="info-box"><div class="label">آدرس IP</div><div class="value" style="direction:ltr;text-align:left">${ip}</div></div>` : ''}
+      ${userAgent ? `<div class="info-box"><div class="label">مرورگر / دستگاه</div><div class="value" style="font-size:.85rem">${userAgent.substring(0, 100)}${userAgent.length > 100 ? '…' : ''}</div></div>` : ''}
+      <div class="alert-box alert-warn" style="margin-top:16px">
+        <span class="alert-icon">⚠️</span>
+        <span class="alert-text">اگر این ورود توسط شما انجام نشده، فوری رمز عبور خود را تغییر دهید.</span>
+      </div>
+      <div class="text-center mt-4">
+        <a href="${PANEL_URL}?page=profile" class="btn-outline">تغییر رمز عبور</a>
+      </div>`;
+    const mailOpts = {
+        to: user.email,
+        subject: `🔔 ورود به پورتال — ${now}`,
+        text: `ورود موفق به پورتال انجام شد. زمان: ${now}${ip ? ' | IP: ' + ip : ''}`,
+        html: baseHtml(title, body)
+    };
     if (usePanel) return sendMailWithConfig(options.emailConfig, mailOpts);
     return sendMail(mailOpts);
 }
@@ -372,13 +478,87 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
     const resetUrl = `${base}${sep}reset=1&token=${encodeURIComponent(resetToken)}`;
     const title = 'بازیابی رمز عبور';
     const body = `
-      <p>سلام ${user.name || 'کاربر'}،</p>
-      <p>درخواست بازیابی رمز عبور برای حساب <strong>${user.email}</strong> ثبت شده است.</p>
-      <p>برای تعیین رمز جدید روی دکمه زیر کلیک کنید (این لینک تا ${expiresInMinutes} دقیقه معتبر است):</p>
-      <a href="${resetUrl}" class="btn">تعیین رمز عبور جدید</a>
-      <p class="muted">اگر شما این درخواست را نزده‌اید، این ایمیل را نادیده بگیرید.</p>
-    `;
-    const mailOpts = { to: user.email, subject: 'بازیابی رمز عبور پورتال', text: `بازیابی رمز: ${resetUrl} (معتبر تا ${expiresInMinutes} دقیقه)`, html: baseHtml(title, body) };
+      <p>سلام <strong>${user.name || 'کاربر گرامی'}</strong>،</p>
+      <p>درخواست بازیابی رمز عبور برای حساب زیر ثبت شده است:</p>
+      <div class="info-box">
+        <div class="label">ایمیل حساب</div>
+        <div class="value">${user.email}</div>
+      </div>
+      <p>برای تعیین رمز جدید روی دکمه زیر کلیک کنید:</p>
+      <div class="text-center mt-4">
+        <a href="${resetUrl}" class="btn">🔒 تعیین رمز عبور جدید</a>
+      </div>
+      <div class="alert-box alert-info" style="margin-top:20px">
+        <span class="alert-icon">ℹ️</span>
+        <span class="alert-text">این لینک تا <strong>${expiresInMinutes} دقیقه</strong> معتبر است و فقط یک بار قابل استفاده است.</span>
+      </div>
+      <hr class="divider">
+      <p class="muted">اگر شما این درخواست را نزده‌اید، این ایمیل را نادیده بگیرید. رمز فعلی شما تغییر نخواهد کرد.</p>`;
+    const mailOpts = {
+        to: user.email,
+        subject: '🔐 بازیابی رمز عبور پورتال',
+        text: `بازیابی رمز عبور\n\nسلام ${user.name || 'کاربر'}،\nلینک بازیابی: ${resetUrl}\n(معتبر تا ${expiresInMinutes} دقیقه)`,
+        html: baseHtml(title, body)
+    };
+    if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
+    return sendMail(mailOpts);
+}
+
+/**
+ * ارسال ایمیل هنگام تخصیص تیکت به کاربر
+ */
+async function sendTicketAssigned(user, ticket, assignedBy = null, panelConfig = null) {
+    if (!user || !user.email) return false;
+    const ticketUrl = `${PANEL_URL}?page=tickets&id=${ticket.id || ''}`;
+    const priorityBadge = { high: '<span class="badge badge-red">بالا</span>', urgent: '<span class="badge badge-red">فوری</span>', normal: '<span class="badge badge-blue">عادی</span>', low: '<span class="badge badge-yellow">کم</span>' };
+    const title = `تیکت جدید برای شما تخصیص یافت`;
+    const body = `
+      <p>سلام <strong>${user.name || 'کاربر'}</strong>،</p>
+      <p>یک تیکت به شما تخصیص داده شد${assignedBy ? ` توسط <strong>${assignedBy}</strong>` : ''}:</p>
+      <div class="info-box">
+        <div class="label">موضوع تیکت</div>
+        <div class="value">${ticket.subject || ticket.title || '(بدون موضوع)'}</div>
+      </div>
+      ${ticket.ticketNumber ? `<div class="info-box"><div class="label">شماره تیکت</div><div class="value">#${ticket.ticketNumber}</div></div>` : ''}
+      <div class="info-box">
+        <div class="label">اولویت</div>
+        <div class="value">${priorityBadge[ticket.priority] || ticket.priority || '—'}</div>
+      </div>
+      ${ticket.description ? `<div class="info-box"><div class="label">شرح</div><div class="value" style="font-size:.9rem;line-height:1.6">${String(ticket.description).substring(0, 300)}${ticket.description.length > 300 ? '...' : ''}</div></div>` : ''}
+      <div class="text-center mt-4">
+        <a href="${ticketUrl}" class="btn">مشاهده تیکت →</a>
+      </div>`;
+    const mailOpts = {
+        to: user.email,
+        subject: `🎫 تیکت جدید: ${ticket.subject || ticket.title || '#' + (ticket.ticketNumber || '')}`,
+        text: `تیکت جدید برای شما تخصیص یافت: ${ticket.subject || ticket.title || ''} — ${ticketUrl}`,
+        html: baseHtml(title, body)
+    };
+    if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
+    return sendMail(mailOpts);
+}
+
+/**
+ * ارسال ایمیل هنگام تخصیص مکالمه به کاربر
+ */
+async function sendConversationAssigned(user, conversation, customerName = '', assignedBy = null, panelConfig = null) {
+    if (!user || !user.email) return false;
+    const convUrl = `${PANEL_URL}?page=conversations&id=${conversation.id || ''}`;
+    const title = 'مکالمه جدید به شما تخصیص یافت';
+    const body = `
+      <p>سلام <strong>${user.name || 'کاربر'}</strong>،</p>
+      <p>یک مکالمه واتساپ به شما تخصیص داده شد${assignedBy ? ` توسط <strong>${assignedBy}</strong>` : ''}:</p>
+      ${customerName ? `<div class="info-box"><div class="label">مشتری</div><div class="value">${customerName}</div></div>` : ''}
+      ${conversation.lastMessagePreview ? `<div class="info-box"><div class="label">آخرین پیام</div><div class="value" style="font-size:.9rem;font-style:italic">"${String(conversation.lastMessagePreview).substring(0, 200)}"</div></div>` : ''}
+      <div class="text-center mt-4">
+        <a href="${convUrl}" class="btn">مشاهده مکالمه →</a>
+      </div>`;
+    const mailOpts = {
+        to: user.email,
+        subject: `💬 مکالمه جدید${customerName ? ': ' + customerName : ''} — به شما تخصیص یافت`,
+        text: `مکالمه به شما تخصیص یافت: ${customerName || ''} — ${convUrl}`,
+        html: baseHtml(title, body)
+    };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
     return sendMail(mailOpts);
 }
@@ -500,6 +680,8 @@ module.exports = {
     sendWelcomeCredentials,
     sendLoginNotification,
     sendPasswordReset,
+    sendTicketAssigned,
+    sendConversationAssigned,
     sendContactForm,
     testSmtpConnection,
     sendTestEmail,

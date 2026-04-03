@@ -190,43 +190,31 @@ async function notifyTicketAssigned(ticket, io) {
             }
         }
 
-        // ایمیل
+        // ایمیل با template جدید
         if (pref && pref.ticketAssignedEmailEnabled && user.email) {
             try {
                 const settings = await PanelSetting.findByPk('default');
                 const emailConfig = getPanelEmailConfig(settings);
-                const title = `تیکت جدید برای شما: ${ticket.title}`;
-                const priorityLabel = { low: 'پایین', normal: 'متوسط', high: 'بالا', urgent: 'فوری' }[ticket.priority] || ticket.priority;
-                const body = `
-                    <p>سلام ${user.name}،</p>
-                    <p>یک تیکت جدید برای شما تخصیص داده شده است:</p>
-                    <p><strong>${ticket.title}</strong></p>
-                    <p>شماره تیکت: <code>${ticket.ticketNumber}</code></p>
-                    <ul>
-                        <li>اولویت: ${priorityLabel}</li>
-                        <li>وضعیت: ${ticket.status}</li>
-                        <li>توضیح: ${(ticket.description || '—').substring(0, 200)}…</li>
-                    </ul>
-                `;
-
-                const mailOpts = {
-                    to: user.email,
-                    subject: title,
-                    text: `تیکت: ${ticket.ticketNumber} - ${ticket.title}`,
-                    html: emailService.baseHtml(title, body)
-                };
-
-                if (emailConfig && emailConfig.host) {
-                    await emailService.sendMailWithConfig(emailConfig, mailOpts);
-                } else {
-                    await emailService.sendMailWithRetry(mailOpts);
-                }
+                const assignedByUser = ticket.creator ? ticket.creator.name || ticket.creator.email : null;
+                await emailService.sendTicketAssigned(user, ticket, assignedByUser, emailConfig && emailConfig.host ? emailConfig : null);
                 results.push({ userId: ticket.assignedTo, type: 'email', ok: true });
             } catch (err) {
                 logger.error(`Ticket email error:`, err.message);
                 results.push({ userId: ticket.assignedTo, type: 'email', ok: false });
             }
         }
+
+        // اطلاع تلگرام به ادمین برای تیکت جدید
+        try {
+            const { notifySystemEvent } = require('./systemEventNotifier');
+            await notifySystemEvent('system', '🎫 تیکت جدید ایجاد شد', {
+                عنوان: ticket.title || '—',
+                شماره: ticket.ticketNumber ? '#' + ticket.ticketNumber : '—',
+                اولویت: { low: 'کم', normal: 'عادی', high: 'بالا', urgent: 'فوری' }[ticket.priority] || ticket.priority || '—',
+                'تخصیص به': user.name || user.email || '—',
+                ایجادکننده: ticket.creator ? ticket.creator.name || ticket.creator.email : '—',
+            });
+        } catch (_) {}
     } catch (err) {
         logger.error(`Ticket notification error:`, err.message);
     }

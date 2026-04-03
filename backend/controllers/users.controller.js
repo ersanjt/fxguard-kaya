@@ -225,10 +225,21 @@ async function create(req, res, next) {
         setImmediate(async () => {
             try {
                 const emailService = require('../services/emailService');
+                const { notifySystemEvent } = require('../services/systemEventNotifier');
                 const settings = await getPanelSettings();
                 const emailConfig = getPanelEmailConfig(settings);
                 const siteName = (settings && settings.siteName) || 'پورتال کارکنان';
+                // ارسال ایمیل خوش‌آمدگویی به کاربر جدید
                 await emailService.sendWelcomeCredentials(user, plainPassword, siteName, emailConfig);
+                // اطلاع تلگرام به ادمین
+                const roleLabels = { owner: 'مالک', admin: 'مدیر', manager: 'مدیر میانی', supervisor: 'سرپرست', agent: 'کارشناس' };
+                await notifySystemEvent('system', '👤 کاربر جدید ثبت شد', {
+                    نام: user.name || '—',
+                    ایمیل: user.email,
+                    نقش: roleLabels[user.role] || user.role || '—',
+                    توسط: req.user ? req.user.name || req.user.email : 'سیستم',
+                    'ایمیل_خوش‌آمدگویی': 'ارسال شد',
+                });
             } catch (_) {}
         });
         const u = user.toJSON();
