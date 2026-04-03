@@ -67,12 +67,12 @@ router.get('/', async (req, res, next) => {
         if (createdBy) where.createdBy = createdBy;
         if (departmentId) where.departmentId = departmentId;
         if (search && String(search).trim()) {
-            const term = '%' + String(search).trim() + '%';
+            const safeTerm = '%' + String(search).trim().replace(/[%_\\]/g, '\\$&') + '%';
             andParts.push({
                 [Op.or]: [
-                    { title: { [Op.like]: term } },
-                    { description: { [Op.like]: term } },
-                    { ticketNumber: { [Op.like]: term } }
+                    { title: { [Op.like]: safeTerm } },
+                    { description: { [Op.like]: safeTerm } },
+                    { ticketNumber: { [Op.like]: safeTerm } }
                 ]
             });
         }

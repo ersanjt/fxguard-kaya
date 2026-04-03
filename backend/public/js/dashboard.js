@@ -4433,6 +4433,16 @@
             }
         }
         function applyConvFilters() { convCurrentPage = 1; loadConversations(); }
+        function resetConvFilters() {
+            ['convFilterStatus','convFilterPriority','convFilterBranch','convFilterDept','convFilterAssignee'].forEach(function(id){
+                var el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            var searchEl = document.getElementById('convSearch');
+            if (searchEl) searchEl.value = '';
+            applyConvFilters();
+        }
+        window.resetConvFilters = resetConvFilters;
         function openNewConvModal() {
             document.getElementById('newConvModal').style.display = 'flex';
             document.getElementById('newConvCustomerSearch').value = '';
@@ -5029,6 +5039,16 @@
         }
 
         function applyCustomerFilters() { loadCustomers(); }
+        function resetCustomerFilters() {
+            var searchEl = document.getElementById('customerSearch');
+            if (searchEl) { searchEl.value = ''; }
+            var statusEl = document.getElementById('customerFilterStatus');
+            if (statusEl) statusEl.value = '';
+            var sortEl = document.getElementById('customerSort');
+            if (sortEl) sortEl.value = 'newest';
+            applyCustomerFilters();
+        }
+        window.resetCustomerFilters = resetCustomerFilters;
         function initCustomerFilters() {
             if (window._customerFiltersInited) return;
             window._customerFiltersInited = true;

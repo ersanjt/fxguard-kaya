@@ -6,6 +6,7 @@ const QRCode = require('qrcode');
 const { User, sequelize, PasswordResetToken } = require('../models');
 const { Op } = require('sequelize');
 const crypto = require('crypto');
+const logger = require('../config/logger');
 const { logActivity } = require('../services/activityLog');
 const { getCountryFromIp } = require('../lib/geoip');
 const emailService = require('../services/emailService');

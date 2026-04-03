@@ -83,10 +83,10 @@ router.get('/', async (req, res, next) => {
         if (branchId) where.branchId = branchId;
         if (createdBy) where.createdBy = createdBy;
         if (search && String(search).trim()) {
-            const term = '%' + String(search).trim() + '%';
+            const safeTerm = '%' + String(search).trim().replace(/[%_\\]/g, '\\$&') + '%';
             const searchOr = [
-                { title: { [Op.like]: term } },
-                { description: { [Op.like]: term } }
+                { title: { [Op.like]: safeTerm } },
+                { description: { [Op.like]: safeTerm } }
             ];
             where[Op.and] = where[Op.and] || [];
             where[Op.and].push({ [Op.or]: searchOr });

@@ -1,7 +1,7 @@
 /**
  * Analytics controller — dashboard stats and metrics
  */
-const { Op, literal, fn, col } = require('sequelize');
+const { Op, literal, fn, col, where: sqWhere, cast } = require('sequelize');
 const {
     Conversation,
     Message,
@@ -9,6 +9,7 @@ const {
     Ticket,
     Task,
     Announcement,
+    AnnouncementRead,
     User,
 } = require('../models');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
@@ -86,15 +87,23 @@ async function dashboard(req, res, next) {
             Ticket.count({ where: { ...ticketAccessWhere(req), status: { [Op.in]: ['open', 'in_progress'] } } }),
             Task.count({ where: { ...taskAccessWhere(req), status: { [Op.in]: ['pending', 'in_progress'] } } }),
             Announcement.count(),
-            Announcement.count({
-                where: {
-                    id: {
-                        [Op.notIn]: literal(
-                            `(SELECT "announcementId" FROM "AnnouncementReads" WHERE "userId" = ${req.userId})`
-                        ),
-                    },
-                },
-            }).catch(() => Announcement.count()),
+            (async () => {
+                try {
+                    if (!AnnouncementRead) return Announcement.count();
+                    const readIds = await AnnouncementRead.findAll({
+                        where: { userId: req.userId },
+                        attributes: ['announcementId'],
+                        raw: true,
+                    });
+                    const readAnnIds = readIds.map(r => r.announcementId);
+                    const whereClause = readAnnIds.length > 0
+                        ? { id: { [Op.notIn]: readAnnIds } }
+                        : {};
+                    return Announcement.count({ where: whereClause });
+                } catch (_) {
+                    return Announcement.count();
+                }
+            })(),
             User.count({
                 where: { isActive: true, status: { [Op.in]: ['online', 'away', 'busy'] } },
             }),

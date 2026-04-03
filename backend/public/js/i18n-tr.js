@@ -188,6 +188,7 @@ window.__I18N_TR = {
     customer_note_add: 'Rapor / not ekle',
     customer_note_ph: 'Rapor veya not metni...',
     btn_cancel: 'İptal',
+    reset_filter: 'Filtreleri temizle',
     page_services: 'Döviz hizmetleri',
     services_intro: 'Borsanın sunduğu hizmetleri tanımlayın.',
     services_intro_full: 'Hizmetler, kasa ve banka hesaplarını yönetin.',

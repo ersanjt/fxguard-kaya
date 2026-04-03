@@ -4,6 +4,13 @@ const { ProcessTemplate, ProcessInstance, ProcessInstanceStep, User } = require(
 const { Op } = require('sequelize');
 const { requireSection } = require('../middleware/auth');
 const { isValidUUID } = require('../lib/validation');
+const { isMainAdmin } = require('../lib/permissions');
+
+/** برگرداندن شرط دسترسی برای instances — مالک/ادمین/مدیر همه؛ بقیه فقط موارد خودشان */
+function instanceAccessWhere(req) {
+    if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role || '') !== -1) return {};
+    return { [Op.or]: [{ createdBy: req.userId }, { assignedTo: req.userId }] };
+}
 
 const templateInclude = [];
 const instanceInclude = [
@@ -117,11 +124,12 @@ router.get('/instances', requireSection('processes'), async (req, res, next) => 
     try {
         const { status, templateId, assignedTo, createdBy } = req.query;
         const { page, limit, offset } = require('../lib/validation').parsePagination(req.query.page, req.query.limit, 100);
-        const where = {};
+        const accessWhere = instanceAccessWhere(req);
+        const where = { ...accessWhere };
         if (status) where.status = status;
-        if (templateId) where.templateId = templateId;
-        if (assignedTo) where.assignedTo = assignedTo;
-        if (createdBy) where.createdBy = createdBy;
+        if (templateId && isValidUUID(templateId)) where.templateId = templateId;
+        if (assignedTo && isValidUUID(assignedTo)) where.assignedTo = assignedTo;
+        if (createdBy && isValidUUID(createdBy)) where.createdBy = createdBy;
 
         const { rows, count } = await ProcessInstance.findAndCountAll({
             where,
@@ -186,6 +194,10 @@ router.get('/instances/:id', requireSection('processes'), async (req, res, next)
             include: [...instanceInclude, { model: ProcessInstanceStep, as: 'steps', include: stepInclude, separate: true, order: [['stageIndex', 'ASC'], ['startedAt', 'ASC']] }]
         });
         if (!instance) return res.status(404).json({ error: 'Instance not found' });
+        const accessWhere = instanceAccessWhere(req);
+        if (Object.keys(accessWhere).length > 0 && instance.createdBy !== req.userId && instance.assignedTo !== req.userId) {
+            return res.status(403).json({ error: 'دسترسی به این فرایند ندارید' });
+        }
         res.json({ data: instance });
     } catch (err) {
         next(err);
@@ -197,6 +209,10 @@ router.put('/instances/:id', requireSection('processes'), async (req, res, next)
     try {
         const instance = await ProcessInstance.findByPk(req.params.id);
         if (!instance) return res.status(404).json({ error: 'Instance not found' });
+        const accessWhere = instanceAccessWhere(req);
+        if (Object.keys(accessWhere).length > 0 && instance.createdBy !== req.userId && instance.assignedTo !== req.userId) {
+            return res.status(403).json({ error: 'دسترسی به این فرایند ندارید' });
+        }
         if (instance.status !== 'active') {
             return res.status(400).json({ error: 'Only active instances can be updated' });
         }
@@ -223,6 +239,10 @@ router.post('/instances/:id/advance', requireSection('processes'), async (req, r
             include: [{ model: ProcessTemplate, as: 'template' }, { model: ProcessInstanceStep, as: 'steps' }]
         });
         if (!instance) return res.status(404).json({ error: 'Instance not found' });
+        const accessWhere = instanceAccessWhere(req);
+        if (Object.keys(accessWhere).length > 0 && instance.createdBy !== req.userId && instance.assignedTo !== req.userId) {
+            return res.status(403).json({ error: 'دسترسی به این فرایند ندارید' });
+        }
         if (instance.status !== 'active') {
             return res.status(400).json({ error: 'Only active instances can be advanced' });
         }

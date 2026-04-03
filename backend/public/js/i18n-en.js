@@ -210,6 +210,7 @@ window.__I18N_EN = {
     customer_note_ph: 'Note or report text...',
     customer_history: 'Conversation history',
     btn_cancel: 'Cancel',
+    reset_filter: 'Clear filters',
     services_intro: 'Define services your exchange offers (buy/sell, transfer, etc.).',
     services_intro_full: 'Manage services, cash boxes, bank accounts and exchange transactions.',
     tab_summary: 'Balance summary',

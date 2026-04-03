@@ -20,14 +20,19 @@ const bulkJobs = new Map();
 router.get('/status/:jobId', (req, res) => {
     const job = bulkJobs.get(req.params.jobId);
     if (!job) return res.status(404).json({ error: 'job یافت نشد یا منقضی شده است' });
+    const isAdmin = req.user && ['owner', 'admin', 'manager'].indexOf(req.user.role || '') !== -1;
+    if (!isAdmin && job.userId !== req.userId) return res.status(403).json({ error: 'دسترسی ندارید' });
     res.json(job);
 });
 
-/** GET /api/bulk/jobs — لیست همه job های فعال */
+/** GET /api/bulk/jobs — لیست job های این کاربر (ادمین همه را می‌بیند) */
 router.get('/jobs', (req, res) => {
+    const isAdmin = req.user && ['owner', 'admin', 'manager'].indexOf(req.user.role || '') !== -1;
     const jobs = [];
     for (const [id, job] of bulkJobs.entries()) {
-        jobs.push({ jobId: id, ...job });
+        if (isAdmin || job.userId === req.userId) {
+            jobs.push({ jobId: id, ...job });
+        }
     }
     res.json({ jobs });
 });

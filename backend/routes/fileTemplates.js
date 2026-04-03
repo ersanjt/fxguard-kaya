@@ -169,6 +169,29 @@ router.post('/', upload.single('file'), async (req, res, next) => {
     }
 });
 
+// دریافت دسته‌بندی‌های موجود — باید قبل از /:id باشد
+router.get('/meta/categories', async (req, res, next) => {
+    try {
+        if (!req.canAccess('conversations')) {
+            return res.status(403).json({ error: 'دسترسی ندارید' });
+        }
+
+        const fileTemplates = await FileTemplate.findAll({
+            attributes: ['category'],
+            where: {
+                category: { [require('sequelize').Op.ne]: null }
+            },
+            group: ['category']
+        });
+
+        const categories = [...new Set(fileTemplates.map(ft => ft.category).filter(Boolean))];
+        res.json({ data: categories });
+    } catch (err) {
+        logger.error('Error getting file template categories', { error: err.message });
+        next(err);
+    }
+});
+
 // دریافت یک فایل قالب
 router.get('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه فایل نامعتبر است' });
@@ -328,29 +351,6 @@ router.post('/:id/use', async (req, res, next) => {
         res.json(fileTemplate);
     } catch (err) {
         logger.error('Error incrementing file template usage', { error: err.message });
-        next(err);
-    }
-});
-
-// دریافت دسته‌بندی‌های موجود
-router.get('/meta/categories', async (req, res, next) => {
-    try {
-        if (!req.canAccess('conversations')) {
-            return res.status(403).json({ error: 'دسترسی ندارید' });
-        }
-
-        const fileTemplates = await FileTemplate.findAll({
-            attributes: ['category'],
-            where: {
-                category: { [require('sequelize').Op.ne]: null }
-            },
-            group: ['category']
-        });
-
-        const categories = [...new Set(fileTemplates.map(ft => ft.category).filter(Boolean))];
-        res.json({ data: categories });
-    } catch (err) {
-        logger.error('Error getting file template categories', { error: err.message });
         next(err);
     }
 });

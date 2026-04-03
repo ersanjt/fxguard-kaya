@@ -535,7 +535,7 @@ router.post('/:id/documents', docUpload.single('file'), async (req, res, next) =
             source: 'manual',
             uploadedBy: req.userId,
             expiresAt: req.body.expiresAt || null,
-            tags: req.body.tags ? JSON.parse(req.body.tags) : []
+            tags: (() => { try { return req.body.tags ? JSON.parse(req.body.tags) : []; } catch(_) { return []; } })()
         });
         const withUser = await CustomerDocument.findByPk(doc.id, {
             include: [{ model: User, as: 'uploader', attributes: ['id', 'name'], required: false }]
@@ -560,7 +560,7 @@ router.put('/:id/documents/:docId', async (req, res, next) => {
         if (description !== undefined) upd.description = description;
         if (category !== undefined) upd.category = category;
         if (expiresAt !== undefined) upd.expiresAt = expiresAt || null;
-        if (tags !== undefined) upd.tags = typeof tags === 'string' ? JSON.parse(tags) : tags;
+        if (tags !== undefined) upd.tags = typeof tags === 'string' ? (() => { try { return JSON.parse(tags); } catch(_) { return []; } })() : tags;
         await doc.update(upd);
         res.json(doc);
     } catch (err) {

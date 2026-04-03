@@ -229,6 +229,7 @@ window.__I18N_FA = {
     panel_company_emails_empty: 'هنوز ایمیل شرکتی ثبت نشده است.',
     panel_company_email_send_creds: 'ارسال اطلاعات ورود',
     btn_cancel: 'انصراف',
+    reset_filter: 'پاک کردن فیلترها',
     page_services: 'خدمات صرافی',
     services_intro: 'سرویس‌هایی که صرافی ارائه می‌دهد (خرید/فروش ارز، حواله و غیره) را تعریف کنید.',
     services_intro_full: 'مدیریت سرویس‌ها، صندوق‌ها، حساب‌های بانکی و تراکنش‌های مالی صرافی.',

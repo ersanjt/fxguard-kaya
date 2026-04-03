@@ -400,8 +400,10 @@ async function permanentDelete(req, res, next) {
             return res.status(403).json({ error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند کاربر را حذف کند' });
         }
         const userId = req.params.id;
+        if (!isValidUUID(userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
         const { transferToUserId } = req.body;
         if (!transferToUserId) return res.status(400).json({ error: 'انتخاب کاربر برای انتقال داده‌ها الزامی است' });
+        if (!isValidUUID(transferToUserId)) return res.status(400).json({ error: 'شناسه کاربر مقصد نامعتبر است' });
         const user = await User.findByPk(userId);
         if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
         if (isMainAdmin(user)) return res.status(403).json({ error: 'امکان حذف ادمین اصلی وجود ندارد' });
