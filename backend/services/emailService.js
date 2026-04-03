@@ -376,11 +376,11 @@ async function sendWelcomeCredentials(user, plainPassword, siteName = 'پورت�
     if (!user || !user.email) return false;
     const roleLabels = { owner: 'مالک', admin: 'مدیر', manager: 'مدیر میانی', supervisor: 'سرپرست', agent: 'کارشناس' };
     const roleName = roleLabels[user.role] || user.role || 'کارشناس';
-    const title = `خوش آمدید به ${siteName}`;
+    const title = `خوش آمدید به ${escHtml(siteName)}`;
     const body = `
-      <p>سلام <strong>${user.name || 'کاربر گرامی'}</strong>،</p>
-      <p>حساب کاربری شما در سیستم <strong>${siteName}</strong> با موفقیت ایجاد شد. 🎉</p>
-      <p>نقش شما در سیستم: <span class="badge badge-green">${roleName}</span></p>
+      <p>سلام <strong>${escHtml(user.name || 'کاربر گرامی')}</strong>،</p>
+      <p>حساب کاربری شما در سیستم <strong>${escHtml(siteName)}</strong> با موفقیت ایجاد شد. 🎉</p>
+      <p>نقش شما در سیستم: <span class="badge badge-green">${escHtml(roleName)}</span></p>
       <hr class="divider">
       <p><strong>🔑 اطلاعات ورود به سیستم:</strong></p>
       <div class="info-box">
@@ -504,27 +504,33 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
     return sendMail(mailOpts);
 }
 
+function escHtml(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 /**
  * ارسال ایمیل هنگام تخصیص تیکت به کاربر
  */
 async function sendTicketAssigned(user, ticket, assignedBy = null, panelConfig = null) {
     if (!user || !user.email) return false;
-    const ticketUrl = `${PANEL_URL}?page=tickets&id=${ticket.id || ''}`;
+    const ticketUrl = `${PANEL_URL}?page=tickets&id=${encodeURIComponent(ticket.id || '')}`;
     const priorityBadge = { high: '<span class="badge badge-red">بالا</span>', urgent: '<span class="badge badge-red">فوری</span>', normal: '<span class="badge badge-blue">عادی</span>', low: '<span class="badge badge-yellow">کم</span>' };
     const title = `تیکت جدید برای شما تخصیص یافت`;
     const body = `
-      <p>سلام <strong>${user.name || 'کاربر'}</strong>،</p>
-      <p>یک تیکت به شما تخصیص داده شد${assignedBy ? ` توسط <strong>${assignedBy}</strong>` : ''}:</p>
+      <p>سلام <strong>${escHtml(user.name || 'کاربر')}</strong>،</p>
+      <p>یک تیکت به شما تخصیص داده شد${assignedBy ? ` توسط <strong>${escHtml(assignedBy)}</strong>` : ''}:</p>
       <div class="info-box">
         <div class="label">موضوع تیکت</div>
-        <div class="value">${ticket.subject || ticket.title || '(بدون موضوع)'}</div>
+        <div class="value">${escHtml(ticket.subject || ticket.title || '(بدون موضوع)')}</div>
       </div>
-      ${ticket.ticketNumber ? `<div class="info-box"><div class="label">شماره تیکت</div><div class="value">#${ticket.ticketNumber}</div></div>` : ''}
+      ${ticket.ticketNumber ? `<div class="info-box"><div class="label">شماره تیکت</div><div class="value">#${escHtml(ticket.ticketNumber)}</div></div>` : ''}
       <div class="info-box">
         <div class="label">اولویت</div>
-        <div class="value">${priorityBadge[ticket.priority] || ticket.priority || '—'}</div>
+        <div class="value">${priorityBadge[ticket.priority] || escHtml(ticket.priority) || '—'}</div>
       </div>
-      ${ticket.description ? `<div class="info-box"><div class="label">شرح</div><div class="value" style="font-size:.9rem;line-height:1.6">${String(ticket.description).substring(0, 300)}${ticket.description.length > 300 ? '...' : ''}</div></div>` : ''}
+      ${ticket.description ? `<div class="info-box"><div class="label">شرح</div><div class="value" style="font-size:.9rem;line-height:1.6">${escHtml(String(ticket.description).substring(0, 300))}${ticket.description.length > 300 ? '...' : ''}</div></div>` : ''}
       <div class="text-center mt-4">
         <a href="${ticketUrl}" class="btn">مشاهده تیکت →</a>
       </div>`;
@@ -543,13 +549,13 @@ async function sendTicketAssigned(user, ticket, assignedBy = null, panelConfig =
  */
 async function sendConversationAssigned(user, conversation, customerName = '', assignedBy = null, panelConfig = null) {
     if (!user || !user.email) return false;
-    const convUrl = `${PANEL_URL}?page=conversations&id=${conversation.id || ''}`;
+    const convUrl = `${PANEL_URL}?page=conversations&id=${encodeURIComponent(conversation.id || '')}`;
     const title = 'مکالمه جدید به شما تخصیص یافت';
     const body = `
-      <p>سلام <strong>${user.name || 'کاربر'}</strong>،</p>
-      <p>یک مکالمه واتساپ به شما تخصیص داده شد${assignedBy ? ` توسط <strong>${assignedBy}</strong>` : ''}:</p>
-      ${customerName ? `<div class="info-box"><div class="label">مشتری</div><div class="value">${customerName}</div></div>` : ''}
-      ${conversation.lastMessagePreview ? `<div class="info-box"><div class="label">آخرین پیام</div><div class="value" style="font-size:.9rem;font-style:italic">"${String(conversation.lastMessagePreview).substring(0, 200)}"</div></div>` : ''}
+      <p>سلام <strong>${escHtml(user.name || 'کاربر')}</strong>،</p>
+      <p>یک مکالمه واتساپ به شما تخصیص داده شد${assignedBy ? ` توسط <strong>${escHtml(assignedBy)}</strong>` : ''}:</p>
+      ${customerName ? `<div class="info-box"><div class="label">مشتری</div><div class="value">${escHtml(customerName)}</div></div>` : ''}
+      ${conversation.lastMessagePreview ? `<div class="info-box"><div class="label">آخرین پیام</div><div class="value" style="font-size:.9rem;font-style:italic">"${escHtml(String(conversation.lastMessagePreview).substring(0, 200))}"</div></div>` : ''}
       <div class="text-center mt-4">
         <a href="${convUrl}" class="btn">مشاهده مکالمه →</a>
       </div>`;

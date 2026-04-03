@@ -12,6 +12,13 @@
 const axios = require('axios');
 const logger = require('../config/logger');
 
+function esc(s) {
+    return String(s == null ? '' : s)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
 let _pollingActive = false;
 let _lastUpdateId = 0;
 let _pollingTimeout = null;
@@ -194,7 +201,7 @@ async function handleCommand(chatId, text, fromUser) {
             await handleLink(chatId, parts[1], fromUser);
             return;
         }
-        const firstName = fromUser.first_name || '';
+        const firstName = esc(fromUser.first_name || '');
         await sendReply(chatId,
             `👋 سلام ${firstName}!\n\n` +
             `🤖 <b>بات مدیریت کایا CRM</b>\n\n` +
@@ -307,11 +314,11 @@ async function handleLink(chatId, token, fromUser) {
             telegramLinkTokenExpiry: null
         });
 
-        const roleName = ROLE_LABELS[user.role] || user.role || '';
+        const roleName = ROLE_LABELS[user.role] || esc(user.role) || '';
         await sendReply(chatId,
             `✅ <b>حساب شما با موفقیت متصل شد!</b>\n\n` +
-            `👤 <b>${user.name}</b>\n` +
-            `📧 ${user.email}\n` +
+            `👤 <b>${esc(user.name)}</b>\n` +
+            `📧 ${esc(user.email)}\n` +
             `🎭 نقش: ${roleName}\n\n` +
             `اکنون می‌توانید از دستورات زیر استفاده کنید:\n` +
             `/me — اطلاعات حساب\n` +
@@ -336,6 +343,7 @@ async function handleUnlink(chatId) {
         await user.update({ telegramChatId: null });
         await sendReply(chatId, '✅ اتصال تلگرام شما قطع شد.');
     } catch (err) {
+        logger.error('handleUnlink error', { chatId, error: err.message });
         await sendReply(chatId, '❌ خطا در قطع اتصال. لطفاً دوباره امتحان کنید.');
     }
 }
@@ -357,19 +365,19 @@ async function handleMe(chatId) {
             return;
         }
 
-        const roleName = ROLE_LABELS[fullUser.role] || fullUser.role || '';
-        const statusName = STATUS_LABELS[fullUser.status] || fullUser.status || '';
+        const roleName = ROLE_LABELS[fullUser.role] || esc(fullUser.role) || '';
+        const statusName = STATUS_LABELS[fullUser.status] || esc(fullUser.status) || '';
         const lastLogin = fullUser.lastLoginAt
             ? new Date(fullUser.lastLoginAt).toLocaleString('fa-IR', { dateStyle: 'short', timeStyle: 'short' })
             : 'نامشخص';
-        const dept = fullUser.department ? fullUser.department.name : '—';
-        const branch = fullUser.branch ? fullUser.branch.name : '—';
+        const dept = fullUser.department ? esc(fullUser.department.name) : '—';
+        const branch = fullUser.branch ? esc(fullUser.branch.name) : '—';
 
         await sendReply(chatId,
             `👤 <b>اطلاعات حساب شما</b>\n\n` +
-            `📛 <b>نام:</b> ${fullUser.name}\n` +
-            `📧 <b>ایمیل:</b> ${fullUser.email}\n` +
-            (fullUser.username ? `🆔 <b>نام کاربری:</b> ${fullUser.username}\n` : '') +
+            `📛 <b>نام:</b> ${esc(fullUser.name)}\n` +
+            `📧 <b>ایمیل:</b> ${esc(fullUser.email)}\n` +
+            (fullUser.username ? `🆔 <b>نام کاربری:</b> ${esc(fullUser.username)}\n` : '') +
             `🎭 <b>نقش:</b> ${roleName}\n` +
             `📊 <b>وضعیت:</b> ${statusName}\n` +
             `🏢 <b>شعبه:</b> ${branch}\n` +
@@ -415,10 +423,15 @@ async function processUpdate(update) {
 async function pollOnce() {
     const updates = await getUpdates(_lastUpdateId);
     for (const update of updates) {
+        // advance offset first so a crashed handler doesn't block the queue forever
         if (update.update_id >= _lastUpdateId) {
             _lastUpdateId = update.update_id + 1;
         }
-        await processUpdate(update);
+        try {
+            await processUpdate(update);
+        } catch (err) {
+            logger.warn('Telegram update handler error', { update_id: update.update_id, error: err.message });
+        }
     }
 }
 

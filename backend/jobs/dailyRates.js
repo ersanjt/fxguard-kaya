@@ -68,10 +68,17 @@ function startDailyRatesJob() {
 
     _intervalId = setInterval(async () => {
         if (shouldSendNow()) {
+            // Mark as sent immediately to prevent duplicate sends within the same minute
             const todayKey = new Date().toDateString();
             _lastSentDate = todayKey;
             logger.info('Daily rates: sending broadcast...');
-            await broadcastRates();
+            try {
+                await broadcastRates();
+            } catch (err) {
+                // On failure, clear the date so it retries on next check cycle
+                if (_lastSentDate === todayKey) _lastSentDate = null;
+                logger.error('Daily rates broadcast threw', { error: err.message });
+            }
         }
     }, CHECK_INTERVAL_MS);
 

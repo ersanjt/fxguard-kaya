@@ -223,12 +223,14 @@ router.get('/history', async (req, res, next) => {
 
 // GET /api/rates/health — تست دسترسی به API خارجی (نیاز به auth دارد)
 router.get('/health', async (req, res, next) => {
+    if (!NAVASAN_LATEST) return res.json({ ok: false, external: false, error: 'API key not configured' });
     try {
         const r = await axios.get(NAVASAN_LATEST, { timeout: 8000 });
         const hasData = r.data && typeof r.data === 'object' && Object.keys(r.data).length > 0;
         res.json({ ok: true, external: hasData });
     } catch (e) {
-        res.json({ ok: false, external: false, error: e.message || e.code });
+        logger.warn('Rates health check failed', { error: e.message });
+        res.json({ ok: false, external: false, error: 'External API unavailable' });
     }
 });
 

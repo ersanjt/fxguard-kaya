@@ -127,7 +127,9 @@ module.exports = (sequelize) => {
             { fields: ['departmentId'] },
             { fields: ['branchId'] },
             { fields: ['isActive'] },
-            { fields: ['role'] }
+            { fields: ['role'] },
+            { fields: ['telegramChatId'] },
+            { fields: ['telegramLinkToken'] }
         ],
         hooks: {
             beforeCreate: async (user) => {

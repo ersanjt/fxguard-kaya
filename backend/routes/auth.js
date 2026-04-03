@@ -221,7 +221,8 @@ router.post('/login', async (req, res, next) => {
             }
         });
     } catch (err) {
-        sendJson(500, { error: err.message || 'خطای سرور' });
+        logger.error('Login error', { error: err.message });
+        sendJson(500, { error: 'خطای سرور. لطفاً دوباره تلاش کنید.' });
     }
 });
 

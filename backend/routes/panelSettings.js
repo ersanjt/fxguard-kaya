@@ -143,7 +143,10 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (emailLoginNotification !== undefined) row.emailLoginNotification = !!emailLoginNotification;
         if (adminAlertsEnabled !== undefined) row.adminAlertsEnabled = !!adminAlertsEnabled;
         if (adminAlertEmails !== undefined) row.adminAlertEmails = adminAlertEmails === '' ? null : String(adminAlertEmails).trim();
-        if (telegramBotToken !== undefined && String(telegramBotToken).trim() !== '') row.telegramBotToken = String(telegramBotToken).trim();
+        if (telegramBotToken !== undefined) {
+            const trimmed = String(telegramBotToken).trim();
+            row.telegramBotToken = trimmed || null;
+        }
         if (telegramChatIds !== undefined) row.telegramChatIds = telegramChatIds === '' ? null : String(telegramChatIds).trim();
         if (telegramTimeoutMs !== undefined) row.telegramTimeoutMs = telegramTimeoutMs === '' ? null : parseInt(telegramTimeoutMs, 10);
         if (clientErrorReportingEnabled !== undefined) row.clientErrorReportingEnabled = !!clientErrorReportingEnabled;
@@ -248,10 +251,13 @@ router.post('/test-email', authMiddleware, async (req, res, next) => {
         }
         if (result.ok) {
             if (userId) testEmailCooldown.set(userId, Date.now());
-            const msg = result.usedFallback
-                ? `ایمیل ارسال شد با Host جایگزین (${result.usedFallback}). توصیه: این Host را در تنظیمات ذخیره کنید.`
+            const usedHost = result.usedHost || null;
+            const configHost = emailConfig && emailConfig.host ? emailConfig.host : null;
+            const usedFallback = usedHost && configHost && usedHost !== configHost ? usedHost : null;
+            const msg = usedFallback
+                ? `ایمیل ارسال شد با Host جایگزین (${usedFallback}). توصیه: این Host را در تنظیمات ذخیره کنید.`
                 : 'ایمیل تست ارسال شد. صندوق ورودی (و اسپم) را بررسی کنید.';
-            res.json({ ok: true, message: msg, usedFallback: result.usedFallback });
+            res.json({ ok: true, message: msg, usedFallback });
         } else {
             res.status(500).json({ error: result.error || 'ارسال ایمیل ناموفق بود. Host، پورت و احراز هویت را بررسی کنید.' });
         }

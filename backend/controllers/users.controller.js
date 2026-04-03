@@ -38,7 +38,7 @@ async function list(req, res, next) {
         }
         const users = await User.findAll({
             where,
-            attributes: { exclude: ['password'] },
+            attributes: { exclude: ['password', 'totpSecret', 'telegramLinkToken', 'telegramLinkTokenExpiry'] },
             include: [
                 { model: Department, as: 'department', attributes: ['id', 'name'], required: false },
                 { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
@@ -145,6 +145,9 @@ async function patchMe(req, res, next) {
         await user.save();
         const u = user.toJSON();
         delete u.password;
+        delete u.totpSecret;
+        delete u.telegramLinkToken;
+        delete u.telegramLinkTokenExpiry;
         res.json(u);
     } catch (err) {
         next(err);
@@ -160,7 +163,7 @@ async function getById(req, res, next) {
             return res.status(400).json({ error: 'شناسه نامعتبر است' });
         }
         const user = await User.findByPk(req.params.id, {
-            attributes: { exclude: ['password'] },
+            attributes: { exclude: ['password', 'totpSecret', 'telegramLinkToken', 'telegramLinkTokenExpiry'] },
             include: [
                 { model: Department, as: 'department' },
                 { model: Branch, as: 'branch', required: false },
@@ -338,6 +341,9 @@ async function update(req, res, next) {
         await user.save();
         const u = user.toJSON();
         delete u.password;
+        delete u.totpSecret;
+        delete u.telegramLinkToken;
+        delete u.telegramLinkTokenExpiry;
         u.permissions = getPermissions(user);
         res.json(u);
     } catch (err) {
@@ -379,6 +385,9 @@ async function deleteWithTransfer(req, res, next) {
         }
         const u = user.toJSON();
         delete u.password;
+        delete u.totpSecret;
+        delete u.telegramLinkToken;
+        delete u.telegramLinkTokenExpiry;
         res.json({ message: 'کاربر غیرفعال شد و داده‌ها منتقل شد', user: u });
     } catch (err) {
         next(err);
