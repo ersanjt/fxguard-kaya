@@ -23,6 +23,20 @@ function conversationWhere(req) {
     return { [Op.or]: orConditions };
 }
 
+function ticketAccessWhere(req) {
+    if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role || '') !== -1) return {};
+    const orConditions = [{ assignedTo: req.userId }, { createdBy: req.userId }];
+    if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
+    return { [Op.or]: orConditions };
+}
+
+function taskAccessWhere(req) {
+    if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role || '') !== -1) return {};
+    const orConditions = [{ assignedTo: req.userId }, { createdBy: req.userId }];
+    if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
+    return { [Op.or]: orConditions };
+}
+
 async function dashboard(req, res, next) {
     try {
         if (!req.canAccess('dashboard')) {
@@ -69,8 +83,8 @@ async function dashboard(req, res, next) {
                 if (ids.length === 0) return 0;
                 return Customer.count({ where: { id: { [Op.in]: ids } } });
             })(),
-            Ticket.count({ where: { status: { [Op.in]: ['open', 'in_progress'] } } }),
-            Task.count({ where: { status: { [Op.in]: ['pending', 'in_progress'] } } }),
+            Ticket.count({ where: { ...ticketAccessWhere(req), status: { [Op.in]: ['open', 'in_progress'] } } }),
+            Task.count({ where: { ...taskAccessWhere(req), status: { [Op.in]: ['pending', 'in_progress'] } } }),
             Announcement.count(),
             Announcement.count({
                 where: {

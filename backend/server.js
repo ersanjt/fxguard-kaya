@@ -241,18 +241,19 @@ app.use('/api', createApiRouter(io, getRabbitChannel, redisClient, logger));
 // ==================== Static & Pages ====================
 app.get('/health', async (req, res) => {
     const checks = {};
-    let overallOk = true;
+    let dbOk = true;
+    let degraded = false;
 
-    // DB check
+    // DB check — failure is critical (503)
     try {
         await sequelize.authenticate();
         checks.database = { status: 'ok' };
     } catch (e) {
         checks.database = { status: 'error', error: 'DB unreachable' };
-        overallOk = false;
+        dbOk = false;
     }
 
-    // Redis check
+    // Redis check — failure is degraded (not critical; 200 with degraded)
     try {
         if (redisClient && !redisClient.isStub) {
             await redisClient.ping();
@@ -262,15 +263,18 @@ app.get('/health', async (req, res) => {
         }
     } catch (e) {
         checks.redis = { status: 'error', error: 'Redis unreachable' };
+        degraded = true;
     }
 
-    // RabbitMQ check (channel presence)
+    // RabbitMQ check — disconnection is degraded
     const rabbitOk = !!getRabbitChannel();
     checks.rabbitmq = { status: rabbitOk ? 'ok' : 'disconnected' };
+    if (!rabbitOk) degraded = true;
 
-    const statusCode = overallOk ? 200 : 503;
+    const statusCode = dbOk ? 200 : 503;
+    const overallStatus = !dbOk ? 'error' : degraded ? 'degraded' : 'ok';
     res.status(statusCode).json({
-        status: overallOk ? 'ok' : 'degraded',
+        status: overallStatus,
         timestamp: new Date().toISOString(),
         uptime: Math.floor(process.uptime()),
         checks
