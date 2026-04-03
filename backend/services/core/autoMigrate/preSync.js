@@ -161,6 +161,33 @@ async function runPreSync(sequelize, logger) {
     } catch (e) {
         logger.warn('Customers profile fields pre-sync migration:', e.message);
     }
+
+    try {
+        let userDesc;
+        try {
+            userDesc = await qi.describeTable('Users');
+        } catch (_) {
+            userDesc = null;
+        }
+        if (userDesc) {
+            const userCols = [
+                ['telegramChatId', { type: DataTypes.STRING, allowNull: true }],
+                ['telegramLinkToken', { type: DataTypes.STRING, allowNull: true }],
+                ['telegramLinkTokenExpiry', { type: DataTypes.DATE, allowNull: true }],
+            ];
+            for (const [col, def] of userCols) {
+                if (!userDesc[col]) {
+                    await qi.addColumn('Users', col, def).catch(e => {
+                        if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
+                            logger.warn(`Users.${col} migration:`, e.message);
+                    });
+                    logger.info(`✅ Users.${col} column added (auto-migration)`);
+                }
+            }
+        }
+    } catch (e) {
+        logger.warn('Users telegram columns migration:', e.message);
+    }
 }
 
 module.exports = { runPreSync };

@@ -103,6 +103,21 @@ module.exports = (sequelize) => {
                 soundAlerts: true,
                 autoAssign: true
             }
+        },
+        telegramChatId: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment: 'شناسه چت تلگرام کاربر برای ارسال اعلان'
+        },
+        telegramLinkToken: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment: 'توکن موقت برای اتصال حساب تلگرام'
+        },
+        telegramLinkTokenExpiry: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            comment: 'زمان انقضای توکن اتصال تلگرام'
         }
     }, {
         timestamps: true,

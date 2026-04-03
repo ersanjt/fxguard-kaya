@@ -472,6 +472,50 @@ router.post('/logout', authMiddleware, async (req, res, next) => {
         next(err);
     }
 });
+// تولید توکن اتصال تلگرام (برای کاربر لاگین‌شده)
+router.post('/telegram-link-token', authMiddleware, async (req, res, next) => {
+    try {
+        const user = req.user;
+        const token = crypto.randomBytes(16).toString('hex');
+        const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 دقیقه
+        await user.update({ telegramLinkToken: token, telegramLinkTokenExpiry: expiry });
+        const botName = process.env.TELEGRAM_BOT_USERNAME || '';
+        const botUrl = botName ? `https://t.me/${botName}?start=${token}` : null;
+        res.json({
+            token,
+            expiresAt: expiry.toISOString(),
+            botUrl,
+            instruction: `دستور زیر را در تلگرام ارسال کنید:\n/link ${token}`
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// نمایش وضعیت اتصال تلگرام کاربر
+router.get('/telegram-status', authMiddleware, async (req, res, next) => {
+    try {
+        const user = req.user;
+        res.json({
+            linked: !!(user.telegramChatId),
+            chatId: user.telegramChatId || null
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// قطع اتصال تلگرام کاربر از طریق پنل
+router.delete('/telegram-link', authMiddleware, async (req, res, next) => {
+    try {
+        const user = req.user;
+        await user.update({ telegramChatId: null, telegramLinkToken: null, telegramLinkTokenExpiry: null });
+        res.json({ ok: true, message: 'اتصال تلگرام قطع شد' });
+    } catch (err) {
+        next(err);
+    }
+});
+
 router.patch('/me/presence', authMiddleware, async (req, res, next) => {
     try {
         const status = req.body.status;

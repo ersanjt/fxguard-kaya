@@ -24,6 +24,9 @@ const { connectDatabases } = require('./services/database');
 const { ensureAdminUser } = require('./services/seed');
 const { connectRabbitMQ, getRabbitChannel } = require('./services/rabbitmq');
 const { checkUnansweredConversations } = require('./jobs/unansweredConversations');
+const { startDailyRatesJob, stopDailyRatesJob } = require('./jobs/dailyRates');
+const telegramBotService = require('./services/telegramBotService');
+const { getPanelSettings } = require('./services/panelSettingsLoader');
 const { createApiRouter } = require('./routes/api');
 const { setupSocketHandlers } = require('./socket/handlers');
 const socketAuth = require('./middleware/socketAuth');
@@ -322,6 +325,20 @@ async function startServer() {
 
         unansweredInterval = setInterval(() => checkUnansweredConversations(io, logger), 60000);
 
+        // راه‌اندازی بات تلگرام
+        try {
+            const panelSettings = await getPanelSettings();
+            const tgConfig = panelSettings && panelSettings.telegramBotToken
+                ? { botToken: panelSettings.telegramBotToken }
+                : null;
+            await telegramBotService.startPolling(models, tgConfig);
+        } catch (tgErr) {
+            logger.warn('Telegram bot startup warning:', tgErr.message);
+        }
+
+        // راه‌اندازی job ارسال روزانه نرخ ارز
+        startDailyRatesJob();
+
         const PORT = process.env.PORT || 3002;
         await new Promise((resolve, reject) => {
             server.listen(PORT, () => {
@@ -360,6 +377,8 @@ async function gracefulShutdown(signal) {
         clearInterval(unansweredInterval);
         unansweredInterval = null;
     }
+    telegramBotService.stopPolling();
+    stopDailyRatesJob();
 
     const forceExitTimer = setTimeout(() => {
         logger.warn('Graceful shutdown timed out — forcing exit');

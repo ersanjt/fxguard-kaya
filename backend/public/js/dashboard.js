@@ -2334,6 +2334,7 @@
                 // Bind event handlers after DOM update
                 setupProfileEventHandlers();
             }
+            loadTelegramStatus();
         }
         async function uploadProfileAvatar(file) {
             const formData = new FormData();
@@ -2411,6 +2412,64 @@
             const res = await apiFetch('/api/auth/totp/disable', { method: 'POST', body: JSON.stringify({ password: password }) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('toast_totp_disabled')); closeTotpDisableModal(); currentUser.totpEnabled = false; loadProfile(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+        }
+
+        // ==================== Telegram Link ====================
+        async function loadTelegramStatus() {
+            try {
+                const res = await apiFetch('/api/auth/telegram-status');
+                if (!res.ok) return;
+                const data = res.data || {};
+                const statusEl = document.getElementById('telegramLinkStatus');
+                const unlinkBtn = document.getElementById('btnUnlinkTelegram');
+                const linkBtn = document.getElementById('btnGenerateTelegramToken');
+                if (!statusEl) return;
+                if (data.linked) {
+                    statusEl.innerHTML = '<span style="color:#059669;font-weight:600;">✅ حساب تلگرام متصل است</span> <span style="font-size:.85rem;color:#718096;margin-right:4px;">(Chat ID: ' + escapeHtml(String(data.chatId || '')) + ')</span>';
+                    if (unlinkBtn) unlinkBtn.style.display = '';
+                    if (linkBtn) linkBtn.textContent = 'کد اتصال جدید';
+                } else {
+                    statusEl.innerHTML = '<span style="color:#718096;font-size:.9rem;">⚪ تلگرام هنوز متصل نیست</span>';
+                    if (unlinkBtn) unlinkBtn.style.display = 'none';
+                    if (linkBtn) linkBtn.textContent = 'دریافت کد اتصال';
+                }
+            } catch (_) {}
+        }
+        async function generateTelegramLinkToken() {
+            const btn = document.getElementById('btnGenerateTelegramToken');
+            if (btn) btn.disabled = true;
+            try {
+                const res = await apiFetch('/api/auth/telegram-link-token', { method: 'POST' });
+                if (!res.ok) { toast((res.data && res.data.error) || 'خطا در دریافت کد اتصال', true); return; }
+                const data = res.data || {};
+                const tokenBox = document.getElementById('telegramTokenBox');
+                const tokenText = document.getElementById('telegramLinkTokenText');
+                const botUrlWrap = document.getElementById('telegramBotUrlWrap');
+                const botUrlEl = document.getElementById('telegramBotUrl');
+                if (tokenText) tokenText.textContent = '/link ' + (data.token || '');
+                if (tokenBox) tokenBox.style.display = 'block';
+                if (data.botUrl && botUrlWrap && botUrlEl) {
+                    botUrlEl.href = data.botUrl;
+                    botUrlWrap.style.display = '';
+                }
+            } catch (_) { toast('خطا در دریافت کد اتصال', true); }
+            finally { if (btn) btn.disabled = false; }
+        }
+        function copyTelegramToken() {
+            const tokenText = document.getElementById('telegramLinkTokenText');
+            if (!tokenText) return;
+            const text = tokenText.textContent || '';
+            if (navigator.clipboard) {
+                navigator.clipboard.writeText(text).then(() => toast('کد کپی شد')).catch(() => {});
+            } else {
+                const el = document.createElement('textarea');
+                el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); toast('کد کپی شد');
+            }
+        }
+        async function unlinkTelegram() {
+            if (!confirm('اتصال تلگرام قطع شود؟')) return;
+            const res = await apiFetch('/api/auth/telegram-link', { method: 'DELETE' });
+            if (res.ok) { toast('اتصال تلگرام قطع شد'); loadTelegramStatus(); } else { toast((res.data && res.data.error) || 'خطا', true); }
         }
 
         async function logout() {

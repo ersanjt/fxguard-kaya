@@ -28,7 +28,7 @@ function isEnabled(config = null) {
     return !!(getBotToken(config) && getChatIds(config).length > 0);
 }
 
-async function sendMessage(text, config = null) {
+async function sendMessage(text, config = null, opts = {}) {
     const token = getBotToken(config);
     const chatIds = getChatIds(config);
     if (!token || chatIds.length === 0) return { ok: false, error: 'Telegram not configured' };
@@ -36,6 +36,7 @@ async function sendMessage(text, config = null) {
     const payloadText = String(text || '');
     const timeoutMs = getTimeoutMs(config);
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
+    const parseMode = opts.parse_mode || 'HTML';
     const results = await Promise.allSettled(
         chatIds.map(chat_id =>
             axios.post(
@@ -43,6 +44,7 @@ async function sendMessage(text, config = null) {
                 {
                     chat_id,
                     text: payloadText,
+                    parse_mode: parseMode,
                     disable_web_page_preview: true
                 },
                 { timeout: timeoutMs }
