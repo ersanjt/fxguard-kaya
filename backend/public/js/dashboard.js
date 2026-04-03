@@ -2310,7 +2310,16 @@
                 const avatarEl = document.getElementById('profileAvatar');
                 if (avatarEl) { avatarEl.value = u.avatar || ''; if (!avatarEl._bound) { avatarEl._bound = true; avatarEl.addEventListener('input', function() { updateProfileAvatarPreview(avatarEl.value); }); avatarEl.addEventListener('blur', function() { updateProfileAvatarPreview(avatarEl.value || displayName); }); } }
                 const avatarFileEl = document.getElementById('profileAvatarFile');
-                if (avatarFileEl && !avatarFileEl._bound) { avatarFileEl._bound = true; avatarFileEl.addEventListener('change', function() { if (avatarFileEl.files && avatarFileEl.files[0]) uploadProfileAvatar(avatarFileEl.files[0]); }); }
+                if (avatarFileEl && !avatarFileEl._bound) {
+                    avatarFileEl._bound = true;
+                    avatarFileEl.addEventListener('change', function() {
+                        if (avatarFileEl.files && avatarFileEl.files[0]) {
+                            const nameEl = document.getElementById('profileAvatarFileName');
+                            if (nameEl) nameEl.textContent = avatarFileEl.files[0].name;
+                            uploadProfileAvatar(avatarFileEl.files[0]);
+                        }
+                    });
+                }
                 if (document.getElementById('profilePassword')) document.getElementById('profilePassword').value = '';
                 updateProfileAvatarPreview(u.avatar || displayName);
                 const profileFields = ['profileUsername','profileFirstName','profileLastName','profileDateOfBirth','profilePhone','profileAvatar','profilePassword','profileEmailInput','profileAvatarFile'];

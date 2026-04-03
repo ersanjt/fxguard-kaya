@@ -919,8 +919,9 @@
                     <div class="profile-page-body">
                     <div class="profile-card">
                         <div class="profile-header">
-                            <div class="profile-avatar-wrap">
+                            <div class="profile-avatar-wrap" onclick="document.getElementById('profileAvatarFile').click()">
                                 <div id="profileAvatarPreview" class="profile-avatar-preview"></div>
+                                <div class="profile-avatar-overlay">📷</div>
                             </div>
                             <div class="profile-meta">
                                 <div id="profileDisplayName" class="profile-display-name">—</div>
@@ -962,10 +963,12 @@
                                     <input id="profilePhone" type="tel" placeholder="" autocomplete="tel" dir="ltr">
                                 </div>
                                 <div class="profile-form-group profile-form-group-full">
-                                    <label data-i18n="profile_avatar">تصویر پروفایل (بارگذاری یا آدرس URL)</label>
+                                    <label data-i18n="profile_avatar">تصویر پروفایل</label>
                                     <div class="profile-avatar-edit">
-                                        <input type="file" id="profileAvatarFile" accept="image/*" style="max-width:240px;">
-                                        <input id="profileAvatar" type="url" placeholder="https://..." autocomplete="off" class="profile-avatar-url" dir="ltr">
+                                        <label for="profileAvatarFile" class="profile-avatar-upload-btn">📷 <span data-i18n="profile_upload_photo">انتخاب تصویر از دستگاه</span></label>
+                                        <span id="profileAvatarFileName" class="profile-avatar-file-name"></span>
+                                        <input type="file" id="profileAvatarFile" accept="image/*">
+                                        <input id="profileAvatar" type="url" placeholder="https://... (آدرس URL تصویر)" autocomplete="off" class="profile-avatar-url" dir="ltr">
                                     </div>
                                 </div>
                                 <div class="profile-form-group profile-form-group-full">
