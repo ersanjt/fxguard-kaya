@@ -373,23 +373,50 @@
                     </div>
                     <div class="profile-page-body">
                     <div class="profile-card">
-                        <div class="profile-header">
-                            <div class="profile-avatar-wrap" onclick="document.getElementById('profileAvatarFile').click()">
-                                <div id="profileAvatarPreview" class="profile-avatar-preview"></div>
-                                <div class="profile-avatar-overlay">📷</div>
-                            </div>
-                            <div class="profile-meta">
-                                <div id="profileDisplayName" class="profile-display-name">—</div>
-                                <div id="profileDisplayUsername" class="profile-display-username">—</div>
-                                <div id="profileDisplayEmail" class="profile-display-email">—</div>
-                                <div class="profile-badges">
-                                    <span id="profileRoleBadge" class="profile-badge profile-badge-role">—</span>
-                                    <span id="profileBranchBadge" class="profile-badge profile-badge-branch">—</span>
+                        <!-- ستون چپ: اطلاعات نمایشی -->
+                        <div class="profile-left-col">
+                            <div class="profile-header">
+                                <div class="profile-avatar-wrap" onclick="document.getElementById('profileAvatarFile').click()">
+                                    <div id="profileAvatarPreview" class="profile-avatar-preview"></div>
+                                    <div class="profile-avatar-overlay">📷</div>
                                 </div>
-                                <div id="profileDepartmentText" class="profile-meta-text">—</div>
-                                <div id="profileLastLogin" class="profile-meta-text profile-last-login">—</div>
+                                <div class="profile-meta">
+                                    <div id="profileDisplayName" class="profile-display-name">—</div>
+                                    <div id="profileDisplayUsername" class="profile-display-username">—</div>
+                                    <div id="profileDisplayEmail" class="profile-display-email">—</div>
+                                    <div class="profile-badges">
+                                        <span id="profileRoleBadge" class="profile-badge profile-badge-role">—</span>
+                                        <span id="profileBranchBadge" class="profile-badge profile-badge-branch">—</span>
+                                    </div>
+                                    <div id="profileDepartmentText" class="profile-meta-text">—</div>
+                                    <div id="profileLastLogin" class="profile-meta-text profile-last-login">—</div>
+                                </div>
+                            </div>
+                            <div class="profile-readonly-section">
+                                <h3 class="profile-section-title"><span class="pst-bar"></span><span data-i18n="profile_readonly_section">اطلاعات فقط‌خواندنی</span></h3>
+                                <div class="profile-readonly-grid">
+                                    <div class="profile-readonly-item" id="profileEmailReadonlyRow">
+                                        <span class="profile-readonly-label" data-i18n="profile_email_readonly">ایمیل</span>
+                                        <span id="profileEmail" class="profile-readonly-value">—</span>
+                                    </div>
+                                    <div class="profile-readonly-item">
+                                        <span class="profile-readonly-label" data-i18n="profile_dept_readonly">دپارتمان</span>
+                                        <span id="profileDepartment" class="profile-readonly-value">—</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="profileMobileAppsSection" class="profile-readonly-section">
+                                <h3 class="profile-section-title"><span class="pst-bar"></span><span data-i18n="profile_mobile_apps_title">اپ موبایل</span></h3>
+                                <p id="profileMobileAppsDesc" class="profile-intro text-muted" style="margin-bottom:10px; display:none;" data-i18n="profile_mobile_apps_desc">برای نصب روی گوشی یکی از دکمه‌های زیر را بزنید.</p>
+                                <p id="profileMobileAppsEmpty" class="profile-intro text-muted" style="margin-bottom:10px;" data-i18n="profile_mobile_apps_empty">هنوز لینک رسمی App Store / Play Store یا فایل نصب توسط مدیر در «ظاهر پنل» ثبت نشده است.</p>
+                                <div class="profile-form-actions" style="justify-content:flex-start; gap:8px; flex-wrap:wrap;">
+                                    <a id="profileIosAppLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display:none;" data-i18n="profile_mobile_ios_btn">دانلود iOS</a>
+                                    <a id="profileAndroidAppLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:none;" data-i18n="profile_mobile_android_btn">دانلود Android</a>
+                                    <button type="button" id="profileMobileAppsOpenSettings" class="btn-secondary" style="display:none;" data-i18n="profile_mobile_apps_settings" onclick="if(typeof showPage==='function'){showPage('panel-settings');} return false;">تنظیم لینک‌ها در ظاهر پنل</button>
+                                </div>
                             </div>
                         </div>
+                        <!-- ستون راست: فرم ویرایش -->
                         <div class="profile-form-section">
                             <h3 class="profile-section-title"><span class="pst-bar"></span><span data-i18n="profile_editable_section">اطلاعات قابل ویرایش</span></h3>
                             <div class="profile-form-grid">
@@ -433,29 +460,6 @@
                             </div>
                             <div class="profile-form-actions">
                                 <button type="button" id="profileSaveBtn" class="btn-primary" data-i18n="profile_save">ذخیره تغییرات</button>
-                            </div>
-                        </div>
-                        <div class="profile-readonly-section">
-                            <h3 class="profile-section-title"><span class="pst-bar"></span><span data-i18n="profile_readonly_section">اطلاعات فقط‌خواندنی</span></h3>
-                            <div class="profile-readonly-grid">
-                                <div class="profile-readonly-item" id="profileEmailReadonlyRow">
-                                    <span class="profile-readonly-label" data-i18n="profile_email_readonly">ایمیل</span>
-                                    <span id="profileEmail" class="profile-readonly-value">—</span>
-                                </div>
-                                <div class="profile-readonly-item">
-                                    <span class="profile-readonly-label" data-i18n="profile_dept_readonly">دپارتمان</span>
-                                    <span id="profileDepartment" class="profile-readonly-value">—</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div id="profileMobileAppsSection" class="profile-readonly-section">
-                            <h3 class="profile-section-title"><span class="pst-bar"></span><span data-i18n="profile_mobile_apps_title">اپ موبایل</span></h3>
-                            <p id="profileMobileAppsDesc" class="profile-intro text-muted" style="margin-bottom:10px; display:none;" data-i18n="profile_mobile_apps_desc">برای نصب روی گوشی یکی از دکمه‌های زیر را بزنید.</p>
-                            <p id="profileMobileAppsEmpty" class="profile-intro text-muted" style="margin-bottom:10px;" data-i18n="profile_mobile_apps_empty">هنوز لینک رسمی App Store / Play Store یا فایل نصب توسط مدیر در «ظاهر پنل» ثبت نشده است.</p>
-                            <div class="profile-form-actions" style="justify-content:flex-start; gap:10px; flex-wrap:wrap;">
-                                <a id="profileIosAppLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-secondary" style="display:none;" data-i18n="profile_mobile_ios_btn">دانلود iOS</a>
-                                <a id="profileAndroidAppLink" href="#" target="_blank" rel="noopener noreferrer" class="btn-primary" style="display:none;" data-i18n="profile_mobile_android_btn">دانلود Android</a>
-                                <button type="button" id="profileMobileAppsOpenSettings" class="btn-secondary" style="display:none;" data-i18n="profile_mobile_apps_settings" onclick="if(typeof showPage==='function'){showPage('panel-settings');} return false;">تنظیم لینک‌ها در ظاهر پنل</button>
                             </div>
                         </div>
                     </div>
