@@ -258,21 +258,44 @@
                                                         <label for="panelSettingSiteName" data-i18n="panel_site_name">نام سایت</label>
                                                         <input type="text" id="panelSettingSiteName" placeholder="مثال: صرافی کایا" oninput="updatePanelLivePreview(); markPanelSettingsChanged();">
                                                     </div>
+                                                    <p class="form-hint panel-branding-upload-hint" data-i18n="panel_brand_upload_hint">می‌توانید آدرس اینترنتی بگذارید یا با «آپلود از دستگاه» فایل را روی سرور بارگذاری کنید.</p>
                                                     <div class="form-group">
-                                                        <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">آدرس لوگو (URL)</label>
-                                                        <div class="input-with-preview">
+                                                        <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">لوگوی پنل (URL یا آپلود)</label>
+                                                        <div class="panel-branding-url-row">
                                                             <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png" oninput="previewPanelLogo(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <button type="button" class="btn-secondary btn-sm" onclick="panelPickBrandingUpload('Logo'); return false;" data-i18n="panel_brand_upload_btn">آپلود از دستگاه</button>
+                                                        </div>
+                                                        <input type="file" id="panelBrandingFileLogo" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,.svg" style="display:none" tabindex="-1" aria-hidden="true">
+                                                        <div class="input-with-preview">
                                                             <div class="panel-setting-preview" id="panelLogoPreview" style="display:none;">
                                                                 <img id="panelLogoPreviewImg" src="" alt="" class="panel-logo-preview-img" onerror="this.style.display='none'">
                                                             </div>
                                                         </div>
                                                     </div>
                                                     <div class="form-group">
-                                                        <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">آدرس فاویکون (URL)</label>
-                                                        <div class="input-with-preview">
+                                                        <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">فاویکون (URL یا آپلود)</label>
+                                                        <div class="panel-branding-url-row">
                                                             <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico" oninput="previewPanelFavicon(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <button type="button" class="btn-secondary btn-sm" onclick="panelPickBrandingUpload('Favicon'); return false;" data-i18n="panel_brand_upload_btn">آپلود از دستگاه</button>
+                                                        </div>
+                                                        <input type="file" id="panelBrandingFileFavicon" accept="image/png,image/jpeg,image/svg+xml,image/webp,image/x-icon,.ico,.svg" style="display:none" tabindex="-1" aria-hidden="true">
+                                                        <div class="input-with-preview">
                                                             <div class="panel-setting-preview" id="panelFaviconPreview" style="display:none;">
                                                                 <img id="panelFaviconPreviewImg" src="" alt="" class="panel-favicon-preview-img" onerror="this.style.display='none'">
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="form-group">
+                                                        <label for="panelSettingLoginLogoUrl" data-i18n="panel_login_logo_url">لوگوی صفحه ورود (اختیاری)</label>
+                                                        <div class="panel-branding-url-row">
+                                                            <input type="url" id="panelSettingLoginLogoUrl" placeholder="https://example.com/login-logo.png" oninput="previewPanelLoginLogo(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <button type="button" class="btn-secondary btn-sm" onclick="panelPickBrandingUpload('LoginLogo'); return false;" data-i18n="panel_brand_upload_btn">آپلود از دستگاه</button>
+                                                        </div>
+                                                        <input type="file" id="panelBrandingFileLoginLogo" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,.svg" style="display:none" tabindex="-1" aria-hidden="true">
+                                                        <span class="form-hint" data-i18n="panel_login_logo_hint">در صورت خالی بودن، همان لوگوی پنل در صفحه ورود نمایش داده می‌شود.</span>
+                                                        <div class="input-with-preview">
+                                                            <div class="panel-setting-preview" id="panelLoginLogoPreview" style="display:none;">
+                                                                <img id="panelLoginLogoPreviewImg" src="" alt="" class="panel-logo-preview-img" onerror="this.style.display='none'">
                                                             </div>
                                                         </div>
                                                     </div>
@@ -452,6 +475,15 @@
                                                 </div>
                                                 <div id="panelPreviewFooter" class="panel-preview-footer">
                                                     <span id="panelPreviewFooterText" class="panel-preview-footer-text">صرافی کایا — پورتال کارکنان</span>
+                                                </div>
+                                                <div class="panel-preview-login-block">
+                                                    <div class="panel-preview-login-label" data-i18n="panel_preview_login_label">پیش‌نمایش صفحه ورود</div>
+                                                    <div class="panel-preview-login-inner">
+                                                        <span class="panel-preview-login-logo-wrap">
+                                                            <img id="panelPreviewLoginLogo" class="panel-preview-logo-img" src="" alt="" onerror="this.style.display='none'">
+                                                            <span id="panelPreviewLoginLogoPlaceholder" class="panel-preview-logo-placeholder">◫</span>
+                                                        </span>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>

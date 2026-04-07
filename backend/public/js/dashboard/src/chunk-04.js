@@ -806,7 +806,7 @@
                 if (res.data.supportedLanguages && window.applySupportedLanguages) window.applySupportedLanguages(res.data.supportedLanguages, res.data.defaultLanguage);
                 return;
             }
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null || data.showFooter !== undefined || data.footerStyle != null)) applyBranding(data); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginLogoUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null || data.showFooter !== undefined || data.footerStyle != null)) applyBranding(data); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/visibility').then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage); }).catch(function() {});
         }
@@ -844,6 +844,7 @@
             set('panelSettingSiteName', d.siteName);
             set('panelSettingLogoUrl', d.logoUrl);
             set('panelSettingFaviconUrl', d.faviconUrl);
+            set('panelSettingLoginLogoUrl', d.loginLogoUrl);
             set('panelSettingLoginTitle', d.loginTitle);
             set('panelSettingPageTitle', d.pageTitle);
             set('panelSettingFooterText', d.footerText);
@@ -934,8 +935,10 @@
             }
             previewPanelLogo(d.logoUrl || '');
             previewPanelFavicon(d.faviconUrl || '');
+            previewPanelLoginLogo(d.loginLogoUrl || '');
             updatePanelSettingsHeaderBranding(d.logoUrl || '', d.faviconUrl || '');
             updatePanelLivePreview();
+            initPanelBrandingFileUploads();
             loadCompanyEmails();
             loadCompanyEmailUserSelect();
             if (typeof initCompanyEmailsHandlers === 'function') initCompanyEmailsHandlers();
@@ -1218,6 +1221,8 @@
             const hideFooter = document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked;
             const logoUrl = (document.getElementById('panelSettingLogoUrl') && document.getElementById('panelSettingLogoUrl').value.trim()) || '';
             const faviconUrl = (document.getElementById('panelSettingFaviconUrl') && document.getElementById('panelSettingFaviconUrl').value.trim()) || '';
+            const loginLogoOnly = (document.getElementById('panelSettingLoginLogoUrl') && document.getElementById('panelSettingLoginLogoUrl').value.trim()) || '';
+            const loginPreviewSrc = loginLogoOnly || logoUrl;
             const titleEl = document.getElementById('panelPreviewPageTitle');
             const siteNameEl = document.getElementById('panelPreviewSiteName');
             const logoEl = document.getElementById('panelPreviewLogo');
@@ -1231,6 +1236,19 @@
             if (footerEl) footerEl.classList.toggle('hidden', !!hideFooter);
             if (logoEl) { if (logoUrl) { logoEl.src = logoUrl; logoEl.style.display = ''; if (logoPlaceholder) logoPlaceholder.style.display = 'none'; } else { logoEl.removeAttribute('src'); logoEl.style.display = 'none'; if (logoPlaceholder) logoPlaceholder.style.display = ''; } }
             if (faviconEl) { if (faviconUrl) { faviconEl.src = faviconUrl; faviconEl.style.display = ''; } else { faviconEl.removeAttribute('src'); faviconEl.style.display = 'none'; } }
+            const loginLogoEl = document.getElementById('panelPreviewLoginLogo');
+            const loginLogoPh = document.getElementById('panelPreviewLoginLogoPlaceholder');
+            if (loginLogoEl) {
+                if (loginPreviewSrc) {
+                    loginLogoEl.src = loginPreviewSrc;
+                    loginLogoEl.style.display = '';
+                    if (loginLogoPh) loginLogoPh.style.display = 'none';
+                } else {
+                    loginLogoEl.removeAttribute('src');
+                    loginLogoEl.style.display = 'none';
+                    if (loginLogoPh) loginLogoPh.style.display = '';
+                }
+            }
             updatePanelSettingsHeaderBranding(logoUrl, faviconUrl);
         }
         function updatePanelSettingsHeaderBranding(logoUrl, faviconUrl) {
@@ -1288,6 +1306,47 @@
             url = (url || '').trim();
             if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = ''; img.onerror = function() { img.style.display = 'none'; }; } else { wrap.style.display = 'none'; }
         }
+        function previewPanelLoginLogo(url) {
+            const wrap = document.getElementById('panelLoginLogoPreview');
+            const img = document.getElementById('panelLoginLogoPreviewImg');
+            if (!wrap || !img) return;
+            url = (url || '').trim();
+            if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = ''; img.onerror = function() { img.style.display = 'none'; }; } else { wrap.style.display = 'none'; }
+        }
+        function panelPickBrandingUpload(kind) {
+            const el = document.getElementById('panelBrandingFile' + kind);
+            if (el) el.click();
+        }
+        let panelBrandingUploadBound = false;
+        function initPanelBrandingFileUploads() {
+            if (panelBrandingUploadBound) return;
+            const pairs = [
+                { fileId: 'panelBrandingFileLogo', urlId: 'panelSettingLogoUrl', preview: function(u) { previewPanelLogo(u); } },
+                { fileId: 'panelBrandingFileFavicon', urlId: 'panelSettingFaviconUrl', preview: function(u) { previewPanelFavicon(u); } },
+                { fileId: 'panelBrandingFileLoginLogo', urlId: 'panelSettingLoginLogoUrl', preview: function(u) { previewPanelLoginLogo(u); } }
+            ];
+            pairs.forEach(function(p) {
+                const fi = document.getElementById(p.fileId);
+                if (!fi) return;
+                fi.addEventListener('change', async function() {
+                    if (!fi.files || !fi.files[0]) return;
+                    const formData = new FormData();
+                    formData.append('file', fi.files[0]);
+                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                    const data = await r.json().catch(function() { return {}; });
+                    if (data.url) {
+                        const urlEl = document.getElementById(p.urlId);
+                        if (urlEl) urlEl.value = data.url;
+                        p.preview(data.url);
+                        updatePanelLivePreview();
+                        markPanelSettingsChanged();
+                        toast(LANG === 'fa' ? 'فایل بارگذاری شد — در صورت نیاز «ذخیره» را بزنید.' : 'Uploaded — save settings if needed.');
+                    } else toast((data.error) || t('err_generic'), true);
+                    fi.value = '';
+                });
+            });
+            panelBrandingUploadBound = true;
+        }
         async function savePanelSettings() {
             const btn = document.getElementById('panelSettingsSaveBtn');
             const btnFooter = document.getElementById('panelSettingsSaveBtnFooter');
@@ -1305,6 +1364,7 @@
                 siteName: get('panelSettingSiteName'),
                 logoUrl: get('panelSettingLogoUrl'),
                 faviconUrl: get('panelSettingFaviconUrl'),
+                loginLogoUrl: get('panelSettingLoginLogoUrl'),
                 loginTitle: get('panelSettingLoginTitle'),
                 pageTitle: get('panelSettingPageTitle'),
                 footerText: get('panelSettingFooterText'),

@@ -1354,6 +1354,8 @@
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
+            window.previewPanelLoginLogo = previewPanelLoginLogo;
+            window.panelPickBrandingUpload = panelPickBrandingUpload;
             window.updatePanelLivePreview = updatePanelLivePreview;
             window.userPermsSelectAll = userPermsSelectAll;
             window.userPermsSelectGroup = userPermsSelectGroup;
@@ -1654,6 +1656,8 @@
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
+            window.previewPanelLoginLogo = previewPanelLoginLogo;
+            window.panelPickBrandingUpload = panelPickBrandingUpload;
             window.updatePanelLivePreview = updatePanelLivePreview;
             window.userPermsSelectAll = userPermsSelectAll;
             window.userPermsSelectGroup = userPermsSelectGroup;
@@ -1702,5 +1706,5 @@
                 } else { logout(); }
             }).catch(function() { logout(); });
         } else {
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginLogoUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
         }

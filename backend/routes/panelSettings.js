@@ -19,6 +19,7 @@ router.get('/public/branding', async (req, res, next) => {
             siteName: s.siteName,
             logoUrl: s.logoUrl,
             faviconUrl: s.faviconUrl,
+            loginLogoUrl: s.loginLogoUrl,
             loginTitle: s.loginTitle,
             pageTitle: s.pageTitle,
             footerText: s.footerText,
@@ -83,12 +84,20 @@ router.put('/', authMiddleware, async (req, res, next) => {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const body = req.body || {};
-        const { siteName, logoUrl, faviconUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, adminAlertsEnabled, adminAlertEmails, telegramBotToken, telegramChatIds, telegramTimeoutMs, clientErrorReportingEnabled, telegramNotifyAllEvents, telegramNotifyApiRequests, telegramNotifyAuthEvents, telegramNotifySocketEvents, telegramNotifyIncomingMessages, telegramNotifySystemEvents, telegramNotifyErrorEvents, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder, iosAppUrl, androidAppUrl } = body;
-        if (logoUrl && !/^https?:\/\//i.test(String(logoUrl).trim()) && !String(logoUrl).trim().startsWith('/uploads/')) {
+        const { siteName, logoUrl, faviconUrl, loginLogoUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, adminAlertsEnabled, adminAlertEmails, telegramBotToken, telegramChatIds, telegramTimeoutMs, clientErrorReportingEnabled, telegramNotifyAllEvents, telegramNotifyApiRequests, telegramNotifyAuthEvents, telegramNotifySocketEvents, telegramNotifyIncomingMessages, telegramNotifySystemEvents, telegramNotifyErrorEvents, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder, iosAppUrl, androidAppUrl } = body;
+        const validLogoLike = (v) => {
+            if (!v || !String(v).trim()) return true;
+            const s = String(v).trim();
+            return /^https?:\/\//i.test(s) || s.startsWith('/uploads/');
+        };
+        if (!validLogoLike(logoUrl)) {
             return res.status(400).json({ error: 'آدرس لوگو باید یک URL معتبر یا مسیر /uploads/ باشد' });
         }
-        if (faviconUrl && !/^https?:\/\//i.test(String(faviconUrl).trim()) && !String(faviconUrl).trim().startsWith('/uploads/')) {
+        if (!validLogoLike(faviconUrl)) {
             return res.status(400).json({ error: 'آدرس فاویکون باید یک URL معتبر یا مسیر /uploads/ باشد' });
+        }
+        if (!validLogoLike(loginLogoUrl)) {
+            return res.status(400).json({ error: 'آدرس لوگوی ورود باید یک URL معتبر یا مسیر /uploads/ باشد' });
         }
         const validAppUrl = (v) => {
             if (!v || !String(v).trim()) return true;
@@ -128,6 +137,7 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (siteName !== undefined) row.siteName = siteName === '' ? null : siteName;
         if (logoUrl !== undefined) row.logoUrl = logoUrl === '' ? null : logoUrl;
         if (faviconUrl !== undefined) row.faviconUrl = faviconUrl === '' ? null : faviconUrl;
+        if (loginLogoUrl !== undefined) row.loginLogoUrl = loginLogoUrl === '' ? null : loginLogoUrl;
         if (loginTitle !== undefined) row.loginTitle = loginTitle === '' ? null : loginTitle;
         if (pageTitle !== undefined) row.pageTitle = pageTitle === '' ? null : pageTitle;
         if (footerText !== undefined) row.footerText = footerText === '' ? null : footerText;

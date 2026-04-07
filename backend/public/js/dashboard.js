@@ -14,7 +14,6 @@
         let presenceInterval = null;
         let staffActivityInterval = null;
         let socket = null;
-        let DEMO_CONFIG = { enabled: false, salesUrl: 'https://fxguard.io' };
         let loadConversationsDebounceTimer = null;
         function debouncedLoadConversations(ms) {
             ms = ms || 400;
@@ -27,7 +26,6 @@
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
-        window.FXGUARD_PUBLIC_SITE = false;
         fetch((API || '') + '/api/panel-settings/public/languages').then(function(r){ return r.json(); }).then(function(data){
             if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage);
             else if (typeof setLang === 'function') setLang(LANG);
@@ -36,22 +34,6 @@
         });
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
-            try {
-                window.FXGUARD_PUBLIC_SITE = !!((c && c.fxguardPublicSite) || /^app\.fxguard\.io$/i.test(window.location.hostname || ''));
-            } catch (e) {
-                window.FXGUARD_PUBLIC_SITE = !!(c && c.fxguardPublicSite);
-            }
-            if (window.FXGUARD_PUBLIC_SITE) {
-                document.body.classList.add('fxguard-public-demo');
-                window.SUPPORTED_LANGUAGES = ['en', 'tr'];
-                if (typeof window.applySupportedLanguages === 'function') window.applySupportedLanguages(['en', 'tr'], 'en');
-            } else {
-                document.body.classList.remove('fxguard-public-demo');
-            }
-            DEMO_CONFIG = {
-                enabled: !!(c && c.demoMode),
-                salesUrl: (c && c.salesUrl) || 'https://fxguard.io'
-            };
             if (c && c.supportUrl) {
                 window.SUPPORT_URL = c.supportUrl;
                 const setSupportLink = function(wrapId, linkId) {
@@ -66,38 +48,7 @@
                 setSupportLink('loginSupportWrap', 'loginSupportLink');
                 setSupportLink('loginSupportWrapTotp', 'loginSupportLinkTotp');
             }
-            renderDemoBanner();
         }).catch(function(){});
-        function renderDemoBanner() {
-            const banner = document.getElementById('demoBanner');
-            if (!banner) return;
-            const isDemoUser = !!(currentUser && currentUser.isDemo);
-            if (!(DEMO_CONFIG.enabled && isDemoUser)) {
-                banner.style.display = 'none';
-                return;
-            }
-            const text = document.getElementById('demoBannerText');
-            if (window.FXGUARD_PUBLIC_SITE) {
-                if (text) text.textContent = (LANG === 'tr')
-                    ? 'Demo sürümü aktif; değişiklikler kaydedilmez.'
-                    : 'Demo mode is active; changes are not saved.';
-                const buyLink = document.getElementById('demoBannerBuyLink');
-                if (buyLink) {
-                    buyLink.href = DEMO_CONFIG.salesUrl || 'https://fxguard.io';
-                    buyLink.textContent = (LANG === 'tr') ? 'Plan satın al' : 'View plans';
-                }
-            } else {
-                if (text) text.textContent = (LANG === 'fa')
-                    ? 'نسخه نمایشی فعال است؛ تغییرات ذخیره نمی‌شود.'
-                    : (LANG === 'tr' ? 'Demo sürümü aktif; değişiklikler kaydedilmez.' : 'Demo mode is active; changes are not saved.');
-                const buyLink = document.getElementById('demoBannerBuyLink');
-                if (buyLink) {
-                    buyLink.href = DEMO_CONFIG.salesUrl || 'https://fxguard.io';
-                    buyLink.textContent = (LANG === 'fa') ? 'خرید پلن' : (LANG === 'tr' ? 'Plan satın al' : 'Buy plan');
-                }
-            }
-            banner.style.display = 'flex';
-        }
         function updateNavBadges(stats) {
             if (stats) {
                 window.navBadgeCounts.conversations = (stats.unreadConversations || 0);
@@ -164,7 +115,10 @@
                     token = null;
                     localStorage.removeItem('crm_token');
                     document.documentElement.classList.remove('auth-has-token');
-                    window.location.replace('/login');
+                    document.getElementById('loginBox').style.display = 'flex';
+                    document.getElementById('app').classList.remove('show');
+                    const errEl = document.getElementById('loginErr');
+                    if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 }
             });
         }
@@ -2022,8 +1976,9 @@
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
-                token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token');
-                window.location.replace('/login');
+                token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
+                const errEl = document.getElementById('loginErr');
+                if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
             }
             if (r.status === 429) {
@@ -2052,7 +2007,7 @@
             btn.addEventListener('click', function() {
                 const show = input.type === 'password';
                 input.type = show ? 'text' : 'password';
-                const title = show ? t('toggle_hide_pass') : t('toggle_show_pass');
+                const title = show ? (LANG === 'fa' ? 'مخفی کردن رمز' : 'Hide password') : (LANG === 'fa' ? 'نمایش رمز' : 'Show password');
                 btn.setAttribute('title', title);
                 btn.setAttribute('aria-label', title);
                 btn.setAttribute('aria-pressed', show ? 'true' : 'false');
@@ -2067,14 +2022,9 @@
                 if (e.key !== 'Enter') return;
                 e.preventDefault();
                 const totpStep = document.getElementById('loginStepTotp');
-                const forgotStep = document.getElementById('loginStepForgot');
-                const resetStep = document.getElementById('loginStepReset');
-                if (totpStep && totpStep.style.display !== 'none') {
+                const isTotpVisible = totpStep && totpStep.style.display !== 'none';
+                if (isTotpVisible) {
                     if (typeof verifyTotpLogin === 'function') verifyTotpLogin();
-                } else if (forgotStep && forgotStep.style.display !== 'none') {
-                    if (typeof submitForgotPassword === 'function') submitForgotPassword();
-                } else if (resetStep && resetStep.style.display !== 'none') {
-                    if (typeof submitResetPassword === 'function') submitResetPassword();
                 } else {
                     if (typeof login === 'function') login();
                 }
@@ -2082,25 +2032,15 @@
             const emailEl = document.getElementById('email');
             const passEl = document.getElementById('pass');
             const totpEl = document.getElementById('totpCode');
-            const forgotEmailEl = document.getElementById('forgotEmail');
-            const resetNewEl = document.getElementById('resetNewPass');
-            const resetConfEl = document.getElementById('resetConfirmPass');
             if (emailEl) emailEl.addEventListener('keydown', onLoginKeydown);
             if (passEl) passEl.addEventListener('keydown', onLoginKeydown);
             if (totpEl) totpEl.addEventListener('keydown', onLoginKeydown);
-            if (forgotEmailEl) forgotEmailEl.addEventListener('keydown', onLoginKeydown);
-            if (resetNewEl) resetNewEl.addEventListener('keydown', onLoginKeydown);
-            if (resetConfEl) resetConfEl.addEventListener('keydown', onLoginKeydown);
         })();
 
         async function login() {
             const email = document.getElementById('email').value.trim();
             const pass = document.getElementById('pass').value;
-            const errEl = document.getElementById('loginErr');
-            errEl.textContent = '';
-            errEl.style.color = '';
-            if (!email) { errEl.textContent = t('login_email_required'); return; }
-            if (!pass) { errEl.textContent = t('login_password_required'); return; }
+            document.getElementById('loginErr').textContent = '';
             const btn = document.getElementById('btnLogin');
             btn.disabled = true;
             btn.textContent = t('login_loading');
@@ -2111,13 +2051,13 @@
             } catch (e) {
                 btn.disabled = false;
                 btn.textContent = t('login_btn');
-                errEl.textContent = t('login_err_connect');
+                document.getElementById('loginErr').textContent = t('login_err_connect');
                 return;
             }
             btn.disabled = false;
             btn.textContent = t('login_btn');
             if ((text || '').trim().startsWith('<')) {
-                errEl.textContent = t('login_err_server_html');
+                document.getElementById('loginErr').textContent = t('login_err_server_html');
                 return;
             }
             let data;
@@ -2126,11 +2066,11 @@
                 if (r.status === 0) hint = t('login_err_connect');
                 else if (r.status === 429) hint = t('login_err_429');
                 else hint = t('login_err_invalid') + ' (HTTP ' + r.status + ')';
-                errEl.textContent = hint;
+                document.getElementById('loginErr').textContent = hint;
                 return;
             }
             if (r.status === 429) {
-                errEl.textContent = (data && data.error) ? data.error : t('login_err_429');
+                document.getElementById('loginErr').textContent = (data && data.error) ? data.error : t('login_err_429');
                 return;
             }
             if (data.needTotp && data.tempToken) {
@@ -2149,6 +2089,7 @@
                 document.documentElement.classList.add('auth-has-token');
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
+                document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('app').classList.add('show');
                 try {
                     applyNavByRole();
@@ -2161,7 +2102,7 @@
                     showTotpPromptIfNeeded();
                 } catch (e) { console.error('Post-login init:', e); }
             } else {
-                errEl.textContent = data.error || t('login_err_fail');
+                document.getElementById('loginErr').textContent = data.error || t('login_err_fail');
             }
         }
         function backToLoginStep1() {
@@ -2187,7 +2128,7 @@
             const errEl = document.getElementById('forgotErr');
             const successEl = document.getElementById('forgotSuccess');
             const btn = document.getElementById('btnForgotSubmit');
-            if (!email) { if (errEl) errEl.textContent = t('forgot_email_required'); return; }
+            if (!email) { if (errEl) errEl.textContent = (LANG === 'fa' ? 'ایمیل را وارد کنید.' : 'Please enter your email.'); return; }
             if (errEl) errEl.textContent = '';
             if (successEl) successEl.style.display = 'none';
             if (btn) btn.disabled = true;
@@ -2219,7 +2160,7 @@
             const btn = document.getElementById('btnResetSubmit');
             if (newPass !== confirmPass) { if (errEl) errEl.textContent = t('reset_err_match'); return; }
             if (newPass.length < 6) { if (errEl) errEl.textContent = t('reset_err_length'); return; }
-            if (!window._resetToken) { if (errEl) errEl.textContent = t('reset_link_expired'); return; }
+            if (!window._resetToken) { if (errEl) errEl.textContent = 'لینک منقضی شده است.'; return; }
             if (errEl) errEl.textContent = '';
             if (btn) btn.disabled = true;
             try {
@@ -2233,12 +2174,11 @@
                     document.getElementById('loginStep1').style.display = 'block';
                     document.getElementById('email').value = '';
                     document.getElementById('pass').value = '';
-                    const loginErrEl = document.getElementById('loginErr');
-                    loginErrEl.style.color = 'var(--success, #059669)';
-                    loginErrEl.textContent = data.message;
+                    document.getElementById('loginErr').textContent = data.message;
+                    document.getElementById('loginErr').style.color = 'var(--success, #059669)';
                     return;
                 }
-                if (errEl) errEl.textContent = (data.error || t('reset_fail'));
+                if (errEl) errEl.textContent = (data.error || (LANG === 'fa' ? 'خطا در تغییر رمز.' : 'Failed to reset password.'));
             } catch (e) { if (errEl) errEl.textContent = t('login_err_connect'); }
             if (btn) btn.disabled = false;
         }
@@ -2265,6 +2205,7 @@
                 document.documentElement.classList.add('auth-has-token');
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
+                document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('app').classList.add('show');
                 try {
                     applyNavByRole();
@@ -2369,16 +2310,7 @@
                 const avatarEl = document.getElementById('profileAvatar');
                 if (avatarEl) { avatarEl.value = u.avatar || ''; if (!avatarEl._bound) { avatarEl._bound = true; avatarEl.addEventListener('input', function() { updateProfileAvatarPreview(avatarEl.value); }); avatarEl.addEventListener('blur', function() { updateProfileAvatarPreview(avatarEl.value || displayName); }); } }
                 const avatarFileEl = document.getElementById('profileAvatarFile');
-                if (avatarFileEl && !avatarFileEl._bound) {
-                    avatarFileEl._bound = true;
-                    avatarFileEl.addEventListener('change', function() {
-                        if (avatarFileEl.files && avatarFileEl.files[0]) {
-                            const nameEl = document.getElementById('profileAvatarFileName');
-                            if (nameEl) nameEl.textContent = avatarFileEl.files[0].name;
-                            uploadProfileAvatar(avatarFileEl.files[0]);
-                        }
-                    });
-                }
+                if (avatarFileEl && !avatarFileEl._bound) { avatarFileEl._bound = true; avatarFileEl.addEventListener('change', function() { if (avatarFileEl.files && avatarFileEl.files[0]) uploadProfileAvatar(avatarFileEl.files[0]); }); }
                 if (document.getElementById('profilePassword')) document.getElementById('profilePassword').value = '';
                 updateProfileAvatarPreview(u.avatar || displayName);
                 const profileFields = ['profileUsername','profileFirstName','profileLastName','profileDateOfBirth','profilePhone','profileAvatar','profilePassword','profileEmailInput','profileAvatarFile'];
@@ -2387,7 +2319,6 @@
                 if (profileSaveBtn) profileSaveBtn.style.display = '';
                 const profileProtectedBanner = document.getElementById('profileProtectedBanner');
                 if (profileProtectedBanner) profileProtectedBanner.style.display = 'none';
-                renderProfileMobileAppLinks(window.__panelBranding || {});
             }
             const statusEl = document.getElementById('profileTotpStatus');
             const actionsEl = document.getElementById('profileTotpActions');
@@ -2402,7 +2333,6 @@
                 // Bind event handlers after DOM update
                 setupProfileEventHandlers();
             }
-            loadTelegramStatus();
         }
         async function uploadProfileAvatar(file) {
             const formData = new FormData();
@@ -2482,64 +2412,6 @@
             if (res.ok) { toast(t('toast_totp_disabled')); closeTotpDisableModal(); currentUser.totpEnabled = false; loadProfile(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
-        // ==================== Telegram Link ====================
-        async function loadTelegramStatus() {
-            try {
-                const res = await apiFetch('/api/auth/telegram-status');
-                if (!res.ok) return;
-                const data = res.data || {};
-                const statusEl = document.getElementById('telegramLinkStatus');
-                const unlinkBtn = document.getElementById('btnUnlinkTelegram');
-                const linkBtn = document.getElementById('btnGenerateTelegramToken');
-                if (!statusEl) return;
-                if (data.linked) {
-                    statusEl.innerHTML = '<span style="color:#059669;font-weight:600;">✅ حساب تلگرام متصل است</span> <span style="font-size:.85rem;color:#718096;margin-right:4px;">(Chat ID: ' + escapeHtml(String(data.chatId || '')) + ')</span>';
-                    if (unlinkBtn) unlinkBtn.style.display = '';
-                    if (linkBtn) linkBtn.textContent = 'کد اتصال جدید';
-                } else {
-                    statusEl.innerHTML = '<span style="color:#718096;font-size:.9rem;">⚪ تلگرام هنوز متصل نیست</span>';
-                    if (unlinkBtn) unlinkBtn.style.display = 'none';
-                    if (linkBtn) linkBtn.textContent = 'دریافت کد اتصال';
-                }
-            } catch (_) {}
-        }
-        async function generateTelegramLinkToken() {
-            const btn = document.getElementById('btnGenerateTelegramToken');
-            if (btn) btn.disabled = true;
-            try {
-                const res = await apiFetch('/api/auth/telegram-link-token', { method: 'POST' });
-                if (!res.ok) { toast((res.data && res.data.error) || 'خطا در دریافت کد اتصال', true); return; }
-                const data = res.data || {};
-                const tokenBox = document.getElementById('telegramTokenBox');
-                const tokenText = document.getElementById('telegramLinkTokenText');
-                const botUrlWrap = document.getElementById('telegramBotUrlWrap');
-                const botUrlEl = document.getElementById('telegramBotUrl');
-                if (tokenText) tokenText.textContent = '/link ' + (data.token || '');
-                if (tokenBox) tokenBox.style.display = 'block';
-                if (data.botUrl && botUrlWrap && botUrlEl) {
-                    botUrlEl.href = data.botUrl;
-                    botUrlWrap.style.display = '';
-                }
-            } catch (_) { toast('خطا در دریافت کد اتصال', true); }
-            finally { if (btn) btn.disabled = false; }
-        }
-        function copyTelegramToken() {
-            const tokenText = document.getElementById('telegramLinkTokenText');
-            if (!tokenText) return;
-            const text = tokenText.textContent || '';
-            if (navigator.clipboard) {
-                navigator.clipboard.writeText(text).then(() => toast('کد کپی شد')).catch(() => {});
-            } else {
-                const el = document.createElement('textarea');
-                el.value = text; document.body.appendChild(el); el.select(); document.execCommand('copy'); document.body.removeChild(el); toast('کد کپی شد');
-            }
-        }
-        async function unlinkTelegram() {
-            if (!confirm('اتصال تلگرام قطع شود؟')) return;
-            const res = await apiFetch('/api/auth/telegram-link', { method: 'DELETE' });
-            if (res.ok) { toast('اتصال تلگرام قطع شد'); loadTelegramStatus(); } else { toast((res.data && res.data.error) || 'خطا', true); }
-        }
-
         async function logout() {
             try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
             if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
@@ -2552,7 +2424,9 @@
             currentUser = null;
             localStorage.removeItem('crm_token');
             document.documentElement.classList.remove('auth-has-token');
-            window.location.replace('/login');
+            document.getElementById('loginBox').style.display = 'flex';
+            const appEl = document.getElementById('app');
+            if (appEl) { appEl.classList.remove('show', 'app-loading', 'app-ready'); }
         }
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -4499,16 +4373,6 @@
             }
         }
         function applyConvFilters() { convCurrentPage = 1; loadConversations(); }
-        function resetConvFilters() {
-            ['convFilterStatus','convFilterPriority','convFilterBranch','convFilterDept','convFilterAssignee'].forEach(function(id){
-                var el = document.getElementById(id);
-                if (el) el.value = '';
-            });
-            var searchEl = document.getElementById('convSearch');
-            if (searchEl) searchEl.value = '';
-            applyConvFilters();
-        }
-        window.resetConvFilters = resetConvFilters;
         function openNewConvModal() {
             document.getElementById('newConvModal').style.display = 'flex';
             document.getElementById('newConvCustomerSearch').value = '';
@@ -5105,16 +4969,6 @@
         }
 
         function applyCustomerFilters() { loadCustomers(); }
-        function resetCustomerFilters() {
-            var searchEl = document.getElementById('customerSearch');
-            if (searchEl) { searchEl.value = ''; }
-            var statusEl = document.getElementById('customerFilterStatus');
-            if (statusEl) statusEl.value = '';
-            var sortEl = document.getElementById('customerSort');
-            if (sortEl) sortEl.value = 'newest';
-            applyCustomerFilters();
-        }
-        window.resetCustomerFilters = resetCustomerFilters;
         function initCustomerFilters() {
             if (window._customerFiltersInited) return;
             window._customerFiltersInited = true;
@@ -5981,35 +5835,8 @@
                 bottomBar.classList.remove('has-mobile-tab');
             }
         }
-        function getFxguardPublicBranding() {
-            if (LANG === 'tr') {
-                return {
-                    siteName: 'FXGuard',
-                    pageTitle: 'FXGuard CRM — Genel demo',
-                    footerText: 'FXGuard — Bağımsız herkese açık demo (diğer markalarla bağlantılı değildir)',
-                    loginTitle: 'FXGuard Portalı',
-                    faviconUrl: '/favicon-fxguard.svg',
-                    showFooter: true,
-                    footerStyle: 'minimal',
-                    logoUrl: ''
-                };
-            }
-            return {
-                siteName: 'FXGuard',
-                pageTitle: 'FXGuard CRM — Public demo',
-                footerText: 'FXGuard — Standalone public demo (not affiliated with other brands)',
-                loginTitle: 'FXGuard Staff Portal',
-                faviconUrl: '/favicon-fxguard.svg',
-                showFooter: true,
-                footerStyle: 'minimal',
-                logoUrl: ''
-            };
-        }
         function applyBranding(s) {
-            if (window.FXGUARD_PUBLIC_SITE) {
-                s = getFxguardPublicBranding();
-            } else if (!s) return;
-            window.__panelBranding = s;
+            if (!s) return;
             const defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
             const defSite = (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
             const defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
@@ -6022,22 +5849,11 @@
                 if (s.logoUrl && s.logoUrl.trim()) { headerIcon.innerHTML = '<img src="' + escapeHtml(s.logoUrl) + '" alt="" style="width:28px;height:28px;object-fit:contain">'; } else { headerIcon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg>'; }
             }
             const headerLogoText = document.getElementById('headerLogoText');
-            if (headerLogoText) {
-                headerLogoText.textContent = logoText;
-                if (window.FXGUARD_PUBLIC_SITE) headerLogoText.removeAttribute('data-i18n');
-            }
+            if (headerLogoText) headerLogoText.textContent = logoText;
             const headerLogo = document.getElementById('headerLogo');
-            if (headerLogo) {
-                const backDash = window.FXGUARD_PUBLIC_SITE
-                    ? (LANG === 'tr' ? ' — Kontrol paneline dön' : ' — Back to dashboard')
-                    : (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard');
-                headerLogo.setAttribute('aria-label', logoText + backDash);
-            }
+            if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
             const footerBrand = document.getElementById('appFooterBrand');
-            if (footerBrand) {
-                footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
-                if (window.FXGUARD_PUBLIC_SITE) footerBrand.removeAttribute('data-i18n');
-            }
+            if (footerBrand) footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
             const appFooter = document.getElementById('appFooter');
             if (appFooter) {
                 appFooter.style.display = (s.showFooter === false) ? 'none' : '';
@@ -6081,39 +5897,6 @@
             const fw = (s.fontWeight && ['normal', 'medium', 'bold'].indexOf(s.fontWeight) >= 0) ? s.fontWeight : 'normal';
             document.body.style.fontWeight = fw;
             if (Array.isArray(s.sidebarOrder) && s.sidebarOrder.length > 0) applySidebarOrder(s.sidebarOrder);
-            renderProfileMobileAppLinks(s);
-        }
-        function resolvePublicAppUrl(u) {
-            if (!u) return u;
-            const s = String(u).trim();
-            if (/^(https?:\/\/|itms-services:\/\/|market:\/\/|intent:\/\/)/i.test(s)) return s;
-            if (s.startsWith('/') && typeof window !== 'undefined' && window.location && window.location.origin) {
-                return String(window.location.origin).replace(/\/$/, '') + s;
-            }
-            return s;
-        }
-        function renderProfileMobileAppLinks(settings) {
-            const section = document.getElementById('profileMobileAppsSection');
-            const iosLink = document.getElementById('profileIosAppLink');
-            const androidLink = document.getElementById('profileAndroidAppLink');
-            const descEl = document.getElementById('profileMobileAppsDesc');
-            const emptyEl = document.getElementById('profileMobileAppsEmpty');
-            const adminBtn = document.getElementById('profileMobileAppsOpenSettings');
-            if (!section || !iosLink || !androidLink) return;
-            const iosUrl = settings && settings.iosAppUrl ? String(settings.iosAppUrl).trim() : '';
-            const androidUrl = settings && settings.androidAppUrl ? String(settings.androidAppUrl).trim() : '';
-            const hasIos = !!iosUrl;
-            const hasAndroid = !!androidUrl;
-            const hasAny = hasIos || hasAndroid;
-            if (hasIos) { iosLink.href = resolvePublicAppUrl(iosUrl); iosLink.style.display = ''; } else { iosLink.removeAttribute('href'); iosLink.style.display = 'none'; }
-            if (hasAndroid) { androidLink.href = resolvePublicAppUrl(androidUrl); androidLink.style.display = ''; } else { androidLink.removeAttribute('href'); androidLink.style.display = 'none'; }
-            if (descEl) descEl.style.display = hasAny ? '' : 'none';
-            if (emptyEl) emptyEl.style.display = hasAny ? 'none' : '';
-            section.style.display = '';
-            if (adminBtn) {
-                var canPanel = !!(typeof currentUser !== 'undefined' && currentUser && currentUser.permissions && currentUser.permissions.panel_settings);
-                adminBtn.style.display = (canPanel && (!hasIos || !hasAndroid)) ? '' : 'none';
-            }
         }
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
@@ -6173,7 +5956,7 @@
                 if (res.data.supportedLanguages && window.applySupportedLanguages) window.applySupportedLanguages(res.data.supportedLanguages, res.data.defaultLanguage);
                 return;
             }
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null || data.showFooter !== undefined || data.footerStyle != null)) applyBranding(data); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginLogoUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null || data.showFooter !== undefined || data.footerStyle != null)) applyBranding(data); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/visibility').then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage); }).catch(function() {});
         }
@@ -6211,11 +5994,10 @@
             set('panelSettingSiteName', d.siteName);
             set('panelSettingLogoUrl', d.logoUrl);
             set('panelSettingFaviconUrl', d.faviconUrl);
+            set('panelSettingLoginLogoUrl', d.loginLogoUrl);
             set('panelSettingLoginTitle', d.loginTitle);
             set('panelSettingPageTitle', d.pageTitle);
             set('panelSettingFooterText', d.footerText);
-            set('panelSettingIosAppUrl', d.iosAppUrl);
-            set('panelSettingAndroidAppUrl', d.androidAppUrl);
             const footerStyleEl = document.getElementById('panelSettingFooterStyle');
             if (footerStyleEl) footerStyleEl.value = (d.footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(d.footerStyle) >= 0) ? d.footerStyle : 'accent';
             const hideFooterEl = document.getElementById('panelSettingHideFooter');
@@ -6303,8 +6085,10 @@
             }
             previewPanelLogo(d.logoUrl || '');
             previewPanelFavicon(d.faviconUrl || '');
+            previewPanelLoginLogo(d.loginLogoUrl || '');
             updatePanelSettingsHeaderBranding(d.logoUrl || '', d.faviconUrl || '');
             updatePanelLivePreview();
+            initPanelBrandingFileUploads();
             loadCompanyEmails();
             loadCompanyEmailUserSelect();
             if (typeof initCompanyEmailsHandlers === 'function') initCompanyEmailsHandlers();
@@ -6405,61 +6189,6 @@
         function clearPanelSettingsChanged() {
             const badge = document.getElementById('panelSettingsUnsavedBadge');
             if (badge) badge.style.display = 'none';
-        }
-        function panelPickMobileBuildFile(platform) {
-            var accept = platform === 'android' ? '.apk,application/vnd.android.package-archive' : '.ipa';
-            var inp = document.createElement('input');
-            inp.type = 'file';
-            inp.accept = accept;
-            inp.style.cssText = 'position:fixed;left:-9999px;width:0;height:0;opacity:0;pointer-events:none';
-            inp.onchange = function () {
-                if (!inp.files || !inp.files[0]) {
-                    if (inp.parentNode) inp.parentNode.removeChild(inp);
-                    return;
-                }
-                var f = inp.files[0];
-                if (inp.parentNode) inp.parentNode.removeChild(inp);
-                uploadPanelMobileBuild(f, platform);
-            };
-            document.body.appendChild(inp);
-            inp.click();
-        }
-        async function uploadPanelMobileBuild(file, platform) {
-            if (!file || !platform) return;
-            var name = (file.name || '').toLowerCase();
-            if (platform === 'android' && !name.endsWith('.apk')) {
-                toast(typeof t === 'function' ? t('panel_mobile_build_bad_ext') : 'Invalid file', true);
-                return;
-            }
-            if (platform === 'ios' && !name.endsWith('.ipa')) {
-                toast(typeof t === 'function' ? t('panel_mobile_build_bad_ext') : 'Invalid file', true);
-                return;
-            }
-            var formData = new FormData();
-            formData.append('file', file);
-            try {
-                var r = await fetch((typeof API !== 'undefined' && API ? API : '') + '/api/upload/mobile-build', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
-                var data = await r.json().catch(function () { return {}; });
-                if (!r.ok) {
-                    toast((data && data.error) || (typeof t === 'function' ? t('err_generic') : 'Error'), true);
-                    return;
-                }
-                if (!data.url) {
-                    toast(typeof t === 'function' ? t('err_generic') : 'Error', true);
-                    return;
-                }
-                var base = (typeof window !== 'undefined' && window.location && window.location.origin) ? String(window.location.origin).replace(/\/$/, '') : '';
-                var fullUrl = /^https?:\/\//i.test(data.url) ? data.url : (base + data.url);
-                var id = platform === 'android' ? 'panelSettingAndroidAppUrl' : 'panelSettingIosAppUrl';
-                var el = document.getElementById(id);
-                if (el) {
-                    el.value = fullUrl;
-                    markPanelSettingsChanged();
-                }
-                toast(typeof t === 'function' ? t('panel_mobile_build_uploaded') : 'Uploaded — save settings');
-            } catch (e) {
-                toast(typeof t === 'function' ? t('err_generic') : 'Error', true);
-            }
         }
         function initPanelSettingsTabs() {
             const tabs = document.querySelectorAll('.panel-settings-tab');
@@ -6642,6 +6371,8 @@
             const hideFooter = document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked;
             const logoUrl = (document.getElementById('panelSettingLogoUrl') && document.getElementById('panelSettingLogoUrl').value.trim()) || '';
             const faviconUrl = (document.getElementById('panelSettingFaviconUrl') && document.getElementById('panelSettingFaviconUrl').value.trim()) || '';
+            const loginLogoOnly = (document.getElementById('panelSettingLoginLogoUrl') && document.getElementById('panelSettingLoginLogoUrl').value.trim()) || '';
+            const loginPreviewSrc = loginLogoOnly || logoUrl;
             const titleEl = document.getElementById('panelPreviewPageTitle');
             const siteNameEl = document.getElementById('panelPreviewSiteName');
             const logoEl = document.getElementById('panelPreviewLogo');
@@ -6655,6 +6386,19 @@
             if (footerEl) footerEl.classList.toggle('hidden', !!hideFooter);
             if (logoEl) { if (logoUrl) { logoEl.src = logoUrl; logoEl.style.display = ''; if (logoPlaceholder) logoPlaceholder.style.display = 'none'; } else { logoEl.removeAttribute('src'); logoEl.style.display = 'none'; if (logoPlaceholder) logoPlaceholder.style.display = ''; } }
             if (faviconEl) { if (faviconUrl) { faviconEl.src = faviconUrl; faviconEl.style.display = ''; } else { faviconEl.removeAttribute('src'); faviconEl.style.display = 'none'; } }
+            const loginLogoEl = document.getElementById('panelPreviewLoginLogo');
+            const loginLogoPh = document.getElementById('panelPreviewLoginLogoPlaceholder');
+            if (loginLogoEl) {
+                if (loginPreviewSrc) {
+                    loginLogoEl.src = loginPreviewSrc;
+                    loginLogoEl.style.display = '';
+                    if (loginLogoPh) loginLogoPh.style.display = 'none';
+                } else {
+                    loginLogoEl.removeAttribute('src');
+                    loginLogoEl.style.display = 'none';
+                    if (loginLogoPh) loginLogoPh.style.display = '';
+                }
+            }
             updatePanelSettingsHeaderBranding(logoUrl, faviconUrl);
         }
         function updatePanelSettingsHeaderBranding(logoUrl, faviconUrl) {
@@ -6712,6 +6456,47 @@
             url = (url || '').trim();
             if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = ''; img.onerror = function() { img.style.display = 'none'; }; } else { wrap.style.display = 'none'; }
         }
+        function previewPanelLoginLogo(url) {
+            const wrap = document.getElementById('panelLoginLogoPreview');
+            const img = document.getElementById('panelLoginLogoPreviewImg');
+            if (!wrap || !img) return;
+            url = (url || '').trim();
+            if (url) { wrap.style.display = 'block'; img.src = url; img.style.display = ''; img.onerror = function() { img.style.display = 'none'; }; } else { wrap.style.display = 'none'; }
+        }
+        function panelPickBrandingUpload(kind) {
+            const el = document.getElementById('panelBrandingFile' + kind);
+            if (el) el.click();
+        }
+        let panelBrandingUploadBound = false;
+        function initPanelBrandingFileUploads() {
+            if (panelBrandingUploadBound) return;
+            const pairs = [
+                { fileId: 'panelBrandingFileLogo', urlId: 'panelSettingLogoUrl', preview: function(u) { previewPanelLogo(u); } },
+                { fileId: 'panelBrandingFileFavicon', urlId: 'panelSettingFaviconUrl', preview: function(u) { previewPanelFavicon(u); } },
+                { fileId: 'panelBrandingFileLoginLogo', urlId: 'panelSettingLoginLogoUrl', preview: function(u) { previewPanelLoginLogo(u); } }
+            ];
+            pairs.forEach(function(p) {
+                const fi = document.getElementById(p.fileId);
+                if (!fi) return;
+                fi.addEventListener('change', async function() {
+                    if (!fi.files || !fi.files[0]) return;
+                    const formData = new FormData();
+                    formData.append('file', fi.files[0]);
+                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                    const data = await r.json().catch(function() { return {}; });
+                    if (data.url) {
+                        const urlEl = document.getElementById(p.urlId);
+                        if (urlEl) urlEl.value = data.url;
+                        p.preview(data.url);
+                        updatePanelLivePreview();
+                        markPanelSettingsChanged();
+                        toast(LANG === 'fa' ? 'فایل بارگذاری شد — در صورت نیاز «ذخیره» را بزنید.' : 'Uploaded — save settings if needed.');
+                    } else toast((data.error) || t('err_generic'), true);
+                    fi.value = '';
+                });
+            });
+            panelBrandingUploadBound = true;
+        }
         async function savePanelSettings() {
             const btn = document.getElementById('panelSettingsSaveBtn');
             const btnFooter = document.getElementById('panelSettingsSaveBtnFooter');
@@ -6729,11 +6514,10 @@
                 siteName: get('panelSettingSiteName'),
                 logoUrl: get('panelSettingLogoUrl'),
                 faviconUrl: get('panelSettingFaviconUrl'),
+                loginLogoUrl: get('panelSettingLoginLogoUrl'),
                 loginTitle: get('panelSettingLoginTitle'),
                 pageTitle: get('panelSettingPageTitle'),
                 footerText: get('panelSettingFooterText'),
-                iosAppUrl: get('panelSettingIosAppUrl'),
-                androidAppUrl: get('panelSettingAndroidAppUrl'),
                 showFooter: !(document.getElementById('panelSettingHideFooter') && document.getElementById('panelSettingHideFooter').checked),
                 footerStyle: (function() { const el = document.getElementById('panelSettingFooterStyle'); const v = el ? el.value : 'accent'; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : 'accent'; })(),
                 primaryColor: (function() { const el = document.getElementById('panelSettingPrimaryColor'); const v = el ? el.value : ''; return /^#[0-9a-fA-F]{6}$/.test(v) ? v : null; })(),
@@ -10263,12 +10047,13 @@
             window.showPage = showPage;
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
-            window.panelPickMobileBuildFile = panelPickMobileBuildFile;
             window.sendPanelTestEmail = sendPanelTestEmail;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
+            window.previewPanelLoginLogo = previewPanelLoginLogo;
+            window.panelPickBrandingUpload = panelPickBrandingUpload;
             window.updatePanelLivePreview = updatePanelLivePreview;
             window.userPermsSelectAll = userPermsSelectAll;
             window.userPermsSelectGroup = userPermsSelectGroup;
@@ -10564,12 +10349,13 @@
             };
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
-            window.panelPickMobileBuildFile = panelPickMobileBuildFile;
             window.sendPanelTestEmail = sendPanelTestEmail;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
             window.previewPanelFavicon = previewPanelFavicon;
+            window.previewPanelLoginLogo = previewPanelLoginLogo;
+            window.panelPickBrandingUpload = panelPickBrandingUpload;
             window.updatePanelLivePreview = updatePanelLivePreview;
             window.userPermsSelectAll = userPermsSelectAll;
             window.userPermsSelectGroup = userPermsSelectGroup;
@@ -10580,9 +10366,6 @@
             window.selectThreadInPopup = selectThreadInPopup;
             window.filterInternalThreads = filterInternalThreads;
             window.toggleInternalChatFloating = toggleInternalChatFloating;
-            window.reapplyFxguardPublicBranding = function() {
-                if (window.FXGUARD_PUBLIC_SITE) applyBranding({});
-            };
         })();
 
         /** مقداردهی بعد از تأیید /api/auth/me — ناو، تنظیمات، رویدادها، سوکت، نرخ، حضور، TOTP. قابل استخراج به ماژول auth. */
@@ -10610,8 +10393,8 @@
                 currentUser = u;
                 if (u && u.email) {
                     setUserDisplay(u);
-                    renderDemoBanner();
                     document.documentElement.classList.add('auth-has-token');
+                    document.getElementById('loginBox').style.display = 'none';
                     document.getElementById('app').classList.add('show');
                     try {
                         await runAfterAuthReady();
@@ -10621,5 +10404,5 @@
                 } else { logout(); }
             }).catch(function() { logout(); });
         } else {
-            window.location.replace('/login');
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginLogoUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
         }

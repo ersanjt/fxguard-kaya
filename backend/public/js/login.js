@@ -558,9 +558,10 @@
                 if (nameEl && d.siteName) nameEl.textContent = d.siteName;
 
                 var logoWrap = document.getElementById('lpLogoWrap');
-                if (logoWrap && d.logoUrl) {
+                var loginLogoSrc = (d.loginLogoUrl && String(d.loginLogoUrl).trim()) ? d.loginLogoUrl : d.logoUrl;
+                if (logoWrap && loginLogoSrc) {
                     var img = document.createElement('img');
-                    img.src = d.logoUrl; img.alt = 'logo';
+                    img.src = loginLogoSrc; img.alt = 'logo';
                     logoWrap.innerHTML = '';
                     logoWrap.appendChild(img);
                 }

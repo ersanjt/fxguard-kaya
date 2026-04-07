@@ -23,6 +23,11 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'آدرس فاویکون (URL)'
         },
+        loginLogoUrl: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'لوگوی مخصوص صفحه ورود؛ خالی = همان لوگوی پنل'
+        },
         loginTitle: {
             type: DataTypes.STRING(255),
             allowNull: true,

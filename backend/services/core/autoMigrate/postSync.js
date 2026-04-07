@@ -90,6 +90,7 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
             ['sidebarOrder', { type: DataTypes.TEXT, allowNull: true }],
             ['iosAppUrl', { type: DataTypes.TEXT, allowNull: true }],
             ['androidAppUrl', { type: DataTypes.TEXT, allowNull: true }],
+            ['loginLogoUrl', { type: DataTypes.TEXT, allowNull: true }],
         ];
         for (const [name, def] of newThemeCols) {
             if (desc && desc[name] === undefined) {

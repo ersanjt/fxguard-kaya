@@ -9,6 +9,7 @@ const { requireSection } = require('../middleware/auth');
 const ALLOWED_MIME_TYPES = new Set([
     // تصاویر
     'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml',
+    'image/x-icon', 'image/vnd.microsoft.icon',
     // ویدیو
     'video/mp4', 'video/webm', 'video/ogg', 'video/quicktime',
     // صوت
@@ -25,6 +26,8 @@ const ALLOWED_MIME_TYPES = new Set([
     // فشرده
     'application/zip', 'application/x-rar-compressed', 'application/x-7z-compressed',
 ]);
+
+const IMAGE_LIKE_EXT = new Set(['.ico', '.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg']);
 
 const BLOCKED_EXTENSIONS = new Set([
     '.php', '.php3', '.php4', '.php5', '.phtml',
@@ -67,7 +70,12 @@ const upload = multer({
         }
         // MIME type can include codec params like "audio/webm;codecs=opus" — check base type
         const baseMime = (file.mimetype || '').split(';')[0].trim().toLowerCase();
-        if (!ALLOWED_MIME_TYPES.has(baseMime) && !ALLOWED_MIME_TYPES.has(file.mimetype)) {
+        const rawMime = (file.mimetype || '').trim().toLowerCase();
+        if (
+            !ALLOWED_MIME_TYPES.has(baseMime) &&
+            !ALLOWED_MIME_TYPES.has(file.mimetype) &&
+            !(baseMime === 'application/octet-stream' && IMAGE_LIKE_EXT.has(ext))
+        ) {
             return cb(new Error(`نوع فایل پشتیبانی نمی‌شود: ${file.mimetype}`));
         }
         cb(null, true);
