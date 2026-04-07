@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { getPermissions, canAccess, canManageUsers, canManageTickets, canDeleteCustomer, canDeleteUser, canManageConversations, canViewArchivedConversations } = require('../lib/permissions');
+const { isDemoModeEnabled, getDemoUserPayload } = require('../lib/demoAuth');
 
 const { COOKIE_NAME } = require('../lib/authCookie');
 
@@ -17,6 +18,21 @@ async function authMiddleware(req, res, next) {
     }
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded && decoded.isDemo && isDemoModeEnabled()) {
+            const demoUser = getDemoUserPayload();
+            req.user = demoUser;
+            req.userId = demoUser.id;
+            req.isOwner = false;
+            req.permissions = demoUser.permissions || {};
+            req.canAccess = (section) => canAccess(demoUser, section);
+            req.canManageUsers = () => false;
+            req.canManageTickets = () => false;
+            req.canDeleteCustomer = () => false;
+            req.canDeleteUser = () => false;
+            req.canManageConversations = () => false;
+            req.canViewArchivedConversations = () => false;
+            return next();
+        }
         const user = await User.findByPk(decoded.id, {
             include: [
                 { association: 'branch', required: false },

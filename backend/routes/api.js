@@ -13,6 +13,7 @@ const { createContactRouter } = require('./contact');
 const { createGatewayRouter } = require('./gateway');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
+const { isDemoModeEnabled, getDemoUsername } = require('../lib/demoAuth');
 
 const authRoutes = require('./auth');
 const userRoutes = require('./users');
@@ -43,9 +44,14 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         const supportUrl = process.env.SUPPORT_URL || null;
         const supportEmail = process.env.SUPPORT_EMAIL || null;
         const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : null);
+        const demoMode = isDemoModeEnabled();
         res.json({
             timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
             supportUrl: supportLink,
+            demoMode,
+            demoUsername: demoMode ? getDemoUsername() : null,
+            demoPassword: demoMode ? (process.env.DEMO_PASSWORD || '123456') : null,
+            salesUrl: process.env.SALES_URL || 'https://fxguard.io',
         });
     });
 

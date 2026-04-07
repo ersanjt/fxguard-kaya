@@ -16,6 +16,7 @@ const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
+const { isDemoModeEnabled, isDemoCredentialMatch, getDemoUserPayload } = require('../lib/demoAuth');
 
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
 const TOTP_TEMP_EXPIRY = '5m';
@@ -92,6 +93,28 @@ router.post('/login', async (req, res, next) => {
         const password = req.body.password;
         if (!identifier || !password) {
             return sendJson(400, { error: 'ایمیل/نام کاربری و رمز عبور الزامی است' });
+        }
+        if (isDemoModeEnabled() && isDemoCredentialMatch(identifier, password)) {
+            const demoUser = getDemoUserPayload();
+            const token = jwt.sign(
+                {
+                    id: demoUser.id,
+                    email: demoUser.email,
+                    isDemo: true
+                },
+                process.env.JWT_SECRET,
+                JWT_OPTIONS
+            );
+            setAuthCookie(res, token);
+            return sendJson(200, {
+                token,
+                user: {
+                    ...demoUser,
+                    canDeleteCustomer: false,
+                    canDeleteUser: false,
+                    canManageTickets: false
+                }
+            });
         }
         if (identifier.length > 255) return sendJson(400, { error: 'ایمیل یا نام کاربری نامعتبر است' });
         let user = null;
@@ -439,6 +462,10 @@ router.post('/totp/disable', authMiddleware, async (req, res, next) => {
 
 router.post('/logout', authMiddleware, async (req, res, next) => {
     try {
+        if (req.user && req.user.isDemo) {
+            clearAuthCookie(res);
+            return res.json({ ok: true, message: 'خروج انجام شد' });
+        }
         clearAuthCookie(res);
         const user = req.user;
         await user.update({ status: 'offline' });

@@ -204,6 +204,17 @@ html[dir="rtl"] .lp-step { animation-name: stepInRtl; }
     font-size: 1.2rem; font-weight: 700; color: var(--lp-text);
     margin-bottom: 6px;
 }
+.lp-demo-box {
+    margin: 12px 0 18px;
+    padding: 12px 14px;
+    border: 1px solid rgba(16,185,129,0.35);
+    background: rgba(16,185,129,0.1);
+    border-radius: 12px;
+}
+.lp-demo-title { font-size: 0.9rem; font-weight: 700; color: #d1fae5; margin-bottom: 6px; }
+.lp-demo-text { font-size: 0.84rem; color: #a7f3d0; line-height: 1.5; margin-bottom: 8px; }
+.lp-demo-link { color: #34d399; font-size: 0.84rem; text-decoration: none; font-weight: 600; }
+.lp-demo-link:hover { text-decoration: underline; }
 .lp-step-sub {
     font-size: 0.855rem; color: var(--lp-text2); line-height: 1.6;
     margin-bottom: 24px;

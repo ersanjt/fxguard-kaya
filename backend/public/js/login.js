@@ -55,6 +55,9 @@
             reset_fail:           'خطا در تغییر رمز عبور.',
             cant_signin:          'نمی‌توانید وارد شوید؟',
             contact_support:      'با پشتیبانی تماس بگیرید',
+            demo_title:           'نسخه دمو',
+            demo_credentials:     'نام کاربری: {username} | رمز عبور: {password}',
+            demo_buy:             'مشاهده پلن‌ها و خرید',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'ترکی',
         },
         en: {
@@ -105,6 +108,9 @@
             reset_fail:           'Failed to reset password.',
             cant_signin:          "Can't sign in?",
             contact_support:      'Contact support',
+            demo_title:           'Demo Access',
+            demo_credentials:     'Username: {username} | Password: {password}',
+            demo_buy:             'View plans and purchase',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Turkish',
         },
         tr: {
@@ -155,6 +161,9 @@
             reset_fail:           'Şifre sıfırlama başarısız.',
             cant_signin:          'Giriş yapamıyor musunuz?',
             contact_support:      'Destekle iletişime geçin',
+            demo_title:           'Demo Erişimi',
+            demo_credentials:     'Kullanıcı adı: {username} | Şifre: {password}',
+            demo_buy:             'Planları incele ve satın al',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Türkçe',
         }
     };
@@ -165,6 +174,30 @@
 
     function t(k) {
         return (I18N[lang] && I18N[lang][k]) || (I18N['fa'] && I18N['fa'][k]) || k;
+    }
+    var DEMO_INFO = { enabled: false, username: 'demo', password: '123456', salesUrl: 'https://fxguard.io' };
+
+    function renderDemoBox() {
+        var box = document.getElementById('lpDemoBox');
+        if (!box) return;
+        if (!DEMO_INFO.enabled) {
+            box.style.display = 'none';
+            return;
+        }
+        box.style.display = '';
+        var titleEl = box.querySelector('.lp-demo-title');
+        if (titleEl) titleEl.textContent = t('demo_title');
+        var textEl = document.getElementById('lpDemoText');
+        if (textEl) {
+            textEl.textContent = t('demo_credentials')
+                .replace('{username}', DEMO_INFO.username || 'demo')
+                .replace('{password}', DEMO_INFO.password || '123456');
+        }
+        var buyLink = document.getElementById('lpDemoBuyLink');
+        if (buyLink) {
+            buyLink.textContent = t('demo_buy');
+            buyLink.href = DEMO_INFO.salesUrl || 'https://fxguard.io';
+        }
     }
 
     /* ── Apply Language ───────────────────────────── */
@@ -198,6 +231,7 @@
             var v = t(el.getAttribute('data-i18n-ph'));
             if (v) el.placeholder = v;
         });
+        renderDemoBox();
     }
 
     /* ── Step Management ─────────────────────────── */
@@ -500,6 +534,21 @@
             })
             .catch(function() {});
     }
+    function loadPublicConfig() {
+        fetch('/api/config')
+            .then(function(r) { return r.json().catch(function() { return {}; }); })
+            .then(function(c) {
+                if (!c) return;
+                DEMO_INFO.enabled = !!c.demoMode;
+                DEMO_INFO.username = c.demoUsername || 'demo';
+                DEMO_INFO.password = c.demoPassword || '123456';
+                DEMO_INFO.salesUrl = c.salesUrl || 'https://fxguard.io';
+                var supportLink = document.getElementById('lpSupportLink');
+                if (supportLink && c.supportUrl) supportLink.href = c.supportUrl;
+                renderDemoBox();
+            })
+            .catch(function() {});
+    }
 
     /* ── Check URL for reset token ───────────────── */
     function checkResetUrl() {
@@ -588,6 +637,7 @@
 
         /* Load branding */
         loadBranding();
+        loadPublicConfig();
 
         /* Redirect if already logged in */
         checkExistingToken();

@@ -14,6 +14,7 @@
         let presenceInterval = null;
         let staffActivityInterval = null;
         let socket = null;
+        let DEMO_CONFIG = { enabled: false, salesUrl: 'https://fxguard.io' };
         let loadConversationsDebounceTimer = null;
         function debouncedLoadConversations(ms) {
             ms = ms || 400;
@@ -34,6 +35,10 @@
         });
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
+            DEMO_CONFIG = {
+                enabled: !!(c && c.demoMode),
+                salesUrl: (c && c.salesUrl) || 'https://fxguard.io'
+            };
             if (c && c.supportUrl) {
                 window.SUPPORT_URL = c.supportUrl;
                 const setSupportLink = function(wrapId, linkId) {
@@ -48,7 +53,27 @@
                 setSupportLink('loginSupportWrap', 'loginSupportLink');
                 setSupportLink('loginSupportWrapTotp', 'loginSupportLinkTotp');
             }
+            renderDemoBanner();
         }).catch(function(){});
+        function renderDemoBanner() {
+            const banner = document.getElementById('demoBanner');
+            if (!banner) return;
+            const isDemoUser = !!(currentUser && currentUser.isDemo);
+            if (!(DEMO_CONFIG.enabled && isDemoUser)) {
+                banner.style.display = 'none';
+                return;
+            }
+            const text = document.getElementById('demoBannerText');
+            if (text) text.textContent = (LANG === 'fa')
+                ? 'نسخه نمایشی فعال است؛ تغییرات ذخیره نمی‌شود.'
+                : (LANG === 'tr' ? 'Demo sürümü aktif; değişiklikler kaydedilmez.' : 'Demo mode is active; changes are not saved.');
+            const buyLink = document.getElementById('demoBannerBuyLink');
+            if (buyLink) {
+                buyLink.href = DEMO_CONFIG.salesUrl || 'https://fxguard.io';
+                buyLink.textContent = (LANG === 'fa') ? 'خرید پلن' : (LANG === 'tr' ? 'Plan satın al' : 'Buy plan');
+            }
+            banner.style.display = 'flex';
+        }
         function updateNavBadges(stats) {
             if (stats) {
                 window.navBadgeCounts.conversations = (stats.unreadConversations || 0);
@@ -10521,6 +10546,7 @@
                 currentUser = u;
                 if (u && u.email) {
                     setUserDisplay(u);
+                    renderDemoBanner();
                     document.documentElement.classList.add('auth-has-token');
                     document.getElementById('app').classList.add('show');
                     try {

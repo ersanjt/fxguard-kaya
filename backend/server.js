@@ -36,6 +36,7 @@ const errorHandler = require('./middleware/errorHandler');
 const { sendAdminSecurityAlert } = require('./services/adminAlertService');
 const { assertWebhookSecretBeforeBody } = require('./middleware/webhookAuth');
 const { notifySystemEvent } = require('./services/systemEventNotifier');
+const { isDemoModeEnabled } = require('./lib/demoAuth');
 
 // ==================== Express Setup ====================
 const app = express();
@@ -209,6 +210,31 @@ app.use('/api/', (req, res, next) => {
     if (p.endsWith('/auth/login') || p.endsWith('/auth/totp/verify-login')) return loginLimiter(req, res, next);
     if (p.endsWith('/auth/forgot-password') || p.endsWith('/auth/reset-password')) return passwordResetLimiter(req, res, next);
     return limiter(req, res, next);
+});
+
+// Demo safety: prevents any write operation from demo tokens.
+app.use('/api', (req, res, next) => {
+    if (!isDemoModeEnabled()) return next();
+    const method = (req.method || 'GET').toUpperCase();
+    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return next();
+    if (req.path && (req.path.endsWith('/auth/login') || req.path.endsWith('/auth/logout'))) return next();
+    try {
+        let token = null;
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            token = authHeader.split(' ')[1];
+        } else if (req.cookies && req.cookies.crm_token) {
+            token = req.cookies.crm_token;
+        }
+        if (!token) return next();
+        const decoded = require('jsonwebtoken').verify(token, process.env.JWT_SECRET);
+        if (decoded && decoded.isDemo) {
+            return res.status(403).json({
+                error: 'حساب دمو فقط نمایشی است و امکان تغییر داده‌ها را ندارد'
+            });
+        }
+    } catch (_) {}
+    return next();
 });
 
 // ==================== Socket.IO ====================
