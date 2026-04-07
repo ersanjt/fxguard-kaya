@@ -28,7 +28,12 @@ window.t = function (k) {
     if (LANG === 'fa' && window.__I18N_FA && window.__I18N_FA[k] !== undefined) return window.__I18N_FA[k];
     if (LANG === 'en' && window.__I18N_EN && window.__I18N_EN[k] !== undefined) return window.__I18N_EN[k];
     if (LANG === 'tr' && window.__I18N_TR && window.__I18N_TR[k] !== undefined) return window.__I18N_TR[k];
-    return (I18N[LANG] && I18N[LANG][k]) || (I18N.fa && I18N.fa[k]) || (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || k;
+    var cur = I18N[LANG] && I18N[LANG][k];
+    if (cur !== undefined) return cur;
+    if (isFxguardPublicHost()) {
+        return (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || (window.__I18N_EN && window.__I18N_EN[k]) || (window.__I18N_TR && window.__I18N_TR[k]) || k;
+    }
+    return (I18N.fa && I18N.fa[k]) || (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || k;
 };
 
 window.setLang = function (l) {

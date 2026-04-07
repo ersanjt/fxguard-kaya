@@ -26,6 +26,7 @@
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
+        window.FXGUARD_PUBLIC_SITE = false;
         fetch((API || '') + '/api/panel-settings/public/languages').then(function(r){ return r.json(); }).then(function(data){
             if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage);
             else if (typeof setLang === 'function') setLang(LANG);
@@ -34,6 +35,18 @@
         });
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
+            try {
+                window.FXGUARD_PUBLIC_SITE = !!((c && c.fxguardPublicSite) || /^app\.fxguard\.io$/i.test(window.location.hostname || ''));
+            } catch (e) {
+                window.FXGUARD_PUBLIC_SITE = !!(c && c.fxguardPublicSite);
+            }
+            if (window.FXGUARD_PUBLIC_SITE) {
+                document.body.classList.add('fxguard-public-demo');
+                window.SUPPORTED_LANGUAGES = ['en', 'tr'];
+                if (typeof window.applySupportedLanguages === 'function') window.applySupportedLanguages(['en', 'tr'], 'en');
+            } else {
+                document.body.classList.remove('fxguard-public-demo');
+            }
             if (c && c.supportUrl) {
                 window.SUPPORT_URL = c.supportUrl;
                 const setSupportLink = function(wrapId, linkId) {
@@ -47,6 +60,17 @@
                 };
                 setSupportLink('loginSupportWrap', 'loginSupportLink');
                 setSupportLink('loginSupportWrapTotp', 'loginSupportLinkTotp');
+            }
+            if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) {
+                const tick = document.getElementById('priceTicker');
+                if (tick) {
+                    tick.style.display = 'none';
+                    tick.setAttribute('dir', 'ltr');
+                }
+                if (ratesInterval) clearInterval(ratesInterval);
+                if (tickerTimeInterval) clearInterval(tickerTimeInterval);
+                ratesInterval = tickerTimeInterval = null;
+                if (typeof updateBottomBarVisibility === 'function') updateBottomBarVisibility();
             }
         }).catch(function(){});
         function updateNavBadges(stats) {
@@ -94,9 +118,12 @@
             });
             const perms = (currentUser && currentUser.permissions) || {};
             const hidden = HIDDEN_SECTIONS || [];
+            const pubDemoTabs = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost() && currentUser && currentUser.isDemo);
             document.querySelectorAll('.mobile-tab-bar .mobile-tab-item[data-section]').forEach(function(item) {
                 const sec = item.getAttribute('data-section');
-                const visible = (sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] === true && hidden.indexOf(sec) < 0);
+                const visible = pubDemoTabs
+                    ? (hidden.indexOf(sec) < 0)
+                    : ((sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] === true && hidden.indexOf(sec) < 0));
                 item.style.display = visible ? '' : 'none';
             });
         }
@@ -128,13 +155,14 @@
             if (isNaN(date.getTime())) return '';
             const now = new Date();
             const sec = Math.floor((now - date) / 1000);
-            if (sec < 60) return (LANG === 'fa' ? 'همین الان' : LANG === 'tr' ? 'Az önce' : 'Just now');
+            const pub = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
+            if (sec < 60) return pub ? (LANG === 'tr' ? 'Az önce' : 'Just now') : (LANG === 'fa' ? 'همین الان' : LANG === 'tr' ? 'Az önce' : 'Just now');
             const min = Math.floor(sec / 60);
-            if (min < 60) return min + ' ' + (LANG === 'fa' ? 'دقیقه پیش' : LANG === 'tr' ? 'dk önce' : 'min ago');
+            if (min < 60) return min + ' ' + (pub ? (LANG === 'tr' ? 'dk önce' : 'min ago') : (LANG === 'fa' ? 'دقیقه پیش' : LANG === 'tr' ? 'dk önce' : 'min ago'));
             const hr = Math.floor(min / 60);
-            if (hr < 24) return hr + ' ' + (LANG === 'fa' ? 'ساعت پیش' : LANG === 'tr' ? 'saat önce' : 'hr ago');
+            if (hr < 24) return hr + ' ' + (pub ? (LANG === 'tr' ? 'saat önce' : 'hr ago') : (LANG === 'fa' ? 'ساعت پیش' : LANG === 'tr' ? 'saat önce' : 'hr ago'));
             const day = Math.floor(hr / 24);
-            if (day < 7) return day + ' ' + (LANG === 'fa' ? 'روز پیش' : LANG === 'tr' ? 'gün önce' : 'days ago');
+            if (day < 7) return day + ' ' + (pub ? (LANG === 'tr' ? 'gün önce' : 'days ago') : (LANG === 'fa' ? 'روز پیش' : LANG === 'tr' ? 'gün önce' : 'days ago'));
             return fmtTZ(d, 'date');
         }
         // فارسی: وقت تهران ایران و تاریخ شمسی. انگلیسی: وقت امارات و تقویم میلادی. ترکی: وقت استانبول ترکیه و تقویم میلادی.
@@ -142,8 +170,9 @@
             if (!d) return '';
             const date = d instanceof Date ? d : new Date(d);
             if (isNaN(date.getTime())) return '';
-            const tz = (LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai');
-            const locale = (LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB');
+            const pub = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
+            const tz = pub ? (LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai') : (LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai');
+            const locale = pub ? (LANG === 'tr' ? 'tr-TR' : 'en-GB') : (LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB');
             const base = { timeZone: tz };
             if (typeof opts === 'string') {
                 if (opts === 'time') return new Intl.DateTimeFormat(locale, Object.assign({}, base, { hour: '2-digit', minute: '2-digit' })).format(date);
@@ -154,11 +183,18 @@
         }
 
         function formatPrice(val) {
-            if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatPrice === 'function') return window.CRM.Utils.formatPrice(val);
+            if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatPrice === 'function') {
+                const u = window.CRM.Utils.formatPrice(val);
+                if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) return String(u).replace(/[۰-۹]/g, function(ch) { return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(ch)); });
+                return u;
+            }
             if (val == null || val === '' || val === '\u2014' || (typeof val === 'string' && val.trim() === '')) return '\u2014';
             const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
             if (isNaN(num)) return '\u2014';
             const n = String(Math.round(num)).replace(/[^\d]/g, '');
+            if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) {
+                return n.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            }
             if (n.length > 3) {
                 let out = ''; for (let i = n.length - 1, c = 0; i >= 0; i--, c++) { if (c && c % 3 === 0) out = ',' + out; out = n[i] + out; }
                 return out.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
@@ -167,11 +203,18 @@
         }
 
         function formatChange(ch) {
-            if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatChange === 'function') return window.CRM.Utils.formatChange(ch);
+            if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatChange === 'function') {
+                const u = window.CRM.Utils.formatChange(ch);
+                if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) return String(u).replace(/[۰-۹]/g, function(x) { return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(x)); });
+                return u;
+            }
             if (ch == null || ch === '') return '';
             const num = typeof ch === 'number' ? ch : parseFloat(String(ch));
             if (isNaN(num) || num === 0) return '';
             const s = Math.abs(num) >= 1000 ? Math.abs(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : String(Math.abs(num));
+            if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) {
+                return (num > 0 ? '+' : '−') + s;
+            }
             const fa = '۰۱۲۳۴۵۶۷۸۹';
             const out = s.replace(/\d/g, function(d) { return fa[d]; });
             return (num > 0 ? '+' : '−') + out;
@@ -233,13 +276,21 @@
         function formatRatesLastUpdated(updatedAtStr, timestampSec) {
             const d = updatedAtStr ? new Date(updatedAtStr) : (timestampSec ? new Date(timestampSec * 1000) : new Date());
             if (isNaN(d.getTime())) return '';
-            const locale = LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB';
-            const tz = LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai';
+            const pub = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
+            const locale = pub ? (LANG === 'tr' ? 'tr-TR' : 'en-GB') : (LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB');
+            const tz = pub ? (LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai') : (LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai');
             return new Intl.DateTimeFormat(locale, { timeZone: tz, dateStyle: 'short', timeStyle: 'short' }).format(d);
         }
         async function fetchRates(showRefreshSpinner) {
             if (!token) return;
             const tickerEl = document.getElementById('priceTicker');
+            if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) {
+                if (tickerEl) tickerEl.style.display = 'none';
+                const innerElPub = document.getElementById('ratesMarqueeInner');
+                if (innerElPub) innerElPub.innerHTML = '';
+                if (typeof updateBottomBarVisibility === 'function') updateBottomBarVisibility();
+                return;
+            }
             if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf('rates') >= 0) {
                 if (tickerEl) tickerEl.style.display = 'none';
                 return;
@@ -270,7 +321,8 @@
                     const chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
                     const chText = formatChange(ch);
                     const valStr = formatPrice(it.value);
-                    const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="تغییر">(' + escapeHtml(chText) + ')</span>' : '';
+                    const chAria = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) ? (LANG === 'tr' ? 'Değişim' : 'Change') : 'تغییر';
+                    const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="' + escapeHtml(chAria) + '">(' + escapeHtml(chText) + ')</span>' : '';
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
                 }).join('');
                 innerEl.innerHTML = itemsHtml;
@@ -344,9 +396,12 @@
             if (res.ok && res.data && res.data.points && res.data.points.length > 0) {
                 res.data.points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
             }
-            const currencyLabels = { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
+            const pubFx = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
+            const currencyLabels = pubFx
+                ? { usd: 'USD', eur: 'EUR', gbp: 'GBP', aed: 'AED', try: 'TRY', gold: 'Gold' }
+                : { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
             const label = currencyLabels[ratesChartCurrentCurrency] || rateLabel(ratesChartCurrentCurrency);
-            const unitLabel = t('currency_unit_toman') || 'تومان';
+            const unitLabel = t('currency_unit_toman') || (pubFx ? 'Toman' : 'تومان');
             if (ratesChartInstance) { ratesChartInstance.destroy(); ratesChartInstance = null; }
             if (values.length > 0) {
                 const ctx = canvas.getContext('2d');
@@ -406,7 +461,7 @@
                             y: {
                                 display: true,
                                 ticks: {
-                                    callback: function(v) { return typeof v === 'number' ? v.toLocaleString('fa-IR') : v; },
+                                    callback: function(v) { return typeof v === 'number' ? v.toLocaleString(pubFx ? 'en-US' : 'fa-IR') : v; },
                                     font: { size: 11 },
                                     color: 'rgba(139, 157, 195, 0.8)',
                                     maxTicksLimit: 8
@@ -434,12 +489,12 @@
                 if (summaryEl) summaryEl.innerHTML = '';
             } else {
                 if (statsRow) statsRow.innerHTML = '';
-                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'داده‌ای برای نمایش وجود ندارد. لطفاً بعداً تلاش کنید.' : LANG === 'tr' ? 'Gösterilecek veri yok. Lütfen daha sonra tekrar deneyin.' : 'No data to display. Please try again later.') + '</div>';
+                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (pubFx ? (LANG === 'tr' ? 'Gösterilecek veri yok. Lütfen daha sonra tekrar deneyin.' : 'No data to display. Please try again later.') : (LANG === 'fa' ? 'داده‌ای برای نمایش وجود ندارد. لطفاً بعداً تلاش کنید.' : LANG === 'tr' ? 'Gösterilecek veri yok. Lütfen daha sonra tekrar deneyin.' : 'No data to display. Please try again later.')) + '</div>';
             }
             } catch (err) {
                 if (loadingOverlay) loadingOverlay.classList.remove('visible');
                 if (refreshBtn) refreshBtn.classList.remove('loading');
-                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'خطا در بارگذاری نمودار. لطفاً دوباره تلاش کنید.' : 'Error loading chart. Please try again.') + '</div>';
+                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + ((typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) ? (LANG === 'tr' ? 'Grafik yüklenemedi. Lütfen tekrar deneyin.' : 'Error loading chart. Please try again.') : (LANG === 'fa' ? 'خطا در بارگذاری نمودار. لطفاً دوباره تلاش کنید.' : 'Error loading chart. Please try again.')) + '</div>';
                 console.error('loadRatesCharts error:', err);
             }
         }
@@ -457,6 +512,7 @@
                 '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.uaeLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.uae) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.hijri) + '</span></span>';
         }
         function startRatesInterval() {
+            if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) return;
             if (ratesInterval) clearInterval(ratesInterval);
             if (tickerTimeInterval) clearInterval(tickerTimeInterval);
             ratesInterval = null;
@@ -705,7 +761,16 @@
             else if (t === 'reports') { loadCurrentReport(); }
         }
         const currencySymbols = { USD: '$', EUR: '€', GBP: '£', DHS: 'د.إ', TRY: '₺', RUB: '₽', USDT: '₮', IRR: 'تومان', TMN: 'تومان' };
-        function formatMoney(n, curr) { const x = parseFloat(n) || 0; const sym = currencySymbols[curr] || curr || 'تومان'; return x.toLocaleString('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym; }
+        function formatMoney(n, curr) {
+            const x = parseFloat(n) || 0;
+            const pub = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
+            let sym = currencySymbols[curr] || curr || (pub ? 'Toman' : 'تومان');
+            if (pub) {
+                if (curr === 'IRR' || curr === 'TMN' || sym === 'تومان') sym = 'Toman';
+                if (sym === 'د.إ') sym = 'AED';
+            }
+            return x.toLocaleString(pub ? 'en-US' : 'fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym;
+        }
         function formatMoneyEn(n) { const x = parseFloat(n) || 0; return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         async function loadServicesSummary() {
             const [sumRes, cpRes] = await Promise.all([
@@ -5769,7 +5834,11 @@
             const perms = (currentUser && currentUser.permissions) || {};
             const role = (currentUser && currentUser.role) || '';
             const isOwnerOrAdmin = (role === 'owner' || role === 'admin');
-            const can = function(section) { return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
+            const pubDemoNav = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost() && currentUser && currentUser.isDemo);
+            const can = function(section) {
+                if (pubDemoNav) return true;
+                return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true);
+            };
             document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
                 const section = link.getAttribute('data-section');
                 link.style.display = can(section) ? '' : 'none';
@@ -5835,8 +5904,17 @@
                 bottomBar.classList.remove('has-mobile-tab');
             }
         }
-        function applyBranding(s) {
-            if (!s) return;
+        function getFxguardPublicBranding() {
+            if (LANG === 'tr') {
+                return { pageTitle: 'FXGuard | Panel', siteName: 'FXGuard', footerText: 'FXGuard — Demo', loginTitle: 'FXGuard Demo' };
+            }
+            return { pageTitle: 'FXGuard | Dashboard', siteName: 'FXGuard', footerText: 'FXGuard — Demo', loginTitle: 'FXGuard Demo' };
+        }
+        function applyBranding(raw) {
+            if (!raw) return;
+            window.__panelRawBranding = Object.assign({}, window.__panelRawBranding || {}, raw);
+            const pubFxguard = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
+            const s = pubFxguard ? Object.assign({}, window.__panelRawBranding, getFxguardPublicBranding()) : window.__panelRawBranding;
             const defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
             const defSite = (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
             const defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
@@ -5851,9 +5929,18 @@
             const headerLogoText = document.getElementById('headerLogoText');
             if (headerLogoText) headerLogoText.textContent = logoText;
             const headerLogo = document.getElementById('headerLogo');
-            if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
+            if (headerLogo) {
+                const backLbl = pubFxguard ? (LANG === 'tr' ? ' — Gösterge paneline dön' : ' — Back to dashboard') : (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard');
+                headerLogo.setAttribute('aria-label', logoText + backLbl);
+            }
             const footerBrand = document.getElementById('appFooterBrand');
             if (footerBrand) footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
+            if (pubFxguard) {
+                ['headerLogoText', 'appFooterBrand', 'loginTitle'].forEach(function(id) {
+                    const el = document.getElementById(id);
+                    if (el) el.removeAttribute('data-i18n');
+                });
+            }
             const appFooter = document.getElementById('appFooter');
             if (appFooter) {
                 appFooter.style.display = (s.showFooter === false) ? 'none' : '';
@@ -5898,6 +5985,10 @@
             document.body.style.fontWeight = fw;
             if (Array.isArray(s.sidebarOrder) && s.sidebarOrder.length > 0) applySidebarOrder(s.sidebarOrder);
         }
+        window.reapplyFxguardPublicBranding = function() {
+            if (typeof isFxguardPublicHost !== 'function' || !isFxguardPublicHost()) return;
+            applyBranding(Object.assign({}, window.__panelRawBranding || {}));
+        };
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
             if (!inner) return;
@@ -5907,15 +5998,16 @@
         }
         var HIDDEN_SECTIONS = [];
         function applyHiddenSections(hidden) {
-            HIDDEN_SECTIONS = Array.isArray(hidden) ? hidden : [];
+            const pubDemoHidden = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost() && currentUser && currentUser.isDemo);
+            HIDDEN_SECTIONS = pubDemoHidden ? [] : (Array.isArray(hidden) ? hidden : []);
             const perms = (currentUser && currentUser.permissions) || {};
             const can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
             const pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
                 const page = link.getAttribute('data-page');
                 const section = link.getAttribute('data-section') || pageToSection[page];
-                const inHidden = HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0);
-                const noPerm = section && !can(section);
+                const inHidden = !pubDemoHidden && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0));
+                const noPerm = !pubDemoHidden && section && !can(section);
                 link.style.display = (inHidden || noPerm) ? 'none' : '';
             });
             const annBanner = document.getElementById('announcementMarquee');
@@ -5924,7 +6016,10 @@
                 else if (typeof loadGeneralAnnouncementsMarquee === 'function') loadGeneralAnnouncementsMarquee();
             }
             const tickerEl = document.getElementById('priceTicker');
-            if (tickerEl) tickerEl.style.display = HIDDEN_SECTIONS.indexOf('rates') >= 0 ? 'none' : '';
+            if (tickerEl) {
+                if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) tickerEl.style.display = 'none';
+                else tickerEl.style.display = HIDDEN_SECTIONS.indexOf('rates') >= 0 ? 'none' : '';
+            }
             updateBottomBarVisibility();
             const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
@@ -5932,7 +6027,7 @@
             if (tickerTimeInterval) clearInterval(tickerTimeInterval);
             ratesInterval = null;
             tickerTimeInterval = null;
-            if (HIDDEN_SECTIONS.indexOf('rates') < 0 && typeof startRatesInterval === 'function') startRatesInterval();
+            if (HIDDEN_SECTIONS.indexOf('rates') < 0 && typeof startRatesInterval === 'function' && !(typeof isFxguardPublicHost === 'function' && isFxguardPublicHost())) startRatesInterval();
             document.querySelectorAll('.nav-section').forEach(function(section) {
                 const body = section.querySelector('.nav-section-body');
                 if (!body) return;
@@ -10037,7 +10132,8 @@
         })();
 
         (function initLang() {
-            const l = localStorage.getItem('crm_lang') || 'fa';
+            const hostPub = /^app\.fxguard\.io$/i.test(window.location.hostname || '') || window.FXGUARD_PUBLIC_SITE;
+            const l = localStorage.getItem('crm_lang') || (hostPub ? 'en' : 'fa');
             setLang(l);
         })();
 
