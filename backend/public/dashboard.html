@@ -18,8 +18,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=46">
-    <script>(function(){try{document.documentElement.style.background='#0c1222';document.documentElement.style.color='#f0f4fc';var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=47">
+    <script>(function(){try{document.documentElement.style.background='#0c1222';document.documentElement.style.color='#f0f4fc';var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}else{window.location.replace('/login');}}catch(e){}})();</script>
 </head>
 <body>
     <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -54,71 +54,7 @@
             <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
         </defs>
     </svg>
-    <div id="loginBox" class="login-wrap">
-        <div class="login-box" id="loginStep1">
-            <div class="login-logo" id="loginLogo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <div class="lang-switch login-lang">
-                <button type="button" id="langFa" data-lang="fa" onclick="setLang('fa')" class="active">فارسی</button>
-                <button type="button" id="langEn" data-lang="en" onclick="setLang('en')">English</button>
-                <button type="button" id="langTr" data-lang="tr" onclick="setLang('tr')" data-i18n="lang_tr">Türkçe</button>
-            </div>
-            <h1 id="loginTitle" data-i18n="login_title">پورتال کارکنان کایا</h1>
-            <p class="sub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
-            <input type="text" id="email" data-i18n-ph="login_email_or_username" placeholder="ایمیل یا نام کاربری" autocomplete="username">
-            <div class="password-wrap">
-                <input type="password" id="pass" data-i18n-ph="login_password" placeholder="رمز عبور" autocomplete="current-password">
-                <button type="button" id="loginTogglePass" class="toggle-password" title="نمایش رمز" aria-label="نمایش رمز عبور" aria-pressed="false">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-eye"/></svg>
-                </button>
-            </div>
-            <button type="button" id="btnLogin" onclick="login()" data-i18n="login_btn">ورود</button>
-            <p class="login-forgot-wrap"><a href="#" id="linkForgotPassword" onclick="showForgotStep(); return false;" data-i18n="login_forgot_password">فراموشی رمز عبور</a></p>
-            <div id="loginErr" class="login-err"></div>
-            <p class="login-support" id="loginSupportWrap">
-                <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
-                <a href="#" id="loginSupportLink" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
-            </p>
-        </div>
-        <div class="login-box" id="loginStepTotp" style="display:none;">
-            <div class="login-logo" id="loginLogoTotp"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <div class="lang-switch login-lang">
-                <button type="button" data-lang="fa" onclick="setLang('fa')" data-i18n="lang_fa">فارسی</button>
-                <button type="button" data-lang="en" onclick="setLang('en')" data-i18n="lang_en">English</button>
-                <button type="button" data-lang="tr" onclick="setLang('tr')" data-i18n="lang_tr">Türkçe</button>
-            </div>
-            <h1 data-i18n="login_totp_title">احراز هویت دو مرحله‌ای</h1>
-            <p class="sub" id="totpStepEmail">کد شش‌رقمی اپلیکیشن Google Authenticator را وارد کنید.</p>
-            <input type="text" id="totpCode" data-i18n-ph="login_totp_code_ph" placeholder="کد ۶ رقمی" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code">
-            <button type="button" id="btnTotpVerify" onclick="verifyTotpLogin()" data-i18n="login_totp_verify">تأیید و ورود</button>
-            <button type="button" id="btnBackToLoginStep1" class="btn-secondary" onclick="backToLoginStep1()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
-            <div id="totpErr" class="login-err"></div>
-            <p class="login-support" id="loginSupportWrapTotp">
-                <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
-                <a href="#" id="loginSupportLinkTotp" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
-            </p>
-        </div>
-        <div class="login-box" id="loginStepForgot" style="display:none;">
-            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <h1 data-i18n="forgot_title">بازیابی رمز عبور</h1>
-            <p class="sub" data-i18n="forgot_sub">ایمیل حساب خود را وارد کنید؛ در صورت وجود حساب، لینک بازیابی ارسال می‌شود.</p>
-            <input type="email" id="forgotEmail" data-i18n-ph="login_email" placeholder="ایمیل" autocomplete="email">
-            <button type="button" id="btnForgotSubmit" onclick="submitForgotPassword()" data-i18n="forgot_send">ارسال لینک بازیابی</button>
-            <button type="button" id="btnBackToLoginFromForgot" class="btn-secondary" onclick="backToLoginFromForgot()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
-            <div id="forgotErr" class="login-err"></div>
-            <div id="forgotSuccess" class="login-success" style="display:none;"></div>
-        </div>
-        <div class="login-box" id="loginStepReset" style="display:none;">
-            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <h1 data-i18n="reset_title">تعیین رمز عبور جدید</h1>
-            <p class="sub" data-i18n="reset_sub">رمز عبور جدید و تکرار آن را وارد کنید.</p>
-            <input type="password" id="resetNewPass" data-i18n-ph="reset_new_password" placeholder="رمز عبور جدید" autocomplete="new-password">
-            <input type="password" id="resetConfirmPass" data-i18n-ph="reset_confirm_password" placeholder="تکرار رمز عبور" autocomplete="new-password">
-            <button type="button" id="btnResetSubmit" onclick="submitResetPassword()" data-i18n="reset_btn">تغییر رمز و ورود</button>
-            <a href="#" id="btnBackToLoginFromReset" class="btn-secondary" style="display:inline-block;margin-top:8px;text-align:center;" onclick="backToLoginFromReset(); return false;" data-i18n="login_back">بازگشت به ورود</a>
-            <div id="resetErr" class="login-err"></div>
-        </div>
-    </div>
-    <div id="app" class="app"><script>(function(){if(document.documentElement.classList.contains('auth-has-token')){document.getElementById('app').classList.add('app-loading');}})();</script>
+    <div id="app" class="app show"><script>(function(){if(document.documentElement.classList.contains('auth-has-token')){document.getElementById('app').classList.add('app-loading');}else{window.location.replace('/login');}})();</script>
         <a href="#mainContent" class="skip-link" id="skipLink" data-i18n="skip_to_content" onclick="var m=document.getElementById('mainContent');if(m){m.focus();}">پرش به محتوا</a>
         <div class="header-sticky-wrap" id="headerStickyWrap">
         <header class="header" role="banner">
@@ -3376,7 +3312,7 @@
     <script src="/js/i18n-en.js?v=4" charset="utf-8"></script>
     <script src="/js/i18n-tr.js?v=6" charset="utf-8"></script>
     <script src="/js/modules/dashboard-i18n.js?v=1" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=33" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=34" charset="utf-8"></script>
     <script>
     (function() {
         function updateMobileHeaderHeight() {

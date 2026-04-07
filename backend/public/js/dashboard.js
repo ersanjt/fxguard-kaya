@@ -115,10 +115,7 @@
                     token = null;
                     localStorage.removeItem('crm_token');
                     document.documentElement.classList.remove('auth-has-token');
-                    document.getElementById('loginBox').style.display = 'flex';
-                    document.getElementById('app').classList.remove('show');
-                    const errEl = document.getElementById('loginErr');
-                    if (errEl) { errEl.style.color = ''; errEl.textContent = t('login_session_expired'); }
+                    window.location.replace('/login');
                 }
             });
         }
@@ -1976,9 +1973,8 @@
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
-                token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
-                const errEl = document.getElementById('loginErr');
-                if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
+                token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token');
+                window.location.replace('/login');
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
             }
             if (r.status === 429) {
@@ -2104,7 +2100,6 @@
                 document.documentElement.classList.add('auth-has-token');
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
-                document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('app').classList.add('show');
                 try {
                     applyNavByRole();
@@ -2221,7 +2216,6 @@
                 document.documentElement.classList.add('auth-has-token');
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
-                document.getElementById('loginBox').style.display = 'none';
                 document.getElementById('app').classList.add('show');
                 try {
                     applyNavByRole();
@@ -2509,9 +2503,7 @@
             currentUser = null;
             localStorage.removeItem('crm_token');
             document.documentElement.classList.remove('auth-has-token');
-            document.getElementById('loginBox').style.display = 'flex';
-            const appEl = document.getElementById('app');
-            if (appEl) { appEl.classList.remove('show', 'app-loading', 'app-ready'); }
+            window.location.replace('/login');
         }
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -10530,7 +10522,6 @@
                 if (u && u.email) {
                     setUserDisplay(u);
                     document.documentElement.classList.add('auth-has-token');
-                    document.getElementById('loginBox').style.display = 'none';
                     document.getElementById('app').classList.add('show');
                     try {
                         await runAfterAuthReady();
@@ -10540,5 +10531,5 @@
                 } else { logout(); }
             }).catch(function() { logout(); });
         } else {
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
+            window.location.replace('/login');
         }

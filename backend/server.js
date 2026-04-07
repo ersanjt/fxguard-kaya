@@ -281,15 +281,17 @@ app.get('/health', async (req, res) => {
     });
 });
 
-const REDIRECT_ROOT_TO_DASHBOARD_HOSTS = (process.env.REDIRECT_ROOT_TO_DASHBOARD_HOSTS || 'kaya.fxguard.io').split(',').map(h => h.trim().toLowerCase()).filter(Boolean);
-app.get('/', (req, res) => {
-    const host = (req.hostname || req.get('host') || '').toLowerCase();
-    if (REDIRECT_ROOT_TO_DASHBOARD_HOSTS.some(h => host === h || host.endsWith('.' + h))) {
-        return res.redirect(302, '/dashboard');
-    }
-    res.set('Cache-Control', 'public, max-age=300');
-    res.sendFile(path.join(__dirname, 'public', 'landing.html'));
-});
+/* ── صفحه ورود مستقل ── */
+function serveLogin(req, res) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    res.sendFile(path.join(__dirname, 'public', 'login.html'));
+}
+app.get('/',       serveLogin);
+app.get('/login',  serveLogin);
+app.get('/login/', (req, res) => res.redirect('/login'));
+
 app.get('/dashboard', (req, res) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.set('Pragma', 'no-cache');
