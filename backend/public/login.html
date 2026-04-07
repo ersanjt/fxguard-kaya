@@ -10,7 +10,6 @@
     <title>ورود | صرافی کایا</title>
     <link rel="icon" id="lpFavicon" href="/favicon-kaya.svg">
     <meta name="description" content="ورود به پورتال کارکنان صرافی کایا">
-    <!-- Fonts (async — no blocking) -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap"
@@ -18,7 +17,7 @@
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="/css/login.css?v=1">
+    <link rel="stylesheet" href="/css/login.css?v=2">
     <script>(function(){try{
         document.documentElement.style.background='#080d1a';
         document.documentElement.style.color='#f0f4fc';
@@ -64,7 +63,7 @@
 <main class="lp-main" id="lpMain">
     <div class="lp-card" role="main">
 
-        <!-- Header (logo + brand) -->
+        <!-- Header -->
         <header class="lp-header">
             <div class="lp-logo-wrap" id="lpLogoWrap" aria-hidden="true">
                 <svg><use href="#lp-logo"/></svg>
@@ -73,23 +72,23 @@
             <p class="lp-brand-sub" id="lpBrandSub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
         </header>
 
-        <!-- Language switcher -->
+        <!-- Language switcher — NO onclick, handled by JS -->
         <div class="lp-lang-wrap" id="lpLangWrap">
             <div class="lp-lang" id="lpLangSwitch" role="group" aria-label="انتخاب زبان">
-                <button type="button" data-lang="fa" onclick="setLang('fa')" class="active" aria-pressed="true">فارسی</button>
-                <button type="button" data-lang="en" onclick="setLang('en')" aria-pressed="false">English</button>
-                <button type="button" data-lang="tr" onclick="setLang('tr')" aria-pressed="false">Türkçe</button>
+                <button type="button" data-lang="fa" class="active" aria-pressed="true">فارسی</button>
+                <button type="button" data-lang="en" aria-pressed="false">English</button>
+                <button type="button" data-lang="tr" aria-pressed="false">Türkçe</button>
             </div>
         </div>
 
-        <!-- ── Step 1: Login ─────────────────────── -->
+        <!-- Step 1: Login -->
         <section class="lp-step active" id="stepLogin" aria-label="ورود">
             <h2 class="lp-step-title" data-i18n="login_title">پورتال کارکنان</h2>
 
             <div class="lp-field">
                 <label for="lpEmail" data-i18n="login_email_lbl">ایمیل یا نام کاربری</label>
                 <input type="text" id="lpEmail" class="lp-input"
-                       data-i18n-ph="login_email_lbl" placeholder="ایمیل یا نام کاربری"
+                       placeholder="ایمیل یا نام کاربری"
                        autocomplete="username" autocorrect="off" autocapitalize="none" spellcheck="false">
             </div>
 
@@ -97,29 +96,28 @@
                 <label for="lpPass" data-i18n="login_pass_lbl">رمز عبور</label>
                 <div class="lp-input-wrap">
                     <input type="password" id="lpPass" class="lp-input"
-                           data-i18n-ph="login_pass_lbl" placeholder="رمز عبور"
-                           autocomplete="current-password">
+                           placeholder="رمز عبور" autocomplete="current-password">
                     <button type="button" id="btnTogglePass" class="lp-toggle-pass"
                             title="نمایش رمز عبور" aria-label="نمایش رمز عبور" aria-pressed="false">
-                        <svg aria-hidden="true"><use href="#lp-eye" id="eyeIcon"/></svg>
+                        <svg aria-hidden="true"><use href="#lp-eye" id="lpEyeIcon"/></svg>
                     </button>
                 </div>
             </div>
 
-            <button type="button" id="btnLogin" class="lp-btn" onclick="doLogin()">
+            <button type="button" id="btnLogin" class="lp-btn">
                 <div class="lp-spinner" aria-hidden="true"></div>
                 <span class="lp-btn-text" data-i18n="login_btn">ورود به سیستم</span>
                 <svg class="lp-btn-icon" aria-hidden="true" style="margin-inline-start:4px;opacity:.7"><use href="#lp-arrow"/></svg>
             </button>
 
             <div class="lp-forgot-row">
-                <a href="#" id="lpForgotLink" onclick="showForgot(); return false;" data-i18n="login_forgot_password">فراموشی رمز عبور</a>
+                <a href="#" id="lpForgotLink" data-i18n="login_forgot_password">فراموشی رمز عبور</a>
             </div>
 
             <div class="lp-msg error" id="loginMsg" role="alert" aria-live="polite"></div>
         </section>
 
-        <!-- ── Step 2: TOTP ──────────────────────── -->
+        <!-- Step 2: TOTP -->
         <section class="lp-step" id="stepTotp" aria-label="احراز هویت دو مرحله‌ای">
             <div class="lp-success-icon" style="margin-bottom:12px;background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.35);color:#6366f1;">
                 <svg width="28" height="28" aria-hidden="true"><use href="#lp-shield"/></svg>
@@ -131,16 +129,15 @@
                 <label for="lpTotpCode" data-i18n="totp_code_lbl">کد ۶ رقمی</label>
                 <input type="text" id="lpTotpCode" class="lp-input lp-totp-input"
                        placeholder="• • • • • •"
-                       maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code"
-                       dir="ltr">
+                       maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code" dir="ltr">
             </div>
 
-            <button type="button" id="btnTotpVerify" class="lp-btn" onclick="doVerifyTotp()">
+            <button type="button" id="btnTotpVerify" class="lp-btn">
                 <div class="lp-spinner" aria-hidden="true"></div>
                 <span class="lp-btn-text" data-i18n="totp_verify_btn">تأیید و ورود</span>
             </button>
 
-            <button type="button" class="lp-btn-secondary" onclick="goBackToLogin()">
+            <button type="button" id="btnTotpBack" class="lp-btn-secondary">
                 <svg width="16" height="16" aria-hidden="true"><use href="#lp-arrow"/></svg>
                 <span data-i18n="totp_back">بازگشت</span>
             </button>
@@ -148,7 +145,7 @@
             <div class="lp-msg error" id="totpMsg" role="alert" aria-live="polite"></div>
         </section>
 
-        <!-- ── Step 3: Forgot Password ───────────── -->
+        <!-- Step 3: Forgot Password -->
         <section class="lp-step" id="stepForgot" aria-label="بازیابی رمز عبور">
             <h2 class="lp-step-title" data-i18n="forgot_title">بازیابی رمز عبور</h2>
             <p class="lp-step-sub" data-i18n="forgot_sub">ایمیل حساب خود را وارد کنید. در صورت وجود حساب، لینک بازیابی ارسال می‌شود.</p>
@@ -156,17 +153,16 @@
             <div class="lp-field">
                 <label for="lpForgotEmail" data-i18n="forgot_email_lbl">ایمیل حساب</label>
                 <input type="email" id="lpForgotEmail" class="lp-input"
-                       placeholder="email@example.com"
-                       autocomplete="email" dir="ltr">
+                       placeholder="email@example.com" autocomplete="email" dir="ltr">
             </div>
 
-            <button type="button" id="btnForgotSend" class="lp-btn" onclick="doForgot()">
+            <button type="button" id="btnForgotSend" class="lp-btn">
                 <div class="lp-spinner" aria-hidden="true"></div>
                 <svg class="lp-btn-icon" aria-hidden="true"><use href="#lp-send"/></svg>
                 <span class="lp-btn-text" data-i18n="forgot_send_btn">ارسال لینک بازیابی</span>
             </button>
 
-            <button type="button" class="lp-btn-secondary" onclick="goBackFromForgot()">
+            <button type="button" id="btnForgotBack" class="lp-btn-secondary">
                 <svg width="16" height="16" aria-hidden="true"><use href="#lp-arrow"/></svg>
                 <span data-i18n="forgot_back">بازگشت به ورود</span>
             </button>
@@ -175,7 +171,7 @@
             <div class="lp-msg success" id="forgotSuccess" role="status" aria-live="polite"></div>
         </section>
 
-        <!-- ── Step 4: Reset Password ────────────── -->
+        <!-- Step 4: Reset Password -->
         <section class="lp-step" id="stepReset" aria-label="تعیین رمز عبور جدید">
             <h2 class="lp-step-title" data-i18n="reset_title">تعیین رمز عبور جدید</h2>
             <p class="lp-step-sub" data-i18n="reset_sub">رمز عبور جدید و تکرار آن را وارد کنید.</p>
@@ -183,24 +179,22 @@
             <div class="lp-field">
                 <label for="lpResetNew" data-i18n="reset_new_lbl">رمز عبور جدید</label>
                 <input type="password" id="lpResetNew" class="lp-input"
-                       placeholder="حداقل ۶ کاراکتر"
-                       autocomplete="new-password">
+                       placeholder="حداقل ۶ کاراکتر" autocomplete="new-password">
             </div>
 
             <div class="lp-field">
                 <label for="lpResetConfirm" data-i18n="reset_confirm_lbl">تکرار رمز عبور</label>
                 <input type="password" id="lpResetConfirm" class="lp-input"
-                       placeholder="تکرار رمز"
-                       autocomplete="new-password">
+                       placeholder="تکرار رمز" autocomplete="new-password">
             </div>
 
-            <button type="button" id="btnResetSubmit" class="lp-btn" onclick="doReset()">
+            <button type="button" id="btnResetSubmit" class="lp-btn">
                 <div class="lp-spinner" aria-hidden="true"></div>
                 <svg class="lp-btn-icon" aria-hidden="true"><use href="#lp-check"/></svg>
                 <span class="lp-btn-text" data-i18n="reset_btn">تغییر رمز و ورود</span>
             </button>
 
-            <button type="button" class="lp-btn-secondary" onclick="goBackFromReset()">
+            <button type="button" id="btnResetBack" class="lp-btn-secondary">
                 <svg width="16" height="16" aria-hidden="true"><use href="#lp-arrow"/></svg>
                 <span data-i18n="forgot_back">بازگشت به ورود</span>
             </button>
@@ -208,16 +202,15 @@
             <div class="lp-msg error" id="resetMsg" role="alert" aria-live="polite"></div>
         </section>
 
-        <!-- Divider + Support -->
         <div class="lp-divider" aria-hidden="true"></div>
         <p class="lp-support">
             <span data-i18n="cant_signin">نمی‌توانید وارد شوید؟</span>
             <a href="#" id="lpSupportLink" data-i18n="contact_support"> با پشتیبانی تماس بگیرید</a>
         </p>
 
-    </div><!-- .lp-card -->
-</main><!-- .lp-main -->
+    </div>
+</main>
 
-<script src="/js/login.js?v=1"></script>
+<script src="/js/login.js?v=2"></script>
 </body>
 </html>

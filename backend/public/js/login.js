@@ -1,6 +1,6 @@
 /**
  * login.js — منطق احراز هویت صفحه ورود مستقل
- * بدون وابستگی به dashboard.js / dashboard-i18n.js
+ * هیچ onclick/event attribute ای در HTML استفاده نشده — همه از طریق addEventListener
  */
 (function () {
     'use strict';
@@ -164,14 +164,13 @@
     if (SUPPORTED.indexOf(lang) < 0) lang = 'fa';
 
     function t(k) {
-        return (I18N[lang] && I18N[lang][k]) || (I18N.fa && I18N.fa[k]) || k;
+        return (I18N[lang] && I18N[lang][k]) || (I18N['fa'] && I18N['fa'][k]) || k;
     }
 
     /* ── Apply Language ───────────────────────────── */
     function applyLang(l) {
         if (SUPPORTED.indexOf(l) < 0) l = 'fa';
         lang = l;
-        window.__LP_LANG = l;
         localStorage.setItem('crm_lang', l);
 
         var isRtl = (l === 'fa');
@@ -179,25 +178,27 @@
         document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
         document.body.classList.toggle('ltr', !isRtl);
 
-        /* update lang buttons */
-        document.querySelectorAll('.lp-lang button[data-lang]').forEach(function(btn) {
-            btn.classList.toggle('active', btn.getAttribute('data-lang') === l);
+        /* lang buttons */
+        document.querySelectorAll('#lpLangSwitch button[data-lang]').forEach(function(btn) {
+            var isActive = btn.getAttribute('data-lang') === l;
+            btn.classList.toggle('active', isActive);
+            btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
             var k = 'lang_' + btn.getAttribute('data-lang');
             btn.textContent = t(k);
         });
 
-        /* translate all [data-i18n] elements */
+        /* data-i18n elements */
         document.querySelectorAll('[data-i18n]').forEach(function(el) {
             var v = t(el.getAttribute('data-i18n'));
             if (v) el.textContent = v;
         });
+
+        /* data-i18n-ph placeholders */
         document.querySelectorAll('[data-i18n-ph]').forEach(function(el) {
             var v = t(el.getAttribute('data-i18n-ph'));
             if (v) el.placeholder = v;
         });
     }
-
-    window.setLang = function(l) { applyLang(l); };
 
     /* ── Step Management ─────────────────────────── */
     function showStep(id) {
@@ -208,7 +209,7 @@
         if (el) el.classList.add('active');
     }
 
-    /* ── Error/Success Messages ──────────────────── */
+    /* ── Messages ────────────────────────────────── */
     function setMsg(id, text, type) {
         var el = document.getElementById(id);
         if (!el) return;
@@ -218,7 +219,7 @@
     }
     function clearMsg(id) { setMsg(id, '', 'error'); }
 
-    /* ── Button Loading State ─────────────────────── */
+    /* ── Button Loading ──────────────────────────── */
     function setBtnLoading(btnId, loading, text) {
         var btn = document.getElementById(btnId);
         if (!btn) return;
@@ -228,10 +229,12 @@
         if (span && text) span.textContent = text;
     }
 
-    /* ── Step 1: Login ───────────────────────────── */
-    window.doLogin = async function() {
-        var email = (document.getElementById('lpEmail') && document.getElementById('lpEmail').value || '').trim();
-        var pass  = (document.getElementById('lpPass')  && document.getElementById('lpPass').value  || '');
+    /* ── Login ───────────────────────────────────── */
+    function doLogin() {
+        var emailEl = document.getElementById('lpEmail');
+        var passEl  = document.getElementById('lpPass');
+        var email   = emailEl ? emailEl.value.trim() : '';
+        var pass    = passEl  ? passEl.value          : '';
         clearMsg('loginMsg');
 
         if (!email) { setMsg('loginMsg', t('login_email_required')); return; }
@@ -239,145 +242,140 @@
 
         setBtnLoading('btnLogin', true, t('login_loading'));
 
-        var r, text;
-        try {
-            r = await fetch('/api/auth/login', {
-                method: 'POST', credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email, password: pass })
-            });
-            text = await r.text();
-        } catch (e) {
+        fetch('/api/auth/login', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email, password: pass })
+        }).then(function(r) {
+            var status = r.status;
+            return r.text().then(function(text) { return { status: status, text: text }; });
+        }).then(function(res) {
+            setBtnLoading('btnLogin', false, t('login_btn'));
+
+            if ((res.text || '').trim().startsWith('<')) {
+                setMsg('loginMsg', t('login_err_server'));
+                return;
+            }
+
+            var data;
+            try { data = JSON.parse(res.text); } catch (_) {
+                setMsg('loginMsg', res.status === 429 ? t('login_err_429') : t('login_err_invalid'));
+                return;
+            }
+
+            if (res.status === 429) {
+                setMsg('loginMsg', (data && data.error) || t('login_err_429'));
+                return;
+            }
+
+            if (data && data.needTotp && data.tempToken) {
+                window._lpTotpTemp = data.tempToken;
+                var subEl = document.getElementById('totpFor');
+                if (subEl) subEl.textContent = t('totp_for') + ' ' + (data.email || '') + ' ' + t('totp_enter');
+                var codeEl = document.getElementById('lpTotpCode');
+                if (codeEl) { codeEl.value = ''; setTimeout(function(){ codeEl.focus(); }, 100); }
+                clearMsg('totpMsg');
+                showStep('stepTotp');
+                return;
+            }
+
+            if (data && data.token) {
+                localStorage.setItem('crm_token', data.token);
+                window.location.href = '/dashboard';
+                return;
+            }
+
+            setMsg('loginMsg', (data && data.error) || t('login_err_fail'));
+        }).catch(function() {
             setBtnLoading('btnLogin', false, t('login_btn'));
             setMsg('loginMsg', t('login_err_connect'));
-            return;
-        }
+        });
+    }
 
-        setBtnLoading('btnLogin', false, t('login_btn'));
-
-        if ((text || '').trim().startsWith('<')) {
-            setMsg('loginMsg', t('login_err_server'));
-            return;
-        }
-
-        var data;
-        try { data = JSON.parse(text); } catch (_) {
-            setMsg('loginMsg', r.status === 429 ? t('login_err_429') : t('login_err_invalid'));
-            return;
-        }
-
-        if (r.status === 429) {
-            setMsg('loginMsg', (data && data.error) || t('login_err_429'));
-            return;
-        }
-
-        /* TOTP required */
-        if (data.needTotp && data.tempToken) {
-            window._lpTotpTemp = data.tempToken;
-            var sub = document.getElementById('totpFor');
-            if (sub) sub.textContent = t('totp_for') + ' ' + (data.email || '') + ' ' + t('totp_enter');
-            var codeEl = document.getElementById('lpTotpCode');
-            if (codeEl) { codeEl.value = ''; setTimeout(function(){ codeEl.focus(); }, 100); }
-            clearMsg('totpMsg');
-            showStep('stepTotp');
-            return;
-        }
-
-        /* Success */
-        if (data.token) {
-            localStorage.setItem('crm_token', data.token);
-            window.location.href = '/dashboard';
-            return;
-        }
-
-        setMsg('loginMsg', (data && data.error) || t('login_err_fail'));
-    };
-
-    /* ── Step 2: TOTP ────────────────────────────── */
-    window.doVerifyTotp = async function() {
-        var code = (document.getElementById('lpTotpCode') && document.getElementById('lpTotpCode').value || '').replace(/\s/g,'');
+    /* ── TOTP ────────────────────────────────────── */
+    function doVerifyTotp() {
+        var codeEl = document.getElementById('lpTotpCode');
+        var code   = codeEl ? codeEl.value.replace(/\s/g, '') : '';
         clearMsg('totpMsg');
 
         if (!code || code.length !== 6) { setMsg('totpMsg', t('totp_required')); return; }
-        if (!window._lpTotpTemp)        { setMsg('totpMsg', t('totp_retry')); return; }
+        if (!window._lpTotpTemp)        { setMsg('totpMsg', t('totp_retry'));    return; }
 
         setBtnLoading('btnTotpVerify', true, t('totp_loading'));
 
-        var r, data;
-        try {
-            r = await fetch('/api/auth/totp/verify-login', {
-                method: 'POST', credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ tempToken: window._lpTotpTemp, code: code })
-            });
-            data = await r.json().catch(function(){ return {}; });
-        } catch (e) {
+        fetch('/api/auth/totp/verify-login', {
+            method: 'POST', credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tempToken: window._lpTotpTemp, code: code })
+        }).then(function(r) {
+            return r.json().catch(function() { return {}; });
+        }).then(function(data) {
+            setBtnLoading('btnTotpVerify', false, t('totp_verify_btn'));
+            if (data && data.token) {
+                localStorage.setItem('crm_token', data.token);
+                window.location.href = '/dashboard';
+                return;
+            }
+            setMsg('totpMsg', (data && data.error) || t('totp_bad'));
+        }).catch(function() {
             setBtnLoading('btnTotpVerify', false, t('totp_verify_btn'));
             setMsg('totpMsg', t('login_err_connect'));
-            return;
-        }
+        });
+    }
 
-        setBtnLoading('btnTotpVerify', false, t('totp_verify_btn'));
-
-        if (data.token) {
-            localStorage.setItem('crm_token', data.token);
-            window.location.href = '/dashboard';
-            return;
-        }
-        setMsg('totpMsg', (data && data.error) || t('totp_bad'));
-    };
-
-    window.goBackToLogin = function() {
+    function goBackToLogin() {
         window._lpTotpTemp = null;
         clearMsg('loginMsg');
         showStep('stepLogin');
-    };
+    }
 
-    /* ── Step 3: Forgot Password ─────────────────── */
-    window.showForgot = function() {
+    /* ── Forgot Password ─────────────────────────── */
+    function showForgot() {
         clearMsg('forgotMsg');
         var fEl = document.getElementById('lpForgotEmail');
         if (fEl) fEl.value = '';
         var suc = document.getElementById('forgotSuccess');
-        if (suc) { suc.textContent = ''; suc.classList.remove('has-text','success'); }
+        if (suc) { suc.textContent = ''; suc.className = 'lp-msg success'; }
         showStep('stepForgot');
-    };
+        setTimeout(function() { var e = document.getElementById('lpForgotEmail'); if (e) e.focus(); }, 100);
+    }
 
-    window.doForgot = async function() {
-        var email = (document.getElementById('lpForgotEmail') && document.getElementById('lpForgotEmail').value || '').trim();
+    function doForgot() {
+        var emailEl = document.getElementById('lpForgotEmail');
+        var email   = emailEl ? emailEl.value.trim() : '';
         clearMsg('forgotMsg');
         var suc = document.getElementById('forgotSuccess');
-        if (suc) { suc.textContent = ''; suc.classList.remove('has-text','success'); }
+        if (suc) { suc.textContent = ''; suc.className = 'lp-msg success'; }
 
         if (!email) { setMsg('forgotMsg', t('forgot_email_req')); return; }
 
         setBtnLoading('btnForgotSend', true, t('forgot_loading'));
 
-        try {
-            var r = await fetch('/api/auth/forgot-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: email })
-            });
-            var data = await r.json().catch(function(){ return {}; });
+        fetch('/api/auth/forgot-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        }).then(function(r) {
+            return r.json().catch(function() { return {}; });
+        }).then(function(data) {
+            setBtnLoading('btnForgotSend', false, t('forgot_send_btn'));
             if (suc) {
-                suc.textContent = data.message || t('forgot_success');
+                suc.textContent = (data && data.message) || t('forgot_success');
                 suc.className = 'lp-msg success has-text';
             }
-        } catch (e) {
+        }).catch(function() {
+            setBtnLoading('btnForgotSend', false, t('forgot_send_btn'));
             setMsg('forgotMsg', t('login_err_connect'));
-        }
+        });
+    }
 
-        setBtnLoading('btnForgotSend', false, t('forgot_send_btn'));
-    };
-
-    window.goBackFromForgot = function() {
+    function goBackFromForgot() {
         clearMsg('loginMsg');
         showStep('stepLogin');
-    };
+    }
 
-    /* ── Step 4: Reset Password ──────────────────── */
-    window.showReset = function(token) {
+    /* ── Reset Password ──────────────────────────── */
+    function showReset(token) {
         window._lpResetToken = token;
         var p1 = document.getElementById('lpResetNew');
         var p2 = document.getElementById('lpResetConfirm');
@@ -385,60 +383,57 @@
         if (p2) p2.value = '';
         clearMsg('resetMsg');
         showStep('stepReset');
-    };
+    }
 
-    window.doReset = async function() {
-        var np = (document.getElementById('lpResetNew')     && document.getElementById('lpResetNew').value     || '');
-        var cp = (document.getElementById('lpResetConfirm') && document.getElementById('lpResetConfirm').value || '');
+    function doReset() {
+        var np = document.getElementById('lpResetNew')     ? document.getElementById('lpResetNew').value     : '';
+        var cp = document.getElementById('lpResetConfirm') ? document.getElementById('lpResetConfirm').value : '';
         clearMsg('resetMsg');
 
-        if (np !== cp)      { setMsg('resetMsg', t('reset_match'));   return; }
-        if (np.length < 6)  { setMsg('resetMsg', t('reset_length'));  return; }
+        if (np !== cp)     { setMsg('resetMsg', t('reset_match'));   return; }
+        if (np.length < 6) { setMsg('resetMsg', t('reset_length'));  return; }
         if (!window._lpResetToken) { setMsg('resetMsg', t('reset_expired')); return; }
 
         setBtnLoading('btnResetSubmit', true, t('reset_loading'));
 
-        try {
-            var r = await fetch('/api/auth/reset-password', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ token: window._lpResetToken, newPassword: np })
-            });
-            var data = await r.json().catch(function(){ return {}; });
-
-            if (r.ok && data.message) {
+        fetch('/api/auth/reset-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: window._lpResetToken, newPassword: np })
+        }).then(function(r) {
+            return r.json().catch(function() { return {}; });
+        }).then(function(data) {
+            if (data && data.message) {
                 window._lpResetToken = null;
-                try { window.history.replaceState(null,'', window.location.pathname); } catch(_){}
-                /* Show success then go to login */
+                try { window.history.replaceState(null, '', window.location.pathname); } catch(_) {}
+                setBtnLoading('btnResetSubmit', false, t('reset_btn'));
                 setMsg('resetMsg', data.message, 'success');
-                setTimeout(function(){
+                setTimeout(function() {
                     clearMsg('resetMsg');
                     showStep('stepLogin');
-                    /* Show the success message on login step */
                     setMsg('loginMsg', data.message, 'success');
                 }, 1800);
-                setBtnLoading('btnResetSubmit', false, t('reset_btn'));
                 return;
             }
+            setBtnLoading('btnResetSubmit', false, t('reset_btn'));
             setMsg('resetMsg', (data && data.error) || t('reset_fail'));
-        } catch (e) {
+        }).catch(function() {
+            setBtnLoading('btnResetSubmit', false, t('reset_btn'));
             setMsg('resetMsg', t('login_err_connect'));
-        }
+        });
+    }
 
-        setBtnLoading('btnResetSubmit', false, t('reset_btn'));
-    };
-
-    window.goBackFromReset = function() {
+    function goBackFromReset() {
         window._lpResetToken = null;
         clearMsg('loginMsg');
-        try { window.history.replaceState(null,'', window.location.pathname); } catch(_){}
+        try { window.history.replaceState(null, '', window.location.pathname); } catch(_) {}
         showStep('stepLogin');
-    };
+    }
 
     /* ── Password Toggle ─────────────────────────── */
-    function initToggle(inputId, btnId) {
-        var inp = document.getElementById(inputId);
-        var btn = document.getElementById(btnId);
+    function initToggle() {
+        var inp = document.getElementById('lpPass');
+        var btn = document.getElementById('btnTogglePass');
         if (!inp || !btn) return;
         btn.addEventListener('click', function() {
             var show = inp.type === 'password';
@@ -447,122 +442,157 @@
             btn.setAttribute('title', lbl);
             btn.setAttribute('aria-label', lbl);
             btn.setAttribute('aria-pressed', show ? 'true' : 'false');
-            btn.classList.toggle('active', show);
-            var icon = btn.querySelector('.eye-icon, use');
-            if (icon && icon.tagName.toLowerCase() === 'use') {
-                icon.setAttribute('href', show ? '#lp-eye-off' : '#lp-eye');
-            }
+            var iconUse = btn.querySelector('use');
+            if (iconUse) iconUse.setAttribute('href', show ? '#lp-eye-off' : '#lp-eye');
         });
     }
 
     /* ── Enter Key ───────────────────────────────── */
-    function onKey(e) {
+    function onEnterKey(e) {
         if (e.key !== 'Enter') return;
         e.preventDefault();
-        var totp  = document.getElementById('stepTotp');
-        var forgot= document.getElementById('stepForgot');
-        var reset = document.getElementById('stepReset');
-        if (totp   && totp.classList.contains('active'))   window.doVerifyTotp();
-        else if (forgot && forgot.classList.contains('active')) window.doForgot();
-        else if (reset  && reset.classList.contains('active'))  window.doReset();
-        else window.doLogin();
+        var activeStep = document.querySelector('.lp-step.active');
+        if (!activeStep) { doLogin(); return; }
+        var id = activeStep.id;
+        if (id === 'stepTotp')   doVerifyTotp();
+        else if (id === 'stepForgot') doForgot();
+        else if (id === 'stepReset')  doReset();
+        else                          doLogin();
     }
 
     /* ── Load Branding ───────────────────────────── */
     function loadBranding() {
         fetch('/api/panel-settings/public/branding')
-            .then(function(r){ return r.json().catch(function(){ return {}; }); })
+            .then(function(r) { return r.json().catch(function() { return {}; }); })
             .then(function(d) {
                 if (!d) return;
-                /* Brand name */
                 var nameEl = document.getElementById('lpBrandName');
                 if (nameEl && d.siteName) nameEl.textContent = d.siteName;
 
-                /* Logo */
                 var logoWrap = document.getElementById('lpLogoWrap');
                 if (logoWrap && d.logoUrl) {
-                    logoWrap.innerHTML = '<img src="' + d.logoUrl + '" alt="logo">';
+                    var img = document.createElement('img');
+                    img.src = d.logoUrl; img.alt = 'logo';
+                    logoWrap.innerHTML = '';
+                    logoWrap.appendChild(img);
                 }
 
-                /* Favicon */
                 var fav = document.getElementById('lpFavicon');
                 if (fav && d.faviconUrl) fav.href = d.faviconUrl;
 
-                /* Page title */
                 if (d.siteName) document.title = d.siteName + ' | ورود';
 
-                /* Supported languages */
-                if (d.supportedLanguages && Array.isArray(d.supportedLanguages)) {
-                    var sup = d.supportedLanguages;
-                    SUPPORTED = sup.length ? sup : ['fa','en','tr'];
+                if (d.supportedLanguages && Array.isArray(d.supportedLanguages) && d.supportedLanguages.length) {
+                    SUPPORTED = d.supportedLanguages;
                     var lpLang = document.getElementById('lpLangSwitch');
                     if (lpLang) {
-                        lpLang.querySelectorAll('button[data-lang]').forEach(function(btn){
-                            btn.style.display = sup.indexOf(btn.getAttribute('data-lang')) >= 0 ? '' : 'none';
+                        lpLang.querySelectorAll('button[data-lang]').forEach(function(btn) {
+                            btn.style.display = SUPPORTED.indexOf(btn.getAttribute('data-lang')) >= 0 ? '' : 'none';
                         });
                     }
                     if (SUPPORTED.indexOf(lang) < 0) {
-                        lang = d.defaultLanguage || SUPPORTED[0] || 'fa';
-                        applyLang(lang);
+                        applyLang(d.defaultLanguage || SUPPORTED[0] || 'fa');
                     }
                 }
 
-                /* Support URL */
                 var supportLink = document.getElementById('lpSupportLink');
                 if (supportLink && d.supportUrl) supportLink.href = d.supportUrl;
             })
-            .catch(function(){});
+            .catch(function() {});
     }
 
     /* ── Check URL for reset token ───────────────── */
     function checkResetUrl() {
         try {
             var params = new URLSearchParams(window.location.search);
-            var reset = params.get('reset');
-            var token = params.get('token');
-            if (reset === '1' && token) {
-                window.showReset(token);
+            if (params.get('reset') === '1' && params.get('token')) {
+                showReset(params.get('token'));
             }
         } catch(_) {}
     }
 
-    /* ── If already logged in, go to dashboard ───── */
+    /* ── Check existing token ────────────────────── */
     function checkExistingToken() {
         var existing = localStorage.getItem('crm_token');
         if (!existing) return;
         fetch('/api/auth/me', {
             headers: { 'Authorization': 'Bearer ' + existing }
-        }).then(function(r){ return r.json().catch(function(){ return {}; }); })
-          .then(function(d) {
-              if (d && d.ok && d.data && d.data.email) {
-                  window.location.href = '/dashboard';
-              } else {
-                  localStorage.removeItem('crm_token');
-              }
-          }).catch(function(){ localStorage.removeItem('crm_token'); });
+        }).then(function(r) {
+            return r.json().catch(function() { return {}; });
+        }).then(function(d) {
+            if (d && d.ok && d.data && d.data.email) {
+                window.location.href = '/dashboard';
+            } else {
+                localStorage.removeItem('crm_token');
+            }
+        }).catch(function() {
+            localStorage.removeItem('crm_token');
+        });
     }
 
-    /* ── Init ────────────────────────────────────── */
+    /* ── DOMContentLoaded — attach ALL event listeners ── */
     document.addEventListener('DOMContentLoaded', function() {
-        /* Apply stored language */
-        applyLang(lang);
+
+        /* Language buttons */
+        document.querySelectorAll('#lpLangSwitch button[data-lang]').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                applyLang(btn.getAttribute('data-lang'));
+            });
+        });
+
+        /* Login button */
+        var btnLogin = document.getElementById('btnLogin');
+        if (btnLogin) btnLogin.addEventListener('click', doLogin);
+
+        /* Forgot password link */
+        var forgotLink = document.getElementById('lpForgotLink');
+        if (forgotLink) forgotLink.addEventListener('click', function(e) {
+            e.preventDefault(); showForgot();
+        });
+
+        /* TOTP verify button */
+        var btnTotp = document.getElementById('btnTotpVerify');
+        if (btnTotp) btnTotp.addEventListener('click', doVerifyTotp);
+
+        /* TOTP back button */
+        var btnTotpBack = document.getElementById('btnTotpBack');
+        if (btnTotpBack) btnTotpBack.addEventListener('click', goBackToLogin);
+
+        /* Forgot send button */
+        var btnForgotSend = document.getElementById('btnForgotSend');
+        if (btnForgotSend) btnForgotSend.addEventListener('click', doForgot);
+
+        /* Forgot back button */
+        var btnForgotBack = document.getElementById('btnForgotBack');
+        if (btnForgotBack) btnForgotBack.addEventListener('click', goBackFromForgot);
+
+        /* Reset submit button */
+        var btnReset = document.getElementById('btnResetSubmit');
+        if (btnReset) btnReset.addEventListener('click', doReset);
+
+        /* Reset back button */
+        var btnResetBack = document.getElementById('btnResetBack');
+        if (btnResetBack) btnResetBack.addEventListener('click', goBackFromReset);
 
         /* Password toggle */
-        initToggle('lpPass', 'btnTogglePass');
+        initToggle();
 
-        /* Enter key on all inputs */
-        ['lpEmail','lpPass','lpTotpCode','lpForgotEmail','lpResetNew','lpResetConfirm'].forEach(function(id){
+        /* Enter key on inputs */
+        ['lpEmail', 'lpPass', 'lpTotpCode', 'lpForgotEmail', 'lpResetNew', 'lpResetConfirm'].forEach(function(id) {
             var el = document.getElementById(id);
-            if (el) el.addEventListener('keydown', onKey);
+            if (el) el.addEventListener('keydown', onEnterKey);
         });
+
+        /* Apply stored language */
+        applyLang(lang);
 
         /* Load branding */
         loadBranding();
 
-        /* Check if already logged in */
+        /* Redirect if already logged in */
         checkExistingToken();
 
-        /* Check for reset token in URL */
+        /* Handle reset link */
         checkResetUrl();
     });
 
