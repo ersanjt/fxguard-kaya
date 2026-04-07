@@ -118,7 +118,7 @@
                     document.getElementById('loginBox').style.display = 'flex';
                     document.getElementById('app').classList.remove('show');
                     const errEl = document.getElementById('loginErr');
-                    if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
+                    if (errEl) { errEl.style.color = ''; errEl.textContent = t('login_session_expired'); }
                 }
             });
         }
@@ -2007,7 +2007,7 @@
             btn.addEventListener('click', function() {
                 const show = input.type === 'password';
                 input.type = show ? 'text' : 'password';
-                const title = show ? (LANG === 'fa' ? 'مخفی کردن رمز' : 'Hide password') : (LANG === 'fa' ? 'نمایش رمز' : 'Show password');
+                const title = show ? t('toggle_hide_pass') : t('toggle_show_pass');
                 btn.setAttribute('title', title);
                 btn.setAttribute('aria-label', title);
                 btn.setAttribute('aria-pressed', show ? 'true' : 'false');
@@ -2022,9 +2022,14 @@
                 if (e.key !== 'Enter') return;
                 e.preventDefault();
                 const totpStep = document.getElementById('loginStepTotp');
-                const isTotpVisible = totpStep && totpStep.style.display !== 'none';
-                if (isTotpVisible) {
+                const forgotStep = document.getElementById('loginStepForgot');
+                const resetStep = document.getElementById('loginStepReset');
+                if (totpStep && totpStep.style.display !== 'none') {
                     if (typeof verifyTotpLogin === 'function') verifyTotpLogin();
+                } else if (forgotStep && forgotStep.style.display !== 'none') {
+                    if (typeof submitForgotPassword === 'function') submitForgotPassword();
+                } else if (resetStep && resetStep.style.display !== 'none') {
+                    if (typeof submitResetPassword === 'function') submitResetPassword();
                 } else {
                     if (typeof login === 'function') login();
                 }
@@ -2032,15 +2037,25 @@
             const emailEl = document.getElementById('email');
             const passEl = document.getElementById('pass');
             const totpEl = document.getElementById('totpCode');
+            const forgotEmailEl = document.getElementById('forgotEmail');
+            const resetNewEl = document.getElementById('resetNewPass');
+            const resetConfEl = document.getElementById('resetConfirmPass');
             if (emailEl) emailEl.addEventListener('keydown', onLoginKeydown);
             if (passEl) passEl.addEventListener('keydown', onLoginKeydown);
             if (totpEl) totpEl.addEventListener('keydown', onLoginKeydown);
+            if (forgotEmailEl) forgotEmailEl.addEventListener('keydown', onLoginKeydown);
+            if (resetNewEl) resetNewEl.addEventListener('keydown', onLoginKeydown);
+            if (resetConfEl) resetConfEl.addEventListener('keydown', onLoginKeydown);
         })();
 
         async function login() {
             const email = document.getElementById('email').value.trim();
             const pass = document.getElementById('pass').value;
-            document.getElementById('loginErr').textContent = '';
+            const errEl = document.getElementById('loginErr');
+            errEl.textContent = '';
+            errEl.style.color = '';
+            if (!email) { errEl.textContent = t('login_email_required'); return; }
+            if (!pass) { errEl.textContent = t('login_password_required'); return; }
             const btn = document.getElementById('btnLogin');
             btn.disabled = true;
             btn.textContent = t('login_loading');
@@ -2051,13 +2066,13 @@
             } catch (e) {
                 btn.disabled = false;
                 btn.textContent = t('login_btn');
-                document.getElementById('loginErr').textContent = t('login_err_connect');
+                errEl.textContent = t('login_err_connect');
                 return;
             }
             btn.disabled = false;
             btn.textContent = t('login_btn');
             if ((text || '').trim().startsWith('<')) {
-                document.getElementById('loginErr').textContent = t('login_err_server_html');
+                errEl.textContent = t('login_err_server_html');
                 return;
             }
             let data;
@@ -2066,11 +2081,11 @@
                 if (r.status === 0) hint = t('login_err_connect');
                 else if (r.status === 429) hint = t('login_err_429');
                 else hint = t('login_err_invalid') + ' (HTTP ' + r.status + ')';
-                document.getElementById('loginErr').textContent = hint;
+                errEl.textContent = hint;
                 return;
             }
             if (r.status === 429) {
-                document.getElementById('loginErr').textContent = (data && data.error) ? data.error : t('login_err_429');
+                errEl.textContent = (data && data.error) ? data.error : t('login_err_429');
                 return;
             }
             if (data.needTotp && data.tempToken) {
@@ -2102,7 +2117,7 @@
                     showTotpPromptIfNeeded();
                 } catch (e) { console.error('Post-login init:', e); }
             } else {
-                document.getElementById('loginErr').textContent = data.error || t('login_err_fail');
+                errEl.textContent = data.error || t('login_err_fail');
             }
         }
         function backToLoginStep1() {
@@ -2128,7 +2143,7 @@
             const errEl = document.getElementById('forgotErr');
             const successEl = document.getElementById('forgotSuccess');
             const btn = document.getElementById('btnForgotSubmit');
-            if (!email) { if (errEl) errEl.textContent = (LANG === 'fa' ? 'ایمیل را وارد کنید.' : 'Please enter your email.'); return; }
+            if (!email) { if (errEl) errEl.textContent = t('forgot_email_required'); return; }
             if (errEl) errEl.textContent = '';
             if (successEl) successEl.style.display = 'none';
             if (btn) btn.disabled = true;
@@ -2160,7 +2175,7 @@
             const btn = document.getElementById('btnResetSubmit');
             if (newPass !== confirmPass) { if (errEl) errEl.textContent = t('reset_err_match'); return; }
             if (newPass.length < 6) { if (errEl) errEl.textContent = t('reset_err_length'); return; }
-            if (!window._resetToken) { if (errEl) errEl.textContent = 'لینک منقضی شده است.'; return; }
+            if (!window._resetToken) { if (errEl) errEl.textContent = t('reset_link_expired'); return; }
             if (errEl) errEl.textContent = '';
             if (btn) btn.disabled = true;
             try {
@@ -2174,11 +2189,12 @@
                     document.getElementById('loginStep1').style.display = 'block';
                     document.getElementById('email').value = '';
                     document.getElementById('pass').value = '';
-                    document.getElementById('loginErr').textContent = data.message;
-                    document.getElementById('loginErr').style.color = 'var(--success, #059669)';
+                    const loginErrEl = document.getElementById('loginErr');
+                    loginErrEl.style.color = 'var(--success, #059669)';
+                    loginErrEl.textContent = data.message;
                     return;
                 }
-                if (errEl) errEl.textContent = (data.error || (LANG === 'fa' ? 'خطا در تغییر رمز.' : 'Failed to reset password.'));
+                if (errEl) errEl.textContent = (data.error || t('reset_fail'));
             } catch (e) { if (errEl) errEl.textContent = t('login_err_connect'); }
             if (btn) btn.disabled = false;
         }
