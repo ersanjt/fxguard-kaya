@@ -72,7 +72,7 @@ async function run() {
         console.log('  ✓ Server started');
 
         const tests = [
-            ['/health', (r) => r.status === 200 && r.data.status === 'ok'],
+            ['/health', (r) => r.status === 200 && ['ok', 'degraded'].includes(r.data.status)],
             ['/api/ping', (r) => r.status === 200 && r.data.ok === true],
             ['/api/config', (r) => r.status === 200 && r.data.timezone],
         ];

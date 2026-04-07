@@ -266,10 +266,11 @@ app.get('/health', async (req, res) => {
         degraded = true;
     }
 
-    // RabbitMQ check — disconnection is degraded
+    // RabbitMQ check — optional service; only degrades if RABBITMQ_URL is configured but down
     const rabbitOk = !!getRabbitChannel();
-    checks.rabbitmq = { status: rabbitOk ? 'ok' : 'disconnected' };
-    if (!rabbitOk) degraded = true;
+    const rabbitConfigured = !!process.env.RABBITMQ_URL;
+    checks.rabbitmq = { status: rabbitOk ? 'ok' : rabbitConfigured ? 'disconnected' : 'disabled' };
+    if (!rabbitOk && rabbitConfigured) degraded = true;
 
     const statusCode = dbOk ? 200 : 503;
     const overallStatus = !dbOk ? 'error' : degraded ? 'degraded' : 'ok';

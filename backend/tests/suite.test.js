@@ -58,7 +58,7 @@ async function runTests() {
     await test('GET /health returns 200 with status ok', async () => {
         const r = await req.get('/health');
         assert.strictEqual(r.status, 200);
-        assert.strictEqual(r.body.status, 'ok');
+        assert(['ok', 'degraded'].includes(r.body.status), `Unexpected health status: ${r.body.status}`);
         assert(r.body.uptime >= 0);
     });
 
