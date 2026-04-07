@@ -665,19 +665,23 @@ function scheduleReconnect() {
             attempts: reconnectAttemptCount,
         });
         reconnectAttemptCount = 0;
-        setTimeout(() => {
-            if (isClientReady || isClientStarting) return;
-            logger.info('🔄 Long-interval reconnect attempt...');
-            client = null;
-            startWhatsApp().catch((e) =>
-                logger.error('Long-interval reconnect failed', { error: e?.message })
-            );
-        }, 10 * 60 * 1000);
+        setTimeout(
+            () => {
+                if (isClientReady || isClientStarting) return;
+                logger.info('🔄 Long-interval reconnect attempt...');
+                client = null;
+                startWhatsApp().catch((e) =>
+                    logger.error('Long-interval reconnect failed', { error: e?.message })
+                );
+            },
+            10 * 60 * 1000
+        );
         return;
     }
 
     const delay = Math.min(
-        CONFIG.reconnectDelayMs * Math.pow(CONFIG.reconnectBackoffMultiplier, reconnectAttemptCount),
+        CONFIG.reconnectDelayMs *
+            Math.pow(CONFIG.reconnectBackoffMultiplier, reconnectAttemptCount),
         300000
     );
     reconnectAttemptCount++;
@@ -1126,7 +1130,10 @@ function startServer() {
                     healthCheckFailCount = 0;
                 } else {
                     healthCheckFailCount++;
-                    logger.warn('💉 Health check: unexpected state', { state, failCount: healthCheckFailCount });
+                    logger.warn('💉 Health check: unexpected state', {
+                        state,
+                        failCount: healthCheckFailCount,
+                    });
                     if (healthCheckFailCount >= 2) {
                         healthCheckFailCount = 0;
                         isClientReady = false;
