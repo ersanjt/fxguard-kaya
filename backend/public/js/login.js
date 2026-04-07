@@ -189,6 +189,19 @@
     var SUPPORTED = ['fa', 'en', 'tr'];
     var lang = localStorage.getItem('crm_lang') || 'fa';
     if (SUPPORTED.indexOf(lang) < 0) lang = 'fa';
+    (function syncAppHostLoginLangEarly() {
+        try {
+            if (/^app\.fxguard\.io$/i.test(window.location.hostname || '')) {
+                SUPPORTED = ['en', 'tr'];
+                if (lang === 'fa' || SUPPORTED.indexOf(lang) < 0) lang = 'en';
+                localStorage.setItem('crm_lang', lang);
+            }
+        } catch (e) {}
+    })();
+
+    function loginIsPublicRestricted() {
+        return !!(DEMO_INFO.publicSite || /^app\.fxguard\.io$/i.test(window.location.hostname || ''));
+    }
 
     function t(k) {
         return (I18N[lang] && I18N[lang][k]) || (I18N['fa'] && I18N['fa'][k]) || k;
@@ -229,7 +242,12 @@
 
     /* ── Apply Language ───────────────────────────── */
     function applyLang(l) {
-        if (SUPPORTED.indexOf(l) < 0) l = 'fa';
+        if (loginIsPublicRestricted()) {
+            SUPPORTED = ['en', 'tr'];
+            if (SUPPORTED.indexOf(l) < 0 || l === 'fa') l = 'en';
+        } else if (SUPPORTED.indexOf(l) < 0) {
+            l = 'fa';
+        }
         lang = l;
         localStorage.setItem('crm_lang', l);
 
@@ -240,10 +258,16 @@
 
         /* lang buttons */
         document.querySelectorAll('#lpLangSwitch button[data-lang]').forEach(function(btn) {
-            var isActive = btn.getAttribute('data-lang') === l;
+            var code = btn.getAttribute('data-lang');
+            if (loginIsPublicRestricted() && code === 'fa') {
+                btn.style.display = 'none';
+                return;
+            }
+            if (code === 'fa') btn.style.display = '';
+            var isActive = code === l;
             btn.classList.toggle('active', isActive);
             btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
-            var k = 'lang_' + btn.getAttribute('data-lang');
+            var k = 'lang_' + code;
             btn.textContent = t(k);
         });
 
@@ -587,6 +611,9 @@
                 var supportLink = document.getElementById('lpSupportLink');
                 if (supportLink && c.supportUrl) supportLink.href = c.supportUrl;
                 if (DEMO_INFO.publicSite) {
+                    SUPPORTED = ['en', 'tr'];
+                    if (lang === 'fa' || SUPPORTED.indexOf(lang) < 0) lang = 'en';
+                    localStorage.setItem('crm_lang', lang);
                     applyDemoPortalBranding();
                 } else {
                     loadBranding();
@@ -596,6 +623,9 @@
             .catch(function() {
                 DEMO_INFO.publicSite = detectFxguardPublicSite(null);
                 if (DEMO_INFO.publicSite) {
+                    SUPPORTED = ['en', 'tr'];
+                    if (lang === 'fa' || SUPPORTED.indexOf(lang) < 0) lang = 'en';
+                    localStorage.setItem('crm_lang', lang);
                     applyDemoPortalBranding();
                 } else {
                     loadBranding();

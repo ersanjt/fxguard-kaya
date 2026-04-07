@@ -2,7 +2,22 @@
  * زبان و ترجمهٔ داشبورد — بعد از i18n-fa.js / i18n-en.js / i18n-tr.js و قبل از dashboard.js
  * متغیر LANG سراسری است تا بقیهٔ dashboard.js به همان نام دسترسی داشته باشد.
  */
-var LANG = localStorage.getItem('crm_lang') || 'fa';
+function isFxguardPublicHost() {
+    try {
+        return !!window.FXGUARD_PUBLIC_SITE || /^app\.fxguard\.io$/i.test(window.location.hostname || '');
+    } catch (_e) {
+        return !!window.FXGUARD_PUBLIC_SITE;
+    }
+}
+
+var LANG = (function initialDashboardLang() {
+    var def = /^app\.fxguard\.io$/i.test(window.location.hostname || '') ? 'en' : 'fa';
+    var stored = localStorage.getItem('crm_lang') || def;
+    if (/^app\.fxguard\.io$/i.test(window.location.hostname || '')) {
+        if (stored === 'fa' || ['en', 'tr'].indexOf(stored) < 0) stored = 'en';
+    }
+    return stored;
+})();
 var I18N = { fa: {}, en: {}, tr: {} };
 if (window.__I18N_FA) Object.assign(I18N.fa, window.__I18N_FA);
 if (window.__I18N_EN) Object.assign(I18N.en, window.__I18N_EN);
@@ -18,7 +33,10 @@ window.t = function (k) {
 
 window.setLang = function (l) {
     var supported = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
-    if (supported.indexOf(l) < 0) l = supported[0] || 'fa';
+    if (isFxguardPublicHost()) {
+        supported = ['en', 'tr'];
+        if (supported.indexOf(l) < 0 || l === 'fa') l = 'en';
+    } else if (supported.indexOf(l) < 0) l = supported[0] || 'fa';
     LANG = l;
     window.LANG = l;
     localStorage.setItem('crm_lang', l);
@@ -71,13 +89,15 @@ window.applyTranslations = function () {
     if (typeof initSidebarCollapsedState === 'function') initSidebarCollapsedState();
 };
 
-window.SUPPORTED_LANGUAGES = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
+window.SUPPORTED_LANGUAGES = isFxguardPublicHost() ? ['en', 'tr'] : window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
 
 (function applyInitialLang() {
-    var l = localStorage.getItem('crm_lang') || 'fa';
+    var l = LANG;
     if (['fa', 'en', 'tr'].indexOf(l) >= 0) {
+        if (isFxguardPublicHost() && (l === 'fa' || ['en', 'tr'].indexOf(l) < 0)) l = 'en';
         LANG = l;
         window.LANG = l;
+        localStorage.setItem('crm_lang', l);
         document.documentElement.lang = l === 'en' ? 'en' : l === 'tr' ? 'tr' : 'fa';
         document.documentElement.dir = l === 'fa' ? 'rtl' : 'ltr';
         document.body.classList.toggle('ltr', l !== 'fa');
@@ -91,13 +111,18 @@ window.SUPPORTED_LANGUAGES = window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];
 })();
 
 window.applySupportedLanguages = function (supported, defaultLanguage) {
+    if (isFxguardPublicHost()) {
+        supported = ['en', 'tr'];
+        if (!defaultLanguage || ['en', 'tr'].indexOf(defaultLanguage) < 0) defaultLanguage = 'en';
+    }
     window.SUPPORTED_LANGUAGES = Array.isArray(supported) && supported.length ? supported : ['fa', 'en', 'tr'];
-    var cur = localStorage.getItem('crm_lang') || 'fa';
+    var cur = localStorage.getItem('crm_lang') || (isFxguardPublicHost() ? 'en' : 'fa');
+    if (isFxguardPublicHost() && (cur === 'fa' || ['en', 'tr'].indexOf(cur) < 0)) cur = 'en';
     if (window.SUPPORTED_LANGUAGES.indexOf(cur) < 0) {
         cur =
             defaultLanguage && window.SUPPORTED_LANGUAGES.indexOf(defaultLanguage) >= 0
                 ? defaultLanguage
-                : window.SUPPORTED_LANGUAGES[0] || 'fa';
+                : window.SUPPORTED_LANGUAGES[0] || (isFxguardPublicHost() ? 'en' : 'fa');
         localStorage.setItem('crm_lang', cur);
     }
     if (typeof setLang === 'function') setLang(cur);

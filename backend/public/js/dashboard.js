@@ -41,6 +41,13 @@
             } catch (e) {
                 window.FXGUARD_PUBLIC_SITE = !!(c && c.fxguardPublicSite);
             }
+            if (window.FXGUARD_PUBLIC_SITE) {
+                document.body.classList.add('fxguard-public-demo');
+                window.SUPPORTED_LANGUAGES = ['en', 'tr'];
+                if (typeof window.applySupportedLanguages === 'function') window.applySupportedLanguages(['en', 'tr'], 'en');
+            } else {
+                document.body.classList.remove('fxguard-public-demo');
+            }
             DEMO_CONFIG = {
                 enabled: !!(c && c.demoMode),
                 salesUrl: (c && c.salesUrl) || 'https://fxguard.io'
@@ -70,13 +77,24 @@
                 return;
             }
             const text = document.getElementById('demoBannerText');
-            if (text) text.textContent = (LANG === 'fa')
-                ? 'نسخه نمایشی فعال است؛ تغییرات ذخیره نمی‌شود.'
-                : (LANG === 'tr' ? 'Demo sürümü aktif; değişiklikler kaydedilmez.' : 'Demo mode is active; changes are not saved.');
-            const buyLink = document.getElementById('demoBannerBuyLink');
-            if (buyLink) {
-                buyLink.href = DEMO_CONFIG.salesUrl || 'https://fxguard.io';
-                buyLink.textContent = (LANG === 'fa') ? 'خرید پلن' : (LANG === 'tr' ? 'Plan satın al' : 'Buy plan');
+            if (window.FXGUARD_PUBLIC_SITE) {
+                if (text) text.textContent = (LANG === 'tr')
+                    ? 'Demo sürümü aktif; değişiklikler kaydedilmez.'
+                    : 'Demo mode is active; changes are not saved.';
+                const buyLink = document.getElementById('demoBannerBuyLink');
+                if (buyLink) {
+                    buyLink.href = DEMO_CONFIG.salesUrl || 'https://fxguard.io';
+                    buyLink.textContent = (LANG === 'tr') ? 'Plan satın al' : 'View plans';
+                }
+            } else {
+                if (text) text.textContent = (LANG === 'fa')
+                    ? 'نسخه نمایشی فعال است؛ تغییرات ذخیره نمی‌شود.'
+                    : (LANG === 'tr' ? 'Demo sürümü aktif; değişiklikler kaydedilmez.' : 'Demo mode is active; changes are not saved.');
+                const buyLink = document.getElementById('demoBannerBuyLink');
+                if (buyLink) {
+                    buyLink.href = DEMO_CONFIG.salesUrl || 'https://fxguard.io';
+                    buyLink.textContent = (LANG === 'fa') ? 'خرید پلن' : (LANG === 'tr' ? 'Plan satın al' : 'Buy plan');
+                }
             }
             banner.style.display = 'flex';
         }
@@ -5964,25 +5982,11 @@
             }
         }
         function getFxguardPublicBranding() {
-            const fa = (LANG === 'fa');
-            const tr = (LANG === 'tr');
-            if (fa) {
-                return {
-                    siteName: 'FXGuard',
-                    pageTitle: 'FXGuard CRM — دمو عمومی',
-                    footerText: 'FXGuard — محیط نمایشی عمومی (بدون ارتباط با سایر برندها)',
-                    loginTitle: 'پورتال FXGuard',
-                    faviconUrl: '/favicon-fxguard.svg',
-                    showFooter: true,
-                    footerStyle: 'minimal',
-                    logoUrl: ''
-                };
-            }
-            if (tr) {
+            if (LANG === 'tr') {
                 return {
                     siteName: 'FXGuard',
                     pageTitle: 'FXGuard CRM — Genel demo',
-                    footerText: 'FXGuard — Bağımsız herkese açık demo',
+                    footerText: 'FXGuard — Bağımsız herkese açık demo (diğer markalarla bağlantılı değildir)',
                     loginTitle: 'FXGuard Portalı',
                     faviconUrl: '/favicon-fxguard.svg',
                     showFooter: true,
@@ -6023,7 +6027,12 @@
                 if (window.FXGUARD_PUBLIC_SITE) headerLogoText.removeAttribute('data-i18n');
             }
             const headerLogo = document.getElementById('headerLogo');
-            if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
+            if (headerLogo) {
+                const backDash = window.FXGUARD_PUBLIC_SITE
+                    ? (LANG === 'tr' ? ' — Kontrol paneline dön' : ' — Back to dashboard')
+                    : (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard');
+                headerLogo.setAttribute('aria-label', logoText + backDash);
+            }
             const footerBrand = document.getElementById('appFooterBrand');
             if (footerBrand) {
                 footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
