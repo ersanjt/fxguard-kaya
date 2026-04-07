@@ -19,7 +19,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
     <link rel="stylesheet" href="/css/dashboard.css?v=46">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{document.documentElement.style.background='#0c1222';document.documentElement.style.color='#f0f4fc';var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
 <body>
@@ -3367,6 +3366,8 @@
             <button type="button" class="btn-primary" id="btnImportSubmit" onclick="submitImportCustomers()" disabled data-i18n="import_submit">ورود مخاطبین</button>
         </div>
     </div>
+    <!-- Chart.js به‌صورت local سرو می‌شود تا وابستگی به CDN خارجی نباشد -->
+    <script src="/js/chart.umd.min.js"></script>
     <script src="/socket.io/socket.io.js"></script>
     <script src="/js/modules/constants.js?v=1" charset="utf-8"></script>
     <script src="/js/modules/utils.js?v=1" charset="utf-8"></script>
