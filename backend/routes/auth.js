@@ -16,7 +16,7 @@ const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
-const { isDemoModeEnabled, isDemoCredentialMatch, getDemoUserPayload } = require('../lib/demoAuth');
+const { isDemoModeEnabled, isDemoCredentialMatch, getDemoUserPayload, isPublicAppRequest } = require('../lib/demoAuth');
 
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
 const TOTP_TEMP_EXPIRY = '5m';
@@ -94,7 +94,7 @@ router.post('/login', async (req, res, next) => {
         if (!identifier || !password) {
             return sendJson(400, { error: 'ایمیل/نام کاربری و رمز عبور الزامی است' });
         }
-        if (isDemoModeEnabled() && isDemoCredentialMatch(identifier, password)) {
+        if (isDemoModeEnabled() && isPublicAppRequest(req) && isDemoCredentialMatch(identifier, password)) {
             const demoUser = getDemoUserPayload();
             const token = jwt.sign(
                 {

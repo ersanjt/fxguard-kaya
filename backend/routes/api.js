@@ -13,7 +13,7 @@ const { createContactRouter } = require('./contact');
 const { createGatewayRouter } = require('./gateway');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
-const { isDemoModeEnabled, getDemoUsername } = require('../lib/demoAuth');
+const { isDemoModeEnabled, getDemoUsername, isPublicAppRequest } = require('../lib/demoAuth');
 
 const authRoutes = require('./auth');
 const userRoutes = require('./users');
@@ -44,9 +44,9 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         const supportUrl = process.env.SUPPORT_URL || null;
         const supportEmail = process.env.SUPPORT_EMAIL || null;
         const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : null);
-        const demoMode = isDemoModeEnabled();
-        const fxguardPublicSite =
-            String(process.env.FXGUARD_PUBLIC_SITE || '').trim().toLowerCase() === 'true';
+        const isPublicApp = isPublicAppRequest(req);
+        const demoMode = isDemoModeEnabled() && isPublicApp;
+        const fxguardPublicSite = isPublicApp;
         res.json({
             timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
             supportUrl: supportLink,

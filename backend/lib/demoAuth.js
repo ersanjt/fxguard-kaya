@@ -10,6 +10,26 @@ function getDemoPassword() {
     return (process.env.DEMO_PASSWORD || '123456').toString();
 }
 
+function getRequestHost(req) {
+    try {
+        const forwardedHost = (req && req.headers && req.headers['x-forwarded-host']) || '';
+        const rawHost = (forwardedHost || (req && req.headers && req.headers.host) || '').toString();
+        return rawHost.split(',')[0].trim().split(':')[0].toLowerCase();
+    } catch (_) {
+        return '';
+    }
+}
+
+function getPublicAppHost() {
+    return (process.env.PUBLIC_APP_HOST || 'app.fxguard.io').toString().trim().toLowerCase();
+}
+
+function isPublicAppRequest(req) {
+    const host = getRequestHost(req);
+    const publicHost = getPublicAppHost();
+    return !!host && !!publicHost && host === publicHost;
+}
+
 function getDemoUserPayload() {
     return {
         id: 'demo-user',
@@ -60,5 +80,6 @@ module.exports = {
     isDemoModeEnabled,
     getDemoUsername,
     getDemoUserPayload,
-    isDemoCredentialMatch
+    isDemoCredentialMatch,
+    isPublicAppRequest
 };
