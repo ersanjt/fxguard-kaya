@@ -45,6 +45,7 @@ window.setLang = function (l) {
     } catch (_e) {
         /* ignore */
     }
+    if (typeof window.reapplyFxguardPublicBranding === 'function') window.reapplyFxguardPublicBranding();
 };
 
 window.applyTranslations = function () {

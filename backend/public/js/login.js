@@ -58,6 +58,12 @@
             demo_title:           'نسخه دمو',
             demo_credentials:     'نام کاربری: {username} | رمز عبور: {password}',
             demo_buy:             'مشاهده پلن‌ها و خرید',
+            demo_brand_name:      'دمو FXGuard',
+            demo_login_sub:       'ورود به محیط نمایشی — در دمو عمومی تغییرات ذخیره نمی‌شود',
+            demo_page_title:      'ورود | دمو FXGuard',
+            forgot_email_ph:      'email@example.com',
+            reset_new_ph:         'حداقل ۶ کاراکتر',
+            reset_confirm_ph:     'تکرار رمز',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'ترکی',
         },
         en: {
@@ -111,6 +117,12 @@
             demo_title:           'Demo Access',
             demo_credentials:     'Username: {username} | Password: {password}',
             demo_buy:             'View plans and purchase',
+            demo_brand_name:      'FXGuard Demo',
+            demo_login_sub:       'Sign in to the read-only public demo',
+            demo_page_title:      'Sign in | FXGuard Demo',
+            forgot_email_ph:      'you@example.com',
+            reset_new_ph:         'At least 6 characters',
+            reset_confirm_ph:     'Confirm password',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Turkish',
         },
         tr: {
@@ -164,6 +176,12 @@
             demo_title:           'Demo Erişimi',
             demo_credentials:     'Kullanıcı adı: {username} | Şifre: {password}',
             demo_buy:             'Planları incele ve satın al',
+            demo_brand_name:      'FXGuard Demo',
+            demo_login_sub:       'Salt okunur genel demo ortamına giriş',
+            demo_page_title:      'Giriş | FXGuard Demo',
+            forgot_email_ph:      'ornek@email.com',
+            reset_new_ph:         'En az 6 karakter',
+            reset_confirm_ph:     'Şifre tekrar',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Türkçe',
         }
     };
@@ -175,7 +193,16 @@
     function t(k) {
         return (I18N[lang] && I18N[lang][k]) || (I18N['fa'] && I18N['fa'][k]) || k;
     }
-    var DEMO_INFO = { enabled: false, username: 'demo', password: '123456', salesUrl: 'https://fxguard.io' };
+    var DEMO_INFO = { enabled: false, publicSite: false, username: 'demo', password: '123456', salesUrl: 'https://fxguard.io' };
+
+    function detectFxguardPublicSite(c) {
+        try {
+            if (c && c.fxguardPublicSite) return true;
+            return /^app\.fxguard\.io$/i.test(window.location.hostname || '');
+        } catch (e) {
+            return !!(c && c.fxguardPublicSite);
+        }
+    }
 
     function renderDemoBox() {
         var box = document.getElementById('lpDemoBox');
@@ -231,6 +258,9 @@
             var v = t(el.getAttribute('data-i18n-ph'));
             if (v) el.placeholder = v;
         });
+        if (DEMO_INFO.enabled || DEMO_INFO.publicSite) {
+            document.title = t('demo_page_title');
+        }
         renderDemoBox();
     }
 
@@ -534,20 +564,44 @@
             })
             .catch(function() {});
     }
-    function loadPublicConfig() {
+    function applyDemoPortalBranding() {
+        var nameEl = document.getElementById('lpBrandName');
+        if (nameEl) nameEl.setAttribute('data-i18n', 'demo_brand_name');
+        var subEl = document.getElementById('lpBrandSub');
+        if (subEl) subEl.setAttribute('data-i18n', 'demo_login_sub');
+        var fav = document.getElementById('lpFavicon');
+        if (fav) fav.href = '/favicon-fxguard.svg';
+        applyLang(lang);
+    }
+
+    function loadPublicConfigAndBranding() {
         fetch('/api/config')
             .then(function(r) { return r.json().catch(function() { return {}; }); })
             .then(function(c) {
-                if (!c) return;
+                c = c || {};
                 DEMO_INFO.enabled = !!c.demoMode;
+                DEMO_INFO.publicSite = detectFxguardPublicSite(c);
                 DEMO_INFO.username = c.demoUsername || 'demo';
                 DEMO_INFO.password = c.demoPassword || '123456';
                 DEMO_INFO.salesUrl = c.salesUrl || 'https://fxguard.io';
                 var supportLink = document.getElementById('lpSupportLink');
                 if (supportLink && c.supportUrl) supportLink.href = c.supportUrl;
+                if (DEMO_INFO.publicSite) {
+                    applyDemoPortalBranding();
+                } else {
+                    loadBranding();
+                }
                 renderDemoBox();
             })
-            .catch(function() {});
+            .catch(function() {
+                DEMO_INFO.publicSite = detectFxguardPublicSite(null);
+                if (DEMO_INFO.publicSite) {
+                    applyDemoPortalBranding();
+                } else {
+                    loadBranding();
+                }
+                renderDemoBox();
+            });
     }
 
     /* ── Check URL for reset token ───────────────── */
@@ -565,11 +619,16 @@
         var existing = localStorage.getItem('crm_token');
         if (!existing) return;
         fetch('/api/auth/me', {
+            credentials: 'include',
             headers: { 'Authorization': 'Bearer ' + existing }
         }).then(function(r) {
-            return r.json().catch(function() { return {}; });
-        }).then(function(d) {
-            if (d && d.ok && d.data && d.data.email) {
+            return r.json().then(function(d) {
+                return { ok: r.ok, d: d };
+            }).catch(function() {
+                return { ok: r.ok, d: {} };
+            });
+        }).then(function(res) {
+            if (res.ok && res.d && res.d.email && !res.d.error) {
                 window.location.href = '/dashboard';
             } else {
                 localStorage.removeItem('crm_token');
@@ -635,9 +694,8 @@
         /* Apply stored language */
         applyLang(lang);
 
-        /* Load branding */
-        loadBranding();
-        loadPublicConfig();
+        /* Config + panel branding (skipped in demo mode — FXGuard demo labels instead) */
+        loadPublicConfigAndBranding();
 
         /* Redirect if already logged in */
         checkExistingToken();

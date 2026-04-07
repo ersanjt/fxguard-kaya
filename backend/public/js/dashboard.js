@@ -27,6 +27,7 @@
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
+        window.FXGUARD_PUBLIC_SITE = false;
         fetch((API || '') + '/api/panel-settings/public/languages').then(function(r){ return r.json(); }).then(function(data){
             if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage);
             else if (typeof setLang === 'function') setLang(LANG);
@@ -35,6 +36,11 @@
         });
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
+            try {
+                window.FXGUARD_PUBLIC_SITE = !!((c && c.fxguardPublicSite) || /^app\.fxguard\.io$/i.test(window.location.hostname || ''));
+            } catch (e) {
+                window.FXGUARD_PUBLIC_SITE = !!(c && c.fxguardPublicSite);
+            }
             DEMO_CONFIG = {
                 enabled: !!(c && c.demoMode),
                 salesUrl: (c && c.salesUrl) || 'https://fxguard.io'
@@ -5957,8 +5963,48 @@
                 bottomBar.classList.remove('has-mobile-tab');
             }
         }
+        function getFxguardPublicBranding() {
+            const fa = (LANG === 'fa');
+            const tr = (LANG === 'tr');
+            if (fa) {
+                return {
+                    siteName: 'FXGuard',
+                    pageTitle: 'FXGuard CRM — دمو عمومی',
+                    footerText: 'FXGuard — محیط نمایشی عمومی (بدون ارتباط با سایر برندها)',
+                    loginTitle: 'پورتال FXGuard',
+                    faviconUrl: '/favicon-fxguard.svg',
+                    showFooter: true,
+                    footerStyle: 'minimal',
+                    logoUrl: ''
+                };
+            }
+            if (tr) {
+                return {
+                    siteName: 'FXGuard',
+                    pageTitle: 'FXGuard CRM — Genel demo',
+                    footerText: 'FXGuard — Bağımsız herkese açık demo',
+                    loginTitle: 'FXGuard Portalı',
+                    faviconUrl: '/favicon-fxguard.svg',
+                    showFooter: true,
+                    footerStyle: 'minimal',
+                    logoUrl: ''
+                };
+            }
+            return {
+                siteName: 'FXGuard',
+                pageTitle: 'FXGuard CRM — Public demo',
+                footerText: 'FXGuard — Standalone public demo (not affiliated with other brands)',
+                loginTitle: 'FXGuard Staff Portal',
+                faviconUrl: '/favicon-fxguard.svg',
+                showFooter: true,
+                footerStyle: 'minimal',
+                logoUrl: ''
+            };
+        }
         function applyBranding(s) {
-            if (!s) return;
+            if (window.FXGUARD_PUBLIC_SITE) {
+                s = getFxguardPublicBranding();
+            } else if (!s) return;
             window.__panelBranding = s;
             const defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
             const defSite = (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
@@ -5972,11 +6018,17 @@
                 if (s.logoUrl && s.logoUrl.trim()) { headerIcon.innerHTML = '<img src="' + escapeHtml(s.logoUrl) + '" alt="" style="width:28px;height:28px;object-fit:contain">'; } else { headerIcon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg>'; }
             }
             const headerLogoText = document.getElementById('headerLogoText');
-            if (headerLogoText) headerLogoText.textContent = logoText;
+            if (headerLogoText) {
+                headerLogoText.textContent = logoText;
+                if (window.FXGUARD_PUBLIC_SITE) headerLogoText.removeAttribute('data-i18n');
+            }
             const headerLogo = document.getElementById('headerLogo');
             if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
             const footerBrand = document.getElementById('appFooterBrand');
-            if (footerBrand) footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
+            if (footerBrand) {
+                footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
+                if (window.FXGUARD_PUBLIC_SITE) footerBrand.removeAttribute('data-i18n');
+            }
             const appFooter = document.getElementById('appFooter');
             if (appFooter) {
                 appFooter.style.display = (s.showFooter === false) ? 'none' : '';
@@ -10519,6 +10571,9 @@
             window.selectThreadInPopup = selectThreadInPopup;
             window.filterInternalThreads = filterInternalThreads;
             window.toggleInternalChatFloating = toggleInternalChatFloating;
+            window.reapplyFxguardPublicBranding = function() {
+                if (window.FXGUARD_PUBLIC_SITE) applyBranding({});
+            };
         })();
 
         /** مقداردهی بعد از تأیید /api/auth/me — ناو، تنظیمات، رویدادها، سوکت، نرخ، حضور، TOTP. قابل استخراج به ماژول auth. */

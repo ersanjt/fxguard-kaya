@@ -17,7 +17,7 @@
     <noscript>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     </noscript>
-    <link rel="stylesheet" href="/css/login.css?v=2">
+    <link rel="stylesheet" href="/css/login.css?v=4">
     <script>(function(){try{
         document.documentElement.style.background='#080d1a';
         document.documentElement.style.color='#f0f4fc';
@@ -93,6 +93,7 @@
             <div class="lp-field">
                 <label for="lpEmail" data-i18n="login_email_lbl">ایمیل یا نام کاربری</label>
                 <input type="text" id="lpEmail" class="lp-input"
+                       data-i18n-ph="login_email_lbl"
                        placeholder="ایمیل یا نام کاربری"
                        autocomplete="username" autocorrect="off" autocapitalize="none" spellcheck="false">
             </div>
@@ -101,6 +102,7 @@
                 <label for="lpPass" data-i18n="login_pass_lbl">رمز عبور</label>
                 <div class="lp-input-wrap">
                     <input type="password" id="lpPass" class="lp-input"
+                           data-i18n-ph="login_pass_lbl"
                            placeholder="رمز عبور" autocomplete="current-password">
                     <button type="button" id="btnTogglePass" class="lp-toggle-pass"
                             title="نمایش رمز عبور" aria-label="نمایش رمز عبور" aria-pressed="false">
@@ -158,6 +160,7 @@
             <div class="lp-field">
                 <label for="lpForgotEmail" data-i18n="forgot_email_lbl">ایمیل حساب</label>
                 <input type="email" id="lpForgotEmail" class="lp-input"
+                       data-i18n-ph="forgot_email_ph"
                        placeholder="email@example.com" autocomplete="email" dir="ltr">
             </div>
 
@@ -184,12 +187,14 @@
             <div class="lp-field">
                 <label for="lpResetNew" data-i18n="reset_new_lbl">رمز عبور جدید</label>
                 <input type="password" id="lpResetNew" class="lp-input"
+                       data-i18n-ph="reset_new_ph"
                        placeholder="حداقل ۶ کاراکتر" autocomplete="new-password">
             </div>
 
             <div class="lp-field">
                 <label for="lpResetConfirm" data-i18n="reset_confirm_lbl">تکرار رمز عبور</label>
                 <input type="password" id="lpResetConfirm" class="lp-input"
+                       data-i18n-ph="reset_confirm_ph"
                        placeholder="تکرار رمز" autocomplete="new-password">
             </div>
 
@@ -216,6 +221,6 @@
     </div>
 </main>
 
-<script src="/js/login.js?v=2"></script>
+<script src="/js/login.js?v=4"></script>
 </body>
 </html>

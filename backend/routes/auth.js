@@ -397,6 +397,17 @@ const { authMiddleware } = require('../middleware/auth');
 
 router.get('/me', authMiddleware, async (req, res, next) => {
     try {
+        if (req.user && req.user.isDemo) {
+            const u = {
+                ...getDemoUserPayload(),
+                branch: null,
+                department: null,
+                canDeleteCustomer: false,
+                canDeleteUser: false,
+                canManageTickets: false
+            };
+            return res.json(u);
+        }
         const user = await User.findByPk(req.user.id, {
             attributes: { exclude: ['password'] },
             include: [

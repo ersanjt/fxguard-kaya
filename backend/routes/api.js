@@ -45,6 +45,8 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         const supportEmail = process.env.SUPPORT_EMAIL || null;
         const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : null);
         const demoMode = isDemoModeEnabled();
+        const fxguardPublicSite =
+            String(process.env.FXGUARD_PUBLIC_SITE || '').trim().toLowerCase() === 'true';
         res.json({
             timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
             supportUrl: supportLink,
@@ -52,6 +54,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             demoUsername: demoMode ? getDemoUsername() : null,
             demoPassword: demoMode ? (process.env.DEMO_PASSWORD || '123456') : null,
             salesUrl: process.env.SALES_URL || 'https://fxguard.io',
+            fxguardPublicSite,
         });
     });
 
