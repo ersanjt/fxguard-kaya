@@ -243,10 +243,12 @@ router.post('/forgot-password', async (req, res, next) => {
             await PasswordResetToken.destroy({ where: { userId: user.id }, transaction: t });
             await PasswordResetToken.create({ userId: user.id, token, expiresAt }, { transaction: t });
         });
+        // پاسخ فوری — ایمیل در background ارسال می‌شود تا کاربر منتظر نماند
+        res.status(200).json({ message: 'در صورت وجود حساب با این ایمیل، لینک بازیابی ارسال می‌شود.' });
         const settings = await getPanelSettings();
         const emailConfig = getPanelEmailConfig(settings);
-        await emailService.sendPasswordReset(user, token, RESET_TOKEN_EXPIRY_MINUTES, emailConfig);
-        res.status(200).json({ message: 'در صورت وجود حساب با این ایمیل، لینک بازیابی ارسال می‌شود.' });
+        emailService.sendPasswordReset(user, token, RESET_TOKEN_EXPIRY_MINUTES, emailConfig)
+            .catch(err => logger.error('Failed to send password reset email:', err));
     } catch (err) {
         next(err);
     }
