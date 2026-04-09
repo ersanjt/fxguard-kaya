@@ -26,6 +26,8 @@ async function logActivity({ userId, branchId, departmentId, action, entityType,
         logger.warn('logActivity called without action');
         return;
     }
+    // JWT دمو `userId` واقعی در DB ندارد — ثبت رکورد باعث SQLITE_FOREIGN KEY می‌شود
+    if (userId === 'demo-user') return;
     if (!VALID_ACTIONS.has(action)) {
         logger.warn('logActivity: unknown action type', { action });
     }

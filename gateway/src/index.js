@@ -1067,9 +1067,23 @@ async function sendWhatsAppMessage(data) {
 }
 
 // ==================== Startup ====================
+function resolveGatewayPort() {
+    const raw = process.env.PORT;
+    let p = raw != null && String(raw).trim() !== '' ? parseInt(String(raw), 10) : 3001;
+    if (!Number.isFinite(p) || p < 1 || p > 65535) p = 3001;
+    return p;
+}
+
 function startServer() {
-    const PORT = process.env.PORT || 3001;
+    const PORT = resolveGatewayPort();
     const isProd = process.env.NODE_ENV === 'production';
+
+    if (isProd && PORT === 3002) {
+        logger.error(
+            '❌ Gateway نباید روی پورت ۳۰۰۲ گوش دهد (پورت پیش‌فرض Backend). در gateway/.env مقدار PORT=3001 بگذارید.'
+        );
+        process.exit(1);
+    }
 
     if (isProd) {
         if (!CONFIG.gatewayApiSecret || CONFIG.gatewayApiSecret.length < CONFIG.secretMinLength) {
@@ -1182,7 +1196,28 @@ process.on('uncaughtException', (err) => {
     setTimeout(() => process.exit(1), 500);
 });
 
+function isRecoverablePuppeteerRejection(reason) {
+    const msg = reason && reason.message ? String(reason.message) : String(reason || '');
+    return (
+        /Execution context was destroyed/i.test(msg) ||
+        /Target closed/i.test(msg) ||
+        /detached Frame/i.test(msg) ||
+        /Protocol error.*Target closed/i.test(msg) ||
+        /Navigation failed/i.test(msg)
+    );
+}
+
 process.on('unhandledRejection', (reason) => {
+    if (isRecoverablePuppeteerRejection(reason)) {
+        logger.warn('unhandledRejection (Puppeteer/WhatsApp — recoverable) — scheduling reconnect', {
+            reason: reason && reason.message ? reason.message : String(reason),
+        });
+        try {
+            resetClientState();
+        } catch (_) {}
+        scheduleReconnect();
+        return;
+    }
     logger.error('unhandledRejection — exiting for clean restart', { reason: String(reason) });
     try {
         resetClientState();

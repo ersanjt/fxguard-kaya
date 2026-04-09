@@ -1,5 +1,11 @@
 # واتساپ Gateway — وقتی «روشن نیست» یا قطع/وصل کند است
 
+## خطای `listen EADDRINUSE: address already in use :::3002` روی Gateway
+
+یعنی در **`gateway/.env`** مقدار **`PORT=3002`** گذاشته شده (اشتباه؛ آن پورت برای Backend است). Gateway باید **`PORT=3001`** باشد. بعد از اصلاح: `pm2 restart crm-gateway --update-env`.
+
+از نسخه‌های اخیر، در production اگر `PORT=3002` باشد فرایند با پیام خطا متوقف می‌شود تا دوباره با پورت اشتباه بالا نیاید.
+
 ## شرط کار کردن حالت Gateway (QR)
 
 1. **پروسهٔ Gateway** روی سرور اجرا باشد (مثلاً `pm2` با نام `crm-gateway` روی پورت **3001**).
