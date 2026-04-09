@@ -164,6 +164,8 @@ window.__I18N_TR = {
     wa_stickers: 'Çıkartmalar',
     wa_gif: 'GIF',
     wa_gif_use_attach: 'GIF veya hareketli görsel göndermek için dosya ekle\'yi kullanın.',
+    chat_empty_title: 'WhatsApp Web',
+    chat_empty_hint: 'Mesajları okumak ve yanıtlamak için listeden bir sohbet seçin.',
     back_to_list: '← Listeye dön',
     back_to_customers: '← Müşterilere dön',
     loading: 'Yükleniyor...',

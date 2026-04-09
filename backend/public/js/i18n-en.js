@@ -173,6 +173,8 @@ window.__I18N_EN = {
     wa_stickers: 'Stickers',
     wa_gif: 'GIF',
     wa_gif_use_attach: 'Use attach to send a GIF or animated image.',
+    chat_empty_title: 'WhatsApp Web',
+    chat_empty_hint: 'Select a chat from the list to read and reply to messages.',
     back_to_list: '← Back to list',
     back_to_customers: '← Back to customers',
     loading: 'Loading...',

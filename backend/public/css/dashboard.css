@@ -1477,6 +1477,61 @@
         .new-conv-customer-item .name { font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
         .new-conv-customer-item .meta { font-size: 0.85rem; color: var(--text-muted); }
         .conv-layout .chat-area.show { flex: 1; min-width: 0; }
+        .chat-empty-state {
+            display: none;
+            flex: 1;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            padding: 24px;
+        }
+        .chat-empty-state-inner {
+            text-align: center;
+            max-width: 420px;
+            color: var(--text-secondary);
+        }
+        .chat-empty-icon {
+            font-size: 3.5rem;
+            line-height: 1;
+            display: block;
+            margin-bottom: 16px;
+            opacity: 0.45;
+        }
+        .chat-empty-title {
+            margin: 0 0 8px;
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            line-height: 1.3;
+        }
+        .chat-empty-hint {
+            margin: 0;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: var(--text-muted);
+        }
+        @media (min-width: 901px) {
+            #pageConversations .conv-layout .chat-area {
+                display: flex !important;
+                flex-direction: column;
+                flex: 1;
+                min-width: 0;
+                min-height: 320px;
+            }
+            #pageConversations .conv-layout .chat-area:not(.show) .chat-header-wrap,
+            #pageConversations .conv-layout .chat-area:not(.show) .chat-messages,
+            #pageConversations .conv-layout .chat-area:not(.show) .chat-reply-preview,
+            #pageConversations .conv-layout .chat-area:not(.show) .chat-file-preview,
+            #pageConversations .conv-layout .chat-area:not(.show) .chat-send {
+                display: none !important;
+            }
+            #pageConversations .conv-layout .chat-area:not(.show) .chat-empty-state {
+                display: flex;
+            }
+            #pageConversations .conv-layout .chat-area.show .chat-empty-state {
+                display: none !important;
+            }
+        }
         .chat-back-btn { display: none; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; width: 44px; height: 44px; padding: 0; background: var(--bg-hover); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text-primary); cursor: pointer; flex-shrink: 0; transition: background 0.2s; -webkit-tap-highlight-color: transparent; }
         .chat-back-btn:hover { background: var(--border); }
         .conv-detail-bar { padding: 12px 18px; font-size: 0.82rem; color: var(--text-secondary); border-top: 1px solid var(--border); min-width: 0; overflow: hidden; background: rgba(0,0,0,0.15); transition: max-height 0.25s ease, padding 0.25s ease, opacity 0.2s; }
@@ -4107,6 +4162,15 @@
             border: none;
             border-radius: 0;
             box-shadow: none;
+        }
+        #pageConversations.wa-conversations-theme .chat-empty-state-inner {
+            color: #8696a0;
+        }
+        #pageConversations.wa-conversations-theme .chat-empty-title {
+            color: #e9edef;
+        }
+        #pageConversations.wa-conversations-theme .chat-empty-hint {
+            color: #8696a0;
         }
         #pageConversations.wa-conversations-theme .chat-header-wrap {
             background: #202c33;

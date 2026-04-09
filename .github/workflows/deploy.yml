@@ -111,6 +111,7 @@ jobs:
             node --check lib/encrypt.js
             node --check routes/upload.js
             node --check routes/api.js
+            node --check routes/panelSettings.js
             echo "  ✅ syntax بدون خطا"
 
             # ---- reload با PM2 ----

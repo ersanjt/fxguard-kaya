@@ -171,6 +171,8 @@ window.__I18N_FA = {
     wa_stickers: 'استیکر',
     wa_gif: 'GIF',
     wa_gif_use_attach: 'برای ارسال GIF یا استیکر متحرک از پیوست فایل استفاده کنید.',
+    chat_empty_title: 'یک گفتگو را از لیست انتخاب کنید',
+    chat_empty_hint: 'برای مشاهدهٔ پیام‌ها و پاسخ، روی یک مکالمه کلیک کنید.',
     back_to_list: '← بازگشت به لیست',
     back_to_customers: '← بازگشت به مشتریان',
     loading: 'در حال بارگذاری...',
