@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
 const { getPermissions, canAccess, canManageUsers, canManageTickets, canDeleteCustomer, canDeleteUser, canManageConversations, canViewArchivedConversations } = require('../lib/permissions');
-const { isDemoModeEnabled, getDemoUserPayload } = require('../lib/demoAuth');
+const { isDemoModeEnabled, getDemoUserPayload, isPublicAppRequest } = require('../lib/demoAuth');
 
 const { COOKIE_NAME } = require('../lib/authCookie');
 
@@ -18,7 +18,7 @@ async function authMiddleware(req, res, next) {
     }
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (decoded && decoded.isDemo && isDemoModeEnabled()) {
+        if (decoded && decoded.isDemo && isDemoModeEnabled() && isPublicAppRequest(req)) {
             const demoUser = getDemoUserPayload();
             req.user = demoUser;
             req.userId = demoUser.id;

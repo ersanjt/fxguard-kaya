@@ -37,6 +37,7 @@ const { sendAdminSecurityAlert } = require('./services/adminAlertService');
 const { assertWebhookSecretBeforeBody } = require('./middleware/webhookAuth');
 const { notifySystemEvent } = require('./services/systemEventNotifier');
 const { isDemoModeEnabled } = require('./lib/demoAuth');
+const { publicDemoSiteApiGuard } = require('./middleware/publicDemoSiteGuard');
 
 // ==================== Express Setup ====================
 const app = express();
@@ -236,6 +237,8 @@ app.use('/api', (req, res, next) => {
     } catch (_) {}
     return next();
 });
+
+app.use('/api', publicDemoSiteApiGuard);
 
 // ==================== Socket.IO ====================
 app.set('io', io);

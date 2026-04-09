@@ -94,7 +94,17 @@ router.post('/login', async (req, res, _next) => {
         if (!identifier || !password) {
             return sendJson(400, { error: 'ایمیل/نام کاربری و رمز عبور الزامی است' });
         }
-        if (isDemoModeEnabled() && isPublicAppRequest(req) && isDemoCredentialMatch(identifier, password)) {
+        if (isPublicAppRequest(req)) {
+            if (!isDemoModeEnabled()) {
+                return sendJson(503, {
+                    error: 'دامنهٔ دمو موقتاً غیرفعال است. برای ورود به پنل سازمان از آدرس اختصاصی خود استفاده کنید.'
+                });
+            }
+            if (!isDemoCredentialMatch(identifier, password)) {
+                return sendJson(403, {
+                    error: 'این دامنه فقط برای پیش‌نمایش دمو است؛ ورود با حساب واقعی تنها از آدرس اختصاصی پنل سازمان (مثل پنل کایا) امکان‌پذیر است.'
+                });
+            }
             const demoUser = getDemoUserPayload();
             const token = jwt.sign(
                 {

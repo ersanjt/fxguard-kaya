@@ -76,10 +76,18 @@ function isDemoCredentialMatch(identifier, password) {
     return (normalizedIdentifier === demoUsername || normalizedIdentifier === demoEmail) && String(password || '') === getDemoPassword();
 }
 
+function isPublicAppHostName(host) {
+    const h = (host || '').toString().trim().split(',')[0].trim().split(':')[0].toLowerCase();
+    const publicHost = getPublicAppHost();
+    return !!h && !!publicHost && h === publicHost;
+}
+
 module.exports = {
     isDemoModeEnabled,
     getDemoUsername,
     getDemoUserPayload,
     isDemoCredentialMatch,
-    isPublicAppRequest
+    isPublicAppRequest,
+    getPublicAppHost,
+    isPublicAppHostName
 };

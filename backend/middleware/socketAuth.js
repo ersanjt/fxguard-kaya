@@ -1,6 +1,16 @@
 const jwt = require('jsonwebtoken');
 const { User } = require('../models');
-const { isDemoModeEnabled } = require('../lib/demoAuth');
+const { isDemoModeEnabled, isPublicAppHostName } = require('../lib/demoAuth');
+
+function socketHandshakeHost(socket) {
+    try {
+        const forwarded = (socket.handshake.headers && socket.handshake.headers['x-forwarded-host']) || '';
+        const raw = (forwarded || (socket.handshake.headers && socket.handshake.headers.host) || '').toString();
+        return raw.split(',')[0].trim().split(':')[0].toLowerCase();
+    } catch (_) {
+        return '';
+    }
+}
 
 module.exports = async (socket, next) => {
     try {
@@ -9,12 +19,19 @@ module.exports = async (socket, next) => {
             return next(new Error('احراز هویت الزامی است'));
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (decoded && decoded.isDemo && isDemoModeEnabled()) {
+        const onPublicDemoHost = isPublicAppHostName(socketHandshakeHost(socket));
+        if (onPublicDemoHost) {
+            if (!isDemoModeEnabled() || !decoded || !decoded.isDemo) {
+                return next(new Error('اتصال زنده فقط با حساب دمو روی این دامنه مجاز است.'));
+            }
             socket.userId = 'demo-user';
             socket.departmentId = null;
             socket.userRole = 'agent';
             socket.isDemo = true;
             return next();
+        }
+        if (decoded && decoded.isDemo) {
+            return next(new Error('حساب دمو فقط روی دامنهٔ پیش‌نمایش (Public Demo) قابل استفاده است.'));
         }
         const user = await User.findByPk(decoded.id || decoded.userId);
         if (!user || !user.isActive) {
