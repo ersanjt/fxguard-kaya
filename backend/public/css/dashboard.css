@@ -881,6 +881,93 @@
         .chat-attach-btn:hover, .chat-voice-btn:hover { background: var(--bg-hover); color: var(--accent); border-color: var(--accent); }
         .chat-voice-btn.recording { background: var(--danger-soft); color: var(--danger); border-color: var(--danger); animation: chat-voice-pulse 1s ease-in-out infinite; }
         @keyframes chat-voice-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }
+        .chat-tool-btn { width: 44px; height: 44px; min-width: 44px; min-height: 44px; }
+        .conv-item-avatar img,
+        .chat-header-avatar img { z-index: 1; }
+        .conv-item-avatar.avatar-img-failed .avatar-fallback,
+        .chat-header-avatar.avatar-img-failed .avatar-fallback { z-index: 2; }
+        .chat-voice-recording-bar {
+            display: none;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            flex-basis: 100%;
+            padding: 8px 14px;
+            background: linear-gradient(90deg, rgba(239, 68, 68, 0.14), rgba(239, 68, 68, 0.04));
+            border-bottom: 1px solid var(--border);
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--danger, #ef4444);
+        }
+        .chat-voice-rec-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--danger, #ef4444);
+            flex-shrink: 0;
+            animation: chat-rec-dot-pulse 1s ease-in-out infinite;
+        }
+        @keyframes chat-rec-dot-pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.4; transform: scale(0.92); } }
+        .chat-compose-row {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            flex: 1;
+            min-width: 0;
+        }
+        .chat-compose-tools {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+        }
+        .chat-compose-field {
+            flex: 1;
+            min-width: 140px;
+        }
+        .chat-send .chat-compose-input,
+        .chat-send #msgInput {
+            width: 100%;
+        }
+        .chat-compose-send.chat-send-btn {
+            width: auto;
+            min-width: 52px;
+            padding: 0 18px;
+            gap: 8px;
+            border-radius: 22px;
+        }
+        .chat-compose-send .chat-send-text { font-weight: 600; font-size: 0.9rem; }
+        .msg-voice-meta {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .msg.in .msg-voice-meta { color: var(--text-secondary); }
+        .msg.out .msg-voice-meta { color: rgba(255, 255, 255, 0.92); }
+        .msg-voice-meta--file .msg-voice-ic { opacity: 0.9; }
+        .msg-audio-shell {
+            border-radius: 12px;
+            padding: 4px 8px;
+            background: rgba(0, 0, 0, 0.07);
+        }
+        .msg.out .msg-audio-shell {
+            background: rgba(0, 0, 0, 0.25);
+        }
+        .msg.out .msg-media.msg-media-voice .msg-audio-el,
+        .msg.out .msg-media.msg-media-audio .msg-audio-el {
+            color-scheme: dark;
+            accent-color: #fff;
+        }
+        .msg.in .msg-audio-el { accent-color: var(--accent); }
+        @media (max-width: 520px) {
+            .chat-compose-send .chat-send-text { display: none; }
+            .chat-compose-send.chat-send-btn { padding: 0; width: 44px; min-width: 44px; justify-content: center; }
+        }
         .chat-send-btn { background: var(--accent); color: #fff; border-color: var(--accent); }
         .chat-send-btn:hover { background: var(--accent-hover); }
         .chat-attach-btn svg, .chat-voice-btn svg, .chat-send-btn svg { flex-shrink: 0; }
@@ -1843,16 +1930,23 @@
         .whatsapp-connection-mode-row label { display: block; font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 6px; }
         .whatsapp-connection-mode-row .whatsapp-select { width: 100%; padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); font-size: 0.9rem; box-sizing: border-box; }
         .whatsapp-connection-tabs {
-            display: flex; flex-wrap: nowrap; gap: 4px; margin: 16px 0 12px; padding-bottom: 2px;
-            border-bottom: 1px solid var(--border);
+            display: flex; flex-wrap: nowrap; gap: 6px; margin: 16px 0 14px; padding: 6px;
+            background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 12px;
             overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
         }
         .whatsapp-conn-tab {
-            flex: 0 0 auto; padding: 10px 14px; background: none; border: none; border-bottom: 2px solid transparent;
-            font-family: var(--font); font-size: 0.9rem; color: var(--text-muted); cursor: pointer; margin-bottom: -1px; white-space: nowrap;
+            flex: 1 1 0; min-width: min(140px, 45%); padding: 10px 14px; border: none; border-radius: 8px;
+            font-family: var(--font); font-size: 0.875rem; font-weight: 500; color: var(--text-secondary);
+            background: transparent; cursor: pointer; white-space: nowrap;
+            transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
         }
-        .whatsapp-conn-tab:hover { color: var(--text-primary); }
-        .whatsapp-conn-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+        .whatsapp-conn-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
+        .whatsapp-conn-tab.active {
+            color: #fff; font-weight: 600;
+            background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+            box-shadow: 0 3px 12px rgba(34, 197, 94, 0.32);
+        }
+        .whatsapp-conn-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
         .whatsapp-conn-panel { margin-bottom: 16px; }
         .whatsapp-conn-panel .whatsapp-check-label { margin-bottom: 12px; display: block; }
         .whatsapp-form-row { margin-bottom: 12px; }
@@ -2109,6 +2203,19 @@
         .customer-card-avatar { position: relative; overflow: hidden; }
         .customer-card-avatar-fallback { display: flex; align-items: center; justify-content: center; position: absolute; inset: 0; font-weight: 700; font-size: 1.1rem; color: var(--accent); background: var(--accent-soft); }
         .customer-card-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; position: relative; z-index: 1; }
+        .customer-card-avatar--letter {
+            background: var(--av-bg, var(--accent-soft));
+            color: var(--av-fg, var(--accent));
+        }
+        .customer-card-avatar-letter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
         .customer-toolbar select { padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); font-family: var(--font); }
         .customer-toolbar-select { min-width: 140px; }
         .customer-detail-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
@@ -3100,7 +3207,7 @@
             .chat-messages .msg { max-width: 90%; }
             .chat-messages .msg-media video { max-height: min(200px, 35vh); }
             .chat-send { padding: 10px 12px; gap: 8px; flex-wrap: wrap; padding-inline: max(12px, env(safe-area-inset-inline)); padding-bottom: max(10px, env(safe-area-inset-bottom)); align-items: center; }
-            .chat-send input, .chat-send #msgInput { flex: 1; min-width: 60px; font-size: 16px; min-height: 44px; }
+            .chat-send input, .chat-send #msgInput, .chat-send .chat-compose-input { flex: 1; min-width: 60px; font-size: 16px; min-height: 44px; }
             .chat-send button, .chat-send .chat-attach-btn, .chat-send .chat-voice-btn, .chat-send .chat-send-btn { flex-shrink: 0; min-height: 44px; min-width: 44px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: transform 0.1s; }
             .chat-send .chat-template-wrap { flex-shrink: 0; }
             .chat-reply-preview { min-width: 0; }
