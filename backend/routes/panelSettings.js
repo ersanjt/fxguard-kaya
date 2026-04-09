@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
-const { isPublicAppRequest } = require('../lib/demoAuth');
+const { isPublicAppRequest, isDemoModeEnabled } = require('../lib/demoAuth');
 const { PanelSetting } = require('../models');
 const { getPanelSettings, getSupportedLanguages, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 const emailService = require('../services/emailService');
@@ -23,6 +23,33 @@ function applyPublicDemoBranding(req, payload) {
         faviconUrl: process.env.DEMO_PUBLIC_FAVICON_URL || '/favicon-fxguard.svg',
         footerText: (process.env.DEMO_PUBLIC_FOOTER_TEXT || 'Demonstration only — sample data.').trim()
     });
+}
+
+/** تنظیمات کامل پنل برای ویرایشگر: روی دامنهٔ دمو هیچ رشتهٔ مشتری واقعی برنمی‌گردد */
+function applyPublicDemoFullPanelRow(req, out) {
+    if (!isPublicAppRequest(req) || !isDemoModeEnabled()) return out;
+    const overlaid = applyPublicDemoBranding(req, {
+        siteName: out.siteName,
+        logoUrl: out.logoUrl,
+        faviconUrl: out.faviconUrl,
+        loginLogoUrl: out.loginLogoUrl,
+        loginTitle: out.loginTitle,
+        pageTitle: out.pageTitle,
+        footerText: out.footerText,
+    });
+    Object.assign(out, overlaid, {
+        languageMode: 'bilingual_en_tr',
+        defaultLanguage: 'en',
+        smtpHost: null,
+        smtpUser: null,
+        smtpFrom: null,
+        smtpFromName: null,
+        adminAlertEmails: null,
+        telegramChatIds: null,
+        telegramBotTokenSet: false,
+        clientErrorReportingEnabled: false,
+    });
+    return out;
 }
 
 // عمومی — برای صفحه ورود و اعمال ظاهر برای همه کاربران (بدون احراز هویت)
@@ -58,6 +85,9 @@ router.get('/public/branding', async (req, res, next) => {
 // عمومی — زبان‌های فعال سایت (برای نمایش سوئیچ زبان در صفحه ورود و داخل پنل)
 router.get('/public/languages', async (req, res, next) => {
     try {
+        if (isPublicAppRequest(req) && isDemoModeEnabled()) {
+            return res.json({ languageMode: 'bilingual_en_tr', supportedLanguages: ['en', 'tr'], defaultLanguage: 'en' });
+        }
         const s = await getSettings();
         const supportedLanguages = getSupportedLanguages(s);
         const defaultLanguage = supportedLanguages.indexOf(s.defaultLanguage) >= 0 ? s.defaultLanguage : supportedLanguages[0] || 'fa';
@@ -91,6 +121,9 @@ router.get('/', authMiddleware, async (req, res, next) => {
         delete out.smtpPass;
         delete out.telegramBotToken;
         out.telegramBotTokenSet = !!(s && s.telegramBotToken);
+        if (req.user && req.user.isDemo && isDemoModeEnabled() && isPublicAppRequest(req)) {
+            applyPublicDemoFullPanelRow(req, out);
+        }
         res.json(out);
     } catch (err) {
         next(err);
