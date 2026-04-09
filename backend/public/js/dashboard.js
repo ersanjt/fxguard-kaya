@@ -166,6 +166,20 @@
             return n.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
         }
 
+        /** نوار نرخ دمو: جفت‌ارز متقاطع با ارقام لاتین (پاسخ API با tickerDisplay === 'fx_cross') */
+        function formatFxCrossTickerValue(val) {
+            if (val == null || val === '' || val === '\u2014' || (typeof val === 'string' && val.trim() === '')) return '\u2014';
+            const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
+            if (isNaN(num)) return '\u2014';
+            const abs = Math.abs(num);
+            let minF = 4;
+            let maxF = 6;
+            if (abs >= 100) { minF = 2; maxF = 3; }
+            else if (abs >= 10) { minF = 3; maxF = 4; }
+            else if (abs >= 1) { minF = 4; maxF = 5; }
+            return num.toLocaleString('en-US', { minimumFractionDigits: minF, maximumFractionDigits: maxF });
+        }
+
         function formatChange(ch) {
             if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatChange === 'function') return window.CRM.Utils.formatChange(ch);
             if (ch == null || ch === '') return '';
@@ -254,7 +268,11 @@
             if (res.needLogin || !res.ok) return;
             const data = res.data;
             const items = (data && data.items) || [];
+            const tickerDisplay = (data && data.tickerDisplay) || 'toman';
             const lastUpdated = formatRatesLastUpdated(data.updatedAt, data.updatedAtTimestamp);
+            if (tickerEl) {
+                tickerEl.setAttribute('dir', tickerDisplay === 'fx_cross' ? 'ltr' : 'rtl');
+            }
             if (trackWrap) {
                 trackWrap.title = lastUpdated ? ((t('ticker_last_updated') || 'آخرین بروزرسانی') + ': ' + lastUpdated) : '';
             }
@@ -268,8 +286,8 @@
                     : items.map(function(it) {
                     const ch = it.change;
                     const chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
-                    const chText = formatChange(ch);
-                    const valStr = formatPrice(it.value);
+                    const chText = tickerDisplay === 'fx_cross' ? '' : formatChange(ch);
+                    const valStr = tickerDisplay === 'fx_cross' ? formatFxCrossTickerValue(it.value) : formatPrice(it.value);
                     const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="تغییر">(' + escapeHtml(chText) + ')</span>' : '';
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
                 }).join('');
@@ -2431,6 +2449,21 @@
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
+        /** تشخیص host/path بدون scheme (مثلاً pps.whatsapp.net/v/...) تا به جای چسباندن به origin اشتباه، https اضافه شود */
+        function looksLikeSchemelessHttpHost(host) {
+            if (!host || typeof host !== 'string' || host.length > 253) return false;
+            if (host.indexOf('.') < 0) return false;
+            var labels = host.split('.');
+            if (labels.length < 2) return false;
+            var tld = labels[labels.length - 1];
+            if (!/^[a-z]{2,63}$/i.test(tld)) return false;
+            for (var i = 0; i < labels.length; i++) {
+                var lab = labels[i];
+                if (!lab || lab.length > 63) return false;
+                if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(lab)) return false;
+            }
+            return true;
+        }
         /** آواتار مشتری/چت: // و مسیر نسبی (حتی بدون / اول) و data: */
         function normalizeProfilePicUrl(url) {
             if (!url || typeof url !== 'string') return '';
@@ -2439,9 +2472,15 @@
             if (u.indexOf('data:') === 0) return u;
             if (u.indexOf('//') === 0) return ensureHttpsUrl('https:' + u);
             if (/^https?:\/\//i.test(u)) return ensureHttpsUrl(u);
+            var slashIdx = u.indexOf('/');
+            var hostPart = slashIdx >= 0 ? u.slice(0, slashIdx) : u;
+            if (hostPart && looksLikeSchemelessHttpHost(hostPart)) {
+                return ensureHttpsUrl('https://' + u.replace(/^\/+/, ''));
+            }
             var origin = window.location.origin || '';
             if (u.indexOf('/') === 0) return ensureHttpsUrl(origin + u);
             if (u.indexOf('/') > 0) return ensureHttpsUrl(origin + '/' + u.replace(/^\/+/, ''));
+            if (looksLikeSchemelessHttpHost(u)) return ensureHttpsUrl('https://' + u);
             return '';
         }
         function profilePicShowsImage(url) {
@@ -2453,11 +2492,12 @@
             try {
                 if (!img) return;
                 img.style.display = 'none';
+                try { img.removeAttribute('src'); } catch (_) { img.src = ''; }
                 var p = img.parentElement;
                 if (p) {
                     p.classList.add('avatar-img-failed');
                     var fb = p.querySelector('.avatar-fallback, .customer-card-avatar-fallback');
-                    if (fb) { fb.style.display = 'flex'; fb.style.visibility = 'visible'; }
+                    if (fb) { fb.style.display = 'flex'; fb.style.visibility = 'visible'; fb.style.opacity = '1'; }
                 }
             } catch (_) {}
         }

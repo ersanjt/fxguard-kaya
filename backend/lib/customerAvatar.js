@@ -41,11 +41,26 @@ function extFromContentType(ct) {
  * @param {string} sourceUrl URL از واتساپ یا آدرس دستی
  * @returns {Promise<string|null>} مسیر عمومی مثل `/uploads/customers/{id}/avatar.jpg` یا null در صورت شکست
  */
+function ensureAvatarFetchUrl(raw) {
+    let u = String(raw || '').trim();
+    if (!u) return '';
+    if (u.startsWith('//')) return 'https:' + u;
+    if (/^https?:\/\//i.test(u)) return u;
+    const slash = u.indexOf('/');
+    const host = slash >= 0 ? u.slice(0, slash) : u;
+    if (host.indexOf('.') > 0) {
+        try {
+            if (/^[a-z0-9.-]+$/i.test(host) && host.split('.').length >= 2) return 'https://' + u.replace(/^\/+/, '');
+        } catch (_) {}
+    }
+    return u;
+}
+
 async function downloadAvatarToUploads(customerId, sourceUrl) {
     if (!customerId || !sourceUrl || typeof sourceUrl !== 'string') return null;
     let raw = sourceUrl.trim();
     if (isAlreadyLocalPath(raw)) return raw.startsWith('/') ? raw : '/' + raw;
-    if (raw.startsWith('//')) raw = 'https:' + raw;
+    raw = ensureAvatarFetchUrl(raw);
     if (!/^https?:\/\//i.test(raw)) return null;
     if (!isSafeRemoteUrl(raw)) return null;
 

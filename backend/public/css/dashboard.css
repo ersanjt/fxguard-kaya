@@ -2203,6 +2203,8 @@
         .customer-card-avatar { position: relative; overflow: hidden; }
         .customer-card-avatar-fallback { display: flex; align-items: center; justify-content: center; position: absolute; inset: 0; font-weight: 700; font-size: 1.1rem; color: var(--accent); background: var(--accent-soft); }
         .customer-card-avatar-img { width: 100%; height: 100%; object-fit: cover; border-radius: inherit; position: relative; z-index: 1; }
+        .customer-card-avatar.avatar-img-failed .customer-card-avatar-fallback { z-index: 2; }
+        .customer-card-avatar.avatar-img-failed .customer-card-avatar-img { display: none !important; }
         .customer-card-avatar--letter {
             background: var(--av-bg, var(--accent-soft));
             color: var(--av-fg, var(--accent));

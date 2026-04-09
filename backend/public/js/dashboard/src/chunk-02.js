@@ -722,6 +722,21 @@
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
+        /** تشخیص host/path بدون scheme (مثلاً pps.whatsapp.net/v/...) تا به جای چسباندن به origin اشتباه، https اضافه شود */
+        function looksLikeSchemelessHttpHost(host) {
+            if (!host || typeof host !== 'string' || host.length > 253) return false;
+            if (host.indexOf('.') < 0) return false;
+            var labels = host.split('.');
+            if (labels.length < 2) return false;
+            var tld = labels[labels.length - 1];
+            if (!/^[a-z]{2,63}$/i.test(tld)) return false;
+            for (var i = 0; i < labels.length; i++) {
+                var lab = labels[i];
+                if (!lab || lab.length > 63) return false;
+                if (!/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$/i.test(lab)) return false;
+            }
+            return true;
+        }
         /** آواتار مشتری/چت: // و مسیر نسبی (حتی بدون / اول) و data: */
         function normalizeProfilePicUrl(url) {
             if (!url || typeof url !== 'string') return '';
@@ -730,9 +745,15 @@
             if (u.indexOf('data:') === 0) return u;
             if (u.indexOf('//') === 0) return ensureHttpsUrl('https:' + u);
             if (/^https?:\/\//i.test(u)) return ensureHttpsUrl(u);
+            var slashIdx = u.indexOf('/');
+            var hostPart = slashIdx >= 0 ? u.slice(0, slashIdx) : u;
+            if (hostPart && looksLikeSchemelessHttpHost(hostPart)) {
+                return ensureHttpsUrl('https://' + u.replace(/^\/+/, ''));
+            }
             var origin = window.location.origin || '';
             if (u.indexOf('/') === 0) return ensureHttpsUrl(origin + u);
             if (u.indexOf('/') > 0) return ensureHttpsUrl(origin + '/' + u.replace(/^\/+/, ''));
+            if (looksLikeSchemelessHttpHost(u)) return ensureHttpsUrl('https://' + u);
             return '';
         }
         function profilePicShowsImage(url) {
@@ -744,11 +765,12 @@
             try {
                 if (!img) return;
                 img.style.display = 'none';
+                try { img.removeAttribute('src'); } catch (_) { img.src = ''; }
                 var p = img.parentElement;
                 if (p) {
                     p.classList.add('avatar-img-failed');
                     var fb = p.querySelector('.avatar-fallback, .customer-card-avatar-fallback');
-                    if (fb) { fb.style.display = 'flex'; fb.style.visibility = 'visible'; }
+                    if (fb) { fb.style.display = 'flex'; fb.style.visibility = 'visible'; fb.style.opacity = '1'; }
                 }
             } catch (_) {}
         }
