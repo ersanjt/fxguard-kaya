@@ -121,7 +121,7 @@ router.get('/', authMiddleware, async (req, res, next) => {
         delete out.smtpPass;
         delete out.telegramBotToken;
         out.telegramBotTokenSet = !!(s && s.telegramBotToken);
-        if (req.user && req.user.isDemo && isDemoModeEnabled() && isPublicAppRequest(req)) {
+        if (isDemoModeEnabled() && isPublicAppRequest(req)) {
             applyPublicDemoFullPanelRow(req, out);
         }
         res.json(out);

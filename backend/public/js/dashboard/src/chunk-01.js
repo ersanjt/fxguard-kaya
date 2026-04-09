@@ -437,7 +437,10 @@
                             y: {
                                 display: true,
                                 ticks: {
-                                    callback: function(v) { return typeof v === 'number' ? v.toLocaleString('fa-IR') : v; },
+                                    callback: function(v) {
+                                        if (typeof v !== 'number') return v;
+                                        return v.toLocaleString(LANG === 'fa' ? 'fa-IR' : 'en-US');
+                                    },
                                     font: { size: 11 },
                                     color: 'rgba(139, 157, 195, 0.8)',
                                     maxTicksLimit: 8
