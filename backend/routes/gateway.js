@@ -9,6 +9,7 @@ const axios = require('axios');
 const { gatewayGet, gatewayPost, isCloudApiConfigured, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
 const { getPhoneNumberId } = require('../lib/whatsappCloudApi');
 const { authMiddleware, requireSection } = require('../middleware/auth');
+const { publicDemoReadStub } = require('../middleware/publicDemoReadStub');
 
 /** فاصلهٔ مجدد بین spawn دستی Gateway (کمتر = دکمه زودتر جواب می‌دهد) */
 const GATEWAY_START_COOLDOWN_MS = 6000;
@@ -28,7 +29,7 @@ function createGatewayRouter(logger) {
         next();
     };
 
-    router.get('/gateway/status', authMiddleware, requireSection('whatsapp'), async (req, res) => {
+    router.get('/gateway/status', authMiddleware, publicDemoReadStub, requireSection('whatsapp'), async (req, res) => {
         const cfg = await getWhatsappConnectionConfig();
         const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
         const useCloud = (cfg.connectionMode === 'cloud' || cfg.connectionMode === 'cloud_first') && cloudOk;
@@ -64,7 +65,7 @@ function createGatewayRouter(logger) {
             });
     });
 
-    router.get('/gateway/qr', authMiddleware, requireSection('whatsapp'), async (req, res) => {
+    router.get('/gateway/qr', authMiddleware, publicDemoReadStub, requireSection('whatsapp'), async (req, res) => {
         const cfg = await getWhatsappConnectionConfig();
         const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
         const useCloud = (cfg.connectionMode === 'cloud' || cfg.connectionMode === 'cloud_first') && cloudOk;

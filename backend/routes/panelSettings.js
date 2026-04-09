@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { authMiddleware } = require('../middleware/auth');
+const { isPublicAppRequest } = require('../lib/demoAuth');
 const { PanelSetting } = require('../models');
 const { getPanelSettings, getSupportedLanguages, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 const emailService = require('../services/emailService');
@@ -10,12 +11,26 @@ async function getSettings() {
     return getPanelSettings();
 }
 
+function applyPublicDemoBranding(req, payload) {
+    if (!isPublicAppRequest(req)) return payload;
+    const siteName = (process.env.DEMO_PUBLIC_SITE_NAME || 'CRM Demo').trim();
+    return Object.assign({}, payload, {
+        siteName,
+        pageTitle: (process.env.DEMO_PUBLIC_PAGE_TITLE || 'Product preview').trim(),
+        loginTitle: (process.env.DEMO_PUBLIC_LOGIN_TITLE || siteName).trim(),
+        logoUrl: process.env.DEMO_PUBLIC_LOGO_URL || null,
+        loginLogoUrl: process.env.DEMO_PUBLIC_LOGIN_LOGO_URL || null,
+        faviconUrl: process.env.DEMO_PUBLIC_FAVICON_URL || '/favicon-fxguard.svg',
+        footerText: (process.env.DEMO_PUBLIC_FOOTER_TEXT || 'Demonstration only — sample data.').trim()
+    });
+}
+
 // عمومی — برای صفحه ورود و اعمال ظاهر برای همه کاربران (بدون احراز هویت)
 router.get('/public/branding', async (req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     try {
         const s = await getSettings();
-        res.json({
+        const out = applyPublicDemoBranding(req, {
             siteName: s.siteName,
             logoUrl: s.logoUrl,
             faviconUrl: s.faviconUrl,
@@ -34,6 +49,7 @@ router.get('/public/branding', async (req, res, next) => {
             iosAppUrl: s.iosAppUrl || null,
             androidAppUrl: s.androidAppUrl || null
         });
+        res.json(out);
     } catch (err) {
         next(err);
     }
@@ -54,6 +70,9 @@ router.get('/public/languages', async (req, res, next) => {
 // عمومی — لیست بخش‌های مخفی برای مخفی کردن در منو و جلوگیری از دسترسی
 router.get('/public/visibility', async (req, res, next) => {
     try {
+        if (isPublicAppRequest(req)) {
+            return res.json({ hiddenSections: [] });
+        }
         const s = await getSettings();
         res.json({ hiddenSections: s.hiddenSections || [] });
     } catch (err) {

@@ -14,6 +14,7 @@ const { createGatewayRouter } = require('./gateway');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { isDemoModeEnabled, getDemoUsername, isPublicAppRequest } = require('../lib/demoAuth');
+const { publicDemoReadStub } = require('../middleware/publicDemoReadStub');
 
 const authRoutes = require('./auth');
 const userRoutes = require('./users');
@@ -61,6 +62,9 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     // گزارش خطاهای فرانت‌اند (landing/dashboard)
     apiRouter.post('/client-errors', async (req, res) => {
         try {
+            if (isDemoModeEnabled() && isPublicAppRequest(req)) {
+                return res.json({ ok: true, ignored: true });
+            }
             const body = req.body || {};
             const message = (body.message || '').toString().trim();
             if (!message) return res.status(400).json({ error: 'message is required' });
@@ -93,30 +97,30 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.use('/', gatewayRouter);
 
     apiRouter.use('/auth', authRoutes);
-    apiRouter.use('/users', authMiddleware, userRoutes);
-    apiRouter.use('/conversations', authMiddleware, conversationRoutes);
-    apiRouter.use('/departments', authMiddleware, departmentRoutes);
-    apiRouter.use('/analytics', authMiddleware, analyticsRoutes);
-    apiRouter.use('/customers', authMiddleware, customerRoutes);
-    apiRouter.use('/tags', authMiddleware, require('./tags'));
-    apiRouter.use('/message-templates', authMiddleware, require('./templates'));
-    apiRouter.use('/file-templates', authMiddleware, require('./fileTemplates'));
-    apiRouter.use('/bulk', authMiddleware, require('./bulk'));
-    apiRouter.use('/customers/import', authMiddleware, require('./customersImport'));
-    apiRouter.use('/tickets', authMiddleware, requireSection('tickets'), require('./tickets')(io));
-    apiRouter.use('/branches', authMiddleware, branchRoutes);
-    apiRouter.use('/supervision', authMiddleware, supervisionRoutes);
-    apiRouter.use('/tasks', authMiddleware, requireSection('tasks'), taskRoutes);
-    apiRouter.use('/processes', authMiddleware, processRoutes);
-    apiRouter.use('/upload', authMiddleware, require('./upload'));
-    apiRouter.use('/rates', authMiddleware, require('./rates'));
-    apiRouter.use('/services', authMiddleware, require('./services'));
-    apiRouter.use('/exchange', authMiddleware, require('./exchange'));
-    apiRouter.use('/whatsapp', authMiddleware, require('./whatsapp'));
-    apiRouter.use('/announcements', authMiddleware, requireSection('announcements'), require('./announcements'));
-    apiRouter.use('/internal', authMiddleware, requireSection('internal_chat'), require('./internal')(io));
+    apiRouter.use('/users', authMiddleware, publicDemoReadStub, userRoutes);
+    apiRouter.use('/conversations', authMiddleware, publicDemoReadStub, conversationRoutes);
+    apiRouter.use('/departments', authMiddleware, publicDemoReadStub, departmentRoutes);
+    apiRouter.use('/analytics', authMiddleware, publicDemoReadStub, analyticsRoutes);
+    apiRouter.use('/customers', authMiddleware, publicDemoReadStub, customerRoutes);
+    apiRouter.use('/tags', authMiddleware, publicDemoReadStub, require('./tags'));
+    apiRouter.use('/message-templates', authMiddleware, publicDemoReadStub, require('./templates'));
+    apiRouter.use('/file-templates', authMiddleware, publicDemoReadStub, require('./fileTemplates'));
+    apiRouter.use('/bulk', authMiddleware, publicDemoReadStub, require('./bulk'));
+    apiRouter.use('/customers/import', authMiddleware, publicDemoReadStub, require('./customersImport'));
+    apiRouter.use('/tickets', authMiddleware, requireSection('tickets'), publicDemoReadStub, require('./tickets')(io));
+    apiRouter.use('/branches', authMiddleware, publicDemoReadStub, branchRoutes);
+    apiRouter.use('/supervision', authMiddleware, publicDemoReadStub, supervisionRoutes);
+    apiRouter.use('/tasks', authMiddleware, requireSection('tasks'), publicDemoReadStub, taskRoutes);
+    apiRouter.use('/processes', authMiddleware, publicDemoReadStub, processRoutes);
+    apiRouter.use('/upload', authMiddleware, publicDemoReadStub, require('./upload'));
+    apiRouter.use('/rates', authMiddleware, publicDemoReadStub, require('./rates'));
+    apiRouter.use('/services', authMiddleware, publicDemoReadStub, require('./services'));
+    apiRouter.use('/exchange', authMiddleware, publicDemoReadStub, require('./exchange'));
+    apiRouter.use('/whatsapp', authMiddleware, publicDemoReadStub, require('./whatsapp'));
+    apiRouter.use('/announcements', authMiddleware, requireSection('announcements'), publicDemoReadStub, require('./announcements'));
+    apiRouter.use('/internal', authMiddleware, requireSection('internal_chat'), publicDemoReadStub, require('./internal')(io));
     apiRouter.use('/panel-settings', require('./panelSettings'));
-    apiRouter.use('/company-emails', authMiddleware, require('./companyEmails'));
+    apiRouter.use('/company-emails', authMiddleware, publicDemoReadStub, require('./companyEmails'));
 
     // بدنه با express.json در server.js (WEBHOOK_BODY_LIMIT، پیش‌فرض 25mb) پارس شده
     apiRouter.post('/webhook/incoming-message', webhookAuth, (req, res) => {

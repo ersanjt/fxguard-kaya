@@ -40,6 +40,7 @@ function conversationRow(overrides) {
             lastMessageAt: new Date().toISOString(),
             lastIncomingMessageAt: new Date().toISOString(),
             lastOutgoingMessageAt: new Date().toISOString(),
+            lastMessagePreview: 'Sample preview text for UI only.',
             source: 'whatsapp',
             customer: demoCustomer(),
             assignee: { id: 'demo-user', name: 'Demo User' },
@@ -228,8 +229,22 @@ function demoUsersList() {
 function demoDepartmentsList() {
     return {
         data: [
-            { id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd', name: 'Sales (demo)', color: '#7c3aed' },
-            { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', name: 'Support (demo)', color: '#0ea5e9' },
+            {
+                id: 'dddddddd-dddd-4ddd-8ddd-dddddddddddd',
+                name: 'Sales (demo)',
+                color: '#7c3aed',
+                isActive: true,
+                users: [],
+                branch: null,
+            },
+            {
+                id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+                name: 'Support (demo)',
+                color: '#0ea5e9',
+                isActive: true,
+                users: [],
+                branch: null,
+            },
         ],
     };
 }
@@ -243,21 +258,30 @@ function demoTagsList() {
 }
 
 function demoAnnouncementsForMe() {
+    const id = 'abababab-abab-4aba-8aba-abababababab';
     return {
         data: [
             {
-                id: 'abababab-abab-4aba-8aba-abababababab',
+                id,
                 title: 'Demo notice',
-                body: 'This panel shows sample content only.',
-                createdAt: new Date().toISOString(),
+                body: 'This panel shows sample content only — not your organization.',
+                targetType: 'all',
+                targetId: null,
+                targetName: null,
+                isImportant: false,
                 read: false,
+                canDelete: false,
+                fromUserId: 'demo-user',
+                fromUser: { id: 'demo-user', name: 'Demo User', email: 'demo@example.com' },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
             },
         ],
     };
 }
 
 function demoGatewayStatus() {
-    return { whatsapp: false, status: 'demo', message: 'Not connected — preview only.' };
+    return { whatsapp: false, status: 'disconnected', error: null, demoPreview: true };
 }
 
 module.exports = {
