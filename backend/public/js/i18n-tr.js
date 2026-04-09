@@ -942,5 +942,7 @@ window.__I18N_TR = {
     tpl_stat_files: 'Hızlı dosya',
     tpl_vars_title: 'Şablon metnindeki değişkenler',
     tpl_vars_hint: 'Kopyalamak için tıklayın; gönderimde otomatik doldurulur.',
-    tpl_search_text: 'Ad, kategori veya içerikte ara…'
+    tpl_search_text: 'Ad, kategori veya içerikte ara…',
+    voice_recording_status: 'Kayıt yapılıyor… durdurmak için mike yeniden dokunun',
+    chat_attachment_ready: 'Dosya seçildi — göndermek için Gönder’e basın'
 };

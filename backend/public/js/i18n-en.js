@@ -960,6 +960,8 @@ window.__I18N_EN = {
     user_perms_none: 'None',
     section_manage_tickets: 'Manage tickets (delete/archive)',
     voice_record: 'Voice message',
+    voice_recording_status: 'Recording… tap the microphone again to stop',
+    chat_attachment_ready: 'File selected — press Send to deliver',
     voice_stop: 'Stop recording',
     voice_no_support: 'Voice recording not supported in this browser',
     voice_no_permission: 'Microphone access denied',

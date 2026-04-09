@@ -908,6 +908,8 @@ window.__I18N_FA = {
     user_perms_all: 'همه',
     user_perms_none: 'هیچ‌کدام',
     voice_record: 'ضبط پیام صوتی',
+    voice_recording_status: 'در حال ضبط… برای پایان دوباره روی میکروفون بزنید',
+    chat_attachment_ready: 'فایل انتخاب شد — با دکمهٔ ارسال می‌رود',
     voice_stop: 'توقف ضبط',
     voice_no_support: 'ضبط صدا در این مرورگر پشتیبانی نمی‌شود',
     voice_no_permission: 'دسترسی به میکروفون داده نشد'

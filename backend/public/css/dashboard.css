@@ -3991,8 +3991,29 @@
         .chat-reply-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); }
         .chat-reply-cancel { background: none; border: none; color: var(--text-muted); font-size: 1.2rem; cursor: pointer; padding: 0 4px; line-height: 1; }
         .chat-reply-cancel:hover { color: var(--danger); }
-        .chat-file-preview { background: var(--bg-secondary); border-bottom: 1px solid var(--border); padding: 8px 12px; }
+        .chat-file-preview {
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            border-inline: 3px solid var(--accent);
+            padding: 10px 14px;
+            box-shadow: inset 0 0 0 1px var(--accent-soft);
+        }
+        .chat-file-preview-badge {
+            display: block;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 8px;
+            letter-spacing: 0.02em;
+        }
         .chat-file-preview-inner { display: flex; align-items: center; gap: 10px; }
+        .chat-send--has-attachment { box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.12); }
+        .chat-attach-btn.chat-attach-has-file {
+            color: var(--accent) !important;
+            border-color: var(--accent) !important;
+            background: var(--accent-soft) !important;
+            box-shadow: 0 0 0 2px var(--accent-soft);
+        }
         .chat-file-preview-thumb { width: 52px; height: 52px; border-radius: 8px; overflow: hidden; background: var(--bg-tertiary,#f0f0f0); flex-shrink: 0; display: flex; align-items: center; justify-content: center; border: 1px solid var(--border); }
         .chat-file-preview-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .chat-file-preview-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }

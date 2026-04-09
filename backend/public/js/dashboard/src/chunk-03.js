@@ -393,6 +393,62 @@
                 assignBtn.removeEventListener('click', assignConvToMe);
                 assignBtn.addEventListener('click', assignConvToMe);
             }
+
+            // نوار جزئیات مکالمه + پیوست/ویس/تمپلیت — باید با ورود به صفحه مکالمات بایند شود (نه فقط staff-activity)
+            let updateConvBtn = document.querySelector('[onclick*="updateConvFromDetail"]');
+            if (!updateConvBtn) {
+                updateConvBtn = document.querySelector('.conv-detail-bar button[data-i18n="btn_apply"]');
+            }
+            if (updateConvBtn) {
+                updateConvBtn.removeEventListener('click', updateConvFromDetail);
+                updateConvBtn.addEventListener('click', updateConvFromDetail);
+            }
+            ['convDetailStatus', 'convDetailPriority', 'convDetailAssignee', 'convDetailDept'].forEach(function(id) {
+                const select = document.getElementById(id);
+                if (select) {
+                    select.removeEventListener('change', function() {});
+                    select.addEventListener('change', function() {});
+                }
+            });
+            const msgAttachBtn = document.getElementById('msgAttachBtn');
+            if (msgAttachBtn) {
+                if (msgAttachBtn._crmFileClick) msgAttachBtn.removeEventListener('click', msgAttachBtn._crmFileClick);
+                msgAttachBtn._crmFileClick = function() { document.getElementById('msgFileInput').click(); };
+                msgAttachBtn.addEventListener('click', msgAttachBtn._crmFileClick);
+            }
+            const msgFileInput = document.getElementById('msgFileInput');
+            if (msgFileInput) {
+                const _prevFileHandler = msgFileInput._previewHandler;
+                if (_prevFileHandler) msgFileInput.removeEventListener('change', _prevFileHandler);
+                msgFileInput._previewHandler = function() {
+                    const f = this.files && this.files[0];
+                    if (f) showFilePreview(f);
+                    else clearFilePreview();
+                };
+                msgFileInput.addEventListener('change', msgFileInput._previewHandler);
+            }
+            const filePreviewRemove = document.getElementById('chatFilePreviewRemove');
+            if (filePreviewRemove) {
+                filePreviewRemove.onclick = function() { clearFilePreview(); };
+            }
+            const msgTemplateBtn = document.getElementById('msgTemplateBtn');
+            if (msgTemplateBtn) {
+                msgTemplateBtn.removeEventListener('click', toggleTemplateDropdown);
+                msgTemplateBtn.addEventListener('click', toggleTemplateDropdown);
+            }
+            const chatReplyCancelBtn = document.querySelector('.chat-reply-cancel');
+            if (chatReplyCancelBtn) {
+                chatReplyCancelBtn.removeEventListener('click', cancelReply);
+                chatReplyCancelBtn.addEventListener('click', cancelReply);
+            }
+            document.querySelectorAll('.conv-rating-star').forEach(function(star) {
+                if (star._crmRatingClick) star.removeEventListener('click', star._crmRatingClick);
+                star._crmRatingClick = function() {
+                    const newRating = parseInt(this.getAttribute('data-rating'), 10);
+                    updateConvRating(currentConvId, newRating);
+                };
+                star.addEventListener('click', star._crmRatingClick);
+            });
         }
         
         // Setup Profile page event handlers
@@ -434,77 +490,6 @@
                 applyBtn.removeEventListener('click', loadAttendanceReport);
                 applyBtn.addEventListener('click', loadAttendanceReport);
             }
-            
-            // Conversation detail update button
-            let updateConvBtn = document.querySelector('[onclick*="updateConvFromDetail"]');
-            if (!updateConvBtn) {
-                updateConvBtn = document.querySelector('.conv-detail-bar button[data-i18n="btn_apply"]');
-            }
-            if (updateConvBtn) {
-                updateConvBtn.removeEventListener('click', updateConvFromDetail);
-                updateConvBtn.addEventListener('click', updateConvFromDetail);
-            }
-            
-            // Conversation detail selects - change handlers
-            ['convDetailStatus', 'convDetailPriority', 'convDetailAssignee', 'convDetailDept'].forEach(function(id) {
-                const select = document.getElementById(id);
-                if (select) {
-                    select.removeEventListener('change', function() {});
-                    select.addEventListener('change', function() {});
-                }
-            });
-            
-            // Chat message handlers
-            const msgAttachBtn = document.getElementById('msgAttachBtn');
-            if (msgAttachBtn) {
-                msgAttachBtn.removeEventListener('click', function() {
-                    document.getElementById('msgFileInput').click();
-                });
-                msgAttachBtn.addEventListener('click', function() {
-                    document.getElementById('msgFileInput').click();
-                });
-            }
-
-            const msgFileInput = document.getElementById('msgFileInput');
-            if (msgFileInput) {
-                const _prevFileHandler = msgFileInput._previewHandler;
-                if (_prevFileHandler) msgFileInput.removeEventListener('change', _prevFileHandler);
-                msgFileInput._previewHandler = function() {
-                    const f = this.files && this.files[0];
-                    if (f) showFilePreview(f);
-                    else clearFilePreview();
-                };
-                msgFileInput.addEventListener('change', msgFileInput._previewHandler);
-            }
-
-            const filePreviewRemove = document.getElementById('chatFilePreviewRemove');
-            if (filePreviewRemove) {
-                filePreviewRemove.onclick = function() { clearFilePreview(); };
-            }
-            
-            const msgTemplateBtn = document.getElementById('msgTemplateBtn');
-            if (msgTemplateBtn) {
-                msgTemplateBtn.removeEventListener('click', toggleTemplateDropdown);
-                msgTemplateBtn.addEventListener('click', toggleTemplateDropdown);
-            }
-            
-            const chatReplyCancelBtn = document.querySelector('.chat-reply-cancel');
-            if (chatReplyCancelBtn) {
-                chatReplyCancelBtn.removeEventListener('click', cancelReply);
-                chatReplyCancelBtn.addEventListener('click', cancelReply);
-            }
-            
-            // Chat rating stars
-            document.querySelectorAll('.conv-rating-star').forEach(function(star) {
-                star.removeEventListener('click', function() {
-                    const newRating = parseInt(this.getAttribute('data-rating'), 10);
-                    updateConvRating(currentConvId, newRating);
-                });
-                star.addEventListener('click', function() {
-                    const newRating = parseInt(this.getAttribute('data-rating'), 10);
-                    updateConvRating(currentConvId, newRating);
-                });
-            });
             
             // Dashboard refresh button
             const dashRefreshBtn = document.getElementById('dashboardRefreshBtn');
@@ -1326,6 +1311,10 @@
             if (sizeEl) sizeEl.textContent = '';
             const fi = document.getElementById('msgFileInput');
             if (fi) fi.value = '';
+            const sendWrap = document.querySelector('#pageConversations .chat-send');
+            if (sendWrap) sendWrap.classList.remove('chat-send--has-attachment');
+            const attachBtn = document.getElementById('msgAttachBtn');
+            if (attachBtn) attachBtn.classList.remove('chat-attach-has-file');
         }
 
         function showFilePreview(file) {
@@ -1335,6 +1324,9 @@
             const nameEl = document.getElementById('chatFilePreviewName');
             const sizeEl = document.getElementById('chatFilePreviewSize');
             if (!bar) return;
+
+            const badgeEl = bar.querySelector('.chat-file-preview-badge');
+            if (badgeEl && typeof t === 'function') badgeEl.textContent = t('chat_attachment_ready');
 
             if (nameEl) nameEl.textContent = file.name;
             if (sizeEl) {
@@ -1370,6 +1362,13 @@
                 }
             }
             bar.style.display = 'block';
+            const sendWrap = document.querySelector('#pageConversations .chat-send');
+            if (sendWrap) sendWrap.classList.add('chat-send--has-attachment');
+            const attachBtn = document.getElementById('msgAttachBtn');
+            if (attachBtn) attachBtn.classList.add('chat-attach-has-file');
+            try {
+                bar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } catch (_) {}
         }
 
         async function sendMsg() {
@@ -1405,6 +1404,8 @@
             if (bar) {
                 bar.style.display = voiceRecorderState.active ? 'flex' : 'none';
                 bar.hidden = !voiceRecorderState.active;
+                const recText = bar.querySelector('.chat-voice-rec-text');
+                if (recText && typeof t === 'function') recText.textContent = t('voice_recording_status');
             }
             if (!btn) return;
             btn.classList.toggle('recording', voiceRecorderState.active);
