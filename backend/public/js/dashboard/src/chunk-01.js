@@ -166,6 +166,20 @@
             return n.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
         }
 
+        /** نوار نرخ دمو: جفت‌ارز متقاطع با ارقام لاتین (پاسخ API با tickerDisplay === 'fx_cross') */
+        function formatFxCrossTickerValue(val) {
+            if (val == null || val === '' || val === '\u2014' || (typeof val === 'string' && val.trim() === '')) return '\u2014';
+            const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
+            if (isNaN(num)) return '\u2014';
+            const abs = Math.abs(num);
+            let minF = 4;
+            let maxF = 6;
+            if (abs >= 100) { minF = 2; maxF = 3; }
+            else if (abs >= 10) { minF = 3; maxF = 4; }
+            else if (abs >= 1) { minF = 4; maxF = 5; }
+            return num.toLocaleString('en-US', { minimumFractionDigits: minF, maximumFractionDigits: maxF });
+        }
+
         function formatChange(ch) {
             if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatChange === 'function') return window.CRM.Utils.formatChange(ch);
             if (ch == null || ch === '') return '';
@@ -254,7 +268,11 @@
             if (res.needLogin || !res.ok) return;
             const data = res.data;
             const items = (data && data.items) || [];
+            const tickerDisplay = (data && data.tickerDisplay) || 'toman';
             const lastUpdated = formatRatesLastUpdated(data.updatedAt, data.updatedAtTimestamp);
+            if (tickerEl) {
+                tickerEl.setAttribute('dir', tickerDisplay === 'fx_cross' ? 'ltr' : 'rtl');
+            }
             if (trackWrap) {
                 trackWrap.title = lastUpdated ? ((t('ticker_last_updated') || 'آخرین بروزرسانی') + ': ' + lastUpdated) : '';
             }
@@ -268,8 +286,8 @@
                     : items.map(function(it) {
                     const ch = it.change;
                     const chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
-                    const chText = formatChange(ch);
-                    const valStr = formatPrice(it.value);
+                    const chText = tickerDisplay === 'fx_cross' ? '' : formatChange(ch);
+                    const valStr = tickerDisplay === 'fx_cross' ? formatFxCrossTickerValue(it.value) : formatPrice(it.value);
                     const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="تغییر">(' + escapeHtml(chText) + ')</span>' : '';
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
                 }).join('');

@@ -52,6 +52,40 @@ function applyAdjustment(rawNum, adj) {
     return rawNum;
 }
 
+/** نمایش دمو: نرخ متقاطع — واحد ارزِ دوم در ازای ۱ USD (بر اساس نرخ تومانی هر دو از یک منبع) */
+const DEMO_CROSS_QUOTE_ORDER = ['eur', 'gbp', 'chf', 'cad', 'aud', 'jpy', 'try', 'aed', 'sar', 'rub', 'cny', 'inr', 'azn', 'iqd', 'kwd'];
+
+function numericItemValue(item) {
+    if (!item || item.value == null || item.value === '—') return NaN;
+    if (typeof item.value === 'number') return item.value;
+    const n = parseFloat(String(item.value).replace(/[^\d.-]/g, ''));
+    return isNaN(n) ? NaN : n;
+}
+
+function buildDemoCrossTickerItems(allItems) {
+    const byKey = {};
+    allItems.forEach(i => { byKey[i.key] = i; });
+    const usdVal = numericItemValue(byKey.usd);
+    if (!usdVal || usdVal <= 0) return null;
+    const out = [];
+    for (const key of DEMO_CROSS_QUOTE_ORDER) {
+        if (key === 'usd') continue;
+        const row = byKey[key];
+        if (!row) continue;
+        const qVal = numericItemValue(row);
+        if (!qVal || qVal <= 0) continue;
+        const cross = usdVal / qVal;
+        out.push({
+            key: `usd_${key}_cross`,
+            label: 'USD/' + key.toUpperCase(),
+            value: cross,
+            change: null,
+            rawValue: cross
+        });
+    }
+    return out.length ? out : null;
+}
+
 // GET /api/rates/config-status — وضعیت تنظیمات (آیا API key دارد؟)
 router.get('/config-status', async (req, res, next) => {
     res.json({ hasApiKey: !!NAVASAN_API_KEY });
@@ -105,18 +139,35 @@ router.get('/', async (req, res, next) => {
             };
         });
 
-        const items = visibleKeys
+        let items = visibleKeys
             ? visibleKeys.map(k => allItems.find(i => i.key === k)).filter(Boolean)
             : allItems;
 
+        let tickerDisplay = 'toman';
+        if (req.user && req.user.isDemo) {
+            const cross = buildDemoCrossTickerItems(allItems);
+            if (cross) {
+                items = cross;
+                tickerDisplay = 'fx_cross';
+            }
+        }
+
         const ts = raw.usd_sell && raw.usd_sell.timestamp ? raw.usd_sell.timestamp : null;
         const updatedAt = ts ? new Date(ts * 1000).toISOString() : new Date().toISOString();
-        res.json({ items, allItems, visibleKeys: visibleKeys || RATES_KEYS.map(r => r.key), updatedAt, updatedAtTimestamp: ts || null });
+        res.json({
+            items,
+            allItems,
+            visibleKeys: visibleKeys || RATES_KEYS.map(r => r.key),
+            updatedAt,
+            updatedAtTimestamp: ts || null,
+            tickerDisplay
+        });
     } catch (err) {
         const fallback = defaultRateCurrencies.map(({ key, label }) => ({ key, label, value: '—', change: null }));
         res.status(502).json({
             error: 'دریافت قیمت‌ها ناموفق بود',
-            items: fallback
+            items: fallback,
+            tickerDisplay: 'toman'
         });
     }
 });
