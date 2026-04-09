@@ -1,9 +1,9 @@
 (function () {
     'use strict';
 
-    var endpoint = '/api/client-errors';
-    var sentCount = 0;
-    var maxSends = 5;
+    const endpoint = '/api/client-errors';
+    let sentCount = 0;
+    const maxSends = 5;
 
     function post(payload) {
         if (sentCount >= maxSends) return;
@@ -34,9 +34,9 @@
 
     window.addEventListener('unhandledrejection', function (event) {
         try {
-            var reason = event && event.reason;
-            var message = '';
-            var stack = '';
+            const reason = event && event.reason;
+            let message = '';
+            let stack = '';
             if (reason && typeof reason === 'object') {
                 message = reason.message || JSON.stringify(reason);
                 stack = reason.stack || '';

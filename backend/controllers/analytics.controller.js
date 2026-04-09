@@ -1,7 +1,7 @@
 /**
  * Analytics controller — dashboard stats and metrics
  */
-const { Op, literal, fn, col, where: sqWhere, cast } = require('sequelize');
+const { Op, fn, col } = require('sequelize');
 const {
     Conversation,
     Message,

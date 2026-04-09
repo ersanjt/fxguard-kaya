@@ -79,7 +79,7 @@ function issueToken(user) {
     );
 }
 
-router.post('/login', async (req, res, next) => {
+router.post('/login', async (req, res, _next) => {
     const sendJson = (status, body) => {
         try {
             if (res.headersSent) return;

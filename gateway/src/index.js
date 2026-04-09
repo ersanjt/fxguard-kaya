@@ -50,7 +50,6 @@ const CONFIG = {
 };
 
 let reconnectAttemptCount = 0;
-let lastMessageReceivedAt = 0;
 let healthCheckFailCount = 0;
 
 // ==================== App / Server ====================
@@ -386,7 +385,6 @@ function attachClientEvents(c) {
     });
 
     c.on('message', async (msg) => {
-        lastMessageReceivedAt = Date.now();
         healthCheckFailCount = 0;
         try {
             const chat = await msg.getChat();
@@ -1209,9 +1207,12 @@ function isRecoverablePuppeteerRejection(reason) {
 
 process.on('unhandledRejection', (reason) => {
     if (isRecoverablePuppeteerRejection(reason)) {
-        logger.warn('unhandledRejection (Puppeteer/WhatsApp — recoverable) — scheduling reconnect', {
-            reason: reason && reason.message ? reason.message : String(reason),
-        });
+        logger.warn(
+            'unhandledRejection (Puppeteer/WhatsApp — recoverable) — scheduling reconnect',
+            {
+                reason: reason && reason.message ? reason.message : String(reason),
+            }
+        );
         try {
             resetClientState();
         } catch (_) {}
