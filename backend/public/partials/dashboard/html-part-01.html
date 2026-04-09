@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=44">
+    <link rel="stylesheet" href="/css/dashboard.css?v=45">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -368,7 +368,7 @@
                         <div id="dashboardCards" class="dashboard-cards"></div>
                     </div>
                 </div>
-                <div id="pageConversations" class="page">
+                <div id="pageConversations" class="page wa-conversations-theme">
                     <!-- دکمه شناور مکالمه جدید — فقط موبایل -->
                     <button type="button" class="conv-fab-btn" id="convFabBtn" onclick="openNewConvModal()" aria-label="مکالمه جدید" title="مکالمه جدید">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -439,8 +439,15 @@
                             <div class="chat-header-main">
                                 <button type="button" class="chat-back-btn" id="chatBackBtn" aria-label="بازگشت به لیست" data-i18n-title="back_to_list" title="بازگشت به لیست" onclick="closeChatMobile()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
                                 <div class="chat-header-avatar" id="chatHeaderAvatar"></div>
-                                <div class="chat-header" id="chatHeader"></div>
-                                <button type="button" class="chat-detail-toggle" id="chatDetailToggle" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                                <div class="chat-header-text-col">
+                                    <div class="chat-header" id="chatHeader"></div>
+                                    <div class="chat-header-sub wa-chat-subtitle" id="chatHeaderSub"></div>
+                                </div>
+                                <div class="wa-chat-header-actions">
+                                    <button type="button" class="wa-chat-call-btn" id="waChatVideoBtn" onclick="waConvVideoCall()" title="Video" data-i18n-title="wa_video_call" aria-label="Video"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
+                                    <button type="button" class="wa-chat-call-btn" id="waChatVoiceBtn" onclick="waConvVoiceCall()" title="Voice" data-i18n-title="wa_voice_call" aria-label="Voice"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+                                    <button type="button" class="chat-detail-toggle" id="chatDetailToggle" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                                </div>
                             </div>
                             <div id="convDetailBar" class="conv-detail-bar" style="display:none;">
                                 <div class="conv-detail-badges" id="convDetailBadges"></div>
@@ -494,20 +501,25 @@
                                 <span class="chat-voice-rec-dot" aria-hidden="true"></span>
                                 <span class="chat-voice-rec-text" data-i18n="voice_recording_status">در حال ضبط… برای پایان دوباره روی میکروفون بزنید</span>
                             </div>
-                            <div class="chat-compose-row">
-                                <div class="chat-compose-tools" role="toolbar" aria-label="پیوست و ضبط">
+                            <div class="chat-compose-row wa-compose-row">
+                                <div class="chat-compose-tools wa-compose-tools-start" role="toolbar" aria-label="پیوست و ضبط">
+                                    <button type="button" class="chat-tool-btn wa-emoji-btn" id="waEmojiBtn" onclick="toggleWaEmojiPanel(event)" title="Emoji" data-i18n-title="wa_emoji" aria-label="Emoji" aria-expanded="false" aria-haspopup="true">😊</button>
                                     <button type="button" class="chat-tool-btn chat-attach-btn" id="msgAttachBtn" onclick="document.getElementById('msgFileInput').click()" title="پیوست فایل" aria-label="پیوست فایل"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-paperclip"/></svg></button>
                                     <div class="chat-template-wrap">
                                         <button type="button" class="chat-tool-btn chat-attach-btn" id="msgTemplateBtn" data-i18n-title="msg_template" title="تمپلیت پیام" aria-label="تمپلیت پیام" aria-haspopup="true" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#icon-file-text"/></svg></button>
                                         <div id="chatTemplateDropdown" class="chat-template-dropdown" style="display:none;"></div>
                                     </div>
-                                    <button type="button" class="chat-tool-btn chat-voice-btn" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+                                    <button type="button" class="chat-tool-btn wa-sticker-btn" id="waStickerBtn" onclick="toggleWaStickerPanel(event)" title="Stickers" data-i18n-title="wa_stickers" aria-label="Stickers" aria-expanded="false">🎨</button>
+                                    <button type="button" class="chat-tool-btn wa-gif-btn" id="waGifBtn" onclick="waConvGifAttach(event)" title="GIF" data-i18n-title="wa_gif" aria-label="GIF">GIF</button>
+                                    <button type="button" class="chat-tool-btn chat-voice-btn wa-voice-left" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
                                 </div>
-                                <div class="chat-compose-field">
-                                    <input type="text" id="msgInput" class="chat-compose-input" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off">
+                                <div class="chat-compose-field wa-compose-pill-wrap">
+                                    <input type="text" id="msgInput" class="chat-compose-input wa-compose-pill" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off">
                                 </div>
-                                <button type="button" class="chat-tool-btn chat-send-btn chat-compose-send" onclick="sendMsg()" data-i18n="btn_send" title="ارسال" aria-label="ارسال"><svg class="chat-send-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="chat-send-text" data-i18n="btn_send">ارسال</span></button>
+                                <button type="button" class="chat-send-btn chat-compose-send wa-send-circle" onclick="sendMsg()" data-i18n="btn_send" title="ارسال" aria-label="ارسال"><svg class="chat-send-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="chat-send-text" data-i18n="btn_send">ارسال</span></button>
                             </div>
+                            <div id="waEmojiPickerMount" class="wa-emoji-picker-mount" hidden></div>
+                            <div id="waStickerPickerMount" class="wa-sticker-picker-mount" hidden></div>
                         </div>
                     </div>
                     </div>

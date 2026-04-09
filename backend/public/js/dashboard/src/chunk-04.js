@@ -74,6 +74,17 @@
         }
         window.showCustomerHistory = showCustomerHistory;
         window.openChatFromHistory = openChatFromHistory;
+        window.toggleWaEmojiPanel = toggleWaEmojiPanel;
+        window.toggleWaStickerPanel = toggleWaStickerPanel;
+        window.waConvGifAttach = waConvGifAttach;
+        window.waConvVoiceCall = waConvVoiceCall;
+        window.waConvVideoCall = waConvVideoCall;
+        document.addEventListener('click', function(ev) {
+            if (!ev || !ev.target) return;
+            var el = ev.target;
+            if (el.closest && (el.closest('#waEmojiPickerMount') || el.closest('#waStickerPickerMount') || el.closest('#waEmojiBtn') || el.closest('#waStickerBtn'))) return;
+            closeWaPickers();
+        }, false);
         function openImagePreviewModal(imgSrc) {
             const modal = document.getElementById('imagePreviewModal');
             const img = document.getElementById('imagePreviewImg');

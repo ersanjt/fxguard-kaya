@@ -4029,9 +4029,366 @@
         .msg-footer .time { margin: 0; }
         .msg-reply-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; font-size: 1rem; opacity: 0.7; }
         .msg-reply-btn:hover { color: var(--accent); opacity: 1; }
-        .msg-status { font-size: 0.75rem; color: var(--text-muted); }
-        .msg-status-read { color: var(--accent); }
+        .msg-status { font-size: 0.72rem; color: var(--text-muted); letter-spacing: -0.06em; line-height: 1; }
+        .msg-status-read { color: #53bdeb; }
+        .msg-status-delivered { color: rgba(255, 255, 255, 0.55); }
+        .msg.in .msg-status-delivered { color: rgba(233, 237, 239, 0.55); }
+        .msg-status-sent { color: rgba(255, 255, 255, 0.55); }
+        .msg.in .msg-status-sent { color: rgba(233, 237, 239, 0.45); }
         .msg-status-failed { color: var(--danger, #ef4444); }
+
+        /* ========== تم مکالمات شبیه واتساپ (وب) — فقط صفحه مکالمات ========== */
+        #pageConversations.wa-conversations-theme .conv-layout {
+            direction: ltr;
+            border-radius: 0;
+            gap: 0;
+            box-shadow: none;
+        }
+        html[dir="ltr"] #pageConversations.wa-conversations-theme .conv-list-wrap,
+        html[dir="ltr"] #pageConversations.wa-conversations-theme .chat-area {
+            direction: ltr;
+        }
+        html[dir="rtl"] #pageConversations.wa-conversations-theme .conv-list-wrap,
+        html[dir="rtl"] #pageConversations.wa-conversations-theme .chat-area {
+            direction: rtl;
+        }
+        #pageConversations.wa-conversations-theme .conv-list-wrap {
+            flex: 0 0 min(360px, 33vw);
+            max-width: 400px;
+            min-width: 280px;
+            background: #111b21;
+            border: none;
+            border-inline-end: 1px solid rgba(134, 150, 160, 0.15);
+            border-radius: 0;
+        }
+        #pageConversations.wa-conversations-theme .conv-list-header {
+            background: #202c33;
+            border-color: rgba(134, 150, 160, 0.12);
+        }
+        #pageConversations.wa-conversations-theme .conv-list-title,
+        #pageConversations.wa-conversations-theme .conv-list-count {
+            color: #aebac1;
+        }
+        #pageConversations.wa-conversations-theme .conv-list-pane {
+            background: #111b21;
+            padding: 0;
+        }
+        #pageConversations.wa-conversations-theme .conv-list-item {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(134, 150, 160, 0.08);
+            border-radius: 0;
+            margin: 0;
+            padding: 12px 14px;
+        }
+        #pageConversations.wa-conversations-theme .conv-list-item:hover {
+            background: #202c33;
+        }
+        #pageConversations.wa-conversations-theme .conv-list-item.active {
+            background: #2a3942;
+            border-color: rgba(134, 150, 160, 0.08);
+            box-shadow: none;
+        }
+        #pageConversations.wa-conversations-theme .conv-item-avatar {
+            border-radius: 50%;
+            background: #6b7b86;
+            color: #fff;
+        }
+        #pageConversations.wa-conversations-theme .conv-item-top .name,
+        #pageConversations.wa-conversations-theme .conv-item-meta,
+        #pageConversations.wa-conversations-theme .conv-item-preview {
+            color: #e9edef;
+        }
+        #pageConversations.wa-conversations-theme .conv-item-time {
+            color: #8696a0;
+        }
+        #pageConversations.wa-conversations-theme .chat-area {
+            background: #0b141a;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
+        }
+        #pageConversations.wa-conversations-theme .chat-header-wrap {
+            background: #202c33;
+            border-color: rgba(134, 150, 160, 0.12);
+        }
+        #pageConversations.wa-conversations-theme .chat-header-main {
+            min-height: 56px;
+        }
+        #pageConversations.wa-conversations-theme .chat-header-avatar {
+            width: 42px;
+            height: 42px;
+            min-width: 42px;
+            border-radius: 50%;
+            background: #6b7b86;
+            color: #fff;
+        }
+        #pageConversations.wa-conversations-theme .chat-header-text-col {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            justify-content: center;
+        }
+        #pageConversations.wa-conversations-theme .chat-header {
+            font-size: 1.02rem;
+            font-weight: 500;
+            color: #e9edef;
+            line-height: 1.2;
+        }
+        #pageConversations.wa-conversations-theme .chat-header-sub {
+            font-size: 0.8rem;
+            color: #8696a0;
+            line-height: 1.2;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        #pageConversations.wa-conversations-theme .wa-chat-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            flex-shrink: 0;
+        }
+        #pageConversations.wa-conversations-theme .wa-chat-call-btn {
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border: none;
+            border-radius: 50%;
+            background: transparent;
+            color: #aebac1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s, color 0.15s;
+        }
+        #pageConversations.wa-conversations-theme .wa-chat-call-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #e9edef;
+        }
+        #pageConversations.wa-conversations-theme .chat-detail-toggle {
+            background: transparent;
+            color: #aebac1;
+        }
+        #pageConversations.wa-conversations-theme .chat-detail-toggle:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #e9edef;
+        }
+        #pageConversations.wa-conversations-theme .chat-messages {
+            background-color: #0b141a;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23182429' fill-opacity='0.35'%3E%3Cpath d='M30 0h30v30H30zM0 30h30v30H0z'/%3E%3C/g%3E%3C/svg%3E");
+            padding: 12px 18px 16px;
+        }
+        #pageConversations.wa-conversations-theme .msg {
+            position: relative;
+            max-width: min(78%, 560px);
+            padding: 6px 10px 8px 12px;
+            border-radius: 8px;
+            box-shadow: none;
+            margin: 4px 0;
+        }
+        #pageConversations.wa-conversations-theme .msg.in {
+            background: #202c33;
+            color: #e9edef;
+            border: none;
+            border-radius: 8px 8px 8px 0;
+            margin-inline-end: auto;
+            margin-inline-start: 0;
+        }
+        #pageConversations.wa-conversations-theme .msg.in::after {
+            content: "";
+            position: absolute;
+            inset-inline-start: -6px;
+            bottom: 0;
+            width: 10px;
+            height: 10px;
+            background: #202c33;
+            clip-path: polygon(100% 0, 100% 100%, 0 100%);
+        }
+        #pageConversations.wa-conversations-theme .msg.out {
+            background: #005c4b;
+            color: #e9edef;
+            border-radius: 8px 8px 0 8px;
+            margin-inline-start: auto;
+            margin-inline-end: 0;
+        }
+        #pageConversations.wa-conversations-theme .msg.out::after {
+            content: "";
+            position: absolute;
+            inset-inline-end: -6px;
+            bottom: 0;
+            width: 10px;
+            height: 10px;
+            background: #005c4b;
+            clip-path: polygon(0 0, 100% 100%, 0 100%);
+        }
+        #pageConversations.wa-conversations-theme .msg .msg-caption {
+            color: rgba(233, 237, 239, 0.88);
+        }
+        #pageConversations.wa-conversations-theme .msg.out .time,
+        #pageConversations.wa-conversations-theme .msg.in .time {
+            color: rgba(233, 237, 239, 0.65);
+            font-size: 0.68rem;
+        }
+        #pageConversations.wa-conversations-theme .msg-media-placeholder {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: rgba(255, 255, 255, 0.08);
+            color: #aebac1;
+        }
+        #pageConversations.wa-conversations-theme .msg-media-link,
+        #pageConversations.wa-conversations-theme .msg-file-link {
+            color: #53bdeb;
+        }
+        #pageConversations.wa-conversations-theme .msg-footer {
+            justify-content: flex-end;
+            gap: 4px;
+            margin-top: 2px;
+        }
+        #pageConversations.wa-conversations-theme .chat-send {
+            background: #202c33;
+            border-color: rgba(134, 150, 160, 0.12);
+            padding: 10px 12px;
+            flex-direction: column;
+            align-items: stretch;
+            flex-wrap: nowrap;
+            gap: 8px;
+        }
+        #pageConversations.wa-conversations-theme .wa-compose-row {
+            flex-wrap: nowrap;
+            align-items: center;
+            width: 100%;
+        }
+        #pageConversations.wa-conversations-theme .wa-compose-tools-start {
+            gap: 2px;
+        }
+        #pageConversations.wa-conversations-theme .wa-compose-pill-wrap {
+            flex: 1;
+            min-width: 0;
+        }
+        #pageConversations.wa-conversations-theme .wa-compose-pill {
+            min-height: 42px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            border: none;
+            background: #2a3942;
+            color: #e9edef;
+            font-size: 0.94rem;
+        }
+        #pageConversations.wa-conversations-theme .wa-compose-pill::placeholder {
+            color: #8696a0;
+        }
+        #pageConversations.wa-conversations-theme .wa-compose-pill:focus {
+            outline: none;
+            box-shadow: 0 0 0 1px rgba(37, 211, 102, 0.35);
+        }
+        #pageConversations.wa-conversations-theme .chat-tool-btn {
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: #8696a0;
+        }
+        #pageConversations.wa-conversations-theme .chat-tool-btn:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: #aebac1;
+        }
+        #pageConversations.wa-conversations-theme .wa-emoji-btn,
+        #pageConversations.wa-conversations-theme .wa-sticker-btn {
+            font-size: 1.25rem;
+            line-height: 1;
+        }
+        #pageConversations.wa-conversations-theme .wa-gif-btn {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+        #pageConversations.wa-conversations-theme .wa-send-circle {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            min-height: 48px;
+            padding: 0;
+            border-radius: 50%;
+            border: none;
+            background: #00a884;
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+        }
+        #pageConversations.wa-conversations-theme .wa-send-circle:hover {
+            background: #06cf9c;
+            filter: brightness(1.03);
+        }
+        #pageConversations.wa-conversations-theme .wa-send-circle .chat-send-text {
+            display: none;
+        }
+        #pageConversations.wa-conversations-theme .wa-send-circle .chat-send-icon {
+            margin: 0;
+        }
+        #pageConversations.wa-conversations-theme .wa-emoji-picker-mount,
+        #pageConversations.wa-conversations-theme .wa-sticker-picker-mount {
+            position: relative;
+            width: 100%;
+            flex-basis: 100%;
+            z-index: 2;
+        }
+        #pageConversations.wa-conversations-theme .wa-emoji-panel,
+        #pageConversations.wa-conversations-theme .wa-sticker-panel {
+            margin-top: 8px;
+            padding: 12px;
+            max-height: 220px;
+            overflow-y: auto;
+            border-radius: 12px;
+            background: #202c33;
+            border: 1px solid rgba(134, 150, 160, 0.2);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+        }
+        #pageConversations.wa-conversations-theme .wa-emoji-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 4px;
+        }
+        #pageConversations.wa-conversations-theme .wa-emoji-grid button,
+        #pageConversations.wa-conversations-theme .wa-sticker-grid button {
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 1.35rem;
+            line-height: 1.3;
+            padding: 6px 4px;
+            transition: background 0.12s;
+        }
+        #pageConversations.wa-conversations-theme .wa-sticker-grid button {
+            font-size: 2rem;
+            padding: 8px;
+        }
+        #pageConversations.wa-conversations-theme .wa-emoji-grid button:hover,
+        #pageConversations.wa-conversations-theme .wa-sticker-grid button:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+        #pageConversations.wa-conversations-theme .conv-page-header,
+        #pageConversations.wa-conversations-theme .conv-toolbar,
+        #pageConversations.wa-conversations-theme .conv-quick-tabs {
+            background: transparent;
+        }
+        @media (max-width: 720px) {
+            #pageConversations.wa-conversations-theme .wa-chat-call-btn {
+                display: none;
+            }
+            #pageConversations.wa-conversations-theme .conv-list-wrap {
+                min-width: 0;
+            }
+        }
+        @media (max-width: 520px) {
+            #pageConversations.wa-conversations-theme .wa-emoji-grid {
+                grid-template-columns: repeat(6, 1fr);
+            }
+            #pageConversations.wa-conversations-theme .wa-gif-btn {
+                display: none;
+            }
+        }
 .demo-banner {
     display: flex;
     align-items: center;

@@ -23,6 +23,12 @@
                 loadConversations();
             }, ms);
         }
+        function waMsgStatusTicks(st) {
+            if (st === 'read' || st === 'delivered') return '\u2713\u2713';
+            if (st === 'sent') return '\u2713';
+            if (st === 'failed') return '!';
+            return '';
+        }
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
@@ -1588,10 +1594,13 @@
                             const msgEl = document.querySelector('.msg[data-msg-id="' + data.messageId + '"]');
                             if (msgEl) {
                                 const statusEl = msgEl.querySelector('.msg-status');
-                                if (statusEl) statusEl.className = 'msg-status msg-status-' + (data.status || '');
-                                else if (data.status) {
+                                const tick = waMsgStatusTicks(data.status);
+                                if (statusEl) {
+                                    statusEl.className = 'msg-status msg-status-' + (data.status || '');
+                                    statusEl.textContent = tick;
+                                } else if (data.status) {
                                     const footer = msgEl.querySelector('.msg-footer');
-                                    if (footer) footer.insertAdjacentHTML('beforeend', '<span class="msg-status msg-status-' + data.status + '">' + (data.status === 'read' ? '✓✓' : '✓') + '</span>');
+                                    if (footer) footer.insertAdjacentHTML('beforeend', '<span class="msg-status msg-status-' + data.status + '">' + tick + '</span>');
                                 }
                             }
                         }

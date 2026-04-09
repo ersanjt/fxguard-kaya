@@ -23,6 +23,12 @@
                 loadConversations();
             }, ms);
         }
+        function waMsgStatusTicks(st) {
+            if (st === 'read' || st === 'delivered') return '\u2713\u2713';
+            if (st === 'sent') return '\u2713';
+            if (st === 'failed') return '!';
+            return '';
+        }
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
@@ -1588,10 +1594,13 @@
                             const msgEl = document.querySelector('.msg[data-msg-id="' + data.messageId + '"]');
                             if (msgEl) {
                                 const statusEl = msgEl.querySelector('.msg-status');
-                                if (statusEl) statusEl.className = 'msg-status msg-status-' + (data.status || '');
-                                else if (data.status) {
+                                const tick = waMsgStatusTicks(data.status);
+                                if (statusEl) {
+                                    statusEl.className = 'msg-status msg-status-' + (data.status || '');
+                                    statusEl.textContent = tick;
+                                } else if (data.status) {
                                     const footer = msgEl.querySelector('.msg-footer');
-                                    if (footer) footer.insertAdjacentHTML('beforeend', '<span class="msg-status msg-status-' + data.status + '">' + (data.status === 'read' ? '✓✓' : '✓') + '</span>');
+                                    if (footer) footer.insertAdjacentHTML('beforeend', '<span class="msg-status msg-status-' + data.status + '">' + tick + '</span>');
                                 }
                             }
                         }
@@ -4310,7 +4319,19 @@
             const actionsEl = document.getElementById('convDetailActions');
             const supPanel = document.getElementById('convSupervisionPanel');
             const supStats = document.getElementById('convSupervisionStats');
-            if (headerEl) headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
+            if (headerEl) {
+                headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
+            }
+            var headerSubEl = document.getElementById('chatHeaderSub');
+            if (headerSubEl) {
+                if (currentConvIsGroup) {
+                    headerSubEl.textContent = (LANG === 'fa' ? 'گروه · واتساپ' : LANG === 'tr' ? 'Grup · WhatsApp' : 'Group · WhatsApp');
+                } else if (phone) {
+                    headerSubEl.textContent = phone;
+                } else {
+                    headerSubEl.textContent = typeof t === 'function' ? (t('wa_subtitle') || 'WhatsApp') : 'WhatsApp';
+                }
+            }
             if (avatarEl) {
                 const rawOpenPic = (profilePic || '').trim();
                 let pic = rawOpenPic ? normalizeProfilePicUrl(rawOpenPic) : '';
@@ -4734,7 +4755,7 @@
                     if (rSn) replyPreviewSender = rSn + ': ';
                 }
                 const replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeHtml(m.whatsappId) + '" data-preview="' + escapeHtml(replyPreviewSender + preview) + '" onclick="event.stopPropagation();var b=this;setReplyTo(b.getAttribute(\'data-wa-id\'), b.getAttribute(\'data-preview\'))" title="' + (LANG === 'fa' ? 'پاسخ' : 'Reply') + '">↩</button>' : '';
-                const statusHtml = (isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + (m.status === 'read' ? '✓✓' : m.status === 'delivered' || m.status === 'sent' ? '✓' : m.status === 'failed' ? '!' : '') + '</span>' : '';
+                const statusHtml = (isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + waMsgStatusTicks(m.status) + '</span>' : '';
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');
             if (loadOlder) {
@@ -4813,6 +4834,103 @@
             window._replyingTo = null;
             const el = document.getElementById('chatReplyPreview');
             if (el) el.style.display = 'none';
+        }
+
+        var _waPickerOpen = null;
+        function closeWaPickers() {
+            var e = document.getElementById('waEmojiPickerMount');
+            var s = document.getElementById('waStickerPickerMount');
+            if (e) { e.hidden = true; e.innerHTML = ''; }
+            if (s) { s.hidden = true; s.innerHTML = ''; }
+            var eb = document.getElementById('waEmojiBtn');
+            var sb = document.getElementById('waStickerBtn');
+            if (eb) eb.setAttribute('aria-expanded', 'false');
+            if (sb) sb.setAttribute('aria-expanded', 'false');
+            _waPickerOpen = null;
+        }
+        function waInsertIntoMsgInput(ch) {
+            var input = document.getElementById('msgInput');
+            if (!input || !ch) return;
+            var start = typeof input.selectionStart === 'number' ? input.selectionStart : (input.value || '').length;
+            var end = typeof input.selectionEnd === 'number' ? input.selectionEnd : start;
+            var v = input.value || '';
+            input.value = v.slice(0, start) + ch + v.slice(end);
+            try {
+                input.focus();
+                var pos = start + ch.length;
+                input.setSelectionRange(pos, pos);
+            } catch (err) { /* ignore */ }
+        }
+        function toggleWaEmojiPanel(ev) {
+            if (ev) ev.stopPropagation();
+            var mount = document.getElementById('waEmojiPickerMount');
+            if (!mount) return;
+            if (_waPickerOpen === 'emoji') { closeWaPickers(); return; }
+            closeWaPickers();
+            _waPickerOpen = 'emoji';
+            var grid = document.createElement('div');
+            grid.className = 'wa-emoji-panel';
+            var inner = document.createElement('div');
+            inner.className = 'wa-emoji-grid';
+            var listStr = '😀😃😄😁😅😂🤣😊😇🙂😉😍🥰😘🥲😋😛🤪😎😢😭😤😡🤬🤔😴🙄👍👎👏🙌🙏🤝💪✌️🤞✋👌🤌💬❤️🧡💛💚💙💔✨🔥⭐🎉💯✅❌❓☕🍕🎂🎁🏠✈️📱💼📎🖼🎵🎶🌙☀️🌟🌈⚽🎮🔔📌';
+            var list = Array.from(listStr);
+            list.forEach(function(ch) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.textContent = ch;
+                b.onclick = function(e) { e.stopPropagation(); waInsertIntoMsgInput(ch); closeWaPickers(); };
+                inner.appendChild(b);
+            });
+            grid.appendChild(inner);
+            mount.innerHTML = '';
+            mount.appendChild(grid);
+            mount.hidden = false;
+            var eb = document.getElementById('waEmojiBtn');
+            if (eb) eb.setAttribute('aria-expanded', 'true');
+        }
+        function toggleWaStickerPanel(ev) {
+            if (ev) ev.stopPropagation();
+            var mount = document.getElementById('waStickerPickerMount');
+            if (!mount) return;
+            if (_waPickerOpen === 'sticker') { closeWaPickers(); return; }
+            closeWaPickers();
+            _waPickerOpen = 'sticker';
+            var wrap = document.createElement('div');
+            wrap.className = 'wa-sticker-panel';
+            var grid = document.createElement('div');
+            grid.className = 'wa-sticker-grid';
+            var stickers = Array.from('❤️😂🔥😍🥰👏😊🎉🤔😭🙏✨🌟💯🎂🍕🐱🐶🌹🥳😎🤗💪👍🙌🤩😇🥺🦄🌸🍀🌻🎈🎀🏆🍉🥑🍓💖💝👻🎃🎄🧸');
+            stickers.forEach(function(ch) {
+                var b = document.createElement('button');
+                b.type = 'button';
+                b.textContent = ch;
+                b.onclick = function(e) { e.stopPropagation(); waInsertIntoMsgInput(ch); closeWaPickers(); };
+                grid.appendChild(b);
+            });
+            wrap.appendChild(grid);
+            mount.innerHTML = '';
+            mount.appendChild(wrap);
+            mount.hidden = false;
+            var sb = document.getElementById('waStickerBtn');
+            if (sb) sb.setAttribute('aria-expanded', 'true');
+        }
+        function waConvGifAttach(ev) {
+            if (ev) ev.stopPropagation();
+            var gifMsg = typeof t === 'function' ? t('wa_gif_use_attach') : '';
+            if (!gifMsg || gifMsg === 'wa_gif_use_attach') gifMsg = LANG === 'fa' ? 'برای ارسال GIF از پیوست فایل استفاده کنید.' : LANG === 'tr' ? 'GIF için dosya eki kullanın.' : 'Use attach to send a GIF or image.';
+            if (typeof toast === 'function') toast(gifMsg, false);
+            var fi = document.getElementById('msgFileInput');
+            if (fi) setTimeout(function() { fi.click(); }, 120);
+        }
+        function waConvVoiceCall() {
+            var msg = typeof t === 'function' ? t('wa_calls_not_in_panel') : '';
+            if (!msg || msg === 'wa_calls_not_in_panel') msg = LANG === 'fa' ? 'تماس صوتی مشتری از این پنل برقرار نمی‌شود؛ از اپ واتساپ استفاده کنید.' : LANG === 'tr' ? 'Sesli arama bu panelden yapılmaz; WhatsApp uygulamasını kullanın.' : 'Voice calls are not started from this CRM panel.';
+            if (typeof toast === 'function') toast(msg, false);
+        }
+        function waConvVideoCall() {
+            var msg = typeof t === 'function' ? t('wa_calls_not_in_panel_video') : '';
+            if (!msg || msg === 'wa_calls_not_in_panel_video') msg = LANG === 'fa' ? 'تماس تصویری از این پنل برقرار نمی‌شود؛ از اپ واتساپ استفاده کنید.' : LANG === 'tr' ? 'Görüntülü arama bu panelden yapılmaz; WhatsApp uygulamasını kullanın.' : 'Video calls are not started from this CRM panel.';
+            if (typeof toast === 'function') toast(msg, false);
         }
 
         function clearFilePreview() {
@@ -5320,6 +5438,17 @@
         }
         window.showCustomerHistory = showCustomerHistory;
         window.openChatFromHistory = openChatFromHistory;
+        window.toggleWaEmojiPanel = toggleWaEmojiPanel;
+        window.toggleWaStickerPanel = toggleWaStickerPanel;
+        window.waConvGifAttach = waConvGifAttach;
+        window.waConvVoiceCall = waConvVoiceCall;
+        window.waConvVideoCall = waConvVideoCall;
+        document.addEventListener('click', function(ev) {
+            if (!ev || !ev.target) return;
+            var el = ev.target;
+            if (el.closest && (el.closest('#waEmojiPickerMount') || el.closest('#waStickerPickerMount') || el.closest('#waEmojiBtn') || el.closest('#waStickerBtn'))) return;
+            closeWaPickers();
+        }, false);
         function openImagePreviewModal(imgSrc) {
             const modal = document.getElementById('imagePreviewModal');
             const img = document.getElementById('imagePreviewImg');
