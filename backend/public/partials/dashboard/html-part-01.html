@@ -489,14 +489,24 @@
                         </div>
                         <div class="chat-send">
                             <input type="file" id="msgFileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" style="display:none;">
-                            <button type="button" class="chat-attach-btn" id="msgAttachBtn" onclick="document.getElementById('msgFileInput').click()" title="پیوست فایل" aria-label="پیوست فایل"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-paperclip"/></svg></button>
-                            <div class="chat-template-wrap">
-                                <button type="button" class="chat-attach-btn" id="msgTemplateBtn" data-i18n-title="msg_template" title="تمپلیت پیام" aria-label="تمپلیت پیام" aria-haspopup="true" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#icon-file-text"/></svg></button>
-                                <div id="chatTemplateDropdown" class="chat-template-dropdown" style="display:none;"></div>
+                            <div id="chatVoiceRecordingBar" class="chat-voice-recording-bar" style="display:none;" hidden>
+                                <span class="chat-voice-rec-dot" aria-hidden="true"></span>
+                                <span class="chat-voice-rec-text" data-i18n="voice_recording_status">در حال ضبط… برای پایان دوباره روی میکروفون بزنید</span>
                             </div>
-                            <button type="button" class="chat-voice-btn" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
-                            <input type="text" id="msgInput" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off">
-                            <button type="button" class="chat-send-btn" onclick="sendMsg()" data-i18n="btn_send">ارسال</button>
+                            <div class="chat-compose-row">
+                                <div class="chat-compose-tools" role="toolbar" aria-label="پیوست و ضبط">
+                                    <button type="button" class="chat-tool-btn chat-attach-btn" id="msgAttachBtn" onclick="document.getElementById('msgFileInput').click()" title="پیوست فایل" aria-label="پیوست فایل"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-paperclip"/></svg></button>
+                                    <div class="chat-template-wrap">
+                                        <button type="button" class="chat-tool-btn chat-attach-btn" id="msgTemplateBtn" data-i18n-title="msg_template" title="تمپلیت پیام" aria-label="تمپلیت پیام" aria-haspopup="true" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#icon-file-text"/></svg></button>
+                                        <div id="chatTemplateDropdown" class="chat-template-dropdown" style="display:none;"></div>
+                                    </div>
+                                    <button type="button" class="chat-tool-btn chat-voice-btn" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+                                </div>
+                                <div class="chat-compose-field">
+                                    <input type="text" id="msgInput" class="chat-compose-input" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off">
+                                </div>
+                                <button type="button" class="chat-tool-btn chat-send-btn chat-compose-send" onclick="sendMsg()" data-i18n="btn_send" title="ارسال" aria-label="ارسال"><svg class="chat-send-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="chat-send-text" data-i18n="btn_send">ارسال</span></button>
+                            </div>
                         </div>
                     </div>
                     </div>

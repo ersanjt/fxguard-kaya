@@ -127,14 +127,23 @@ jobs:
             fi
             pm2 save
 
-            # ---- بررسی سلامت بعد از deploy ----
-            echo "⏳ انتظار برای راه‌اندازی (۱۵ ثانیه) ..."
-            sleep 15
-            if curl -sf http://localhost:3002/api/ping > /dev/null; then
+            # ---- بررسی سلامت بعد از deploy (چند تلاش — گاهی PM2/Node کمی دیر گوش می‌دهد) ----
+            echo "⏳ بررسی /api/ping روی پورت ۳۰۰۲ ..."
+            OK=0
+            for i in 1 2 3 4 5 6 7 8; do
+              if curl -sf --max-time 10 http://localhost:3002/api/ping > /dev/null; then
+                OK=1
+                break
+              fi
+              echo "   تلاش $i از ۸ — هنوز پاسخی نیست، ۱۰ ثانیه بعد دوباره ..."
+              sleep 10
+            done
+            if [ "$OK" = "1" ]; then
               echo "✅ Deploy موفق — سرور پاسخ می‌دهد"
             else
               echo "❌ هشدار: سرور پس از deploy پاسخ نمی‌دهد — لاگ‌ها را بررسی کنید"
-              pm2 logs crm-backend --lines 30 --nostream || true
+              pm2 logs crm-backend --lines 40 --nostream || true
+              pm2 logs crm-gateway --lines 20 --nostream || true
               pm2 logs kayaCRM --lines 30 --nostream || true
               exit 1
             fi

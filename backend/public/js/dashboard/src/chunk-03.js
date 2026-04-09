@@ -646,6 +646,13 @@
                 if (btn) { btn.disabled = false; if (textSpan) textSpan.textContent = syncText; else btn.textContent = '👥 ' + syncText; }
             }
         }
+        function letterAvatarVars(seed) {
+            var s = String(seed || '');
+            var h = 0;
+            for (var i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+            var hue = Math.abs(h) % 360;
+            return '--av-bg:hsla(' + hue + ',42%,22%,1);--av-fg:hsla(' + hue + ',48%,84%,1);';
+        }
         async function loadConversations(appendMode) {
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
@@ -706,10 +713,10 @@
                 const phone = cust.phone || '';
                 const metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
-                let profilePic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
-                profilePic = profilePic ? normalizeProfilePicUrl(profilePic) : '';
-                const canShowImg = !isGroup && profilePic && profilePicShowsImage(profilePic);
-                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\'">' : '');
+                const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
+                let profilePic = rawPic ? normalizeProfilePicUrl(rawPic) : '';
+                const canShowImg = !isGroup && rawPic && profilePicShowsImage(rawPic);
+                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
                 const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
                 const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
@@ -805,11 +812,11 @@
             const supStats = document.getElementById('convSupervisionStats');
             if (headerEl) headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
             if (avatarEl) {
-                let pic = (profilePic || '').trim();
-                pic = pic ? normalizeProfilePicUrl(pic) : '';
+                const rawOpenPic = (profilePic || '').trim();
+                let pic = rawOpenPic ? normalizeProfilePicUrl(rawOpenPic) : '';
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
-                if (pic && profilePicShowsImage(pic)) {
-                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\'">';
+                if (pic && profilePicShowsImage(rawOpenPic)) {
+                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
                 } else {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 }
@@ -941,9 +948,9 @@
             list.innerHTML = data.data.map(function(c) {
                 const name = c.name || c.phone || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
-                let profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-                profilePic = profilePic ? normalizeProfilePicUrl(profilePic) : '';
-                const avatarHtml = profilePic && profilePicShowsImage(profilePic) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\'">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                let profilePic = rawPicNc ? normalizeProfilePicUrl(rawPicNc) : '';
+                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" onclick="startNewConversation(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
@@ -1180,11 +1187,16 @@
                         const voiceClass = isPtt ? ' msg-media-voice' : ' msg-media-audio';
                         const typeAttr = mdMime ? ' type="' + escapeHtml(mdMime) + '"' : '';
                         const errHint = LANG === 'fa' ? 'پخش در مرورگر ممکن نیست — از دانلود استفاده کنید.' : 'Playback failed — try download.';
+                        const voiceLabel = isPtt
+                            ? ('<div class="msg-voice-meta"><span class="msg-voice-ic" aria-hidden="true">🎙</span><span>' + (LANG === 'fa' ? 'پیام صوتی' : 'Voice message') + '</span></div>')
+                            : ('<div class="msg-voice-meta msg-voice-meta--file"><span class="msg-voice-ic" aria-hidden="true">🎵</span><span>' + escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'فایل صوتی' : 'Audio')) + '</span></div>');
                         mediaHtml =
                             '<div class="msg-media' + voiceClass + '">' +
+                            voiceLabel +
+                            '<div class="msg-audio-shell">' +
                             '<audio class="msg-audio-el" controls preload="auto" playsinline onerror="var w=this.closest(\'.msg-media\');if(w){w.classList.add(\'msg-media-error\');}">' +
                             '<source src="' + escapeHtml(mediaUrl) + '"' + typeAttr + '>' +
-                            '</audio>' +
+                            '</audio></div>' +
                             '<p class="msg-media-audio-err" role="alert">' + escapeHtml(errHint) + '</p>' +
                             '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-dl" data-open="1">' + (LANG === 'fa' ? 'دانلود فایل صوتی' : 'Download audio') + '</a>' +
                             '</div>';
@@ -1196,12 +1208,21 @@
                     const isImageName = /\.(jpe?g|png|gif|webp|bmp)$/i.test(fileName);
                     mediaHtml = '<div class="msg-media msg-media-placeholder">' + (isImageName ? '🖼 ' : '📎 ') + escapeHtml(fileName) + '</div>';
                 }
+                var resolvedMediaType = (mediaUrl && m.hasMedia && m.mediaData) ? inferMediaType(m) : '';
                 let contentHtml = '';
                 let displayContent = (m.content || '').trim();
                 if (isOut && (displayContent.indexOf('🤖 ') === 0)) displayContent = displayContent.slice(2).trim();
                 else if (isOut && displayContent.indexOf('AI KAYA: ') === 0) displayContent = displayContent.slice(9).trim();
-                if (m.hasMedia && m.mediaData && m.mediaData.url && m.content) contentHtml = '<div class="msg-caption">' + escapeHtml(displayContent || m.content) + '</div>';
-                else if ((displayContent || m.content) && !(m.hasMedia && !(m.mediaData && m.mediaData.url))) contentHtml = '<div>' + escapeHtml(displayContent || m.content) + '</div>';
+                var fnCaption = (m.mediaData && m.mediaData.filename) ? String(m.mediaData.filename).trim() : '';
+                if (resolvedMediaType === 'audio' && displayContent) {
+                    var dcLo = displayContent.toLowerCase();
+                    var fnLo = fnCaption.toLowerCase();
+                    if (fnCaption && (displayContent === fnCaption || dcLo === fnLo)) displayContent = '';
+                    else if (/^voice\.(webm|ogg|m4a|mp3|wav)$/i.test(displayContent)) displayContent = '';
+                    else if (displayContent === 'file' || displayContent === '📎 فایل') displayContent = '';
+                }
+                if (m.hasMedia && m.mediaData && m.mediaData.url && m.content && displayContent) contentHtml = '<div class="msg-caption">' + escapeHtml(displayContent) + '</div>';
+                else if (displayContent && !(m.hasMedia && !(m.mediaData && m.mediaData.url))) contentHtml = '<div>' + escapeHtml(displayContent) + '</div>';
                 let preview = (m.content || '').slice(0, 50) || (m.hasMedia ? '📎' : '');
                 if ((m.content || '').length > 50) preview += '…';
                 // اضافه کردن اسم فرستنده به preview برای گروه
@@ -1380,6 +1401,11 @@
         const voiceRecorderState = { active: false, recorder: null, chunks: [] };
         function updateVoiceBtn() {
             const btn = document.getElementById('msgVoiceBtn');
+            const bar = document.getElementById('chatVoiceRecordingBar');
+            if (bar) {
+                bar.style.display = voiceRecorderState.active ? 'flex' : 'none';
+                bar.hidden = !voiceRecorderState.active;
+            }
             if (!btn) return;
             btn.classList.toggle('recording', voiceRecorderState.active);
             btn.setAttribute('title', voiceRecorderState.active ? (t('voice_stop') || (LANG === 'fa' ? 'توقف ضبط' : 'Stop recording')) : (t('voice_record') || (LANG === 'fa' ? 'ضبط پیام صوتی' : 'Voice message')));
@@ -1492,9 +1518,15 @@
             list.innerHTML = sorted.map(function(c) {
                 const name = c.name || c.phone || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
-                let profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-                profilePic = profilePic ? normalizeProfilePicUrl(profilePic) : '';
-                const avatarHtml = profilePic && profilePicShowsImage(profilePic) ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-card-avatar-fallback\');if(f)f.style.display=\'flex\'">' : escapeHtml(initial);
+                const rawPicCust = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                let profilePic = rawPicCust ? normalizeProfilePicUrl(rawPicCust) : '';
+                const hasCustPic = !!(rawPicCust && profilePicShowsImage(rawPicCust));
+                const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
+                const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
+                const avatarInner = hasCustPic
+                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">'
+                    : '<span class="customer-card-avatar-letter">' + escapeHtml(initial) + '</span>';
+                const avatarHtml = '<div class="' + avClass + '"' + avStyle + '>' + avatarInner + '</div>';
                 const statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
                 const statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
                 const lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
@@ -1502,7 +1534,7 @@
                 const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
                 const safeName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
-                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main"><div class="customer-card-avatar">' + avatarHtml + '</div><div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" data-i18n="btn_send">ارسال</button></div>';
+                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main">' + avatarHtml + '<div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" data-i18n="btn_send">ارسال</button></div>';
             }).join('');
             updateBulkSelectedCount();
         }

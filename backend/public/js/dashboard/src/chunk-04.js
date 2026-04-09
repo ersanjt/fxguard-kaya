@@ -597,14 +597,16 @@
             if (emailEl) emailEl.textContent = u.username || u.email || u.name || '';
             const setAvatar = function(el) {
                 if (!el) return;
-                let avatarUrl = (u.avatar || '').trim();
-                if (avatarUrl.indexOf('/') === 0) avatarUrl = (window.location.origin || '') + avatarUrl;
-                if (avatarUrl && avatarUrl.indexOf('http') === 0) {
+                el.classList.remove('avatar-img-failed');
+                var avatarUrl = normalizeProfilePicUrl((u.avatar || '').trim());
+                if (avatarUrl && profilePicShowsImage(u.avatar)) {
                     const img = document.createElement('img');
                     img.src = avatarUrl;
                     img.alt = '';
+                    img.referrerPolicy = 'no-referrer';
+                    img.loading = 'lazy';
                     img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.borderRadius = 'inherit';
-                    img.onerror = function() { el.innerHTML = ''; el.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?'); };
+                    img.onerror = function() { el.classList.add('avatar-img-failed'); el.innerHTML = ''; el.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?'); };
                     el.innerHTML = '';
                     el.appendChild(img);
                 } else {

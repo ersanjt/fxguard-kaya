@@ -722,23 +722,39 @@
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
-        /** آواتار مشتری/چت: // و مسیر نسبی و data: را برای نمایش درست تبدیل می‌کند */
+        /** آواتار مشتری/چت: // و مسیر نسبی (حتی بدون / اول) و data: */
         function normalizeProfilePicUrl(url) {
             if (!url || typeof url !== 'string') return '';
             var u = url.trim();
             if (!u) return '';
             if (u.indexOf('data:') === 0) return u;
-            if (u.indexOf('//') === 0) u = 'https:' + u;
-            if (u.indexOf('/') === 0) u = (window.location.origin || '') + u;
-            return ensureHttpsUrl(u);
+            if (u.indexOf('//') === 0) return ensureHttpsUrl('https:' + u);
+            if (/^https?:\/\//i.test(u)) return ensureHttpsUrl(u);
+            var origin = window.location.origin || '';
+            if (u.indexOf('/') === 0) return ensureHttpsUrl(origin + u);
+            if (u.indexOf('/') > 0) return ensureHttpsUrl(origin + '/' + u.replace(/^\/+/, ''));
+            return '';
         }
         function profilePicShowsImage(url) {
             if (!url || typeof url !== 'string') return false;
-            var u = url.trim();
-            return /^https?:\/\//i.test(u) || u.indexOf('data:') === 0;
+            var n = normalizeProfilePicUrl(url);
+            return !!n && (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0);
         }
-        function resolveAvatarUrl(avatar) { if (!avatar || typeof avatar !== 'string') return ''; const s = avatar.trim(); if (!s) return ''; if (s.indexOf('http') === 0) return ensureHttpsUrl(s); const origin = window.location.origin || ''; if (s.indexOf('/') === 0) return origin + s; return origin + '/' + s; }
-        function internalMsgAvatarHtml(fromUser) { const u = fromUser || {}; const name = (u.name || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'"></span>'; return '<span class="msg-avatar">' + escapeHtml(initial) + '</span>'; }
+        function crmAvatarImgErr(img) {
+            try {
+                if (!img) return;
+                img.style.display = 'none';
+                var p = img.parentElement;
+                if (p) {
+                    p.classList.add('avatar-img-failed');
+                    var fb = p.querySelector('.avatar-fallback, .customer-card-avatar-fallback');
+                    if (fb) { fb.style.display = 'flex'; fb.style.visibility = 'visible'; }
+                }
+            } catch (_) {}
+        }
+        window.crmAvatarImgErr = crmAvatarImgErr;
+        function resolveAvatarUrl(avatar) { return normalizeProfilePicUrl(avatar); }
+        function internalMsgAvatarHtml(fromUser) { const u = fromUser || {}; const name = (u.name || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)"></span>'; return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>'; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         function refreshDashboard() {

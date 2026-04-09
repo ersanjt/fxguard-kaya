@@ -26,7 +26,6 @@
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
-        window.FXGUARD_PUBLIC_SITE = false;
         fetch((API || '') + '/api/panel-settings/public/languages').then(function(r){ return r.json(); }).then(function(data){
             if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage);
             else if (typeof setLang === 'function') setLang(LANG);
@@ -35,18 +34,6 @@
         });
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
-            try {
-                window.FXGUARD_PUBLIC_SITE = !!((c && c.fxguardPublicSite) || /^app\.fxguard\.io$/i.test(window.location.hostname || ''));
-            } catch (e) {
-                window.FXGUARD_PUBLIC_SITE = !!(c && c.fxguardPublicSite);
-            }
-            if (window.FXGUARD_PUBLIC_SITE) {
-                document.body.classList.add('fxguard-public-demo');
-                window.SUPPORTED_LANGUAGES = ['en', 'tr'];
-                if (typeof window.applySupportedLanguages === 'function') window.applySupportedLanguages(['en', 'tr'], 'en');
-            } else {
-                document.body.classList.remove('fxguard-public-demo');
-            }
             if (c && c.supportUrl) {
                 window.SUPPORT_URL = c.supportUrl;
                 const setSupportLink = function(wrapId, linkId) {
@@ -60,17 +47,6 @@
                 };
                 setSupportLink('loginSupportWrap', 'loginSupportLink');
                 setSupportLink('loginSupportWrapTotp', 'loginSupportLinkTotp');
-            }
-            if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) {
-                const tick = document.getElementById('priceTicker');
-                if (tick) {
-                    tick.style.display = 'none';
-                    tick.setAttribute('dir', 'ltr');
-                }
-                if (ratesInterval) clearInterval(ratesInterval);
-                if (tickerTimeInterval) clearInterval(tickerTimeInterval);
-                ratesInterval = tickerTimeInterval = null;
-                if (typeof updateBottomBarVisibility === 'function') updateBottomBarVisibility();
             }
         }).catch(function(){});
         function updateNavBadges(stats) {
@@ -118,12 +94,9 @@
             });
             const perms = (currentUser && currentUser.permissions) || {};
             const hidden = HIDDEN_SECTIONS || [];
-            const pubDemoTabs = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost() && currentUser && currentUser.isDemo);
             document.querySelectorAll('.mobile-tab-bar .mobile-tab-item[data-section]').forEach(function(item) {
                 const sec = item.getAttribute('data-section');
-                const visible = pubDemoTabs
-                    ? (hidden.indexOf(sec) < 0)
-                    : ((sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] === true && hidden.indexOf(sec) < 0));
+                const visible = (sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] === true && hidden.indexOf(sec) < 0);
                 item.style.display = visible ? '' : 'none';
             });
         }
@@ -155,14 +128,13 @@
             if (isNaN(date.getTime())) return '';
             const now = new Date();
             const sec = Math.floor((now - date) / 1000);
-            const pub = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
-            if (sec < 60) return pub ? (LANG === 'tr' ? 'Az önce' : 'Just now') : (LANG === 'fa' ? 'همین الان' : LANG === 'tr' ? 'Az önce' : 'Just now');
+            if (sec < 60) return (LANG === 'fa' ? 'همین الان' : LANG === 'tr' ? 'Az önce' : 'Just now');
             const min = Math.floor(sec / 60);
-            if (min < 60) return min + ' ' + (pub ? (LANG === 'tr' ? 'dk önce' : 'min ago') : (LANG === 'fa' ? 'دقیقه پیش' : LANG === 'tr' ? 'dk önce' : 'min ago'));
+            if (min < 60) return min + ' ' + (LANG === 'fa' ? 'دقیقه پیش' : LANG === 'tr' ? 'dk önce' : 'min ago');
             const hr = Math.floor(min / 60);
-            if (hr < 24) return hr + ' ' + (pub ? (LANG === 'tr' ? 'saat önce' : 'hr ago') : (LANG === 'fa' ? 'ساعت پیش' : LANG === 'tr' ? 'saat önce' : 'hr ago'));
+            if (hr < 24) return hr + ' ' + (LANG === 'fa' ? 'ساعت پیش' : LANG === 'tr' ? 'saat önce' : 'hr ago');
             const day = Math.floor(hr / 24);
-            if (day < 7) return day + ' ' + (pub ? (LANG === 'tr' ? 'gün önce' : 'days ago') : (LANG === 'fa' ? 'روز پیش' : LANG === 'tr' ? 'gün önce' : 'days ago'));
+            if (day < 7) return day + ' ' + (LANG === 'fa' ? 'روز پیش' : LANG === 'tr' ? 'gün önce' : 'days ago');
             return fmtTZ(d, 'date');
         }
         // فارسی: وقت تهران ایران و تاریخ شمسی. انگلیسی: وقت امارات و تقویم میلادی. ترکی: وقت استانبول ترکیه و تقویم میلادی.
@@ -170,9 +142,8 @@
             if (!d) return '';
             const date = d instanceof Date ? d : new Date(d);
             if (isNaN(date.getTime())) return '';
-            const pub = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
-            const tz = pub ? (LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai') : (LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai');
-            const locale = pub ? (LANG === 'tr' ? 'tr-TR' : 'en-GB') : (LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB');
+            const tz = (LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai');
+            const locale = (LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB');
             const base = { timeZone: tz };
             if (typeof opts === 'string') {
                 if (opts === 'time') return new Intl.DateTimeFormat(locale, Object.assign({}, base, { hour: '2-digit', minute: '2-digit' })).format(date);
@@ -183,18 +154,11 @@
         }
 
         function formatPrice(val) {
-            if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatPrice === 'function') {
-                const u = window.CRM.Utils.formatPrice(val);
-                if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) return String(u).replace(/[۰-۹]/g, function(ch) { return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(ch)); });
-                return u;
-            }
+            if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatPrice === 'function') return window.CRM.Utils.formatPrice(val);
             if (val == null || val === '' || val === '\u2014' || (typeof val === 'string' && val.trim() === '')) return '\u2014';
             const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
             if (isNaN(num)) return '\u2014';
             const n = String(Math.round(num)).replace(/[^\d]/g, '');
-            if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) {
-                return n.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-            }
             if (n.length > 3) {
                 let out = ''; for (let i = n.length - 1, c = 0; i >= 0; i--, c++) { if (c && c % 3 === 0) out = ',' + out; out = n[i] + out; }
                 return out.replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
@@ -203,18 +167,11 @@
         }
 
         function formatChange(ch) {
-            if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatChange === 'function') {
-                const u = window.CRM.Utils.formatChange(ch);
-                if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) return String(u).replace(/[۰-۹]/g, function(x) { return String('۰۱۲۳۴۵۶۷۸۹'.indexOf(x)); });
-                return u;
-            }
+            if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.formatChange === 'function') return window.CRM.Utils.formatChange(ch);
             if (ch == null || ch === '') return '';
             const num = typeof ch === 'number' ? ch : parseFloat(String(ch));
             if (isNaN(num) || num === 0) return '';
             const s = Math.abs(num) >= 1000 ? Math.abs(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') : String(Math.abs(num));
-            if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) {
-                return (num > 0 ? '+' : '−') + s;
-            }
             const fa = '۰۱۲۳۴۵۶۷۸۹';
             const out = s.replace(/\d/g, function(d) { return fa[d]; });
             return (num > 0 ? '+' : '−') + out;
@@ -276,21 +233,13 @@
         function formatRatesLastUpdated(updatedAtStr, timestampSec) {
             const d = updatedAtStr ? new Date(updatedAtStr) : (timestampSec ? new Date(timestampSec * 1000) : new Date());
             if (isNaN(d.getTime())) return '';
-            const pub = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
-            const locale = pub ? (LANG === 'tr' ? 'tr-TR' : 'en-GB') : (LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB');
-            const tz = pub ? (LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai') : (LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai');
+            const locale = LANG === 'fa' ? 'fa-IR' : LANG === 'tr' ? 'tr-TR' : 'en-GB';
+            const tz = LANG === 'fa' ? 'Asia/Tehran' : LANG === 'tr' ? 'Europe/Istanbul' : 'Asia/Dubai';
             return new Intl.DateTimeFormat(locale, { timeZone: tz, dateStyle: 'short', timeStyle: 'short' }).format(d);
         }
         async function fetchRates(showRefreshSpinner) {
             if (!token) return;
             const tickerEl = document.getElementById('priceTicker');
-            if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) {
-                if (tickerEl) tickerEl.style.display = 'none';
-                const innerElPub = document.getElementById('ratesMarqueeInner');
-                if (innerElPub) innerElPub.innerHTML = '';
-                if (typeof updateBottomBarVisibility === 'function') updateBottomBarVisibility();
-                return;
-            }
             if (HIDDEN_SECTIONS && HIDDEN_SECTIONS.indexOf('rates') >= 0) {
                 if (tickerEl) tickerEl.style.display = 'none';
                 return;
@@ -321,8 +270,7 @@
                     const chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
                     const chText = formatChange(ch);
                     const valStr = formatPrice(it.value);
-                    const chAria = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) ? (LANG === 'tr' ? 'Değişim' : 'Change') : 'تغییر';
-                    const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="' + escapeHtml(chAria) + '">(' + escapeHtml(chText) + ')</span>' : '';
+                    const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="تغییر">(' + escapeHtml(chText) + ')</span>' : '';
                     return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
                 }).join('');
                 innerEl.innerHTML = itemsHtml;
@@ -396,12 +344,9 @@
             if (res.ok && res.data && res.data.points && res.data.points.length > 0) {
                 res.data.points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
             }
-            const pubFx = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
-            const currencyLabels = pubFx
-                ? { usd: 'USD', eur: 'EUR', gbp: 'GBP', aed: 'AED', try: 'TRY', gold: 'Gold' }
-                : { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
+            const currencyLabels = { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
             const label = currencyLabels[ratesChartCurrentCurrency] || rateLabel(ratesChartCurrentCurrency);
-            const unitLabel = t('currency_unit_toman') || (pubFx ? 'Toman' : 'تومان');
+            const unitLabel = t('currency_unit_toman') || 'تومان';
             if (ratesChartInstance) { ratesChartInstance.destroy(); ratesChartInstance = null; }
             if (values.length > 0) {
                 const ctx = canvas.getContext('2d');
@@ -461,7 +406,7 @@
                             y: {
                                 display: true,
                                 ticks: {
-                                    callback: function(v) { return typeof v === 'number' ? v.toLocaleString(pubFx ? 'en-US' : 'fa-IR') : v; },
+                                    callback: function(v) { return typeof v === 'number' ? v.toLocaleString('fa-IR') : v; },
                                     font: { size: 11 },
                                     color: 'rgba(139, 157, 195, 0.8)',
                                     maxTicksLimit: 8
@@ -489,12 +434,12 @@
                 if (summaryEl) summaryEl.innerHTML = '';
             } else {
                 if (statsRow) statsRow.innerHTML = '';
-                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (pubFx ? (LANG === 'tr' ? 'Gösterilecek veri yok. Lütfen daha sonra tekrar deneyin.' : 'No data to display. Please try again later.') : (LANG === 'fa' ? 'داده‌ای برای نمایش وجود ندارد. لطفاً بعداً تلاش کنید.' : LANG === 'tr' ? 'Gösterilecek veri yok. Lütfen daha sonra tekrar deneyin.' : 'No data to display. Please try again later.')) + '</div>';
+                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'داده‌ای برای نمایش وجود ندارد. لطفاً بعداً تلاش کنید.' : LANG === 'tr' ? 'Gösterilecek veri yok. Lütfen daha sonra tekrar deneyin.' : 'No data to display. Please try again later.') + '</div>';
             }
             } catch (err) {
                 if (loadingOverlay) loadingOverlay.classList.remove('visible');
                 if (refreshBtn) refreshBtn.classList.remove('loading');
-                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + ((typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) ? (LANG === 'tr' ? 'Grafik yüklenemedi. Lütfen tekrar deneyin.' : 'Error loading chart. Please try again.') : (LANG === 'fa' ? 'خطا در بارگذاری نمودار. لطفاً دوباره تلاش کنید.' : 'Error loading chart. Please try again.')) + '</div>';
+                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'خطا در بارگذاری نمودار. لطفاً دوباره تلاش کنید.' : 'Error loading chart. Please try again.') + '</div>';
                 console.error('loadRatesCharts error:', err);
             }
         }
@@ -512,7 +457,6 @@
                 '<span class="ticker-time-block"><span class="ticker-time-row"><span class="ticker-tz">' + escapeHtml(fmt.uaeLabel) + '</span><span class="ticker-time">' + escapeHtml(fmt.uae) + '</span></span><span class="ticker-date-below">' + escapeHtml(fmt.hijri) + '</span></span>';
         }
         function startRatesInterval() {
-            if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) return;
             if (ratesInterval) clearInterval(ratesInterval);
             if (tickerTimeInterval) clearInterval(tickerTimeInterval);
             ratesInterval = null;
@@ -761,16 +705,7 @@
             else if (t === 'reports') { loadCurrentReport(); }
         }
         const currencySymbols = { USD: '$', EUR: '€', GBP: '£', DHS: 'د.إ', TRY: '₺', RUB: '₽', USDT: '₮', IRR: 'تومان', TMN: 'تومان' };
-        function formatMoney(n, curr) {
-            const x = parseFloat(n) || 0;
-            const pub = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
-            let sym = currencySymbols[curr] || curr || (pub ? 'Toman' : 'تومان');
-            if (pub) {
-                if (curr === 'IRR' || curr === 'TMN' || sym === 'تومان') sym = 'Toman';
-                if (sym === 'د.إ') sym = 'AED';
-            }
-            return x.toLocaleString(pub ? 'en-US' : 'fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym;
-        }
+        function formatMoney(n, curr) { const x = parseFloat(n) || 0; const sym = currencySymbols[curr] || curr || 'تومان'; return x.toLocaleString('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym; }
         function formatMoneyEn(n) { const x = parseFloat(n) || 0; return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
         async function loadServicesSummary() {
             const [sumRes, cpRes] = await Promise.all([
@@ -2496,23 +2431,39 @@
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
         function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
-        /** آواتار مشتری/چت: // و مسیر نسبی و data: را برای نمایش درست تبدیل می‌کند */
+        /** آواتار مشتری/چت: // و مسیر نسبی (حتی بدون / اول) و data: */
         function normalizeProfilePicUrl(url) {
             if (!url || typeof url !== 'string') return '';
             var u = url.trim();
             if (!u) return '';
             if (u.indexOf('data:') === 0) return u;
-            if (u.indexOf('//') === 0) u = 'https:' + u;
-            if (u.indexOf('/') === 0) u = (window.location.origin || '') + u;
-            return ensureHttpsUrl(u);
+            if (u.indexOf('//') === 0) return ensureHttpsUrl('https:' + u);
+            if (/^https?:\/\//i.test(u)) return ensureHttpsUrl(u);
+            var origin = window.location.origin || '';
+            if (u.indexOf('/') === 0) return ensureHttpsUrl(origin + u);
+            if (u.indexOf('/') > 0) return ensureHttpsUrl(origin + '/' + u.replace(/^\/+/, ''));
+            return '';
         }
         function profilePicShowsImage(url) {
             if (!url || typeof url !== 'string') return false;
-            var u = url.trim();
-            return /^https?:\/\//i.test(u) || u.indexOf('data:') === 0;
+            var n = normalizeProfilePicUrl(url);
+            return !!n && (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0);
         }
-        function resolveAvatarUrl(avatar) { if (!avatar || typeof avatar !== 'string') return ''; const s = avatar.trim(); if (!s) return ''; if (s.indexOf('http') === 0) return ensureHttpsUrl(s); const origin = window.location.origin || ''; if (s.indexOf('/') === 0) return origin + s; return origin + '/' + s; }
-        function internalMsgAvatarHtml(fromUser) { const u = fromUser || {}; const name = (u.name || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'"></span>'; return '<span class="msg-avatar">' + escapeHtml(initial) + '</span>'; }
+        function crmAvatarImgErr(img) {
+            try {
+                if (!img) return;
+                img.style.display = 'none';
+                var p = img.parentElement;
+                if (p) {
+                    p.classList.add('avatar-img-failed');
+                    var fb = p.querySelector('.avatar-fallback, .customer-card-avatar-fallback');
+                    if (fb) { fb.style.display = 'flex'; fb.style.visibility = 'visible'; }
+                }
+            } catch (_) {}
+        }
+        window.crmAvatarImgErr = crmAvatarImgErr;
+        function resolveAvatarUrl(avatar) { return normalizeProfilePicUrl(avatar); }
+        function internalMsgAvatarHtml(fromUser) { const u = fromUser || {}; const name = (u.name || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)"></span>'; return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>'; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         function refreshDashboard() {
@@ -4163,6 +4114,13 @@
                 if (btn) { btn.disabled = false; if (textSpan) textSpan.textContent = syncText; else btn.textContent = '👥 ' + syncText; }
             }
         }
+        function letterAvatarVars(seed) {
+            var s = String(seed || '');
+            var h = 0;
+            for (var i = 0; i < s.length; i++) { h = ((h << 5) - h) + s.charCodeAt(i); h |= 0; }
+            var hue = Math.abs(h) % 360;
+            return '--av-bg:hsla(' + hue + ',42%,22%,1);--av-fg:hsla(' + hue + ',48%,84%,1);';
+        }
         async function loadConversations(appendMode) {
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
@@ -4223,10 +4181,10 @@
                 const phone = cust.phone || '';
                 const metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
-                let profilePic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
-                profilePic = profilePic ? normalizeProfilePicUrl(profilePic) : '';
-                const canShowImg = !isGroup && profilePic && profilePicShowsImage(profilePic);
-                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\'">' : '');
+                const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
+                let profilePic = rawPic ? normalizeProfilePicUrl(rawPic) : '';
+                const canShowImg = !isGroup && rawPic && profilePicShowsImage(rawPic);
+                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
                 const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
                 const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
@@ -4322,11 +4280,11 @@
             const supStats = document.getElementById('convSupervisionStats');
             if (headerEl) headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
             if (avatarEl) {
-                let pic = (profilePic || '').trim();
-                pic = pic ? normalizeProfilePicUrl(pic) : '';
+                const rawOpenPic = (profilePic || '').trim();
+                let pic = rawOpenPic ? normalizeProfilePicUrl(rawOpenPic) : '';
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
-                if (pic && profilePicShowsImage(pic)) {
-                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\'">';
+                if (pic && profilePicShowsImage(rawOpenPic)) {
+                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
                 } else {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 }
@@ -4458,9 +4416,9 @@
             list.innerHTML = data.data.map(function(c) {
                 const name = c.name || c.phone || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
-                let profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-                profilePic = profilePic ? normalizeProfilePicUrl(profilePic) : '';
-                const avatarHtml = profilePic && profilePicShowsImage(profilePic) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\'">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                let profilePic = rawPicNc ? normalizeProfilePicUrl(rawPicNc) : '';
+                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" onclick="startNewConversation(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
@@ -4697,11 +4655,16 @@
                         const voiceClass = isPtt ? ' msg-media-voice' : ' msg-media-audio';
                         const typeAttr = mdMime ? ' type="' + escapeHtml(mdMime) + '"' : '';
                         const errHint = LANG === 'fa' ? 'پخش در مرورگر ممکن نیست — از دانلود استفاده کنید.' : 'Playback failed — try download.';
+                        const voiceLabel = isPtt
+                            ? ('<div class="msg-voice-meta"><span class="msg-voice-ic" aria-hidden="true">🎙</span><span>' + (LANG === 'fa' ? 'پیام صوتی' : 'Voice message') + '</span></div>')
+                            : ('<div class="msg-voice-meta msg-voice-meta--file"><span class="msg-voice-ic" aria-hidden="true">🎵</span><span>' + escapeHtml(m.mediaData.filename || (LANG === 'fa' ? 'فایل صوتی' : 'Audio')) + '</span></div>');
                         mediaHtml =
                             '<div class="msg-media' + voiceClass + '">' +
+                            voiceLabel +
+                            '<div class="msg-audio-shell">' +
                             '<audio class="msg-audio-el" controls preload="auto" playsinline onerror="var w=this.closest(\'.msg-media\');if(w){w.classList.add(\'msg-media-error\');}">' +
                             '<source src="' + escapeHtml(mediaUrl) + '"' + typeAttr + '>' +
-                            '</audio>' +
+                            '</audio></div>' +
                             '<p class="msg-media-audio-err" role="alert">' + escapeHtml(errHint) + '</p>' +
                             '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-dl" data-open="1">' + (LANG === 'fa' ? 'دانلود فایل صوتی' : 'Download audio') + '</a>' +
                             '</div>';
@@ -4713,12 +4676,21 @@
                     const isImageName = /\.(jpe?g|png|gif|webp|bmp)$/i.test(fileName);
                     mediaHtml = '<div class="msg-media msg-media-placeholder">' + (isImageName ? '🖼 ' : '📎 ') + escapeHtml(fileName) + '</div>';
                 }
+                var resolvedMediaType = (mediaUrl && m.hasMedia && m.mediaData) ? inferMediaType(m) : '';
                 let contentHtml = '';
                 let displayContent = (m.content || '').trim();
                 if (isOut && (displayContent.indexOf('🤖 ') === 0)) displayContent = displayContent.slice(2).trim();
                 else if (isOut && displayContent.indexOf('AI KAYA: ') === 0) displayContent = displayContent.slice(9).trim();
-                if (m.hasMedia && m.mediaData && m.mediaData.url && m.content) contentHtml = '<div class="msg-caption">' + escapeHtml(displayContent || m.content) + '</div>';
-                else if ((displayContent || m.content) && !(m.hasMedia && !(m.mediaData && m.mediaData.url))) contentHtml = '<div>' + escapeHtml(displayContent || m.content) + '</div>';
+                var fnCaption = (m.mediaData && m.mediaData.filename) ? String(m.mediaData.filename).trim() : '';
+                if (resolvedMediaType === 'audio' && displayContent) {
+                    var dcLo = displayContent.toLowerCase();
+                    var fnLo = fnCaption.toLowerCase();
+                    if (fnCaption && (displayContent === fnCaption || dcLo === fnLo)) displayContent = '';
+                    else if (/^voice\.(webm|ogg|m4a|mp3|wav)$/i.test(displayContent)) displayContent = '';
+                    else if (displayContent === 'file' || displayContent === '📎 فایل') displayContent = '';
+                }
+                if (m.hasMedia && m.mediaData && m.mediaData.url && m.content && displayContent) contentHtml = '<div class="msg-caption">' + escapeHtml(displayContent) + '</div>';
+                else if (displayContent && !(m.hasMedia && !(m.mediaData && m.mediaData.url))) contentHtml = '<div>' + escapeHtml(displayContent) + '</div>';
                 let preview = (m.content || '').slice(0, 50) || (m.hasMedia ? '📎' : '');
                 if ((m.content || '').length > 50) preview += '…';
                 // اضافه کردن اسم فرستنده به preview برای گروه
@@ -4897,6 +4869,11 @@
         const voiceRecorderState = { active: false, recorder: null, chunks: [] };
         function updateVoiceBtn() {
             const btn = document.getElementById('msgVoiceBtn');
+            const bar = document.getElementById('chatVoiceRecordingBar');
+            if (bar) {
+                bar.style.display = voiceRecorderState.active ? 'flex' : 'none';
+                bar.hidden = !voiceRecorderState.active;
+            }
             if (!btn) return;
             btn.classList.toggle('recording', voiceRecorderState.active);
             btn.setAttribute('title', voiceRecorderState.active ? (t('voice_stop') || (LANG === 'fa' ? 'توقف ضبط' : 'Stop recording')) : (t('voice_record') || (LANG === 'fa' ? 'ضبط پیام صوتی' : 'Voice message')));
@@ -5009,9 +4986,15 @@
             list.innerHTML = sorted.map(function(c) {
                 const name = c.name || c.phone || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
-                let profilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-                profilePic = profilePic ? normalizeProfilePicUrl(profilePic) : '';
-                const avatarHtml = profilePic && profilePicShowsImage(profilePic) ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-card-avatar-fallback\');if(f)f.style.display=\'flex\'">' : escapeHtml(initial);
+                const rawPicCust = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                let profilePic = rawPicCust ? normalizeProfilePicUrl(rawPicCust) : '';
+                const hasCustPic = !!(rawPicCust && profilePicShowsImage(rawPicCust));
+                const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
+                const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
+                const avatarInner = hasCustPic
+                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">'
+                    : '<span class="customer-card-avatar-letter">' + escapeHtml(initial) + '</span>';
+                const avatarHtml = '<div class="' + avClass + '"' + avStyle + '>' + avatarInner + '</div>';
                 const statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
                 const statusLabel = c.status === 'blocked' ? (LANG === 'fa' ? 'مسدود' : 'Blocked') : c.status === 'inactive' ? (LANG === 'fa' ? 'غیرفعال' : 'Inactive') : (LANG === 'fa' ? 'فعال' : 'Active');
                 const lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
@@ -5019,7 +5002,7 @@
                 const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
                 const safeName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
-                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main"><div class="customer-card-avatar">' + avatarHtml + '</div><div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" data-i18n="btn_send">ارسال</button></div>';
+                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main">' + avatarHtml + '<div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" data-i18n="btn_send">ارسال</button></div>';
             }).join('');
             updateBulkSelectedCount();
         }
@@ -5812,14 +5795,16 @@
             if (emailEl) emailEl.textContent = u.username || u.email || u.name || '';
             const setAvatar = function(el) {
                 if (!el) return;
-                let avatarUrl = (u.avatar || '').trim();
-                if (avatarUrl.indexOf('/') === 0) avatarUrl = (window.location.origin || '') + avatarUrl;
-                if (avatarUrl && avatarUrl.indexOf('http') === 0) {
+                el.classList.remove('avatar-img-failed');
+                var avatarUrl = normalizeProfilePicUrl((u.avatar || '').trim());
+                if (avatarUrl && profilePicShowsImage(u.avatar)) {
                     const img = document.createElement('img');
                     img.src = avatarUrl;
                     img.alt = '';
+                    img.referrerPolicy = 'no-referrer';
+                    img.loading = 'lazy';
                     img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.borderRadius = 'inherit';
-                    img.onerror = function() { el.innerHTML = ''; el.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?'); };
+                    img.onerror = function() { el.classList.add('avatar-img-failed'); el.innerHTML = ''; el.textContent = (u.name && u.name[0]) ? u.name[0].toUpperCase() : (u.email && u.email[0] ? u.email[0].toUpperCase() : '?'); };
                     el.innerHTML = '';
                     el.appendChild(img);
                 } else {
@@ -5834,11 +5819,7 @@
             const perms = (currentUser && currentUser.permissions) || {};
             const role = (currentUser && currentUser.role) || '';
             const isOwnerOrAdmin = (role === 'owner' || role === 'admin');
-            const pubDemoNav = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost() && currentUser && currentUser.isDemo);
-            const can = function(section) {
-                if (pubDemoNav) return true;
-                return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true);
-            };
+            const can = function(section) { return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
             document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
                 const section = link.getAttribute('data-section');
                 link.style.display = can(section) ? '' : 'none';
@@ -5904,17 +5885,8 @@
                 bottomBar.classList.remove('has-mobile-tab');
             }
         }
-        function getFxguardPublicBranding() {
-            if (LANG === 'tr') {
-                return { pageTitle: 'FXGuard | Panel', siteName: 'FXGuard', footerText: 'FXGuard — Demo', loginTitle: 'FXGuard Demo' };
-            }
-            return { pageTitle: 'FXGuard | Dashboard', siteName: 'FXGuard', footerText: 'FXGuard — Demo', loginTitle: 'FXGuard Demo' };
-        }
-        function applyBranding(raw) {
-            if (!raw) return;
-            window.__panelRawBranding = Object.assign({}, window.__panelRawBranding || {}, raw);
-            const pubFxguard = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost());
-            const s = pubFxguard ? Object.assign({}, window.__panelRawBranding, getFxguardPublicBranding()) : window.__panelRawBranding;
+        function applyBranding(s) {
+            if (!s) return;
             const defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
             const defSite = (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
             const defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
@@ -5929,18 +5901,9 @@
             const headerLogoText = document.getElementById('headerLogoText');
             if (headerLogoText) headerLogoText.textContent = logoText;
             const headerLogo = document.getElementById('headerLogo');
-            if (headerLogo) {
-                const backLbl = pubFxguard ? (LANG === 'tr' ? ' — Gösterge paneline dön' : ' — Back to dashboard') : (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard');
-                headerLogo.setAttribute('aria-label', logoText + backLbl);
-            }
+            if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
             const footerBrand = document.getElementById('appFooterBrand');
             if (footerBrand) footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
-            if (pubFxguard) {
-                ['headerLogoText', 'appFooterBrand', 'loginTitle'].forEach(function(id) {
-                    const el = document.getElementById(id);
-                    if (el) el.removeAttribute('data-i18n');
-                });
-            }
             const appFooter = document.getElementById('appFooter');
             if (appFooter) {
                 appFooter.style.display = (s.showFooter === false) ? 'none' : '';
@@ -5985,10 +5948,6 @@
             document.body.style.fontWeight = fw;
             if (Array.isArray(s.sidebarOrder) && s.sidebarOrder.length > 0) applySidebarOrder(s.sidebarOrder);
         }
-        window.reapplyFxguardPublicBranding = function() {
-            if (typeof isFxguardPublicHost !== 'function' || !isFxguardPublicHost()) return;
-            applyBranding(Object.assign({}, window.__panelRawBranding || {}));
-        };
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
             if (!inner) return;
@@ -5998,16 +5957,15 @@
         }
         var HIDDEN_SECTIONS = [];
         function applyHiddenSections(hidden) {
-            const pubDemoHidden = (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost() && currentUser && currentUser.isDemo);
-            HIDDEN_SECTIONS = pubDemoHidden ? [] : (Array.isArray(hidden) ? hidden : []);
+            HIDDEN_SECTIONS = Array.isArray(hidden) ? hidden : [];
             const perms = (currentUser && currentUser.permissions) || {};
             const can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
             const pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
                 const page = link.getAttribute('data-page');
                 const section = link.getAttribute('data-section') || pageToSection[page];
-                const inHidden = !pubDemoHidden && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0));
-                const noPerm = !pubDemoHidden && section && !can(section);
+                const inHidden = HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0);
+                const noPerm = section && !can(section);
                 link.style.display = (inHidden || noPerm) ? 'none' : '';
             });
             const annBanner = document.getElementById('announcementMarquee');
@@ -6016,10 +5974,7 @@
                 else if (typeof loadGeneralAnnouncementsMarquee === 'function') loadGeneralAnnouncementsMarquee();
             }
             const tickerEl = document.getElementById('priceTicker');
-            if (tickerEl) {
-                if (typeof isFxguardPublicHost === 'function' && isFxguardPublicHost()) tickerEl.style.display = 'none';
-                else tickerEl.style.display = HIDDEN_SECTIONS.indexOf('rates') >= 0 ? 'none' : '';
-            }
+            if (tickerEl) tickerEl.style.display = HIDDEN_SECTIONS.indexOf('rates') >= 0 ? 'none' : '';
             updateBottomBarVisibility();
             const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
@@ -6027,7 +5982,7 @@
             if (tickerTimeInterval) clearInterval(tickerTimeInterval);
             ratesInterval = null;
             tickerTimeInterval = null;
-            if (HIDDEN_SECTIONS.indexOf('rates') < 0 && typeof startRatesInterval === 'function' && !(typeof isFxguardPublicHost === 'function' && isFxguardPublicHost())) startRatesInterval();
+            if (HIDDEN_SECTIONS.indexOf('rates') < 0 && typeof startRatesInterval === 'function') startRatesInterval();
             document.querySelectorAll('.nav-section').forEach(function(section) {
                 const body = section.querySelector('.nav-section-body');
                 if (!body) return;
@@ -10132,8 +10087,7 @@
         })();
 
         (function initLang() {
-            const hostPub = /^app\.fxguard\.io$/i.test(window.location.hostname || '') || window.FXGUARD_PUBLIC_SITE;
-            const l = localStorage.getItem('crm_lang') || (hostPub ? 'en' : 'fa');
+            const l = localStorage.getItem('crm_lang') || 'fa';
             setLang(l);
         })();
 
