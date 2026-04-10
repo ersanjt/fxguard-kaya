@@ -4871,6 +4871,25 @@
         }
 
         var _waPickerOpen = null;
+        var _waPickerDocBound = false;
+        var _waPickerData = {
+            emoji: Array.from('😀😃😄😁😅😂🤣😊😇🙂😉😍🥰😘🥲😋😛🤪😎😢😭😤😡🤬🤔😴🙄👍👎👏🙌🙏🤝💪✌️🤞✋👌🤌💬❤️🧡💛💚💙💔✨🔥⭐🎉💯✅❌❓☕🍕🎂🎁🏠✈️📱💼📎🖼🎵🎶🌙☀️🌟🌈⚽🎮🔔📌'),
+            sticker: Array.from('❤️😂🔥😍🥰👏😊🎉🤔😭🙏✨🌟💯🎂🍕🐱🐶🌹🥳😎🤗💪👍🙌🤩😇🥺🦄🌸🍀🌻🎈🎀🏆🍉🥑🍓💖💝👻🎃🎄🧸'),
+            gif: [
+                { label: 'Funny', url: 'https://media.giphy.com/media/ICOgUNjpvO0PC/giphy.gif' },
+                { label: 'Wow', url: 'https://media.giphy.com/media/l3q2K5jinAlChoCLS/giphy.gif' },
+                { label: 'Happy', url: 'https://media.giphy.com/media/111ebonMs90YLu/giphy.gif' },
+                { label: 'Love', url: 'https://media.giphy.com/media/3oriO0OEd9QIDdllqo/giphy.gif' },
+                { label: 'Thanks', url: 'https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif' },
+                { label: 'Hi', url: 'https://media.giphy.com/media/ASd0Ukj0y3qMM/giphy.gif' }
+            ]
+        };
+        function waPickerText(kfa, ken, ktr) { return LANG === 'fa' ? kfa : (LANG === 'tr' ? ktr : ken); }
+        function getWaPickerHostMount() {
+            var e = document.getElementById('waEmojiPickerMount');
+            var s = document.getElementById('waStickerPickerMount');
+            return e || s || null;
+        }
         function closeWaPickers() {
             var e = document.getElementById('waEmojiPickerMount');
             var s = document.getElementById('waStickerPickerMount');
@@ -4878,9 +4897,22 @@
             if (s) { s.hidden = true; s.innerHTML = ''; }
             var eb = document.getElementById('waEmojiBtn');
             var sb = document.getElementById('waStickerBtn');
+            var gb = document.getElementById('waGifBtn');
             if (eb) eb.setAttribute('aria-expanded', 'false');
             if (sb) sb.setAttribute('aria-expanded', 'false');
+            if (gb) gb.setAttribute('aria-expanded', 'false');
             _waPickerOpen = null;
+        }
+        function ensureWaPickerGlobalClose() {
+            if (_waPickerDocBound) return;
+            _waPickerDocBound = true;
+            document.addEventListener('click', function(ev) {
+                if (!_waPickerOpen) return;
+                var target = ev && ev.target;
+                if (!target) return;
+                if (target.closest && (target.closest('#waEmojiPickerMount') || target.closest('#waStickerPickerMount') || target.closest('#waEmojiBtn') || target.closest('#waStickerBtn') || target.closest('#waGifBtn'))) return;
+                closeWaPickers();
+            });
         }
         function waInsertIntoMsgInput(ch) {
             var input = document.getElementById('msgInput');
@@ -4894,67 +4926,130 @@
                 var pos = start + ch.length;
                 input.setSelectionRange(pos, pos);
             } catch (err) { /* ignore */ }
+            updateWaComposerState();
         }
-        function toggleWaEmojiPanel(ev) {
-            if (ev) ev.stopPropagation();
-            var mount = document.getElementById('waEmojiPickerMount');
-            if (!mount) return;
-            if (_waPickerOpen === 'emoji') { closeWaPickers(); return; }
-            closeWaPickers();
-            _waPickerOpen = 'emoji';
-            var grid = document.createElement('div');
-            grid.className = 'wa-emoji-panel';
-            var inner = document.createElement('div');
-            inner.className = 'wa-emoji-grid';
-            var listStr = '😀😃😄😁😅😂🤣😊😇🙂😉😍🥰😘🥲😋😛🤪😎😢😭😤😡🤬🤔😴🙄👍👎👏🙌🙏🤝💪✌️🤞✋👌🤌💬❤️🧡💛💚💙💔✨🔥⭐🎉💯✅❌❓☕🍕🎂🎁🏠✈️📱💼📎🖼🎵🎶🌙☀️🌟🌈⚽🎮🔔📌';
-            var list = Array.from(listStr);
-            list.forEach(function(ch) {
+        function buildWaPickerTabs(activeTab, onTab) {
+            var tabs = document.createElement('div');
+            tabs.className = 'wa-picker-tabs';
+            var tabDefs = [
+                { key: 'emoji', label: waPickerText('ایموجی', 'Emoji', 'Emoji') },
+                { key: 'sticker', label: waPickerText('استیکر', 'Stickers', 'Sticker') },
+                { key: 'gif', label: 'GIF' }
+            ];
+            tabDefs.forEach(function(td) {
                 var b = document.createElement('button');
                 b.type = 'button';
-                b.textContent = ch;
-                b.onclick = function(e) { e.stopPropagation(); waInsertIntoMsgInput(ch); closeWaPickers(); };
-                inner.appendChild(b);
+                b.className = 'wa-picker-tab' + (td.key === activeTab ? ' active' : '');
+                b.textContent = td.label;
+                b.onclick = function(e) { e.stopPropagation(); onTab(td.key); };
+                tabs.appendChild(b);
             });
-            grid.appendChild(inner);
-            mount.innerHTML = '';
-            mount.appendChild(grid);
-            mount.hidden = false;
-            var eb = document.getElementById('waEmojiBtn');
-            if (eb) eb.setAttribute('aria-expanded', 'true');
+            return tabs;
         }
-        function toggleWaStickerPanel(ev) {
-            if (ev) ev.stopPropagation();
-            var mount = document.getElementById('waStickerPickerMount');
-            if (!mount) return;
-            if (_waPickerOpen === 'sticker') { closeWaPickers(); return; }
-            closeWaPickers();
-            _waPickerOpen = 'sticker';
-            var wrap = document.createElement('div');
-            wrap.className = 'wa-sticker-panel';
+        function renderWaPickerBody(tab, query, body) {
+            body.innerHTML = '';
+            var q = (query || '').trim().toLowerCase();
+            if (tab === 'gif') {
+                var gWrap = document.createElement('div');
+                gWrap.className = 'wa-gif-grid';
+                _waPickerData.gif.filter(function(g) { return !q || g.label.toLowerCase().indexOf(q) >= 0; }).forEach(function(g) {
+                    var item = document.createElement('button');
+                    item.type = 'button';
+                    item.className = 'wa-gif-item';
+                    item.innerHTML = '<img loading="lazy" alt="' + escapeHtml(g.label) + '" src="' + escapeHtml(g.url) + '"><span>' + escapeHtml(g.label) + '</span>';
+                    item.onclick = function(e) { e.stopPropagation(); sendWaGifFromPicker(g.url); };
+                    gWrap.appendChild(item);
+                });
+                if (!gWrap.children.length) {
+                    gWrap.innerHTML = '<div class="wa-picker-empty">' + waPickerText('نتیجه‌ای پیدا نشد', 'No results', 'Sonuc bulunamadi') + '</div>';
+                }
+                body.appendChild(gWrap);
+                return;
+            }
+            var list = _waPickerData[tab] || [];
+            if (q) list = list.filter(function(ch) { return String(ch).indexOf(q) >= 0; });
             var grid = document.createElement('div');
-            grid.className = 'wa-sticker-grid';
-            var stickers = Array.from('❤️😂🔥😍🥰👏😊🎉🤔😭🙏✨🌟💯🎂🍕🐱🐶🌹🥳😎🤗💪👍🙌🤩😇🥺🦄🌸🍀🌻🎈🎀🏆🍉🥑🍓💖💝👻🎃🎄🧸');
-            stickers.forEach(function(ch) {
+            grid.className = tab === 'emoji' ? 'wa-emoji-grid' : 'wa-sticker-grid';
+            list.forEach(function(ch) {
                 var b = document.createElement('button');
                 b.type = 'button';
                 b.textContent = ch;
                 b.onclick = function(e) { e.stopPropagation(); waInsertIntoMsgInput(ch); closeWaPickers(); };
                 grid.appendChild(b);
             });
-            wrap.appendChild(grid);
+            if (!grid.children.length) {
+                grid.innerHTML = '<div class="wa-picker-empty">' + waPickerText('نتیجه‌ای پیدا نشد', 'No results', 'Sonuc bulunamadi') + '</div>';
+            }
+            body.appendChild(grid);
+        }
+        function openWaUnifiedPicker(tab) {
+            ensureWaPickerGlobalClose();
+            var mount = getWaPickerHostMount();
+            if (!mount) return;
+            if (_waPickerOpen === tab) { closeWaPickers(); return; }
+            closeWaPickers();
+            _waPickerOpen = tab;
+            var shell = document.createElement('div');
+            shell.className = 'wa-picker-shell';
+            var header = document.createElement('div');
+            header.className = 'wa-picker-header';
+            var title = document.createElement('div');
+            title.className = 'wa-picker-title';
+            title.textContent = waPickerText('انتخاب', 'Picker', 'Secici');
+            var closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'wa-picker-close';
+            closeBtn.innerHTML = '&times;';
+            closeBtn.onclick = function(e) { e.stopPropagation(); closeWaPickers(); };
+            header.appendChild(title);
+            header.appendChild(closeBtn);
+            var tabs = buildWaPickerTabs(tab, function(nextTab) { openWaUnifiedPicker(nextTab); });
+            var searchWrap = document.createElement('div');
+            searchWrap.className = 'wa-picker-search-wrap';
+            var search = document.createElement('input');
+            search.type = 'text';
+            search.className = 'wa-picker-search';
+            search.placeholder = waPickerText('جستجو...', 'Search...', 'Ara...');
+            searchWrap.appendChild(search);
+            var body = document.createElement('div');
+            body.className = 'wa-picker-body';
+            shell.appendChild(header);
+            shell.appendChild(tabs);
+            shell.appendChild(searchWrap);
+            shell.appendChild(body);
             mount.innerHTML = '';
-            mount.appendChild(wrap);
+            mount.appendChild(shell);
             mount.hidden = false;
+            renderWaPickerBody(tab, '', body);
+            search.addEventListener('input', function() { renderWaPickerBody(tab, search.value || '', body); });
+            var eb = document.getElementById('waEmojiBtn');
             var sb = document.getElementById('waStickerBtn');
-            if (sb) sb.setAttribute('aria-expanded', 'true');
+            var gb = document.getElementById('waGifBtn');
+            if (eb) eb.setAttribute('aria-expanded', tab === 'emoji' ? 'true' : 'false');
+            if (sb) sb.setAttribute('aria-expanded', tab === 'sticker' ? 'true' : 'false');
+            if (gb) gb.setAttribute('aria-expanded', tab === 'gif' ? 'true' : 'false');
+            setTimeout(function() { try { search.focus(); } catch (_) {} }, 0);
+        }
+        async function sendWaGifFromPicker(url) {
+            if (!currentConvId || !url) return;
+            closeWaPickers();
+            const media = { url: url, filename: 'gif.gif', mimetype: 'image/gif' };
+            const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
+            if (res.needLogin) return;
+            if (res.ok) loadMessages(currentConvId);
+            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+        }
+        function toggleWaEmojiPanel(ev) {
+            if (ev) ev.stopPropagation();
+            openWaUnifiedPicker('emoji');
+        }
+        function toggleWaStickerPanel(ev) {
+            if (ev) ev.stopPropagation();
+            openWaUnifiedPicker('sticker');
         }
         function waConvGifAttach(ev) {
             if (ev) ev.stopPropagation();
-            var gifMsg = typeof t === 'function' ? t('wa_gif_use_attach') : '';
-            if (!gifMsg || gifMsg === 'wa_gif_use_attach') gifMsg = LANG === 'fa' ? 'برای ارسال GIF از پیوست فایل استفاده کنید.' : LANG === 'tr' ? 'GIF için dosya eki kullanın.' : 'Use attach to send a GIF or image.';
-            if (typeof toast === 'function') toast(gifMsg, false);
-            var fi = document.getElementById('msgFileInput');
-            if (fi) setTimeout(function() { fi.click(); }, 120);
+            openWaUnifiedPicker('gif');
         }
         function waConvVoiceCall() {
             var msg = typeof t === 'function' ? t('wa_calls_not_in_panel') : '';

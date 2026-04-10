@@ -4603,10 +4603,28 @@
             }
             #pageConversations.wa-conversations-theme .wa-compose-row {
                 gap: 4px;
+                align-items: center;
+            }
+            #pageConversations.wa-conversations-theme .wa-compose-tools-start {
+                display: flex;
+                flex-wrap: nowrap;
+                gap: 2px;
+                overflow-x: auto;
+                max-width: 44%;
+                scrollbar-width: none;
+                -webkit-overflow-scrolling: touch;
+            }
+            #pageConversations.wa-conversations-theme .wa-compose-tools-start::-webkit-scrollbar { display: none; }
+            #pageConversations.wa-conversations-theme .chat-tool-btn {
+                width: 40px;
+                height: 40px;
+                min-width: 40px;
+                min-height: 40px;
             }
             #pageConversations.wa-conversations-theme .wa-compose-pill {
                 min-height: 40px;
-                padding: 9px 12px;
+                padding: 8px 10px;
+                font-size: 0.9rem;
             }
             #pageConversations.wa-conversations-theme .wa-send-circle {
                 width: 44px;
@@ -4614,11 +4632,58 @@
                 min-width: 44px;
                 min-height: 44px;
             }
+            #pageConversations.wa-conversations-theme .chat-send.chat-send-recording {
+                padding: 8px;
+            }
+            #pageConversations.wa-conversations-theme .chat-voice-recording-bar {
+                gap: 8px;
+                padding: 7px 8px;
+                border-radius: 16px;
+            }
+            #pageConversations.wa-conversations-theme .chat-voice-rec-time {
+                font-size: 1.25rem;
+                min-width: 52px;
+            }
+            #pageConversations.wa-conversations-theme .chat-voice-wave {
+                height: 20px;
+                gap: 2px;
+            }
+            #pageConversations.wa-conversations-theme .chat-voice-wave span {
+                width: 2px;
+            }
+            #pageConversations.wa-conversations-theme .chat-voice-action-btn {
+                width: 34px;
+                height: 34px;
+                min-width: 34px;
+                min-height: 34px;
+            }
             #pageConversations .conv-fab-btn {
                 position: fixed;
                 bottom: max(calc(72px + 14px), calc(72px + env(safe-area-inset-bottom) + 14px));
                 inset-inline-end: max(14px, env(safe-area-inset-inline-end));
                 z-index: 120;
+            }
+            #pageConversations.wa-conversations-theme .wa-emoji-picker-mount,
+            #pageConversations.wa-conversations-theme .wa-sticker-picker-mount {
+                position: fixed;
+                inset-inline: 0;
+                bottom: max(60px, env(safe-area-inset-bottom));
+                z-index: 11000;
+                padding-inline: 8px;
+                flex-basis: auto;
+                width: auto;
+            }
+            #pageConversations.wa-conversations-theme .wa-picker-shell {
+                margin-top: 0;
+                border-radius: 16px 16px 12px 12px;
+                max-height: min(58vh, 470px);
+                backdrop-filter: blur(4px);
+            }
+            #pageConversations.wa-conversations-theme .wa-picker-body {
+                max-height: min(44vh, 320px);
+            }
+            #pageConversations.wa-conversations-theme .wa-gif-item img {
+                height: 66px;
             }
         }
         #pageConversations.wa-conversations-theme .wa-emoji-picker-mount,
@@ -4628,16 +4693,82 @@
             flex-basis: 100%;
             z-index: 2;
         }
-        #pageConversations.wa-conversations-theme .wa-emoji-panel,
-        #pageConversations.wa-conversations-theme .wa-sticker-panel {
+        #pageConversations.wa-conversations-theme .wa-picker-shell {
             margin-top: 8px;
-            padding: 12px;
-            max-height: 220px;
-            overflow-y: auto;
             border-radius: 12px;
             background: #202c33;
             border: 1px solid rgba(134, 150, 160, 0.2);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+            overflow: hidden;
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(134, 150, 160, 0.16);
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-title {
+            font-size: 0.82rem;
+            color: #aebac1;
+            font-weight: 600;
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-close {
+            width: 28px;
+            height: 28px;
+            border-radius: 999px;
+            border: none;
+            background: transparent;
+            color: #aebac1;
+            cursor: pointer;
+            font-size: 1.1rem;
+            line-height: 1;
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-close:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e9edef;
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-tabs {
+            display: flex;
+            gap: 6px;
+            padding: 8px 10px 6px;
+            border-bottom: 1px solid rgba(134, 150, 160, 0.12);
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-tab {
+            border: 1px solid rgba(134, 150, 160, 0.24);
+            background: #1b2730;
+            color: #aebac1;
+            border-radius: 999px;
+            min-height: 28px;
+            padding: 0 10px;
+            font-size: 0.75rem;
+            cursor: pointer;
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-tab.active {
+            background: #005c4b;
+            color: #e9edef;
+            border-color: transparent;
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-search-wrap {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(134, 150, 160, 0.12);
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-search {
+            width: 100%;
+            min-height: 34px;
+            border-radius: 8px;
+            border: 1px solid rgba(134, 150, 160, 0.22);
+            background: #111b21;
+            color: #e9edef;
+            padding: 0 10px;
+            font-size: 0.82rem;
+            font-family: var(--font);
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-search::placeholder { color: #8696a0; }
+        #pageConversations.wa-conversations-theme .wa-picker-body {
+            padding: 10px;
+            max-height: 240px;
+            overflow-y: auto;
         }
         #pageConversations.wa-conversations-theme .wa-emoji-grid {
             display: grid;
@@ -4663,6 +4794,48 @@
         #pageConversations.wa-conversations-theme .wa-sticker-grid button:hover {
             background: rgba(255, 255, 255, 0.08);
         }
+        #pageConversations.wa-conversations-theme .wa-gif-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+        }
+        #pageConversations.wa-conversations-theme .wa-gif-item {
+            border: 1px solid rgba(134, 150, 160, 0.2);
+            background: #111b21;
+            color: #aebac1;
+            border-radius: 10px;
+            padding: 6px;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            overflow: hidden;
+        }
+        #pageConversations.wa-conversations-theme .wa-gif-item img {
+            width: 100%;
+            height: 74px;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+        }
+        #pageConversations.wa-conversations-theme .wa-gif-item span {
+            font-size: 0.72rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #pageConversations.wa-conversations-theme .wa-gif-item:hover {
+            border-color: rgba(37, 211, 102, 0.45);
+            color: #e9edef;
+        }
+        #pageConversations.wa-conversations-theme .wa-picker-empty {
+            color: #8696a0;
+            text-align: center;
+            padding: 18px 6px;
+            font-size: 0.82rem;
+            grid-column: 1 / -1;
+        }
         #pageConversations.wa-conversations-theme .conv-page-header,
         #pageConversations.wa-conversations-theme .conv-toolbar,
         #pageConversations.wa-conversations-theme .conv-quick-tabs {
@@ -4680,8 +4853,31 @@
             #pageConversations.wa-conversations-theme .wa-emoji-grid {
                 grid-template-columns: repeat(6, 1fr);
             }
-            #pageConversations.wa-conversations-theme .wa-gif-btn {
-                display: none;
+            #pageConversations.wa-conversations-theme .wa-sticker-grid button {
+                font-size: 1.75rem;
+                padding: 6px;
+            }
+            #pageConversations.wa-conversations-theme .wa-picker-tabs {
+                gap: 4px;
+                padding: 6px 8px 5px;
+            }
+            #pageConversations.wa-conversations-theme .wa-picker-tab {
+                min-height: 26px;
+                padding: 0 8px;
+                font-size: 0.7rem;
+            }
+            #pageConversations.wa-conversations-theme .wa-picker-search-wrap {
+                padding: 6px 8px;
+            }
+            #pageConversations.wa-conversations-theme .wa-picker-search {
+                min-height: 32px;
+                font-size: 0.78rem;
+            }
+            #pageConversations.wa-conversations-theme .wa-picker-body {
+                padding: 8px;
+            }
+            #pageConversations.wa-conversations-theme .wa-gif-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
         @media (min-width: 901px) {
