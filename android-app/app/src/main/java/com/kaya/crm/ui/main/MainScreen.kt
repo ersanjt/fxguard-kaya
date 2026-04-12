@@ -2,6 +2,7 @@ package com.kaya.crm.ui.main
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -16,7 +17,7 @@ import com.kaya.crm.ui.main.profile.ProfileScreen
 
 enum class MainTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     DASHBOARD("داشبورد", Icons.Default.Dashboard),
-    CONVERSATIONS("مکالمات", Icons.Default.Chat),
+    CONVERSATIONS("مکالمات", Icons.AutoMirrored.Filled.Chat),
     CUSTOMERS("مشتریان", Icons.Default.People),
     TICKETS("تیکت‌ها", Icons.Default.ConfirmationNumber),
     PROFILE("پروفایل", Icons.Default.Person)

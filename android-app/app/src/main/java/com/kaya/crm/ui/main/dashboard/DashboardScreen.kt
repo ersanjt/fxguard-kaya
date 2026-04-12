@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -63,7 +65,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                         modifier = Modifier.weight(1f),
                         title = "مکالمات باز",
                         value = d.openConversations.toString(),
-                        icon = Icons.Default.Chat
+                        icon = Icons.AutoMirrored.Filled.Chat
                     )
                     StatCard(
                         modifier = Modifier.weight(1f),
@@ -87,7 +89,7 @@ fun DashboardScreen(viewModel: DashboardViewModel = hiltViewModel()) {
                         modifier = Modifier.weight(1f),
                         title = "پیام امروز",
                         value = d.todayMessages.toString(),
-                        icon = Icons.Default.Send
+                        icon = Icons.AutoMirrored.Filled.Send
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
