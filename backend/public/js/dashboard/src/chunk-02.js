@@ -75,7 +75,8 @@
                 const cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                 let preview = (data.message && data.message.content) ? String(data.message.content).slice(0, 80) : '';
                 if (preview.length >= 80) preview += '…';
-                const n = new Notification((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + cust, { body: preview || (LANG === 'fa' ? 'پیام واتساپ' : 'WhatsApp message'), icon: '/favicon.ico' });
+                const notifIcon = typeof resolvePanelFaviconHref === 'function' ? resolvePanelFaviconHref(PANEL_BRANDING_STATE || {}) : '/favicon-kaya.svg';
+                const n = new Notification((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + cust, { body: preview || (LANG === 'fa' ? 'پیام واتساپ' : 'WhatsApp message'), icon: notifIcon });
                 n.onclick = function() { window.focus(); n.close(); if (data.conversationId) { showPage('conversations'); setTimeout(function() { openChat(data.conversationId, cust, data.customer && data.customer.phone, data.customer && data.customer.profilePic); }, 200); } };
             } catch (e) {}
         }
@@ -435,18 +436,28 @@
             if (errEl) errEl.textContent = '';
             if (successEl) successEl.style.display = 'none';
             if (btn) btn.disabled = true;
+            const ac = new AbortController();
+            const tid = setTimeout(function() { ac.abort(); }, 32000);
             try {
-                const r = await fetch(API + '/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
+                const r = await fetch(API + '/api/auth/forgot-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email: email }),
+                    signal: ac.signal
+                });
                 const data = await r.json().catch(function() { return {}; });
                 if (!r.ok) {
                     if (successEl) successEl.style.display = 'none';
                     if (errEl) errEl.textContent = data.error || t('forgot_send_fail');
-                    if (btn) btn.disabled = false;
                     return;
                 }
                 if (successEl) { successEl.textContent = (data.message || t('forgot_success_msg')); successEl.style.display = 'block'; }
-            } catch (e) { if (errEl) errEl.textContent = t('login_err_connect'); }
-            if (btn) btn.disabled = false;
+            } catch (e) {
+                if (errEl) errEl.textContent = (e && e.name === 'AbortError') ? t('forgot_send_fail') : t('login_err_connect');
+            } finally {
+                clearTimeout(tid);
+                if (btn) btn.disabled = false;
+            }
         }
         function showResetStep(resetToken) {
             window._resetToken = resetToken;

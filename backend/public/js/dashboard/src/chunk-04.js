@@ -727,6 +727,32 @@
                 bottomBar.classList.remove('has-mobile-tab');
             }
         }
+        /** فاویکون تب: تنظیمات وبسایت — اول faviconUrl سپس logoUrl سپس پیش‌فرض */
+        function resolvePanelFaviconHref(b) {
+            if (!b) return '/favicon-kaya.svg';
+            const fav = b.faviconUrl && String(b.faviconUrl).trim();
+            if (fav) return fav;
+            const logo = b.logoUrl && String(b.logoUrl).trim();
+            if (logo) return logo;
+            return '/favicon-kaya.svg';
+        }
+        /** آیکن هدر: لوگوی پنل، در نبود لوگو از favicon تنظیمات */
+        function resolvePanelHeaderLogoSrc(b) {
+            if (!b) return '';
+            const logo = b.logoUrl && String(b.logoUrl).trim();
+            if (logo) return logo;
+            const fav = b.faviconUrl && String(b.faviconUrl).trim();
+            return fav || '';
+        }
+        /** لوگوی کارت ورود داخل داشبورد: ورود اختصاصی → لوگو پنل → فاویکون */
+        function resolvePanelLoginLogoSrc(b) {
+            if (!b) return '';
+            const login = b.loginLogoUrl && String(b.loginLogoUrl).trim();
+            if (login) return login;
+            const logo = b.logoUrl && String(b.logoUrl).trim();
+            if (logo) return logo;
+            return (b.faviconUrl && String(b.faviconUrl).trim()) || '';
+        }
         var PANEL_BRANDING_STATE = {};
         function applyBranding(s, brandingOpts) {
             if (!s) return;
@@ -742,10 +768,12 @@
             const defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
             if (b.pageTitle) document.title = b.pageTitle; else document.title = defTitle;
             const fav = document.getElementById('favicon');
-            if (fav) fav.href = (b.faviconUrl && String(b.faviconUrl).trim()) ? b.faviconUrl : '/favicon-kaya.svg';
+            if (fav) fav.href = resolvePanelFaviconHref(b);
+            const ath = document.getElementById('appleTouchIcon');
+            if (ath) ath.href = resolvePanelFaviconHref(b);
             const logoText = b.siteName || defSite;
-            const panelLogoSrc = (b.logoUrl && String(b.logoUrl).trim()) || '';
-            const loginLogoSrc = (b.loginLogoUrl && String(b.loginLogoUrl).trim()) || panelLogoSrc;
+            const panelLogoSrc = resolvePanelHeaderLogoSrc(b);
+            const loginLogoSrc = resolvePanelLoginLogoSrc(b);
             const headerIcon = document.getElementById('headerLogoIcon');
             if (headerIcon) {
                 if (panelLogoSrc) {
@@ -758,6 +786,8 @@
             }
             const headerLogoText = document.getElementById('headerLogoText');
             if (headerLogoText) headerLogoText.textContent = logoText;
+            const amTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
+            if (amTitle && logoText) amTitle.setAttribute('content', logoText);
             const headerLogo = document.getElementById('headerLogo');
             if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
             const footerBrand = document.getElementById('appFooterBrand');
@@ -1284,7 +1314,8 @@
             const logoUrl = (document.getElementById('panelSettingLogoUrl') && document.getElementById('panelSettingLogoUrl').value.trim()) || '';
             const faviconUrl = (document.getElementById('panelSettingFaviconUrl') && document.getElementById('panelSettingFaviconUrl').value.trim()) || '';
             const loginLogoOnly = (document.getElementById('panelSettingLoginLogoUrl') && document.getElementById('panelSettingLoginLogoUrl').value.trim()) || '';
-            const loginPreviewSrc = loginLogoOnly || logoUrl;
+            const loginPreviewSrc = loginLogoOnly || logoUrl || faviconUrl;
+            const effectiveFaviconPreview = faviconUrl || logoUrl;
             const titleEl = document.getElementById('panelPreviewPageTitle');
             const siteNameEl = document.getElementById('panelPreviewSiteName');
             const logoEl = document.getElementById('panelPreviewLogo');
@@ -1297,7 +1328,7 @@
             if (footerTextEl) footerTextEl.textContent = footerText;
             if (footerEl) footerEl.classList.toggle('hidden', !!hideFooter);
             if (logoEl) { if (logoUrl) { logoEl.src = logoUrl; logoEl.style.display = ''; if (logoPlaceholder) logoPlaceholder.style.display = 'none'; } else { logoEl.removeAttribute('src'); logoEl.style.display = 'none'; if (logoPlaceholder) logoPlaceholder.style.display = ''; } }
-            if (faviconEl) { if (faviconUrl) { faviconEl.src = faviconUrl; faviconEl.style.display = ''; } else { faviconEl.removeAttribute('src'); faviconEl.style.display = 'none'; } }
+            if (faviconEl) { if (effectiveFaviconPreview) { faviconEl.src = effectiveFaviconPreview; faviconEl.style.display = ''; } else { faviconEl.removeAttribute('src'); faviconEl.style.display = 'none'; } }
             const loginLogoEl = document.getElementById('panelPreviewLoginLogo');
             const loginLogoPh = document.getElementById('panelPreviewLoginLogoPlaceholder');
             if (loginLogoEl) {

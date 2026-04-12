@@ -176,7 +176,7 @@ function normalizeHost(host) {
     return host.replace(/\.+$/, '').trim();
 }
 
-async function sendMailWithConfigDetailed(config, { to, subject, text, html, attachments = [] }, attempt = 1) {
+async function sendMailWithConfigDetailed(config, { to, subject, text, html, attachments = [] }, attempt = 1, deliveryOpts = null) {
     if (!config || !config.host || !config.port) {
         return { ok: false, error: 'SMTP host and port are required' };
     }
@@ -194,6 +194,19 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
         }
     }
 
+    const effMaxRetries = deliveryOpts && deliveryOpts.maxRetries != null
+        ? Math.max(1, parseInt(String(deliveryOpts.maxRetries), 10))
+        : MAX_RETRIES;
+    const connTimeoutMs = deliveryOpts && deliveryOpts.connectionTimeoutMs != null
+        ? parseInt(String(deliveryOpts.connectionTimeoutMs), 10)
+        : CONNECTION_TIMEOUT_MS;
+    const greetTimeoutMs = deliveryOpts && deliveryOpts.greetingTimeoutMs != null
+        ? parseInt(String(deliveryOpts.greetingTimeoutMs), 10)
+        : GREETING_TIMEOUT_MS;
+    const sockTimeoutMs = deliveryOpts && deliveryOpts.socketTimeoutMs != null
+        ? parseInt(String(deliveryOpts.socketTimeoutMs), 10)
+        : SOCKET_TIMEOUT_MS;
+
     const nodemailer_local = require('nodemailer');
     const basePort = parseInt(config.port, 10) || 587;
     const baseSecure = !!config.secure;
@@ -203,41 +216,41 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
 
     // If SSL/TLS mismatch happens (wrong version number), try alternate port/secure combos.
     // This addresses errors like: "ssl3_get_record:wrong version number".
-    const connectionCandidates = (() => {
-        if (basePort === 587) {
-            // 587 typically means STARTTLS (secure=false), while 465 means SSL (secure=true).
-            return [
-                { port: 587, secure: false },
-                { port: 465, secure: true },
-                // also try the inverted secure flag on 587 (some providers behave differently)
-                { port: 587, secure: true }
-            ];
-        }
-        if (basePort === 465) {
-            return [
-                { port: 465, secure: true },
-                { port: 587, secure: false },
-                { port: 465, secure: false }
-            ];
-        }
-        return [{ port: basePort, secure: baseSecure }];
-    })();
+    const connectionCandidates = deliveryOpts && deliveryOpts.singleConnectionCandidate
+        ? [{ port: basePort, secure: baseSecure }]
+        : (() => {
+            if (basePort === 587) {
+                return [
+                    { port: 587, secure: false },
+                    { port: 465, secure: true },
+                    { port: 587, secure: true }
+                ];
+            }
+            if (basePort === 465) {
+                return [
+                    { port: 465, secure: true },
+                    { port: 587, secure: false },
+                    { port: 465, secure: false }
+                ];
+            }
+            return [{ port: basePort, secure: baseSecure }];
+        })();
 
     for (const host of hostCandidates) {
         for (const conn of connectionCandidates) {
             const trySecure = !!conn.secure;
             const tryPort = parseInt(conn.port, 10) || basePort;
 
-            for (let i = Math.max(1, attempt); i <= MAX_RETRIES; i++) {
+            for (let i = Math.max(1, attempt); i <= effMaxRetries; i++) {
                 try {
                     const opts = {
                         host,
                         port: tryPort,
                         secure: trySecure,
                         auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
-                        connectionTimeout: CONNECTION_TIMEOUT_MS,
-                        greetingTimeout: GREETING_TIMEOUT_MS,
-                        socketTimeout: SOCKET_TIMEOUT_MS
+                        connectionTimeout: connTimeoutMs,
+                        greetingTimeout: greetTimeoutMs,
+                        socketTimeout: sockTimeoutMs
                     };
                     if (tryPort === 587 && !trySecure) opts.requireTLS = true;
                     if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
@@ -254,11 +267,11 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
                 } catch (err) {
                     lastError = err;
                     const retryable = isRetryableError(err);
-                    if (retryable && i < MAX_RETRIES) {
+                    if (retryable && i < effMaxRetries) {
                         const delay = RETRY_DELAY_MS * i;
                         logger.warn('Email send failed (custom config), retrying', {
                             attempt: i,
-                            maxRetries: MAX_RETRIES,
+                            maxRetries: effMaxRetries,
                             delay,
                             host,
                             port: tryPort,
@@ -507,8 +520,19 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
         text: `Password reset\n\nHello ${user.name || 'there'},\nUse this link to set a new password: ${resetUrl}\n(Valid for ${expiresInMinutes} minutes.)`,
         html: baseHtml(title, body)
     };
-    if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
-    return sendMail(mailOpts);
+    /** بازیابی رمز: بدون چند دقیقه انتظار — SMTP کند/قطع نباید UI را قفل کند */
+    const quickForgotDelivery = {
+        maxRetries: parseInt(process.env.EMAIL_FORGOT_MAX_RETRIES || '1', 10),
+        connectionTimeoutMs: parseInt(process.env.EMAIL_FORGOT_CONNECTION_TIMEOUT_MS || '10000', 10),
+        greetingTimeoutMs: parseInt(process.env.EMAIL_FORGOT_GREETING_TIMEOUT_MS || '7000', 10),
+        socketTimeoutMs: parseInt(process.env.EMAIL_FORGOT_SOCKET_TIMEOUT_MS || '10000', 10),
+        singleConnectionCandidate: process.env.EMAIL_FORGOT_TRY_ALL_SMTP_COMBOS === '1' ? false : true
+    };
+    const envCfg = getEnvEmailConfig();
+    const cfg = panelConfig && panelConfig.host ? panelConfig : envCfg;
+    if (!cfg) return false;
+    const r = await sendMailWithConfigDetailed(cfg, mailOpts, 1, quickForgotDelivery);
+    return r.ok;
 }
 
 function escHtml(s) {

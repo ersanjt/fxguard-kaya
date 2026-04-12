@@ -448,10 +448,13 @@
 
         setBtnLoading('btnForgotSend', true, t('forgot_loading'));
 
+        var ac = new AbortController();
+        var tid = setTimeout(function() { ac.abort(); }, 32000);
         fetch('/api/auth/forgot-password', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: email })
+            body: JSON.stringify({ email: email }),
+            signal: ac.signal
         }).then(function(r) {
             return r.json().catch(function() { return {}; }).then(function(data) {
                 return { ok: r.ok, data: data };
@@ -467,9 +470,11 @@
                 suc.textContent = (res.data && res.data.message) || t('forgot_success');
                 suc.className = 'lp-msg success has-text';
             }
-        }).catch(function() {
+        }).catch(function(err) {
             setBtnLoading('btnForgotSend', false, t('forgot_send_btn'));
-            setMsg('forgotMsg', t('login_err_connect'));
+            setMsg('forgotMsg', err && err.name === 'AbortError' ? t('forgot_send_fail') : t('login_err_connect'));
+        }).finally(function() {
+            clearTimeout(tid);
         });
     }
 
@@ -569,7 +574,23 @@
         else                          doLogin();
     }
 
-    /* ── Load Branding ───────────────────────────── */
+    /* ── Load Branding (اولویت از تنظیمات وبسایت پنل) ───────────────── */
+    function lpResolveFaviconHref(d) {
+        if (!d) return '/favicon-kaya.svg';
+        var fav = d.faviconUrl && String(d.faviconUrl).trim();
+        if (fav) return fav;
+        var logo = d.logoUrl && String(d.logoUrl).trim();
+        if (logo) return logo;
+        return '/favicon-kaya.svg';
+    }
+    function lpResolveLoginLogoSrc(d) {
+        if (!d) return '';
+        var a = d.loginLogoUrl && String(d.loginLogoUrl).trim();
+        if (a) return a;
+        var logo = d.logoUrl && String(d.logoUrl).trim();
+        if (logo) return logo;
+        return (d.faviconUrl && String(d.faviconUrl).trim()) || '';
+    }
     function loadBranding() {
         fetch('/api/panel-settings/public/branding')
             .then(function(r) { return r.json().catch(function() { return {}; }); })
@@ -579,7 +600,7 @@
                 if (nameEl && d.siteName) nameEl.textContent = d.siteName;
 
                 var logoWrap = document.getElementById('lpLogoWrap');
-                var loginLogoSrc = (d.loginLogoUrl && String(d.loginLogoUrl).trim()) ? d.loginLogoUrl : d.logoUrl;
+                var loginLogoSrc = lpResolveLoginLogoSrc(d);
                 if (logoWrap && loginLogoSrc) {
                     var img = document.createElement('img');
                     img.src = loginLogoSrc; img.alt = 'logo';
@@ -587,10 +608,17 @@
                     logoWrap.appendChild(img);
                 }
 
+                var favHref = lpResolveFaviconHref(d);
                 var fav = document.getElementById('lpFavicon');
-                if (fav && d.faviconUrl) fav.href = d.faviconUrl;
+                if (fav) fav.href = favHref;
+                var lpApple = document.getElementById('lpAppleTouch');
+                if (lpApple) lpApple.href = favHref;
 
-                if (d.siteName) document.title = d.siteName + ' | ورود';
+                var pt = d.pageTitle && String(d.pageTitle).trim();
+                var lt = d.loginTitle && String(d.loginTitle).trim();
+                if (pt) document.title = pt;
+                else if (lt) document.title = lt;
+                else if (d.siteName) document.title = d.siteName + (lang === 'fa' ? ' | ورود' : ' | Sign in');
 
                 if (d.supportedLanguages && Array.isArray(d.supportedLanguages) && d.supportedLanguages.length) {
                     SUPPORTED = d.supportedLanguages;
@@ -617,6 +645,8 @@
         if (subEl) subEl.setAttribute('data-i18n', 'demo_login_sub');
         var fav = document.getElementById('lpFavicon');
         if (fav) fav.href = '/favicon-fxguard.svg';
+        var lpApple = document.getElementById('lpAppleTouch');
+        if (lpApple) lpApple.href = '/favicon-fxguard.svg';
         applyLang(lang);
     }
 
