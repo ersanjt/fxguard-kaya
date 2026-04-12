@@ -8,6 +8,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import com.kaya.crm.data.network.NetworkMonitor
 import com.kaya.crm.ui.auth.LoginScreen
 import com.kaya.crm.ui.auth.LoginViewModel
@@ -31,6 +33,10 @@ fun KayaCrmApp(
 
     LaunchedEffect(Unit) {
         appUpdateViewModel.checkOnLaunch()
+    }
+    /* بعد از دیپلوی روی سرور، با برگشت به اپ از پس‌زمینه دوباره /api/config را می‌زند (با فاصلهٔ حداقلی) */
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        appUpdateViewModel.checkSilentlyOnResume()
     }
 
     Box(modifier = Modifier.fillMaxSize()) {

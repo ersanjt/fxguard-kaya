@@ -14,8 +14,8 @@ android {
         applicationId = "com.kaya.crm"
         minSdk = 26
         targetSdk = 36
-        versionCode = 3
-        versionName = "1.2.0"
+        versionCode = 4
+        versionName = "1.3.0"
         buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
     }
 
@@ -36,8 +36,9 @@ android {
         debug {
             isMinifyEnabled = false
             isDebuggable = true
-            // امولاتور: localhost میزبان = 10.0.2.2 — همان پورت بک‌اند (پیش‌فرض 3002)
-            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3002/\"")
+            // روی گوشی واقعی 10.0.2.2 کار نمی‌کند (فقط امولاتور). پیش‌فرض = همان سرور release؛
+            // برای بک‌اند لوکال از آیکن چرخ‌دندهٔ ورود آدرس بگذارید و اپ را یک‌بار ببندید و باز کنید.
+            buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
         }
         release {
             isMinifyEnabled = false  // برای تست نصب راحت‌تر؛ بعداً true کنید
@@ -65,6 +66,7 @@ android {
 dependencies {
     implementation("androidx.core:core-ktx:1.16.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
     implementation("androidx.activity:activity-compose:1.13.0")
 
     // Compose

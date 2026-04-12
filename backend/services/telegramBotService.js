@@ -82,6 +82,9 @@ async function getUpdates(offset = 0) {
         if (res.data && res.data.ok && Array.isArray(res.data.result)) {
             return res.data.result;
         }
+        if (res.data && res.data.ok === false) {
+            logger.warn('Telegram getUpdates rejected', { description: res.data.description });
+        }
         return [];
     } catch (err) {
         if (err.code !== 'ECONNABORTED' && err.code !== 'ETIMEDOUT') {
@@ -444,6 +447,14 @@ async function startPolling(models, config = null) {
     if (!token) {
         logger.info('Telegram bot: no token configured, polling disabled');
         return;
+    }
+
+    // If a webhook was ever set for this bot, getUpdates receives no new messages until webhook is removed.
+    const delWh = await apiCall('deleteWebhook', { drop_pending_updates: false });
+    if (delWh && delWh.ok === false) {
+        logger.warn('Telegram deleteWebhook failed', { description: delWh.description });
+    } else {
+        logger.info('Telegram bot: webhook cleared (if any) — long polling enabled');
     }
 
     _pollingActive = true;

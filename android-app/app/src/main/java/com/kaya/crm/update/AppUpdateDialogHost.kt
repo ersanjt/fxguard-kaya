@@ -70,9 +70,12 @@ fun AppUpdateDialogHost(
                 title = { Text("در حال دانلود…") },
                 text = {
                     Column(Modifier.fillMaxWidth()) {
-                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        LinearProgressIndicator(
+                            progress = { ui.percent.coerceIn(0, 100) / 100f },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                         Spacer(Modifier.height(8.dp))
-                        Text("${ui.percent}٪")
+                        Text("${ui.percent.coerceIn(0, 100)}٪")
                     }
                 },
                 confirmButton = {

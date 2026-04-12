@@ -9,11 +9,14 @@ import com.kaya.crm.data.preferences.AuthPreferences
 import com.kaya.crm.data.repository.AppUpdateRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 sealed interface AppUpdateUi {
@@ -34,41 +37,67 @@ class AppUpdateViewModel @Inject constructor(
     private val _ui = MutableStateFlow<AppUpdateUi>(AppUpdateUi.Idle)
     val ui: StateFlow<AppUpdateUi> = _ui.asStateFlow()
 
-    private var launchCheckStarted = false
+    private val fetchMutex = Mutex()
+    private val fetchRunning = AtomicBoolean(false)
+    private var coldStartCheckDone = false
+    private var lastFetchElapsedMs: Long = 0L
+    private var resumeCheckJob: Job? = null
 
-    /** یک‌بار بعد از باز شدن اپ — برای اجباری و اختیاری */
+    /** یک‌بار بعد از باز شدن اپ (با نشان کوتاه Checking) */
     fun checkOnLaunch() {
-        if (launchCheckStarted) return
-        launchCheckStarted = true
+        if (coldStartCheckDone) return
+        coldStartCheckDone = true
         viewModelScope.launch {
+            runFetch(showChecking = true)
+        }
+    }
+
+    /**
+     * وقتی کاربر به اپ برمی‌گردد (مثلاً بعد از دیپلوی روی سرور) — بدون دیالوگ Checking؛
+     * حداقل [minIntervalMs] بین دو درخواست رعایت می‌شود.
+     */
+    fun checkSilentlyOnResume(minIntervalMs: Long = 30 * 60 * 1000L) {
+        resumeCheckJob?.cancel()
+        resumeCheckJob = viewModelScope.launch {
+            val now = android.os.SystemClock.elapsedRealtime()
+            if (now - lastFetchElapsedMs < minIntervalMs) return@launch
             if (_ui.value is AppUpdateUi.Downloading) return@launch
-            _ui.value = AppUpdateUi.Checking
-            val skipped = authPreferences.getSkippedAndroidUpdateVersionCode()
-            val result = repository.fetchAvailableUpdate(skipped)
-            if (result.isSuccess) {
-                val info = result.getOrNull()
-                _ui.value = if (info != null) AppUpdateUi.Available(info) else AppUpdateUi.Idle
-            } else {
-                _ui.value = AppUpdateUi.Idle
-            }
+            runFetch(showChecking = false)
         }
     }
 
     fun checkManual() {
         viewModelScope.launch {
-            _ui.value = AppUpdateUi.Checking
-            val skipped = authPreferences.getSkippedAndroidUpdateVersionCode()
-            val result = repository.fetchAvailableUpdate(skipped)
-            if (result.isSuccess) {
-                val info = result.getOrNull()
-                _ui.value = if (info != null) {
-                    AppUpdateUi.Available(info)
+            runFetch(showChecking = true, forceManual = true)
+        }
+    }
+
+    private suspend fun runFetch(showChecking: Boolean, forceManual: Boolean = false) {
+        if (!fetchRunning.compareAndSet(false, true)) return
+        try {
+            fetchMutex.withLock {
+                if (_ui.value is AppUpdateUi.Downloading) return@withLock
+                val skipped = authPreferences.getSkippedAndroidUpdateVersionCode()
+                if (showChecking) _ui.value = AppUpdateUi.Checking
+                val result = repository.fetchAvailableUpdate(skipped)
+                lastFetchElapsedMs = android.os.SystemClock.elapsedRealtime()
+                if (result.isSuccess) {
+                    val info = result.getOrNull()
+                    _ui.value = when {
+                        info != null -> AppUpdateUi.Available(info)
+                        forceManual -> AppUpdateUi.Error("نسخهٔ شما به‌روز است (${BuildConfig.VERSION_NAME})")
+                        else -> AppUpdateUi.Idle
+                    }
                 } else {
-                    AppUpdateUi.Error("نسخهٔ شما به‌روز است (${BuildConfig.VERSION_NAME})")
+                    _ui.value = if (forceManual) {
+                        AppUpdateUi.Error(result.exceptionOrNull()?.message ?: "خطا در دریافت اطلاعات")
+                    } else {
+                        AppUpdateUi.Idle
+                    }
                 }
-            } else {
-                _ui.value = AppUpdateUi.Error(result.exceptionOrNull()?.message ?: "خطا در دریافت اطلاعات")
             }
+        } finally {
+            fetchRunning.set(false)
         }
     }
 

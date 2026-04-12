@@ -56,18 +56,32 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         res.json({ ok: true, message: 'API در دسترس است' });
     });
 
+    function resolveAndroidApkUrl(raw) {
+        const u = String(raw || '').trim();
+        if (!u) return null;
+        if (/^https:\/\//i.test(u)) return u.slice(0, 2048);
+        /* مسیر نسبی روی همین بک‌اند (مثل /uploads/releases/KayaCRM.apk) — BACKEND_PUBLIC_URL باید https باشد */
+        if (u.startsWith('/uploads/')) {
+            const base = String(process.env.BACKEND_PUBLIC_URL || '').trim().replace(/\/$/, '');
+            if (!/^https:\/\//i.test(base)) return null;
+            const path = u.startsWith('/') ? u : '/' + u;
+            return (base + path).slice(0, 2048);
+        }
+        return null;
+    }
+
     function parseAndroidAppUpdate() {
         const code = parseInt(String(process.env.ANDROID_APP_VERSION_CODE || '').trim(), 10);
-        const url = String(process.env.ANDROID_APP_APK_URL || '').trim();
+        const rawUrl = String(process.env.ANDROID_APP_APK_URL || '').trim();
         const name = String(process.env.ANDROID_APP_VERSION_NAME || '').trim();
-        if (!Number.isFinite(code) || code < 1 || !url || !name) return null;
-        if (!/^https:\/\//i.test(url)) return null;
+        const apkUrl = resolveAndroidApkUrl(rawUrl);
+        if (!Number.isFinite(code) || code < 1 || !apkUrl || !name) return null;
         const notes = String(process.env.ANDROID_APP_RELEASE_NOTES || '').trim().slice(0, 4000);
         const mandatory = process.env.ANDROID_APP_UPDATE_MANDATORY === 'true' || process.env.ANDROID_APP_UPDATE_MANDATORY === '1';
         return {
             versionCode: code,
             versionName: name,
-            apkUrl: url.slice(0, 2048),
+            apkUrl,
             releaseNotes: notes || null,
             mandatory
         };
