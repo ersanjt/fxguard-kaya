@@ -20,11 +20,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kaya.crm.data.models.UserResponse
 import com.kaya.crm.ui.main.MainTab
+import com.kaya.crm.ui.main.permissions.canShowDashboardCard
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DashboardScreen(
+    user: UserResponse?,
+    hiddenPanelPages: Set<String> = emptySet(),
     viewModel: DashboardViewModel = hiltViewModel(),
     onNavigateToTab: (MainTab) -> Unit = {}
 ) {
@@ -97,99 +101,127 @@ fun DashboardScreen(
                         }
                     }
                     Text(
-                        "برای رفتن به بخش مربوط، روی هر کارت بزنید (در صورت وجود مسیر).",
+                        "فقط بخش‌هایی که دسترسی دارید نمایش داده می‌شود (مثل پنل وب).",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
                     )
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            title = "چت داخلی",
-                            value = "گفتگو با تیم",
-                            icon = Icons.Default.Forum,
-                            onClick = { onNavigateToTab(MainTab.TEAM) }
-                        )
+                    if (canShowDashboardCard(user, "internal_chat", "internal-chat", hiddenPanelPages)) {
+                        Row(modifier = Modifier.fillMaxWidth()) {
+                            StatCard(
+                                modifier = Modifier.weight(1f),
+                                title = "چت داخلی",
+                                value = "گفتگو با تیم",
+                                icon = Icons.Default.Forum,
+                                onClick = { onNavigateToTab(MainTab.TEAM) }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            title = "مکالمات باز",
-                            value = d.openConversations.toString(),
-                            icon = Icons.AutoMirrored.Filled.Chat,
-                            onClick = { onNavigateToTab(MainTab.CONVERSATIONS) }
-                        )
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            title = "خوانده نشده",
-                            value = d.unreadConversations.toString(),
-                            icon = Icons.Default.MarkEmailUnread,
-                            onClick = { onNavigateToTab(MainTab.CONVERSATIONS) }
-                        )
+                    if (canShowDashboardCard(user, "conversations", "conversations", hiddenPanelPages)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            StatCard(
+                                modifier = Modifier.weight(1f),
+                                title = "مکالمات باز",
+                                value = d.openConversations.toString(),
+                                icon = Icons.AutoMirrored.Filled.Chat,
+                                onClick = { onNavigateToTab(MainTab.CONVERSATIONS) }
+                            )
+                            StatCard(
+                                modifier = Modifier.weight(1f),
+                                title = "خوانده نشده",
+                                value = d.unreadConversations.toString(),
+                                icon = Icons.Default.MarkEmailUnread,
+                                onClick = { onNavigateToTab(MainTab.CONVERSATIONS) }
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            title = "مشتریان",
-                            value = d.totalCustomers.toString(),
-                            icon = Icons.Default.People,
-                            onClick = { onNavigateToTab(MainTab.CUSTOMERS) }
-                        )
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            title = "پیام امروز",
-                            value = d.todayMessages.toString(),
-                            icon = Icons.AutoMirrored.Filled.Send,
-                            onClick = { onNavigateToTab(MainTab.CONVERSATIONS) }
-                        )
+                    val showCustomers = canShowDashboardCard(user, "customers", "customers", hiddenPanelPages)
+                    val showTodayMsg = canShowDashboardCard(user, "conversations", "conversations", hiddenPanelPages)
+                    if (showCustomers || showTodayMsg) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            if (showCustomers) {
+                                StatCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "مشتریان",
+                                    value = d.totalCustomers.toString(),
+                                    icon = Icons.Default.People,
+                                    onClick = { onNavigateToTab(MainTab.CUSTOMERS) }
+                                )
+                            }
+                            if (showTodayMsg) {
+                                StatCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "پیام امروز",
+                                    value = d.todayMessages.toString(),
+                                    icon = Icons.AutoMirrored.Filled.Send,
+                                    onClick = { onNavigateToTab(MainTab.CONVERSATIONS) }
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            title = "تیکت‌ها",
-                            value = d.ticketsOpen.toString(),
-                            icon = Icons.Default.ConfirmationNumber,
-                            onClick = { onNavigateToTab(MainTab.TICKETS) }
-                        )
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            title = "تسک‌ها",
-                            value = d.tasksPending.toString(),
-                            icon = Icons.AutoMirrored.Filled.Assignment,
-                            onClick = null
-                        )
+                    val showTickets = canShowDashboardCard(user, "tickets", "tickets", hiddenPanelPages)
+                    val showTasks = canShowDashboardCard(user, "tasks", "tasks", hiddenPanelPages)
+                    if (showTickets || showTasks) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            if (showTickets) {
+                                StatCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "تیکت‌ها",
+                                    value = d.ticketsOpen.toString(),
+                                    icon = Icons.Default.ConfirmationNumber,
+                                    onClick = { onNavigateToTab(MainTab.TICKETS) }
+                                )
+                            }
+                            if (showTasks) {
+                                StatCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "تسک‌ها",
+                                    value = d.tasksPending.toString(),
+                                    icon = Icons.AutoMirrored.Filled.Assignment,
+                                    onClick = null
+                                )
+                            }
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            title = "اعلان‌ها",
-                            value = d.unreadAnnouncements.toString(),
-                            icon = Icons.Default.Notifications,
-                            onClick = null
-                        )
-                        StatCard(
-                            modifier = Modifier.weight(1f),
-                            title = "آنلاین",
-                            value = d.staffOnline.toString(),
-                            icon = Icons.Default.Person,
-                            onClick = null
-                        )
+                    val showAnn = canShowDashboardCard(user, "announcements", "announcements", hiddenPanelPages)
+                    val showStaff = canShowDashboardCard(user, "staff_activity", "staff-activity", hiddenPanelPages)
+                    if (showAnn || showStaff) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            if (showAnn) {
+                                StatCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "اعلان‌ها",
+                                    value = d.unreadAnnouncements.toString(),
+                                    icon = Icons.Default.Notifications,
+                                    onClick = null
+                                )
+                            }
+                            if (showStaff) {
+                                StatCard(
+                                    modifier = Modifier.weight(1f),
+                                    title = "آنلاین",
+                                    value = d.staffOnline.toString(),
+                                    icon = Icons.Default.Person,
+                                    onClick = null
+                                )
+                            }
+                        }
                     }
                 }
             }

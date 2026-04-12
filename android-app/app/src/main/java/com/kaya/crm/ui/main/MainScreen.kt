@@ -9,12 +9,13 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.kaya.crm.ui.main.dashboard.DashboardScreen
 import com.kaya.crm.ui.main.conversations.ConversationsScreen
 import com.kaya.crm.ui.main.customers.CustomersScreen
+import com.kaya.crm.ui.main.dashboard.DashboardScreen
 import com.kaya.crm.ui.main.internalchat.InternalChatScreen
-import com.kaya.crm.ui.main.tickets.TicketsScreen
+import com.kaya.crm.ui.main.permissions.PanelPermissions
 import com.kaya.crm.ui.main.profile.ProfileScreen
+import com.kaya.crm.ui.main.tickets.TicketsScreen
 
 enum class MainTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
     DASHBOARD("داشبورد", Icons.Default.Dashboard),
@@ -29,10 +30,23 @@ enum class MainTab(val title: String, val icon: androidx.compose.ui.graphics.vec
 @Composable
 fun MainScreen(
     onLogout: () -> Unit,
-    viewModel: MainViewModel = hiltViewModel()
+    mainViewModel: MainViewModel = hiltViewModel()
 ) {
+    val user by mainViewModel.currentUser.collectAsState()
+    val hiddenPanelPages by mainViewModel.hiddenPanelPages.collectAsState()
+    val visibleTabs = remember(user, hiddenPanelPages) {
+        PanelPermissions.visibleTabs(user, hiddenPanelPages)
+    }
+
     var selectedTab by remember { mutableStateOf(MainTab.CONVERSATIONS) }
     var pendingOpenConversationId by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(visibleTabs, user, hiddenPanelPages) {
+        if (visibleTabs.isEmpty()) return@LaunchedEffect
+        if (selectedTab !in visibleTabs) {
+            selectedTab = visibleTabs.first()
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -61,7 +75,7 @@ fun MainScreen(
                 containerColor = MaterialTheme.colorScheme.surface,
                 contentColor = MaterialTheme.colorScheme.onSurface
             ) {
-                MainTab.entries.forEach { tab ->
+                visibleTabs.forEach { tab ->
                     NavigationBarItem(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
@@ -86,7 +100,11 @@ fun MainScreen(
         ) {
             when (selectedTab) {
                 MainTab.DASHBOARD -> DashboardScreen(
-                    onNavigateToTab = { selectedTab = it }
+                    user = user,
+                    hiddenPanelPages = hiddenPanelPages,
+                    onNavigateToTab = { target ->
+                        if (target in visibleTabs) selectedTab = target
+                    }
                 )
                 MainTab.CONVERSATIONS -> ConversationsScreen(
                     pendingOpenConversationId = pendingOpenConversationId,
@@ -94,15 +112,18 @@ fun MainScreen(
                 )
                 MainTab.CUSTOMERS -> CustomersScreen(
                     onOpenConversation = { convId ->
-                        pendingOpenConversationId = convId
-                        selectedTab = MainTab.CONVERSATIONS
+                        if (MainTab.CONVERSATIONS in visibleTabs) {
+                            pendingOpenConversationId = convId
+                            selectedTab = MainTab.CONVERSATIONS
+                        }
                     }
                 )
                 MainTab.TEAM -> InternalChatScreen()
                 MainTab.TICKETS -> TicketsScreen()
                 MainTab.PROFILE -> ProfileScreen(
+                    hiddenPanelPages = hiddenPanelPages,
                     onLogout = {
-                        viewModel.logout()
+                        mainViewModel.logout()
                         onLogout()
                     }
                 )

@@ -388,6 +388,10 @@ data class PublicBrandingResponse(
     @SerializedName("androidAppUrl") val androidAppUrl: String? = null
 )
 
+data class VisibilityResponse(
+    @SerializedName("hiddenSections") val hiddenSections: List<String>? = null
+)
+
 /** پاسخ عمومی `/api/config` — فقط فیلدهای مورد نیاز اپ */
 data class PublicConfigResponse(
     @SerializedName("timezone") val timezone: String? = null,

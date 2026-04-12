@@ -35,6 +35,7 @@ import com.kaya.crm.data.models.TelegramLinkTokenResponse
 import com.kaya.crm.data.models.TelegramStatusResponse
 import com.kaya.crm.data.models.UserResponse
 import com.kaya.crm.data.models.WhatsAppStatus
+import com.kaya.crm.ui.main.permissions.canShowDashboardCard
 import com.kaya.crm.update.AppUpdateViewModel
 
 private fun resolveAppLink(raw: String, base: String): String {
@@ -60,6 +61,7 @@ fun absoluteFromApiPath(path: String?, baseApi: String): String? {
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
+    hiddenPanelPages: Set<String> = emptySet(),
     onLogout: () -> Unit,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
@@ -372,9 +374,13 @@ fun ProfileScreen(
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
-                GatewayCard(gatewayStatus, gatewayError)
+                val showGateway = user == null ||
+                    canShowDashboardCard(user, "whatsapp", "whatsapp", hiddenPanelPages)
+                if (showGateway) {
+                    GatewayCard(gatewayStatus, gatewayError)
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
 
-                Spacer(modifier = Modifier.height(16.dp))
                 ServerUrlCard(
                     savedServerUrl = savedServerUrl,
                     onChangeClick = { showServerDialog = true }

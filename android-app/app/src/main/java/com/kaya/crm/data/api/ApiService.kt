@@ -120,6 +120,9 @@ interface ApiService {
     @GET("panel-settings/public/branding")
     suspend fun getPublicBranding(): Response<PublicBrandingResponse>
 
+    @GET("panel-settings/public/visibility")
+    suspend fun getPublicVisibility(): Response<VisibilityResponse>
+
     // چت داخلی سازمان
     @GET("internal/threads")
     suspend fun getInternalThreads(): Response<InternalThreadsResponse>
