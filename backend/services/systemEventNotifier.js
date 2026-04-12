@@ -1,11 +1,13 @@
 const { getPanelSettings, getPanelAlertConfig } = require('./config/panelSettingsLoader');
 const telegramService = require('./telegramService');
 const logger = require('../config/logger');
+const { evaluateSystemEventTelegram } = require('./incidentTelegramPolicy');
 
 const CACHE_TTL_MS = 10000;
 let cachedConfig = null;
 let cachedAt = 0;
 
+/** Legacy “notify all” gate for non-critical operational chatter (mostly unused after incident policy). */
 function isCategoryEnabled(cfg, category) {
     if (!cfg || cfg.telegramNotifyAllEvents !== true) return false;
     if (category === 'api') return cfg.telegramNotifyApiRequests === true;
@@ -17,17 +19,17 @@ function isCategoryEnabled(cfg, category) {
     return false;
 }
 
-function formatPayload(category, title, payload) {
-    const lines = [`🔔 ${title}`, `Category: ${category}`, `Time: ${new Date().toISOString()}`];
-    const keys = Object.keys(payload || {});
-    for (const k of keys) {
-        let v = payload[k];
-        if (v == null) continue;
-        if (typeof v === 'object') v = JSON.stringify(v);
-        const val = String(v).replace(/\s+/g, ' ').slice(0, 500);
-        lines.push(`${k}: ${val}`);
+function isTelegramCategoryAllowed(cfg, category, decision) {
+    if (decision && decision.bypassCategory && decision.severity === 'CRITICAL') {
+        return true;
     }
-    return lines.join('\n');
+    if (decision && decision.bypassCategory) {
+        if (category === 'error') return cfg.telegramNotifyErrorEvents !== false;
+        if (category === 'system') return cfg.telegramNotifySystemEvents !== false;
+        if (category === 'message') return cfg.telegramNotifyIncomingMessages !== false;
+        return cfg.telegramNotifySystemEvents !== false;
+    }
+    return isCategoryEnabled(cfg, category);
 }
 
 async function getConfig() {
@@ -52,15 +54,25 @@ async function getConfig() {
 async function notifySystemEvent(category, title, payload = {}) {
     try {
         const cfg = await getConfig();
-        if (!isCategoryEnabled(cfg, category)) return { ok: false, skipped: true };
         const tgConfig = {
             botToken: cfg.telegramBotToken,
             chatIds: cfg.telegramChatIds,
             timeoutMs: cfg.telegramTimeoutMs
         };
         if (!telegramService.isEnabled(tgConfig)) return { ok: false, skipped: true, reason: 'telegram_not_configured' };
-        const text = formatPayload(category, title, payload);
-        return await telegramService.sendMessage(text, tgConfig);
+
+        const decision = evaluateSystemEventTelegram(category, title, payload);
+        if (decision.mode === 'skip') return { ok: false, skipped: true, reason: 'incident_policy' };
+
+        if (!isTelegramCategoryAllowed(cfg, category, decision)) {
+            return { ok: false, skipped: true, reason: 'category_disabled' };
+        }
+
+        if (decision.mode === 'send' && decision.text) {
+            return await telegramService.sendMessage(decision.text, tgConfig, { parse_mode: null });
+        }
+
+        return { ok: false, skipped: true, reason: 'no_telegram_body' };
     } catch (err) {
         logger.warn('system event notify failed', { error: err.message || String(err), category, title });
         return { ok: false, error: err.message || String(err) };
@@ -70,4 +82,3 @@ async function notifySystemEvent(category, title, payload = {}) {
 module.exports = {
     notifySystemEvent
 };
-

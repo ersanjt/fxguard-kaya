@@ -13,6 +13,7 @@ const { createContactRouter } = require('./contact');
 const { createGatewayRouter } = require('./gateway');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
+const { getPanelSettings } = require('../services/panelSettingsLoader');
 const { isDemoModeEnabled, getDemoUsername, isPublicAppRequest } = require('../lib/demoAuth');
 const { publicDemoReadStub } = require('../middleware/publicDemoReadStub');
 
@@ -123,18 +124,18 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             const clientIp = (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim();
             const ua = (req.get && req.get('user-agent')) || null;
 
-            await sendAdminSecurityAlert('frontend_error', {
-                ip: clientIp,
-                userAgent: ua,
-                pageUrl,
-                path: source || pageUrl,
-                errorMessage: `${eventType}: ${message}${stack ? '\n' + stack : ''}`
-            });
-            await notifySystemEvent('error', 'Frontend Error Reported', {
-                eventType,
-                pageUrl: source || pageUrl,
-                ip: clientIp
-            });
+            const panelSettings = await getPanelSettings();
+            await sendAdminSecurityAlert(
+                'frontend_error',
+                {
+                    ip: clientIp,
+                    userAgent: ua,
+                    pageUrl,
+                    path: source || pageUrl,
+                    errorMessage: `${eventType}: ${message}${stack ? '\n' + stack : ''}`
+                },
+                { settings: panelSettings }
+            );
             return res.json({ ok: true });
         } catch (_) {
             return res.json({ ok: true });

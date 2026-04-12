@@ -47,10 +47,6 @@ setInterval(cleanupStaleCallRooms, 30 * 60 * 1000);
 function setupSocketHandlers(io, getRabbitChannel, logger) {
     io.on('connection', (socket) => {
         logger.info(`🔌 User connected: ${socket.userId}`);
-        notifySystemEvent('socket', 'Socket Connected', {
-            userId: socket.userId || null,
-            departmentId: socket.departmentId || null
-        }).catch(() => {});
 
         if (socket.userId) socket.join('user_' + String(socket.userId));
         if (socket.departmentId) socket.join(`department_${socket.departmentId}`);
@@ -131,11 +127,6 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     io.to(`department_${conversation.departmentId}`).emit('message_sent', { conversationId: conversation.id, message: newMessage });
                 }
                 logger.info(`📤 Message sent by user ${socket.userId}`);
-                notifySystemEvent('message', 'Outgoing Message Sent', {
-                    conversationId: conversation.id,
-                    userId: socket.userId || null,
-                    type: type || 'text'
-                }).catch(() => {});
             } catch (error) {
                 logger.error('Send message error:', error);
                 notifySystemEvent('error', 'Socket Send Message Error', {
@@ -223,9 +214,6 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
 
         socket.on('disconnect', async () => {
             logger.info(`🔌 User disconnected: ${socket.userId}`);
-            notifySystemEvent('socket', 'Socket Disconnected', {
-                userId: socket.userId || null
-            }).catch(() => {});
             Object.keys(callRooms).forEach(threadId => {
                 const room = callRooms[threadId];
                 if (room && room.participants.has(String(socket.userId))) {

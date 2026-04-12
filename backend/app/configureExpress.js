@@ -21,7 +21,7 @@ const { setupSocketHandlers } = require('../socket/handlers');
 const socketAuth = require('../middleware/socketAuth');
 const errorHandler = require('../middleware/errorHandler');
 const { assertWebhookSecretBeforeBody } = require('../middleware/webhookAuth');
-const { notifySystemEvent } = require('../services/systemEventNotifier');
+const { onApiResponseFinished, deliverIncidentTelegram } = require('../services/incidentTelegramPolicy');
 const { isDemoModeEnabled } = require('../lib/demoAuth');
 const { publicDemoSiteApiGuard } = require('../middleware/publicDemoSiteGuard');
 
@@ -219,16 +219,18 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
         const startedAt = Date.now();
         res.on('finish', () => {
             setImmediate(() => {
-                const status = res.statusCode || 0;
-                const category = status >= 500 ? 'error' : 'api';
-                notifySystemEvent(category, 'API Request', {
-                    method: req.method,
-                    path: req.originalUrl || req.url,
-                    status,
-                    durationMs: Date.now() - startedAt,
-                    userId: req.user && req.user.id ? req.user.id : null,
-                    ip: (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim()
-                }).catch(() => {});
+                try {
+                    const status = res.statusCode || 0;
+                    const hit = onApiResponseFinished({
+                        method: req.method,
+                        path: req.originalUrl || req.url,
+                        status,
+                        durationMs: Date.now() - startedAt,
+                        userId: req.user && req.user.id ? req.user.id : null,
+                        ip: (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim()
+                    });
+                    if (hit && hit.text) deliverIncidentTelegram(hit.text, hit.kind).catch(() => {});
+                } catch (_) {}
             });
         });
         next();

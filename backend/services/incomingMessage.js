@@ -725,12 +725,6 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         }
 
         logger.info(`📩 Message processed: ${phone}`);
-        notifySystemEvent('message', 'Incoming Message Processed', {
-            phone,
-            conversationId: conversation.id,
-            customerId: customer.id,
-            type: msgType
-        }).catch(() => {});
     } catch (error) {
         logger.error('Error processing incoming message:', {
             error: error.message,

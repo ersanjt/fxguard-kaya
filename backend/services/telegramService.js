@@ -42,19 +42,17 @@ async function sendMessage(text, config = null, opts = {}) {
     }
     const timeoutMs = getTimeoutMs(config);
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
-    const parseMode = opts.parse_mode || 'HTML';
+    const usePlain = opts.parse_mode === null || opts.parse_mode === false || opts.parse_mode === '';
+    const parseMode = usePlain ? undefined : opts.parse_mode || 'HTML';
     const results = await Promise.allSettled(
         chatIds.map(async chat_id => {
-            const res = await axios.post(
-                url,
-                {
-                    chat_id,
-                    text: payloadText,
-                    parse_mode: parseMode,
-                    disable_web_page_preview: true
-                },
-                { timeout: timeoutMs }
-            );
+            const body = {
+                chat_id,
+                text: payloadText,
+                disable_web_page_preview: true
+            };
+            if (parseMode) body.parse_mode = parseMode;
+            const res = await axios.post(url, body, { timeout: timeoutMs });
             const d = res.data;
             if (!d || d.ok !== true) {
                 const msg = (d && d.description) || 'Telegram sendMessage not ok';
