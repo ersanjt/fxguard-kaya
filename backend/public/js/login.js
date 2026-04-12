@@ -620,6 +620,12 @@
                 else if (lt) document.title = lt;
                 else if (d.siteName) document.title = d.siteName + (lang === 'fa' ? ' | ورود' : ' | Sign in');
 
+                var lpAppTitle = document.getElementById('lpAppTitle');
+                if (lpAppTitle) {
+                    var appTitle = pt || lt || (d.siteName && String(d.siteName).trim()) || '';
+                    if (appTitle) lpAppTitle.setAttribute('content', appTitle);
+                }
+
                 if (d.supportedLanguages && Array.isArray(d.supportedLanguages) && d.supportedLanguages.length) {
                     SUPPORTED = d.supportedLanguages;
                     var lpLang = document.getElementById('lpLangSwitch');
@@ -647,6 +653,8 @@
         if (fav) fav.href = '/favicon-fxguard.svg';
         var lpApple = document.getElementById('lpAppleTouch');
         if (lpApple) lpApple.href = '/favicon-fxguard.svg';
+        var lpAppTitle = document.getElementById('lpAppTitle');
+        if (lpAppTitle) lpAppTitle.setAttribute('content', 'FXGuard');
         applyLang(lang);
     }
 

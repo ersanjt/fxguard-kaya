@@ -176,6 +176,13 @@ function normalizeHost(host) {
     return host.replace(/\.+$/, '').trim();
 }
 
+/** Integer > 0 from env or caller; otherwise `fallback` (avoids NaN in nodemailer timeouts). */
+function parsePositiveInt(val, fallback) {
+    const n = parseInt(String(val), 10);
+    if (!Number.isFinite(n) || n < 1) return fallback;
+    return n;
+}
+
 async function sendMailWithConfigDetailed(config, { to, subject, text, html, attachments = [] }, attempt = 1, deliveryOpts = null) {
     if (!config || !config.host || !config.port) {
         return { ok: false, error: 'SMTP host and port are required' };
@@ -195,16 +202,16 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
     }
 
     const effMaxRetries = deliveryOpts && deliveryOpts.maxRetries != null
-        ? Math.max(1, parseInt(String(deliveryOpts.maxRetries), 10))
+        ? Math.max(1, parsePositiveInt(deliveryOpts.maxRetries, MAX_RETRIES))
         : MAX_RETRIES;
     const connTimeoutMs = deliveryOpts && deliveryOpts.connectionTimeoutMs != null
-        ? parseInt(String(deliveryOpts.connectionTimeoutMs), 10)
+        ? parsePositiveInt(deliveryOpts.connectionTimeoutMs, CONNECTION_TIMEOUT_MS)
         : CONNECTION_TIMEOUT_MS;
     const greetTimeoutMs = deliveryOpts && deliveryOpts.greetingTimeoutMs != null
-        ? parseInt(String(deliveryOpts.greetingTimeoutMs), 10)
+        ? parsePositiveInt(deliveryOpts.greetingTimeoutMs, GREETING_TIMEOUT_MS)
         : GREETING_TIMEOUT_MS;
     const sockTimeoutMs = deliveryOpts && deliveryOpts.socketTimeoutMs != null
-        ? parseInt(String(deliveryOpts.socketTimeoutMs), 10)
+        ? parsePositiveInt(deliveryOpts.socketTimeoutMs, SOCKET_TIMEOUT_MS)
         : SOCKET_TIMEOUT_MS;
 
     const nodemailer_local = require('nodemailer');
@@ -522,10 +529,10 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
     };
     /** بازیابی رمز: بدون چند دقیقه انتظار — SMTP کند/قطع نباید UI را قفل کند */
     const quickForgotDelivery = {
-        maxRetries: parseInt(process.env.EMAIL_FORGOT_MAX_RETRIES || '1', 10),
-        connectionTimeoutMs: parseInt(process.env.EMAIL_FORGOT_CONNECTION_TIMEOUT_MS || '10000', 10),
-        greetingTimeoutMs: parseInt(process.env.EMAIL_FORGOT_GREETING_TIMEOUT_MS || '7000', 10),
-        socketTimeoutMs: parseInt(process.env.EMAIL_FORGOT_SOCKET_TIMEOUT_MS || '10000', 10),
+        maxRetries: parsePositiveInt(process.env.EMAIL_FORGOT_MAX_RETRIES, 1),
+        connectionTimeoutMs: parsePositiveInt(process.env.EMAIL_FORGOT_CONNECTION_TIMEOUT_MS, 10000),
+        greetingTimeoutMs: parsePositiveInt(process.env.EMAIL_FORGOT_GREETING_TIMEOUT_MS, 7000),
+        socketTimeoutMs: parsePositiveInt(process.env.EMAIL_FORGOT_SOCKET_TIMEOUT_MS, 10000),
         singleConnectionCandidate: process.env.EMAIL_FORGOT_TRY_ALL_SMTP_COMBOS === '1' ? false : true
     };
     const envCfg = getEnvEmailConfig();
