@@ -57,13 +57,35 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         res.json({ ok: true, message: 'API در دسترس است' });
     });
 
-    function resolveAndroidApkUrl(raw) {
+    /**
+     * پایهٔ https عمومی برای ساخت URL APK وقتی BACKEND_PUBLIC_URL در .env نیست یا http است.
+     * (پشت nginx معمولاً X-Forwarded-Proto / Host ست است؛ server.js: trust proxy)
+     */
+    function httpsPublicBaseFromReq(req) {
+        if (!req || typeof req.get !== 'function') return null;
+        const host = (req.get('x-forwarded-host') || req.get('host') || '')
+            .toString()
+            .split(',')[0]
+            .trim()
+            .replace(/\/$/, '')
+            .replace(/^https?:\/\//i, '');
+        if (!host) return null;
+        const xfProto = (req.get('x-forwarded-proto') || '').toString().split(',')[0].trim().toLowerCase();
+        const isHttps = xfProto === 'https' || req.secure === true;
+        if (!isHttps) return null;
+        return `https://${host}`;
+    }
+
+    function resolveAndroidApkUrl(raw, req) {
         const u = String(raw || '').trim();
         if (!u) return null;
         if (/^https:\/\//i.test(u)) return u.slice(0, 2048);
-        /* مسیر نسبی روی همین بک‌اند (مثل /uploads/releases/KayaCRM.apk) — BACKEND_PUBLIC_URL باید https باشد */
+        /* مسیر نسبی روی همین بک‌اند — ترجیح با BACKEND_PUBLIC_URL=https، وگرنا از Host درخواست */
         if (u.startsWith('/uploads/')) {
-            const base = String(process.env.BACKEND_PUBLIC_URL || '').trim().replace(/\/$/, '');
+            let base = String(process.env.BACKEND_PUBLIC_URL || '').trim().replace(/\/$/, '');
+            if (!/^https:\/\//i.test(base)) {
+                base = httpsPublicBaseFromReq(req) || '';
+            }
             if (!/^https:\/\//i.test(base)) return null;
             const path = u.startsWith('/') ? u : '/' + u;
             return (base + path).slice(0, 2048);
@@ -71,11 +93,11 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         return null;
     }
 
-    function parseAndroidAppUpdate() {
+    function parseAndroidAppUpdate(req) {
         const code = parseInt(String(process.env.ANDROID_APP_VERSION_CODE || '').trim(), 10);
         const rawUrl = String(process.env.ANDROID_APP_APK_URL || '').trim();
         const name = String(process.env.ANDROID_APP_VERSION_NAME || '').trim();
-        const apkUrl = resolveAndroidApkUrl(rawUrl);
+        const apkUrl = resolveAndroidApkUrl(rawUrl, req);
         if (!Number.isFinite(code) || code < 1 || !apkUrl || !name) return null;
         const notes = String(process.env.ANDROID_APP_RELEASE_NOTES || '').trim().slice(0, 4000);
         const mandatory = process.env.ANDROID_APP_UPDATE_MANDATORY === 'true' || process.env.ANDROID_APP_UPDATE_MANDATORY === '1';
@@ -95,7 +117,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         const isPublicApp = isPublicAppRequest(req);
         const demoMode = isDemoModeEnabled() && isPublicApp;
         const fxguardPublicSite = isPublicApp;
-        const androidAppUpdate = parseAndroidAppUpdate();
+        const androidAppUpdate = parseAndroidAppUpdate(req);
         res.json({
             timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
             supportUrl: supportLink,
