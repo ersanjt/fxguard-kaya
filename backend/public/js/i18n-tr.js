@@ -79,6 +79,7 @@ window.__I18N_TR = {
     nav_internal_chat: 'Dahili sohbet',
     nav_announcements: 'Duyurular',
     nav_whatsapp: 'WhatsApp bağlantısı',
+    nav_message_templates: 'Mesaj şablonları',
     nav_rates: 'Döviz kurları',
     nav_rates_charts: 'Döviz grafikleri',
     rates_charts_title: 'Döviz grafikleri',

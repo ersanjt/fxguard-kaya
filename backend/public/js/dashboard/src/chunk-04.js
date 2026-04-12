@@ -898,8 +898,9 @@
                 if (res.data.supportedLanguages && window.applySupportedLanguages) window.applySupportedLanguages(res.data.supportedLanguages, res.data.defaultLanguage);
                 return;
             }
+            const pubFetchOpts = { credentials: 'include', headers: headers() };
             fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data) applyBranding(data, { full: true }); }).catch(function() {});
-            fetch(API + '/api/panel-settings/public/visibility').then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/visibility', pubFetchOpts).then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage); }).catch(function() {});
         }
         const SECTIONS_FOR_VISIBILITY = [
@@ -918,10 +919,15 @@
             { page: 'internal-chat', labelKey: 'nav_internal_chat' },
             { page: 'announcements', labelKey: 'nav_announcements' },
             { page: 'whatsapp', labelKey: 'nav_whatsapp' },
+            { page: 'message-templates', labelKey: 'nav_message_templates' },
             { page: 'rates', labelKey: 'nav_rates' },
+            { page: 'rates-charts', labelKey: 'nav_rates_charts' },
             { page: 'services', labelKey: 'nav_services' },
             { page: 'panel-settings', labelKey: 'nav_panel_settings' }
         ];
+        let panelSettingsTabsInited = false;
+        let panelSettingsCollapseInited = false;
+        let panelSettingsVisibilitySearchInited = false;
         async function loadPanelSettings() {
             const loadingEl = document.getElementById('panelSettingsLoading');
             const contentEl = document.getElementById('panelSettingsContent');
@@ -1137,6 +1143,8 @@
             if (badge) badge.style.display = 'none';
         }
         function initPanelSettingsTabs() {
+            if (panelSettingsTabsInited) return;
+            panelSettingsTabsInited = true;
             const tabs = document.querySelectorAll('.panel-settings-tab');
             const panels = document.querySelectorAll('.panel-settings-tab-panel');
             tabs.forEach(function(tab) {
@@ -1153,6 +1161,8 @@
             });
         }
         function initPanelSettingsCollapse() {
+            if (panelSettingsCollapseInited) return;
+            panelSettingsCollapseInited = true;
             const EXPANDED_MAX = 1200;
             document.querySelectorAll('.panel-settings-section-collapsible').forEach(function(section) {
                 const toggle = section.querySelector('.panel-settings-section-toggle');
@@ -1167,9 +1177,11 @@
             });
         }
         function initPanelVisibilitySearch() {
+            if (panelSettingsVisibilitySearchInited) return;
             const searchEl = document.getElementById('panelVisibilitySearch');
             const container = document.getElementById('panelVisibilityToggles');
             if (!searchEl || !container) return;
+            panelSettingsVisibilitySearchInited = true;
             searchEl.addEventListener('input', function() {
                 const q = (searchEl.value || '').trim().toLowerCase();
                 container.querySelectorAll('.panel-visibility-item').forEach(function(item) {
@@ -1380,7 +1392,7 @@
             if (!sel || !hint) return;
             const mode = sel.value;
             const hints = { single: 'panel_language_hint_single', single_en: 'panel_language_hint_single_en', single_tr: 'panel_language_hint_single_tr', bilingual: 'panel_language_hint_bilingual', bilingual_fa_tr: 'panel_language_hint_bilingual_fa_tr', bilingual_en_tr: 'panel_language_hint_bilingual_en_tr', trilingual: 'panel_language_hint_trilingual' };
-            hint.textContent = t(hints[mode] || 'panel_language_hint_trilingual') !== (hints[mode] || 'panel_language_hint_trilingual') ? t(hints[mode] || 'panel_language_hint_trilingual') : '';
+            hint.textContent = t(hints[mode] || 'panel_language_hint_trilingual');
         }
         function toggleDefaultLanguageVisibility() {
             const wrap = document.getElementById('panelDefaultLanguageWrap');
@@ -1539,8 +1551,9 @@
                 if (savedFooterStyle != null) res.data.footerStyle = savedFooterStyle;
                 applyBranding(res.data, { full: true });
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
-                const mode = res.data.languageMode;
-                if (mode && window.applySupportedLanguages) window.applySupportedLanguages(mode === 'single' ? ['fa'] : mode === 'bilingual' ? ['fa', 'en'] : ['fa', 'en', 'tr']);
+                if (res.data.supportedLanguages && window.applySupportedLanguages) {
+                    window.applySupportedLanguages(res.data.supportedLanguages, res.data.defaultLanguage);
+                }
                 toast(t('saved'));
                 clearPanelSettingsChanged();
                 if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ذخیره شد' : LANG === 'tr' ? 'Kaydedildi' : 'Saved'); statusEl.className = 'panel-settings-save-status saved'; statusEl.style.display = 'inline'; setTimeout(function() { statusEl.style.display = 'none'; }, 3000); }

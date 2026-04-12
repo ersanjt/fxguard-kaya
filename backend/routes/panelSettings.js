@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, optionalAuthMiddleware } = require('../middleware/auth');
 const { isPublicAppRequest, isDemoModeEnabled } = require('../lib/demoAuth');
 const { PanelSetting } = require('../models');
 const { getPanelSettings, getSupportedLanguages, getPanelEmailConfig } = require('../services/panelSettingsLoader');
@@ -52,6 +52,14 @@ function applyPublicDemoFullPanelRow(req, out) {
     return out;
 }
 
+/** مسیرهای آپلود و URLها: بک‌اسلش، کاراکترهای نامرئی bidi، فاصلهٔ اضافه */
+function normalizePanelMediaUrl(v) {
+    if (v == null || v === '') return v;
+    let s = String(v).trim().replace(/\\/g, '/');
+    s = s.replace(/[\u200e\u200f\u202a-\u202e\ufeff]/g, '');
+    return s.trim();
+}
+
 // عمومی — برای صفحه ورود و اعمال ظاهر برای همه کاربران (بدون احراز هویت)
 router.get('/public/branding', async (req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
@@ -97,10 +105,13 @@ router.get('/public/languages', async (req, res, next) => {
     }
 });
 
-// عمومی — لیست بخش‌های مخفی برای مخفی کردن در منو و جلوگیری از دسترسی
-router.get('/public/visibility', async (req, res, next) => {
+// فقط با نشست معتبر — بدون توکن/کاربر، [] برمی‌گردد تا فهرست بخش‌های مخفی در اینترنت لو نرود
+router.get('/public/visibility', optionalAuthMiddleware, async (req, res, next) => {
     try {
         if (isPublicAppRequest(req)) {
+            return res.json({ hiddenSections: [] });
+        }
+        if (!req.user) {
             return res.json({ hiddenSections: [] });
         }
         const s = await getSettings();
@@ -124,6 +135,10 @@ router.get('/', authMiddleware, async (req, res, next) => {
         if (isDemoModeEnabled() && isPublicAppRequest(req)) {
             applyPublicDemoFullPanelRow(req, out);
         }
+        out.supportedLanguages = getSupportedLanguages(out);
+        if (out.supportedLanguages && out.supportedLanguages.indexOf(out.defaultLanguage) < 0) {
+            out.defaultLanguage = out.supportedLanguages[0] || 'fa';
+        }
         res.json(out);
     } catch (err) {
         next(err);
@@ -136,17 +151,46 @@ router.put('/', authMiddleware, async (req, res, next) => {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const body = req.body || {};
-        let {
-            siteName, logoUrl, faviconUrl, loginLogoUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, adminAlertsEnabled, adminAlertEmails, telegramBotToken, telegramChatIds, telegramTimeoutMs, clientErrorReportingEnabled, telegramNotifyAllEvents, telegramNotifyApiRequests, telegramNotifyAuthEvents, telegramNotifySocketEvents, telegramNotifyIncomingMessages, telegramNotifySystemEvents, telegramNotifyErrorEvents, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder, iosAppUrl, androidAppUrl
+        let { logoUrl, faviconUrl, loginLogoUrl, iosAppUrl, androidAppUrl } = body;
+        const {
+            siteName,
+            loginTitle,
+            pageTitle,
+            footerText,
+            showFooter,
+            footerStyle,
+            smtpHost,
+            smtpPort,
+            smtpUser,
+            smtpPass,
+            smtpFrom,
+            smtpFromName,
+            smtpSecure,
+            emailLoginNotification,
+            adminAlertsEnabled,
+            adminAlertEmails,
+            telegramBotToken,
+            telegramChatIds,
+            telegramTimeoutMs,
+            clientErrorReportingEnabled,
+            telegramNotifyAllEvents,
+            telegramNotifyApiRequests,
+            telegramNotifyAuthEvents,
+            telegramNotifySocketEvents,
+            telegramNotifyIncomingMessages,
+            telegramNotifySystemEvents,
+            telegramNotifyErrorEvents,
+            hiddenSections,
+            languageMode,
+            defaultLanguage,
+            primaryColor,
+            fontFamily,
+            fontSize,
+            fontWeight,
+            uiTheme,
+            sidebarOrder
         } = body;
 
-        /** مسیرهای آپلود و URLها: بک‌اسلش، کاراکترهای نامرئی bidi، فاصلهٔ اضافه */
-        function normalizePanelMediaUrl(v) {
-            if (v == null || v === '') return v;
-            let s = String(v).trim().replace(/\\/g, '/');
-            s = s.replace(/[\u200e\u200f\u202a-\u202e\ufeff]/g, '');
-            return s.trim();
-        }
         if (logoUrl !== undefined) logoUrl = normalizePanelMediaUrl(logoUrl);
         if (faviconUrl !== undefined) faviconUrl = normalizePanelMediaUrl(faviconUrl);
         if (loginLogoUrl !== undefined) loginLogoUrl = normalizePanelMediaUrl(loginLogoUrl);
@@ -255,7 +299,11 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (telegramNotifySystemEvents !== undefined) row.telegramNotifySystemEvents = !!telegramNotifySystemEvents;
         if (telegramNotifyErrorEvents !== undefined) row.telegramNotifyErrorEvents = !!telegramNotifyErrorEvents;
         if (hiddenSections !== undefined) row.hiddenSections = Array.isArray(hiddenSections) ? JSON.stringify(hiddenSections) : (hiddenSections === '' ? null : row.hiddenSections);
-        if (languageMode !== undefined) row.languageMode = languageMode === '' ? null : languageMode;
+        if (languageMode !== undefined) {
+            const validLangModes = ['single', 'single_en', 'single_tr', 'bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'];
+            if (languageMode === '' || languageMode == null) row.languageMode = null;
+            else row.languageMode = validLangModes.indexOf(languageMode) >= 0 ? languageMode : 'trilingual';
+        }
         if (defaultLanguage !== undefined && (defaultLanguage === 'fa' || defaultLanguage === 'en' || defaultLanguage === 'tr')) row.defaultLanguage = defaultLanguage;
         if (primaryColor !== undefined) row.primaryColor = (typeof primaryColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(primaryColor.trim())) ? primaryColor.trim() : (primaryColor === '' ? null : row.primaryColor);
         if (fontFamily !== undefined) row.fontFamily = fontFamily === '' ? null : fontFamily;
