@@ -24,6 +24,10 @@ let _lastUpdateId = 0;
 let _pollingTimeout = null;
 let _appModels = null;
 let _botConfig = null;
+/** از getMe — برای botUrl در API اتصال تلگرام وقتی TELEGRAM_BOT_USERNAME تنظیم نشده */
+let _cachedBotUsername = '';
+/** فاصلهٔ بعدی بین چرخه‌های getUpdates (بعد از ۴۲۹/۴۰۹ توسط API تنظیم می‌شود) */
+let _adaptivePollMs = 2000;
 
 const POLL_INTERVAL_MS = 2000;
 const LONG_POLL_TIMEOUT_SEC = 25;
@@ -46,6 +50,19 @@ function getToken() {
 
 function isConfigured() {
     return !!getToken();
+}
+
+function getCachedBotUsername() {
+    return _cachedBotUsername || '';
+}
+
+/** فقط یک worker باید getUpdates بزند (PM2 cluster / چند replica) */
+function shouldSkipTelegramPollingForThisWorker() {
+    if (process.env.TELEGRAM_POLLING_DISABLED === '1') return true;
+    if (process.env.TELEGRAM_POLL_ALL_WORKERS === '1') return false;
+    const inst = process.env.NODE_APP_INSTANCE;
+    if (inst === undefined || inst === '') return false;
+    return String(inst) !== '0';
 }
 
 async function apiCall(method, params = {}) {
@@ -147,23 +164,49 @@ async function getUpdates(offset = 0) {
         const res = await axios.post(url, {
             offset,
             timeout: LONG_POLL_TIMEOUT_SEC,
-            allowed_updates: ['message']
+            allowed_updates: ['message', 'edited_message']
         }, { timeout: REQUEST_TIMEOUT_MS + 5000 });
         if (res.data && res.data.ok && Array.isArray(res.data.result)) {
+            _adaptivePollMs = POLL_INTERVAL_MS;
             return res.data.result;
         }
         if (res.data && res.data.ok === false) {
-            logger.warn('Telegram getUpdates rejected', { description: res.data.description });
+            const code = res.data.error_code;
+            if (code === 429 && res.data.parameters && res.data.parameters.retry_after != null) {
+                const sec = Math.max(1, Number(res.data.parameters.retry_after) || 5);
+                _adaptivePollMs = Math.min(60000, Math.max(3000, sec * 1000));
+                logger.warn('Telegram getUpdates rate limited (429), backing off', { retry_after_sec: sec });
+            } else {
+                logger.warn('Telegram getUpdates rejected', {
+                    description: res.data.description,
+                    error_code: code
+                });
+            }
         }
         return [];
     } catch (err) {
+        const status = err.response && err.response.status;
+        const body = err.response && err.response.data;
+        // 409: another getUpdates (or webhook delivery) is already active for this bot token — common with multiple backend processes.
+        if (status === 409 || (body && body.error_code === 409)) {
+            _adaptivePollMs = Math.max(_adaptivePollMs, 12000);
+            logger.error(
+                'Telegram getUpdates conflict (409): another instance may be using the same bot token. Only one long-poll consumer is allowed per bot.'
+            );
+            return [];
+        }
+        if (status === 429 && body && body.parameters && body.parameters.retry_after != null) {
+            const sec = Math.max(1, Number(body.parameters.retry_after) || 5);
+            _adaptivePollMs = Math.min(60000, Math.max(3000, sec * 1000));
+            logger.warn('Telegram getUpdates HTTP 429, backing off', { retry_after_sec: sec });
+            return [];
+        }
         if (err.code !== 'ECONNABORTED' && err.code !== 'ETIMEDOUT') {
-            const body = err.response && err.response.data;
             logger.warn('Telegram getUpdates error', {
                 error: err.message,
                 description: body && body.description,
                 error_code: body && body.error_code,
-                status: err.response && err.response.status
+                status
             });
         }
         return [];
@@ -484,8 +527,9 @@ async function handleRates(chatId) {
 
 async function processUpdate(update) {
     try {
-        if (!update || !update.message) return;
-        const msg = update.message;
+        if (!update) return;
+        const msg = update.message || update.edited_message;
+        if (!msg) return;
         const chatId = msg.chat && msg.chat.id;
         const text = msg.text || '';
         const fromUser = msg.from || {};
@@ -524,13 +568,26 @@ async function startPolling(models, config = undefined) {
                 : null;
     }
 
+    if (shouldSkipTelegramPollingForThisWorker()) {
+        logger.info(
+            'Telegram bot: long polling skipped on this process (set TELEGRAM_POLL_ALL_WORKERS=1 to force, or use a single backend instance per bot token)'
+        );
+        return;
+    }
+
     const token = getToken();
     if (!token) {
         logger.info('Telegram bot: no token configured, polling disabled');
         return;
     }
 
+    _adaptivePollMs = POLL_INTERVAL_MS;
+
     const me = await apiCall('getMe', {});
+    if (me && me.ok === true && me.result && me.result.username) {
+        const u = String(me.result.username).replace(/^@/, '').trim();
+        if (u) _cachedBotUsername = u;
+    }
     if (me && me.ok === false) {
         const code = me.error_code;
         const desc = String(me.description || '');
@@ -590,7 +647,8 @@ async function startPolling(models, config = undefined) {
             logger.warn('Telegram polling cycle error', { error: err.message });
         }
         if (_pollingActive) {
-            _pollingTimeout = setTimeout(poll, POLL_INTERVAL_MS);
+            const delay = Math.max(POLL_INTERVAL_MS, _adaptivePollMs || POLL_INTERVAL_MS);
+            _pollingTimeout = setTimeout(poll, delay);
         }
     };
 
@@ -603,6 +661,7 @@ function stopPolling() {
         clearTimeout(_pollingTimeout);
         _pollingTimeout = null;
     }
+    _lastUpdateId = 0;
     logger.info('Telegram bot polling stopped');
 }
 
@@ -613,12 +672,11 @@ async function restartPollingFromPanel(models) {
     const m = models || _appModels;
     stopPolling();
     if (m) _appModels = m;
-    const { getPanelSettings } = require('./config/panelSettingsLoader');
+    const { getPanelSettings, getPanelAlertConfig } = require('./config/panelSettingsLoader');
     const settings = await getPanelSettings();
-    const cfg =
-        settings && settings.telegramBotToken && String(settings.telegramBotToken).trim()
-            ? { botToken: String(settings.telegramBotToken).trim() }
-            : null;
+    const alertCfg = getPanelAlertConfig(settings);
+    const tok = (alertCfg.telegramBotToken || '').trim();
+    const cfg = tok ? { botToken: tok } : null;
     await startPolling(m, cfg);
 }
 
@@ -630,7 +688,7 @@ async function sendToUser(userId, text) {
         const { User } = _appModels || require('../models');
         const user = await User.findByPk(userId, { attributes: ['telegramChatId'] });
         if (!user || !user.telegramChatId) return false;
-        const data = await sendReply(user.telegramChatId, text);
+        const data = await sendReply(String(user.telegramChatId).trim(), text);
         return !!(data && data.ok !== false);
     } catch (_) {
         return false;
@@ -642,6 +700,7 @@ module.exports = {
     stopPolling,
     restartPollingFromPanel,
     isConfigured,
+    getCachedBotUsername,
     getRatesText,
     sendReply,
     sendToUser,

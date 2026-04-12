@@ -11,6 +11,7 @@ const { logActivity } = require('../services/activityLog');
 const { getCountryFromIp } = require('../lib/geoip');
 const emailService = require('../services/emailService');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
+const telegramBotService = require('../services/telegramBotService');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
@@ -547,7 +548,14 @@ router.post('/telegram-link-token', authMiddleware, async (req, res, next) => {
         const token = crypto.randomBytes(16).toString('hex');
         const expiry = new Date(Date.now() + 15 * 60 * 1000); // 15 دقیقه
         await user.update({ telegramLinkToken: token, telegramLinkTokenExpiry: expiry });
-        const botName = process.env.TELEGRAM_BOT_USERNAME || '';
+        const envName = String(process.env.TELEGRAM_BOT_USERNAME || '')
+            .replace(/^@/, '')
+            .trim();
+        const cachedName =
+            typeof telegramBotService.getCachedBotUsername === 'function'
+                ? String(telegramBotService.getCachedBotUsername() || '').replace(/^@/, '').trim()
+                : '';
+        const botName = envName || cachedName;
         const botUrl = botName ? `https://t.me/${botName}?start=${token}` : null;
         res.json({
             token,

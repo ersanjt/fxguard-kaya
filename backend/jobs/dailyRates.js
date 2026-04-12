@@ -7,7 +7,7 @@
 const logger = require('../config/logger');
 const telegramService = require('../services/telegramService');
 const { getRatesText } = require('../services/telegramBotService');
-const { getPanelSettings } = require('../services/panelSettingsLoader');
+const { getPanelSettings, getPanelAlertConfig } = require('../services/panelSettingsLoader');
 
 const DAILY_RATES_HOUR = parseInt(process.env.DAILY_RATES_HOUR || '9', 10);
 const DAILY_RATES_MINUTE = parseInt(process.env.DAILY_RATES_MINUTE || '0', 10);
@@ -25,11 +25,12 @@ async function broadcastRates() {
         }
 
         const settings = await getPanelSettings();
-        const telegramConfig = settings && settings.telegramBotToken
+        const alertCfg = getPanelAlertConfig(settings);
+        const telegramConfig = alertCfg.telegramBotToken
             ? {
-                botToken: settings.telegramBotToken,
-                chatIds: settings.telegramChatIds,
-                timeoutMs: settings.telegramTimeoutMs
+                botToken: alertCfg.telegramBotToken,
+                chatIds: alertCfg.telegramChatIds,
+                timeoutMs: alertCfg.telegramTimeoutMs
             }
             : null;
 

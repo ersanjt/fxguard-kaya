@@ -19,7 +19,7 @@ const { connectRabbitMQ, getRabbitChannel } = require('./services/rabbitmq');
 const { checkUnansweredConversations } = require('./jobs/unansweredConversations');
 const { startDailyRatesJob, stopDailyRatesJob } = require('./jobs/dailyRates');
 const telegramBotService = require('./services/telegramBotService');
-const { getPanelSettings } = require('./services/panelSettingsLoader');
+const { getPanelSettings, getPanelAlertConfig } = require('./services/panelSettingsLoader');
 const models = require('./models');
 const { sequelize } = models;
 const { sendAdminSecurityAlert } = require('./services/adminAlertService');
@@ -65,9 +65,8 @@ async function startServer() {
 
         try {
             const panelSettings = await getPanelSettings();
-            const tgConfig = panelSettings && panelSettings.telegramBotToken
-                ? { botToken: panelSettings.telegramBotToken }
-                : null;
+            const mergedToken = (getPanelAlertConfig(panelSettings).telegramBotToken || '').trim();
+            const tgConfig = mergedToken ? { botToken: mergedToken } : null;
             await telegramBotService.startPolling(models, tgConfig);
         } catch (tgErr) {
             logger.warn('Telegram bot startup warning:', tgErr.message);
