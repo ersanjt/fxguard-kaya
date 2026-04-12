@@ -1,5 +1,6 @@
 package com.kaya.crm.ui.main.internalchat
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kaya.crm.data.models.InternalMessageItem
@@ -112,13 +113,14 @@ class InternalChatViewModel @Inject constructor(
 
     fun clearDetailError() { _detailError.value = null }
 
-    fun sendMessage(threadId: String, content: String) {
+    fun sendMessage(threadId: String, content: String, attachmentUris: List<Uri> = emptyList()) {
         val trimmed = content.trim()
-        if (trimmed.isEmpty() || _sendingMessage.value) return
+        if (trimmed.isEmpty() && attachmentUris.isEmpty()) return
+        if (_sendingMessage.value) return
         viewModelScope.launch {
             _sendingMessage.value = true
             _detailError.value = null
-            repo.sendMessage(threadId, trimmed)
+            repo.sendMessage(threadId, trimmed, attachmentUris)
                 .onSuccess { msg ->
                     _messages.value = _messages.value + msg
                     _inputClearNonce.value = _inputClearNonce.value + 1

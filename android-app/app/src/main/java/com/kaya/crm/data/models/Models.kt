@@ -61,6 +61,8 @@ data class PatchProfilePayload(
 
 data class UploadResponse(
     @SerializedName("url") val url: String? = null,
+    @SerializedName("name") val name: String? = null,
+    @SerializedName("size") val size: Long? = null,
     @SerializedName("error") val error: String? = null
 )
 
@@ -347,16 +349,25 @@ data class InternalMessagesResponse(
     @SerializedName("data") val data: List<InternalMessageItem>
 )
 
+data class InternalAttachmentItem(
+    @SerializedName("name") val name: String? = null,
+    @SerializedName("url") val url: String,
+    @SerializedName("size") val size: Long? = null,
+    @SerializedName("allowDownload") val allowDownload: Boolean? = true
+)
+
 data class InternalMessageItem(
     @SerializedName("id") val id: String,
     @SerializedName("content") val content: String,
     @SerializedName("fromUserId") val fromUserId: String,
     @SerializedName("fromUser") val fromUser: UserBrief?,
-    @SerializedName("createdAt") val createdAt: String? = null
+    @SerializedName("createdAt") val createdAt: String? = null,
+    @SerializedName("attachments") val attachments: List<InternalAttachmentItem>? = null
 )
 
 data class SendInternalMessageRequest(
-    @SerializedName("content") val content: String
+    @SerializedName("content") val content: String,
+    @SerializedName("attachments") val attachments: List<InternalAttachmentItem>? = null
 )
 
 data class CreateThreadRequest(

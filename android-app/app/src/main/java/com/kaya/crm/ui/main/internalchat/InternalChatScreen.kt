@@ -1,5 +1,8 @@
 package com.kaya.crm.ui.main.internalchat
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -22,16 +25,43 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kaya.crm.data.ApiConfig
+import com.kaya.crm.data.models.InternalThreadBrief
+import com.kaya.crm.data.models.InternalMessageItem
+import com.kaya.crm.data.models.UserBrief
 import com.kaya.crm.ui.components.ChatWhatsAppStyle
+import com.kaya.crm.ui.components.WaBubbleAttachment
 import com.kaya.crm.ui.components.WaChatRowDivider
 import com.kaya.crm.ui.components.WaChatSheetHeader
 import com.kaya.crm.ui.components.WaChatThreadRow
 import com.kaya.crm.ui.components.WaMessageBubble
 import com.kaya.crm.ui.components.WaMessageComposer
 import com.kaya.crm.ui.components.waChatBackdropColor
-import com.kaya.crm.data.models.InternalThreadBrief
-import com.kaya.crm.data.models.InternalMessageItem
-import com.kaya.crm.data.models.UserBrief
+import kotlinx.coroutines.launch
+
+private fun resolvePublicFileUrl(pathOrUrl: String): String {
+    val t = pathOrUrl.trim()
+    if (t.startsWith("http", ignoreCase = true)) return t
+    val root = ApiConfig.BASE_URL.trim().trimEnd('/')
+    val p = t.removePrefix("/")
+    return "$root/$p"
+}
+
+private fun looksLikeImageAttachment(url: String, label: String?): Boolean {
+    val s = "$url ${label ?: ""}".lowercase()
+    return listOf(".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp").any { s.contains(it) }
+}
+
+private fun internalMessageAttachments(msg: InternalMessageItem): List<WaBubbleAttachment> {
+    val raw = msg.attachments ?: return emptyList()
+    return raw.map { a ->
+        WaBubbleAttachment(
+            label = a.name?.trim()?.takeIf { it.isNotEmpty() } ?: "فایل",
+            absoluteUrl = resolvePublicFileUrl(a.url),
+            showAsImage = looksLikeImageAttachment(a.url, a.name)
+        )
+    }
+}
 
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -229,13 +259,24 @@ private fun InternalChatDetailSheet(
     val sending by viewModel.sendingMessage.collectAsState()
     val inputClearNonce by viewModel.inputClearNonce.collectAsState()
     var inputText by remember(threadId) { mutableStateOf("") }
+    var pendingUris by remember(threadId) { mutableStateOf<List<Uri>>(emptyList()) }
     val listState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
     val thread = threads.find { it.id == threadId }
     val participantNames = thread?.participants?.joinToString("، ") { it.name ?: it.email ?: "—" } ?: "چت"
 
+    val pickFiles = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetMultipleContents()
+    ) { uris: List<Uri> ->
+        if (uris.isNotEmpty()) pendingUris = pendingUris + uris
+    }
+
     LaunchedEffect(inputClearNonce) {
-        if (inputClearNonce > 0) inputText = ""
+        if (inputClearNonce > 0) {
+            inputText = ""
+            pendingUris = emptyList()
+        }
     }
 
     LaunchedEffect(detailError) {
@@ -267,7 +308,21 @@ private fun InternalChatDetailSheet(
                 WaChatSheetHeader(
                     title = participantNames,
                     subtitle = "چت سازمان",
-                    onDismiss = onDismiss
+                    onDismiss = onDismiss,
+                    onVoiceCall = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                "تماس صوتی / گروهی هنوز روی اپ موبایل وصل نشده؛ فعلاً از داشبورد وب استفاده کنید."
+                            )
+                        }
+                    },
+                    onVideoCall = {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                "تماس تصویری / گروهی هنوز روی اپ موبایل وصل نشده؛ فعلاً از داشبورد وب استفاده کنید."
+                            )
+                        }
+                    }
                 )
                 Box(
                     modifier = Modifier
@@ -297,9 +352,27 @@ private fun InternalChatDetailSheet(
                                     isOutgoing = isMe,
                                     text = msg.content,
                                     footer = timeStr.ifBlank { null },
-                                    senderLabel = if (isMe) null else (msg.fromUser?.name ?: "کاربر")
+                                    senderLabel = if (isMe) null else (msg.fromUser?.name ?: "کاربر"),
+                                    attachments = internalMessageAttachments(msg)
                                 )
                             }
+                        }
+                    }
+                }
+                if (pendingUris.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            "${pendingUris.size} فایل برای ارسال",
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                        TextButton(onClick = { pendingUris = emptyList() }) {
+                            Text("حذف پیوست‌ها")
                         }
                     }
                 }
@@ -307,11 +380,14 @@ private fun InternalChatDetailSheet(
                     text = inputText,
                     onTextChange = { inputText = it },
                     onSend = {
-                        val t = inputText.trim()
-                        if (t.isNotEmpty() && !sending) viewModel.sendMessage(threadId, t)
+                        if (!sending && (inputText.isNotBlank() || pendingUris.isNotEmpty())) {
+                            viewModel.sendMessage(threadId, inputText, pendingUris)
+                        }
                     },
                     sending = sending,
-                    placeholder = "پیام…"
+                    placeholder = "پیام…",
+                    onAttachClick = { pickFiles.launch("*/*") },
+                    extraCanSend = pendingUris.isNotEmpty()
                 )
             }
         }
