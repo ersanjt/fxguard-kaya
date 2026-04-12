@@ -14,6 +14,7 @@ backend/public/js/app/
 
 # logs
 *.log
+logs/
 backend/logs/
 
 # sqlite

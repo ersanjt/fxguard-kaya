@@ -263,13 +263,17 @@ router.post('/login', async (req, res, _next) => {
 
 const RESET_TOKEN_EXPIRY_MINUTES = 60;
 
+const FORGOT_OK_MESSAGE = 'در صورت وجود حساب با این ایمیل، لینک بازیابی ارسال می‌شود.';
+const RESET_EMAIL_FAIL =
+    'ارسال ایمیل بازیابی انجام نشد. لطفاً بعداً تلاش کنید یا با مدیر سیستم تماس بگیرید.';
+
 router.post('/forgot-password', async (req, res, next) => {
     try {
         const email = (req.body.email || '').toString().trim().toLowerCase();
         if (!email) return res.status(400).json({ error: 'ایمیل الزامی است' });
         const user = await User.findOne({ where: { email, isActive: true } });
         if (!user) {
-            return res.status(200).json({ message: 'در صورت وجود حساب با این ایمیل، لینک بازیابی ارسال می‌شود.' });
+            return res.status(200).json({ message: FORGOT_OK_MESSAGE });
         }
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date(Date.now() + RESET_TOKEN_EXPIRY_MINUTES * 60 * 1000);
@@ -277,12 +281,19 @@ router.post('/forgot-password', async (req, res, next) => {
             await PasswordResetToken.destroy({ where: { userId: user.id }, transaction: t });
             await PasswordResetToken.create({ userId: user.id, token, expiresAt }, { transaction: t });
         });
-        // پاسخ فوری — ایمیل در background ارسال می‌شود تا کاربر منتظر نماند
-        res.status(200).json({ message: 'در صورت وجود حساب با این ایمیل، لینک بازیابی ارسال می‌شود.' });
         const settings = await getPanelSettings();
         const emailConfig = getPanelEmailConfig(settings);
-        emailService.sendPasswordReset(user, token, RESET_TOKEN_EXPIRY_MINUTES, emailConfig)
-            .catch(err => logger.error('Failed to send password reset email:', err));
+        let sent = false;
+        try {
+            sent = await emailService.sendPasswordReset(user, token, RESET_TOKEN_EXPIRY_MINUTES, emailConfig);
+        } catch (err) {
+            logger.error('Failed to send password reset email:', err);
+        }
+        if (!sent) {
+            await PasswordResetToken.destroy({ where: { userId: user.id } });
+            return res.status(503).json({ error: RESET_EMAIL_FAIL });
+        }
+        return res.status(200).json({ message: FORGOT_OK_MESSAGE });
     } catch (err) {
         next(err);
     }
@@ -291,7 +302,9 @@ router.post('/forgot-password', async (req, res, next) => {
 router.post('/reset-password', async (req, res, next) => {
     try {
         const { token: resetToken, newPassword } = req.body;
-        if (!resetToken || !newPassword) return res.status(400).json({ error: 'توکن و رمز عبور جدید الزامی است' });
+        if (!resetToken || !newPassword) {
+            return res.status(400).json({ error: 'توکن و رمز عبور جدید الزامی است' });
+        }
         const pwdCheck = validatePassword(newPassword);
         if (!pwdCheck.valid) return res.status(400).json({ error: pwdCheck.message });
         const row = await PasswordResetToken.findOne({
@@ -303,7 +316,9 @@ router.post('/reset-password', async (req, res, next) => {
             return res.status(400).json({ error: 'لینک بازیابی منقضی شده است. دوباره درخواست دهید.' });
         }
         const user = await User.findByPk(row.userId);
-        if (!user || !user.isActive) return res.status(400).json({ error: 'کاربر یافت نشد یا غیرفعال است' });
+        if (!user || !user.isActive) {
+            return res.status(400).json({ error: 'کاربر یافت نشد یا غیرفعال است' });
+        }
         user.password = newPassword;
         await user.save();
         await PasswordResetToken.destroy({ where: { userId: user.id } });
