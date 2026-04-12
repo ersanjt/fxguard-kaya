@@ -29,7 +29,7 @@ object AppModule {
         val request = chain.request().newBuilder().apply {
             token?.let { addHeader("Authorization", "Bearer $it") }
             addHeader("Accept", "application/json")
-            addHeader("Content-Type", "application/json")
+            // Content-Type را اینجا ست نکنید تا multipart و JSON هر کدام هدر درست داشته باشند
         }.build()
         val response = chain.proceed(request)
         if (response.code == 401) {

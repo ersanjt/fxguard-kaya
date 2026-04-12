@@ -1,6 +1,7 @@
 package com.kaya.crm.data.api
 
 import com.kaya.crm.data.models.*
+import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
@@ -18,6 +19,34 @@ interface ApiService {
 
     @GET("auth/me")
     suspend fun getMe(): Response<UserResponse>
+
+    @PATCH("users/me")
+    suspend fun patchProfile(@Body body: PatchProfilePayload): Response<UserResponse>
+
+    @Multipart
+    @POST("upload")
+    suspend fun uploadFile(@Part file: MultipartBody.Part): Response<UploadResponse>
+
+    @GET("auth/totp/setup")
+    suspend fun getTotpSetup(): Response<TotpSetupResponse>
+
+    @POST("auth/totp/confirm-setup")
+    suspend fun confirmTotpSetup(@Body body: TotpConfirmBody): Response<Map<String, Any>>
+
+    @POST("auth/totp/disable")
+    suspend fun disableTotp(@Body body: TotpDisableBody): Response<Map<String, Any>>
+
+    @POST("auth/telegram-link-token")
+    suspend fun requestTelegramLinkToken(): Response<TelegramLinkTokenResponse>
+
+    @GET("auth/telegram-status")
+    suspend fun getTelegramStatus(): Response<TelegramStatusResponse>
+
+    @DELETE("auth/telegram-link")
+    suspend fun unlinkTelegram(): Response<Map<String, Any>>
+
+    @PATCH("auth/me/presence")
+    suspend fun patchPresence(@Body body: PresenceBody): Response<Map<String, Any>>
 
     // Analytics / Dashboard
     @GET("analytics/dashboard")

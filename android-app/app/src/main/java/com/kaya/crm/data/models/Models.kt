@@ -21,6 +21,11 @@ data class LoginResponse(
     @SerializedName("error") val error: String? = null
 )
 
+data class DeptBranchBrief(
+    @SerializedName("id") val id: String? = null,
+    @SerializedName("name") val name: String? = null
+)
+
 data class UserResponse(
     @SerializedName("id") val id: String,
     @SerializedName("name") val name: String?,
@@ -29,7 +34,65 @@ data class UserResponse(
     @SerializedName("status") val status: String? = null,
     @SerializedName("departmentId") val departmentId: String? = null,
     @SerializedName("branchId") val branchId: String? = null,
-    @SerializedName("permissions") val permissions: Map<String, Boolean>? = null
+    @SerializedName("permissions") val permissions: Map<String, Boolean>? = null,
+    @SerializedName("username") val username: String? = null,
+    @SerializedName("firstName") val firstName: String? = null,
+    @SerializedName("lastName") val lastName: String? = null,
+    @SerializedName("dateOfBirth") val dateOfBirth: String? = null,
+    @SerializedName("phone") val phone: String? = null,
+    @SerializedName("avatar") val avatar: String? = null,
+    @SerializedName("totpEnabled") val totpEnabled: Boolean? = false,
+    @SerializedName("lastLoginAt") val lastLoginAt: String? = null,
+    @SerializedName("department") val department: DeptBranchBrief? = null,
+    @SerializedName("branch") val branch: DeptBranchBrief? = null
+)
+
+/** بدنهٔ PATCH /users/me — فیلدهای null توسط Gson حذف می‌شوند */
+data class PatchProfilePayload(
+    @SerializedName("username") val username: String? = null,
+    @SerializedName("firstName") val firstName: String? = null,
+    @SerializedName("lastName") val lastName: String? = null,
+    @SerializedName("dateOfBirth") val dateOfBirth: String? = null,
+    @SerializedName("phone") val phone: String? = null,
+    @SerializedName("avatar") val avatar: String? = null,
+    @SerializedName("password") val password: String? = null,
+    @SerializedName("email") val email: String? = null
+)
+
+data class UploadResponse(
+    @SerializedName("url") val url: String? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class TotpSetupResponse(
+    @SerializedName("secret") val secret: String? = null,
+    @SerializedName("qrCode") val qrCode: String? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class TotpConfirmBody(
+    @SerializedName("code") val code: String
+)
+
+data class TotpDisableBody(
+    @SerializedName("password") val password: String
+)
+
+data class TelegramLinkTokenResponse(
+    @SerializedName("token") val token: String? = null,
+    @SerializedName("expiresAt") val expiresAt: String? = null,
+    @SerializedName("botUrl") val botUrl: String? = null,
+    @SerializedName("instruction") val instruction: String? = null,
+    @SerializedName("error") val error: String? = null
+)
+
+data class TelegramStatusResponse(
+    @SerializedName("linked") val linked: Boolean = false,
+    @SerializedName("chatId") val chatId: String? = null
+)
+
+data class PresenceBody(
+    @SerializedName("status") val status: String
 )
 
 // Dashboard

@@ -70,6 +70,10 @@ class AuthRepository @Inject constructor(
         prefs.clear()
     }
 
+    suspend fun cacheUser(user: UserResponse) {
+        prefs.setUser(user)
+    }
+
     suspend fun refreshUser(): Result<UserResponse> {
         return try {
             val response = api.getMe()
