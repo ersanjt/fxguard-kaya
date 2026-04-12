@@ -1688,6 +1688,7 @@
             applyHashRoute();
             loadGeneralAnnouncementsMarquee();
             removeAllInlineHandlers();
+            initCspInlineMutationStrip();
             setupGlobalDelegatedHandlers();
             setupLoginEventHandlers();
             setupGlobalEventHandlers();

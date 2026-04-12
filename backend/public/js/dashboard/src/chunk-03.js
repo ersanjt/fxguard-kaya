@@ -1039,6 +1039,10 @@
             }
         }
         function applyConvFilters() { convCurrentPage = 1; loadConversations(); }
+        function escapeAttr(s) {
+            if (s == null || s === '') return '';
+            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
         function openNewConvModal() {
             document.getElementById('newConvModal').style.display = 'flex';
             document.getElementById('newConvCustomerSearch').value = '';
@@ -1062,7 +1066,7 @@
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 let profilePic = rawPicNc ? normalizeProfilePicUrl(rawPicNc) : '';
                 const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
-                return '<div class="new-conv-customer-item" onclick="startNewConversation(\'' + c.id + '\', \'' + (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\') + '\')"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
+                return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
         async function startNewConversation(customerId, name) {
@@ -1200,10 +1204,6 @@
         let _loadMessagesController = null;
         let _currentMsgConvId = null;
         let _currentMsgOldestId = null;
-        function escapeAttr(s) {
-            if (s == null || s === '') return '';
-            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        }
         async function loadMessages(id, loadOlder) {
             // لغو درخواست قبلی در صورت تغییر مکالمه
             if (_loadMessagesController) { _loadMessagesController.abort(); _loadMessagesController = null; }

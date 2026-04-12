@@ -822,9 +822,9 @@
             const n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
             if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
                 const parts = [];
-                if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" onclick="showPage(\'conversations\'); setConvQuickTab(\'unread\'); return false;" class="dashboard-attention-link">' + n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread') + '</a>');
-                if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" onclick="showPage(\'tasks\'); return false;" class="dashboard-attention-link">' + n(stats.tasksPending) + ' ' + t('dashboard_stat_tasks') + '</a>');
-                if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" onclick="showPage(\'announcements\'); return false;" class="dashboard-attention-link">' + n(stats.unreadAnnouncements) + ' ' + t('dashboard_stat_announcements') + '</a>');
+                if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unread">' + n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread') + '</a>');
+                if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" class="dashboard-attention-link" data-dashboard-page="tasks">' + n(stats.tasksPending) + ' ' + t('dashboard_stat_tasks') + '</a>');
+                if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" class="dashboard-attention-link" data-dashboard-page="announcements">' + n(stats.unreadAnnouncements) + ' ' + t('dashboard_stat_announcements') + '</a>');
                 if (parts.length) {
                     const needsLabel = (t('dashboard_needs_attention') || (LANG === 'fa' ? 'نیاز به توجه: ' : 'Needs attention: ')) + ' ';
                     attentionEl.innerHTML = needsLabel + parts.join(' · ');
@@ -850,17 +850,17 @@
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: n(stats.unreadAnnouncements), label: t('dashboard_stat_announcements'), warn: true });
                 const summaryHtml = summaryItems.map(function(item) {
                     const cls = 'dashboard-stat-box' + (item.warn ? ' warn' : '');
-                    return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" onclick="showPage(\'' + item.page.replace(/'/g, "\\'") + '\'); return false;"><span class="stat-number">' + escapeHtml(String(item.num)) + '</span><span class="stat-label">' + escapeHtml(item.label) + '</span></a>';
+                    return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" data-dashboard-page="' + escapeHtml(item.page) + '"><span class="stat-number">' + escapeHtml(String(item.num)) + '</span><span class="stat-label">' + escapeHtml(item.label) + '</span></a>';
                 }).join('');
                 summaryEl.innerHTML = summaryHtml || '';
             }
             if (quickEl) {
                 const quickBtns = [];
-                if (can('conversations')) quickBtns.push({ label: t('dashboard_quick_new_conv'), icon: 'icon-chat', onclick: "showPage('conversations'); openNewConvModal();" });
-                if (can('customers')) quickBtns.push({ label: t('dashboard_quick_new_customer'), icon: 'icon-user-plus', onclick: "showPage('customers'); openCustomerModal();" });
-                if (can('tickets')) quickBtns.push({ label: t('dashboard_quick_new_ticket'), icon: 'icon-ticket', onclick: "showPage('tickets'); setTimeout(function(){ toggleTicketForm(); }, 350);" });
+                if (can('conversations')) quickBtns.push({ label: t('dashboard_quick_new_conv'), icon: 'icon-chat', quickAction: 'conv-new' });
+                if (can('customers')) quickBtns.push({ label: t('dashboard_quick_new_customer'), icon: 'icon-user-plus', quickAction: 'customer-new' });
+                if (can('tickets')) quickBtns.push({ label: t('dashboard_quick_new_ticket'), icon: 'icon-ticket', quickAction: 'ticket-new' });
                 const quickHtml = quickBtns.map(function(b) {
-                    return '<button type="button" class="btn-quick" onclick="' + escapeHtml(b.onclick) + '"><svg viewBox="0 0 24 24"><use href="#' + escapeHtml(b.icon) + '"/></svg>' + escapeHtml(b.label) + '</button>';
+                    return '<button type="button" class="btn-quick" data-quick-action="' + escapeHtml(b.quickAction) + '"><svg viewBox="0 0 24 24"><use href="#' + escapeHtml(b.icon) + '"/></svg>' + escapeHtml(b.label) + '</button>';
                 }).join('');
                 quickEl.innerHTML = quickHtml || '';
             }
@@ -887,7 +887,7 @@
             cards.forEach(function(c) {
                 if (!can(c.section)) return;
                 const badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
-                html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '" onclick="showPage(\'' + c.page.replace(/'/g, "\\'") + '\'); return false;"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
+                html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
             });
             container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : t('no_data')) + '</div>');
             if (cardsTitleEl) cardsTitleEl.style.display = html ? '' : 'none';
@@ -1320,6 +1320,50 @@
                     }
                     return;
                 }
+                // داشبورد — کارت‌ها، آمار، اقدام سریع، نوار «نیاز به توجه» (بدون inline onclick)
+                const dashCard = targetEl && targetEl.closest && targetEl.closest('.dashboard-card[data-page]');
+                if (dashCard && typeof showPage === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showPage(dashCard.getAttribute('data-page') || '');
+                    return;
+                }
+                const dashStat = targetEl && targetEl.closest && targetEl.closest('.dashboard-stat-box[data-dashboard-page]');
+                if (dashStat && typeof showPage === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    showPage(dashStat.getAttribute('data-dashboard-page') || '');
+                    return;
+                }
+                const dashAtt = targetEl && targetEl.closest && targetEl.closest('.dashboard-attention-link[data-dashboard-page]');
+                if (dashAtt && typeof showPage === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var _dashPage = dashAtt.getAttribute('data-dashboard-page') || '';
+                    var _dashConvTab = dashAtt.getAttribute('data-conv-tab');
+                    showPage(_dashPage);
+                    if (_dashConvTab && _dashPage === 'conversations' && typeof setConvQuickTab === 'function') {
+                        setTimeout(function() { setConvQuickTab(_dashConvTab); }, 0);
+                    }
+                    return;
+                }
+                const dashQuick = targetEl && targetEl.closest && targetEl.closest('.btn-quick[data-quick-action]');
+                if (dashQuick) {
+                    var _qa = dashQuick.getAttribute('data-quick-action');
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (_qa === 'conv-new' && typeof showPage === 'function' && typeof openNewConvModal === 'function') {
+                        showPage('conversations');
+                        openNewConvModal();
+                    } else if (_qa === 'customer-new' && typeof showPage === 'function' && typeof openCustomerModal === 'function') {
+                        showPage('customers');
+                        openCustomerModal();
+                    } else if (_qa === 'ticket-new' && typeof showPage === 'function' && typeof toggleTicketForm === 'function') {
+                        showPage('tickets');
+                        setTimeout(function() { toggleTicketForm(); }, 350);
+                    }
+                    return;
+                }
                 // کلیک روی اسم فرستنده در گروه → باز کردن مکالمه خصوصی
                 const senderEl = target.closest('.msg-sender-clickable');
                 if (senderEl) {
@@ -1363,6 +1407,13 @@
                 // دکمه مکالمه جدید در حالت خالی لیست
                 if (target.closest('#emptyConvNewBtn') && typeof openNewConvModal === 'function') {
                     e.preventDefault(); e.stopPropagation(); openNewConvModal();
+                    return;
+                }
+                const newConvCust = targetEl && targetEl.closest && targetEl.closest('.new-conv-customer-item[data-start-conv-id]');
+                if (newConvCust && typeof startNewConversation === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    startNewConversation(newConvCust.getAttribute('data-start-conv-id') || '', newConvCust.getAttribute('data-start-conv-name') || '');
                     return;
                 }
                 // تب‌های سریع تسک (همه، در انتظار، در حال انجام، ...)
@@ -1730,6 +1781,30 @@
             document.querySelectorAll('[onkeypress]').forEach(function(el) {
                 el.removeAttribute('onkeypress');
             });
+        }
+
+        function scheduleRemoveAllInlineHandlers() {
+            if (window._crmStripInlineScheduled) return;
+            window._crmStripInlineScheduled = true;
+            requestAnimationFrame(function() {
+                window._crmStripInlineScheduled = false;
+                try { removeAllInlineHandlers(); } catch (err) { console.error(err); }
+            });
+        }
+        function initCspInlineMutationStrip() {
+            if (window._crmInlineMutObs) return;
+            const root = document.getElementById('app');
+            if (!root || typeof MutationObserver === 'undefined') return;
+            var mutT = null;
+            var mo = new MutationObserver(function() {
+                if (mutT) clearTimeout(mutT);
+                mutT = setTimeout(function() {
+                    mutT = null;
+                    scheduleRemoveAllInlineHandlers();
+                }, 50);
+            });
+            mo.observe(root, { childList: true, subtree: true });
+            window._crmInlineMutObs = mo;
         }
 
         /* ========== Login Page Event Handlers Setup ========== */
