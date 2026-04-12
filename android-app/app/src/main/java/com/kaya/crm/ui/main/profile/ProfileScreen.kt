@@ -123,7 +123,7 @@ fun ProfileScreen(
         .trimEnd('/') + "/api/"
 
     val pickImage = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.PickVisualMedia()
+        contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) viewModel.uploadAvatar(uri)
     }
@@ -223,13 +223,7 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 OutlinedButton(
-                                    onClick = {
-                                        pickImage.launch(
-                                            ActivityResultContracts.PickVisualMediaRequest(
-                                                ActivityResultContracts.PickVisualMedia.ImageOnly
-                                            )
-                                        )
-                                    },
+                                    onClick = { pickImage.launch("image/*") },
                                     enabled = !uploadingAvatar && !saving,
                                     modifier = Modifier.weight(1f)
                                 ) {
