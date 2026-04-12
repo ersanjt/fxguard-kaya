@@ -836,6 +836,14 @@
         .msg.out { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); border: none; color: #fff; margin-left: auto; margin-right: 0; border-bottom-left-radius: 4px; }
         .msg.out .time { color: rgba(255,255,255,0.85); }
         .msg .time { font-size: 0.7rem; color: var(--text-muted); margin-top: 4px; font-variant-numeric: tabular-nums; }
+        a.msg-text-link { color: var(--accent); text-decoration: underline; word-break: break-all; cursor: pointer; }
+        a.msg-text-link:hover { filter: brightness(1.08); }
+        .msg.out a.msg-text-link { color: #fff; text-underline-offset: 2px; }
+        .msg-caption a.msg-text-link { color: inherit; text-decoration: underline; opacity: 0.95; }
+        .msg.out .msg-caption a.msg-text-link { color: #fff; }
+        .ticket-reply-content a.msg-text-link { color: var(--accent); }
+        .msg-body a.msg-text-link { color: var(--accent); }
+        .msg.out .msg-body a.msg-text-link { color: #e8fffb; }
         .msg-media { margin: 6px 0; min-width: 0; }
         .msg-media-image { max-width: 100%; }
         .msg-media-image img { max-width: 100%; width: auto; height: auto; max-height: min(280px, 50vmin); border-radius: 12px; display: block; object-fit: contain; cursor: pointer; }
@@ -5039,6 +5047,12 @@
         #pageConversations.wa-conversations-theme .msg-media-link,
         #pageConversations.wa-conversations-theme .msg-file-link {
             color: #53bdeb;
+        }
+        #pageConversations.wa-conversations-theme .chat-messages a.msg-text-link {
+            color: #53bdeb;
+        }
+        #pageConversations.wa-conversations-theme .chat-messages .msg.out a.msg-text-link {
+            color: #9af0d9;
         }
         #pageConversations.wa-conversations-theme .msg-footer {
             justify-content: flex-end;

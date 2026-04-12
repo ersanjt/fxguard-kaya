@@ -185,7 +185,7 @@
             const att = (m.attachments && m.attachments.length) ? m.attachments.map(renderInternalAttachment).join('') : '';
             const avatarHtml = internalMsgAvatarHtml(m.fromUser);
             const timeStr = (m.fromUser && m.fromUser.name ? m.fromUser.name : '') + ' · ' + (m.createdAt ? fmtTZ(m.createdAt, 'time') : '');
-            const html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + escapeHtml(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
+            const html = '<div class="msg ' + (isOut ? 'out' : 'in') + '">' + avatarHtml + '<div class="msg-body"><div>' + linkifyMessageContent(m.content || '') + '</div>' + att + '<div class="time">' + escapeHtml(timeStr) + '</div></div></div>';
             list.insertAdjacentHTML('beforeend', html);
             list.scrollTop = list.scrollHeight;
         }
@@ -721,6 +721,40 @@
         }
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+        /** متن پیام: ابتدا escape، سپس http(s) به &lt;a&gt; امن (فقط همان پروتکل‌ها) */
+        function linkifyMessageContent(raw) {
+            if (raw == null || raw === '') return '';
+            const s = String(raw);
+            const re = /https?:\/\/[^\s<>'"]+/gi;
+            let out = '';
+            let last = 0;
+            let m;
+            while ((m = re.exec(s)) !== null) {
+                const chunk = m[0];
+                out += escapeHtml(s.slice(last, m.index));
+                let core = chunk;
+                let href = '';
+                for (let tries = 0; tries < 8 && core.length >= 8; tries++) {
+                    try {
+                        const u = new URL(core);
+                        if (u.protocol === 'http:' || u.protocol === 'https:') {
+                            href = u.href;
+                            break;
+                        }
+                    } catch (_e) { /* shrink */ }
+                    core = core.slice(0, -1);
+                }
+                if (!href) {
+                    out += escapeHtml(chunk);
+                } else {
+                    const tail = chunk.slice(core.length);
+                    out += '<a href="' + escapeHtml(href) + '" target="_blank" rel="noopener noreferrer" class="msg-text-link">' + escapeHtml(core) + '</a>' + escapeHtml(tail);
+                }
+                last = m.index + chunk.length;
+            }
+            out += escapeHtml(s.slice(last));
+            return out;
+        }
         function ensureHttpsUrl(url) { if (!url || typeof url !== 'string') return url; if (url.startsWith('http:') && window.location.protocol === 'https:') return 'https:' + url.slice(5); return url; }
         /** تشخیص host/path بدون scheme (مثلاً pps.whatsapp.net/v/...) تا به جای چسباندن به origin اشتباه، https اضافه شود */
         function looksLikeSchemelessHttpHost(host) {
