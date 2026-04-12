@@ -12,7 +12,6 @@ function instanceAccessWhere(req) {
     return { [Op.or]: [{ createdBy: req.userId }, { assignedTo: req.userId }] };
 }
 
-const templateInclude = [];
 const instanceInclude = [
     { model: ProcessTemplate, as: 'template', attributes: ['id', 'name', 'stages'] },
     { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },

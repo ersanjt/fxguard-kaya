@@ -1,7 +1,7 @@
 {
-  "name": "whatsapp-enterprise-gateway",
+  "name": "kaya-crm-gateway",
   "version": "1.0.0",
-  "description": "WhatsApp Gateway for Enterprise CRM",
+  "description": "Kaya CRM — WhatsApp gateway service",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

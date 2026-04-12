@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
@@ -22,12 +23,17 @@ class AuthPreferences @Inject constructor(
     private val TOKEN = stringPreferencesKey("token")
     private val USER = stringPreferencesKey("user")
     private val BASE_URL = stringPreferencesKey("base_url")
+    /** نسخهٔ سروری که کاربر «بعداً» زده — برای آپدیت اختیاری دوباره نپرس تا نسخهٔ جدیدتر بیاید */
+    private val SKIPPED_ANDROID_UPDATE_VC = intPreferencesKey("skipped_android_update_vc")
 
     val token: Flow<String?> = context.dataStore.data.map { it[TOKEN] }
     val user: Flow<UserResponse?> = context.dataStore.data.map { json ->
         json[USER]?.let { Gson().fromJson(it, UserResponse::class.java) }
     }
     val baseUrl: Flow<String?> = context.dataStore.data.map { it[BASE_URL] }
+
+    val skippedAndroidUpdateVersionCode: Flow<Int> =
+        context.dataStore.data.map { it[SKIPPED_ANDROID_UPDATE_VC] ?: 0 }
 
     suspend fun setToken(token: String) {
         context.dataStore.edit { it[TOKEN] = token }
@@ -48,4 +54,11 @@ class AuthPreferences @Inject constructor(
     suspend fun getToken(): String? = token.first()
 
     suspend fun getBaseUrl(): String? = baseUrl.first()
+
+    suspend fun getSkippedAndroidUpdateVersionCode(): Int =
+        skippedAndroidUpdateVersionCode.first()
+
+    suspend fun setSkippedAndroidUpdateVersionCode(versionCode: Int) {
+        context.dataStore.edit { it[SKIPPED_ANDROID_UPDATE_VC] = versionCode }
+    }
 }

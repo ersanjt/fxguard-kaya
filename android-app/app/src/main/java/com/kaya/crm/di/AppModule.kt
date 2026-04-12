@@ -15,6 +15,7 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import javax.inject.Named
 import javax.inject.Singleton
 
 @Module
@@ -36,6 +37,18 @@ object AppModule {
         }
         response
     }
+
+    /** بدون هدر JSON — مناسب دانلود APK */
+    @Provides
+    @Singleton
+    @Named("updateDownloader")
+    fun provideUpdateDownloadClient(): OkHttpClient =
+        OkHttpClient.Builder()
+            .followRedirects(true)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(300, TimeUnit.SECONDS)
+            .writeTimeout(120, TimeUnit.SECONDS)
+            .build()
 
     @Provides
     @Singleton

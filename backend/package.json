@@ -1,7 +1,7 @@
 {
-  "name": "whatsapp-crm-backend",
+  "name": "kaya-crm-backend",
   "version": "1.1.0",
-  "description": "Backend API for WhatsApp Enterprise CRM",
+  "description": "Kaya CRM — backend API and staff portal",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

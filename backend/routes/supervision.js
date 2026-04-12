@@ -96,7 +96,6 @@ router.get('/user/:userId/detail', canViewStaffActivity, async (req, res, next) 
         if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
 
         const now = new Date();
-        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
 
         const [logins, logouts, activities, convCount, msgCount, ticketsCreated, ticketsReplied, ticketsAssigned, tasksCompleted, conversations] = await Promise.all([
             ActivityLog.findAll({ where: { userId, action: 'user_login' }, order: [['createdAt', 'DESC']], limit: 50 }),

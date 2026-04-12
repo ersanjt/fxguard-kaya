@@ -21,16 +21,37 @@ class CrmRepository @Inject constructor(private val api: ApiService) {
         handleResponse(api.getDashboard())
     }.mapNetworkError()
 
-    suspend fun getConversations(page: Int = 1, status: String? = null): Result<ConversationsResponse> = runCatching {
-        handleResponse(api.getConversations(page, 50, status))
+    suspend fun getConversations(
+        page: Int = 1,
+        status: String? = null,
+        search: String? = null
+    ): Result<ConversationsResponse> = runCatching {
+        handleResponse(api.getConversations(page, 50, status, search))
     }.mapNetworkError()
 
-    suspend fun getMessages(conversationId: String, page: Int = 1): Result<List<MessageItem>> = runCatching {
-        val r = api.getMessages(conversationId, page, 50)
+    suspend fun getMessages(
+        conversationId: String,
+        before: String? = null,
+        limit: Int = 100
+    ): Result<ConversationMessagesPage> = runCatching {
+        val r = api.getMessages(conversationId, limit, before)
         if (r.isSuccessful) {
             val body = r.body()!!
-            (body.data ?: body.messages ?: emptyList())
+            val list = body.data ?: body.messages ?: emptyList()
+            ConversationMessagesPage(
+                messages = list,
+                hasMore = body.hasMore ?: false,
+                oldestId = body.oldestId,
+                total = body.total ?: list.size
+            )
         } else {
+            throw Exception(ApiErrorParser.parseError(r.errorBody()?.string()))
+        }
+    }.mapNetworkError()
+
+    suspend fun markConversationRead(conversationId: String): Result<Unit> = runCatching {
+        val r = api.markConversationRead(conversationId)
+        if (!r.isSuccessful) {
             throw Exception(ApiErrorParser.parseError(r.errorBody()?.string()))
         }
     }.mapNetworkError()
@@ -41,6 +62,10 @@ class CrmRepository @Inject constructor(private val api: ApiService) {
 
     suspend fun getCustomers(page: Int = 1, search: String? = null): Result<CustomersResponse> = runCatching {
         handleResponse(api.getCustomers(page, 50, search))
+    }.mapNetworkError()
+
+    suspend fun getCustomer(id: String): Result<CustomerDetail> = runCatching {
+        handleResponse(api.getCustomer(id))
     }.mapNetworkError()
 
     suspend fun getTickets(page: Int = 1): Result<TicketsResponse> = runCatching {

@@ -49,7 +49,7 @@ function extFromContentType(ct) {
  * @returns {Promise<string|null>} مسیر عمومی مثل `/uploads/customers/{id}/avatar.jpg` یا null در صورت شکست
  */
 function ensureAvatarFetchUrl(raw) {
-    let u = String(raw || '').trim();
+    const u = String(raw || '').trim();
     if (!u) return '';
     if (u.startsWith('//')) return 'https:' + u;
     if (/^https?:\/\//i.test(u)) return u;

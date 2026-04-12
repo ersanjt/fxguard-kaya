@@ -86,7 +86,7 @@ router.post('/import', async (req, res, next) => {
                 });
                 updated++;
             } else {
-                const c = await Customer.create({
+                await Customer.create({
                     phone,
                     name: r.name || `مشتری ${phone}`,
                     email: r.email || null,

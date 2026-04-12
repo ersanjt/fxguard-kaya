@@ -158,11 +158,11 @@ router.post('/:id/send-credentials', authMiddleware, async (req, res, next) => {
         }
         const settings = await getPanelSettings();
         const emailConfig = getPanelEmailConfig(settings);
-        const siteName = (settings && settings.siteName) || 'پورتال کارکنان';
+        const siteName = (settings && settings.siteName) || 'کایا CRM';
         const title = `اطلاعات ایمیل شرکتی ${row.email}`;
         const body = `
       <p>سلام ${row.assignedUser.name || 'کاربر'}،</p>
-      <p>اطلاعات ورود به <strong>ایمیل شرکتی</strong> که به شما اختصاص داده شده است:</p>
+      <p>اطلاعات ورود به <strong>ایمیل شرکتی</strong> (${siteName}) که به شما اختصاص داده شده است:</p>
       <ul>
         <li>آدرس ایمیل: <span class="cred">${row.email}</span></li>
         <li>رمز عبور: <span class="cred">${plainPassword}</span></li>

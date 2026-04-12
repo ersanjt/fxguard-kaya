@@ -104,7 +104,10 @@ data class DepartmentBrief(
 // Messages
 data class MessagesResponse(
     @SerializedName("data") val data: List<MessageItem>? = null,
-    @SerializedName("messages") val messages: List<MessageItem>? = null
+    @SerializedName("messages") val messages: List<MessageItem>? = null,
+    @SerializedName("total") val total: Int? = null,
+    @SerializedName("hasMore") val hasMore: Boolean? = null,
+    @SerializedName("oldestId") val oldestId: String? = null
 )
 
 data class MessageItem(
@@ -117,10 +120,27 @@ data class MessageItem(
     @SerializedName("user") val user: UserBrief? = null,
     @SerializedName("mediaUrl") val mediaUrl: String? = null,
     @SerializedName("mediaType") val mediaType: String? = null,
+    @SerializedName("type") val messageType: String? = null,
     @SerializedName("hasMedia") val hasMedia: Boolean? = null,
     @SerializedName("mediaData") val mediaData: Map<String, Any>? = null
 ) {
-    val displayContent: String get() = body ?: content ?: ""
+    val displayContent: String
+        get() {
+            val t = body ?: content
+            if (!t.isNullOrBlank()) return t
+            if (hasMedia == true) {
+                return when (messageType) {
+                    "image" -> "[تصویر]"
+                    "video" -> "[ویدیو]"
+                    "audio" -> "[صوت]"
+                    "document" -> "[فایل]"
+                    "location" -> "[موقعیت]"
+                    "contact" -> "[مخاطب]"
+                    else -> "[پیام رسانه‌ای]"
+                }
+            }
+            return ""
+        }
 }
 
 data class SendMessageRequest(
@@ -129,10 +149,25 @@ data class SendMessageRequest(
     @SerializedName("media") val media: Map<String, Any>? = null
 )
 
+/** نتیجهٔ GET /conversations/:id/messages (صفحه‌بندی با before/limit) */
+data class ConversationMessagesPage(
+    val messages: List<MessageItem>,
+    val hasMore: Boolean,
+    val oldestId: String?,
+    val total: Int
+)
+
 // Customers
 data class CustomersResponse(
     @SerializedName("data") val data: List<CustomerItem>,
     @SerializedName("total") val total: Int = 0
+)
+
+data class LastOpenConversationBrief(
+    @SerializedName("id") val id: String,
+    @SerializedName("status") val status: String? = null,
+    @SerializedName("assignee") val assignee: UserBrief? = null,
+    @SerializedName("department") val department: DepartmentBrief? = null
 )
 
 data class CustomerItem(
@@ -141,7 +176,8 @@ data class CustomerItem(
     @SerializedName("phone") val phone: String?,
     @SerializedName("email") val email: String? = null,
     @SerializedName("status") val status: String? = null,
-    @SerializedName("lastContactAt") val lastContactAt: String? = null
+    @SerializedName("lastContactAt") val lastContactAt: String? = null,
+    @SerializedName("lastOpenConv") val lastOpenConv: LastOpenConversationBrief? = null
 )
 
 data class CustomerDetail(
@@ -149,7 +185,15 @@ data class CustomerDetail(
     @SerializedName("name") val name: String?,
     @SerializedName("phone") val phone: String?,
     @SerializedName("email") val email: String? = null,
-    @SerializedName("status") val status: String? = null
+    @SerializedName("status") val status: String? = null,
+    @SerializedName("source") val source: String? = null,
+    @SerializedName("notes") val notes: String? = null,
+    @SerializedName("profilePic") val profilePic: String? = null,
+    @SerializedName("lastContactAt") val lastContactAt: String? = null,
+    @SerializedName("firstContactAt") val firstContactAt: String? = null,
+    @SerializedName("city") val city: String? = null,
+    @SerializedName("address") val address: String? = null,
+    @SerializedName("country") val country: String? = null
 )
 
 // Tickets
@@ -279,4 +323,18 @@ data class WhatsAppStatus(
 data class PublicBrandingResponse(
     @SerializedName("iosAppUrl") val iosAppUrl: String? = null,
     @SerializedName("androidAppUrl") val androidAppUrl: String? = null
+)
+
+/** پاسخ عمومی `/api/config` — فقط فیلدهای مورد نیاز اپ */
+data class PublicConfigResponse(
+    @SerializedName("timezone") val timezone: String? = null,
+    @SerializedName("androidAppUpdate") val androidAppUpdate: AndroidAppUpdateDto? = null
+)
+
+data class AndroidAppUpdateDto(
+    @SerializedName("versionCode") val versionCode: Int,
+    @SerializedName("versionName") val versionName: String,
+    @SerializedName("apkUrl") val apkUrl: String,
+    @SerializedName("releaseNotes") val releaseNotes: String? = null,
+    @SerializedName("mandatory") val mandatory: Boolean = false
 )

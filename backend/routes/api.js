@@ -56,6 +56,23 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         res.json({ ok: true, message: 'API در دسترس است' });
     });
 
+    function parseAndroidAppUpdate() {
+        const code = parseInt(String(process.env.ANDROID_APP_VERSION_CODE || '').trim(), 10);
+        const url = String(process.env.ANDROID_APP_APK_URL || '').trim();
+        const name = String(process.env.ANDROID_APP_VERSION_NAME || '').trim();
+        if (!Number.isFinite(code) || code < 1 || !url || !name) return null;
+        if (!/^https:\/\//i.test(url)) return null;
+        const notes = String(process.env.ANDROID_APP_RELEASE_NOTES || '').trim().slice(0, 4000);
+        const mandatory = process.env.ANDROID_APP_UPDATE_MANDATORY === 'true' || process.env.ANDROID_APP_UPDATE_MANDATORY === '1';
+        return {
+            versionCode: code,
+            versionName: name,
+            apkUrl: url.slice(0, 2048),
+            releaseNotes: notes || null,
+            mandatory
+        };
+    }
+
     apiRouter.get('/config', (req, res) => {
         const supportUrl = process.env.SUPPORT_URL || null;
         const supportEmail = process.env.SUPPORT_EMAIL || null;
@@ -63,6 +80,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         const isPublicApp = isPublicAppRequest(req);
         const demoMode = isDemoModeEnabled() && isPublicApp;
         const fxguardPublicSite = isPublicApp;
+        const androidAppUpdate = parseAndroidAppUpdate();
         res.json({
             timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
             supportUrl: supportLink,
@@ -71,6 +89,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             demoPassword: demoMode ? (process.env.DEMO_PASSWORD || '123456') : null,
             salesUrl: process.env.SALES_URL || 'https://fxguard.io',
             fxguardPublicSite,
+            androidAppUpdate
         });
     });
 

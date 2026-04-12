@@ -9,7 +9,7 @@
 
 const logger = require('../config/logger');
 
-const FROM_NAME = process.env.SMTP_FROM_NAME || 'پورتال کارکنان';
+const FROM_NAME = process.env.SMTP_FROM_NAME || 'کایا CRM';
 const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@localhost';
 const LOGIN_NOTIFICATION_ENABLED = process.env.EMAIL_LOGIN_NOTIFICATION === 'true' || process.env.EMAIL_LOGIN_NOTIFICATION === '1';
 const PANEL_URL =

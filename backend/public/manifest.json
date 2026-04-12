@@ -1,7 +1,7 @@
 {
-  "name": "پورتال کارکنان کایا",
+  "name": "کایا CRM",
   "short_name": "کایا CRM",
-  "description": "پورتال کارکنان صرافی کایا — مدیریت مکالمات واتساپ و نظارت",
+  "description": "کایا CRM — مدیریت مکالمات واتساپ و نظارت",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",

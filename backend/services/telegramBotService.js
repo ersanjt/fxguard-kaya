@@ -163,7 +163,7 @@ async function getRatesText() {
 
 async function getUserInfo(userId) {
     try {
-        const { User, Department, Branch } = _appModels || require('../models');
+        const { User } = _appModels || require('../models');
         const user = await User.findByPk(userId, {
             include: [
                 { association: 'branch', required: false },
@@ -276,7 +276,7 @@ async function findUserByChatId(chatId) {
     }
 }
 
-async function handleLink(chatId, token, fromUser) {
+async function handleLink(chatId, token, _fromUser) {
     if (!token) {
         await sendReply(chatId,
             `⚠️ لطفاً توکن را وارد کنید:\n` +

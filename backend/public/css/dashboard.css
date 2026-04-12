@@ -1444,6 +1444,39 @@
         .conv-tab:active { transform: scale(0.96); transition: transform 0.1s; }
         .conv-tab.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 500; }
         .conv-toolbar { display: flex; flex-direction: column; gap: 0; margin-bottom: 16px; position: relative; }
+        /* دسکتاپ: تب‌های سریع + نوار جستجو در یک ردیف (دو ستون)، فیلتر پیشرفته ردیف بعد تمام‌عرض */
+        @media (min-width: 901px) {
+            #pageConversations .conv-filters-two-col {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(200px, 34%);
+                gap: 8px 14px;
+                align-items: start;
+                margin-bottom: 16px;
+            }
+            #pageConversations .conv-filters-two-col > .conv-quick-tabs-bar {
+                grid-column: 1;
+                grid-row: 1;
+                margin-bottom: 0;
+            }
+            #pageConversations .conv-filters-two-col > .conv-quick-tabs-bar.is-collapsed {
+                margin-bottom: 0;
+            }
+            #pageConversations .conv-filters-two-col > .conv-toolbar {
+                display: contents;
+                margin-bottom: 0;
+            }
+            #pageConversations .conv-filters-two-col .conv-search-bar {
+                grid-column: 2;
+                grid-row: 1;
+                min-width: 0;
+                align-self: center;
+            }
+            #pageConversations .conv-filters-two-col .conv-advanced-filters {
+                grid-column: 1 / -1;
+                grid-row: 2;
+                margin-top: 0;
+            }
+        }
         /* نوار جستجو یکپارچه */
         .conv-search-bar { display: flex; align-items: center; gap: 0; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius-sm); overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
         .conv-search-bar:focus-within { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
@@ -4574,12 +4607,15 @@
                 width: 16px;
                 height: 16px;
             }
-            #pageConversations.wa-conversations-theme .conv-quick-tabs-bar {
+            #pageConversations.wa-conversations-theme .conv-filters-two-col {
                 margin-bottom: 8px;
+            }
+            #pageConversations.wa-conversations-theme .conv-filters-two-col > .conv-quick-tabs-bar {
+                margin-bottom: 0;
                 gap: 4px;
             }
-            #pageConversations.wa-conversations-theme .conv-quick-tabs-bar.is-collapsed {
-                margin-bottom: 6px;
+            #pageConversations.wa-conversations-theme .conv-filters-two-col > .conv-quick-tabs-bar.is-collapsed {
+                margin-bottom: 0;
             }
             #pageConversations.wa-conversations-theme .conv-quick-tabs-toggle {
                 padding: 5px 10px;
@@ -4598,9 +4634,6 @@
                 padding: 5px 11px;
                 font-size: 0.78rem;
                 border-radius: 999px;
-            }
-            #pageConversations.wa-conversations-theme .conv-toolbar {
-                margin-bottom: 8px;
             }
             #pageConversations.wa-conversations-theme .conv-search-bar {
                 border-radius: 8px;

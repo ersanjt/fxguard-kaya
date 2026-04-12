@@ -55,7 +55,6 @@ const storage = multer.diskStorage({
         }
     },
     filename: (req, file, cb) => {
-        const ext = (path.extname(file.originalname) || '').toLowerCase() || '.bin';
         const safe = Date.now() + '-' + (file.originalname || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 80);
         cb(null, safe);
     }
@@ -70,7 +69,6 @@ const upload = multer({
         }
         // MIME type can include codec params like "audio/webm;codecs=opus" — check base type
         const baseMime = (file.mimetype || '').split(';')[0].trim().toLowerCase();
-        const rawMime = (file.mimetype || '').trim().toLowerCase();
         if (
             !ALLOWED_MIME_TYPES.has(baseMime) &&
             !ALLOWED_MIME_TYPES.has(file.mimetype) &&

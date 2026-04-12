@@ -6,6 +6,9 @@ import retrofit2.http.*
 
 interface ApiService {
 
+    @GET("config")
+    suspend fun getPublicConfig(): Response<PublicConfigResponse>
+
     // Auth
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequest): Response<LoginResponse>
@@ -25,15 +28,19 @@ interface ApiService {
     suspend fun getConversations(
         @Query("page") page: Int = 1,
         @Query("limit") limit: Int = 50,
-        @Query("status") status: String? = null
+        @Query("status") status: String? = null,
+        @Query("search") search: String? = null
     ): Response<ConversationsResponse>
 
     @GET("conversations/{id}/messages")
     suspend fun getMessages(
         @Path("id") conversationId: String,
-        @Query("page") page: Int = 1,
-        @Query("limit") limit: Int = 50
+        @Query("limit") limit: Int = 100,
+        @Query("before") before: String? = null
     ): Response<MessagesResponse>
+
+    @POST("conversations/{id}/read")
+    suspend fun markConversationRead(@Path("id") conversationId: String): Response<Map<String, Any>>
 
     @POST("conversations/{id}/send")
     suspend fun sendMessage(

@@ -1,6 +1,6 @@
 require('dotenv').config();
 const models = require('./models');
-const { User, Department, sequelize } = models;
+const { User, sequelize } = models;
 const { MAIN_ADMIN_EMAILS } = require('./lib/permissions');
 const { ensureDefaultDepartments } = require('./services/defaultDepartments');
 

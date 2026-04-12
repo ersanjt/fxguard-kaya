@@ -1,8 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Tag, Customer, Conversation } = require('../models');
-const { Op } = require('sequelize');
-const { canAccessCustomer } = require('../lib/customerAccess');
+const { Tag } = require('../models');
 const { isValidUUID } = require('../lib/validation');
 
 // لیست همه تگ‌ها

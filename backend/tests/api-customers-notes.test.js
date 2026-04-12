@@ -11,7 +11,7 @@ const assert = require('assert');
 async function run() {
     console.log('Loading models...');
     const models = require('../models');
-    const { Customer, CustomerNote, User, Conversation, Message } = models;
+    const { Customer, CustomerNote } = models;
 
     assert(Customer, 'Customer model should exist');
     assert(CustomerNote, 'CustomerNote model should exist');

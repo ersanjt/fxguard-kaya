@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.ExperimentalMaterialApi
@@ -15,19 +17,32 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kaya.crm.data.models.Conversation
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun ConversationsScreen(viewModel: ConversationsViewModel = hiltViewModel()) {
+fun ConversationsScreen(
+    viewModel: ConversationsViewModel = hiltViewModel(),
+    pendingOpenConversationId: String? = null,
+    onPendingOpenConversationConsumed: () -> Unit = {}
+) {
     val conversations by viewModel.conversations.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
     val refreshing by viewModel.refreshing.collectAsState()
+    val selectedConversationId by viewModel.selectedConversationId.collectAsState()
+    val searchText by viewModel.searchText.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.load() }
+
+    LaunchedEffect(pendingOpenConversationId) {
+        val id = pendingOpenConversationId ?: return@LaunchedEffect
+        viewModel.openConversation(id)
+        onPendingOpenConversationConsumed()
+    }
 
     val onRefresh = { viewModel.refresh() }
     val pullRefreshState = rememberPullRefreshState(refreshing, onRefresh)
@@ -57,6 +72,15 @@ fun ConversationsScreen(viewModel: ConversationsViewModel = hiltViewModel()) {
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                item {
+                    OutlinedTextField(
+                        value = searchText,
+                        onValueChange = { viewModel.setSearchText(it) },
+                        modifier = Modifier.fillMaxWidth(),
+                        placeholder = { Text("جستجو نام یا شماره…") },
+                        singleLine = true
+                    )
+                }
                 if (conversations.isEmpty()) {
                     item {
                         Box(
@@ -68,7 +92,7 @@ fun ConversationsScreen(viewModel: ConversationsViewModel = hiltViewModel()) {
                     }
                 }
                 items(conversations, key = { it.id }) { conv ->
-                    ConversationItem(
+                    ConversationRow(
                         conversation = conv,
                         onClick = { viewModel.openConversation(conv.id) }
                     )
@@ -82,7 +106,7 @@ fun ConversationsScreen(viewModel: ConversationsViewModel = hiltViewModel()) {
         }
     }
 
-    viewModel.selectedConversationId?.let { id ->
+    selectedConversationId?.let { id ->
         ConversationDetailSheet(
             conversationId = id,
             onDismiss = { viewModel.closeConversation() },
@@ -92,7 +116,7 @@ fun ConversationsScreen(viewModel: ConversationsViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun ConversationItem(
+private fun ConversationRow(
     conversation: Conversation,
     onClick: () -> Unit
 ) {
@@ -180,8 +204,25 @@ private fun ConversationDetailSheet(
 ) {
     val messages by viewModel.messages.collectAsState()
     val messagesLoading by viewModel.messagesLoading.collectAsState()
-    var inputText by remember { mutableStateOf("") }
+    val loadingOlder by viewModel.loadingOlderMessages.collectAsState()
+    val hasMore by viewModel.hasMoreMessages.collectAsState()
+    val detailError by viewModel.detailError.collectAsState()
+    val sending by viewModel.sendingMessage.collectAsState()
+    val inputClearNonce by viewModel.inputClearNonce.collectAsState()
+
+    var inputText by remember(conversationId) { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(inputClearNonce) {
+        if (inputClearNonce > 0) inputText = ""
+    }
+
+    LaunchedEffect(detailError) {
+        val msg = detailError ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(msg)
+        viewModel.clearDetailError()
+    }
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
@@ -191,88 +232,138 @@ private fun ConversationDetailSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
-        Column(
+        Scaffold(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 500.dp)
-        ) {
-            Text(
-                "مکالمه",
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(16.dp)
-            )
-            Box(modifier = Modifier.weight(1f)) {
-                if (messagesLoading && messages.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(messages, key = { it.id }) { msg ->
-                            val isOutgoing = msg.direction == "outgoing"
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = if (isOutgoing) Arrangement.End else Arrangement.Start
-                            ) {
-                                Column(
-                                    horizontalAlignment = if (isOutgoing) Alignment.End else Alignment.Start
-                                ) {
-                                    Surface(
-                                        color = if (isOutgoing)
-                                            MaterialTheme.colorScheme.primaryContainer
-                                        else
-                                            MaterialTheme.colorScheme.surfaceVariant
-                                    ) {
-                                        Text(
-                                            text = msg.displayContent,
-                                            modifier = Modifier.padding(12.dp)
-                                        )
+                .heightIn(max = 520.dp),
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(padding)
+            ) {
+                Text(
+                    "مکالمه",
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+                Box(modifier = Modifier.weight(1f)) {
+                    if (messagesLoading && messages.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            if (hasMore) {
+                                item {
+                                    if (loadingOlder) {
+                                        Box(
+                                            modifier = Modifier.fillMaxWidth().padding(8.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                        }
+                                    } else {
+                                        TextButton(
+                                            onClick = { viewModel.loadOlderMessages() },
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text("پیام‌های قدیمی‌تر")
+                                        }
                                     }
-                                    val timeStr = msg.timestamp?.takeIf { it.isNotBlank() }
-                                        ?.take(19)?.replace('T', ' ') ?: ""
-                                    if (timeStr.isNotBlank()) {
-                                        Text(
-                                            timeStr,
-                                            style = MaterialTheme.typography.labelSmall,
-                                            modifier = Modifier.padding(top = 2.dp)
-                                        )
+                                }
+                            }
+                            items(messages, key = { it.id }) { msg ->
+                                val isOutgoing = msg.direction == "outgoing"
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = if (isOutgoing) Arrangement.End else Arrangement.Start
+                                ) {
+                                    Column(
+                                        horizontalAlignment = if (isOutgoing) Alignment.End else Alignment.Start
+                                    ) {
+                                        if (isOutgoing && !msg.user?.name.isNullOrBlank()) {
+                                            Text(
+                                                msg.user!!.name!!,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                        Surface(
+                                            color = if (isOutgoing)
+                                                MaterialTheme.colorScheme.primaryContainer
+                                            else
+                                                MaterialTheme.colorScheme.surfaceVariant
+                                        ) {
+                                            Text(
+                                                text = msg.displayContent.ifBlank { "—" },
+                                                modifier = Modifier.padding(12.dp)
+                                            )
+                                        }
+                                        val timeStr = msg.timestamp?.takeIf { it.isNotBlank() }
+                                            ?.take(19)?.replace('T', ' ') ?: ""
+                                        if (timeStr.isNotBlank()) {
+                                            Text(
+                                                timeStr,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                modifier = Modifier.padding(top = 2.dp)
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("پیام...") }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = {
-                        if (inputText.isNotBlank()) {
-                            viewModel.sendMessage(conversationId, inputText)
-                            inputText = ""
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = inputText,
+                        onValueChange = { inputText = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("پیام…") },
+                        enabled = !sending,
+                        singleLine = false,
+                        maxLines = 4,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                        keyboardActions = KeyboardActions(
+                            onSend = {
+                                val t = inputText.trim()
+                                if (t.isNotEmpty() && !sending) {
+                                    viewModel.sendMessage(conversationId, t)
+                                }
+                            }
+                        )
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            val t = inputText.trim()
+                            if (t.isNotEmpty() && !sending) {
+                                viewModel.sendMessage(conversationId, t)
+                            }
+                        },
+                        enabled = !sending && inputText.isNotBlank()
+                    ) {
+                        if (sending) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.Default.Send, contentDescription = "ارسال")
                         }
                     }
-                ) {
-                    Icon(Icons.Default.Send, contentDescription = "ارسال")
                 }
             }
         }

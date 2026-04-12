@@ -4,7 +4,7 @@
  */
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
-const { Message, Customer, User, Department, Conversation, WhatsappConfig } = require('../models');
+const { Message, Customer, Conversation, WhatsappConfig } = require('../models');
 const logger = require('../config/logger');
 
 const DEFAULT_DEPT_ASSIGNED = 'شما به دپارتمان {{deptName}} وصل شدید. به زودی پاسخگوی شما خواهیم بود.';

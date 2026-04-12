@@ -288,7 +288,7 @@ async function tryRerouteIfTopicChanged(conversation, messageContent, customerId
         const text = (messageContent || '').trim();
         if (text.length < 10) return;
         const departments = await Department.findAll({ where: { isActive: true } });
-        const { department: smartDept, method, confidence } = await selectBestDepartment(
+        const { department: smartDept, confidence } = await selectBestDepartment(
             departments,
             messageContent || '',
             { useAI: true }

@@ -87,12 +87,12 @@ function buildDemoCrossTickerItems(allItems) {
 }
 
 // GET /api/rates/config-status — وضعیت تنظیمات (آیا API key دارد؟)
-router.get('/config-status', async (req, res, next) => {
+router.get('/config-status', async (req, res, _next) => {
     res.json({ hasApiKey: !!NAVASAN_API_KEY });
 });
 
 // GET /api/rates — نرخ‌ها از API + اعمال تعدیلات؛ برای همه کاربران لاگین‌شده
-router.get('/', async (req, res, next) => {
+router.get('/', async (req, res, _next) => {
     try {
         const RATES_KEYS = await getRatesKeys();
         let raw = null;
@@ -342,7 +342,7 @@ router.get('/history', async (req, res, next) => {
 });
 
 // GET /api/rates/health — تست دسترسی به API خارجی (نیاز به auth دارد)
-router.get('/health', async (req, res, next) => {
+router.get('/health', async (req, res, _next) => {
     if (!NAVASAN_LATEST) return res.json({ ok: false, external: false, error: 'API key not configured' });
     try {
         const r = await axios.get(NAVASAN_LATEST, { timeout: 8000 });

@@ -3,7 +3,7 @@
   "version": "1.1.0",
   "private": true,
   "type": "module",
-  "description": "داشبورد CRM — Vite + ES modules (مهاجرت تدریجی از dashboard.js)",
+  "description": "کایا CRM — ماژول‌های Vite (مهاجرت تدریجی از dashboard.js)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

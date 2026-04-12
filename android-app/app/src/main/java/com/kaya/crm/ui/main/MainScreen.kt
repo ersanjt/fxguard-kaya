@@ -28,12 +28,13 @@ fun MainScreen(
     onLogout: () -> Unit,
     viewModel: MainViewModel = hiltViewModel()
 ) {
-    var selectedTab by remember { mutableStateOf(MainTab.DASHBOARD) }
+    var selectedTab by remember { mutableStateOf(MainTab.CONVERSATIONS) }
+    var pendingOpenConversationId by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("صرافی کایا", style = MaterialTheme.typography.titleLarge) },
+                title = { Text("کایا CRM", style = MaterialTheme.typography.titleLarge) },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -60,8 +61,16 @@ fun MainScreen(
         ) {
             when (selectedTab) {
                 MainTab.DASHBOARD -> DashboardScreen()
-                MainTab.CONVERSATIONS -> ConversationsScreen()
-                MainTab.CUSTOMERS -> CustomersScreen()
+                MainTab.CONVERSATIONS -> ConversationsScreen(
+                    pendingOpenConversationId = pendingOpenConversationId,
+                    onPendingOpenConversationConsumed = { pendingOpenConversationId = null }
+                )
+                MainTab.CUSTOMERS -> CustomersScreen(
+                    onOpenConversation = { convId ->
+                        pendingOpenConversationId = convId
+                        selectedTab = MainTab.CONVERSATIONS
+                    }
+                )
                 MainTab.TICKETS -> TicketsScreen()
                 MainTab.PROFILE -> ProfileScreen(
                     onLogout = {

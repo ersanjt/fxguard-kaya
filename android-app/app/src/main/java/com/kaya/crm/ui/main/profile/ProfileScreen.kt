@@ -14,7 +14,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kaya.crm.BuildConfig
 import com.kaya.crm.data.ApiConfig
+import com.kaya.crm.update.AppUpdateViewModel
 
 private fun resolveAppLink(raw: String, base: String): String {
     val s = raw.trim()
@@ -37,6 +39,7 @@ fun ProfileScreen(
     val user by viewModel.user.collectAsState()
     val publicBranding by viewModel.publicBranding.collectAsState()
     val savedServerUrl by viewModel.savedServerUrl.collectAsState(initial = null)
+    val appUpdateViewModel: AppUpdateViewModel = hiltViewModel()
     var showServerDialog by remember { mutableStateOf(false) }
     val iosUrlRaw = publicBranding?.iosAppUrl?.trim().orEmpty()
     val androidUrlRaw = publicBranding?.androidAppUrl?.trim().orEmpty()
@@ -97,6 +100,36 @@ fun ProfileScreen(
                 }
                 TextButton(onClick = { showServerDialog = true }) {
                     Text("تغییر")
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("به‌روزرسانی اپ", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "نسخهٔ نصب‌شده: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(
+                    "اگر روی سرور نسخهٔ جدید تعریف شده باشد، می‌توانید از اینجا بررسی و مستقیم از داخل اپ به‌روز کنید.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Button(
+                    onClick = { appUpdateViewModel.checkManual() },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("بررسی به‌روزرسانی از سرور")
                 }
             }
         }

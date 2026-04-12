@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const { CashBox, BankAccount, Transaction, Branch, User, Customer, sequelize } = require('../models');
 const { Op } = require('sequelize');
-const { literal } = require('sequelize');
 const { isValidUUID, parsePagination } = require('../lib/validation');
 const Decimal = require('decimal.js');
 const logger = require('../config/logger');
