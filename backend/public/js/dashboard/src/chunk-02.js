@@ -776,7 +776,7 @@
         }
         window.crmAvatarImgErr = crmAvatarImgErr;
         function resolveAvatarUrl(avatar) { return normalizeProfilePicUrl(avatar); }
-        function internalMsgAvatarHtml(fromUser) { const u = fromUser || {}; const name = (u.name || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); if (pic) return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)"></span>'; return '<span class="msg-avatar"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>'; }
+        function internalMsgAvatarHtml(fromUser, extraClass) { const u = fromUser || {}; const name = (u.name || u.username || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); const cls = 'msg-avatar' + (extraClass ? ' ' + extraClass : ''); if (pic) return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)"></span>'; return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>'; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         function refreshDashboard() {
@@ -911,6 +911,11 @@
             // Show toggle button
             const toggleBtn = document.getElementById('headerAnnToggleBtn');
             if (toggleBtn) toggleBtn.style.display = 'flex';
+        }
+        /** دکمهٔ «بیشتر» نوار اعلان — رفتن به صفحهٔ اعلان‌ها */
+        function handleAnnMoreClick(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            if (typeof showPage === 'function') showPage('announcements');
         }
         function openAnnouncementMarquee() {
             const el = document.getElementById('announcementMarquee');
@@ -1497,6 +1502,15 @@
                     closeChatMobile();
                     return;
                 }
+                const msgReplyBtn = target.closest('.msg-reply-btn[data-wa-id]');
+                if (msgReplyBtn && typeof setReplyTo === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const waId = msgReplyBtn.getAttribute('data-wa-id');
+                    const prev = msgReplyBtn.getAttribute('data-preview');
+                    setReplyTo(waId, prev != null ? prev : '');
+                    return;
+                }
                 // چت داخلی — دکمه‌ها و المان‌های کلیکی
                 if (target.closest('.internal-chat-new-btn') && typeof showNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); showNewChatForm(); return; }
                 if (target.closest('.internal-chat-back-btn') && typeof backToInternalChatList === 'function') { e.preventDefault(); e.stopPropagation(); backToInternalChatList(); return; }
@@ -1539,7 +1553,7 @@
                 // دکمه تنظیمات مکالمه (chat detail toggle)
                 if (target.closest('#chatDetailToggle') && typeof toggleChatDetailBar === 'function') { e.preventDefault(); e.stopPropagation(); toggleChatDetailBar(); return; }
                 // دکمه تمپلیت پیام در چت مکالمات
-                if (target.closest('#msgTemplateBtn') && typeof toggleTemplateDropdown === 'function') { e.preventDefault(); e.stopPropagation(); toggleTemplateDropdown(); return; }
+                if (target.closest('#waAttachTemplateBtn') && typeof toggleTemplateDropdown === 'function') { e.preventDefault(); e.stopPropagation(); toggleTemplateDropdown(); return; }
                 // آیتم‌های دراپ‌داون تمپلیت — کلیک برای درج در چت
                 // آیتم فایل template در dropdown
                 const fileTplItem = target.closest('.chat-file-tpl-item[data-file-id]');
@@ -1550,7 +1564,7 @@
                     const furl = fileTplItem.getAttribute('data-file-url') || '';
                     if (fid && typeof sendMsg === 'function') {
                         e.preventDefault(); e.stopPropagation();
-                        var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('msgTemplateBtn');
+                        var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn');
                         if (dd) dd.style.display = 'none'; if (btn) btn.setAttribute('aria-expanded', 'false');
                         apiFetch('/api/file-templates/' + fid + '/use', { method: 'POST' }).catch(function(){});
                         apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: { url: furl, filename: fname, mimetype: fmime } }) }).then(function(r) { if (!r.ok) toast((r.data && r.data.error) || t('err_generic'), true); });
@@ -1561,7 +1575,7 @@
                 if (tplItem && tplItem.hasAttribute('data-content')) {
                     var tid = tplItem.getAttribute('data-id');
                     const c = typeof unescapeFromDataAttr === 'function' ? unescapeFromDataAttr(tplItem.getAttribute('data-content') || '') : (tplItem.getAttribute('data-content') || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-                    if (typeof insertTemplateIntoChat === 'function') { e.preventDefault(); e.stopPropagation(); insertTemplateIntoChat(c, tid); var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('msgTemplateBtn'); if (dd) dd.style.display = 'none'; if (btn) btn.setAttribute('aria-expanded', 'false'); }
+                    if (typeof insertTemplateIntoChat === 'function') { e.preventDefault(); e.stopPropagation(); insertTemplateIntoChat(c, tid); var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn'); if (dd) dd.style.display = 'none'; if (btn) btn.setAttribute('aria-expanded', 'false'); }
                     return;
                 }
                 // کلیک روی آیتم تاریخچه مکالمات یا تاریخچه کامل در کارت مشتری — باز کردن مکالمه

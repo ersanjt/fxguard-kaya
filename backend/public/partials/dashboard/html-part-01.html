@@ -3,7 +3,7 @@
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, user-scalable=yes, minimum-scale=0.5">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover, user-scalable=yes, minimum-scale=0.5, interactive-widget=resizes-content">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,7 +18,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=45">
+    <link rel="stylesheet" href="/css/dashboard.css?v=50">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
@@ -456,32 +456,56 @@
                                     <button type="button" class="chat-detail-toggle" id="chatDetailToggle" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
                                 </div>
                             </div>
-                            <div id="convDetailBar" class="conv-detail-bar" style="display:none;">
-                                <div class="conv-detail-badges" id="convDetailBadges"></div>
-                                <div id="convSupervisionPanel" class="conv-supervision-panel" style="display:none;">
-                                    <div class="conv-supervision-title" data-i18n="conv_supervision_title">نظارت مدیر</div>
-                                    <div id="convSupervisionStats" class="conv-supervision-stats"></div>
-                                </div>
-                                <div id="convRatingSection" class="conv-rating-section" style="display:none;">
-                                    <label data-i18n="conv_rating">رتبه‌دهی / نظرسنجی</label>
-                                    <div class="conv-rating-stars" id="convRatingStars">
-                                        <button type="button" class="conv-rating-star" data-rating="1" aria-label="1">★</button>
-                                        <button type="button" class="conv-rating-star" data-rating="2" aria-label="2">★</button>
-                                        <button type="button" class="conv-rating-star" data-rating="3" aria-label="3">★</button>
-                                        <button type="button" class="conv-rating-star" data-rating="4" aria-label="4">★</button>
-                                        <button type="button" class="conv-rating-star" data-rating="5" aria-label="5">★</button>
-                                    </div>
-                                    <textarea id="convFeedback" class="conv-feedback-input" rows="2" placeholder="" data-i18n-ph="conv_feedback_ph"></textarea>
-                                </div>
-                                <div id="convDetailActions" class="conv-detail-actions" style="display:none;">
-                                    <button type="button" id="btnAssignToMe" class="btn-secondary btn-sm" onclick="assignConvToMe()" data-i18n="conv_assign_me">تخصیص به من</button>
-                                    <select id="convDetailStatus"><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
-                                    <select id="convDetailPriority"><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
-                                    <select id="convDetailDept" data-i18n-title="label_dept" title="دپارتمان"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
-                                    <select id="convDetailAssignee"><option value="">بدون تخصیص</option></select>
-                                    <button type="button" class="btn-secondary btn-sm" onclick="updateConvFromDetail()" data-i18n="btn_apply">اعمال</button>
-                                    <button type="button" id="btnConvArchive" class="btn-secondary btn-sm" onclick="archiveConversation()" data-i18n="btn_archive" style="display:none;">ارسال به آرشیو</button>
-                                    <button type="button" id="btnConvDelete" class="btn-danger btn-sm" onclick="deleteConversation()" data-i18n="btn_delete" style="display:none;">حذف</button>
+                            <div id="convDetailBar" class="conv-detail-bar" style="display:none;" hidden>
+                                <div class="conv-detail-inner">
+                                    <section class="conv-detail-section conv-detail-section--badges" aria-labelledby="convDetailSummaryHeading">
+                                        <h3 class="conv-detail-sr-title" id="convDetailSummaryHeading" data-i18n="conv_detail_summary">خلاصه مکالمه</h3>
+                                        <div class="conv-detail-badges" id="convDetailBadges" role="list"></div>
+                                    </section>
+                                    <section id="convSupervisionPanel" class="conv-detail-section conv-supervision-panel" style="display:none;" hidden aria-labelledby="convSupervisionHeading">
+                                        <h3 class="conv-supervision-title" id="convSupervisionHeading" data-i18n="conv_supervision_title">نظارت مدیر</h3>
+                                        <div id="convSupervisionStats" class="conv-supervision-stats" role="status"></div>
+                                    </section>
+                                    <section id="convRatingSection" class="conv-detail-section conv-rating-section" style="display:none;" hidden aria-labelledby="convRatingHeading">
+                                        <label id="convRatingHeading" class="conv-rating-heading" data-i18n="conv_rating">رتبه‌دهی / نظرسنجی</label>
+                                        <div class="conv-rating-stars" id="convRatingStars" role="group" aria-labelledby="convRatingHeading">
+                                            <button type="button" class="conv-rating-star" data-rating="1" aria-label="1">★</button>
+                                            <button type="button" class="conv-rating-star" data-rating="2" aria-label="2">★</button>
+                                            <button type="button" class="conv-rating-star" data-rating="3" aria-label="3">★</button>
+                                            <button type="button" class="conv-rating-star" data-rating="4" aria-label="4">★</button>
+                                            <button type="button" class="conv-rating-star" data-rating="5" aria-label="5">★</button>
+                                        </div>
+                                        <textarea id="convFeedback" class="conv-feedback-input" rows="2" placeholder="" data-i18n-ph="conv_feedback_ph" aria-describedby="convRatingHeading"></textarea>
+                                    </section>
+                                    <section id="convDetailActions" class="conv-detail-section conv-detail-actions" style="display:none;" hidden aria-labelledby="convDetailActionsHeading">
+                                        <h3 class="conv-detail-sr-title" id="convDetailActionsHeading" data-i18n="conv_detail_actions_title">تنظیمات و اقدامات</h3>
+                                        <div class="conv-detail-actions-top">
+                                            <button type="button" id="btnAssignToMe" class="btn-secondary btn-sm conv-detail-btn-assign" data-i18n="conv_assign_me">تخصیص به من</button>
+                                        </div>
+                                        <div class="conv-detail-fields-grid">
+                                            <div class="conv-detail-field">
+                                                <label for="convDetailStatus" class="conv-detail-field-label" data-i18n="conv_form_status">وضعیت</label>
+                                                <select id="convDetailStatus" class="conv-detail-select"><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
+                                            </div>
+                                            <div class="conv-detail-field">
+                                                <label for="convDetailPriority" class="conv-detail-field-label" data-i18n="conv_form_priority">اولویت</label>
+                                                <select id="convDetailPriority" class="conv-detail-select"><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                                            </div>
+                                            <div class="conv-detail-field conv-detail-field--full">
+                                                <label for="convDetailDept" class="conv-detail-field-label" data-i18n="label_dept">دپارتمان</label>
+                                                <select id="convDetailDept" class="conv-detail-select" data-i18n-title="label_dept" title="دپارتمان"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
+                                            </div>
+                                            <div class="conv-detail-field conv-detail-field--full">
+                                                <label for="convDetailAssignee" class="conv-detail-field-label" data-i18n="conv_form_assignee">مسئول</label>
+                                                <select id="convDetailAssignee" class="conv-detail-select"><option value="">بدون تخصیص</option></select>
+                                            </div>
+                                        </div>
+                                        <div class="conv-detail-actions-footer">
+                                            <button type="button" id="convDetailApplyBtn" class="btn-secondary btn-sm conv-detail-btn-apply" data-i18n="btn_apply">اعمال</button>
+                                            <button type="button" id="btnConvArchive" class="btn-secondary btn-sm" data-i18n="btn_archive" style="display:none;">ارسال به آرشیو</button>
+                                            <button type="button" id="btnConvDelete" class="btn-danger btn-sm" data-i18n="btn_delete" style="display:none;">حذف</button>
+                                        </div>
+                                    </section>
                                 </div>
                             </div>
                         </div>
@@ -509,11 +533,14 @@
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
                                 </button>
                                 <div class="chat-voice-live" aria-live="polite">
-                                    <span class="chat-voice-rec-dot" aria-hidden="true"></span>
-                                    <span class="chat-voice-rec-time" id="chatVoiceRecTime">0:00</span>
-                                    <div class="chat-voice-wave" id="chatVoiceWave" aria-hidden="true">
-                                        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                    <div class="chat-voice-live-main">
+                                        <span class="chat-voice-rec-dot" aria-hidden="true"></span>
+                                        <span class="chat-voice-rec-time" id="chatVoiceRecTime">0:00</span>
+                                        <div class="chat-voice-wave" id="chatVoiceWave" aria-hidden="true">
+                                            <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                                        </div>
                                     </div>
+                                    <span class="chat-voice-hint" id="chatVoiceHint" data-i18n="voice_recording_status"></span>
                                 </div>
                                 <div class="chat-voice-controls">
                                     <button type="button" class="chat-voice-action-btn chat-voice-pause-btn" id="chatVoicePauseBtn" onclick="toggleVoicePause()" title="مکث" aria-label="مکث">
@@ -526,21 +553,30 @@
                                 </div>
                             </div>
                             <div class="chat-compose-row wa-compose-row">
-                                <div class="chat-compose-tools wa-compose-tools-start" role="toolbar" aria-label="پیوست و ضبط">
-                                    <button type="button" class="chat-tool-btn wa-emoji-btn" id="waEmojiBtn" onclick="toggleWaEmojiPanel(event)" title="Emoji" data-i18n-title="wa_emoji" aria-label="Emoji" aria-expanded="false" aria-haspopup="true">😊</button>
-                                    <button type="button" class="chat-tool-btn chat-attach-btn" id="msgAttachBtn" onclick="document.getElementById('msgFileInput').click()" title="پیوست فایل" aria-label="پیوست فایل"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-paperclip"/></svg></button>
-                                    <div class="chat-template-wrap">
-                                        <button type="button" class="chat-tool-btn chat-attach-btn" id="msgTemplateBtn" data-i18n-title="msg_template" title="تمپلیت پیام" aria-label="تمپلیت پیام" aria-haspopup="true" aria-expanded="false"><svg width="22" height="22" viewBox="0 0 24 24"><use href="#icon-file-text"/></svg></button>
-                                        <div id="chatTemplateDropdown" class="chat-template-dropdown" style="display:none;"></div>
+                                <div class="wa-compose-attach-slot chat-template-wrap" role="group" aria-label="پیوست">
+                                    <button type="button" class="chat-tool-btn wa-attach-plus-btn" id="waAttachMenuBtn" onclick="toggleWaAttachMenu(event)" title="پیوست" data-i18n-title="attach_file" aria-label="پیوست" aria-expanded="false" aria-haspopup="true">
+                                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                                    </button>
+                                    <div id="waAttachMenu" class="wa-attach-menu" hidden role="menu">
+                                        <button type="button" class="wa-attach-menu-item" id="waAttachFileBtn" onclick="waAttachPickFile(event)" role="menuitem">
+                                            <span class="wa-attach-menu-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-paperclip"/></svg></span>
+                                            <span data-i18n="attach_file">سند / فایل</span>
+                                        </button>
+                                        <button type="button" class="wa-attach-menu-item" id="waAttachTemplateBtn" onclick="waOpenTemplatesFromAttachMenu(event)" role="menuitem">
+                                            <span class="wa-attach-menu-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24"><use href="#icon-file-text"/></svg></span>
+                                            <span data-i18n="msg_template">تمپلیت پیام</span>
+                                        </button>
                                     </div>
-                                    <button type="button" class="chat-tool-btn wa-sticker-btn" id="waStickerBtn" onclick="toggleWaStickerPanel(event)" title="Stickers" data-i18n-title="wa_stickers" aria-label="Stickers" aria-expanded="false">🎨</button>
-                                    <button type="button" class="chat-tool-btn wa-gif-btn" id="waGifBtn" onclick="waConvGifAttach(event)" title="GIF" data-i18n-title="wa_gif" aria-label="GIF">GIF</button>
-                                    <button type="button" class="chat-tool-btn chat-voice-btn wa-voice-left" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+                                    <div id="chatTemplateDropdown" class="chat-template-dropdown" style="display:none;"></div>
                                 </div>
-                                <div class="chat-compose-field wa-compose-pill-wrap">
+                                <div class="chat-compose-field wa-compose-pill-wrap wa-compose-pill-shell">
+                                    <button type="button" class="chat-tool-btn wa-emoji-btn" id="waEmojiBtn" onclick="toggleWaEmojiPanel(event)" title="Emoji" data-i18n-title="wa_emoji" aria-label="Emoji" aria-expanded="false" aria-haspopup="true">😊</button>
                                     <input type="text" id="msgInput" class="chat-compose-input wa-compose-pill" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off">
                                 </div>
-                                <button type="button" class="chat-send-btn chat-compose-send wa-send-circle" onclick="sendMsg()" data-i18n="btn_send" title="ارسال" aria-label="ارسال"><svg class="chat-send-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="chat-send-text" data-i18n="btn_send">ارسال</span></button>
+                                <div class="wa-compose-primary-actions">
+                                    <button type="button" class="chat-send-btn chat-compose-send wa-send-circle" onclick="sendMsg()" data-i18n="btn_send" title="ارسال" aria-label="ارسال"><svg class="chat-send-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="chat-send-text" data-i18n="btn_send">ارسال</span></button>
+                                    <button type="button" class="chat-tool-btn chat-voice-btn wa-voice-trailing" id="msgVoiceBtn" onclick="toggleVoiceRecord()" title="ضبط صدا" aria-label="ضبط پیام صوتی"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
+                                </div>
                             </div>
                             <div id="waEmojiPickerMount" class="wa-emoji-picker-mount" hidden></div>
                             <div id="waStickerPickerMount" class="wa-sticker-picker-mount" hidden></div>

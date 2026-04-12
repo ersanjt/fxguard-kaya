@@ -72,7 +72,10 @@ app.use(helmet({
                 "https://cdnjs.cloudflare.com",
                 "https://cdn.jsdelivr.net",
                 "https://unpkg.com",
+                "https://static.cloudflareinsights.com",
             ],
+            // داشبورد فعلی هنوز onclick روی HTML تزریق‌شده دارد؛ بدون این، CSP سطح ۳ رویدادهای inline را مسدود می‌کند
+            scriptSrcAttr: ["'unsafe-inline'"],
             styleSrc: [
                 "'self'",
                 "'unsafe-inline'",
@@ -87,7 +90,13 @@ app.use(helmet({
             ],
             imgSrc: ["'self'", "data:", "blob:", "https:", "https://cdn.jsdelivr.net", "https://s3.iranserver.com"],
             mediaSrc: ["'self'", "blob:", "data:"],
-            connectSrc: ["'self'", "wss:", "ws:"],
+            connectSrc: [
+                "'self'",
+                "wss:",
+                "ws:",
+                "https://cdn.jsdelivr.net",
+                "https://static.cloudflareinsights.com",
+            ],
             frameSrc: ["'none'"],
             objectSrc: ["'none'"],
             upgradeInsecureRequests: process.env.NODE_ENV === 'production' ? [] : null,

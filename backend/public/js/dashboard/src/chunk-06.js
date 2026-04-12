@@ -756,12 +756,16 @@
         }
         async function toggleTemplateDropdown() {
             const dd = document.getElementById('chatTemplateDropdown');
-            const btn = document.getElementById('msgTemplateBtn');
-            if (!dd || !btn) return;
-            if (dd.style.display === 'block') { dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); return; }
+            const btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn');
+            if (!dd) return;
+            if (dd.style.display === 'block') {
+                dd.style.display = 'none';
+                if (btn) btn.setAttribute('aria-expanded', 'false');
+                return;
+            }
             dd.innerHTML = '<div class="chat-template-dropdown-loading">' + (LANG === 'fa' ? 'در حال بارگذاری...' : 'Loading...') + '</div>';
             dd.style.display = 'block';
-            btn.setAttribute('aria-expanded', 'true');
+            if (btn) btn.setAttribute('aria-expanded', 'true');
             if (chatTemplatesCache.length === 0) {
                 const res = await apiFetch('/api/message-templates');
                 if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data;
@@ -792,7 +796,14 @@
             if (!html) html = '<div class="chat-template-dropdown-empty">' + (LANG === 'fa' ? 'تمپلیتی وجود ندارد. از بخش تمپلیت‌های پیام اضافه کنید.' : 'No templates. Add from Message Templates.') + '</div>';
             dd.innerHTML = html;
             document.addEventListener('click', function closeTemplateDd(e) {
-                if (!dd.contains(e.target) && e.target !== btn && !btn.contains(e.target)) { dd.style.display = 'none'; btn.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', closeTemplateDd); }
+                var menuBtn = document.getElementById('waAttachMenuBtn');
+                var insideTplAnchor = btn && (e.target === btn || btn.contains(e.target));
+                var insideAttachTrigger = menuBtn && (e.target === menuBtn || menuBtn.contains(e.target));
+                if (!dd.contains(e.target) && !insideTplAnchor && !insideAttachTrigger) {
+                    dd.style.display = 'none';
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                    document.removeEventListener('click', closeTemplateDd);
+                }
             });
         }
         function insertTemplateIntoChat(content, templateId) {

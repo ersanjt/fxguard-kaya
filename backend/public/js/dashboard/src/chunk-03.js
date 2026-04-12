@@ -395,7 +395,10 @@
             }
 
             // نوار جزئیات مکالمه + پیوست/ویس/تمپلیت — باید با ورود به صفحه مکالمات بایند شود (نه فقط staff-activity)
-            let updateConvBtn = document.querySelector('[onclick*="updateConvFromDetail"]');
+            let updateConvBtn = document.getElementById('convDetailApplyBtn');
+            if (!updateConvBtn) {
+                updateConvBtn = document.querySelector('[onclick*="updateConvFromDetail"], [data-onclick-backup*="updateConvFromDetail"]');
+            }
             if (!updateConvBtn) {
                 updateConvBtn = document.querySelector('.conv-detail-bar button[data-i18n="btn_apply"]');
             }
@@ -410,12 +413,6 @@
                     select.addEventListener('change', function() {});
                 }
             });
-            const msgAttachBtn = document.getElementById('msgAttachBtn');
-            if (msgAttachBtn) {
-                if (msgAttachBtn._crmFileClick) msgAttachBtn.removeEventListener('click', msgAttachBtn._crmFileClick);
-                msgAttachBtn._crmFileClick = function() { document.getElementById('msgFileInput').click(); };
-                msgAttachBtn.addEventListener('click', msgAttachBtn._crmFileClick);
-            }
             const msgFileInput = document.getElementById('msgFileInput');
             if (msgFileInput) {
                 const _prevFileHandler = msgFileInput._previewHandler;
@@ -461,11 +458,6 @@
                 voiceSendBtn.removeEventListener('click', finalizeVoiceRecordAndSend);
                 voiceSendBtn.addEventListener('click', finalizeVoiceRecordAndSend);
             }
-            const msgTemplateBtn = document.getElementById('msgTemplateBtn');
-            if (msgTemplateBtn) {
-                msgTemplateBtn.removeEventListener('click', toggleTemplateDropdown);
-                msgTemplateBtn.addEventListener('click', toggleTemplateDropdown);
-            }
             const chatReplyCancelBtn = document.querySelector('.chat-reply-cancel');
             if (chatReplyCancelBtn) {
                 chatReplyCancelBtn.removeEventListener('click', cancelReply);
@@ -480,6 +472,56 @@
                 star.addEventListener('click', star._crmRatingClick);
             });
             updateWaComposerState();
+            initConversationsMobileEnhancements();
+        }
+
+        /** موبایل / iOS: فاصلهٔ کیبورد مجازی (visualViewport) + اسکرول هنگام فوکوس روی ورودی پیام */
+        function initConversationsMobileEnhancements() {
+            if (window._crmConvMobileInit) return;
+            window._crmConvMobileInit = true;
+            function isConvNarrow() {
+                return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 900px)').matches;
+            }
+            function applyKbInset() {
+                if (!isConvNarrow()) {
+                    document.documentElement.style.setProperty('--crm-ios-kb', '0px');
+                    return;
+                }
+                var vv = window.visualViewport;
+                if (!vv) {
+                    document.documentElement.style.setProperty('--crm-ios-kb', '0px');
+                    return;
+                }
+                var inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+                document.documentElement.style.setProperty('--crm-ios-kb', inset + 'px');
+            }
+            window.applyCrmConvKbInset = applyKbInset;
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', applyKbInset);
+                window.visualViewport.addEventListener('scroll', applyKbInset);
+            }
+            window.addEventListener('orientationchange', function() { setTimeout(applyKbInset, 400); });
+            var msgInput = document.getElementById('msgInput');
+            if (msgInput && !msgInput._crmIosFocusBound) {
+                msgInput._crmIosFocusBound = true;
+                msgInput.addEventListener('focus', function() {
+                    if (!isConvNarrow()) return;
+                    setTimeout(function() {
+                        applyKbInset();
+                        try {
+                            msgInput.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                        } catch (e1) { try { msgInput.scrollIntoView(false); } catch (e2) {} }
+                        var pane = document.getElementById('chatMessages');
+                        if (pane) {
+                            try {
+                                pane.scrollTop = pane.scrollHeight;
+                            } catch (e3) {}
+                        }
+                    }, 300);
+                });
+                msgInput.addEventListener('blur', function() { setTimeout(applyKbInset, 120); });
+            }
+            applyKbInset();
         }
         
         // Setup Profile page event handlers
@@ -734,6 +776,12 @@
                 const canShowImg = !isGroup && rawPic && profilePicShowsImage(rawPic);
                 const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
+                let assigneeMetaSuffix = '';
+                if (assigneeName) {
+                    if (c.lastOutgoingIsAutoReply) assigneeMetaSuffix = ' · ' + escapeHtml(assigneeName);
+                    else if (c.assignee) assigneeMetaSuffix = ' · <span class="conv-item-assignee-inline">' + internalMsgAvatarHtml(c.assignee, 'conv-item-assignee-avatar') + '<span class="conv-item-assignee-name">' + escapeHtml(assigneeName) + '</span></span>';
+                    else assigneeMetaSuffix = ' · ' + escapeHtml(assigneeName);
+                }
                 const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
                 const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
                 const priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
@@ -748,7 +796,7 @@
                 }
                 const activeClass = (c.id === currentConvId) ? ' active' : '';
                 // نام و شماره در data-* ذخیره می‌شن — event handler میتواند کلیک رو handle کند
-                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + (assigneeName ? ' · ' + escapeHtml(assigneeName) : '') + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="conv-item-avatar">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + assigneeMetaSuffix + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
             if (appendMode) {
                 // آیتم‌های جدید به انتهای لیست اضافه می‌شن
@@ -786,6 +834,7 @@
                 const isCollapsed = bar.classList.contains('collapsed');
                 if (isCollapsed) {
                     bar.style.display = '';
+                    bar.removeAttribute('hidden');
                     bar.classList.remove('collapsed');
                     btn.classList.add('active');
                 } else {
@@ -803,6 +852,7 @@
             if (btn) btn.style.display = 'none';
             const pm = document.getElementById('headerMobileTitle');
             if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = t('nav_conversations');
+            if (typeof window.applyCrmConvKbInset === 'function') setTimeout(function() { window.applyCrmConvKbInset(); }, 200);
         }
         function updateChatBackBtn() {
             const btn = document.querySelector('.chat-back-btn');
@@ -853,15 +903,26 @@
             const layout = chatArea && chatArea.closest('.conv-layout');
             if (chatArea) chatArea.classList.add('show');
             if (layout) layout.classList.add('chat-open');
+            if (typeof window.applyCrmConvKbInset === 'function') setTimeout(function() { window.applyCrmConvKbInset(); }, 120);
             const backBtn = document.querySelector('.chat-back-btn');
             if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
             const pm = document.getElementById('headerMobileTitle');
             if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = name || phone || t('customer');
-            if (barEl) barEl.style.display = 'none';
+            if (barEl) {
+                barEl.style.display = 'none';
+                barEl.setAttribute('hidden', '');
+            }
             apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
             loadMessages(id);
             const canViewSupervision = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
-            if (canViewSupervision && supPanel && supStats) { loadConvStats(id, supStats); supPanel.style.display = 'block'; } else if (supPanel) supPanel.style.display = 'none';
+            if (canViewSupervision && supPanel && supStats) {
+                loadConvStats(id, supStats);
+                supPanel.style.display = 'block';
+                supPanel.removeAttribute('hidden');
+            } else if (supPanel) {
+                supPanel.style.display = 'none';
+                supPanel.setAttribute('hidden', '');
+            }
             apiFetch('/api/conversations/' + id).then(function(res) {
                 if (!res.ok || !res.data) return;
                 currentConvDetail = res.data;
@@ -871,21 +932,25 @@
                 const deptName = (d.department && d.department.name) ? d.department.name : '';
                 const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
                 const prioT = LANG === 'fa' ? { low: 'کم', normal: 'عادی', high: 'مهم', urgent: 'فوری' } : { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
-                badgesEl.innerHTML = '<span class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</span>' + (statusT[d.status] || d.status) + '</span><span class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'اولویت' : 'Priority') + '</span>' + (prioT[d.priority] || d.priority) + '</span><span class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + (LANG === 'fa' ? 'مسئول' : 'Assignee') + '</span>' + escapeHtml(assigneeName) + '</span>' + (deptName ? '<span class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + (LANG === 'fa' ? 'دپارتمان' : 'Dept') + '</span>' + escapeHtml(deptName) + '</span>' : '');
+                badgesEl.innerHTML = '<span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</span>' + (statusT[d.status] || d.status) + '</span><span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'اولویت' : 'Priority') + '</span>' + (prioT[d.priority] || d.priority) + '</span><span role="listitem" class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + (LANG === 'fa' ? 'مسئول' : 'Assignee') + '</span><span class="conv-badge-assignee-wrap">' + (d.assignee ? internalMsgAvatarHtml(d.assignee, 'conv-badge-assignee-avatar') : '') + '<span class="conv-badge-assignee-name">' + escapeHtml(assigneeName) + '</span></span></span>' + (deptName ? '<span role="listitem" class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + (LANG === 'fa' ? 'دپارتمان' : 'Dept') + '</span>' + escapeHtml(deptName) + '</span>' : '');
                 barEl.style.display = '';
+                barEl.removeAttribute('hidden');
                 barEl.classList.add('collapsed');
                 const toggleBtn = document.getElementById('chatDetailToggle');
                 if (toggleBtn) { toggleBtn.style.display = 'flex'; toggleBtn.classList.remove('active'); }
                 const canManage = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager'));
                 const isAssignedToMe = d.assignedTo === (currentUser && currentUser.id);
                 if (actionsEl) {
-                    actionsEl.style.display = 'flex';
+                    actionsEl.removeAttribute('hidden');
                     const assignBtn = document.getElementById('btnAssignToMe');
+                    const gridEl = actionsEl.querySelector('.conv-detail-fields-grid');
+                    const topRowEl = actionsEl.querySelector('.conv-detail-actions-top');
+                    const footerEl = actionsEl.querySelector('.conv-detail-actions-footer');
                     if (assignBtn) assignBtn.style.display = (canManage || !isAssignedToMe) ? '' : 'none';
-                    actionsEl.querySelectorAll('select').forEach(function(el){ el.style.display = canManage ? '' : 'none'; });
-                    var deptSel = document.getElementById('convDetailDept');
-                    if (deptSel) deptSel.style.display = canManage ? '' : 'none';
-                    const applyBtn = actionsEl.querySelector('[onclick="updateConvFromDetail()"]');
+                    if (topRowEl) topRowEl.style.display = (assignBtn && assignBtn.style.display !== 'none') ? '' : 'none';
+                    if (gridEl) gridEl.style.display = canManage ? 'grid' : 'none';
+                    actionsEl.querySelectorAll('.conv-detail-select').forEach(function(el) { el.style.display = canManage ? '' : 'none'; });
+                    const applyBtn = document.getElementById('convDetailApplyBtn');
                     if (applyBtn) applyBtn.style.display = canManage ? '' : 'none';
                 }
                 if (canManage) {
@@ -908,11 +973,29 @@
                 const delBtn = document.getElementById('btnConvDelete');
                 if (archBtn) archBtn.style.display = (canManageConversations() && d.status !== 'archived') ? '' : 'none';
                 if (delBtn) delBtn.style.display = canManageConversations() ? '' : 'none';
+                if (actionsEl) {
+                    const footerEl2 = actionsEl.querySelector('.conv-detail-actions-footer');
+                    const applyBtn2 = document.getElementById('convDetailApplyBtn');
+                    var footVis = false;
+                    if (footerEl2) {
+                        var fApply = applyBtn2 && applyBtn2.style.display !== 'none';
+                        var fArch = archBtn && archBtn.style.display !== 'none';
+                        var fDel = delBtn && delBtn.style.display !== 'none';
+                        footerEl2.style.display = (fApply || fArch || fDel) ? '' : 'none';
+                        footVis = footerEl2.style.display !== 'none';
+                    }
+                    var gridVis = actionsEl.querySelector('.conv-detail-fields-grid');
+                    var topVis = actionsEl.querySelector('.conv-detail-actions-top');
+                    var anyAct = (topVis && topVis.style.display !== 'none') || (gridVis && gridVis.style.display !== 'none') || footVis;
+                    actionsEl.style.display = anyAct ? 'flex' : 'none';
+                    if (!anyAct) actionsEl.setAttribute('hidden', '');
+                }
                 const chatSend = document.querySelector('.chat-send');
                 if (chatSend) chatSend.style.display = (d.status === 'archived') ? 'none' : '';
                 const ratingSection = document.getElementById('convRatingSection');
                 if (ratingSection) {
                     ratingSection.style.display = 'block';
+                    ratingSection.removeAttribute('hidden');
                     const stars = ratingSection.querySelectorAll('.conv-rating-star');
                     const r = d.rating || 0;
                     stars.forEach(function(s) {
@@ -1091,7 +1174,7 @@
                 const finalPic = (convData && convData.customer && convData.customer.profilePic) ? convData.customer.profilePic : '';
                 const finalIsGrp = convData ? !!(convData.metadata && convData.metadata.isGroup) : isGrp;
                 // اگر لیست مکالمات هنوز بارگذاری نشده، بارگذاری کن
-                const convList = document.getElementById('conversationsList');
+                const convList = document.getElementById('convList');
                 const needsLoad = !convList || convList.children.length === 0;
                 if (needsLoad) {
                     loadConvFiltersInit();
@@ -1102,7 +1185,7 @@
                 openChat(convId, finalName, finalPhone, finalPic, finalIsGrp);
             }).catch(function() {
                 // در صورت خطا با اطلاعات موجود باز کن
-                const convList = document.getElementById('conversationsList');
+                const convList = document.getElementById('convList');
                 const needsLoad = !convList || convList.children.length === 0;
                 if (needsLoad) {
                     loadConvFiltersInit();
@@ -1117,6 +1200,10 @@
         let _loadMessagesController = null;
         let _currentMsgConvId = null;
         let _currentMsgOldestId = null;
+        function escapeAttr(s) {
+            if (s == null || s === '') return '';
+            return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
         async function loadMessages(id, loadOlder) {
             // لغو درخواست قبلی در صورت تغییر مکالمه
             if (_loadMessagesController) { _loadMessagesController.abort(); _loadMessagesController = null; }
@@ -1155,7 +1242,8 @@
                 if (isOut && m.isAutoReply) {
                     senderLabel = '<div class="msg-sender">' + escapeHtml(t('ai_assistant') || 'AI assistant') + '</div>';
                 } else if (isOut && m.user && (m.user.name || m.user.username)) {
-                    senderLabel = '<div class="msg-sender">' + escapeHtml(m.user.name || m.user.username) + '</div>';
+                    const staffName = escapeHtml(m.user.name || m.user.username);
+                    senderLabel = '<div class="msg-sender msg-sender-staff">' + internalMsgAvatarHtml(m.user) + '<span class="msg-sender-staff-name">' + staffName + '</span></div>';
                 } else if (!isOut && currentConvIsGroup) {
                     const sn = (m.metadata && m.metadata.senderName) || null;
                     const sid = (m.metadata && m.metadata.senderId) || null;
@@ -1261,7 +1349,8 @@
                     if (!rSn && rSid) { const rRaw = String(rSid).replace(/@[a-z0-9.]+$/i, '').replace(/\D/g, ''); rSn = rRaw ? rRaw.replace(/^98/, '0') : null; }
                     if (rSn) replyPreviewSender = rSn + ': ';
                 }
-                const replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeHtml(m.whatsappId) + '" data-preview="' + escapeHtml(replyPreviewSender + preview) + '" onclick="event.stopPropagation();var b=this;setReplyTo(b.getAttribute(\'data-wa-id\'), b.getAttribute(\'data-preview\'))" title="' + (LANG === 'fa' ? 'پاسخ' : 'Reply') + '">↩</button>' : '';
+                const replyTitle = escapeAttr((typeof t === 'function' && t('msg_reply_short')) || (LANG === 'fa' ? 'پاسخ' : LANG === 'tr' ? 'Yanıtla' : 'Reply'));
+                const replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeAttr(m.whatsappId) + '" data-preview="' + escapeAttr(replyPreviewSender + preview) + '" title="' + replyTitle + '">↩</button>' : '';
                 const statusHtml = (isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + waMsgStatusTicks(m.status) + '</span>' : '';
                 return '<div class="msg ' + (isOut ? 'out' : 'in') + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');
@@ -1345,6 +1434,53 @@
 
         var _waPickerOpen = null;
         var _waPickerDocBound = false;
+        var _waAttachMenuDocListener = null;
+        function closeWaAttachMenu() {
+            var m = document.getElementById('waAttachMenu');
+            var b = document.getElementById('waAttachMenuBtn');
+            if (m) m.hidden = true;
+            if (b) b.setAttribute('aria-expanded', 'false');
+            if (_waAttachMenuDocListener) {
+                document.removeEventListener('click', _waAttachMenuDocListener, true);
+                _waAttachMenuDocListener = null;
+            }
+        }
+        function toggleWaAttachMenu(ev) {
+            if (ev) ev.stopPropagation();
+            var m = document.getElementById('waAttachMenu');
+            var b = document.getElementById('waAttachMenuBtn');
+            if (!m || !b) return;
+            if (!m.hidden) {
+                closeWaAttachMenu();
+                return;
+            }
+            closeWaPickers();
+            m.hidden = false;
+            b.setAttribute('aria-expanded', 'true');
+            _waAttachMenuDocListener = function(e) {
+                var t = e.target;
+                if (t && t.closest && (t.closest('#waAttachMenu') || t.closest('#waAttachMenuBtn'))) return;
+                closeWaAttachMenu();
+            };
+            setTimeout(function() {
+                document.addEventListener('click', _waAttachMenuDocListener, true);
+            }, 0);
+        }
+        function waAttachPickFile(ev) {
+            if (ev) { ev.stopPropagation(); ev.preventDefault(); }
+            closeWaAttachMenu();
+            var fi = document.getElementById('msgFileInput');
+            if (fi) fi.click();
+        }
+        function waOpenTemplatesFromAttachMenu(ev) {
+            if (ev) ev.stopPropagation();
+            closeWaAttachMenu();
+            if (typeof toggleTemplateDropdown === 'function') toggleTemplateDropdown();
+        }
+        window.toggleWaAttachMenu = toggleWaAttachMenu;
+        window.waAttachPickFile = waAttachPickFile;
+        window.waOpenTemplatesFromAttachMenu = waOpenTemplatesFromAttachMenu;
+        var _waPickerEmojiCat = 'all';
         var _waPickerData = {
             emoji: Array.from('😀😃😄😁😅😂🤣😊😇🙂😉😍🥰😘🥲😋😛🤪😎😢😭😤😡🤬🤔😴🙄👍👎👏🙌🙏🤝💪✌️🤞✋👌🤌💬❤️🧡💛💚💙💔✨🔥⭐🎉💯✅❌❓☕🍕🎂🎁🏠✈️📱💼📎🖼🎵🎶🌙☀️🌟🌈⚽🎮🔔📌'),
             sticker: Array.from('❤️😂🔥😍🥰👏😊🎉🤔😭🙏✨🌟💯🎂🍕🐱🐶🌹🥳😎🤗💪👍🙌🤩😇🥺🦄🌸🍀🌻🎈🎀🏆🍉🥑🍓💖💝👻🎃🎄🧸'),
@@ -1357,6 +1493,16 @@
                 { label: 'Hi', url: 'https://media.giphy.com/media/ASd0Ukj0y3qMM/giphy.gif' }
             ]
         };
+        function getWaEmojiCategoryMap() {
+            var all = _waPickerData.emoji || [];
+            return {
+                all: all,
+                smileys: all.slice(0, 34),
+                people: all.slice(34, 52),
+                symbols: all.slice(52, 65),
+                objects: all.slice(65)
+            };
+        }
         function waPickerText(kfa, ken, ktr) { return LANG === 'fa' ? kfa : (LANG === 'tr' ? ktr : ken); }
         function getWaPickerHostMount() {
             var e = document.getElementById('waEmojiPickerMount');
@@ -1369,11 +1515,7 @@
             if (e) { e.hidden = true; e.innerHTML = ''; }
             if (s) { s.hidden = true; s.innerHTML = ''; }
             var eb = document.getElementById('waEmojiBtn');
-            var sb = document.getElementById('waStickerBtn');
-            var gb = document.getElementById('waGifBtn');
             if (eb) eb.setAttribute('aria-expanded', 'false');
-            if (sb) sb.setAttribute('aria-expanded', 'false');
-            if (gb) gb.setAttribute('aria-expanded', 'false');
             _waPickerOpen = null;
         }
         function ensureWaPickerGlobalClose() {
@@ -1383,7 +1525,7 @@
                 if (!_waPickerOpen) return;
                 var target = ev && ev.target;
                 if (!target) return;
-                if (target.closest && (target.closest('#waEmojiPickerMount') || target.closest('#waStickerPickerMount') || target.closest('#waEmojiBtn') || target.closest('#waStickerBtn') || target.closest('#waGifBtn'))) return;
+                if (target.closest && (target.closest('#waEmojiPickerMount') || target.closest('#waStickerPickerMount') || target.closest('#waEmojiBtn') || target.closest('#waAttachMenu') || target.closest('#waAttachMenuBtn'))) return;
                 closeWaPickers();
             });
         }
@@ -1403,25 +1545,49 @@
         }
         function buildWaPickerTabs(activeTab, onTab) {
             var tabs = document.createElement('div');
-            tabs.className = 'wa-picker-tabs';
+            tabs.className = 'wa-picker-tabs wa-picker-tabs-footer';
             var tabDefs = [
-                { key: 'emoji', label: waPickerText('ایموجی', 'Emoji', 'Emoji') },
-                { key: 'sticker', label: waPickerText('استیکر', 'Stickers', 'Sticker') },
-                { key: 'gif', label: 'GIF' }
+                { key: 'emoji', label: waPickerText('ایموجی', 'Emoji', 'Emoji'), icon: '😊' },
+                { key: 'gif', label: 'GIF', icon: 'GIF' },
+                { key: 'sticker', label: waPickerText('استیکر', 'Stickers', 'Sticker'), icon: '◌' }
             ];
             tabDefs.forEach(function(td) {
                 var b = document.createElement('button');
                 b.type = 'button';
                 b.className = 'wa-picker-tab' + (td.key === activeTab ? ' active' : '');
-                b.textContent = td.label;
+                b.innerHTML = '<span class="wa-picker-tab-icon">' + td.icon + '</span><span class="wa-picker-tab-label">' + td.label + '</span>';
                 b.onclick = function(e) { e.stopPropagation(); onTab(td.key); };
                 tabs.appendChild(b);
             });
             return tabs;
         }
-        function renderWaPickerBody(tab, query, body) {
+        function renderWaPickerBody(tab, query, body, categoryWrap) {
             body.innerHTML = '';
+            if (categoryWrap) categoryWrap.innerHTML = '';
             var q = (query || '').trim().toLowerCase();
+            if (tab === 'emoji' && categoryWrap) {
+                var catDefs = [
+                    { key: 'all', icon: '🕘', title: waPickerText('اخیر', 'Recent', 'Son Kullanilan') },
+                    { key: 'smileys', icon: '😀', title: waPickerText('صورتک', 'Smileys', 'Yuzler') },
+                    { key: 'people', icon: '👍', title: waPickerText('افراد', 'People', 'Kisiler') },
+                    { key: 'symbols', icon: '❤️', title: waPickerText('نمادها', 'Symbols', 'Semboller') },
+                    { key: 'objects', icon: '🎉', title: waPickerText('اشیا', 'Objects', 'Nesneler') }
+                ];
+                categoryWrap.className = 'wa-picker-cats';
+                catDefs.forEach(function(c) {
+                    var cb = document.createElement('button');
+                    cb.type = 'button';
+                    cb.className = 'wa-picker-cat-btn' + (_waPickerEmojiCat === c.key ? ' active' : '');
+                    cb.title = c.title;
+                    cb.textContent = c.icon;
+                    cb.onclick = function(e) {
+                        e.stopPropagation();
+                        _waPickerEmojiCat = c.key;
+                        renderWaPickerBody(tab, query, body, categoryWrap);
+                    };
+                    categoryWrap.appendChild(cb);
+                });
+            }
             if (tab === 'gif') {
                 var gWrap = document.createElement('div');
                 gWrap.className = 'wa-gif-grid';
@@ -1440,6 +1606,14 @@
                 return;
             }
             var list = _waPickerData[tab] || [];
+            if (tab === 'emoji') {
+                var cmap = getWaEmojiCategoryMap();
+                list = cmap[_waPickerEmojiCat] || cmap.all;
+                var sec = document.createElement('div');
+                sec.className = 'wa-picker-section-title';
+                sec.textContent = waPickerText('یوز و شکلک‌ها', 'Smileys & people', 'Yuz ifadeleri ve insanlar');
+                body.appendChild(sec);
+            }
             if (q) list = list.filter(function(ch) { return String(ch).indexOf(q) >= 0; });
             var grid = document.createElement('div');
             grid.className = tab === 'emoji' ? 'wa-emoji-grid' : 'wa-sticker-grid';
@@ -1457,6 +1631,7 @@
         }
         function openWaUnifiedPicker(tab) {
             ensureWaPickerGlobalClose();
+            closeWaAttachMenu();
             var mount = getWaPickerHostMount();
             if (!mount) return;
             if (_waPickerOpen === tab) { closeWaPickers(); return; }
@@ -1468,7 +1643,7 @@
             header.className = 'wa-picker-header';
             var title = document.createElement('div');
             title.className = 'wa-picker-title';
-            title.textContent = waPickerText('انتخاب', 'Picker', 'Secici');
+            title.textContent = tab === 'emoji' ? waPickerText('ایموجی', 'Emoji', 'Emoji') : tab === 'gif' ? 'GIF' : waPickerText('استیکر', 'Stickers', 'Sticker');
             var closeBtn = document.createElement('button');
             closeBtn.type = 'button';
             closeBtn.className = 'wa-picker-close';
@@ -1477,6 +1652,8 @@
             header.appendChild(title);
             header.appendChild(closeBtn);
             var tabs = buildWaPickerTabs(tab, function(nextTab) { openWaUnifiedPicker(nextTab); });
+            var catWrap = document.createElement('div');
+            catWrap.className = 'wa-picker-cats';
             var searchWrap = document.createElement('div');
             searchWrap.className = 'wa-picker-search-wrap';
             var search = document.createElement('input');
@@ -1487,20 +1664,18 @@
             var body = document.createElement('div');
             body.className = 'wa-picker-body';
             shell.appendChild(header);
-            shell.appendChild(tabs);
+            shell.appendChild(catWrap);
             shell.appendChild(searchWrap);
             shell.appendChild(body);
+            shell.appendChild(tabs);
             mount.innerHTML = '';
             mount.appendChild(shell);
             mount.hidden = false;
-            renderWaPickerBody(tab, '', body);
-            search.addEventListener('input', function() { renderWaPickerBody(tab, search.value || '', body); });
+            if (tab !== 'emoji') _waPickerEmojiCat = 'all';
+            renderWaPickerBody(tab, '', body, catWrap);
+            search.addEventListener('input', function() { renderWaPickerBody(tab, search.value || '', body, catWrap); });
             var eb = document.getElementById('waEmojiBtn');
-            var sb = document.getElementById('waStickerBtn');
-            var gb = document.getElementById('waGifBtn');
             if (eb) eb.setAttribute('aria-expanded', tab === 'emoji' ? 'true' : 'false');
-            if (sb) sb.setAttribute('aria-expanded', tab === 'sticker' ? 'true' : 'false');
-            if (gb) gb.setAttribute('aria-expanded', tab === 'gif' ? 'true' : 'false');
             setTimeout(function() { try { search.focus(); } catch (_) {} }, 0);
         }
         async function sendWaGifFromPicker(url) {
@@ -1548,7 +1723,7 @@
             if (fi) fi.value = '';
             const sendWrap = document.querySelector('#pageConversations .chat-send');
             if (sendWrap) sendWrap.classList.remove('chat-send--has-attachment');
-            const attachBtn = document.getElementById('msgAttachBtn');
+            const attachBtn = document.getElementById('waAttachMenuBtn');
             if (attachBtn) attachBtn.classList.remove('chat-attach-has-file');
             updateWaComposerState();
         }
@@ -1600,7 +1775,7 @@
             bar.style.display = 'block';
             const sendWrap = document.querySelector('#pageConversations .chat-send');
             if (sendWrap) sendWrap.classList.add('chat-send--has-attachment');
-            const attachBtn = document.getElementById('msgAttachBtn');
+            const attachBtn = document.getElementById('waAttachMenuBtn');
             if (attachBtn) attachBtn.classList.add('chat-attach-has-file');
             updateWaComposerState();
             try {
@@ -1654,6 +1829,7 @@
 
         const voiceRecorderState = {
             active: false,
+            starting: false,
             recorder: null,
             chunks: [],
             stream: null,
@@ -1661,8 +1837,111 @@
             shouldSend: false,
             timerId: null,
             startAt: 0,
-            elapsedBeforePauseMs: 0
+            elapsedBeforePauseMs: 0,
+            supportsRecorderPause: false,
+            voiceMeterRaf: null,
+            audioContext: null,
+            analyser: null,
+            voiceSourceNode: null
         };
+        var VOICE_MIN_MS = 450;
+        function pickVoiceMimeType() {
+            if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) return 'audio/webm;codecs=opus';
+            if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) return 'audio/webm';
+            if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/mp4')) return 'audio/mp4';
+            if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/ogg')) return 'audio/ogg';
+            return '';
+        }
+        function safeStopMediaRecorder(rec) {
+            if (!rec || typeof rec.stop !== 'function') return;
+            try {
+                if (rec.state === 'inactive') return;
+                if (typeof rec.requestData === 'function') rec.requestData();
+                rec.stop();
+            } catch (_) {
+                try { if (rec.state !== 'inactive') rec.stop(); } catch (_2) {}
+            }
+        }
+        function setVoiceBarBusy(busy) {
+            ['chatVoiceSendBtn', 'chatVoiceDeleteBtn', 'chatVoicePauseBtn'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) {
+                    el.disabled = !!busy;
+                    el.setAttribute('aria-busy', busy ? 'true' : 'false');
+                }
+            });
+        }
+        function stopVoiceMeterAnimation() {
+            if (voiceRecorderState.voiceMeterRaf) {
+                cancelAnimationFrame(voiceRecorderState.voiceMeterRaf);
+                voiceRecorderState.voiceMeterRaf = null;
+            }
+            try {
+                if (voiceRecorderState.voiceSourceNode) {
+                    voiceRecorderState.voiceSourceNode.disconnect();
+                    voiceRecorderState.voiceSourceNode = null;
+                }
+                if (voiceRecorderState.audioContext && voiceRecorderState.audioContext.state !== 'closed') {
+                    voiceRecorderState.audioContext.close();
+                }
+            } catch (_) {}
+            voiceRecorderState.audioContext = null;
+            voiceRecorderState.analyser = null;
+            var wave = document.getElementById('chatVoiceWave');
+            if (wave) {
+                wave.classList.remove('chat-voice-wave--meter');
+                wave.querySelectorAll('span').forEach(function(el) {
+                    el.style.height = '';
+                    el.style.opacity = '';
+                });
+            }
+        }
+        function startVoiceMeter(stream) {
+            stopVoiceMeterAnimation();
+            var AC = window.AudioContext || window.webkitAudioContext;
+            if (!AC) return;
+            try {
+                var ctx = new AC();
+                voiceRecorderState.audioContext = ctx;
+                if (ctx.state === 'suspended') ctx.resume().catch(function() {});
+                var src = ctx.createMediaStreamSource(stream);
+                voiceRecorderState.voiceSourceNode = src;
+                var an = ctx.createAnalyser();
+                an.fftSize = 256;
+                an.smoothingTimeConstant = 0.62;
+                src.connect(an);
+                voiceRecorderState.analyser = an;
+                var waveEl = document.getElementById('chatVoiceWave');
+                if (waveEl) waveEl.classList.add('chat-voice-wave--meter');
+                var freq = new Uint8Array(an.frequencyBinCount);
+                function tick() {
+                    if (!voiceRecorderState.active) return;
+                    voiceRecorderState.voiceMeterRaf = requestAnimationFrame(tick);
+                    if (voiceRecorderState.paused) return;
+                    an.getByteFrequencyData(freq);
+                    var sum = 0;
+                    for (var i = 0; i < 20; i++) sum += freq[i];
+                    var level = Math.min(1, (sum / (20 * 255)) * 2);
+                    var spans = waveEl && waveEl.querySelectorAll('span');
+                    if (!spans || !spans.length) return;
+                    var now = performance.now() / 180;
+                    for (var j = 0; j < spans.length; j++) {
+                        var w = 0.2 + 0.8 * (0.5 + 0.5 * Math.sin(now + j * 0.52));
+                        var h = 3 + level * 18 * w;
+                        h = Math.max(3, Math.min(22, h));
+                        spans[j].style.height = h + 'px';
+                        spans[j].style.opacity = String(0.32 + level * 0.65);
+                    }
+                }
+                voiceRecorderState.voiceMeterRaf = requestAnimationFrame(tick);
+            } catch (_) {
+                stopVoiceMeterAnimation();
+            }
+        }
+        function syncVoiceHintI18n() {
+            var hint = document.getElementById('chatVoiceHint');
+            if (hint && typeof t === 'function') hint.textContent = t('voice_recording_status') || '';
+        }
         function formatVoiceDuration(ms) {
             const totalSec = Math.max(0, Math.floor((ms || 0) / 1000));
             const mm = Math.floor(totalSec / 60);
@@ -1696,14 +1975,18 @@
         }
         function resetVoiceRecordState() {
             stopVoiceTimer();
+            stopVoiceMeterAnimation();
             stopVoiceStreamTracks();
             voiceRecorderState.active = false;
+            voiceRecorderState.starting = false;
             voiceRecorderState.paused = false;
             voiceRecorderState.shouldSend = false;
             voiceRecorderState.recorder = null;
             voiceRecorderState.chunks = [];
             voiceRecorderState.startAt = 0;
             voiceRecorderState.elapsedBeforePauseMs = 0;
+            voiceRecorderState.supportsRecorderPause = false;
+            setVoiceBarBusy(false);
             updateVoiceTimerUI();
         }
         function updateVoiceBtn() {
@@ -1719,36 +2002,56 @@
                 bar.classList.toggle('is-paused', !!voiceRecorderState.paused);
             }
             if (sendWrap) sendWrap.classList.toggle('chat-send-recording', !!voiceRecorderState.active);
+            if (pauseBtn) {
+                var showPause = !!(voiceRecorderState.active && voiceRecorderState.supportsRecorderPause);
+                pauseBtn.style.display = showPause ? '' : 'none';
+                pauseBtn.setAttribute('aria-hidden', showPause ? 'false' : 'true');
+            }
             if (pauseBtn) pauseBtn.setAttribute('aria-label', voiceRecorderState.paused ? (LANG === 'fa' ? 'ادامه' : 'Resume') : (LANG === 'fa' ? 'مکث' : 'Pause'));
             if (pauseBtn) pauseBtn.setAttribute('title', pauseBtn.getAttribute('aria-label'));
             if (pauseIcon) pauseIcon.style.display = voiceRecorderState.paused ? 'none' : '';
             if (playIcon) playIcon.style.display = voiceRecorderState.paused ? '' : 'none';
             if (!btn) return;
             btn.classList.toggle('recording', voiceRecorderState.active);
-            btn.setAttribute('title', voiceRecorderState.active ? (t('voice_stop') || (LANG === 'fa' ? 'توقف ضبط' : 'Stop recording')) : (t('voice_record') || (LANG === 'fa' ? 'ضبط پیام صوتی' : 'Voice message')));
+            btn.setAttribute('title', voiceRecorderState.active ? (t('voice_use_bar_hint') || (LANG === 'fa' ? 'از نوار ضبط ارسال یا حذف' : 'Use the bar to send or discard')) : (t('voice_record') || (LANG === 'fa' ? 'ضبط پیام صوتی' : 'Voice message')));
             btn.setAttribute('aria-label', btn.getAttribute('title'));
+            if (voiceRecorderState.active) syncVoiceHintI18n();
             updateWaComposerState();
         }
         function cancelVoiceRecord() {
             if (!voiceRecorderState.active || !voiceRecorderState.recorder) return;
             voiceRecorderState.shouldSend = false;
-            try { voiceRecorderState.recorder.stop(); } catch (_) { resetVoiceRecordState(); updateVoiceBtn(); }
+            setVoiceBarBusy(true);
+            safeStopMediaRecorder(voiceRecorderState.recorder);
         }
         function finalizeVoiceRecordAndSend() {
             if (!voiceRecorderState.active || !voiceRecorderState.recorder) return;
+            var elapsed = getVoiceElapsedMs();
+            if (elapsed < VOICE_MIN_MS) {
+                toast(t('voice_too_short') || (LANG === 'fa' ? 'صدا خیلی کوتاه بود' : 'Recording too short'), true);
+                return;
+            }
             if (voiceRecorderState.paused) {
                 try { voiceRecorderState.recorder.resume(); } catch (_) {}
                 voiceRecorderState.paused = false;
             }
             voiceRecorderState.shouldSend = true;
-            try { voiceRecorderState.recorder.stop(); } catch (_) { resetVoiceRecordState(); updateVoiceBtn(); }
+            setVoiceBarBusy(true);
+            safeStopMediaRecorder(voiceRecorderState.recorder);
         }
         function toggleVoicePause() {
             if (!voiceRecorderState.active || !voiceRecorderState.recorder) return;
+            if (!voiceRecorderState.supportsRecorderPause) {
+                toast(t('voice_pause_unsupported') || (LANG === 'fa' ? 'مکث در این مرورگر نیست' : 'Pause not supported'), true);
+                return;
+            }
             if (voiceRecorderState.paused) {
                 try { voiceRecorderState.recorder.resume(); } catch (_) {}
                 voiceRecorderState.paused = false;
                 voiceRecorderState.startAt = Date.now();
+                if (voiceRecorderState.audioContext && voiceRecorderState.audioContext.state === 'suspended') {
+                    voiceRecorderState.audioContext.resume().catch(function() {});
+                }
                 startVoiceTimer();
             } else {
                 try { voiceRecorderState.recorder.pause(); } catch (_) {}
@@ -1763,12 +2066,22 @@
                 toast(t('voice_no_support') || (LANG === 'fa' ? 'ضبط صدا در این مرورگر پشتیبانی نمی‌شود' : 'Voice recording not supported'), true);
                 return;
             }
+            if (voiceRecorderState.active || voiceRecorderState.starting) return;
+            voiceRecorderState.starting = true;
             navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
-                const mime = (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) ? 'audio/webm;codecs=opus' : (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm')) ? 'audio/webm' : 'audio/ogg';
+                var mime = pickVoiceMimeType();
+                var recorder;
                 try {
-                    var recorder = new MediaRecorder(stream, { mimeType: mime });
+                    recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
                 } catch (e) {
-                    recorder = new MediaRecorder(stream);
+                    try {
+                        recorder = new MediaRecorder(stream);
+                    } catch (e2) {
+                        voiceRecorderState.starting = false;
+                        try { stream.getTracks().forEach(function(tk) { tk.stop(); }); } catch (_) {}
+                        toast(t('voice_no_support') || (LANG === 'fa' ? 'ضبط صدا پشتیبانی نمی‌شود' : 'Recording not supported'), true);
+                        return;
+                    }
                 }
                 voiceRecorderState.chunks = [];
                 voiceRecorderState.stream = stream;
@@ -1776,42 +2089,69 @@
                 voiceRecorderState.shouldSend = false;
                 voiceRecorderState.elapsedBeforePauseMs = 0;
                 voiceRecorderState.startAt = Date.now();
+                voiceRecorderState.supportsRecorderPause = typeof recorder.pause === 'function';
                 recorder.ondataavailable = function(e) { if (e.data && e.data.size) voiceRecorderState.chunks.push(e.data); };
                 recorder.onstop = function() {
-                    const shouldSend = !!voiceRecorderState.shouldSend;
-                    const chunks = voiceRecorderState.chunks.slice();
-                    const mimeType = recorder.mimeType || 'audio/webm';
+                    var shouldSend = !!voiceRecorderState.shouldSend;
+                    var durationMs = getVoiceElapsedMs();
+                    var chunks = voiceRecorderState.chunks.slice();
+                    var mimeType = (recorder.mimeType || '').split(';')[0].trim() || 'audio/webm';
                     resetVoiceRecordState();
                     updateVoiceBtn();
                     if (!shouldSend) return;
-                    const blob = new Blob(chunks, { type: mimeType });
-                    if (blob.size > 0) sendVoiceMessage(blob);
+                    var blob = new Blob(chunks, { type: mimeType });
+                    if (blob.size < 256) {
+                        toast(t('voice_too_short') || (LANG === 'fa' ? 'صدا خیلی کوتاه بود' : 'Recording too short'), true);
+                        return;
+                    }
+                    if (durationMs < VOICE_MIN_MS) {
+                        toast(t('voice_too_short') || (LANG === 'fa' ? 'صدا خیلی کوتاه بود' : 'Recording too short'), true);
+                        return;
+                    }
+                    sendVoiceMessage(blob);
                 };
-                recorder.start(200);
+                try {
+                    recorder.start(250);
+                } catch (e3) {
+                    voiceRecorderState.starting = false;
+                    stopVoiceStreamTracks();
+                    toast(t('voice_err_open') || (LANG === 'fa' ? 'ضبط شروع نشد' : 'Could not start recording'), true);
+                    return;
+                }
                 voiceRecorderState.recorder = recorder;
                 voiceRecorderState.active = true;
+                voiceRecorderState.starting = false;
                 startVoiceTimer();
                 updateVoiceTimerUI();
+                startVoiceMeter(stream);
                 updateVoiceBtn();
-            }).catch(function() {
-                toast(t('voice_no_permission') || (LANG === 'fa' ? 'دسترسی به میکروفون داده نشد' : 'Microphone access denied'), true);
+                syncVoiceHintI18n();
+            }).catch(function(err) {
+                voiceRecorderState.starting = false;
+                var name = err && err.name;
+                if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+                    toast(t('voice_no_permission') || (LANG === 'fa' ? 'دسترسی به میکروفون داده نشد' : 'Microphone access denied'), true);
+                } else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+                    toast(t('voice_no_mic') || (LANG === 'fa' ? 'میکروفونی پیدا نشد' : 'No microphone'), true);
+                } else {
+                    toast(t('voice_err_open') || (LANG === 'fa' ? 'میکروفون باز نشد' : 'Could not open microphone'), true);
+                }
             });
-        }
-        function stopVoiceRecord() {
-            if (!voiceRecorderState.recorder) return;
-            finalizeVoiceRecordAndSend();
         }
         function toggleVoiceRecord() {
             if (!currentConvId) { toast(LANG === 'fa' ? 'ابتدا یک مکالمه باز کنید' : 'Open a conversation first', true); return; }
-            if (voiceRecorderState.active) stopVoiceRecord();
-            else startVoiceRecord();
+            if (voiceRecorderState.active) {
+                toast(t('voice_use_bar_hint') || (LANG === 'fa' ? 'از نوار ضبط ارسال یا حذف را بزنید' : 'Use the recording bar to send or discard'), false);
+                return;
+            }
+            startVoiceRecord();
         }
         async function sendVoiceMessage(blob) {
             if (!currentConvId || !blob || blob.size === 0) return;
             const fd = new FormData();
             const rawType = blob.type || '';
             const baseMime = rawType.split(';')[0].trim() || 'audio/webm';
-            const ext = baseMime.indexOf('ogg') >= 0 ? '.ogg' : baseMime.indexOf('mp4') >= 0 ? '.m4a' : '.webm';
+            const ext = baseMime.indexOf('ogg') >= 0 ? '.ogg' : (baseMime.indexOf('mp4') >= 0 || baseMime.indexOf('aac') >= 0) ? '.m4a' : '.webm';
             // Create new blob with clean MIME type so server accepts it
             const cleanBlob = new Blob([blob], { type: baseMime });
             fd.append('file', cleanBlob, 'voice' + ext);

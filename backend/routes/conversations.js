@@ -1,6 +1,5 @@
 const express = require('express');
 const router = express.Router();
-const axios = require('axios');
 const fs = require('fs');
 const fsPromises = require('fs').promises;
 const path = require('path');
@@ -47,7 +46,7 @@ router.post('/', async (req, res, next) => {
             where: { customerId, status: { [Op.notIn]: ['closed', 'archived'] } },
             include: [
                 { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'] },
-                { model: User, as: 'assignee', attributes: ['id', 'name'] },
+                { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
                 { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
                 { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
             ]
@@ -66,7 +65,7 @@ router.post('/', async (req, res, next) => {
             conversation = await Conversation.findByPk(conversation.id, {
                 include: [
                     { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'] },
-                    { model: User, as: 'assignee', attributes: ['id', 'name'] },
+                    { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
                     { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
                     { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
                 ]
@@ -213,7 +212,7 @@ router.get('/', async (req, res, next) => {
         const escapedSearch = search ? search.replace(/[%_\\]/g, '\\$&') : null;
         const include = [
             { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'], ...(escapedSearch ? { where: { [Op.or]: [{ name: { [Op.like]: '%' + escapedSearch + '%' } }, { phone: { [Op.like]: '%' + escapedSearch + '%' } }] }, required: true } : {}) },
-            { model: User, as: 'assignee', attributes: ['id', 'name'] },
+            { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
             { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
             { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
         ];
@@ -282,7 +281,7 @@ router.get('/:id/messages', async (req, res, next) => {
         const total = await Message.count({ where: { conversationId: req.params.id } });
         const messages = await Message.findAll({
             where: msgWhere,
-            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username'], required: false }],
+            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username', 'avatar'], required: false }],
             order: [['timestamp', 'DESC']],
             limit: pageLimit
         });
@@ -364,8 +363,8 @@ router.get('/:id/stats', async (req, res, next) => {
             Message.findAll({
                 where: { conversationId: convId, direction: 'outgoing', userId: { [Op.ne]: null } },
                 attributes: ['userId', [sequelize.fn('MIN', sequelize.col('timestamp')), 'firstAt']],
-                include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username'], required: false }],
-                group: ['userId', 'user.id', 'user.name', 'user.username'],
+                include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username', 'avatar'], required: false }],
+                group: ['userId', 'user.id', 'user.name', 'user.username', 'user.avatar'],
                 order: [[sequelize.fn('MIN', sequelize.col('timestamp')), 'ASC']],
                 raw: false
             })
@@ -410,7 +409,7 @@ router.patch('/:id', async (req, res, next) => {
         const conversation = await Conversation.findByPk(req.params.id, {
             include: [
                 { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'] },
-                { model: User, as: 'assignee', attributes: ['id', 'name'] }
+                { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] }
             ]
         });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
@@ -519,7 +518,7 @@ router.patch('/:id', async (req, res, next) => {
         const updated = await Conversation.findByPk(req.params.id, {
             include: [
                 { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'] },
-                { model: User, as: 'assignee', attributes: ['id', 'name'] },
+                { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
                 { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
                 { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
             ]

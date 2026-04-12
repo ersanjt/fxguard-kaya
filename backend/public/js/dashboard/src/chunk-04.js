@@ -82,7 +82,7 @@
         document.addEventListener('click', function(ev) {
             if (!ev || !ev.target) return;
             var el = ev.target;
-            if (el.closest && (el.closest('#waEmojiPickerMount') || el.closest('#waStickerPickerMount') || el.closest('#waEmojiBtn') || el.closest('#waStickerBtn'))) return;
+            if (el.closest && (el.closest('#waEmojiPickerMount') || el.closest('#waStickerPickerMount') || el.closest('#waEmojiBtn') || el.closest('#waAttachMenuBtn'))) return;
             closeWaPickers();
         }, false);
         function openImagePreviewModal(imgSrc) {
