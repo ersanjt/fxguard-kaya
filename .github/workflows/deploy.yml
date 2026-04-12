@@ -36,7 +36,20 @@ jobs:
 
       - name: Build Android release APK (OTA)
         working-directory: android-app
-        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon -q
+        env:
+          # حافظهٔ بیشتر برای Compose/KSP روی runner (گرادل پیش‌فرض ۲۰۴۸م گاهی OOM می‌دهد)
+          GRADLE_OPTS: "-Xmx3584m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
+        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Verify release APK exists
+        run: |
+          APK="android-app/app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$APK" ]; then
+            echo "::error::Release APK not found at $APK — see Gradle step logs above."
+            ls -la android-app/app/build/outputs/apk/release/ 2>/dev/null || ls -laR android-app/app/build/outputs/ 2>/dev/null || true
+            exit 1
+          fi
+          ls -lh "$APK"
 
       - name: Ensure releases directory on server
         uses: appleboy/ssh-action@v1.0.3
