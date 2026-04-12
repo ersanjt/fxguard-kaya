@@ -21,6 +21,15 @@ data class LoginResponse(
     @SerializedName("error") val error: String? = null
 )
 
+data class ForgotPasswordRequest(
+    @SerializedName("email") val email: String
+)
+
+data class ForgotPasswordResponse(
+    @SerializedName("message") val message: String? = null,
+    @SerializedName("error") val error: String? = null
+)
+
 data class DeptBranchBrief(
     @SerializedName("id") val id: String? = null,
     @SerializedName("name") val name: String? = null

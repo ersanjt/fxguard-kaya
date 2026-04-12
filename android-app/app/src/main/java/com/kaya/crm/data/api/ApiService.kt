@@ -14,6 +14,9 @@ interface ApiService {
     @POST("auth/login")
     suspend fun login(@Body body: LoginRequest): Response<LoginResponse>
 
+    @POST("auth/forgot-password")
+    suspend fun forgotPassword(@Body body: ForgotPasswordRequest): Response<ForgotPasswordResponse>
+
     @POST("auth/totp/verify-login")
     suspend fun verifyTotp(@Body body: TotpRequest): Response<LoginResponse>
 

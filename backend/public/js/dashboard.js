@@ -7034,68 +7034,88 @@
                 bottomBar.classList.remove('has-mobile-tab');
             }
         }
-        function applyBranding(s) {
+        var PANEL_BRANDING_STATE = {};
+        function applyBranding(s, brandingOpts) {
             if (!s) return;
+            brandingOpts = brandingOpts || {};
+            if (brandingOpts.full) {
+                PANEL_BRANDING_STATE = Object.assign({}, s);
+            } else {
+                PANEL_BRANDING_STATE = Object.assign({}, PANEL_BRANDING_STATE, s);
+            }
+            const b = PANEL_BRANDING_STATE;
             const defTitle = (LANG === 'fa' ? 'پورتال کارکنان کایا | صرافی کایا' : 'Kaya Exchange | Staff Portal');
             const defSite = (LANG === 'fa' ? 'صرافی کایا' : 'Kaya Exchange');
             const defFooter = (LANG === 'fa' ? 'صرافی کایا — پورتال کارکنان' : 'Kaya Exchange — Staff Portal');
-            if (s.pageTitle) document.title = s.pageTitle; else document.title = defTitle;
+            if (b.pageTitle) document.title = b.pageTitle; else document.title = defTitle;
             const fav = document.getElementById('favicon');
-            if (fav) fav.href = (s.faviconUrl && s.faviconUrl.trim()) ? s.faviconUrl : '/favicon-kaya.svg';
-            const logoText = s.siteName || defSite;
+            if (fav) fav.href = (b.faviconUrl && String(b.faviconUrl).trim()) ? b.faviconUrl : '/favicon-kaya.svg';
+            const logoText = b.siteName || defSite;
+            const panelLogoSrc = (b.logoUrl && String(b.logoUrl).trim()) || '';
+            const loginLogoSrc = (b.loginLogoUrl && String(b.loginLogoUrl).trim()) || panelLogoSrc;
             const headerIcon = document.getElementById('headerLogoIcon');
             if (headerIcon) {
-                if (s.logoUrl && s.logoUrl.trim()) { headerIcon.innerHTML = '<img src="' + escapeHtml(s.logoUrl) + '" alt="" style="width:28px;height:28px;object-fit:contain">'; } else { headerIcon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg>'; }
+                if (panelLogoSrc) {
+                    headerIcon.classList.add('logo-icon--custom');
+                    headerIcon.innerHTML = '<img src="' + escapeHtml(panelLogoSrc) + '" alt="" style="width:28px;height:28px;object-fit:contain">';
+                } else {
+                    headerIcon.classList.remove('logo-icon--custom');
+                    headerIcon.innerHTML = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg>';
+                }
             }
             const headerLogoText = document.getElementById('headerLogoText');
             if (headerLogoText) headerLogoText.textContent = logoText;
             const headerLogo = document.getElementById('headerLogo');
             if (headerLogo) headerLogo.setAttribute('aria-label', logoText + (LANG === 'fa' ? ' — بازگشت به داشبورد' : ' — Back to dashboard'));
             const footerBrand = document.getElementById('appFooterBrand');
-            if (footerBrand) footerBrand.textContent = (s.footerText && s.footerText.trim()) ? s.footerText : defFooter;
+            if (footerBrand) footerBrand.textContent = (b.footerText && String(b.footerText).trim()) ? b.footerText : defFooter;
             const appFooter = document.getElementById('appFooter');
             if (appFooter) {
-                appFooter.style.display = (s.showFooter === false) ? 'none' : '';
-                const style = (s.footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(s.footerStyle) >= 0) ? s.footerStyle : 'accent';
+                appFooter.style.display = (b.showFooter === false) ? 'none' : '';
+                const style = (b.footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(b.footerStyle) >= 0) ? b.footerStyle : 'accent';
                 appFooter.classList.remove('app-footer--accent', 'app-footer--minimal', 'app-footer--compact', 'app-footer--line');
                 appFooter.classList.add('app-footer--' + style);
             }
             updateBottomBarVisibility();
             const loginTitleEl = document.getElementById('loginTitle');
-            if (loginTitleEl) loginTitleEl.textContent = (s.loginTitle && s.loginTitle.trim()) ? s.loginTitle : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal');
+            if (loginTitleEl) loginTitleEl.textContent = (b.loginTitle && String(b.loginTitle).trim()) ? b.loginTitle : (LANG === 'fa' ? 'پورتال کارکنان کایا' : 'Kaya Staff Portal');
             const setLoginLogo = function(containerId, size) {
                 const c = document.getElementById(containerId);
                 if (!c) return;
-                if (s.logoUrl && s.logoUrl.trim()) { c.innerHTML = '<img src="' + escapeHtml(s.logoUrl) + '" alt="" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain">'; } else { c.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg>'; }
+                if (loginLogoSrc) {
+                    c.innerHTML = '<img src="' + escapeHtml(loginLogoSrc) + '" alt="" style="width:' + size + 'px;height:' + size + 'px;object-fit:contain">';
+                } else {
+                    c.innerHTML = '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg>';
+                }
             };
             setLoginLogo('loginLogo', 48);
             setLoginLogo('loginLogoTotp', 40);
             const root = document.documentElement;
             const target = document.body;
-            if (s.primaryColor && /^#[0-9a-fA-F]{6}$/.test(s.primaryColor)) {
-                const r = parseInt(s.primaryColor.slice(1, 3), 16); const g = parseInt(s.primaryColor.slice(3, 5), 16); const b = parseInt(s.primaryColor.slice(5, 7), 16);
-                const hoverHex = '#' + [r, g, b].map(function(x) { return Math.max(0, Math.min(255, x - 20)).toString(16).padStart(2, '0'); }).join('');
+            if (b.primaryColor && /^#[0-9a-fA-F]{6}$/.test(b.primaryColor)) {
+                const r = parseInt(b.primaryColor.slice(1, 3), 16); const g = parseInt(b.primaryColor.slice(3, 5), 16); const bl = parseInt(b.primaryColor.slice(5, 7), 16);
+                const hoverHex = '#' + [r, g, bl].map(function(x) { return Math.max(0, Math.min(255, x - 20)).toString(16).padStart(2, '0'); }).join('');
                 [root, target].forEach(function(el) {
-                    if (el) { el.style.setProperty('--accent', s.primaryColor); el.style.setProperty('--accent-hover', hoverHex); el.style.setProperty('--accent-soft', 'rgba(' + r + ',' + g + ',' + b + ',0.15)'); }
+                    if (el) { el.style.setProperty('--accent', b.primaryColor); el.style.setProperty('--accent-hover', hoverHex); el.style.setProperty('--accent-soft', 'rgba(' + r + ',' + g + ',' + bl + ',0.15)'); }
                 });
             } else {
                 [root, target].forEach(function(el) {
                     if (el) { el.style.removeProperty('--accent'); el.style.removeProperty('--accent-hover'); el.style.removeProperty('--accent-soft'); }
                 });
             }
-            const themeClass = (s.uiTheme && s.uiTheme !== 'default') ? 'theme-' + s.uiTheme : '';
+            const themeClass = (b.uiTheme && b.uiTheme !== 'default') ? 'theme-' + b.uiTheme : '';
             document.body.classList.remove('theme-minimal', 'theme-dark', 'theme-light', 'theme-ocean', 'theme-warm');
             if (themeClass) document.body.classList.add(themeClass);
-            const fontSizeClass = (s.fontSize && ['small', 'medium', 'large'].indexOf(s.fontSize) >= 0) ? 'font-size-' + s.fontSize : 'font-size-medium';
+            const fontSizeClass = (b.fontSize && ['small', 'medium', 'large'].indexOf(b.fontSize) >= 0) ? 'font-size-' + b.fontSize : 'font-size-medium';
             document.body.classList.remove('font-size-small', 'font-size-medium', 'font-size-large');
             document.body.classList.add(fontSizeClass);
-            if (s.fontFamily && s.fontFamily.trim()) {
-                root.style.setProperty('--font', s.fontFamily.trim());
-                root.style.setProperty('--font-ltr', s.fontFamily.trim());
+            if (b.fontFamily && String(b.fontFamily).trim()) {
+                root.style.setProperty('--font', String(b.fontFamily).trim());
+                root.style.setProperty('--font-ltr', String(b.fontFamily).trim());
             } else { root.style.removeProperty('--font'); root.style.removeProperty('--font-ltr'); }
-            const fw = (s.fontWeight && ['normal', 'medium', 'bold'].indexOf(s.fontWeight) >= 0) ? s.fontWeight : 'normal';
+            const fw = (b.fontWeight && ['normal', 'medium', 'bold'].indexOf(b.fontWeight) >= 0) ? b.fontWeight : 'normal';
             document.body.style.fontWeight = fw;
-            if (Array.isArray(s.sidebarOrder) && s.sidebarOrder.length > 0) applySidebarOrder(s.sidebarOrder);
+            if (Array.isArray(b.sidebarOrder) && b.sidebarOrder.length > 0) applySidebarOrder(b.sidebarOrder);
         }
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
@@ -7150,12 +7170,12 @@
         async function loadPanelSettingsAndApply() {
             const res = await apiFetch('/api/panel-settings');
             if (res.ok && res.data) {
-                applyBranding(res.data);
+                applyBranding(res.data, { full: true });
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
                 if (res.data.supportedLanguages && window.applySupportedLanguages) window.applySupportedLanguages(res.data.supportedLanguages, res.data.defaultLanguage);
                 return;
             }
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginLogoUrl != null || data.loginTitle != null || data.pageTitle != null || data.footerText != null || data.showFooter !== undefined || data.footerStyle != null)) applyBranding(data); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data) applyBranding(data, { full: true }); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/visibility').then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
             fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage); }).catch(function() {});
         }
@@ -7760,7 +7780,7 @@
             if (res.ok && res.data) {
                 const savedFooterStyle = (function() { const el = document.getElementById('panelSettingFooterStyle'); const v = el ? el.value : ''; return (v && ['accent', 'minimal', 'compact', 'line'].indexOf(v) >= 0) ? v : null; })();
                 if (savedFooterStyle != null) res.data.footerStyle = savedFooterStyle;
-                applyBranding(res.data);
+                applyBranding(res.data, { full: true });
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
                 const mode = res.data.languageMode;
                 if (mode && window.applySupportedLanguages) window.applySupportedLanguages(mode === 'single' ? ['fa'] : mode === 'bilingual' ? ['fa', 'en'] : ['fa', 'en', 'tr']);
@@ -11614,5 +11634,5 @@
                 } else { logout(); }
             }).catch(function() { logout(); });
         } else {
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginLogoUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data) applyBranding(data, { full: true }); }).catch(function() {});
         }

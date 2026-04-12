@@ -36,6 +36,9 @@ fun LoginScreen(
     val error by viewModel.error.collectAsState()
     val needTotp by viewModel.needTotp.collectAsState()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val forgotUi by viewModel.forgotPassword.collectAsState()
+
+    var showForgotPassword by remember { mutableStateOf(false) }
 
     LaunchedEffect(isLoggedIn) {
         if (isLoggedIn == true) onLoginSuccess()
@@ -49,13 +52,7 @@ fun LoginScreen(
             .fillMaxSize()
             .padding(24.dp)
     ) {
-        IconButton(
-            onClick = { showServerConfig = true },
-            modifier = Modifier.align(Alignment.TopEnd)
-        ) {
-            Icon(Icons.Default.Settings, contentDescription = "تنظیمات سرور")
-        }
-
+        /* Column اول باشد تا IconButton بعدی روی لایهٔ بالا قرار بگیرد و لمسی نخورد */
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -116,7 +113,20 @@ fun LoginScreen(
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                 shape = MaterialTheme.shapes.medium
             )
-            Spacer(modifier = Modifier.height(24.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                TextButton(
+                    onClick = {
+                        viewModel.resetForgotPassword()
+                        showForgotPassword = true
+                    }
+                ) {
+                    Text("فراموشی رمز عبور")
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
 
             error?.let { msg ->
                 Card(
@@ -148,6 +158,13 @@ fun LoginScreen(
                 }
             }
         }
+
+        IconButton(
+            onClick = { showServerConfig = true },
+            modifier = Modifier.align(Alignment.TopEnd)
+        ) {
+            Icon(Icons.Default.Settings, contentDescription = "تنظیمات سرور")
+        }
     }
 
     if (showServerConfig) {
@@ -160,6 +177,111 @@ fun LoginScreen(
             }
         )
     }
+
+    if (showForgotPassword) {
+        ForgotPasswordDialog(
+            initialEmail = email.trim(),
+            forgotUi = forgotUi,
+            onDismiss = {
+                showForgotPassword = false
+                viewModel.resetForgotPassword()
+            },
+            onSubmit = { viewModel.requestForgotPassword(it) }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ForgotPasswordDialog(
+    initialEmail: String,
+    forgotUi: LoginViewModel.ForgotPasswordUi,
+    onDismiss: () -> Unit,
+    onSubmit: (String) -> Unit
+) {
+    var forgotEmail by remember { mutableStateOf(initialEmail) }
+    LaunchedEffect(initialEmail) {
+        forgotEmail = initialEmail
+    }
+    AlertDialog(
+        onDismissRequest = {
+            if (!forgotUi.inProgress) onDismiss()
+        },
+        title = { Text("بازیابی رمز عبور") },
+        text = {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState())
+            ) {
+                if (forgotUi.success) {
+                    Text(
+                        "در صورت وجود حساب با این ایمیل، لینک تعیین رمز جدید از همان سامانهٔ ایمیل پنل برای شما ارسال شده است.\n\n" +
+                            "صندوق ورودی و پوشهٔ هرزنامه را بررسی کنید؛ با باز کردن لینک در مرورگر، رمز جدید را انتخاب کنید.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        "ایمیل حساب خود را وارد کنید. همان مسیر ارسال ایمیل وب‌سایت است؛ رمز به‌صورت خودکار در متن ایمیل نیست، بلکه از طریق لینک امن تعیین می‌شود.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    OutlinedTextField(
+                        value = forgotEmail,
+                        onValueChange = { forgotEmail = it },
+                        label = { Text("ایمیل") },
+                        leadingIcon = { Icon(Icons.Default.Mail, contentDescription = null) },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        enabled = !forgotUi.inProgress,
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Email,
+                            imeAction = ImeAction.Done
+                        ),
+                        shape = MaterialTheme.shapes.medium
+                    )
+                    forgotUi.error?.let { err ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = err,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            if (forgotUi.success) {
+                TextButton(onClick = onDismiss) {
+                    Text("بستن")
+                }
+            } else {
+                TextButton(
+                    onClick = { onSubmit(forgotEmail) },
+                    enabled = !forgotUi.inProgress
+                ) {
+                    if (forgotUi.inProgress) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            strokeWidth = 2.dp
+                        )
+                    } else {
+                        Text("ارسال لینک بازیابی")
+                    }
+                }
+            }
+        },
+        dismissButton = {
+            if (!forgotUi.success) {
+                TextButton(onClick = onDismiss, enabled = !forgotUi.inProgress) {
+                    Text("انصراف")
+                }
+            }
+        }
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

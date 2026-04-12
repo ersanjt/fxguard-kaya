@@ -1,6 +1,7 @@
 package com.kaya.crm.data.repository
 
 import com.kaya.crm.data.api.ApiService
+import com.kaya.crm.data.models.ForgotPasswordRequest
 import com.kaya.crm.data.models.LoginRequest
 import com.kaya.crm.data.models.LoginResponse
 import com.kaya.crm.data.models.TotpRequest
@@ -41,6 +42,34 @@ class AuthRepository @Inject constructor(
             }
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    suspend fun forgotPassword(email: String): Result<Unit> {
+        return try {
+            val response = api.forgotPassword(ForgotPasswordRequest(email))
+            if (response.isSuccessful) {
+                Result.success(Unit)
+            } else {
+                val errorBodyStr = response.errorBody()?.string()
+                val raw = if (errorBodyStr != null) {
+                    try {
+                        com.google.gson.Gson().fromJson(errorBodyStr, ErrorBody::class.java)?.error
+                    } catch (_: Exception) {
+                        null
+                    }
+                } else null
+                val msg = when {
+                    raw.isNullOrBlank() -> "ارسال درخواست ناموفق بود"
+                    raw.contains("could not send", ignoreCase = true) ||
+                        raw.contains("password reset email", ignoreCase = true) ->
+                        "ارسال ایمیل بازیابی انجام نشد. بعداً دوباره تلاش کنید یا با مدیر سیستم تماس بگیرید."
+                    else -> raw
+                }
+                Result.failure(Exception(msg))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(e.message ?: "خطا در اتصال به سرور"))
         }
     }
 

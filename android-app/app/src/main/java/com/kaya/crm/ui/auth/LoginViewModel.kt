@@ -37,6 +37,39 @@ class LoginViewModel @Inject constructor(
     private val _loading = MutableStateFlow(false)
     val loading: StateFlow<Boolean> = _loading.asStateFlow()
 
+    data class ForgotPasswordUi(
+        val inProgress: Boolean = false,
+        val error: String? = null,
+        val success: Boolean = false
+    )
+
+    private val _forgotPassword = MutableStateFlow(ForgotPasswordUi())
+    val forgotPassword: StateFlow<ForgotPasswordUi> = _forgotPassword.asStateFlow()
+
+    fun resetForgotPassword() {
+        _forgotPassword.value = ForgotPasswordUi()
+    }
+
+    fun requestForgotPassword(email: String) {
+        val trimmed = email.trim().lowercase()
+        if (trimmed.isBlank()) {
+            _forgotPassword.value = ForgotPasswordUi(error = "ایمیل را وارد کنید.")
+            return
+        }
+        viewModelScope.launch {
+            _forgotPassword.value = ForgotPasswordUi(inProgress = true)
+            authRepository.forgotPassword(trimmed)
+                .onSuccess {
+                    _forgotPassword.value = ForgotPasswordUi(success = true)
+                }
+                .onFailure { e ->
+                    _forgotPassword.value = ForgotPasswordUi(
+                        error = e.message ?: "ارسال ایمیل بازیابی انجام نشد."
+                    )
+                }
+        }
+    }
+
     fun login(email: String, password: String) {
         viewModelScope.launch {
             _loading.value = true

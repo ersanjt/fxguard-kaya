@@ -1718,5 +1718,5 @@
                 } else { logout(); }
             }).catch(function() { logout(); });
         } else {
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data && (data.siteName != null || data.logoUrl != null || data.faviconUrl != null || data.loginLogoUrl != null || data.loginTitle != null || data.pageTitle != null)) applyBranding(data); }).catch(function() {});
+            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data) applyBranding(data, { full: true }); }).catch(function() {});
         }
