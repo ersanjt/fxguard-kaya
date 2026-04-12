@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
@@ -26,9 +27,12 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
+import kotlinx.coroutines.launch
 import com.kaya.crm.BuildConfig
 import com.kaya.crm.data.ApiConfig
 import com.kaya.crm.data.models.TelegramLinkTokenResponse
@@ -110,6 +114,13 @@ fun ProfileScreen(
     }
 
     val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    fun copyToClipboard(label: String, text: String) {
+        clipboard.setText(AnnotatedString(text))
+        scope.launch { snackbarHostState.showSnackbar(label) }
+    }
+
     LaunchedEffect(saveMessage) {
         val m = saveMessage ?: return@LaunchedEffect
         snackbarHostState.showSnackbar(m)
@@ -362,9 +373,8 @@ fun ProfileScreen(
                         busy = telegramBusy,
                         onGenerate = { viewModel.generateTelegramToken() },
                         onUnlink = { viewModel.unlinkTelegram() },
-                        onCopy = { line ->
-                            clipboard.setText(AnnotatedString(line))
-                        },
+                        onCopyCommand = { copyToClipboard("دستور کپی شد — در تلگرام برای بات بفرستید", it) },
+                        onCopyTokenOnly = { copyToClipboard("کد اتصال کپی شد", it) },
                         onOpenBot = { url ->
                             runCatching {
                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
@@ -426,9 +436,18 @@ fun ProfileScreen(
                         .heightIn(max = 420.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
+                    setup.error?.takeIf { it.isNotBlank() }?.let { err ->
+                        Text(
+                            err,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
                     Text(
-                        "کد QR را در اپ اسکن کنید یا کلید را دستی وارد کنید.",
-                        style = MaterialTheme.typography.bodySmall
+                        "ابتدا QR را در Google Authenticator اسکن کنید، یا کلید زیر را کپی کرده و در اپ به‌صورت دستی اضافه کنید؛ سپس کد شش‌رقمی را اینجا وارد کنید.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     setup.qrCode?.let { qr ->
@@ -443,15 +462,41 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                     setup.secret?.let { sec ->
-                        Text("کلید: $sec", style = MaterialTheme.typography.labelSmall)
+                        OutlinedTextField(
+                            value = sec,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("کلید مخفی (دستی)") },
+                            textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                            modifier = Modifier.fillMaxWidth(),
+                            trailingIcon = {
+                                IconButton(
+                                    onClick = {
+                                        copyToClipboard("کلید احراز دو مرحله‌ای کپی شد", sec)
+                                    }
+                                ) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = "کپی کلید")
+                                }
+                            }
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedButton(
+                            onClick = { copyToClipboard("کلید احراز دو مرحله‌ای کپی شد", sec) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("کپی کلید مخفی")
+                        }
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                     OutlinedTextField(
                         value = totpConfirmCode,
-                        onValueChange = { totpConfirmCode = it },
-                        label = { Text("کد شش‌رقمی") },
+                        onValueChange = { v -> totpConfirmCode = v.filter { ch -> ch.isDigit() }.take(6) },
+                        label = { Text("کد شش‌رقمی از Authenticator") },
                         singleLine = true,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
                     )
                 }
             },
@@ -602,7 +647,7 @@ private fun TotpSection(
             Text("احراز هویت دو مرحله‌ای", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                "ورود امن‌تر با Google Authenticator؛ از همین‌جا فعال یا غیرفعال کنید.",
+                "ورود امن‌تر با Google Authenticator. پس از زدن «فعال‌سازی»، QR یا کلید را کپی کنید؛ در اپ کد شش‌رقمی را وارد و تأیید کنید.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -634,7 +679,8 @@ private fun TelegramSection(
     busy: Boolean,
     onGenerate: () -> Unit,
     onUnlink: () -> Unit,
-    onCopy: (String) -> Unit,
+    onCopyCommand: (String) -> Unit,
+    onCopyTokenOnly: (String) -> Unit,
     onOpenBot: (String) -> Unit
 ) {
     Card(
@@ -645,7 +691,7 @@ private fun TelegramSection(
             Text("اتصال به بات تلگرام", style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                "کد اتصال را در بات بفرستید یا از لینک مستقیم استفاده کنید.",
+                "کد را از کادر زیر کپی کنید، در تلگرام برای بات بفرستید، یا با «باز کردن بات» وارد شوید.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -668,28 +714,55 @@ private fun TelegramSection(
                 }
             }
             token?.token?.let { t ->
+                val fullCommand = "/link $t"
                 Spacer(modifier = Modifier.height(12.dp))
-                Text("دستور (۱۵ دقیقه اعتبار):", style = MaterialTheme.typography.labelMedium)
-                Surface(
-                    tonalElevation = 1.dp,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(
-                        "/link $t",
-                        modifier = Modifier.padding(12.dp),
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
+                OutlinedTextField(
+                    value = fullCommand,
+                    onValueChange = {},
+                    readOnly = true,
+                    label = { Text("دستور برای بات (حدود ۱۵ دقیقه اعتبار)") },
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
+                    modifier = Modifier.fillMaxWidth(),
+                    trailingIcon = {
+                        IconButton(onClick = { onCopyCommand(fullCommand) }) {
+                            Icon(Icons.Default.ContentCopy, contentDescription = "کپی دستور کامل")
+                        }
+                    }
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    TextButton(onClick = { onCopy("/link $t") }) { Text("کپی دستور") }
-                    token.botUrl?.takeIf { it.isNotBlank() }?.let { url ->
-                        TextButton(onClick = { onOpenBot(url) }) { Text("باز کردن بات") }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedButton(
+                        onClick = { onCopyCommand(fullCommand) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(6.dp))
+                        Text("کپی دستور", maxLines = 1)
+                    }
+                    OutlinedButton(
+                        onClick = { onCopyTokenOnly(t) },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text("فقط کد", maxLines = 1)
+                    }
+                }
+                token.botUrl?.takeIf { it.isNotBlank() }?.let { url ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(
+                        onClick = { onOpenBot(url) },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(8.dp))
+                        Text("باز کردن بات در تلگرام")
                     }
                 }
                 token.instruction?.takeIf { it.isNotBlank() }?.let { ins ->
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(ins, style = MaterialTheme.typography.labelSmall)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(ins, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
