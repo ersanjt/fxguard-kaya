@@ -12,6 +12,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.kaya.crm.ui.main.dashboard.DashboardScreen
 import com.kaya.crm.ui.main.conversations.ConversationsScreen
 import com.kaya.crm.ui.main.customers.CustomersScreen
+import com.kaya.crm.ui.main.internalchat.InternalChatScreen
 import com.kaya.crm.ui.main.tickets.TicketsScreen
 import com.kaya.crm.ui.main.profile.ProfileScreen
 
@@ -19,6 +20,7 @@ enum class MainTab(val title: String, val icon: androidx.compose.ui.graphics.vec
     DASHBOARD("داشبورد", Icons.Default.Dashboard),
     CONVERSATIONS("مکالمات", Icons.AutoMirrored.Filled.Chat),
     CUSTOMERS("مشتریان", Icons.Default.People),
+    TEAM("تیم", Icons.Default.Forum),
     TICKETS("تیکت‌ها", Icons.Default.ConfirmationNumber),
     PROFILE("پروفایل", Icons.Default.Person)
 }
@@ -61,7 +63,9 @@ fun MainScreen(
                 .padding(padding)
         ) {
             when (selectedTab) {
-                MainTab.DASHBOARD -> DashboardScreen()
+                MainTab.DASHBOARD -> DashboardScreen(
+                    onNavigateToTab = { selectedTab = it }
+                )
                 MainTab.CONVERSATIONS -> ConversationsScreen(
                     pendingOpenConversationId = pendingOpenConversationId,
                     onPendingOpenConversationConsumed = { pendingOpenConversationId = null }
@@ -72,6 +76,7 @@ fun MainScreen(
                         selectedTab = MainTab.CONVERSATIONS
                     }
                 )
+                MainTab.TEAM -> InternalChatScreen()
                 MainTab.TICKETS -> TicketsScreen()
                 MainTab.PROFILE -> ProfileScreen(
                     onLogout = {

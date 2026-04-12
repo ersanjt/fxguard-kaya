@@ -2,6 +2,8 @@ package com.kaya.crm.ui.main.internalchat
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -14,23 +16,27 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
 import androidx.compose.material.pullrefresh.rememberPullRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kaya.crm.data.models.InternalThreadBrief
 import com.kaya.crm.data.models.InternalMessageItem
 import com.kaya.crm.data.models.UserBrief
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun InternalChatScreen(viewModel: InternalChatViewModel = hiltViewModel()) {
     val threads by viewModel.threads.collectAsState()
+    val users by viewModel.users.collectAsState()
     val loading by viewModel.loading.collectAsState()
     val error by viewModel.error.collectAsState()
     val refreshing by viewModel.refreshing.collectAsState()
+    val selectedThreadId by viewModel.selectedThreadId.collectAsState()
     var showNewChat by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -97,7 +103,7 @@ fun InternalChatScreen(viewModel: InternalChatViewModel = hiltViewModel()) {
                             }
                         }
                     }
-                    items(threads) { thread ->
+                    items(threads, key = { it.id }) { thread ->
                         InternalThreadItem(
                             thread = thread,
                             onClick = { viewModel.openThread(thread.id) }
@@ -115,7 +121,7 @@ fun InternalChatScreen(viewModel: InternalChatViewModel = hiltViewModel()) {
 
     if (showNewChat) {
         NewChatDialog(
-            users = viewModel.users.collectAsState().value,
+            users = users,
             onDismiss = { showNewChat = false },
             onSelectUser = { user ->
                 viewModel.createThread(listOf(user.id))
@@ -125,7 +131,7 @@ fun InternalChatScreen(viewModel: InternalChatViewModel = hiltViewModel()) {
     }
 
     val currentUserId by viewModel.currentUserId.collectAsState()
-    viewModel.selectedThreadId?.let { id ->
+    selectedThreadId?.let { id ->
         InternalChatDetailSheet(
             threadId = id,
             threads = threads,
@@ -220,10 +226,24 @@ private fun InternalChatDetailSheet(
 ) {
     val messages by viewModel.messages.collectAsState()
     val messagesLoading by viewModel.messagesLoading.collectAsState()
-    var inputText by remember { mutableStateOf("") }
+    val detailError by viewModel.detailError.collectAsState()
+    val sending by viewModel.sendingMessage.collectAsState()
+    val inputClearNonce by viewModel.inputClearNonce.collectAsState()
+    var inputText by remember(threadId) { mutableStateOf("") }
     val listState = rememberLazyListState()
+    val snackbarHostState = remember { SnackbarHostState() }
     val thread = threads.find { it.id == threadId }
     val participantNames = thread?.participants?.joinToString("، ") { it.name ?: it.email ?: "—" } ?: "چت"
+
+    LaunchedEffect(inputClearNonce) {
+        if (inputClearNonce > 0) inputText = ""
+    }
+
+    LaunchedEffect(detailError) {
+        val msg = detailError ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(msg)
+        viewModel.clearDetailError()
+    }
 
     LaunchedEffect(messages.size) {
         if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
@@ -233,59 +253,78 @@ private fun InternalChatDetailSheet(
         onDismissRequest = onDismiss,
         sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ) {
-        Column(
+        Scaffold(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 500.dp)
-        ) {
-            Text(
-                participantNames,
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(16.dp)
-            )
-            Box(modifier = Modifier.weight(1f)) {
-                if (messagesLoading && messages.isEmpty()) {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                } else {
-                    LazyColumn(
-                        state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(messages) { msg ->
-                            InternalMessageBubble(msg = msg, currentUserId = currentUserId)
+                .heightIn(max = 520.dp),
+            snackbarHost = { SnackbarHost(snackbarHostState) }
+        ) { padding ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(padding)
+            ) {
+                Text(
+                    participantNames,
+                    style = MaterialTheme.typography.titleLarge,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                )
+                Box(modifier = Modifier.weight(1f)) {
+                    if (messagesLoading && messages.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    } else {
+                        LazyColumn(
+                            state = listState,
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(messages, key = { it.id }) { msg ->
+                                InternalMessageBubble(msg = msg, currentUserId = currentUserId)
+                            }
                         }
                     }
                 }
-            }
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                OutlinedTextField(
-                    value = inputText,
-                    onValueChange = { inputText = it },
-                    modifier = Modifier.weight(1f),
-                    placeholder = { Text("پیام...") }
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                IconButton(
-                    onClick = {
-                        if (inputText.isNotBlank()) {
-                            viewModel.sendMessage(threadId, inputText)
-                            inputText = ""
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = inputText,
+                        onValueChange = { inputText = it },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("پیام…") },
+                        enabled = !sending,
+                        maxLines = 4,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                        keyboardActions = KeyboardActions(
+                            onSend = {
+                                val t = inputText.trim()
+                                if (t.isNotEmpty() && !sending) viewModel.sendMessage(threadId, t)
+                            }
+                        )
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    IconButton(
+                        onClick = {
+                            val t = inputText.trim()
+                            if (t.isNotEmpty() && !sending) viewModel.sendMessage(threadId, t)
+                        },
+                        enabled = !sending && inputText.isNotBlank()
+                    ) {
+                        if (sending) {
+                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
+                        } else {
+                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "ارسال")
                         }
                     }
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "ارسال")
                 }
             }
         }

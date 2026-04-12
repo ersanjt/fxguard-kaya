@@ -43,6 +43,10 @@ class CustomersViewModel @Inject constructor(
     private val _searchText = MutableStateFlow("")
     val searchText: StateFlow<String> = _searchText.asStateFlow()
 
+    /** null = همه؛ active / inactive / blocked */
+    private val _statusFilter = MutableStateFlow<String?>(null)
+    val statusFilter: StateFlow<String?> = _statusFilter.asStateFlow()
+
     private val _selectedCustomerId = MutableStateFlow<String?>(null)
     val selectedCustomerId: StateFlow<String?> = _selectedCustomerId.asStateFlow()
 
@@ -73,6 +77,13 @@ class CustomersViewModel @Inject constructor(
         }
     }
 
+    fun setStatusFilter(status: String?) {
+        _statusFilter.value = status
+        load(reset = true)
+    }
+
+    private fun currentStatus(): String? = _statusFilter.value
+
     fun load(reset: Boolean = true) {
         viewModelScope.launch {
             if (reset) {
@@ -80,7 +91,7 @@ class CustomersViewModel @Inject constructor(
                 _page.value = 1
             }
             _error.value = null
-            repo.getCustomers(page = 1, search = currentSearchQuery())
+            repo.getCustomers(page = 1, search = currentSearchQuery(), status = currentStatus())
                 .onSuccess {
                     _customers.value = it.data
                     _total.value = it.total
@@ -95,7 +106,7 @@ class CustomersViewModel @Inject constructor(
         viewModelScope.launch {
             _refreshing.value = true
             _error.value = null
-            repo.getCustomers(page = 1, search = currentSearchQuery())
+            repo.getCustomers(page = 1, search = currentSearchQuery(), status = currentStatus())
                 .onSuccess {
                     _customers.value = it.data
                     _total.value = it.total
@@ -112,7 +123,7 @@ class CustomersViewModel @Inject constructor(
         viewModelScope.launch {
             _loadingMore.value = true
             val next = _page.value + 1
-            repo.getCustomers(page = next, search = currentSearchQuery())
+            repo.getCustomers(page = next, search = currentSearchQuery(), status = currentStatus())
                 .onSuccess {
                     _page.value = next
                     _customers.value = _customers.value + it.data

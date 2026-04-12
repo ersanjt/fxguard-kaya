@@ -60,8 +60,12 @@ class CrmRepository @Inject constructor(private val api: ApiService) {
         handleResponse(api.sendMessage(conversationId, SendMessageRequest(content)))
     }.mapNetworkError()
 
-    suspend fun getCustomers(page: Int = 1, search: String? = null): Result<CustomersResponse> = runCatching {
-        handleResponse(api.getCustomers(page, 50, search))
+    suspend fun getCustomers(
+        page: Int = 1,
+        search: String? = null,
+        status: String? = null
+    ): Result<CustomersResponse> = runCatching {
+        handleResponse(api.getCustomers(page, 50, search, status))
     }.mapNetworkError()
 
     suspend fun getCustomer(id: String): Result<CustomerDetail> = runCatching {

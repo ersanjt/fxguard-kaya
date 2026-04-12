@@ -1,7 +1,11 @@
 package com.kaya.crm.ui.main.customers
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -9,6 +13,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -17,6 +22,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kaya.crm.data.models.CustomerDetail
@@ -35,6 +41,7 @@ fun CustomersScreen(
     val refreshing by viewModel.refreshing.collectAsState()
     val error by viewModel.error.collectAsState()
     val searchText by viewModel.searchText.collectAsState()
+    val statusFilter by viewModel.statusFilter.collectAsState()
     val selectedCustomerId by viewModel.selectedCustomerId.collectAsState()
     val customerDetail by viewModel.customerDetail.collectAsState()
     val detailLoading by viewModel.detailLoading.collectAsState()
@@ -79,6 +86,41 @@ fun CustomersScreen(
                         placeholder = { Text("جستجو نام، شماره یا ایمیل…") },
                         singleLine = true
                     )
+                }
+                item {
+                    Text(
+                        "وضعیت مشتری",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = statusFilter == null,
+                            onClick = { viewModel.setStatusFilter(null) },
+                            label = { Text("همه") }
+                        )
+                        FilterChip(
+                            selected = statusFilter == "active",
+                            onClick = { viewModel.setStatusFilter("active") },
+                            label = { Text("فعال") }
+                        )
+                        FilterChip(
+                            selected = statusFilter == "inactive",
+                            onClick = { viewModel.setStatusFilter("inactive") },
+                            label = { Text("غیرفعال") }
+                        )
+                        FilterChip(
+                            selected = statusFilter == "blocked",
+                            onClick = { viewModel.setStatusFilter("blocked") },
+                            label = { Text("مسدود") }
+                        )
+                    }
                 }
                 if (customers.isEmpty()) {
                     item {
@@ -141,6 +183,7 @@ private fun CustomerListRow(
     customer: CustomerItem,
     onClick: () -> Unit
 ) {
+    val context = LocalContext.current
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -158,12 +201,33 @@ private fun CustomerListRow(
                     style = MaterialTheme.typography.titleMedium
                 )
                 customer.phone?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+                customer.status?.takeIf { it.isNotBlank() }?.let { st ->
+                    Text(
+                        st,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
                 customer.lastOpenConv?.let { conv ->
                     Text(
                         "مکالمه باز: ${conv.status ?: "—"}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary
                     )
+                }
+            }
+            customer.phone?.takeIf { it.isNotBlank() }?.let { phone ->
+                IconButton(
+                    onClick = {
+                        runCatching {
+                            context.startActivity(
+                                Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(phone)}"))
+                            )
+                        }
+                    }
+                ) {
+                    Icon(Icons.Filled.Phone, contentDescription = "تماس")
                 }
             }
         }
@@ -181,6 +245,7 @@ private fun CustomerDetailSheet(
     onOpenConversation: (String) -> Unit,
     onClearDetailError: () -> Unit
 ) {
+    val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(detailError) {
@@ -217,6 +282,23 @@ private fun CustomerDetailSheet(
                     }
                 } else if (detail != null) {
                     DetailFields(detail = detail)
+                    detail.phone?.takeIf { it.isNotBlank() }?.let { phone ->
+                        Spacer(modifier = Modifier.height(12.dp))
+                        OutlinedButton(
+                            onClick = {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(phone)}"))
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Filled.Phone, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("تماس تلفنی")
+                        }
+                    }
                     linkedConversationId?.let { convId ->
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(

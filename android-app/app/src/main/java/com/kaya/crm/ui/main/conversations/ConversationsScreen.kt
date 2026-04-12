@@ -1,7 +1,9 @@
 package com.kaya.crm.ui.main.conversations
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -35,6 +37,7 @@ fun ConversationsScreen(
     val refreshing by viewModel.refreshing.collectAsState()
     val selectedConversationId by viewModel.selectedConversationId.collectAsState()
     val searchText by viewModel.searchText.collectAsState()
+    val statusFilter by viewModel.statusFilter.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.load() }
 
@@ -80,6 +83,41 @@ fun ConversationsScreen(
                         placeholder = { Text("جستجو نام یا شماره…") },
                         singleLine = true
                     )
+                }
+                item {
+                    Text(
+                        "فیلتر وضعیت مکالمه",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
+                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        FilterChip(
+                            selected = statusFilter == null,
+                            onClick = { viewModel.setStatusFilter(null) },
+                            label = { Text("همه") }
+                        )
+                        FilterChip(
+                            selected = statusFilter == "open",
+                            onClick = { viewModel.setStatusFilter("open") },
+                            label = { Text("باز") }
+                        )
+                        FilterChip(
+                            selected = statusFilter == "pending",
+                            onClick = { viewModel.setStatusFilter("pending") },
+                            label = { Text("در انتظار") }
+                        )
+                        FilterChip(
+                            selected = statusFilter == "closed",
+                            onClick = { viewModel.setStatusFilter("closed") },
+                            label = { Text("بسته") }
+                        )
+                    }
                 }
                 if (conversations.isEmpty()) {
                     item {

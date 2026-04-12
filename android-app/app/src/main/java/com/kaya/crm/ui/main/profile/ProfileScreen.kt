@@ -8,6 +8,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.pullrefresh.PullRefreshIndicator
+import androidx.compose.material.pullrefresh.pullRefresh
+import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
@@ -31,6 +35,7 @@ private fun resolveAppLink(raw: String, base: String): String {
     return if (s.startsWith("/")) base.trimEnd('/') + s else s
 }
 
+@OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     onLogout: () -> Unit,
@@ -40,6 +45,11 @@ fun ProfileScreen(
     val user by viewModel.user.collectAsState()
     val publicBranding by viewModel.publicBranding.collectAsState()
     val savedServerUrl by viewModel.savedServerUrl.collectAsState(initial = null)
+    val gatewayStatus by viewModel.gatewayStatus.collectAsState()
+    val gatewayError by viewModel.gatewayError.collectAsState()
+    val profileError by viewModel.profileError.collectAsState()
+    val loading by viewModel.loading.collectAsState()
+    val refreshing by viewModel.refreshing.collectAsState()
     val appUpdateViewModel: AppUpdateViewModel = hiltViewModel()
     var showServerDialog by remember { mutableStateOf(false) }
     val iosUrlRaw = publicBranding?.iosAppUrl?.trim().orEmpty()
@@ -48,150 +58,244 @@ fun ProfileScreen(
     val iosUrl = iosUrlRaw.takeIf { it.isNotBlank() }?.let { resolveAppLink(it, baseForLinks) }.orEmpty()
     val androidUrl = androidUrlRaw.takeIf { it.isNotBlank() }?.let { resolveAppLink(it, baseForLinks) }.orEmpty()
 
-    Column(
+    val onRefresh = { viewModel.refreshAll(initial = false) }
+    val pullRefreshState = rememberPullRefreshState(refreshing, onRefresh)
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(24.dp)
+            .pullRefresh(pullRefreshState)
     ) {
-        Text(
-            text = "پروفایل من",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-
-        user?.let { u ->
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    ProfileRow("نام", u.name ?: u.email)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    ProfileRow("ایمیل", u.email)
-                    Spacer(modifier = Modifier.height(16.dp))
-                    ProfileRow("نقش", u.role)
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            shape = MaterialTheme.shapes.medium
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(24.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Settings, contentDescription = null)
-                Spacer(modifier = Modifier.width(16.dp))
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("آدرس سرور", style = MaterialTheme.typography.labelMedium)
-                    Text(
-                        savedServerUrl?.takeIf { it.isNotBlank() } ?: ApiConfig.BASE_URL,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1
-                    )
-                }
-                TextButton(onClick = { showServerDialog = true }) {
-                    Text("تغییر")
-                }
-            }
-        }
+            Text(
+                text = "پروفایل من",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
 
-        Spacer(modifier = Modifier.height(24.dp))
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text("به‌روزرسانی اپ", style = MaterialTheme.typography.titleMedium)
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    "نسخهٔ نصب‌شده: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Text(
-                    "اگر روی سرور نسخهٔ جدید تعریف شده باشد، می‌توانید از اینجا بررسی و مستقیم از داخل اپ به‌روز کنید.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Button(
-                    onClick = { appUpdateViewModel.checkManual() },
-                    modifier = Modifier.fillMaxWidth()
+            if (profileError != null) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
                 ) {
-                    Text("بررسی به‌روزرسانی از سرور")
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            profileError!!,
+                            modifier = Modifier.weight(1f),
+                            color = MaterialTheme.colorScheme.onErrorContainer,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        TextButton(onClick = { viewModel.clearProfileError(); viewModel.refreshAll(initial = false) }) {
+                            Text("تلاش مجدد")
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            if (loading && user == null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(120.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
                 }
             }
-        }
 
-        if (iosUrl.isNotBlank() || androidUrl.isNotBlank()) {
-            Spacer(modifier = Modifier.height(24.dp))
+            user?.let { u ->
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        ProfileRow("نام", u.name ?: u.email)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        ProfileRow("ایمیل", u.email)
+                        Spacer(modifier = Modifier.height(16.dp))
+                        ProfileRow("نقش", u.role)
+                        u.departmentId?.takeIf { it.isNotBlank() }?.let {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            ProfileRow("شناسه دپارتمان", it)
+                        }
+                        u.branchId?.takeIf { it.isNotBlank() }?.let {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            ProfileRow("شناسه شعبه", it)
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
                 shape = MaterialTheme.shapes.medium
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
-                    Text("دانلود اپ موبایل", style = MaterialTheme.typography.titleMedium)
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Text("وضعیت واتساپ / Gateway", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    when {
+                        gatewayError != null -> Text(
+                            gatewayError!!,
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        gatewayStatus != null -> {
+                            val g = gatewayStatus!!
+                            val ok = g.isConnected
+                            Text(
+                                if (ok) "متصل" else "غیرمتصل",
+                                color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            g.phone?.takeIf { it.isNotBlank() }?.let { ph ->
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text("شماره: $ph", style = MaterialTheme.typography.bodySmall)
+                            }
+                            g.status?.takeIf { it.isNotBlank() }?.let { st ->
+                                Text(st, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        else -> Text("—", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Default.Settings, contentDescription = null)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("آدرس سرور", style = MaterialTheme.typography.labelMedium)
+                        Text(
+                            savedServerUrl?.takeIf { it.isNotBlank() } ?: ApiConfig.BASE_URL,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 2
+                        )
+                    }
+                    TextButton(onClick = { showServerDialog = true }) {
+                        Text("تغییر")
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text("به‌روزرسانی اپ", style = MaterialTheme.typography.titleMedium)
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        "نسخه‌های قابل نصب مستقیم:",
+                        "نسخهٔ نصب‌شده: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (iosUrl.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        OutlinedButton(
-                            onClick = {
-                                runCatching {
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(iosUrl)))
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("دانلود نسخه iOS")
-                        }
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Text(
+                        "اگر روی سرور نسخهٔ جدید تعریف شده باشد، می‌توانید از اینجا بررسی و مستقیم از داخل اپ به‌روز کنید.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Button(
+                        onClick = { appUpdateViewModel.checkManual() },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("بررسی به‌روزرسانی از سرور")
                     }
-                    if (androidUrl.isNotBlank()) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Button(
-                            onClick = {
-                                runCatching {
-                                    context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(androidUrl)))
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Text("دانلود نسخه Android")
+                }
+            }
+
+            if (iosUrl.isNotBlank() || androidUrl.isNotBlank()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text("دانلود اپ موبایل", style = MaterialTheme.typography.titleMedium)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            "نسخه‌های قابل نصب مستقیم:",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (iosUrl.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                            OutlinedButton(
+                                onClick = {
+                                    runCatching {
+                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(iosUrl)))
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("دانلود نسخه iOS")
+                            }
+                        }
+                        if (androidUrl.isNotBlank()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Button(
+                                onClick = {
+                                    runCatching {
+                                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(androidUrl)))
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text("دانلود نسخه Android")
+                            }
                         }
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            Button(
+                onClick = onLogout,
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("خروج")
+            }
         }
 
-        Spacer(modifier = Modifier.weight(1f))
-
-        Button(
-            onClick = onLogout,
-            modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("خروج")
-        }
+        PullRefreshIndicator(
+            refreshing = refreshing,
+            state = pullRefreshState,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
     }
 
     if (showServerDialog) {
@@ -214,7 +318,6 @@ private fun ProfileRow(label: String, value: String) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ServerUrlDialog(
     currentUrl: String,

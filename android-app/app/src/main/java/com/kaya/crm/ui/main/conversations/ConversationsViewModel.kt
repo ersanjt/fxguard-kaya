@@ -61,6 +61,10 @@ class ConversationsViewModel @Inject constructor(
     private val _searchText = MutableStateFlow("")
     val searchText: StateFlow<String> = _searchText.asStateFlow()
 
+    /** null = همه؛ مقدار مستقیم برای API (مثلاً open، pending) */
+    private val _statusFilter = MutableStateFlow<String?>(null)
+    val statusFilter: StateFlow<String?> = _statusFilter.asStateFlow()
+
     private var searchDebounceJob: Job? = null
 
     fun setSearchText(text: String) {
@@ -90,9 +94,17 @@ class ConversationsViewModel @Inject constructor(
         }
     }
 
+    fun setStatusFilter(status: String?) {
+        _statusFilter.value = status
+        viewModelScope.launch {
+            fetchConversationList()
+        }
+    }
+
     private suspend fun fetchConversationList() {
         val q = _searchText.value.trim().takeIf { it.isNotEmpty() }
-        repo.getConversations(page = 1, search = q)
+        val st = _statusFilter.value
+        repo.getConversations(page = 1, status = st, search = q)
             .onSuccess { _conversations.value = it.data ?: emptyList() }
             .onFailure { _error.value = it.message }
     }

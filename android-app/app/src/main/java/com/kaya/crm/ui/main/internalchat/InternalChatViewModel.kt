@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.kaya.crm.data.models.InternalMessageItem
 import com.kaya.crm.data.models.InternalThreadBrief
 import com.kaya.crm.data.models.UserBrief
+import com.kaya.crm.data.repository.AuthRepository
 import com.kaya.crm.data.repository.InternalChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class InternalChatViewModel @Inject constructor(
     private val repo: InternalChatRepository,
-    private val authRepo: com.kaya.crm.data.repository.AuthRepository
+    private val authRepo: AuthRepository
 ) : ViewModel() {
 
     private val _currentUserId = MutableStateFlow<String?>(null)
@@ -50,8 +51,17 @@ class InternalChatViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _detailError = MutableStateFlow<String?>(null)
+    val detailError: StateFlow<String?> = _detailError.asStateFlow()
+
     private val _selectedThreadId = MutableStateFlow<String?>(null)
-    val selectedThreadId: String? get() = _selectedThreadId.value
+    val selectedThreadId: StateFlow<String?> = _selectedThreadId.asStateFlow()
+
+    private val _sendingMessage = MutableStateFlow(false)
+    val sendingMessage: StateFlow<Boolean> = _sendingMessage.asStateFlow()
+
+    private val _inputClearNonce = MutableStateFlow(0)
+    val inputClearNonce: StateFlow<Int> = _inputClearNonce.asStateFlow()
 
     fun loadThreads() {
         viewModelScope.launch {
@@ -84,24 +94,37 @@ class InternalChatViewModel @Inject constructor(
     fun openThread(id: String) {
         _selectedThreadId.value = id
         _messages.value = emptyList()
+        _detailError.value = null
         viewModelScope.launch {
             _messagesLoading.value = true
             repo.getMessages(id)
                 .onSuccess { _messages.value = it }
-                .onFailure { _error.value = it.message }
+                .onFailure { _detailError.value = it.message }
             _messagesLoading.value = false
         }
     }
 
     fun closeThread() {
         _selectedThreadId.value = null
+        _messages.value = emptyList()
+        _detailError.value = null
     }
 
+    fun clearDetailError() { _detailError.value = null }
+
     fun sendMessage(threadId: String, content: String) {
+        val trimmed = content.trim()
+        if (trimmed.isEmpty() || _sendingMessage.value) return
         viewModelScope.launch {
-            repo.sendMessage(threadId, content)
-                .onSuccess { msg -> _messages.value = _messages.value + msg }
-                .onFailure { _error.value = it.message }
+            _sendingMessage.value = true
+            _detailError.value = null
+            repo.sendMessage(threadId, trimmed)
+                .onSuccess { msg ->
+                    _messages.value = _messages.value + msg
+                    _inputClearNonce.value = _inputClearNonce.value + 1
+                }
+                .onFailure { _detailError.value = it.message }
+            _sendingMessage.value = false
         }
     }
 
@@ -109,14 +132,8 @@ class InternalChatViewModel @Inject constructor(
         viewModelScope.launch {
             repo.createThread(userIds)
                 .onSuccess { thread ->
-                    _threads.value = _threads.value + InternalThreadBrief(
-                        id = thread.id,
-                        lastMessageAt = null,
-                        lastMessage = null,
-                        participants = thread.participants ?: emptyList()
-                    )
-                    _selectedThreadId.value = thread.id
-                    _messages.value = emptyList()
+                    repo.getThreads().onSuccess { _threads.value = it }
+                    openThread(thread.id)
                 }
                 .onFailure { _error.value = it.message }
         }
