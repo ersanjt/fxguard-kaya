@@ -2405,6 +2405,99 @@
                 // Bind event handlers after DOM update
                 setupProfileEventHandlers();
             }
+            await refreshTelegramProfileSection();
+        }
+        async function refreshTelegramProfileSection() {
+            const statusEl = document.getElementById('telegramLinkStatus');
+            const btnGen = document.getElementById('btnGenerateTelegramToken');
+            const btnUnlink = document.getElementById('btnUnlinkTelegram');
+            const tokenBox = document.getElementById('telegramTokenBox');
+            if (!statusEl && !btnGen) return;
+            const res = await apiFetch('/api/auth/telegram-status');
+            if (res.needLogin) return;
+            const linked = !!(res.ok && res.data && res.data.linked);
+            if (statusEl) {
+                statusEl.innerHTML = linked
+                    ? '<span class="badge done">' + (LANG === 'fa' ? 'تلگرام متصل است' : 'Telegram linked') + '</span>'
+                    : '<span class="badge pending">' + (LANG === 'fa' ? 'تلگرام متصل نیست' : 'Telegram not linked') + '</span>';
+            }
+            if (btnUnlink) btnUnlink.style.display = linked ? '' : 'none';
+            if (btnGen) btnGen.style.display = linked ? 'none' : '';
+            if (tokenBox && linked) tokenBox.style.display = 'none';
+        }
+        async function generateTelegramLinkToken() {
+            const btn = document.getElementById('btnGenerateTelegramToken');
+            if (btn) btn.disabled = true;
+            try {
+                const res = await apiFetch('/api/auth/telegram-link-token', { method: 'POST', body: JSON.stringify({}) });
+                if (res.needLogin) return;
+                if (!res.ok) {
+                    toast(getApiError(res), true);
+                    return;
+                }
+                const d = res.data || {};
+                const codeEl = document.getElementById('telegramLinkTokenText');
+                const tokenBox = document.getElementById('telegramTokenBox');
+                const wrap = document.getElementById('telegramBotUrlWrap');
+                const linkEl = document.getElementById('telegramBotUrl');
+                if (codeEl) codeEl.textContent = d.token || '';
+                if (tokenBox) tokenBox.style.display = d.token ? '' : 'none';
+                if (wrap && linkEl) {
+                    if (d.botUrl) {
+                        wrap.style.display = '';
+                        linkEl.href = d.botUrl;
+                    } else {
+                        wrap.style.display = 'none';
+                    }
+                }
+                toast(LANG === 'fa' ? 'کد اتصال آماده است. در بات بفرستید: /link و سپس کد' : 'Code ready. In the bot send: /link then the code');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+        function copyTelegramToken() {
+            const codeEl = document.getElementById('telegramLinkTokenText');
+            const text = (codeEl && codeEl.textContent) ? codeEl.textContent.trim() : '';
+            if (!text) {
+                toast(LANG === 'fa' ? 'ابتدا کد را بسازید' : 'Generate a code first', true);
+                return;
+            }
+            const line = '/link ' + text;
+            function done(ok) {
+                toast(ok ? (LANG === 'fa' ? 'کپی شد (دستور کامل)' : 'Copied (full command)') : (LANG === 'fa' ? 'کپی نشد' : 'Copy failed'), !ok);
+            }
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(line).then(function() { done(true); }, function() { done(false); });
+            } else {
+                try {
+                    const ta = document.createElement('textarea');
+                    ta.value = line;
+                    document.body.appendChild(ta);
+                    ta.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(ta);
+                    done(true);
+                } catch (e) {
+                    done(false);
+                }
+            }
+        }
+        async function unlinkTelegram() {
+            const msg = LANG === 'fa' ? 'قطع اتصال تلگرام از حساب؟' : 'Disconnect Telegram from your account?';
+            if (typeof confirm === 'function' && !confirm(msg)) return;
+            const res = await apiFetch('/api/auth/telegram-link', { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (!res.ok) {
+                toast(getApiError(res), true);
+                return;
+            }
+            toast((res.data && res.data.message) || (LANG === 'fa' ? 'اتصال قطع شد' : 'Disconnected'));
+            await refreshTelegramProfileSection();
+        }
+        if (typeof window !== 'undefined') {
+            window.generateTelegramLinkToken = generateTelegramLinkToken;
+            window.copyTelegramToken = copyTelegramToken;
+            window.unlinkTelegram = unlinkTelegram;
         }
         async function uploadProfileAvatar(file) {
             const formData = new FormData();
