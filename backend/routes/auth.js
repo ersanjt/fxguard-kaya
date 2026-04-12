@@ -263,14 +263,15 @@ router.post('/login', async (req, res, _next) => {
 
 const RESET_TOKEN_EXPIRY_MINUTES = 60;
 
-const FORGOT_OK_MESSAGE = 'در صورت وجود حساب با این ایمیل، لینک بازیابی ارسال می‌شود.';
+const FORGOT_OK_MESSAGE =
+    'If an account exists for this email address, you will receive password reset instructions shortly.';
 const RESET_EMAIL_FAIL =
-    'ارسال ایمیل بازیابی انجام نشد. لطفاً بعداً تلاش کنید یا با مدیر سیستم تماس بگیرید.';
+    'We could not send the password reset email. Please try again later or contact your administrator.';
 
 router.post('/forgot-password', async (req, res, next) => {
     try {
         const email = (req.body.email || '').toString().trim().toLowerCase();
-        if (!email) return res.status(400).json({ error: 'ایمیل الزامی است' });
+        if (!email) return res.status(400).json({ error: 'Email is required' });
         const user = await User.findOne({ where: { email, isActive: true } });
         if (!user) {
             return res.status(200).json({ message: FORGOT_OK_MESSAGE });
@@ -303,26 +304,26 @@ router.post('/reset-password', async (req, res, next) => {
     try {
         const { token: resetToken, newPassword } = req.body;
         if (!resetToken || !newPassword) {
-            return res.status(400).json({ error: 'توکن و رمز عبور جدید الزامی است' });
+            return res.status(400).json({ error: 'Reset token and new password are required' });
         }
         const pwdCheck = validatePassword(newPassword);
         if (!pwdCheck.valid) return res.status(400).json({ error: pwdCheck.message });
         const row = await PasswordResetToken.findOne({
             where: { token: String(resetToken).trim() }
         });
-        if (!row) return res.status(400).json({ error: 'لینک بازیابی نامعتبر یا منقضی شده است' });
+        if (!row) return res.status(400).json({ error: 'This reset link is invalid or has expired' });
         if (new Date() > row.expiresAt) {
             await row.destroy();
-            return res.status(400).json({ error: 'لینک بازیابی منقضی شده است. دوباره درخواست دهید.' });
+            return res.status(400).json({ error: 'This reset link has expired. Please request a new one.' });
         }
         const user = await User.findByPk(row.userId);
         if (!user || !user.isActive) {
-            return res.status(400).json({ error: 'کاربر یافت نشد یا غیرفعال است' });
+            return res.status(400).json({ error: 'Account was not found or is disabled' });
         }
         user.password = newPassword;
         await user.save();
         await PasswordResetToken.destroy({ where: { userId: user.id } });
-        res.json({ message: 'رمز عبور با موفقیت تغییر کرد. اکنون می‌توانید وارد شوید.' });
+        res.json({ message: 'Your password has been updated. You can sign in now.' });
     } catch (err) {
         next(err);
     }

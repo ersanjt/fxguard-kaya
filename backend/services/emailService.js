@@ -9,7 +9,7 @@
 
 const logger = require('../config/logger');
 
-const FROM_NAME = process.env.SMTP_FROM_NAME || 'کایا CRM';
+const FROM_NAME = process.env.SMTP_FROM_NAME || 'Kaya CRM';
 const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@localhost';
 const LOGIN_NOTIFICATION_ENABLED = process.env.EMAIL_LOGIN_NOTIFICATION === 'true' || process.env.EMAIL_LOGIN_NOTIFICATION === '1';
 const PANEL_URL =
@@ -115,7 +115,7 @@ function buildMailOpts(config, { to, subject, text, html, attachments = [] }) {
     return {
         from,
         to: emails.join(', '),
-        subject: subject || '(بدون موضوع)',
+        subject: subject || '(no subject)',
         text: text || '',
         html: html || (text ? text.replace(/\n/g, '<br>') : ''),
         attachments: attachments || [],
@@ -178,7 +178,7 @@ function normalizeHost(host) {
 
 async function sendMailWithConfigDetailed(config, { to, subject, text, html, attachments = [] }, attempt = 1) {
     if (!config || !config.host || !config.port) {
-        return { ok: false, error: 'Host و پورت الزامی است.' };
+        return { ok: false, error: 'SMTP host and port are required' };
     }
 
     if (!checkRateLimit()) {
@@ -282,17 +282,19 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
     return { ok: false, error: msg };
 }
 
-/** قالب HTML مدرن با پشتیبانی RTL و طراحی حرفه‌ای */
+/** Shared HTML layout for outbound mail (English, LTR). */
 function baseHtml(title, body, opts = {}) {
     const accentColor = opts.accentColor || '#059669';
     const accentDark  = opts.accentDark  || '#047857';
-    const siteName    = opts.siteName    || FROM_NAME || 'پورتال کارکنان';
+    const siteName    = opts.siteName    || FROM_NAME || 'Staff Portal';
     const logoUrl     = opts.logoUrl     || '';
-    const footerText  = opts.footerText  || `این ایمیل به‌صورت خودکار از <strong>${siteName}</strong> ارسال شده است.`;
+    const footerText  = opts.footerText  || `This email was sent automatically by <strong>${siteName}</strong>.`;
     const unsubUrl    = `${PANEL_URL}?unsubscribe=1`;
+    const dir         = opts.dir || 'ltr';
+    const lang        = opts.lang || 'en';
 
     return `<!DOCTYPE html>
-<html dir="rtl" lang="fa" xmlns="http://www.w3.org/1999/xhtml">
+<html dir="${dir}" lang="${lang}" xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -300,9 +302,8 @@ function baseHtml(title, body, opts = {}) {
   <title>${title}</title>
   <!--[if mso]><noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript><![endif]-->
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap');
     *{box-sizing:border-box;margin:0;padding:0}
-    body{font-family:'Vazirmatn',Tahoma,Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;line-height:1.7;-webkit-font-smoothing:antialiased}
+    body{font-family:system-ui,-apple-system,'Segoe UI',Roboto,Ubuntu,Cantarell,Helvetica,Arial,sans-serif;background:#f0f2f5;color:#1a1a2e;line-height:1.7;-webkit-font-smoothing:antialiased}
     .wrapper{width:100%;background:#f0f2f5;padding:32px 16px}
     .container{max-width:580px;margin:0 auto}
     .brand-bar{background:linear-gradient(135deg,${accentColor} 0%,${accentDark} 100%);border-radius:16px 16px 0 0;padding:24px 32px;display:flex;align-items:center;gap:12px}
@@ -314,7 +315,7 @@ function baseHtml(title, body, opts = {}) {
     .card-body{padding:28px 32px}
     .card-body p{margin-bottom:14px;font-size:.97rem;color:#2d3748}
     .divider{border:none;border-top:1px solid #e8ecf0;margin:20px 0}
-    .info-box{background:#f8fafb;border:1px solid #e2e8f0;border-right:4px solid ${accentColor};border-radius:10px;padding:16px 20px;margin:18px 0}
+    .info-box{background:#f8fafb;border:1px solid #e2e8f0;border-left:4px solid ${accentColor};border-radius:10px;padding:16px 20px;margin:18px 0}
     .info-box .label{font-size:.82rem;color:#718096;margin-bottom:3px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
     .info-box .value{font-size:1rem;color:#1a202c;font-weight:600;word-break:break-all}
     .cred-box{background:#1a202c;border-radius:10px;padding:16px 20px;margin:18px 0;direction:ltr;text-align:left}
@@ -360,7 +361,7 @@ function baseHtml(title, body, opts = {}) {
       <div class="card-body">${body}</div>
       <div class="card-footer">
         <p>${footerText}</p>
-        <p class="mt-4"><a href="${unsubUrl}">لغو اشتراک</a> &nbsp;·&nbsp; <a href="${PANEL_URL}">ورود به پنل</a></p>
+        <p class="mt-4"><a href="${unsubUrl}">Unsubscribe</a> &nbsp;·&nbsp; <a href="${PANEL_URL}">Sign in</a></p>
       </div>
     </div>
   </div>
@@ -370,61 +371,66 @@ function baseHtml(title, body, opts = {}) {
 }
 
 /**
- * ارسال ایمیل خوش‌آمدگویی کامل به کاربر تازه‌ساخته‌شده
- * شامل: اطلاعات ورود، معرفی سیستم، راهنمای شروع
+ * Welcome email for a newly created user (sign-in details).
  */
-async function sendWelcomeCredentials(user, plainPassword, siteName = 'پورتال کارکنان', panelConfig = null) {
+async function sendWelcomeCredentials(user, plainPassword, siteName = 'Staff Portal', panelConfig = null) {
     if (!user || !user.email) return false;
-    const roleLabels = { owner: 'مالک', admin: 'مدیر', manager: 'مدیر میانی', supervisor: 'سرپرست', agent: 'کارشناس' };
-    const roleName = roleLabels[user.role] || user.role || 'کارشناس';
-    const title = `خوش آمدید به ${escHtml(siteName)}`;
+    const roleLabels = {
+        owner: 'Owner',
+        admin: 'Administrator',
+        manager: 'Manager',
+        supervisor: 'Supervisor',
+        agent: 'Agent'
+    };
+    const roleName = roleLabels[user.role] || user.role || 'Agent';
+    const title = `Welcome to ${escHtml(siteName)}`;
     const body = `
-      <p>سلام <strong>${escHtml(user.name || 'کاربر گرامی')}</strong>،</p>
-      <p>حساب کاربری شما در سیستم <strong>${escHtml(siteName)}</strong> با موفقیت ایجاد شد. 🎉</p>
-      <p>نقش شما در سیستم: <span class="badge badge-green">${escHtml(roleName)}</span></p>
+      <p>Hello <strong>${escHtml(user.name || 'there')}</strong>,</p>
+      <p>Your account on <strong>${escHtml(siteName)}</strong> has been created.</p>
+      <p>Your role: <span class="badge badge-green">${escHtml(roleName)}</span></p>
       <hr class="divider">
-      <p><strong>🔑 اطلاعات ورود به سیستم:</strong></p>
+      <p><strong>Sign-in details</strong></p>
       <div class="info-box">
-        <div class="label">آدرس پنل</div>
+        <div class="label">Portal URL</div>
         <div class="value"><a href="${PANEL_URL}" style="color:#059669">${PANEL_URL}</a></div>
       </div>
       <div class="info-box">
-        <div class="label">ایمیل ورود${user.username ? ' / نام کاربری' : ''}</div>
-        <div class="value">${user.email}${user.username ? ' · ' + user.username : ''}</div>
+        <div class="label">Sign-in email${user.username ? ' / username' : ''}</div>
+        <div class="value">${escHtml(user.email)}${user.username ? ' · ' + escHtml(user.username) : ''}</div>
       </div>
       <div class="cred-box">
-        <div class="cred-label">🔒 رمز عبور موقت</div>
-        <div class="cred-value">${plainPassword}</div>
+        <div class="cred-label">Temporary password</div>
+        <div class="cred-value">${escHtml(plainPassword)}</div>
       </div>
       <div class="alert-box alert-warn">
         <span class="alert-icon">⚠️</span>
-        <span class="alert-text">پس از اولین ورود، رمز عبور خود را از بخش <strong>«پروفایل من»</strong> تغییر دهید.</span>
+        <span class="alert-text">After your first sign-in, change your password from <strong>My profile</strong>.</span>
       </div>
       <hr class="divider">
-      <p><strong>✨ امکانات سیستم:</strong></p>
+      <p><strong>What you can do</strong></p>
       <div class="feature-grid">
-        <div class="feature-item"><span class="icon">💬</span>مدیریت مکالمات واتساپ</div>
-        <div class="feature-item"><span class="icon">👥</span>مدیریت مشتریان</div>
-        <div class="feature-item"><span class="icon">🎫</span>سیستم تیکت‌ها</div>
-        <div class="feature-item"><span class="icon">✅</span>مدیریت وظایف</div>
-        <div class="feature-item"><span class="icon">📊</span>گزارش‌ها و آنالیز</div>
-        <div class="feature-item"><span class="icon">🔔</span>اعلان‌های لحظه‌ای</div>
+        <div class="feature-item"><span class="icon">💬</span>WhatsApp conversations</div>
+        <div class="feature-item"><span class="icon">👥</span>Customer management</div>
+        <div class="feature-item"><span class="icon">🎫</span>Tickets</div>
+        <div class="feature-item"><span class="icon">✅</span>Tasks</div>
+        <div class="feature-item"><span class="icon">📊</span>Reports &amp; analytics</div>
+        <div class="feature-item"><span class="icon">🔔</span>Real-time notifications</div>
       </div>
       <hr class="divider">
-      <p><strong>🚀 مراحل شروع:</strong></p>
+      <p><strong>Getting started</strong></p>
       <ol style="margin: 0 0 0 20px; padding: 0; font-size:.94rem; color:#2d3748">
-        <li style="margin-bottom:6px">وارد پنل شوید</li>
-        <li style="margin-bottom:6px">رمز عبور خود را تغییر دهید</li>
-        <li style="margin-bottom:6px">پروفایل خود را تکمیل کنید</li>
-        <li>شروع به کار با مکالمات و تیکت‌ها کنید</li>
+        <li style="margin-bottom:6px">Open the portal and sign in</li>
+        <li style="margin-bottom:6px">Change your password</li>
+        <li style="margin-bottom:6px">Complete your profile</li>
+        <li>Start working with conversations and tickets</li>
       </ol>
       <div class="text-center mt-4">
-        <a href="${PANEL_URL}" class="btn">ورود به پنل →</a>
+        <a href="${PANEL_URL}" class="btn">Sign in to the portal →</a>
       </div>`;
     const mailOpts = {
         to: user.email,
-        subject: `${title} — اطلاعات ورود`,
-        text: `سلام ${user.name || 'کاربر'}،\n\nحساب کاربری شما در ${siteName} ایجاد شد.\n\nآدرس پنل: ${PANEL_URL}\nایمیل: ${user.email}${user.username ? '\nنام کاربری: ' + user.username : ''}\nرمز موقت: ${plainPassword}\n\nپس از ورود رمز خود را تغییر دهید.`,
+        subject: `${title} — your sign-in details`,
+        text: `Hello ${user.name || 'there'},\n\nYour account on ${siteName} is ready.\n\nPortal: ${PANEL_URL}\nEmail: ${user.email}${user.username ? '\nUsername: ' + user.username : ''}\nTemporary password: ${plainPassword}\n\nPlease change your password after you sign in.`,
         html: baseHtml(title, body, { siteName })
     };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
@@ -440,28 +446,28 @@ async function sendLoginNotification(user, ip = '', userAgent = '', options = nu
     if (usePanel && options.loginNotificationEnabled !== true) return false;
     if (!usePanel && (!LOGIN_NOTIFICATION_ENABLED || !user || !user.email)) return false;
     if (!user || !user.email) return false;
-    const title = 'ورود به پورتال';
-    const now = new Date().toLocaleString('fa-IR', { dateStyle: 'short', timeStyle: 'short' });
+    const title = 'New sign-in to your account';
+    const now = new Date().toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
     const body = `
-      <p>سلام <strong>${user.name || 'کاربر'}</strong>،</p>
-      <p>ورود موفق به پورتال ثبت شد.</p>
+      <p>Hello <strong>${escHtml(user.name || 'there')}</strong>,</p>
+      <p>A successful sign-in to the portal was recorded for your account.</p>
       <div class="info-box">
-        <div class="label">زمان ورود</div>
-        <div class="value">${now}</div>
+        <div class="label">Time</div>
+        <div class="value">${escHtml(now)}</div>
       </div>
-      ${ip ? `<div class="info-box"><div class="label">آدرس IP</div><div class="value" style="direction:ltr;text-align:left">${ip}</div></div>` : ''}
-      ${userAgent ? `<div class="info-box"><div class="label">مرورگر / دستگاه</div><div class="value" style="font-size:.85rem">${userAgent.substring(0, 100)}${userAgent.length > 100 ? '…' : ''}</div></div>` : ''}
+      ${ip ? `<div class="info-box"><div class="label">IP address</div><div class="value" style="direction:ltr;text-align:left">${escHtml(ip)}</div></div>` : ''}
+      ${userAgent ? `<div class="info-box"><div class="label">Browser / device</div><div class="value" style="font-size:.85rem">${escHtml(userAgent.substring(0, 100))}${userAgent.length > 100 ? '…' : ''}</div></div>` : ''}
       <div class="alert-box alert-warn" style="margin-top:16px">
         <span class="alert-icon">⚠️</span>
-        <span class="alert-text">اگر این ورود توسط شما انجام نشده، فوری رمز عبور خود را تغییر دهید.</span>
+        <span class="alert-text">If this was not you, change your password immediately.</span>
       </div>
       <div class="text-center mt-4">
-        <a href="${PANEL_URL}?page=profile" class="btn-outline">تغییر رمز عبور</a>
+        <a href="${PANEL_URL}?page=profile" class="btn-outline">Change password</a>
       </div>`;
     const mailOpts = {
         to: user.email,
-        subject: `🔔 ورود به پورتال — ${now}`,
-        text: `ورود موفق به پورتال انجام شد. زمان: ${now}${ip ? ' | IP: ' + ip : ''}`,
+        subject: `Sign-in notification — ${now}`,
+        text: `A sign-in to the portal was recorded.\nTime: ${now}${ip ? '\nIP: ' + ip : ''}`,
         html: baseHtml(title, body)
     };
     if (usePanel) return sendMailWithConfig(options.emailConfig, mailOpts);
@@ -477,28 +483,28 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
     const base = PANEL_URL.replace(/#.*$/, '').replace(/\?.*$/, '');
     const sep = base.indexOf('?') >= 0 ? '&' : '?';
     const resetUrl = `${base}${sep}reset=1&token=${encodeURIComponent(resetToken)}`;
-    const title = 'بازیابی رمز عبور';
+    const title = 'Reset your password';
     const body = `
-      <p>سلام <strong>${user.name || 'کاربر گرامی'}</strong>،</p>
-      <p>درخواست بازیابی رمز عبور برای حساب زیر ثبت شده است:</p>
+      <p>Hello <strong>${escHtml(user.name || 'there')}</strong>,</p>
+      <p>We received a request to reset the password for this account:</p>
       <div class="info-box">
-        <div class="label">ایمیل حساب</div>
-        <div class="value">${user.email}</div>
+        <div class="label">Account email</div>
+        <div class="value">${escHtml(user.email)}</div>
       </div>
-      <p>برای تعیین رمز جدید روی دکمه زیر کلیک کنید:</p>
+      <p>Click the button below to choose a new password:</p>
       <div class="text-center mt-4">
-        <a href="${resetUrl}" class="btn">🔒 تعیین رمز عبور جدید</a>
+        <a href="${resetUrl}" class="btn">Set a new password</a>
       </div>
       <div class="alert-box alert-info" style="margin-top:20px">
         <span class="alert-icon">ℹ️</span>
-        <span class="alert-text">این لینک تا <strong>${expiresInMinutes} دقیقه</strong> معتبر است و فقط یک بار قابل استفاده است.</span>
+        <span class="alert-text">This link is valid for <strong>${expiresInMinutes} minutes</strong> and can only be used once.</span>
       </div>
       <hr class="divider">
-      <p class="muted">اگر شما این درخواست را نزده‌اید، این ایمیل را نادیده بگیرید. رمز فعلی شما تغییر نخواهد کرد.</p>`;
+      <p class="muted">If you did not request this, you can ignore this email. Your current password will stay the same.</p>`;
     const mailOpts = {
         to: user.email,
-        subject: '🔐 بازیابی رمز عبور پورتال',
-        text: `بازیابی رمز عبور\n\nسلام ${user.name || 'کاربر'}،\nلینک بازیابی: ${resetUrl}\n(معتبر تا ${expiresInMinutes} دقیقه)`,
+        subject: 'Password reset request',
+        text: `Password reset\n\nHello ${user.name || 'there'},\nUse this link to set a new password: ${resetUrl}\n(Valid for ${expiresInMinutes} minutes.)`,
         html: baseHtml(title, body)
     };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
@@ -517,28 +523,33 @@ function escHtml(s) {
 async function sendTicketAssigned(user, ticket, assignedBy = null, panelConfig = null) {
     if (!user || !user.email) return false;
     const ticketUrl = `${PANEL_URL}?page=tickets&id=${encodeURIComponent(ticket.id || '')}`;
-    const priorityBadge = { high: '<span class="badge badge-red">بالا</span>', urgent: '<span class="badge badge-red">فوری</span>', normal: '<span class="badge badge-blue">عادی</span>', low: '<span class="badge badge-yellow">کم</span>' };
-    const title = `تیکت جدید برای شما تخصیص یافت`;
+    const priorityBadge = {
+        high: '<span class="badge badge-red">High</span>',
+        urgent: '<span class="badge badge-red">Urgent</span>',
+        normal: '<span class="badge badge-blue">Normal</span>',
+        low: '<span class="badge badge-yellow">Low</span>'
+    };
+    const title = 'A ticket has been assigned to you';
     const body = `
-      <p>سلام <strong>${escHtml(user.name || 'کاربر')}</strong>،</p>
-      <p>یک تیکت به شما تخصیص داده شد${assignedBy ? ` توسط <strong>${escHtml(assignedBy)}</strong>` : ''}:</p>
+      <p>Hello <strong>${escHtml(user.name || 'there')}</strong>,</p>
+      <p>A ticket has been assigned to you${assignedBy ? ` by <strong>${escHtml(assignedBy)}</strong>` : ''}.</p>
       <div class="info-box">
-        <div class="label">موضوع تیکت</div>
-        <div class="value">${escHtml(ticket.subject || ticket.title || '(بدون موضوع)')}</div>
+        <div class="label">Subject</div>
+        <div class="value">${escHtml(ticket.subject || ticket.title || '(No subject)')}</div>
       </div>
-      ${ticket.ticketNumber ? `<div class="info-box"><div class="label">شماره تیکت</div><div class="value">#${escHtml(ticket.ticketNumber)}</div></div>` : ''}
+      ${ticket.ticketNumber ? `<div class="info-box"><div class="label">Ticket number</div><div class="value">#${escHtml(ticket.ticketNumber)}</div></div>` : ''}
       <div class="info-box">
-        <div class="label">اولویت</div>
+        <div class="label">Priority</div>
         <div class="value">${priorityBadge[ticket.priority] || escHtml(ticket.priority) || '—'}</div>
       </div>
-      ${ticket.description ? `<div class="info-box"><div class="label">شرح</div><div class="value" style="font-size:.9rem;line-height:1.6">${escHtml(String(ticket.description).substring(0, 300))}${ticket.description.length > 300 ? '...' : ''}</div></div>` : ''}
+      ${ticket.description ? `<div class="info-box"><div class="label">Description</div><div class="value" style="font-size:.9rem;line-height:1.6">${escHtml(String(ticket.description).substring(0, 300))}${ticket.description.length > 300 ? '...' : ''}</div></div>` : ''}
       <div class="text-center mt-4">
-        <a href="${ticketUrl}" class="btn">مشاهده تیکت →</a>
+        <a href="${ticketUrl}" class="btn">Open ticket →</a>
       </div>`;
     const mailOpts = {
         to: user.email,
-        subject: `🎫 تیکت جدید: ${ticket.subject || ticket.title || '#' + (ticket.ticketNumber || '')}`,
-        text: `تیکت جدید برای شما تخصیص یافت: ${ticket.subject || ticket.title || ''} — ${ticketUrl}`,
+        subject: `New ticket: ${ticket.subject || ticket.title || '#' + (ticket.ticketNumber || '')}`,
+        text: `A ticket was assigned to you: ${ticket.subject || ticket.title || ''} — ${ticketUrl}`,
         html: baseHtml(title, body)
     };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
@@ -551,19 +562,19 @@ async function sendTicketAssigned(user, ticket, assignedBy = null, panelConfig =
 async function sendConversationAssigned(user, conversation, customerName = '', assignedBy = null, panelConfig = null) {
     if (!user || !user.email) return false;
     const convUrl = `${PANEL_URL}?page=conversations&id=${encodeURIComponent(conversation.id || '')}`;
-    const title = 'مکالمه جدید به شما تخصیص یافت';
+    const title = 'A conversation has been assigned to you';
     const body = `
-      <p>سلام <strong>${escHtml(user.name || 'کاربر')}</strong>،</p>
-      <p>یک مکالمه واتساپ به شما تخصیص داده شد${assignedBy ? ` توسط <strong>${escHtml(assignedBy)}</strong>` : ''}:</p>
-      ${customerName ? `<div class="info-box"><div class="label">مشتری</div><div class="value">${escHtml(customerName)}</div></div>` : ''}
-      ${conversation.lastMessagePreview ? `<div class="info-box"><div class="label">آخرین پیام</div><div class="value" style="font-size:.9rem;font-style:italic">"${escHtml(String(conversation.lastMessagePreview).substring(0, 200))}"</div></div>` : ''}
+      <p>Hello <strong>${escHtml(user.name || 'there')}</strong>,</p>
+      <p>A WhatsApp conversation has been assigned to you${assignedBy ? ` by <strong>${escHtml(assignedBy)}</strong>` : ''}.</p>
+      ${customerName ? `<div class="info-box"><div class="label">Customer</div><div class="value">${escHtml(customerName)}</div></div>` : ''}
+      ${conversation.lastMessagePreview ? `<div class="info-box"><div class="label">Last message</div><div class="value" style="font-size:.9rem;font-style:italic">"${escHtml(String(conversation.lastMessagePreview).substring(0, 200))}"</div></div>` : ''}
       <div class="text-center mt-4">
-        <a href="${convUrl}" class="btn">مشاهده مکالمه →</a>
+        <a href="${convUrl}" class="btn">Open conversation →</a>
       </div>`;
     const mailOpts = {
         to: user.email,
-        subject: `💬 مکالمه جدید${customerName ? ': ' + customerName : ''} — به شما تخصیص یافت`,
-        text: `مکالمه به شما تخصیص یافت: ${customerName || ''} — ${convUrl}`,
+        subject: `New conversation assigned${customerName ? ': ' + customerName : ''}`,
+        text: `A conversation was assigned to you: ${customerName || ''} — ${convUrl}`,
         html: baseHtml(title, body)
     };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
@@ -627,7 +638,7 @@ async function sendContactForm({ purpose, name, email, phone, message, emailConf
  */
 async function testSmtpConnection(config) {
     if (!config || !config.host || !config.port) {
-        return { ok: false, error: 'Host و پورت الزامی است.' };
+        return { ok: false, error: 'SMTP host and port are required' };
     }
 
     try {
@@ -668,11 +679,11 @@ async function sendTestEmail(config, testEmail) {
 
     const result = await sendMailWithConfigDetailed(config, {
         to: testEmail,
-        subject: 'تست SMTP - WhatsApp CRM',
-        text: 'این ایمیل برای تست تنظیمات SMTP است.',
-        html: baseHtml('تست SMTP', '<p>این ایمیل برای تست تنظیمات SMTP است.</p><p>اگر این ایمیل دریافت کردید، تنظیمات SMTP شما درست است.</p>')
+        subject: 'SMTP test — Kaya CRM',
+        text: 'This message was sent to verify your SMTP settings.',
+        html: baseHtml('SMTP test', '<p>This message was sent to verify your SMTP settings.</p><p>If you received it, your outbound mail configuration is working.</p>')
     });
-    
+
     return result;
 }
 
@@ -695,5 +706,6 @@ module.exports = {
     getFrom,
     LOGIN_NOTIFICATION_ENABLED,
     PANEL_URL,
-    baseHtml
+    baseHtml,
+    escHtml
 };

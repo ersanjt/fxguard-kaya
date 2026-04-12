@@ -43,6 +43,7 @@
             forgot_loading:       'در حال ارسال...',
             forgot_email_req:     'ایمیل را وارد کنید.',
             forgot_success:       'در صورت وجود حساب، لینک بازیابی به ایمیل شما ارسال شد.',
+            forgot_send_fail:     'ارسال ایمیل بازیابی انجام نشد. دوباره تلاش کنید یا با مدیر سیستم تماس بگیرید.',
             reset_title:          'تعیین رمز عبور جدید',
             reset_sub:            'رمز عبور جدید و تکرار آن را وارد کنید.',
             reset_new_lbl:        'رمز عبور جدید',
@@ -50,7 +51,9 @@
             reset_btn:            'تغییر رمز و ورود',
             reset_loading:        'در حال تغییر...',
             reset_match:          'رمز عبور و تکرار آن یکسان نیستند.',
-            reset_length:         'رمز عبور حداقل ۶ کاراکتر باشد.',
+            reset_length:         'رمز عبور باید حداقل ۸ کاراکتر باشد.',
+            reset_need_letter:    'رمز باید حداقل یک حرف انگلیسی داشته باشد.',
+            reset_need_digit:     'رمز باید حداقل یک عدد داشته باشد.',
             reset_expired:        'لینک بازیابی منقضی شده است. دوباره درخواست بازیابی کنید.',
             reset_fail:           'خطا در تغییر رمز عبور.',
             cant_signin:          'نمی‌توانید وارد شوید؟',
@@ -62,7 +65,7 @@
             demo_login_sub:       'ورود به محیط نمایشی — در دمو عمومی تغییرات ذخیره نمی‌شود',
             demo_page_title:      'ورود | دمو FXGuard',
             forgot_email_ph:      'email@example.com',
-            reset_new_ph:         'حداقل ۶ کاراکتر',
+            reset_new_ph:         'حداقل ۸ کاراکتر، یک حرف و یک عدد',
             reset_confirm_ph:     'تکرار رمز',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'ترکی',
         },
@@ -102,6 +105,7 @@
             forgot_loading:       'Sending...',
             forgot_email_req:     'Please enter your email.',
             forgot_success:       'If an account exists with this email, a reset link has been sent.',
+            forgot_send_fail:     'Could not send the reset email. Please try again or contact support.',
             reset_title:          'Set new password',
             reset_sub:            'Enter your new password and confirm it.',
             reset_new_lbl:        'New password',
@@ -109,7 +113,9 @@
             reset_btn:            'Change password & sign in',
             reset_loading:        'Changing...',
             reset_match:          'Password and confirmation do not match.',
-            reset_length:         'Password must be at least 6 characters.',
+            reset_length:         'Password must be at least 8 characters.',
+            reset_need_letter:    'Password must include at least one letter.',
+            reset_need_digit:     'Password must include at least one number.',
             reset_expired:        'Reset link has expired. Please request a new one.',
             reset_fail:           'Failed to reset password.',
             cant_signin:          "Can't sign in?",
@@ -121,7 +127,7 @@
             demo_login_sub:       'Sign in to the read-only public demo',
             demo_page_title:      'Sign in | FXGuard Demo',
             forgot_email_ph:      'you@example.com',
-            reset_new_ph:         'At least 6 characters',
+            reset_new_ph:         'At least 8 characters, one letter & one number',
             reset_confirm_ph:     'Confirm password',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Turkish',
         },
@@ -161,6 +167,7 @@
             forgot_loading:       'Gönderiliyor...',
             forgot_email_req:     'E-postanızı girin.',
             forgot_success:       'Bu e-postayla hesap varsa sıfırlama bağlantısı gönderildi.',
+            forgot_send_fail:     'Sıfırlama e-postası gönderilemedi. Lütfen tekrar deneyin veya destekle iletişime geçin.',
             reset_title:          'Yeni şifre belirleme',
             reset_sub:            'Yeni şifrenizi ve tekrarını girin.',
             reset_new_lbl:        'Yeni şifre',
@@ -168,7 +175,9 @@
             reset_btn:            'Şifreyi değiştir ve giriş yap',
             reset_loading:        'Değiştiriliyor...',
             reset_match:          'Şifre ve tekrarı aynı değil.',
-            reset_length:         'Şifre en az 6 karakter olmalıdır.',
+            reset_length:         'Şifre en az 8 karakter olmalıdır.',
+            reset_need_letter:    'Şifre en az bir harf içermelidir.',
+            reset_need_digit:     'Şifre en az bir rakam içermelidir.',
             reset_expired:        'Sıfırlama bağlantısının süresi dolmuş. Yeniden isteyin.',
             reset_fail:           'Şifre sıfırlama başarısız.',
             cant_signin:          'Giriş yapamıyor musunuz?',
@@ -180,7 +189,7 @@
             demo_login_sub:       'Salt okunur genel demo ortamına giriş',
             demo_page_title:      'Giriş | FXGuard Demo',
             forgot_email_ph:      'ornek@email.com',
-            reset_new_ph:         'En az 6 karakter',
+            reset_new_ph:         'En az 8 karakter, bir harf ve bir rakam',
             reset_confirm_ph:     'Şifre tekrar',
             lang_fa: 'فارسی', lang_en: 'English', lang_tr: 'Türkçe',
         }
@@ -444,11 +453,18 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email: email })
         }).then(function(r) {
-            return r.json().catch(function() { return {}; });
-        }).then(function(data) {
+            return r.json().catch(function() { return {}; }).then(function(data) {
+                return { ok: r.ok, data: data };
+            });
+        }).then(function(res) {
             setBtnLoading('btnForgotSend', false, t('forgot_send_btn'));
+            if (!res.ok) {
+                if (suc) { suc.textContent = ''; suc.className = 'lp-msg success'; }
+                setMsg('forgotMsg', (res.data && res.data.error) || t('forgot_send_fail'));
+                return;
+            }
             if (suc) {
-                suc.textContent = (data && data.message) || t('forgot_success');
+                suc.textContent = (res.data && res.data.message) || t('forgot_success');
                 suc.className = 'lp-msg success has-text';
             }
         }).catch(function() {
@@ -478,8 +494,10 @@
         var cp = document.getElementById('lpResetConfirm') ? document.getElementById('lpResetConfirm').value : '';
         clearMsg('resetMsg');
 
-        if (np !== cp)     { setMsg('resetMsg', t('reset_match'));   return; }
-        if (np.length < 6) { setMsg('resetMsg', t('reset_length'));  return; }
+        if (np !== cp) { setMsg('resetMsg', t('reset_match')); return; }
+        if (np.length < 8) { setMsg('resetMsg', t('reset_length')); return; }
+        if (!/[a-zA-Z]/.test(np)) { setMsg('resetMsg', t('reset_need_letter')); return; }
+        if (!/[0-9]/.test(np)) { setMsg('resetMsg', t('reset_need_digit')); return; }
         if (!window._lpResetToken) { setMsg('resetMsg', t('reset_expired')); return; }
 
         setBtnLoading('btnResetSubmit', true, t('reset_loading'));
@@ -489,9 +507,12 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ token: window._lpResetToken, newPassword: np })
         }).then(function(r) {
-            return r.json().catch(function() { return {}; });
-        }).then(function(data) {
-            if (data && data.message) {
+            return r.json().catch(function() { return {}; }).then(function(data) {
+                return { ok: r.ok, data: data };
+            });
+        }).then(function(res) {
+            var data = res.data;
+            if (res.ok && data && data.message) {
                 window._lpResetToken = null;
                 try { window.history.replaceState(null, '', window.location.pathname); } catch(_) {}
                 setBtnLoading('btnResetSubmit', false, t('reset_btn'));

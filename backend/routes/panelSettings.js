@@ -186,6 +186,10 @@ router.put('/', authMiddleware, async (req, res, next) => {
             where: { id: 'default' },
             defaults: {}
         });
+        const telegramTokenBeforeSave =
+            row.telegramBotToken && String(row.telegramBotToken).trim()
+                ? String(row.telegramBotToken).trim()
+                : '';
         if (siteName !== undefined) row.siteName = siteName === '' ? null : siteName;
         if (logoUrl !== undefined) row.logoUrl = logoUrl === '' ? null : logoUrl;
         if (faviconUrl !== undefined) row.faviconUrl = faviconUrl === '' ? null : faviconUrl;
@@ -231,6 +235,21 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (iosAppUrl !== undefined) row.iosAppUrl = iosAppUrl === '' ? null : String(iosAppUrl).trim();
         if (androidAppUrl !== undefined) row.androidAppUrl = androidAppUrl === '' ? null : String(androidAppUrl).trim();
         await row.save();
+        const telegramTokenAfterSave =
+            row.telegramBotToken && String(row.telegramBotToken).trim()
+                ? String(row.telegramBotToken).trim()
+                : '';
+        if (telegramBotToken !== undefined && telegramTokenBeforeSave !== telegramTokenAfterSave) {
+            const telegramBotService = require('../services/telegramBotService');
+            const models = require('../models');
+            const logger = require('../config/logger');
+            try {
+                await telegramBotService.restartPollingFromPanel(models);
+                logger.info('Telegram bot: polling restarted after panel bot token change');
+            } catch (e) {
+                logger.warn('Telegram bot: polling restart failed after panel save', { error: e.message });
+            }
+        }
         const s = await getSettings();
         if (footerStyle !== undefined) s.footerStyle = (footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(footerStyle) >= 0) ? footerStyle : 'accent';
         s.supportedLanguages = getSupportedLanguages(s);
@@ -293,13 +312,13 @@ router.post('/test-email', authMiddleware, async (req, res, next) => {
             };
             if (!emailConfig.from && emailConfig.user) emailConfig.from = emailConfig.user;
         }
-        const siteName = (settings && settings.siteName) || 'پورتال کارکنان';
-        const title = 'ایمیل تست — ' + siteName;
-        const body = '<p>این ایمیل برای تست تنظیمات SMTP پنل ارسال شده است. اگر آن را دریافت کرده‌اید، ارسال ایمیل درست کار می‌کند.</p>';
+        const siteName = (settings && settings.siteName) || 'Staff Portal';
+        const title = 'Test email — ' + siteName;
+        const body = '<p>This message was sent to verify SMTP settings for the panel. If you received it, outbound email is working.</p>';
         const mailOpts = {
             to,
             subject: title,
-            text: 'این ایمیل برای تست تنظیمات SMTP پنل ارسال شده است.',
+            text: 'This message was sent to verify SMTP settings for the panel.',
             html: emailService.baseHtml(title, body)
         };
         let result = { ok: false };

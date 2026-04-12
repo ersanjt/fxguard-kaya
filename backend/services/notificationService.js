@@ -59,18 +59,21 @@ async function notifyAnnouncement(announcement, recipientIds, io) {
             // ایمیل
             if (pref.announceEmailEnabled && user.email) {
                 try {
-                    const title = `اعلان مهم: ${announcement.title}`;
-                    const from = announcement.fromUser ? announcement.fromUser.name : 'سیستم';
+                    const esc = emailService.escHtml;
+                    const title = `Important notice: ${esc(announcement.title)}`;
+                    const from = announcement.fromUser ? esc(announcement.fromUser.name) : 'System';
+                    const when = new Date(announcement.createdAt).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+                    const bodyHtml = esc(String(announcement.body || '')).replace(/\n/g, '<br>');
                     const body = `
-                        <p>سلام ${user.name || 'کاربر'}،</p>
-                        <p><strong>اعلان مهم از ${from}:</strong></p>
-                        <p>${announcement.body.replace(/\n/g, '<br>')}</p>
-                        <p class="muted">زمان: ${new Date(announcement.createdAt).toLocaleString('fa-IR')}</p>
+                        <p>Hello ${esc(user.name || 'there')},</p>
+                        <p><strong>Important notice from ${from}:</strong></p>
+                        <p>${bodyHtml}</p>
+                        <p class="muted">Time: ${when}</p>
                     `;
 
                     const mailOpts = {
                         to: user.email,
-                        subject: title,
+                        subject: `Important notice: ${String(announcement.title || '').slice(0, 200)}`,
                         text: announcement.body,
                         html: emailService.baseHtml(title, body)
                     };
@@ -125,25 +128,29 @@ async function notifyTaskAssigned(task, io) {
             try {
                 const settings = await PanelSetting.findByPk('default');
                 const emailConfig = getPanelEmailConfig(settings);
-                const title = `تسک جدید برای شما: ${task.title}`;
-                const priorityLabel = { low: 'پایین', normal: 'متوسط', high: 'بالا', urgent: 'فوری' }[task.priority] || task.priority;
-                const dueStr = task.dueDate ? new Date(task.dueDate).toLocaleString('fa-IR') : 'تعیین نشده';
+                const esc = emailService.escHtml;
+                const title = `New task assigned: ${esc(task.title)}`;
+                const priorityLabel = { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' }[task.priority] || esc(String(task.priority || ''));
+                const dueStr = task.dueDate
+                    ? new Date(task.dueDate).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })
+                    : 'Not set';
+                const desc = esc((task.description || '—').substring(0, 200));
                 const body = `
-                    <p>سلام ${user.name}،</p>
-                    <p>یک تسک جدید برای شما تخصیص داده شده است:</p>
-                    <p><strong>${task.title}</strong></p>
+                    <p>Hello ${esc(user.name || 'there')},</p>
+                    <p>A new task has been assigned to you:</p>
+                    <p><strong>${esc(task.title)}</strong></p>
                     <ul>
-                        <li>اولویت: ${priorityLabel}</li>
-                        <li>مهلت: ${dueStr}</li>
-                        <li>توضیح: ${(task.description || '—').substring(0, 200)}…</li>
+                        <li>Priority: ${priorityLabel}</li>
+                        <li>Due: ${dueStr}</li>
+                        <li>Description: ${desc}${(task.description && task.description.length > 200) ? '…' : ''}</li>
                     </ul>
-                    <p>برای مشاهده جزئیات وارد پنل شوید.</p>
+                    <p>Open the portal for full details.</p>
                 `;
 
                 const mailOpts = {
                     to: user.email,
-                    subject: title,
-                    text: `تسک: ${task.title}`,
+                    subject: `New task: ${String(task.title || '').slice(0, 200)}`,
+                    text: `Task: ${task.title}`,
                     html: emailService.baseHtml(title, body)
                 };
 
@@ -268,18 +275,20 @@ async function notifyTicketReply(ticket, reply, io) {
             // ایمیل
             if (pref && pref.ticketReplyEmailEnabled && user.email) {
                 try {
-                    const title = `پاسخ برای تیکت: ${ticket.title}`;
-                    const replyFrom = reply.user ? reply.user.name : 'پاسخگو';
+                    const esc = emailService.escHtml;
+                    const title = `Ticket reply: ${esc(ticket.title)}`;
+                    const replyFrom = reply.user ? esc(reply.user.name) : 'Support';
+                    const snippet = esc(reply.content.substring(0, 300)).replace(/\n/g, '<br>');
                     const body = `
-                        <p>سلام ${user.name}،</p>
-                        <p><strong>${replyFrom}</strong> پاسخی برای تیکت <strong>${ticket.ticketNumber}</strong> نوشته است:</p>
-                        <p>${reply.content.substring(0, 300).replace(/\n/g, '<br>')}…</p>
-                        <p class="muted">برای مشاهده پاسخ کامل وارد پنل شوید.</p>
+                        <p>Hello ${esc(user.name || 'there')},</p>
+                        <p><strong>${replyFrom}</strong> replied on ticket <strong>${esc(String(ticket.ticketNumber || ''))}</strong>:</p>
+                        <p>${snippet}${reply.content.length > 300 ? '…' : ''}</p>
+                        <p class="muted">Open the portal to read the full thread.</p>
                     `;
 
                     const mailOpts = {
                         to: user.email,
-                        subject: title,
+                        subject: `Ticket reply: ${String(ticket.title || '').slice(0, 200)}`,
                         text: reply.content.substring(0, 200),
                         html: emailService.baseHtml(title, body)
                     };

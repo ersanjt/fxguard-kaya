@@ -2198,6 +2198,12 @@
             try {
                 const r = await fetch(API + '/api/auth/forgot-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email }) });
                 const data = await r.json().catch(function() { return {}; });
+                if (!r.ok) {
+                    if (successEl) successEl.style.display = 'none';
+                    if (errEl) errEl.textContent = data.error || t('forgot_send_fail');
+                    if (btn) btn.disabled = false;
+                    return;
+                }
                 if (successEl) { successEl.textContent = (data.message || t('forgot_success_msg')); successEl.style.display = 'block'; }
             } catch (e) { if (errEl) errEl.textContent = t('login_err_connect'); }
             if (btn) btn.disabled = false;
@@ -2222,8 +2228,10 @@
             const errEl = document.getElementById('resetErr');
             const btn = document.getElementById('btnResetSubmit');
             if (newPass !== confirmPass) { if (errEl) errEl.textContent = t('reset_err_match'); return; }
-            if (newPass.length < 6) { if (errEl) errEl.textContent = t('reset_err_length'); return; }
-            if (!window._resetToken) { if (errEl) errEl.textContent = 'لینک منقضی شده است.'; return; }
+            if (newPass.length < 8) { if (errEl) errEl.textContent = t('reset_err_length'); return; }
+            if (!/[a-zA-Z]/.test(newPass)) { if (errEl) errEl.textContent = t('reset_err_letter'); return; }
+            if (!/[0-9]/.test(newPass)) { if (errEl) errEl.textContent = t('reset_err_digit'); return; }
+            if (!window._resetToken) { if (errEl) errEl.textContent = t('reset_link_expired'); return; }
             if (errEl) errEl.textContent = '';
             if (btn) btn.disabled = true;
             try {
@@ -2239,6 +2247,7 @@
                     document.getElementById('pass').value = '';
                     document.getElementById('loginErr').textContent = data.message;
                     document.getElementById('loginErr').style.color = 'var(--success, #059669)';
+                    if (btn) btn.disabled = false;
                     return;
                 }
                 if (errEl) errEl.textContent = (data.error || (LANG === 'fa' ? 'خطا در تغییر رمز.' : 'Failed to reset password.'));

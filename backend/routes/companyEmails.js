@@ -158,22 +158,23 @@ router.post('/:id/send-credentials', authMiddleware, async (req, res, next) => {
         }
         const settings = await getPanelSettings();
         const emailConfig = getPanelEmailConfig(settings);
-        const siteName = (settings && settings.siteName) || 'کایا CRM';
-        const title = `اطلاعات ایمیل شرکتی ${row.email}`;
+        const siteName = (settings && settings.siteName) || 'Kaya CRM';
+        const esc = emailService.escHtml;
+        const title = `Company mailbox credentials — ${esc(row.email)}`;
         const body = `
-      <p>سلام ${row.assignedUser.name || 'کاربر'}،</p>
-      <p>اطلاعات ورود به <strong>ایمیل شرکتی</strong> (${siteName}) که به شما اختصاص داده شده است:</p>
+      <p>Hello ${esc(row.assignedUser.name || 'there')},</p>
+      <p>Below are the sign-in details for the <strong>company mailbox</strong> assigned to you on <strong>${esc(siteName)}</strong>:</p>
       <ul>
-        <li>آدرس ایمیل: <span class="cred">${row.email}</span></li>
-        <li>رمز عبور: <span class="cred">${plainPassword}</span></li>
-        ${row.label ? '<li>کاربرد: ' + row.label + '</li>' : ''}
+        <li>Email address: <span class="cred">${esc(row.email)}</span></li>
+        <li>Password: <span class="cred">${esc(plainPassword)}</span></li>
+        ${row.label ? '<li>Label: ' + esc(row.label) + '</li>' : ''}
       </ul>
-      <p class="muted">این اطلاعات را محرمانه نگه دارید. برای ورود به صندوق پستی از نرم‌افزار ایمیل یا وب‌میل استفاده کنید.</p>
+      <p class="muted">Keep this information confidential. Use your email client or webmail to access the mailbox.</p>
     `;
         const mailOpts = {
             to: row.assignedUser.email,
-            subject: title,
-            text: `ایمیل شرکتی: ${row.email} — رمز: ${plainPassword}`,
+            subject: `Company mailbox: ${row.email}`,
+            text: `Company mailbox: ${row.email}\nPassword: ${plainPassword}`,
             html: emailService.baseHtml(title, body)
         };
         let sent = false;

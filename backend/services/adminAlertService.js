@@ -16,12 +16,12 @@ function fmtNow() {
 
 function buildSubject(eventType, siteName) {
     const title = siteName || 'Kaya CRM';
-    if (eventType === 'login_success') return `اعلان امنیتی: ورود کاربر - ${title}`;
-    if (eventType === 'login_failed') return `اعلان امنیتی: ورود ناموفق - ${title}`;
-    if (eventType === 'logout') return `اعلان امنیتی: خروج کاربر - ${title}`;
-    if (eventType === 'frontend_error') return `اعلان خطای فرانت‌اند - ${title}`;
-    if (eventType === 'backend_error') return `اعلان خطای بک‌اند - ${title}`;
-    return `اعلان امنیتی سیستم - ${title}`;
+    if (eventType === 'login_success') return `Security alert: user sign-in — ${title}`;
+    if (eventType === 'login_failed') return `Security alert: failed sign-in — ${title}`;
+    if (eventType === 'logout') return `Security alert: user sign-out — ${title}`;
+    if (eventType === 'frontend_error') return `Client error report — ${title}`;
+    if (eventType === 'backend_error') return `Server error report — ${title}`;
+    return `Security alert — ${title}`;
 }
 
 function buildBody(eventType, data) {
@@ -31,15 +31,15 @@ function buildBody(eventType, data) {
     const userLabel = data.userEmail || data.username || data.identifier || '—';
     const action =
         eventType === 'login_success'
-            ? 'ورود موفق'
+            ? 'Successful sign-in'
             : eventType === 'login_failed'
-              ? 'ورود ناموفق'
+              ? 'Failed sign-in'
               : eventType === 'logout'
-                ? 'خروج'
+                ? 'Sign-out'
                 : eventType === 'frontend_error'
-                  ? 'خطای فرانت‌اند'
+                  ? 'Frontend error'
                   : eventType === 'backend_error'
-                    ? 'خطای بک‌اند'
+                    ? 'Backend error'
                 : eventType;
     const errorMessage = data.errorMessage || data.message || '—';
     const requestPath = data.path || data.pageUrl || '—';
@@ -56,15 +56,15 @@ function buildBody(eventType, data) {
             `Agent: ${userAgent}`
         ].join('\n'),
         html: emailService.baseHtml(
-            'اعلان امنیتی سیستم',
-            `<p><strong>رویداد:</strong> ${action}</p>
-             <p><strong>زمان:</strong> ${fmtNow()}</p>
-             <p><strong>کاربر:</strong> ${userLabel}</p>
-             <p><strong>مسیر/صفحه:</strong> ${requestPath}</p>
-             <p><strong>متن خطا:</strong> ${errorMessage}</p>
+            'System security alert',
+            `<p><strong>Event:</strong> ${action}</p>
+             <p><strong>Time:</strong> ${fmtNow()}</p>
+             <p><strong>User:</strong> ${userLabel}</p>
+             <p><strong>Path / page:</strong> ${requestPath}</p>
+             <p><strong>Error message:</strong> ${errorMessage}</p>
              <p><strong>IP:</strong> ${ip}</p>
-             <p><strong>کشور:</strong> ${country}</p>
-             <p><strong>مرورگر/دستگاه:</strong> ${userAgent}</p>`
+             <p><strong>Country:</strong> ${country}</p>
+             <p><strong>Browser / device:</strong> ${userAgent}</p>`
         ),
         tg: [
             '🚨 Security Alert',

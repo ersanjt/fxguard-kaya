@@ -1,6 +1,8 @@
 const axios = require('axios');
 const logger = require('../config/logger');
 
+const TELEGRAM_MAX_MESSAGE_LENGTH = 4096;
+
 function getBotToken(config = null) {
     if (config && config.botToken) return String(config.botToken).trim();
     return (process.env.TELEGRAM_BOT_TOKEN || '').trim();
@@ -33,13 +35,17 @@ async function sendMessage(text, config = null, opts = {}) {
     const chatIds = getChatIds(config);
     if (!token || chatIds.length === 0) return { ok: false, error: 'Telegram not configured' };
 
-    const payloadText = String(text || '');
+    let payloadText = String(text || '');
+    if (payloadText.length > TELEGRAM_MAX_MESSAGE_LENGTH) {
+        logger.warn('Telegram sendMessage text truncated to API limit', { length: payloadText.length });
+        payloadText = payloadText.slice(0, TELEGRAM_MAX_MESSAGE_LENGTH - 24) + '\n… (متن کوتاه شد)';
+    }
     const timeoutMs = getTimeoutMs(config);
     const url = `https://api.telegram.org/bot${token}/sendMessage`;
     const parseMode = opts.parse_mode || 'HTML';
     const results = await Promise.allSettled(
-        chatIds.map(chat_id =>
-            axios.post(
+        chatIds.map(async chat_id => {
+            const res = await axios.post(
                 url,
                 {
                     chat_id,
@@ -48,14 +54,25 @@ async function sendMessage(text, config = null, opts = {}) {
                     disable_web_page_preview: true
                 },
                 { timeout: timeoutMs }
-            )
-        )
+            );
+            const d = res.data;
+            if (!d || d.ok !== true) {
+                const msg = (d && d.description) || 'Telegram sendMessage not ok';
+                throw new Error(msg);
+            }
+            return res;
+        })
     );
 
     const failed = results.filter(r => r.status === 'rejected');
     if (failed.length > 0) {
         logger.warn('Telegram notify partial failure', { failed: failed.length, total: results.length });
-        return { ok: failed.length < results.length, error: failed[0].reason?.message || 'Telegram send failed' };
+        const first = failed[0];
+        const reasonMsg =
+            first.status === 'rejected' && first.reason && first.reason.message
+                ? first.reason.message
+                : 'Telegram send failed';
+        return { ok: failed.length < results.length, error: reasonMsg };
     }
 
     return { ok: true };

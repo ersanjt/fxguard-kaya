@@ -28,6 +28,8 @@ let _botConfig = null;
 const POLL_INTERVAL_MS = 2000;
 const LONG_POLL_TIMEOUT_SEC = 25;
 const REQUEST_TIMEOUT_MS = 30000;
+/** حداکثر طول متن یک پیام تلگرام (کاراکتر UTF-16، مطابق محدودیت API) */
+const TELEGRAM_MAX_MESSAGE_LENGTH = 4096;
 
 function setBotConfig(config) {
     _botConfig = config;
@@ -52,21 +54,89 @@ async function apiCall(method, params = {}) {
     const url = `https://api.telegram.org/bot${token}/${method}`;
     try {
         const res = await axios.post(url, params, { timeout: REQUEST_TIMEOUT_MS });
-        return res.data;
+        const data = res.data;
+        if (data && data.ok === false) {
+            logger.warn(`Telegram API ${method} rejected`, { description: data.description, error_code: data.error_code });
+        }
+        return data;
     } catch (err) {
-        logger.warn(`Telegram API call failed: ${method}`, { error: err.message });
+        const body = err.response && err.response.data;
+        const desc = body && body.description;
+        const errorCode = body && body.error_code;
+        logger.warn(`Telegram API call failed: ${method}`, {
+            error: err.message,
+            description: desc,
+            error_code: errorCode,
+            status: err.response && err.response.status
+        });
+        if (desc) return { ok: false, description: desc, error_code: errorCode };
         return null;
     }
 }
 
+function splitTelegramText(text, limit = TELEGRAM_MAX_MESSAGE_LENGTH) {
+    const s = String(text || '');
+    const parts = [];
+    let rest = s;
+    while (rest.length > 0) {
+        if (rest.length <= limit) {
+            parts.push(rest);
+            break;
+        }
+        let slice = rest.slice(0, limit);
+        const nl = slice.lastIndexOf('\n');
+        if (nl > Math.floor(limit * 0.72)) slice = rest.slice(0, nl + 1);
+        parts.push(slice);
+        rest = rest.slice(slice.length);
+    }
+    return parts;
+}
+
+function stripHtmlForFallback(s) {
+    return String(s)
+        .replace(/<br\s*\/?>/gi, '\n')
+        .replace(/<\/code>/gi, '')
+        .replace(/<code>/gi, '')
+        .replace(/<\/b>/gi, '')
+        .replace(/<b>/gi, '')
+        .replace(/<[^>]+>/g, '')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>');
+}
+
 async function sendReply(chatId, text, opts = {}) {
-    return apiCall('sendMessage', {
-        chat_id: chatId,
-        text,
-        parse_mode: 'HTML',
-        disable_web_page_preview: true,
-        ...opts
-    });
+    const { parse_mode, ...restOpts } = opts;
+    const useHtml = parse_mode !== undefined ? parse_mode : 'HTML';
+    const chunks = splitTelegramText(text, TELEGRAM_MAX_MESSAGE_LENGTH);
+    let last = null;
+    for (const part of chunks) {
+        const payload = {
+            chat_id: chatId,
+            text: part,
+            disable_web_page_preview: true,
+            ...restOpts,
+            ...(useHtml ? { parse_mode: useHtml } : {})
+        };
+        let data = await apiCall('sendMessage', payload);
+        if (data && data.ok === false) {
+            const desc = String(data.description || '');
+            if (/parse|entities|html|markdown/i.test(desc)) {
+                data = await apiCall('sendMessage', {
+                    chat_id: chatId,
+                    text: stripHtmlForFallback(part).slice(0, TELEGRAM_MAX_MESSAGE_LENGTH),
+                    disable_web_page_preview: true,
+                    ...restOpts
+                });
+            }
+            if (data && data.ok === false) {
+                logger.warn('Telegram sendMessage failed', { description: data.description, chat_id: chatId });
+            }
+        }
+        last = data;
+    }
+    return last;
 }
 
 async function getUpdates(offset = 0) {
@@ -88,7 +158,13 @@ async function getUpdates(offset = 0) {
         return [];
     } catch (err) {
         if (err.code !== 'ECONNABORTED' && err.code !== 'ETIMEDOUT') {
-            logger.warn('Telegram getUpdates error', { error: err.message });
+            const body = err.response && err.response.data;
+            logger.warn('Telegram getUpdates error', {
+                error: err.message,
+                description: body && body.description,
+                error_code: body && body.error_code,
+                status: err.response && err.response.status
+            });
         }
         return [];
     }
@@ -155,7 +231,7 @@ async function getRatesText() {
         const now = new Date().toLocaleString('fa-IR', { dateStyle: 'short', timeStyle: 'short' });
         const lines = items.map(i => {
             const formatted = i.value.toLocaleString('fa-IR');
-            return `• <b>${i.label}:</b> ${formatted} تومان`;
+            return `• <b>${esc(i.label)}:</b> ${formatted} تومان`;
         });
         return `💱 <b>نرخ ارز لحظه‌ای</b>\n🕐 ${now}\n\n${lines.join('\n')}`;
     } catch (err) {
@@ -438,15 +514,31 @@ async function pollOnce() {
     }
 }
 
-async function startPolling(models, config = null) {
+async function startPolling(models, config = undefined) {
     if (_pollingActive) return;
     if (models) _appModels = models;
-    if (config) _botConfig = config;
+    if (config !== undefined) {
+        _botConfig =
+            config && String(config.botToken || '').trim()
+                ? { botToken: String(config.botToken).trim() }
+                : null;
+    }
 
     const token = getToken();
     if (!token) {
         logger.info('Telegram bot: no token configured, polling disabled');
         return;
+    }
+
+    const me = await apiCall('getMe', {});
+    if (me && me.ok === false) {
+        const code = me.error_code;
+        const desc = String(me.description || '');
+        if (code === 401 || /unauthorized|invalid bot token/i.test(desc)) {
+            logger.error('Telegram bot: token invalid (getMe), polling not started', { description: me.description });
+            return;
+        }
+        logger.warn('Telegram getMe non-fatal', { description: me.description, error_code: code });
     }
 
     // If a webhook was ever set for this bot, getUpdates receives no new messages until webhook is removed.
@@ -456,6 +548,17 @@ async function startPolling(models, config = null) {
     } else {
         logger.info('Telegram bot: webhook cleared (if any) — long polling enabled');
     }
+
+    await apiCall('setMyCommands', {
+        commands: [
+            { command: 'start', description: 'شروع و راهنمای اتصال به CRM' },
+            { command: 'link', description: 'اتصال حساب با توکن از پنل' },
+            { command: 'me', description: 'اطلاعات حساب من' },
+            { command: 'rates', description: 'نرخ ارز لحظه‌ای' },
+            { command: 'unlink', description: 'قطع اتصال تلگرام' },
+            { command: 'help', description: 'راهنمای دستورات' }
+        ]
+    });
 
     _pollingActive = true;
     logger.info('🤖 Telegram bot polling started');
@@ -485,6 +588,22 @@ function stopPolling() {
 }
 
 /**
+ * بعد از تغییر توکن در تنظیمات پنل — polling را با توکن تازه از DB دوباره بالا می‌آورد.
+ */
+async function restartPollingFromPanel(models) {
+    const m = models || _appModels;
+    stopPolling();
+    if (m) _appModels = m;
+    const { getPanelSettings } = require('./config/panelSettingsLoader');
+    const settings = await getPanelSettings();
+    const cfg =
+        settings && settings.telegramBotToken && String(settings.telegramBotToken).trim()
+            ? { botToken: String(settings.telegramBotToken).trim() }
+            : null;
+    await startPolling(m, cfg);
+}
+
+/**
  * ارسال پیام مستقیم به کاربر CRM از طریق تلگرام
  */
 async function sendToUser(userId, text) {
@@ -492,8 +611,8 @@ async function sendToUser(userId, text) {
         const { User } = _appModels || require('../models');
         const user = await User.findByPk(userId, { attributes: ['telegramChatId'] });
         if (!user || !user.telegramChatId) return false;
-        await sendReply(user.telegramChatId, text);
-        return true;
+        const data = await sendReply(user.telegramChatId, text);
+        return !!(data && data.ok !== false);
     } catch (_) {
         return false;
     }
@@ -502,6 +621,7 @@ async function sendToUser(userId, text) {
 module.exports = {
     startPolling,
     stopPolling,
+    restartPollingFromPanel,
     isConfigured,
     getRatesText,
     sendReply,

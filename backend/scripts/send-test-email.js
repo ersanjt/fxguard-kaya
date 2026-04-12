@@ -34,9 +34,9 @@ async function main() {
     }
     const mailOpts = {
         to,
-        subject: 'ایمیل تست — پورتال کارکنان',
-        text: 'این ایمیل برای تست تنظیمات SMTP ارسال شده است.',
-        html: emailService.baseHtml('ایمیل تست — پورتال کارکنان', '<p>این ایمیل برای تست تنظیمات SMTP ارسال شده است. اگر آن را دریافت کرده‌اید، ارسال ایمیل درست کار می‌کند.</p>')
+        subject: 'Test email — Kaya CRM',
+        text: 'This message was sent to verify your SMTP settings.',
+        html: emailService.baseHtml('Test email — Kaya CRM', '<p>This message was sent to verify your SMTP settings. If you received it, outbound email is working.</p>')
     };
     for (const host of HOSTS_TO_TRY) {
         for (const { port, secure } of PORTS_TO_TRY) {
