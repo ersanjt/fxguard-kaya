@@ -21,8 +21,12 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Mood
 import androidx.compose.material.icons.filled.Videocam
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -45,6 +49,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.graphics.luminance
 import coil.compose.AsyncImage
 
@@ -97,7 +102,8 @@ fun WaChatSheetHeader(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     onVoiceCall: (() -> Unit)? = null,
-    onVideoCall: (() -> Unit)? = null
+    onVideoCall: (() -> Unit)? = null,
+    trailing: (@Composable () -> Unit)? = null
 ) {
     Surface(
         modifier = modifier.fillMaxWidth(),
@@ -148,6 +154,9 @@ fun WaChatSheetHeader(
                 IconButton(onClick = onVideoCall) {
                     Icon(Icons.Default.Videocam, contentDescription = "تماس تصویری", tint = Color.White)
                 }
+            }
+            if (trailing != null) {
+                trailing()
             }
         }
     }
@@ -330,7 +339,10 @@ fun WaMessageComposer(
     modifier: Modifier = Modifier,
     imeSend: Boolean = true,
     onAttachClick: (() -> Unit)? = null,
-    extraCanSend: Boolean = false
+    extraCanSend: Boolean = false,
+    onEmojiClick: (() -> Unit)? = null,
+    voiceRecording: Boolean = false,
+    onVoiceTap: (() -> Unit)? = null
 ) {
     val canSend = (text.isNotBlank() || extraCanSend) && !sending
     Surface(
@@ -371,6 +383,20 @@ fun WaMessageComposer(
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.25f)
                 )
             )
+            if (onEmojiClick != null) {
+                IconButton(onClick = onEmojiClick, enabled = !sending) {
+                    Icon(Icons.Default.Mood, contentDescription = "ایموجی")
+                }
+            }
+            if (onVoiceTap != null) {
+                IconButton(onClick = onVoiceTap, enabled = !sending) {
+                    Icon(
+                        Icons.Default.Mic,
+                        contentDescription = if (voiceRecording) "پایان ضبط" else "پیام صوتی",
+                        tint = if (voiceRecording) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
             Spacer(modifier = Modifier.width(8.dp))
             FloatingActionButton(
                 onClick = { if (canSend) onSend() },
@@ -393,6 +419,58 @@ fun WaMessageComposer(
                     )
                 } else {
                     Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "ارسال")
+                }
+            }
+        }
+    }
+}
+
+private val WA_EMOJI_PRESET = listOf(
+    "😀", "😃", "😄", "😁", "😅", "🤣", "😊", "🙂", "😉", "😍", "🥰", "😘",
+    "😂", "🤔", "😢", "😭", "😡", "👍", "👎", "🙏", "👏", "🔥", "✨", "💯",
+    "❤️", "✅", "❌", "⭐", "🎉", "📌", "📎", "☎️", "📞", "💼", "🏠"
+)
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun WaEmojiPickerBottomSheet(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    onEmojiSelected: (String) -> Unit
+) {
+    if (!expanded) return
+    ModalBottomSheet(onDismissRequest = onDismiss) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 24.dp)
+        ) {
+            Text(
+                "ایموجی",
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+            )
+            WA_EMOJI_PRESET.chunked(6).forEach { row ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 6.dp),
+                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    row.forEach { em ->
+                        TextButton(
+                            onClick = {
+                                onEmojiSelected(em)
+                                onDismiss()
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(em, fontSize = 22.sp)
+                        }
+                    }
+                    repeat(6 - row.size) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
                 }
             }
         }

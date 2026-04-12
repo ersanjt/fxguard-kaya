@@ -183,6 +183,7 @@ data class MessageItem(
     @SerializedName("timestamp") val timestamp: String? = null,
     @SerializedName("userId") val userId: String? = null,
     @SerializedName("user") val user: UserBrief? = null,
+    @SerializedName("whatsappId") val whatsappId: String? = null,
     @SerializedName("mediaUrl") val mediaUrl: String? = null,
     @SerializedName("mediaType") val mediaType: String? = null,
     @SerializedName("type") val messageType: String? = null,
@@ -208,10 +209,22 @@ data class MessageItem(
         }
 }
 
+data class SendMessageMedia(
+    @SerializedName("url") val url: String,
+    @SerializedName("filename") val filename: String,
+    @SerializedName("mimetype") val mimetype: String
+)
+
 data class SendMessageRequest(
-    @SerializedName("content") val content: String,
-    @SerializedName("type") val type: String? = "text",
-    @SerializedName("media") val media: Map<String, Any>? = null
+    @SerializedName("content") val content: String = "",
+    @SerializedName("type") val type: String? = null,
+    @SerializedName("media") val media: SendMessageMedia? = null,
+    @SerializedName("replyTo") val replyTo: String? = null
+)
+
+/** PATCH /conversations/:id — فعلاً تخصیص به همکار */
+data class PatchConversationBody(
+    @SerializedName("assignedTo") val assignedTo: String? = null
 )
 
 /** نتیجهٔ GET /conversations/:id/messages (صفحه‌بندی با before/limit) */

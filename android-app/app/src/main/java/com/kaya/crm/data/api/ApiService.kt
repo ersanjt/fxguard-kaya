@@ -77,6 +77,12 @@ interface ApiService {
         @Body body: SendMessageRequest
     ): Response<MessageItem>
 
+    @PATCH("conversations/{id}")
+    suspend fun patchConversation(
+        @Path("id") conversationId: String,
+        @Body body: PatchConversationBody
+    ): Response<Conversation>
+
     // Customers
     @GET("customers")
     suspend fun getCustomers(
