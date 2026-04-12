@@ -1114,14 +1114,14 @@
                         <p class="profile-totp-desc">با اتصال حساب خود به بات تلگرام، می‌توانید اطلاعات حساب، نرخ ارز و اعلان‌ها را در تلگرام دریافت کنید.</p>
                         <div id="telegramLinkStatus" style="margin-bottom:10px;"></div>
                         <div id="telegramLinkActions" style="display:flex;gap:8px;flex-wrap:wrap;">
-                            <button type="button" class="btn-primary" id="btnGenerateTelegramToken" onclick="generateTelegramLinkToken()">دریافت کد اتصال</button>
-                            <button type="button" class="btn-secondary" id="btnUnlinkTelegram" onclick="unlinkTelegram()" style="display:none;">قطع اتصال تلگرام</button>
+                            <button type="button" class="btn-primary" id="btnGenerateTelegramToken">دریافت کد اتصال</button>
+                            <button type="button" class="btn-secondary" id="btnUnlinkTelegram" style="display:none;">قطع اتصال تلگرام</button>
                         </div>
                         <div id="telegramTokenBox" class="telegram-token-box" style="display:none;">
                             <p class="telegram-token-hint">کد زیر را در بات تلگرام ارسال کنید (۱۵ دقیقه اعتبار دارد):</p>
                             <div class="telegram-token-row">
                                 <code id="telegramLinkTokenText" class="telegram-token-code"></code>
-                                <button type="button" onclick="copyTelegramToken()" class="btn-secondary" style="font-size:.82rem;padding:6px 12px;">کپی</button>
+                                <button type="button" id="btnCopyTelegramToken" class="btn-secondary" style="font-size:.82rem;padding:6px 12px;">کپی</button>
                             </div>
                             <p id="telegramBotUrlWrap" class="telegram-open-link" style="display:none;">یا مستقیم بات را باز کنید: <a id="telegramBotUrl" href="#" target="_blank">باز کردن بات</a></p>
                         </div>
@@ -3502,7 +3502,7 @@
     <script src="/js/i18n-en.js?v=3" charset="utf-8"></script>
     <script src="/js/i18n-tr.js?v=5" charset="utf-8"></script>
     <script src="/js/modules/dashboard-i18n.js?v=3" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=37" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=38" charset="utf-8"></script>
     <script>
     (function() {
         function updateMobileHeaderHeight() {

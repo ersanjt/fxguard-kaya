@@ -1623,7 +1623,6 @@
                 loadProfile();
                 setTimeout(function() {
                     removeAllInlineHandlers();
-                    setupProfileEventHandlers();
                 }, 100);
             }
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }

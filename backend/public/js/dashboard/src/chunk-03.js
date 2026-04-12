@@ -587,6 +587,22 @@
                 totpDisableBtn.removeEventListener('click', openTotpDisableModal);
                 totpDisableBtn.addEventListener('click', openTotpDisableModal);
             }
+
+            const tgGen = document.getElementById('btnGenerateTelegramToken');
+            if (tgGen) {
+                tgGen.removeEventListener('click', generateTelegramLinkToken);
+                tgGen.addEventListener('click', generateTelegramLinkToken);
+            }
+            const tgUn = document.getElementById('btnUnlinkTelegram');
+            if (tgUn) {
+                tgUn.removeEventListener('click', unlinkTelegram);
+                tgUn.addEventListener('click', unlinkTelegram);
+            }
+            const tgCopy = document.getElementById('btnCopyTelegramToken');
+            if (tgCopy) {
+                tgCopy.removeEventListener('click', copyTelegramToken);
+                tgCopy.addEventListener('click', copyTelegramToken);
+            }
         }
         
         // Setup Staff Activity event handlers

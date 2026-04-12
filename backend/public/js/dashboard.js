@@ -1997,6 +1997,7 @@
 
         function toast(msg, isErr) {
             const el = document.getElementById('toast');
+            if (!el) return;
             el.textContent = msg;
             el.className = 'toast' + (isErr ? ' err' : '');
             el.style.display = 'block';
@@ -2402,9 +2403,8 @@
                 } else {
                     actionsEl.innerHTML = '<button type="button" class="btn-primary" id="totpSetupBtnDynamic">' + t('totp_setup_btn') + '</button>';
                 }
-                // Bind event handlers after DOM update
-                setupProfileEventHandlers();
             }
+            setupProfileEventHandlers();
             await refreshTelegramProfileSection();
         }
         async function refreshTelegramProfileSection() {
@@ -4343,6 +4343,22 @@
             if (totpDisableBtn) {
                 totpDisableBtn.removeEventListener('click', openTotpDisableModal);
                 totpDisableBtn.addEventListener('click', openTotpDisableModal);
+            }
+
+            const tgGen = document.getElementById('btnGenerateTelegramToken');
+            if (tgGen) {
+                tgGen.removeEventListener('click', generateTelegramLinkToken);
+                tgGen.addEventListener('click', generateTelegramLinkToken);
+            }
+            const tgUn = document.getElementById('btnUnlinkTelegram');
+            if (tgUn) {
+                tgUn.removeEventListener('click', unlinkTelegram);
+                tgUn.addEventListener('click', unlinkTelegram);
+            }
+            const tgCopy = document.getElementById('btnCopyTelegramToken');
+            if (tgCopy) {
+                tgCopy.removeEventListener('click', copyTelegramToken);
+                tgCopy.addEventListener('click', copyTelegramToken);
             }
         }
         
@@ -7903,7 +7919,6 @@
                 loadProfile();
                 setTimeout(function() {
                     removeAllInlineHandlers();
-                    setupProfileEventHandlers();
                 }, 100);
             }
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }

@@ -225,6 +225,7 @@
 
         function toast(msg, isErr) {
             const el = document.getElementById('toast');
+            if (!el) return;
             el.textContent = msg;
             el.className = 'toast' + (isErr ? ' err' : '');
             el.style.display = 'block';
@@ -630,9 +631,8 @@
                 } else {
                     actionsEl.innerHTML = '<button type="button" class="btn-primary" id="totpSetupBtnDynamic">' + t('totp_setup_btn') + '</button>';
                 }
-                // Bind event handlers after DOM update
-                setupProfileEventHandlers();
             }
+            setupProfileEventHandlers();
             await refreshTelegramProfileSection();
         }
         async function refreshTelegramProfileSection() {
