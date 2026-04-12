@@ -92,6 +92,7 @@ window.applyTranslations = function () {
         if (k && t(k)) el.setAttribute('aria-label', t(k));
     });
     if (typeof initSidebarCollapsedState === 'function') initSidebarCollapsedState();
+    if (typeof window.refreshConversationUiAfterLang === 'function') window.refreshConversationUiAfterLang();
 };
 
 window.SUPPORTED_LANGUAGES = isFxguardPublicHost() ? ['en', 'tr'] : window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];

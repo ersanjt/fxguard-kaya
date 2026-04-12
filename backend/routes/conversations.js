@@ -233,18 +233,20 @@ router.get('/', async (req, res, next) => {
     }
 });
 
+const conversationDetailInclude = [
+    { model: Customer, as: 'customer' },
+    { model: User, as: 'assignee', attributes: { exclude: ['password'] } },
+    { model: Branch, as: 'branch', required: false },
+    { model: Department, as: 'department', required: false },
+];
+
 // ——— جزئیات یک مکالمه
 router.get('/:id', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id, {
-            include: [
-                { model: Customer, as: 'customer' },
-                { model: User, as: 'assignee', attributes: { exclude: ['password'] } },
-                { model: Branch, as: 'branch', required: false },
-                { model: Department, as: 'department', required: false }
-            ]
+            include: conversationDetailInclude,
         });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
         if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
@@ -260,6 +262,7 @@ router.get('/:id', async (req, res, next) => {
                 logger.warn('conversation avatar refresh', { customerId: conversation.customerId, err: e && e.message });
             }
         }
+        await conversation.reload({ include: conversationDetailInclude });
         res.json(conversation);
     } catch (err) {
         next(err);

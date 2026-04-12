@@ -19,7 +19,7 @@ frontend/
 
 | دستور | معنی |
 |--------|------|
-| `npm run dev` | سرور Vite + HMR (پورت ۵۱۷۳)، پروکسی `/api` و WebSocket به `:3000` |
+| `npm run dev` | سرور Vite + HMR (پورت ۵۱۷۳)، پروکسی `/api` و WebSocket به بک‌اند (پیش‌فرض `:3002`؛ از `BACKEND_PORT` ریشه یا `PORT` در `backend/.env`) |
 | `npm run build` | خروجی در `../backend/public/js/app/` |
 | `npm run preview` | پیش‌نمایش بیلد production |
 

@@ -52,12 +52,25 @@ const CONFIG = {
 let reconnectAttemptCount = 0;
 let healthCheckFailCount = 0;
 
+/** چند مبدأ با ویرگول — برای Vite (5173) و پنل روی بک‌اند (3002) */
+function socketCorsOrigins() {
+    const raw =
+        process.env.FRONTEND_URL ||
+        'http://localhost:3000,http://localhost:3002,http://localhost:5173,http://127.0.0.1:5173';
+    const list = raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    if (list.length === 0) return 'http://localhost:3000';
+    return list.length === 1 ? list[0] : list;
+}
+
 // ==================== App / Server ====================
 const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
     cors: {
-        origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+        origin: socketCorsOrigins(),
         methods: ['GET', 'POST'],
     },
 });

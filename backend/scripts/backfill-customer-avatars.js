@@ -12,7 +12,7 @@ const { connectDatabases } = require('../services/database');
 const logger = require('../config/logger');
 const { Customer } = require('../models');
 const { gatewayGet } = require('../lib/gatewayClient');
-const { persistRemoteAvatarIfNeeded } = require('../lib/customerAvatar');
+const { persistRemoteAvatarIfNeeded, digitsOnlyChatPhone } = require('../lib/customerAvatar');
 
 function parseArgs(argv) {
     const opts = { all: false, limit: 500, delayMs: 120 };
@@ -75,8 +75,13 @@ async function run() {
             skipped++;
             continue;
         }
+        const phoneDigits = digitsOnlyChatPhone(c.phone);
+        if (!phoneDigits) {
+            skipped++;
+            continue;
+        }
         try {
-            const remoteUrl = await lookupProfilePic(phone);
+            const remoteUrl = await lookupProfilePic(phoneDigits);
             if (!remoteUrl) {
                 skipped++;
                 continue;

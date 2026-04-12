@@ -16,6 +16,7 @@ android {
         targetSdk = 36
         versionCode = 2
         versionName = "1.1.0"
+        buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
     }
 
     signingConfigs {
@@ -35,6 +36,8 @@ android {
         debug {
             isMinifyEnabled = false
             isDebuggable = true
+            // امولاتور: localhost میزبان = 10.0.2.2 — همان پورت بک‌اند (پیش‌فرض 3002)
+            buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3002/\"")
         }
         release {
             isMinifyEnabled = false  // برای تست نصب راحت‌تر؛ بعداً true کنید
@@ -55,6 +58,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 

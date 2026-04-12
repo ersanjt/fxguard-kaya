@@ -12,7 +12,8 @@ const logger = require('../config/logger');
 const FROM_NAME = process.env.SMTP_FROM_NAME || 'پورتال کارکنان';
 const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@localhost';
 const LOGIN_NOTIFICATION_ENABLED = process.env.EMAIL_LOGIN_NOTIFICATION === 'true' || process.env.EMAIL_LOGIN_NOTIFICATION === '1';
-const PANEL_URL = process.env.FRONTEND_URL || process.env.PANEL_URL || 'http://localhost:3002';
+const PANEL_URL =
+    process.env.BACKEND_PUBLIC_URL || process.env.PANEL_URL || process.env.FRONTEND_URL || 'http://localhost:3002';
 const MAX_RETRIES = parseInt(process.env.EMAIL_MAX_RETRIES || '3', 10);
 const RETRY_DELAY_MS = parseInt(process.env.EMAIL_RETRY_DELAY_MS || '2000', 10);
 const RATE_LIMIT_REQUESTS = parseInt(process.env.EMAIL_RATE_LIMIT_REQUESTS || '100', 10);

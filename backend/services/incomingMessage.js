@@ -14,7 +14,7 @@ const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayCli
 const { gatewayGet } = require('../lib/gatewayClient');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessages');
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
-const { persistRemoteAvatarIfNeeded } = require('../lib/customerAvatar');
+const { persistRemoteAvatarIfNeeded, digitsOnlyChatPhone } = require('../lib/customerAvatar');
 const { notifySystemEvent } = require('./systemEventNotifier');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
@@ -36,8 +36,8 @@ const AVATAR_LOOKUP_TTL_MS = 5 * 60 * 1000;
 const _avatarLookupCache = new Map();
 
 async function tryFetchProfilePicFromGateway(phone, logger) {
-    const p = String(phone || '').trim();
-    if (!p) return null;
+    const p = digitsOnlyChatPhone(phone);
+    if (!p || p.length < 8) return null;
     const now = Date.now();
     const cached = _avatarLookupCache.get(p);
     if (cached && (now - cached.at) < AVATAR_LOOKUP_TTL_MS) {

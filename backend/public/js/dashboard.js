@@ -352,6 +352,21 @@
             loadRatesCharts();
         }
         window.setRatesChartCurrency = setRatesChartCurrency;
+        let ratesChartsLoadSeq = 0;
+        function ratesChartsYAxisLocale() {
+            if (LANG === 'fa') return 'fa-IR';
+            if (LANG === 'tr') return 'tr-TR';
+            return 'en-US';
+        }
+        function ratesChartsShowEmpty(summaryEl, statsRow, message, withRetry) {
+            if (statsRow) statsRow.innerHTML = '';
+            if (!summaryEl) return;
+            const retry = withRetry
+                ? '<button type="button" class="btn-secondary rates-charts-retry-btn" onclick="loadRatesCharts()">' + escapeHtml(t('rates_charts_retry')) + '</button>'
+                : '';
+            summaryEl.innerHTML = '<div class="rates-charts-empty">' +
+                '<p class="rates-charts-empty-text">' + escapeHtml(message) + '</p>' + retry + '</div>';
+        }
         async function loadRatesCharts() {
             const canvas = document.getElementById('ratesChartCanvas');
             const summaryEl = document.getElementById('ratesChartsSummary');
@@ -359,6 +374,7 @@
             const loadingOverlay = document.getElementById('ratesChartsLoadingOverlay');
             const refreshBtn = document.querySelector('.rates-charts-refresh-btn');
             if (!canvas) return;
+            const loadId = ++ratesChartsLoadSeq;
             const periodSel = document.getElementById('ratesChartPeriod');
             const days = periodSel ? parseInt(periodSel.value, 10) || 30 : 30;
             if (loadingOverlay) loadingOverlay.classList.add('visible');
@@ -367,13 +383,15 @@
             if (summaryEl) summaryEl.innerHTML = '';
             try {
             const res = await apiFetch('/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days);
+            if (loadId !== ratesChartsLoadSeq) return;
             if (loadingOverlay) loadingOverlay.classList.remove('visible');
             if (refreshBtn) refreshBtn.classList.remove('loading');
             if (res.needLogin) return;
             const labels = [];
             const values = [];
-            if (res.ok && res.data && res.data.points && res.data.points.length > 0) {
-                res.data.points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
+            const payload = res.data || {};
+            if (res.ok && payload.points && payload.points.length > 0) {
+                payload.points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
             }
             const currencyLabels = { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
             const label = currencyLabels[ratesChartCurrentCurrency] || rateLabel(ratesChartCurrentCurrency);
@@ -385,6 +403,7 @@
                 gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
                 gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.12)');
                 gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
+                const yLoc = ratesChartsYAxisLocale();
                 ratesChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -439,7 +458,7 @@
                                 ticks: {
                                     callback: function(v) {
                                         if (typeof v !== 'number') return v;
-                                        return v.toLocaleString(LANG === 'fa' ? 'fa-IR' : 'en-US');
+                                        return v.toLocaleString(yLoc);
                                     },
                                     font: { size: 11 },
                                     color: 'rgba(139, 157, 195, 0.8)',
@@ -467,13 +486,20 @@
                 }
                 if (summaryEl) summaryEl.innerHTML = '';
             } else {
-                if (statsRow) statsRow.innerHTML = '';
-                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'داده‌ای برای نمایش وجود ندارد. لطفاً بعداً تلاش کنید.' : LANG === 'tr' ? 'Gösterilecek veri yok. Lütfen daha sonra tekrar deneyin.' : 'No data to display. Please try again later.') + '</div>';
+                if (res.ok && payload.externalConfigured === false) {
+                    ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_api_not_configured'), false);
+                } else if (!res.ok) {
+                    const errMsg = typeof getApiError === 'function' ? getApiError(res) : (res.error || t('rates_charts_error_load'));
+                    ratesChartsShowEmpty(summaryEl, statsRow, errMsg, true);
+                } else {
+                    ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_empty'), true);
+                }
             }
             } catch (err) {
+                if (loadId !== ratesChartsLoadSeq) return;
                 if (loadingOverlay) loadingOverlay.classList.remove('visible');
                 if (refreshBtn) refreshBtn.classList.remove('loading');
-                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'خطا در بارگذاری نمودار. لطفاً دوباره تلاش کنید.' : 'Error loading chart. Please try again.') + '</div>';
+                ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_error_load'), true);
                 console.error('loadRatesCharts error:', err);
             }
         }
@@ -3837,7 +3863,46 @@
         
         /* ========== Conversation Event Handlers Setup ========== */
         let convListClickHandler = null;
-        
+
+        var CONV_QUICK_TABS_COLLAPSE_LS = 'crm_conv_quick_tabs_collapsed';
+        function updateConvQuickTabsToggleUi() {
+            var bar = document.getElementById('convQuickTabsBar');
+            var btn = document.getElementById('btnConvQuickTabsToggle');
+            if (!bar || !btn) return;
+            var collapsed = bar.classList.contains('is-collapsed');
+            btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            var hideLbl = t('conv_quick_tabs_hide');
+            var showLbl = t('conv_quick_tabs_show');
+            btn.setAttribute('title', collapsed ? showLbl : hideLbl);
+            btn.setAttribute('aria-label', collapsed ? showLbl : hideLbl);
+            var textSpan = btn.querySelector('.conv-quick-tabs-toggle-text');
+            if (textSpan) {
+                textSpan.textContent = collapsed ? showLbl : hideLbl;
+                textSpan.setAttribute('data-i18n', collapsed ? 'conv_quick_tabs_show' : 'conv_quick_tabs_hide');
+            }
+        }
+        function applyConvQuickTabsCollapsedState(collapsed) {
+            var bar = document.getElementById('convQuickTabsBar');
+            if (!bar) return;
+            bar.classList.toggle('is-collapsed', !!collapsed);
+            try { localStorage.setItem(CONV_QUICK_TABS_COLLAPSE_LS, collapsed ? '1' : '0'); } catch (_e) { /* ignore */ }
+            updateConvQuickTabsToggleUi();
+        }
+        function initConvQuickTabsCollapse() {
+            var bar = document.getElementById('convQuickTabsBar');
+            var btn = document.getElementById('btnConvQuickTabsToggle');
+            if (!bar || !btn || btn._convQuickTabsBound) return;
+            btn._convQuickTabsBound = true;
+            var stored = '0';
+            try { stored = localStorage.getItem(CONV_QUICK_TABS_COLLAPSE_LS) || '0'; } catch (_e) { /* ignore */ }
+            if (stored === '1') bar.classList.add('is-collapsed');
+            updateConvQuickTabsToggleUi();
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                applyConvQuickTabsCollapsedState(!bar.classList.contains('is-collapsed'));
+            });
+        }
+
         function setupConversationEventHandlers() {
             // Conversation list items - event delegation
             const convList = document.getElementById('convList');
@@ -3913,6 +3978,8 @@
                 newConvBtn.addEventListener('click', openNewConvModal);
             }
             
+            initConvQuickTabsCollapse();
+
             // Quick tab buttons
             document.querySelectorAll('.conv-quick-tabs .conv-tab').forEach(function(btn) {
                 btn.removeEventListener('click', handleQuickTabClick);
@@ -4264,7 +4331,7 @@
             if (res.ok && res.data && res.data.data) {
                 const sel = document.getElementById('convFilterDept');
                 if (sel) {
-                    var opt = '<option value="">' + (LANG === 'fa' ? 'همه دپارتمان‌ها' : 'All departments') + '</option>' + res.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+                    var opt = '<option value="" data-i18n="all_depts">' + escapeHtml(t('all_depts')) + '</option>' + res.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
                     sel.innerHTML = opt;
                 }
             }
@@ -4273,7 +4340,7 @@
             const statusFilter = document.getElementById('convFilterStatus');
             if (statusFilter && canViewArchivedConversations()) {
                 const hasArchived = Array.from(statusFilter.options).some(function(o){ return o.value === 'archived'; });
-                if (!hasArchived) { var opt = document.createElement('option'); opt.value = 'archived'; opt.textContent = t('filter_archived') || t('status_archived') || 'آرشیو'; statusFilter.appendChild(opt); }
+                if (!hasArchived) { var opt = document.createElement('option'); opt.value = 'archived'; opt.setAttribute('data-i18n', 'status_archived'); opt.textContent = t('filter_archived') || t('status_archived') || 'Archived'; statusFilter.appendChild(opt); }
             }
         }
         async function syncWhatsAppGroups() {
@@ -4306,6 +4373,56 @@
             var hue = Math.abs(h) % 360;
             return '--av-bg:hsla(' + hue + ',42%,22%,1);--av-fg:hsla(' + hue + ',48%,84%,1);';
         }
+        function convStatusLabelUi(status) {
+            var map = { open: 'status_open', pending: 'status_pending', closed: 'status_closed', resolved: 'status_resolved', archived: 'status_archived' };
+            var key = map[status];
+            return key ? t(key) : (status || '');
+        }
+        function convPriorityLabelUi(priority) {
+            if (!priority) return '';
+            var key = 'priority_' + priority;
+            return t(key) || priority;
+        }
+        function renderConvDetailBadges(d) {
+            if (!d) return;
+            var badgesEl = document.getElementById('convDetailBadges');
+            if (!badgesEl) return;
+            var assigneeName = userDisplay(d.assignee) || t('no_assignee');
+            var deptName = (d.department && d.department.name) ? d.department.name : '';
+            var statusLabel = convStatusLabelUi(d.status);
+            var prioLabel = convPriorityLabelUi(d.priority);
+            badgesEl.innerHTML = '<span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_status')) + '</span>' + escapeHtml(statusLabel) + '</span><span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_priority')) + '</span>' + escapeHtml(prioLabel) + '</span><span role="listitem" class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + escapeHtml(t('conv_form_assignee')) + '</span><span class="conv-badge-assignee-wrap">' + (d.assignee ? internalMsgAvatarHtml(d.assignee, 'conv-badge-assignee-avatar') : '') + '<span class="conv-badge-assignee-name">' + escapeHtml(assigneeName) + '</span></span></span>' + (deptName ? '<span role="listitem" class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + escapeHtml(t('label_dept')) + '</span>' + escapeHtml(deptName) + '</span>' : '');
+        }
+        window.refreshConversationDetailBadges = function() {
+            if (currentConvDetail) renderConvDetailBadges(currentConvDetail);
+        };
+        window.refreshConversationUiAfterLang = function() {
+            try {
+                if (typeof window.refreshConversationDetailBadges === 'function') window.refreshConversationDetailBadges();
+                var fa = document.getElementById('convFilterAssignee');
+                var va = fa ? fa.value : '';
+                var da = document.getElementById('convDetailAssignee');
+                var vd = da ? da.value : '';
+                var dd = document.getElementById('convDetailDept');
+                var vdd = dd ? dd.value : '';
+                if (typeof loadConvAssignees === 'function') {
+                    loadConvAssignees().then(function() {
+                        try {
+                            if (fa && fa.options && va !== undefined) fa.value = va;
+                            if (da && da.options && vd !== undefined) da.value = vd;
+                            if (dd && dd.options && vdd !== undefined) dd.value = vdd;
+                        } catch (_e) { /* ignore */ }
+                    });
+                }
+                var fd = document.getElementById('convFilterDept');
+                if (fd && fd.options && fd.options.length && fd.options[0].value === '') {
+                    fd.options[0].setAttribute('data-i18n', 'all_depts');
+                    fd.options[0].textContent = t('all_depts');
+                }
+                updateConvQuickTabsToggleUi();
+            } catch (e) { /* ignore */ }
+        };
+
         async function loadConversations(appendMode) {
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
@@ -4339,7 +4456,7 @@
             if (statsEl && data.total != null) {
                 const openCount = data.openCount != null ? data.openCount : (data.data || []).filter(function(c){ return c.status === 'open'; }).length;
                 const unreadCount = data.unreadCount != null ? data.unreadCount : (data.data || []).reduce(function(s,c){ return s + (c.unreadCount || 0); }, 0);
-                statsEl.innerHTML = '<span class="conv-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</span><span class="conv-stat"><strong>' + openCount + '</strong> ' + (LANG === 'fa' ? 'باز' : 'open') + '</span><span class="conv-stat"><strong>' + unreadCount + '</strong> ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread') + '</span>';
+                statsEl.innerHTML = '<span class="conv-stat"><strong>' + (data.total || 0) + '</strong> ' + t('nav_conversations') + '</span><span class="conv-stat"><strong>' + openCount + '</strong> ' + t('status_open') + '</span><span class="conv-stat"><strong>' + unreadCount + '</strong> ' + t('filter_unread') + '</span>';
                 statsEl.style.display = 'flex';
             }
             const countEl = document.getElementById('convListCount');
@@ -4369,7 +4486,7 @@
                 const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
                 let profilePic = rawPic ? normalizeProfilePicUrl(rawPic) : '';
                 const canShowImg = !isGroup && rawPic && profilePicShowsImage(rawPic);
-                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
+                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
                 let assigneeMetaSuffix = '';
                 if (assigneeName) {
@@ -4377,8 +4494,7 @@
                     else if (c.assignee) assigneeMetaSuffix = ' · <span class="conv-item-assignee-inline">' + internalMsgAvatarHtml(c.assignee, 'conv-item-assignee-avatar') + '<span class="conv-item-assignee-name">' + escapeHtml(assigneeName) + '</span></span>';
                     else assigneeMetaSuffix = ' · ' + escapeHtml(assigneeName);
                 }
-                const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
-                const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
+                const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + escapeHtml(convStatusLabelUi(c.status)) + '</span>';
                 const priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
                 const unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
                 const preview = (c.lastMessagePreview || '').trim();
@@ -4489,7 +4605,7 @@
                 let pic = rawOpenPic ? normalizeProfilePicUrl(rawOpenPic) : '';
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
                 if (pic && profilePicShowsImage(rawOpenPic)) {
-                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
+                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="crmAvatarImgErr(this)">';
                 } else {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 }
@@ -4527,18 +4643,14 @@
                     const picNorm = normalizeProfilePicUrl(custPicRaw);
                     if (picNorm && profilePicShowsImage(custPicRaw)) {
                         const initialH = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
-                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picNorm) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
+                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picNorm) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="crmAvatarImgErr(this)">';
                     }
                 }
                 if (!barEl || !badgesEl) {
                     try { loadConversations(); } catch (_) {}
                     return;
                 }
-                const assigneeName = userDisplay(d.assignee) || (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned');
-                const deptName = (d.department && d.department.name) ? d.department.name : '';
-                const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
-                const prioT = LANG === 'fa' ? { low: 'کم', normal: 'عادی', high: 'مهم', urgent: 'فوری' } : { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
-                badgesEl.innerHTML = '<span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</span>' + (statusT[d.status] || d.status) + '</span><span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'اولویت' : 'Priority') + '</span>' + (prioT[d.priority] || d.priority) + '</span><span role="listitem" class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + (LANG === 'fa' ? 'مسئول' : 'Assignee') + '</span><span class="conv-badge-assignee-wrap">' + (d.assignee ? internalMsgAvatarHtml(d.assignee, 'conv-badge-assignee-avatar') : '') + '<span class="conv-badge-assignee-name">' + escapeHtml(assigneeName) + '</span></span></span>' + (deptName ? '<span role="listitem" class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + (LANG === 'fa' ? 'دپارتمان' : 'Dept') + '</span>' + escapeHtml(deptName) + '</span>' : '');
+                renderConvDetailBadges(d);
                 barEl.style.display = '';
                 barEl.removeAttribute('hidden');
                 barEl.classList.add('collapsed');
@@ -4566,7 +4678,7 @@
                     var deptSel = document.getElementById('convDetailDept');
                     if (statusSel) {
                         const hasArchivedOpt = Array.from(statusSel.options).some(function(o){ return o.value === 'archived'; });
-                        if (canManageConversations() && !hasArchivedOpt) { const o = document.createElement('option'); o.value = 'archived'; o.textContent = t('status_archived') || 'آرشیو'; statusSel.appendChild(o); }
+                        if (canManageConversations() && !hasArchivedOpt) { const o = document.createElement('option'); o.value = 'archived'; o.setAttribute('data-i18n', 'status_archived'); o.textContent = t('status_archived') || 'Archived'; statusSel.appendChild(o); }
                         statusSel.value = d.status || 'open';
                     }
                     if (prioritySel) prioritySel.value = d.priority || 'normal';
@@ -4633,15 +4745,15 @@
             const res = await apiFetch('/api/users');
             if (!res.ok || !res.data || !res.data.data) return;
             const users = res.data.data;
-            const opt = '<option value="">' + (LANG === 'fa' ? 'هر مسئول' : 'Any assignee') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            const opt = '<option value="">' + escapeHtml(t('filter_any_assignee') || t('any_assignee')) + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
             if (selFilter) selFilter.innerHTML = opt;
-            const optDetail = '<option value="">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            const optDetail = '<option value="">' + escapeHtml(t('no_assignee')) + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
             if (selDetail) selDetail.innerHTML = optDetail;
             if (selDetailDept) {
                 const deptRes = await apiFetch('/api/departments');
                 if (deptRes.ok && deptRes.data && deptRes.data.data) {
                     const depts = deptRes.data.data;
-                    selDetailDept.innerHTML = '<option value="">' + (LANG === 'fa' ? 'بدون دپارتمان' : 'No department') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+                    selDetailDept.innerHTML = '<option value="">' + escapeHtml(t('no_dept')) + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
                 }
             }
         }
@@ -4672,7 +4784,7 @@
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 let profilePic = rawPicNc ? normalizeProfilePicUrl(rawPicNc) : '';
-                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
@@ -5826,7 +5938,7 @@
                 const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
                 const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
                 const avatarInner = hasCustPic
-                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">'
+                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="crmAvatarImgErr(this)">'
                     : '<span class="customer-card-avatar-letter">' + escapeHtml(initial) + '</span>';
                 const avatarHtml = '<div class="' + avClass + '"' + avStyle + '>' + avatarInner + '</div>';
                 const statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
@@ -6054,7 +6166,7 @@
             let detailProfilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
             detailProfilePic = detailProfilePic ? normalizeProfilePicUrl(detailProfilePic) : '';
             const avatarClickable = detailProfilePic && profilePicShowsImage(detailProfilePic);
-            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
+            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
             const avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
             if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailProfilePic) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             const res = await apiFetch('/api/customers/' + custId + '/conversations');
@@ -6207,8 +6319,21 @@
                 return '';
             }).join('');
         }
-        // ——— اسناد و مدیا مشتری
+        // ——— فایل‌ها و پیوست‌های مشتری
         let _docUploadBound = false;
+        function _customerDocCategoryLabel(cat) {
+            const c = (cat && String(cat)) || 'other';
+            const k = 'customer_docs_cat_' + c;
+            const tx = t(k);
+            return tx === k ? c : tx;
+        }
+        function _customerDocFileTypeLabel(ft) {
+            const allowed = { image: 1, video: 1, audio: 1, document: 1, other: 1 };
+            const f = allowed[ft] ? ft : 'other';
+            const k = 'customer_docs_type_' + f;
+            const tx = t(k);
+            return tx === k ? f : tx;
+        }
         async function loadCustomerDocuments(custId) {
             const list = document.getElementById('customerDocsList');
             if (!list) return;
@@ -6222,30 +6347,46 @@
             if (params.length) url += '?' + params.join('&');
             const res = await apiFetch(url);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml((res.data && res.data.error) || 'خطا در بارگذاری') + '</div>'; return; }
+            if (!res.ok) {
+                list.innerHTML = '<div class="customer-docs-empty customer-docs-empty--error" role="alert"><span class="customer-docs-empty-icon">⚠️</span><p class="customer-docs-empty-text">' + escapeHtml((res.data && res.data.error) || t('customer_docs_error_load')) + '</p></div>';
+                return;
+            }
             const docs = (res.data && res.data.data) || [];
-            if (docs.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📁</span><br>هنوز سندی ثبت نشده.</div>'; }
-            else {
-                const catLabels = { identity: 'مدارک هویتی', contract: 'قرارداد', financial: 'مالی', media: 'رسانه', other: 'سایر' };
+            if (docs.length === 0) {
+                list.innerHTML = '<div class="customer-docs-empty"><span class="customer-docs-empty-icon">📁</span><p class="customer-docs-empty-text">' + escapeHtml(t('customer_docs_empty')) + '</p></div>';
+            } else {
                 list.innerHTML = docs.map(function(d) {
                     const icon = d.fileType === 'image' ? '🖼️' : d.fileType === 'video' ? '🎬' : d.fileType === 'audio' ? '🎵' : d.fileType === 'document' ? '📄' : '📎';
-                    const size = d.fileSize ? (d.fileSize > 1048576 ? (d.fileSize/1048576).toFixed(1)+'MB' : (d.fileSize/1024).toFixed(0)+'KB') : '';
-                    const expiry = d.expiresAt ? '<span class="doc-expiry' + (new Date(d.expiresAt) < new Date() ? ' doc-expiry-expired' : '') + '">انقضا: ' + d.expiresAt + '</span>' : '';
+                    const typePill = _customerDocFileTypeLabel(d.fileType);
+                    const size = d.fileSize ? (d.fileSize > 1048576 ? (d.fileSize / 1048576).toFixed(1) + ' MB' : (d.fileSize / 1024).toFixed(0) + ' KB') : '';
+                    const expiryRaw = d.expiresAt ? String(d.expiresAt) : '';
+                    const expiry = expiryRaw
+                        ? '<span class="doc-expiry' + (new Date(d.expiresAt) < new Date() ? ' doc-expiry-expired' : '') + '">' + escapeHtml(t('customer_docs_expires')) + ' ' + escapeHtml(expiryRaw) + '</span>'
+                        : '';
                     const src = d.filePath && d.filePath.startsWith('http') ? d.filePath : (d.filePath ? (window.location.origin + d.filePath) : '');
-                    const previewBtn = src ? '<a href="' + escapeHtml(src) + '" target="_blank" class="btn-link btn-sm">مشاهده</a>' : '';
-                    const dlBtn = src ? '<a href="' + escapeHtml(src) + '" download class="btn-link btn-sm">دانلود</a>' : '';
-                    return '<div class="customer-doc-item" data-docid="' + d.id + '">' +
-                        '<div class="customer-doc-icon">' + icon + '</div>' +
-                        '<div class="customer-doc-info">' +
-                            '<div class="customer-doc-title">' + escapeHtml(d.title || d.fileName) + '</div>' +
-                            '<div class="customer-doc-meta">' + (catLabels[d.category] || d.category) + (size ? ' · ' + size : '') + (d.source === 'conversation' ? ' · از مکالمه' : '') + (d.uploader ? ' · ' + escapeHtml(d.uploader.name) : '') + ' · ' + fmtTZ(d.createdAt, 'date') + '</div>' +
-                            (d.description ? '<div class="customer-doc-desc">' + escapeHtml(d.description) + '</div>' : '') +
-                            expiry +
-                        '</div>' +
-                        '<div class="customer-doc-actions">' + previewBtn + dlBtn +
-                            '<button type="button" class="btn-danger btn-sm btn-icon" onclick="deleteCustomerDoc(\'' + d.id + '\',\'' + custId + '\')" title="حذف">🗑</button>' +
-                        '</div>' +
-                    '</div>';
+                    const previewBtn = src ? '<a href="' + escapeHtml(src) + '" target="_blank" rel="noopener noreferrer" class="btn btn-doc-action">' + escapeHtml(t('customer_docs_view')) + '</a>' : '';
+                    const dlBtn = src ? '<a href="' + escapeHtml(src) + '" download class="btn btn-doc-action">' + escapeHtml(t('customer_docs_download')) + '</a>' : '';
+                    const metaParts = [escapeHtml(_customerDocCategoryLabel(d.category))];
+                    if (size) metaParts.push(escapeHtml(size));
+                    if (d.source === 'conversation') metaParts.push(escapeHtml(t('customer_docs_from_chat')));
+                    if (d.uploader && d.uploader.name) metaParts.push(escapeHtml(d.uploader.name));
+                    metaParts.push(escapeHtml(fmtTZ(d.createdAt, 'datetime')));
+                    return (
+                        '<article class="customer-doc-card" data-docid="' + escapeHtml(d.id) + '">' +
+                        '<div class="customer-doc-card-head">' +
+                        '<span class="customer-doc-card-icon" aria-hidden="true">' + icon + '</span>' +
+                        '<div class="customer-doc-card-titles">' +
+                        '<h4 class="customer-doc-card-title">' + escapeHtml(d.title || d.fileName || '—') + '</h4>' +
+                        '<span class="customer-doc-type-pill">' + escapeHtml(typePill) + '</span>' +
+                        '</div></div>' +
+                        '<p class="customer-doc-card-meta">' + metaParts.join(' · ') + '</p>' +
+                        (d.description ? '<p class="customer-doc-card-desc">' + escapeHtml(d.description) + '</p>' : '') +
+                        (expiry ? '<div class="customer-doc-card-expiry">' + expiry + '</div>' : '') +
+                        '<div class="customer-doc-card-actions">' +
+                        previewBtn + dlBtn +
+                        '<button type="button" class="btn-doc-delete" onclick="deleteCustomerDoc(\'' + d.id + '\',\'' + custId + '\')" title="' + escapeHtml(t('customer_docs_delete_title')) + '"><span aria-hidden="true">🗑</span></button>' +
+                        '</div></article>'
+                    );
                 }).join('');
             }
             // bind filters
@@ -6272,7 +6413,7 @@
         }
         async function uploadCustomerDoc(custId) {
             const fileInput = document.getElementById('docUploadFile');
-            if (!fileInput || !fileInput.files || !fileInput.files[0]) { toast('فایل انتخاب نشده', true); return; }
+            if (!fileInput || !fileInput.files || !fileInput.files[0]) { toast(t('customer_docs_no_file'), true); return; }
             const title = (document.getElementById('docUploadTitle').value || '').trim() || fileInput.files[0].name;
             const category = document.getElementById('docUploadCategory').value || 'other';
             const desc = (document.getElementById('docUploadDesc').value || '').trim();
@@ -6284,12 +6425,12 @@
             if (desc) fd.append('description', desc);
             if (expiry) fd.append('expiresAt', expiry);
             const saveBtn = document.getElementById('btnDocUploadSave');
-            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'در حال آپلود...'; }
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = t('customer_docs_uploading'); }
             try {
                 const res = await apiFetch('/api/customers/' + custId + '/documents', { method: 'POST', body: fd });
                 if (res.needLogin) return;
                 if (res.ok) {
-                    toast('سند با موفقیت ذخیره شد');
+                    toast(t('customer_docs_saved'));
                     const form = document.getElementById('customerDocUploadForm');
                     if (form) form.style.display = 'none';
                     fileInput.value = '';
@@ -6297,17 +6438,17 @@
                     document.getElementById('docUploadDesc').value = '';
                     document.getElementById('docUploadExpiry').value = '';
                     loadCustomerDocuments(custId);
-                } else { toast((res.data && res.data.error) || 'خطا در آپلود', true); }
+                } else { toast((res.data && res.data.error) || t('customer_docs_upload_error'), true); }
             } finally {
-                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'ذخیره'; }
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = t('btn_save'); }
             }
         }
         async function deleteCustomerDoc(docId, custId) {
-            if (!confirm('آیا از حذف این سند مطمئن هستید؟')) return;
+            if (!confirm(t('customer_docs_confirm_delete'))) return;
             const res = await apiFetch('/api/customers/' + custId + '/documents/' + docId, { method: 'DELETE' });
             if (res.needLogin) return;
-            if (res.ok) { toast('سند حذف شد'); loadCustomerDocuments(custId); }
-            else toast((res.data && res.data.error) || 'خطا در حذف', true);
+            if (res.ok) { toast(t('customer_docs_deleted')); loadCustomerDocuments(custId); }
+            else toast((res.data && res.data.error) || t('customer_docs_delete_error'), true);
         }
 
         async function loadCustomerTransactions(custId) {

@@ -242,7 +242,46 @@
         
         /* ========== Conversation Event Handlers Setup ========== */
         let convListClickHandler = null;
-        
+
+        var CONV_QUICK_TABS_COLLAPSE_LS = 'crm_conv_quick_tabs_collapsed';
+        function updateConvQuickTabsToggleUi() {
+            var bar = document.getElementById('convQuickTabsBar');
+            var btn = document.getElementById('btnConvQuickTabsToggle');
+            if (!bar || !btn) return;
+            var collapsed = bar.classList.contains('is-collapsed');
+            btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+            var hideLbl = t('conv_quick_tabs_hide');
+            var showLbl = t('conv_quick_tabs_show');
+            btn.setAttribute('title', collapsed ? showLbl : hideLbl);
+            btn.setAttribute('aria-label', collapsed ? showLbl : hideLbl);
+            var textSpan = btn.querySelector('.conv-quick-tabs-toggle-text');
+            if (textSpan) {
+                textSpan.textContent = collapsed ? showLbl : hideLbl;
+                textSpan.setAttribute('data-i18n', collapsed ? 'conv_quick_tabs_show' : 'conv_quick_tabs_hide');
+            }
+        }
+        function applyConvQuickTabsCollapsedState(collapsed) {
+            var bar = document.getElementById('convQuickTabsBar');
+            if (!bar) return;
+            bar.classList.toggle('is-collapsed', !!collapsed);
+            try { localStorage.setItem(CONV_QUICK_TABS_COLLAPSE_LS, collapsed ? '1' : '0'); } catch (_e) { /* ignore */ }
+            updateConvQuickTabsToggleUi();
+        }
+        function initConvQuickTabsCollapse() {
+            var bar = document.getElementById('convQuickTabsBar');
+            var btn = document.getElementById('btnConvQuickTabsToggle');
+            if (!bar || !btn || btn._convQuickTabsBound) return;
+            btn._convQuickTabsBound = true;
+            var stored = '0';
+            try { stored = localStorage.getItem(CONV_QUICK_TABS_COLLAPSE_LS) || '0'; } catch (_e) { /* ignore */ }
+            if (stored === '1') bar.classList.add('is-collapsed');
+            updateConvQuickTabsToggleUi();
+            btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                applyConvQuickTabsCollapsedState(!bar.classList.contains('is-collapsed'));
+            });
+        }
+
         function setupConversationEventHandlers() {
             // Conversation list items - event delegation
             const convList = document.getElementById('convList');
@@ -318,6 +357,8 @@
                 newConvBtn.addEventListener('click', openNewConvModal);
             }
             
+            initConvQuickTabsCollapse();
+
             // Quick tab buttons
             document.querySelectorAll('.conv-quick-tabs .conv-tab').forEach(function(btn) {
                 btn.removeEventListener('click', handleQuickTabClick);
@@ -669,7 +710,7 @@
             if (res.ok && res.data && res.data.data) {
                 const sel = document.getElementById('convFilterDept');
                 if (sel) {
-                    var opt = '<option value="">' + (LANG === 'fa' ? 'همه دپارتمان‌ها' : 'All departments') + '</option>' + res.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+                    var opt = '<option value="" data-i18n="all_depts">' + escapeHtml(t('all_depts')) + '</option>' + res.data.data.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
                     sel.innerHTML = opt;
                 }
             }
@@ -678,7 +719,7 @@
             const statusFilter = document.getElementById('convFilterStatus');
             if (statusFilter && canViewArchivedConversations()) {
                 const hasArchived = Array.from(statusFilter.options).some(function(o){ return o.value === 'archived'; });
-                if (!hasArchived) { var opt = document.createElement('option'); opt.value = 'archived'; opt.textContent = t('filter_archived') || t('status_archived') || 'آرشیو'; statusFilter.appendChild(opt); }
+                if (!hasArchived) { var opt = document.createElement('option'); opt.value = 'archived'; opt.setAttribute('data-i18n', 'status_archived'); opt.textContent = t('filter_archived') || t('status_archived') || 'Archived'; statusFilter.appendChild(opt); }
             }
         }
         async function syncWhatsAppGroups() {
@@ -711,6 +752,56 @@
             var hue = Math.abs(h) % 360;
             return '--av-bg:hsla(' + hue + ',42%,22%,1);--av-fg:hsla(' + hue + ',48%,84%,1);';
         }
+        function convStatusLabelUi(status) {
+            var map = { open: 'status_open', pending: 'status_pending', closed: 'status_closed', resolved: 'status_resolved', archived: 'status_archived' };
+            var key = map[status];
+            return key ? t(key) : (status || '');
+        }
+        function convPriorityLabelUi(priority) {
+            if (!priority) return '';
+            var key = 'priority_' + priority;
+            return t(key) || priority;
+        }
+        function renderConvDetailBadges(d) {
+            if (!d) return;
+            var badgesEl = document.getElementById('convDetailBadges');
+            if (!badgesEl) return;
+            var assigneeName = userDisplay(d.assignee) || t('no_assignee');
+            var deptName = (d.department && d.department.name) ? d.department.name : '';
+            var statusLabel = convStatusLabelUi(d.status);
+            var prioLabel = convPriorityLabelUi(d.priority);
+            badgesEl.innerHTML = '<span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_status')) + '</span>' + escapeHtml(statusLabel) + '</span><span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_priority')) + '</span>' + escapeHtml(prioLabel) + '</span><span role="listitem" class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + escapeHtml(t('conv_form_assignee')) + '</span><span class="conv-badge-assignee-wrap">' + (d.assignee ? internalMsgAvatarHtml(d.assignee, 'conv-badge-assignee-avatar') : '') + '<span class="conv-badge-assignee-name">' + escapeHtml(assigneeName) + '</span></span></span>' + (deptName ? '<span role="listitem" class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + escapeHtml(t('label_dept')) + '</span>' + escapeHtml(deptName) + '</span>' : '');
+        }
+        window.refreshConversationDetailBadges = function() {
+            if (currentConvDetail) renderConvDetailBadges(currentConvDetail);
+        };
+        window.refreshConversationUiAfterLang = function() {
+            try {
+                if (typeof window.refreshConversationDetailBadges === 'function') window.refreshConversationDetailBadges();
+                var fa = document.getElementById('convFilterAssignee');
+                var va = fa ? fa.value : '';
+                var da = document.getElementById('convDetailAssignee');
+                var vd = da ? da.value : '';
+                var dd = document.getElementById('convDetailDept');
+                var vdd = dd ? dd.value : '';
+                if (typeof loadConvAssignees === 'function') {
+                    loadConvAssignees().then(function() {
+                        try {
+                            if (fa && fa.options && va !== undefined) fa.value = va;
+                            if (da && da.options && vd !== undefined) da.value = vd;
+                            if (dd && dd.options && vdd !== undefined) dd.value = vdd;
+                        } catch (_e) { /* ignore */ }
+                    });
+                }
+                var fd = document.getElementById('convFilterDept');
+                if (fd && fd.options && fd.options.length && fd.options[0].value === '') {
+                    fd.options[0].setAttribute('data-i18n', 'all_depts');
+                    fd.options[0].textContent = t('all_depts');
+                }
+                updateConvQuickTabsToggleUi();
+            } catch (e) { /* ignore */ }
+        };
+
         async function loadConversations(appendMode) {
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
@@ -744,7 +835,7 @@
             if (statsEl && data.total != null) {
                 const openCount = data.openCount != null ? data.openCount : (data.data || []).filter(function(c){ return c.status === 'open'; }).length;
                 const unreadCount = data.unreadCount != null ? data.unreadCount : (data.data || []).reduce(function(s,c){ return s + (c.unreadCount || 0); }, 0);
-                statsEl.innerHTML = '<span class="conv-stat"><strong>' + (data.total || 0) + '</strong> ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + '</span><span class="conv-stat"><strong>' + openCount + '</strong> ' + (LANG === 'fa' ? 'باز' : 'open') + '</span><span class="conv-stat"><strong>' + unreadCount + '</strong> ' + (LANG === 'fa' ? 'خوانده\u200cنشده' : 'unread') + '</span>';
+                statsEl.innerHTML = '<span class="conv-stat"><strong>' + (data.total || 0) + '</strong> ' + t('nav_conversations') + '</span><span class="conv-stat"><strong>' + openCount + '</strong> ' + t('status_open') + '</span><span class="conv-stat"><strong>' + unreadCount + '</strong> ' + t('filter_unread') + '</span>';
                 statsEl.style.display = 'flex';
             }
             const countEl = document.getElementById('convListCount');
@@ -774,7 +865,7 @@
                 const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
                 let profilePic = rawPic ? normalizeProfilePicUrl(rawPic) : '';
                 const canShowImg = !isGroup && rawPic && profilePicShowsImage(rawPic);
-                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
+                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
                 let assigneeMetaSuffix = '';
                 if (assigneeName) {
@@ -782,8 +873,7 @@
                     else if (c.assignee) assigneeMetaSuffix = ' · <span class="conv-item-assignee-inline">' + internalMsgAvatarHtml(c.assignee, 'conv-item-assignee-avatar') + '<span class="conv-item-assignee-name">' + escapeHtml(assigneeName) + '</span></span>';
                     else assigneeMetaSuffix = ' · ' + escapeHtml(assigneeName);
                 }
-                const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
-                const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + (statusT[c.status] || c.status) + '</span>';
+                const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + escapeHtml(convStatusLabelUi(c.status)) + '</span>';
                 const priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
                 const unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
                 const preview = (c.lastMessagePreview || '').trim();
@@ -894,7 +984,7 @@
                 let pic = rawOpenPic ? normalizeProfilePicUrl(rawOpenPic) : '';
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
                 if (pic && profilePicShowsImage(rawOpenPic)) {
-                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
+                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="crmAvatarImgErr(this)">';
                 } else {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 }
@@ -932,18 +1022,14 @@
                     const picNorm = normalizeProfilePicUrl(custPicRaw);
                     if (picNorm && profilePicShowsImage(custPicRaw)) {
                         const initialH = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
-                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picNorm) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
+                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picNorm) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="crmAvatarImgErr(this)">';
                     }
                 }
                 if (!barEl || !badgesEl) {
                     try { loadConversations(); } catch (_) {}
                     return;
                 }
-                const assigneeName = userDisplay(d.assignee) || (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned');
-                const deptName = (d.department && d.department.name) ? d.department.name : '';
-                const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
-                const prioT = LANG === 'fa' ? { low: 'کم', normal: 'عادی', high: 'مهم', urgent: 'فوری' } : { low: 'Low', normal: 'Normal', high: 'High', urgent: 'Urgent' };
-                badgesEl.innerHTML = '<span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'وضعیت' : 'Status') + '</span>' + (statusT[d.status] || d.status) + '</span><span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + (LANG === 'fa' ? 'اولویت' : 'Priority') + '</span>' + (prioT[d.priority] || d.priority) + '</span><span role="listitem" class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + (LANG === 'fa' ? 'مسئول' : 'Assignee') + '</span><span class="conv-badge-assignee-wrap">' + (d.assignee ? internalMsgAvatarHtml(d.assignee, 'conv-badge-assignee-avatar') : '') + '<span class="conv-badge-assignee-name">' + escapeHtml(assigneeName) + '</span></span></span>' + (deptName ? '<span role="listitem" class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + (LANG === 'fa' ? 'دپارتمان' : 'Dept') + '</span>' + escapeHtml(deptName) + '</span>' : '');
+                renderConvDetailBadges(d);
                 barEl.style.display = '';
                 barEl.removeAttribute('hidden');
                 barEl.classList.add('collapsed');
@@ -971,7 +1057,7 @@
                     var deptSel = document.getElementById('convDetailDept');
                     if (statusSel) {
                         const hasArchivedOpt = Array.from(statusSel.options).some(function(o){ return o.value === 'archived'; });
-                        if (canManageConversations() && !hasArchivedOpt) { const o = document.createElement('option'); o.value = 'archived'; o.textContent = t('status_archived') || 'آرشیو'; statusSel.appendChild(o); }
+                        if (canManageConversations() && !hasArchivedOpt) { const o = document.createElement('option'); o.value = 'archived'; o.setAttribute('data-i18n', 'status_archived'); o.textContent = t('status_archived') || 'Archived'; statusSel.appendChild(o); }
                         statusSel.value = d.status || 'open';
                     }
                     if (prioritySel) prioritySel.value = d.priority || 'normal';
@@ -1038,15 +1124,15 @@
             const res = await apiFetch('/api/users');
             if (!res.ok || !res.data || !res.data.data) return;
             const users = res.data.data;
-            const opt = '<option value="">' + (LANG === 'fa' ? 'هر مسئول' : 'Any assignee') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            const opt = '<option value="">' + escapeHtml(t('filter_any_assignee') || t('any_assignee')) + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
             if (selFilter) selFilter.innerHTML = opt;
-            const optDetail = '<option value="">' + (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned') + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
+            const optDetail = '<option value="">' + escapeHtml(t('no_assignee')) + '</option>' + users.map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(u.username || u.name || u.email) + '</option>'; }).join('');
             if (selDetail) selDetail.innerHTML = optDetail;
             if (selDetailDept) {
                 const deptRes = await apiFetch('/api/departments');
                 if (deptRes.ok && deptRes.data && deptRes.data.data) {
                     const depts = deptRes.data.data;
-                    selDetailDept.innerHTML = '<option value="">' + (LANG === 'fa' ? 'بدون دپارتمان' : 'No department') + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
+                    selDetailDept.innerHTML = '<option value="">' + escapeHtml(t('no_dept')) + '</option>' + depts.map(function(d){ return '<option value="' + d.id + '">' + escapeHtml(d.name || '') + '</option>'; }).join('');
                 }
             }
         }
@@ -1077,7 +1163,7 @@
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 let profilePic = rawPicNc ? normalizeProfilePicUrl(rawPicNc) : '';
-                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
@@ -2231,7 +2317,7 @@
                 const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
                 const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
                 const avatarInner = hasCustPic
-                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">'
+                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="crmAvatarImgErr(this)">'
                     : '<span class="customer-card-avatar-letter">' + escapeHtml(initial) + '</span>';
                 const avatarHtml = '<div class="' + avClass + '"' + avStyle + '>' + avatarInner + '</div>';
                 const statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');

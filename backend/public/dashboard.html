@@ -384,14 +384,22 @@
                         </div>
                     </div>
                     <div id="convStats" class="conv-stats" style="display:none;"></div>
-                    <div class="conv-quick-tabs" role="tablist">
-                        <button type="button" class="conv-tab active" data-tab="all" data-i18n="filter_all">همه</button>
-                        <button type="button" class="conv-tab" data-tab="unread" data-i18n="filter_unread">خوانده‌نشده</button>
-                        <button type="button" class="conv-tab" data-tab="unanswered" data-i18n="filter_unanswered">بدون پاسخ</button>
-                        <button type="button" class="conv-tab" data-tab="open" data-i18n="filter_open">باز</button>
-                        <button type="button" class="conv-tab" data-tab="mine" data-i18n="conv_tab_mine">مشخص‌شده به من</button>
-                        <button type="button" class="conv-tab" data-tab="groups" data-i18n="conv_tab_groups">👥 گروه‌ها</button>
-                        <button type="button" class="conv-tab" id="convTabArchived" data-tab="archived" data-i18n="filter_archived" style="display:none;">آرشیو</button>
+                    <div class="conv-quick-tabs-bar" id="convQuickTabsBar">
+                        <button type="button" class="conv-quick-tabs-toggle" id="btnConvQuickTabsToggle" aria-expanded="true" aria-controls="convQuickTabsPanel">
+                            <span class="conv-quick-tabs-toggle-text" data-i18n="conv_quick_tabs_hide">پنهان کردن فیلترهای سریع</span>
+                            <svg class="conv-quick-tabs-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+                        </button>
+                        <div class="conv-quick-tabs-panel" id="convQuickTabsPanel">
+                            <div class="conv-quick-tabs" role="tablist">
+                                <button type="button" class="conv-tab active" data-tab="all" data-i18n="filter_all">همه</button>
+                                <button type="button" class="conv-tab" data-tab="unread" data-i18n="filter_unread">خوانده‌نشده</button>
+                                <button type="button" class="conv-tab" data-tab="unanswered" data-i18n="filter_unanswered">بدون پاسخ</button>
+                                <button type="button" class="conv-tab" data-tab="open" data-i18n="filter_open">باز</button>
+                                <button type="button" class="conv-tab" data-tab="mine" data-i18n="conv_tab_mine">مشخص‌شده به من</button>
+                                <button type="button" class="conv-tab" data-tab="groups" data-i18n="conv_tab_groups">👥 گروه‌ها</button>
+                                <button type="button" class="conv-tab" id="convTabArchived" data-tab="archived" data-i18n="filter_archived" style="display:none;">آرشیو</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="conv-toolbar">
                         <div class="conv-search-bar">
@@ -413,8 +421,8 @@
                                 </button>
                             </div>
                             <div class="conv-filters-grid">
-                                <select id="convFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
-                                <select id="convFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                                <select id="convFilterStatus"><option value="" data-i18n="filter_all_status">همه وضعیت‌ها</option><option value="open" data-i18n="status_open">باز</option><option value="pending" data-i18n="status_pending">در انتظار</option><option value="closed" data-i18n="status_closed">بسته</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option></select>
+                                <select id="convFilterPriority"><option value="" data-i18n="filter_all_priority">همه اولویت‌ها</option><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
                                 <select id="convFilterBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
                                 <select id="convFilterDept"><option value="" data-i18n="all_depts">همه دپارتمان‌ها</option></select>
                                 <select id="convFilterAssignee"><option value="" data-i18n="filter_any_assignee">هر مسئول</option></select>
@@ -485,11 +493,11 @@
                                         <div class="conv-detail-fields-grid">
                                             <div class="conv-detail-field">
                                                 <label for="convDetailStatus" class="conv-detail-field-label" data-i18n="conv_form_status">وضعیت</label>
-                                                <select id="convDetailStatus" class="conv-detail-select"><option value="open">باز</option><option value="pending">در انتظار</option><option value="closed">بسته</option><option value="resolved">حل‌شده</option></select>
+                                                <select id="convDetailStatus" class="conv-detail-select"><option value="open" data-i18n="status_open">باز</option><option value="pending" data-i18n="status_pending">در انتظار</option><option value="closed" data-i18n="status_closed">بسته</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option></select>
                                             </div>
                                             <div class="conv-detail-field">
                                                 <label for="convDetailPriority" class="conv-detail-field-label" data-i18n="conv_form_priority">اولویت</label>
-                                                <select id="convDetailPriority" class="conv-detail-select"><option value="low">کم</option><option value="normal">عادی</option><option value="high">مهم</option><option value="urgent">فوری</option></select>
+                                                <select id="convDetailPriority" class="conv-detail-select"><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
                                             </div>
                                             <div class="conv-detail-field conv-detail-field--full">
                                                 <label for="convDetailDept" class="conv-detail-field-label" data-i18n="label_dept">دپارتمان</label>
@@ -497,7 +505,7 @@
                                             </div>
                                             <div class="conv-detail-field conv-detail-field--full">
                                                 <label for="convDetailAssignee" class="conv-detail-field-label" data-i18n="conv_form_assignee">مسئول</label>
-                                                <select id="convDetailAssignee" class="conv-detail-select"><option value="">بدون تخصیص</option></select>
+                                                <select id="convDetailAssignee" class="conv-detail-select"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
                                             </div>
                                         </div>
                                         <div class="conv-detail-actions-footer">
@@ -528,6 +536,7 @@
                         </div>
                         <div class="chat-send">
                             <input type="file" id="msgFileInput" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" style="display:none;">
+                            <div class="chat-send-main">
                             <div id="chatVoiceRecordingBar" class="chat-voice-recording-bar" style="display:none;" hidden>
                                 <button type="button" class="chat-voice-action-btn chat-voice-delete-btn" id="chatVoiceDeleteBtn" onclick="cancelVoiceRecord()" title="حذف ضبط" aria-label="حذف ضبط">
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
@@ -571,7 +580,7 @@
                                 </div>
                                 <div class="chat-compose-field wa-compose-pill-wrap wa-compose-pill-shell">
                                     <button type="button" class="chat-tool-btn wa-emoji-btn" id="waEmojiBtn" onclick="toggleWaEmojiPanel(event)" title="Emoji" data-i18n-title="wa_emoji" aria-label="Emoji" aria-expanded="false" aria-haspopup="true">😊</button>
-                                    <input type="text" id="msgInput" class="chat-compose-input wa-compose-pill" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off">
+                                    <input type="text" id="msgInput" class="chat-compose-input wa-compose-pill" data-i18n-ph="msg_placeholder" placeholder="پیام خود را بنویسید..." aria-label="متن پیام" autocomplete="off" enterkeyhint="send" inputmode="text">
                                 </div>
                                 <div class="wa-compose-primary-actions">
                                     <button type="button" class="chat-send-btn chat-compose-send wa-send-circle" onclick="sendMsg()" data-i18n="btn_send" title="ارسال" aria-label="ارسال"><svg class="chat-send-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg><span class="chat-send-text" data-i18n="btn_send">ارسال</span></button>
@@ -580,6 +589,7 @@
                             </div>
                             <div id="waEmojiPickerMount" class="wa-emoji-picker-mount" hidden></div>
                             <div id="waStickerPickerMount" class="wa-sticker-picker-mount" hidden></div>
+                            </div>
                         </div>
                     </div>
                     </div>
@@ -2739,7 +2749,7 @@
                         <button type="button" class="customer-detail-tab" data-tab="conversations" data-i18n="customer_history">مکالمات</button>
                         <button type="button" class="customer-detail-tab" data-tab="transactions" data-i18n="customer_transactions">تراکنش‌ها</button>
                         <button type="button" class="customer-detail-tab" data-tab="notes" data-i18n="customer_notes">گزارش‌ها و یادداشت‌ها</button>
-                        <button type="button" class="customer-detail-tab" data-tab="documents">📁 اسناد و مدیا</button>
+                        <button type="button" class="customer-detail-tab" data-tab="documents" data-i18n="customer_documents">فایل‌ها و پیوست‌ها</button>
                     </div>
                     <div id="customerTimelinePanel" class="customer-detail-panel show">
                         <div id="customerTimelineList" class="customer-timeline-list"></div>
@@ -2764,61 +2774,61 @@
                         <div id="customerNotesList"></div>
                     </div>
                     <div id="customerDocumentsPanel" class="customer-detail-panel">
+                        <p class="customer-detail-meta customer-docs-intro" data-i18n="customer_documents_intro">فایل‌های آپلودشده و پیوست‌های مکالمات اینجا نمایش داده می‌شوند.</p>
                         <div class="customer-docs-toolbar">
                             <div class="customer-docs-filters">
                                 <select id="customerDocsFilterCat" class="customer-docs-filter-select">
-                                    <option value="">همه دسته‌ها</option>
-                                    <option value="identity">مدارک هویتی</option>
-                                    <option value="contract">قرارداد</option>
-                                    <option value="financial">مالی</option>
-                                    <option value="media">رسانه (مکالمات)</option>
-                                    <option value="other">سایر</option>
+                                    <option value="" data-i18n="customer_docs_all_categories">همهٔ دسته‌ها</option>
+                                    <option value="identity" data-i18n="customer_docs_cat_identity">مدارک هویتی</option>
+                                    <option value="contract" data-i18n="customer_docs_cat_contract">قرارداد</option>
+                                    <option value="financial" data-i18n="customer_docs_cat_financial">مالی</option>
+                                    <option value="media" data-i18n="customer_docs_cat_media">پیوست مکالمه</option>
+                                    <option value="other" data-i18n="customer_docs_cat_other">سایر</option>
                                 </select>
                                 <select id="customerDocsFilterType" class="customer-docs-filter-select">
-                                    <option value="">همه انواع</option>
-                                    <option value="image">تصویر</option>
-                                    <option value="video">ویدیو</option>
-                                    <option value="audio">صدا</option>
-                                    <option value="document">سند</option>
-                                    <option value="other">سایر</option>
+                                    <option value="" data-i18n="customer_docs_all_types">همهٔ انواع</option>
+                                    <option value="image" data-i18n="customer_docs_type_image">تصویر</option>
+                                    <option value="video" data-i18n="customer_docs_type_video">ویدیو</option>
+                                    <option value="audio" data-i18n="customer_docs_type_audio">صوت</option>
+                                    <option value="document" data-i18n="customer_docs_type_document">سند</option>
+                                    <option value="other" data-i18n="customer_docs_type_other">سایر</option>
                                 </select>
                             </div>
-                            <button type="button" class="btn-primary btn-sm" id="btnCustomerUploadDoc">+ آپلود سند / فایل</button>
+                            <button type="button" class="btn-primary btn-sm" id="btnCustomerUploadDoc" data-i18n="customer_docs_upload">افزودن فایل</button>
                         </div>
                         <div id="customerDocsList" class="customer-docs-list"></div>
-                        <!-- فرم آپلود سند -->
                         <div id="customerDocUploadForm" class="customer-doc-upload-form" style="display:none;">
-                            <h4>آپلود سند جدید</h4>
+                            <h4 data-i18n="customer_docs_upload_heading">آپلود فایل جدید</h4>
                             <div class="customer-doc-upload-grid">
                                 <div>
-                                    <label>عنوان سند</label>
-                                    <input type="text" id="docUploadTitle" placeholder="عنوان سند">
+                                    <label data-i18n="customer_docs_field_title">عنوان</label>
+                                    <input type="text" id="docUploadTitle" data-i18n-ph="customer_docs_ph_title" placeholder="">
                                 </div>
                                 <div>
-                                    <label>دسته‌بندی</label>
+                                    <label data-i18n="customer_docs_field_category">دسته‌بندی</label>
                                     <select id="docUploadCategory">
-                                        <option value="other">سایر</option>
-                                        <option value="identity">مدارک هویتی</option>
-                                        <option value="contract">قرارداد</option>
-                                        <option value="financial">مالی</option>
-                                        <option value="media">رسانه</option>
+                                        <option value="other" data-i18n="customer_docs_cat_other">سایر</option>
+                                        <option value="identity" data-i18n="customer_docs_cat_identity">مدارک هویتی</option>
+                                        <option value="contract" data-i18n="customer_docs_cat_contract">قرارداد</option>
+                                        <option value="financial" data-i18n="customer_docs_cat_financial">مالی</option>
+                                        <option value="media" data-i18n="customer_docs_cat_media">پیوست مکالمه</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label>تاریخ انقضا (اختیاری)</label>
+                                    <label data-i18n="customer_docs_field_expiry">تاریخ انقضا (اختیاری)</label>
                                     <input type="date" id="docUploadExpiry">
                                 </div>
                                 <div>
-                                    <label>توضیحات</label>
-                                    <input type="text" id="docUploadDesc" placeholder="توضیح اختیاری">
+                                    <label data-i18n="customer_docs_field_desc">توضیحات</label>
+                                    <input type="text" id="docUploadDesc" data-i18n-ph="customer_docs_ph_desc" placeholder="">
                                 </div>
                             </div>
                             <div class="customer-doc-upload-file-wrap">
                                 <input type="file" id="docUploadFile" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar">
                             </div>
                             <div class="customer-doc-upload-actions">
-                                <button type="button" class="btn-secondary btn-sm" id="btnDocUploadCancel">انصراف</button>
-                                <button type="button" class="btn-primary btn-sm" id="btnDocUploadSave">ذخیره</button>
+                                <button type="button" class="btn-secondary btn-sm" id="btnDocUploadCancel" data-i18n="btn_cancel">انصراف</button>
+                                <button type="button" class="btn-primary btn-sm" id="btnDocUploadSave" data-i18n="btn_save">ذخیره</button>
                             </div>
                         </div>
                     </div>

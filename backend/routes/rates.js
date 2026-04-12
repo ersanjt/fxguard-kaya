@@ -209,6 +209,67 @@ const HISTORY_CACHE_TTL = 10 * 60 * 1000;
 
 function getHistoryCacheKey(key, days) { return `${key}_${days}`; }
 
+/** استخراج آرایه سطرها از پاسخ نوسان (آرایه خام یا { data } یا خطا) */
+function normalizeNavasanRows(body) {
+    if (body == null) return [];
+    if (Array.isArray(body)) return body;
+    if (body.data != null && Array.isArray(body.data)) return body.data;
+    return [];
+}
+
+function parseNumericNavasanField(v) {
+    if (v == null) return NaN;
+    if (typeof v === 'string') return parseFloat(v.replace(/[^\d.-]/g, ''));
+    const n = Number(v);
+    return isNaN(n) ? NaN : n;
+}
+
+/** یک نقطه در روز از پاسخ ohlcSearch (ترجیح close) */
+function pointsFromOhlcRows(rows) {
+    const byDate = new Map();
+    for (const row of rows) {
+        if (!row || row.date == null) continue;
+        const dateStr = String(row.date).trim().split(/\s+/)[0];
+        if (!dateStr) continue;
+        const raw = row.close != null ? row.close : (row.value != null ? row.value : row.open);
+        const num = parseNumericNavasanField(raw);
+        if (isNaN(num)) continue;
+        const ts = row.timestamp != null ? Number(row.timestamp) : 0;
+        byDate.set(dateStr, { date: dateStr, timestamp: ts, value: num });
+    }
+    return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+}
+
+/** Fallback: dailyCurrency برای هر روز (کمتر ترجیح داده می‌شود — مصرف API بالا) */
+async function fetchHistoryViaDaily(item, dayEntries, baseUrl) {
+    const BATCH_SIZE = 5;
+    const results = new Array(dayEntries.length).fill(null);
+    for (let batch = 0; batch < dayEntries.length; batch += BATCH_SIZE) {
+        const chunk = dayEntries.slice(batch, batch + BATCH_SIZE);
+        const promises = chunk.map(entry =>
+            axios.get(baseUrl + '&date=' + encodeURIComponent(entry.jalali), { timeout: 8000 })
+                .then(r => {
+                    const data = normalizeNavasanRows(r.data);
+                    if (data.length > 0) {
+                        const last = data[data.length - 1];
+                        let v = last.value;
+                        if (typeof v === 'string') v = parseFloat(v.replace(/[^\d.-]/g, ''));
+                        const num = Number(v);
+                        if (!isNaN(num)) return { date: entry.jalali, timestamp: last.timestamp || Math.floor(entry.date.getTime() / 1000), value: num };
+                    }
+                    return null;
+                })
+                .catch(() => null)
+        );
+        const batchResults = await Promise.all(promises);
+        batchResults.forEach((r, i) => { results[batch + i] = r; });
+        if (batch + BATCH_SIZE < dayEntries.length) {
+            await new Promise(r => setTimeout(r, 120));
+        }
+    }
+    return results.filter(Boolean);
+}
+
 // GET /api/rates/history — داده تاریخی برای چارت (item یا key ارز، days تعداد روز)
 router.get('/history', async (req, res, next) => {
     try {
@@ -226,43 +287,51 @@ router.get('/history', async (req, res, next) => {
         }
 
         const item = CURRENCY_TO_NAVASAN_ITEM[key] || (key === 'usd' ? 'usd_sell' : key + '_sell');
-        const baseUrl = `https://api.navasan.tech/dailyCurrency/?api_key=${NAVASAN_API_KEY}&item=${encodeURIComponent(item)}`;
+
+        if (!NAVASAN_API_KEY) {
+            const responseData = {
+                key,
+                item,
+                points: [],
+                externalConfigured: false
+            };
+            historyCache.set(cacheKey, { ts: Date.now(), data: responseData });
+            return res.json(responseData);
+        }
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-
-        const BATCH_SIZE = 5;
         const dayEntries = [];
         for (let i = days - 1; i >= 0; i--) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);
-            dayEntries.push({ index: days - 1 - i, date: d, jalali: toJalaliDate(d) });
+            dayEntries.push({ date: d, jalali: toJalaliDate(d) });
+        }
+        const startJ = dayEntries[0].jalali;
+        const endJ = dayEntries[dayEntries.length - 1].jalali;
+
+        let points = [];
+        let source = 'ohlc';
+
+        try {
+            const ohlcUrl = `https://api.navasan.tech/ohlcSearch/?api_key=${NAVASAN_API_KEY}&item=${encodeURIComponent(item)}&start=${encodeURIComponent(startJ)}&end=${encodeURIComponent(endJ)}`;
+            const ohlcRes = await axios.get(ohlcUrl, { timeout: 20000 });
+            const rows = normalizeNavasanRows(ohlcRes.data);
+            if (rows.length === 0 && ohlcRes.data && typeof ohlcRes.data === 'object' && ohlcRes.data.message) {
+                logger.warn('Navasan ohlcSearch empty or error', { key, item, message: ohlcRes.data.message });
+            }
+            points = pointsFromOhlcRows(rows);
+        } catch (e) {
+            logger.warn('Navasan ohlcSearch request failed', { key, item, error: e.message || e.code });
         }
 
-        const results = new Array(dayEntries.length).fill(null);
-        for (let batch = 0; batch < dayEntries.length; batch += BATCH_SIZE) {
-            const chunk = dayEntries.slice(batch, batch + BATCH_SIZE);
-            const promises = chunk.map(entry =>
-                axios.get(baseUrl + '&date=' + encodeURIComponent(entry.jalali), { timeout: 8000 })
-                    .then(r => {
-                        const data = Array.isArray(r.data) ? r.data : (r.data && r.data.data ? r.data.data : []);
-                        if (data.length > 0) {
-                            const last = data[data.length - 1];
-                            let v = last.value;
-                            if (typeof v === 'string') v = parseFloat(v.replace(/[^\d.-]/g, ''));
-                            const num = Number(v);
-                            if (!isNaN(num)) return { date: entry.jalali, timestamp: last.timestamp || Math.floor(entry.date.getTime() / 1000), value: num };
-                        }
-                        return null;
-                    })
-                    .catch(() => null)
-            );
-            const batchResults = await Promise.all(promises);
-            batchResults.forEach((r, i) => { results[batch + i] = r; });
+        if (points.length === 0) {
+            source = 'daily';
+            const baseUrl = `https://api.navasan.tech/dailyCurrency/?api_key=${NAVASAN_API_KEY}&item=${encodeURIComponent(item)}`;
+            points = await fetchHistoryViaDaily(item, dayEntries, baseUrl);
         }
 
-        const points = results.filter(Boolean);
-        const responseData = { key, item, points };
+        const responseData = { key, item, points, source };
 
         historyCache.set(cacheKey, { ts: Date.now(), data: responseData });
 

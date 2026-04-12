@@ -5,6 +5,13 @@ const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
 
+/** شمارهٔ فقط رقمی برای API گیت‌وی (بدون +، فاصله، پسوند @c.us) */
+function digitsOnlyChatPhone(raw) {
+    const s = String(raw || '').trim();
+    if (!s || s.includes('@g.us')) return '';
+    return s.replace(/@c\.us$/i, '').replace(/\D/g, '').trim();
+}
+
 function isAlreadyLocalPath(s) {
     if (!s || typeof s !== 'string') return false;
     const t = s.trim();
@@ -137,12 +144,15 @@ function looksLikeExpiringCdnProfilePic(url) {
  */
 async function maybeRefreshWhatsappCustomerAvatar(customer) {
     if (!customer || !customer.id) return null;
-    const phone = String(customer.phone || '').trim();
-    if (!phone || phone.includes('@g.us')) return null;
+    const phoneDigits = digitsOnlyChatPhone(customer.phone);
+    if (!phoneDigits || phoneDigits.length < 8) return null;
     const src = String(customer.source || '').toLowerCase();
-    if (src && src !== 'whatsapp') return null;
-
+    /* web: معمولاً شمارهٔ واتساپ نیست — واکشی پروفایل WA بی‌معنی */
+    if (src === 'web') return null;
+    /* manual با عکس ذخیره‌شده: دست‌کاری نکن؛ بدون عکس مثل واتساپ از گیت‌وی تلاش کن */
     const pic = String(customer.profilePic || '').trim();
+    if (src === 'manual' && pic) return null;
+
     if (isAlreadyLocalPath(pic)) return null;
 
     const now = Date.now();
@@ -156,7 +166,7 @@ async function maybeRefreshWhatsappCustomerAvatar(customer) {
     let remoteUrl = '';
     try {
         const { gatewayGet } = require('./gatewayClient');
-        const res = await gatewayGet('/api/contacts/profile-pic?phone=' + encodeURIComponent(phone), { timeout: 5000 });
+        const res = await gatewayGet('/api/contacts/profile-pic?phone=' + encodeURIComponent(phoneDigits), { timeout: 5000 });
         remoteUrl = (res && res.data && res.data.profilePicUrl) ? String(res.data.profilePicUrl).trim() : '';
     } catch (_) {
         return null;
@@ -178,5 +188,6 @@ module.exports = {
     downloadAvatarToUploads,
     persistRemoteAvatarIfNeeded,
     isAlreadyLocalPath,
+    digitsOnlyChatPhone,
     maybeRefreshWhatsappCustomerAvatar,
 };

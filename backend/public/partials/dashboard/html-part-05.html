@@ -395,7 +395,7 @@
                         <button type="button" class="customer-detail-tab" data-tab="conversations" data-i18n="customer_history">مکالمات</button>
                         <button type="button" class="customer-detail-tab" data-tab="transactions" data-i18n="customer_transactions">تراکنش‌ها</button>
                         <button type="button" class="customer-detail-tab" data-tab="notes" data-i18n="customer_notes">گزارش‌ها و یادداشت‌ها</button>
-                        <button type="button" class="customer-detail-tab" data-tab="documents">📁 اسناد و مدیا</button>
+                        <button type="button" class="customer-detail-tab" data-tab="documents" data-i18n="customer_documents">فایل‌ها و پیوست‌ها</button>
                     </div>
                     <div id="customerTimelinePanel" class="customer-detail-panel show">
                         <div id="customerTimelineList" class="customer-timeline-list"></div>
@@ -420,61 +420,61 @@
                         <div id="customerNotesList"></div>
                     </div>
                     <div id="customerDocumentsPanel" class="customer-detail-panel">
+                        <p class="customer-detail-meta customer-docs-intro" data-i18n="customer_documents_intro">فایل‌های آپلودشده و پیوست‌های مکالمات اینجا نمایش داده می‌شوند.</p>
                         <div class="customer-docs-toolbar">
                             <div class="customer-docs-filters">
                                 <select id="customerDocsFilterCat" class="customer-docs-filter-select">
-                                    <option value="">همه دسته‌ها</option>
-                                    <option value="identity">مدارک هویتی</option>
-                                    <option value="contract">قرارداد</option>
-                                    <option value="financial">مالی</option>
-                                    <option value="media">رسانه (مکالمات)</option>
-                                    <option value="other">سایر</option>
+                                    <option value="" data-i18n="customer_docs_all_categories">همهٔ دسته‌ها</option>
+                                    <option value="identity" data-i18n="customer_docs_cat_identity">مدارک هویتی</option>
+                                    <option value="contract" data-i18n="customer_docs_cat_contract">قرارداد</option>
+                                    <option value="financial" data-i18n="customer_docs_cat_financial">مالی</option>
+                                    <option value="media" data-i18n="customer_docs_cat_media">پیوست مکالمه</option>
+                                    <option value="other" data-i18n="customer_docs_cat_other">سایر</option>
                                 </select>
                                 <select id="customerDocsFilterType" class="customer-docs-filter-select">
-                                    <option value="">همه انواع</option>
-                                    <option value="image">تصویر</option>
-                                    <option value="video">ویدیو</option>
-                                    <option value="audio">صدا</option>
-                                    <option value="document">سند</option>
-                                    <option value="other">سایر</option>
+                                    <option value="" data-i18n="customer_docs_all_types">همهٔ انواع</option>
+                                    <option value="image" data-i18n="customer_docs_type_image">تصویر</option>
+                                    <option value="video" data-i18n="customer_docs_type_video">ویدیو</option>
+                                    <option value="audio" data-i18n="customer_docs_type_audio">صوت</option>
+                                    <option value="document" data-i18n="customer_docs_type_document">سند</option>
+                                    <option value="other" data-i18n="customer_docs_type_other">سایر</option>
                                 </select>
                             </div>
-                            <button type="button" class="btn-primary btn-sm" id="btnCustomerUploadDoc">+ آپلود سند / فایل</button>
+                            <button type="button" class="btn-primary btn-sm" id="btnCustomerUploadDoc" data-i18n="customer_docs_upload">افزودن فایل</button>
                         </div>
                         <div id="customerDocsList" class="customer-docs-list"></div>
-                        <!-- فرم آپلود سند -->
                         <div id="customerDocUploadForm" class="customer-doc-upload-form" style="display:none;">
-                            <h4>آپلود سند جدید</h4>
+                            <h4 data-i18n="customer_docs_upload_heading">آپلود فایل جدید</h4>
                             <div class="customer-doc-upload-grid">
                                 <div>
-                                    <label>عنوان سند</label>
-                                    <input type="text" id="docUploadTitle" placeholder="عنوان سند">
+                                    <label data-i18n="customer_docs_field_title">عنوان</label>
+                                    <input type="text" id="docUploadTitle" data-i18n-ph="customer_docs_ph_title" placeholder="">
                                 </div>
                                 <div>
-                                    <label>دسته‌بندی</label>
+                                    <label data-i18n="customer_docs_field_category">دسته‌بندی</label>
                                     <select id="docUploadCategory">
-                                        <option value="other">سایر</option>
-                                        <option value="identity">مدارک هویتی</option>
-                                        <option value="contract">قرارداد</option>
-                                        <option value="financial">مالی</option>
-                                        <option value="media">رسانه</option>
+                                        <option value="other" data-i18n="customer_docs_cat_other">سایر</option>
+                                        <option value="identity" data-i18n="customer_docs_cat_identity">مدارک هویتی</option>
+                                        <option value="contract" data-i18n="customer_docs_cat_contract">قرارداد</option>
+                                        <option value="financial" data-i18n="customer_docs_cat_financial">مالی</option>
+                                        <option value="media" data-i18n="customer_docs_cat_media">پیوست مکالمه</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label>تاریخ انقضا (اختیاری)</label>
+                                    <label data-i18n="customer_docs_field_expiry">تاریخ انقضا (اختیاری)</label>
                                     <input type="date" id="docUploadExpiry">
                                 </div>
                                 <div>
-                                    <label>توضیحات</label>
-                                    <input type="text" id="docUploadDesc" placeholder="توضیح اختیاری">
+                                    <label data-i18n="customer_docs_field_desc">توضیحات</label>
+                                    <input type="text" id="docUploadDesc" data-i18n-ph="customer_docs_ph_desc" placeholder="">
                                 </div>
                             </div>
                             <div class="customer-doc-upload-file-wrap">
                                 <input type="file" id="docUploadFile" accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.zip,.rar">
                             </div>
                             <div class="customer-doc-upload-actions">
-                                <button type="button" class="btn-secondary btn-sm" id="btnDocUploadCancel">انصراف</button>
-                                <button type="button" class="btn-primary btn-sm" id="btnDocUploadSave">ذخیره</button>
+                                <button type="button" class="btn-secondary btn-sm" id="btnDocUploadCancel" data-i18n="btn_cancel">انصراف</button>
+                                <button type="button" class="btn-primary btn-sm" id="btnDocUploadSave" data-i18n="btn_save">ذخیره</button>
                             </div>
                         </div>
                     </div>

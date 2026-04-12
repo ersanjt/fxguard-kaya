@@ -22,7 +22,7 @@
             let detailProfilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
             detailProfilePic = detailProfilePic ? normalizeProfilePicUrl(detailProfilePic) : '';
             const avatarClickable = detailProfilePic && profilePicShowsImage(detailProfilePic);
-            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
+            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" referrerpolicy="strict-origin-when-cross-origin" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
             const avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
             if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailProfilePic) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             const res = await apiFetch('/api/customers/' + custId + '/conversations');
@@ -175,8 +175,21 @@
                 return '';
             }).join('');
         }
-        // ——— اسناد و مدیا مشتری
+        // ——— فایل‌ها و پیوست‌های مشتری
         let _docUploadBound = false;
+        function _customerDocCategoryLabel(cat) {
+            const c = (cat && String(cat)) || 'other';
+            const k = 'customer_docs_cat_' + c;
+            const tx = t(k);
+            return tx === k ? c : tx;
+        }
+        function _customerDocFileTypeLabel(ft) {
+            const allowed = { image: 1, video: 1, audio: 1, document: 1, other: 1 };
+            const f = allowed[ft] ? ft : 'other';
+            const k = 'customer_docs_type_' + f;
+            const tx = t(k);
+            return tx === k ? f : tx;
+        }
         async function loadCustomerDocuments(custId) {
             const list = document.getElementById('customerDocsList');
             if (!list) return;
@@ -190,30 +203,46 @@
             if (params.length) url += '?' + params.join('&');
             const res = await apiFetch(url);
             if (res.needLogin) return;
-            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml((res.data && res.data.error) || 'خطا در بارگذاری') + '</div>'; return; }
+            if (!res.ok) {
+                list.innerHTML = '<div class="customer-docs-empty customer-docs-empty--error" role="alert"><span class="customer-docs-empty-icon">⚠️</span><p class="customer-docs-empty-text">' + escapeHtml((res.data && res.data.error) || t('customer_docs_error_load')) + '</p></div>';
+                return;
+            }
             const docs = (res.data && res.data.data) || [];
-            if (docs.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📁</span><br>هنوز سندی ثبت نشده.</div>'; }
-            else {
-                const catLabels = { identity: 'مدارک هویتی', contract: 'قرارداد', financial: 'مالی', media: 'رسانه', other: 'سایر' };
+            if (docs.length === 0) {
+                list.innerHTML = '<div class="customer-docs-empty"><span class="customer-docs-empty-icon">📁</span><p class="customer-docs-empty-text">' + escapeHtml(t('customer_docs_empty')) + '</p></div>';
+            } else {
                 list.innerHTML = docs.map(function(d) {
                     const icon = d.fileType === 'image' ? '🖼️' : d.fileType === 'video' ? '🎬' : d.fileType === 'audio' ? '🎵' : d.fileType === 'document' ? '📄' : '📎';
-                    const size = d.fileSize ? (d.fileSize > 1048576 ? (d.fileSize/1048576).toFixed(1)+'MB' : (d.fileSize/1024).toFixed(0)+'KB') : '';
-                    const expiry = d.expiresAt ? '<span class="doc-expiry' + (new Date(d.expiresAt) < new Date() ? ' doc-expiry-expired' : '') + '">انقضا: ' + d.expiresAt + '</span>' : '';
+                    const typePill = _customerDocFileTypeLabel(d.fileType);
+                    const size = d.fileSize ? (d.fileSize > 1048576 ? (d.fileSize / 1048576).toFixed(1) + ' MB' : (d.fileSize / 1024).toFixed(0) + ' KB') : '';
+                    const expiryRaw = d.expiresAt ? String(d.expiresAt) : '';
+                    const expiry = expiryRaw
+                        ? '<span class="doc-expiry' + (new Date(d.expiresAt) < new Date() ? ' doc-expiry-expired' : '') + '">' + escapeHtml(t('customer_docs_expires')) + ' ' + escapeHtml(expiryRaw) + '</span>'
+                        : '';
                     const src = d.filePath && d.filePath.startsWith('http') ? d.filePath : (d.filePath ? (window.location.origin + d.filePath) : '');
-                    const previewBtn = src ? '<a href="' + escapeHtml(src) + '" target="_blank" class="btn-link btn-sm">مشاهده</a>' : '';
-                    const dlBtn = src ? '<a href="' + escapeHtml(src) + '" download class="btn-link btn-sm">دانلود</a>' : '';
-                    return '<div class="customer-doc-item" data-docid="' + d.id + '">' +
-                        '<div class="customer-doc-icon">' + icon + '</div>' +
-                        '<div class="customer-doc-info">' +
-                            '<div class="customer-doc-title">' + escapeHtml(d.title || d.fileName) + '</div>' +
-                            '<div class="customer-doc-meta">' + (catLabels[d.category] || d.category) + (size ? ' · ' + size : '') + (d.source === 'conversation' ? ' · از مکالمه' : '') + (d.uploader ? ' · ' + escapeHtml(d.uploader.name) : '') + ' · ' + fmtTZ(d.createdAt, 'date') + '</div>' +
-                            (d.description ? '<div class="customer-doc-desc">' + escapeHtml(d.description) + '</div>' : '') +
-                            expiry +
-                        '</div>' +
-                        '<div class="customer-doc-actions">' + previewBtn + dlBtn +
-                            '<button type="button" class="btn-danger btn-sm btn-icon" onclick="deleteCustomerDoc(\'' + d.id + '\',\'' + custId + '\')" title="حذف">🗑</button>' +
-                        '</div>' +
-                    '</div>';
+                    const previewBtn = src ? '<a href="' + escapeHtml(src) + '" target="_blank" rel="noopener noreferrer" class="btn btn-doc-action">' + escapeHtml(t('customer_docs_view')) + '</a>' : '';
+                    const dlBtn = src ? '<a href="' + escapeHtml(src) + '" download class="btn btn-doc-action">' + escapeHtml(t('customer_docs_download')) + '</a>' : '';
+                    const metaParts = [escapeHtml(_customerDocCategoryLabel(d.category))];
+                    if (size) metaParts.push(escapeHtml(size));
+                    if (d.source === 'conversation') metaParts.push(escapeHtml(t('customer_docs_from_chat')));
+                    if (d.uploader && d.uploader.name) metaParts.push(escapeHtml(d.uploader.name));
+                    metaParts.push(escapeHtml(fmtTZ(d.createdAt, 'datetime')));
+                    return (
+                        '<article class="customer-doc-card" data-docid="' + escapeHtml(d.id) + '">' +
+                        '<div class="customer-doc-card-head">' +
+                        '<span class="customer-doc-card-icon" aria-hidden="true">' + icon + '</span>' +
+                        '<div class="customer-doc-card-titles">' +
+                        '<h4 class="customer-doc-card-title">' + escapeHtml(d.title || d.fileName || '—') + '</h4>' +
+                        '<span class="customer-doc-type-pill">' + escapeHtml(typePill) + '</span>' +
+                        '</div></div>' +
+                        '<p class="customer-doc-card-meta">' + metaParts.join(' · ') + '</p>' +
+                        (d.description ? '<p class="customer-doc-card-desc">' + escapeHtml(d.description) + '</p>' : '') +
+                        (expiry ? '<div class="customer-doc-card-expiry">' + expiry + '</div>' : '') +
+                        '<div class="customer-doc-card-actions">' +
+                        previewBtn + dlBtn +
+                        '<button type="button" class="btn-doc-delete" onclick="deleteCustomerDoc(\'' + d.id + '\',\'' + custId + '\')" title="' + escapeHtml(t('customer_docs_delete_title')) + '"><span aria-hidden="true">🗑</span></button>' +
+                        '</div></article>'
+                    );
                 }).join('');
             }
             // bind filters
@@ -240,7 +269,7 @@
         }
         async function uploadCustomerDoc(custId) {
             const fileInput = document.getElementById('docUploadFile');
-            if (!fileInput || !fileInput.files || !fileInput.files[0]) { toast('فایل انتخاب نشده', true); return; }
+            if (!fileInput || !fileInput.files || !fileInput.files[0]) { toast(t('customer_docs_no_file'), true); return; }
             const title = (document.getElementById('docUploadTitle').value || '').trim() || fileInput.files[0].name;
             const category = document.getElementById('docUploadCategory').value || 'other';
             const desc = (document.getElementById('docUploadDesc').value || '').trim();
@@ -252,12 +281,12 @@
             if (desc) fd.append('description', desc);
             if (expiry) fd.append('expiresAt', expiry);
             const saveBtn = document.getElementById('btnDocUploadSave');
-            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'در حال آپلود...'; }
+            if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = t('customer_docs_uploading'); }
             try {
                 const res = await apiFetch('/api/customers/' + custId + '/documents', { method: 'POST', body: fd });
                 if (res.needLogin) return;
                 if (res.ok) {
-                    toast('سند با موفقیت ذخیره شد');
+                    toast(t('customer_docs_saved'));
                     const form = document.getElementById('customerDocUploadForm');
                     if (form) form.style.display = 'none';
                     fileInput.value = '';
@@ -265,17 +294,17 @@
                     document.getElementById('docUploadDesc').value = '';
                     document.getElementById('docUploadExpiry').value = '';
                     loadCustomerDocuments(custId);
-                } else { toast((res.data && res.data.error) || 'خطا در آپلود', true); }
+                } else { toast((res.data && res.data.error) || t('customer_docs_upload_error'), true); }
             } finally {
-                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'ذخیره'; }
+                if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = t('btn_save'); }
             }
         }
         async function deleteCustomerDoc(docId, custId) {
-            if (!confirm('آیا از حذف این سند مطمئن هستید؟')) return;
+            if (!confirm(t('customer_docs_confirm_delete'))) return;
             const res = await apiFetch('/api/customers/' + custId + '/documents/' + docId, { method: 'DELETE' });
             if (res.needLogin) return;
-            if (res.ok) { toast('سند حذف شد'); loadCustomerDocuments(custId); }
-            else toast((res.data && res.data.error) || 'خطا در حذف', true);
+            if (res.ok) { toast(t('customer_docs_deleted')); loadCustomerDocuments(custId); }
+            else toast((res.data && res.data.error) || t('customer_docs_delete_error'), true);
         }
 
         async function loadCustomerTransactions(custId) {

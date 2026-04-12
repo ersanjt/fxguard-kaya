@@ -124,7 +124,26 @@ function publicDemoReadStub(req, res, next) {
             tickerDisplay: 'toman',
         });
     }
-    if (p.startsWith('/rates/history')) return res.json({ key: 'usd', item: 'demo', points: [] });
+    if (p === '/rates/history' || p.startsWith('/rates/history')) {
+        const key = String(req.query.key || req.query.currency || 'usd').toLowerCase();
+        const days = Math.min(90, Math.max(1, parseInt(req.query.days, 10) || 30));
+        const base = key === 'eur' ? 54800 : key === 'gold' ? 2850000 : 50200;
+        const points = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        for (let i = days - 1; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const wave = Math.round(Math.sin(i * 0.35) * (base * 0.012));
+            const jitter = ((i * 17) % 9) * 120;
+            points.push({
+                date: d.toISOString().slice(0, 10),
+                timestamp: Math.floor(d.getTime() / 1000),
+                value: Math.round(base + wave + jitter),
+            });
+        }
+        return res.json({ key, item: 'demo', points, source: 'demo' });
+    }
     if (p.startsWith('/rates/adjustments')) return res.json({ data: [] });
     if (p.startsWith('/rates/ticker-config')) return res.json({ visibleKeys: ['usd', 'eur'] });
     if (p.startsWith('/rates/currencies')) {

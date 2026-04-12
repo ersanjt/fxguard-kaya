@@ -352,6 +352,21 @@
             loadRatesCharts();
         }
         window.setRatesChartCurrency = setRatesChartCurrency;
+        let ratesChartsLoadSeq = 0;
+        function ratesChartsYAxisLocale() {
+            if (LANG === 'fa') return 'fa-IR';
+            if (LANG === 'tr') return 'tr-TR';
+            return 'en-US';
+        }
+        function ratesChartsShowEmpty(summaryEl, statsRow, message, withRetry) {
+            if (statsRow) statsRow.innerHTML = '';
+            if (!summaryEl) return;
+            const retry = withRetry
+                ? '<button type="button" class="btn-secondary rates-charts-retry-btn" onclick="loadRatesCharts()">' + escapeHtml(t('rates_charts_retry')) + '</button>'
+                : '';
+            summaryEl.innerHTML = '<div class="rates-charts-empty">' +
+                '<p class="rates-charts-empty-text">' + escapeHtml(message) + '</p>' + retry + '</div>';
+        }
         async function loadRatesCharts() {
             const canvas = document.getElementById('ratesChartCanvas');
             const summaryEl = document.getElementById('ratesChartsSummary');
@@ -359,6 +374,7 @@
             const loadingOverlay = document.getElementById('ratesChartsLoadingOverlay');
             const refreshBtn = document.querySelector('.rates-charts-refresh-btn');
             if (!canvas) return;
+            const loadId = ++ratesChartsLoadSeq;
             const periodSel = document.getElementById('ratesChartPeriod');
             const days = periodSel ? parseInt(periodSel.value, 10) || 30 : 30;
             if (loadingOverlay) loadingOverlay.classList.add('visible');
@@ -367,13 +383,15 @@
             if (summaryEl) summaryEl.innerHTML = '';
             try {
             const res = await apiFetch('/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days);
+            if (loadId !== ratesChartsLoadSeq) return;
             if (loadingOverlay) loadingOverlay.classList.remove('visible');
             if (refreshBtn) refreshBtn.classList.remove('loading');
             if (res.needLogin) return;
             const labels = [];
             const values = [];
-            if (res.ok && res.data && res.data.points && res.data.points.length > 0) {
-                res.data.points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
+            const payload = res.data || {};
+            if (res.ok && payload.points && payload.points.length > 0) {
+                payload.points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
             }
             const currencyLabels = { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
             const label = currencyLabels[ratesChartCurrentCurrency] || rateLabel(ratesChartCurrentCurrency);
@@ -385,6 +403,7 @@
                 gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
                 gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.12)');
                 gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
+                const yLoc = ratesChartsYAxisLocale();
                 ratesChartInstance = new Chart(ctx, {
                     type: 'line',
                     data: {
@@ -439,7 +458,7 @@
                                 ticks: {
                                     callback: function(v) {
                                         if (typeof v !== 'number') return v;
-                                        return v.toLocaleString(LANG === 'fa' ? 'fa-IR' : 'en-US');
+                                        return v.toLocaleString(yLoc);
                                     },
                                     font: { size: 11 },
                                     color: 'rgba(139, 157, 195, 0.8)',
@@ -467,13 +486,20 @@
                 }
                 if (summaryEl) summaryEl.innerHTML = '';
             } else {
-                if (statsRow) statsRow.innerHTML = '';
-                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'داده‌ای برای نمایش وجود ندارد. لطفاً بعداً تلاش کنید.' : LANG === 'tr' ? 'Gösterilecek veri yok. Lütfen daha sonra tekrar deneyin.' : 'No data to display. Please try again later.') + '</div>';
+                if (res.ok && payload.externalConfigured === false) {
+                    ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_api_not_configured'), false);
+                } else if (!res.ok) {
+                    const errMsg = typeof getApiError === 'function' ? getApiError(res) : (res.error || t('rates_charts_error_load'));
+                    ratesChartsShowEmpty(summaryEl, statsRow, errMsg, true);
+                } else {
+                    ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_empty'), true);
+                }
             }
             } catch (err) {
+                if (loadId !== ratesChartsLoadSeq) return;
                 if (loadingOverlay) loadingOverlay.classList.remove('visible');
                 if (refreshBtn) refreshBtn.classList.remove('loading');
-                if (summaryEl) summaryEl.innerHTML = '<div class="rates-charts-empty">' + (LANG === 'fa' ? 'خطا در بارگذاری نمودار. لطفاً دوباره تلاش کنید.' : 'Error loading chart. Please try again.') + '</div>';
+                ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_error_load'), true);
                 console.error('loadRatesCharts error:', err);
             }
         }
