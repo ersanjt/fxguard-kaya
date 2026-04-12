@@ -10,6 +10,52 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android-app/**/*.gradle*', 'android-app/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android platform (compileSdk)
+        run: yes | sdkmanager "platforms;android-36" >/dev/null
+
+      - name: Build Android release APK (OTA)
+        working-directory: android-app
+        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon -q
+
+      - name: Ensure releases directory on server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 60s
+          script: mkdir -p /var/www/kayaCRM/backend/uploads/releases
+
+      - name: Upload APK to server (in-app update)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: android-app/app/build/outputs/apk/release/app-release.apk
+          target: /var/www/kayaCRM/backend/uploads/releases/
+
       # اگر خطای dial tcp ... i/o timeout دیدید: سرور از شبکهٔ GitHub در دسترس نیست (فایروال/پورت ۲۲). دیپلوی دستی را ببینید: docs/DEPLOY-SERVER.md
       # host/user ثابت — اگر خواستی از Secrets استفاده کنی: docs/DEPLOY-GITHUB-SECRETS.md
       - name: Deploy via SSH
@@ -103,6 +149,26 @@ jobs:
             node scripts/add-customer-profile-fields.js
             echo "  ✅ migration scripts اجرا شد"
 
+            # ---- همسان‌سازی ANDROID_APP_* با نسخهٔ اپ (برای به‌روزرسانی از داخل اپ) ----
+            echo "📱 همسان‌سازی ANDROID_APP_* از android-app/app/build.gradle.kts ..."
+            mkdir -p backend/uploads/releases
+            GKF="android-app/app/build.gradle.kts"
+            CODE=$(grep -E 'versionCode\s*=' "$GKF" | head -1 | sed -E 's/[^0-9]*([0-9]+).*/\1/')
+            VER=$(grep -E 'versionName\s*=' "$GKF" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+            if [ -z "$CODE" ] || [ -z "$VER" ]; then
+              echo "❌ خطا: خواندن versionCode/versionName از $GKF ناموفق بود"
+              exit 1
+            fi
+            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_VERSION_CODE "$CODE"
+            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_VERSION_NAME "$VER"
+            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_APK_URL "/uploads/releases/app-release.apk"
+            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_RELEASE_NOTES "نسخه ${VER} — چت، برندینگ سازمان، امنیت شبکه"
+            if [ -f backend/uploads/releases/app-release.apk ]; then
+              echo "  ✅ APK روی سرور: app-release.apk"
+            else
+              echo "  ⚠️ APK روی سرور دیده نشد — مسیر uploads/releases را بررسی کنید"
+            fi
+
             # ---- بررسی syntax فایل‌های اصلی ----
             echo "🔎 بررسی syntax ..."
             node --check server.js
@@ -112,6 +178,7 @@ jobs:
             node --check routes/upload.js
             node --check routes/api.js
             node --check routes/panelSettings.js
+            node --check scripts/upsert-dotenv.js
             echo "  ✅ syntax بدون خطا"
 
             # ---- reload با PM2 ----

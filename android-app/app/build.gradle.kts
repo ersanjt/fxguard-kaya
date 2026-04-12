@@ -14,20 +14,30 @@ android {
         applicationId = "com.kaya.crm"
         minSdk = 26
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.4.1"
+        versionCode = 7
+        versionName = "1.4.2"
         buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
     }
 
     signingConfigs {
-        // برای تست: از کلید debug برای release هم استفاده می‌شود
+        // اولویت: keystore ثابت ریشهٔ پروژه اندروید (GitHub Actions + امضای یکسان هر OTA)
+        // وگرنه ~/.android/debug.keystore برای بیلد لوکال
         create("release") {
+            val ciKeystore = rootProject.file("ci-android-release.keystore")
             val debugKeystore = File(System.getProperty("user.home"), ".android/debug.keystore")
-            if (debugKeystore.exists()) {
-                storeFile = debugKeystore
-                storePassword = "android"
-                keyAlias = "androiddebugkey"
-                keyPassword = "android"
+            when {
+                ciKeystore.isFile -> {
+                    storeFile = ciKeystore
+                    storePassword = "android"
+                    keyAlias = "androiddebugkey"
+                    keyPassword = "android"
+                }
+                debugKeystore.exists() -> {
+                    storeFile = debugKeystore
+                    storePassword = "android"
+                    keyAlias = "androiddebugkey"
+                    keyPassword = "android"
+                }
             }
         }
     }
