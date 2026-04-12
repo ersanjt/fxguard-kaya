@@ -677,7 +677,7 @@ router.post('/:id/send', async (req, res, next) => {
                 filePath = path.join(uploadsDir, path.basename(relUnderUploads));
             }
             let sendMimetype = media.mimetype || 'application/octet-stream';
-            let sendFilename = media.filename || media.name || fileName;
+            let sendFilename = media.filename || media.name || path.basename(relUnderUploads) || 'file';
             if (!relPath.startsWith('http') && fs.existsSync(filePath)) {
                 try {
                     // For audio/voice: convert to ogg/opus so WhatsApp accepts it as voice message
