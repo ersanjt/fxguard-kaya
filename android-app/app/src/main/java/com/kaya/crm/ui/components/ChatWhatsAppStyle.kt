@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -313,9 +314,10 @@ fun WaMessageComposer(
             )
             Spacer(modifier = Modifier.width(8.dp))
             FloatingActionButton(
-                onClick = onSend,
-                modifier = Modifier.size(48.dp),
-                enabled = canSend,
+                onClick = { if (canSend) onSend() },
+                modifier = Modifier
+                    .size(48.dp)
+                    .alpha(if (canSend) 1f else 0.45f),
                 containerColor = ChatWhatsAppStyle.sendFabGreen,
                 contentColor = Color.White,
                 elevation = FloatingActionButtonDefaults.elevation(

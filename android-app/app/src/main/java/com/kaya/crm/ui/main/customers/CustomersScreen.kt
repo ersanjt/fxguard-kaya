@@ -2,17 +2,17 @@ package com.kaya.crm.ui.main.customers
 
 import android.content.Intent
 import android.net.Uri
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
@@ -25,6 +25,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kaya.crm.ui.components.WaChatRowDivider
+import com.kaya.crm.ui.components.WaChatSheetHeader
+import com.kaya.crm.ui.components.WaChatThreadRow
 import com.kaya.crm.data.models.CustomerDetail
 import com.kaya.crm.data.models.CustomerItem
 
@@ -72,11 +75,16 @@ fun CustomersScreen(
             CircularProgressIndicator()
         }
     } else {
-        Box(modifier = Modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+                .pullRefresh(pullRefreshState)
+        ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 item {
                     OutlinedTextField(
@@ -84,7 +92,8 @@ fun CustomersScreen(
                         onValueChange = { viewModel.setSearchText(it) },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("جستجو نام، شماره یا ایمیل…") },
-                        singleLine = true
+                        singleLine = true,
+                        shape = RoundedCornerShape(24.dp)
                     )
                 }
                 item {
@@ -184,51 +193,50 @@ private fun CustomerListRow(
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick)
+    val title = customer.name ?: customer.phone ?: "—"
+    val preview = buildString {
+        if (!customer.name.isNullOrBlank() && !customer.phone.isNullOrBlank()) {
+            append(customer.phone)
+        }
+        if (!customer.email.isNullOrBlank()) {
+            if (isNotEmpty()) append(" · ")
+            append(customer.email)
+        }
+        if (customer.lastOpenConv != null) {
+            if (isNotEmpty()) append(" · ")
+            append("مکالمه باز")
+        }
+    }.ifBlank { customer.phone ?: customer.email ?: "—" }.take(58)
+    val initial = (title.firstOrNull() ?: '?').toString()
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .clickable(onClick = onClick)
         ) {
-            Icon(Icons.Default.People, contentDescription = null)
-            Spacer(modifier = Modifier.width(16.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = customer.name ?: customer.phone ?: "—",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                customer.phone?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
-                customer.status?.takeIf { it.isNotBlank() }?.let { st ->
-                    Text(
-                        st,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(top = 4.dp)
-                    )
-                }
-                customer.lastOpenConv?.let { conv ->
-                    Text(
-                        "مکالمه باز: ${conv.status ?: "—"}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            customer.phone?.takeIf { it.isNotBlank() }?.let { phone ->
-                IconButton(
-                    onClick = {
-                        runCatching {
-                            context.startActivity(
-                                Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(phone)}"))
-                            )
-                        }
+            WaChatThreadRow(
+                title = title,
+                preview = preview,
+                timeOrMeta = customer.status?.takeIf { it.isNotBlank() },
+                avatarLetter = initial
+            )
+            WaChatRowDivider()
+        }
+        customer.phone?.takeIf { it.isNotBlank() }?.let { phone ->
+            IconButton(
+                onClick = {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(phone)}"))
+                        )
                     }
-                ) {
-                    Icon(Icons.Filled.Phone, contentDescription = "تماس")
                 }
+            ) {
+                Icon(Icons.Filled.Phone, contentDescription = "تماس")
             }
         }
     }
@@ -261,18 +269,27 @@ private fun CustomerDetailSheet(
         Scaffold(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 480.dp),
-            snackbarHost = { SnackbarHost(snackbarHostState) }
+                .fillMaxHeight(0.92f),
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = MaterialTheme.colorScheme.surface
         ) { padding ->
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(padding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp)
             ) {
-                Text("جزئیات مشتری", style = MaterialTheme.typography.titleLarge)
-                Spacer(modifier = Modifier.height(12.dp))
+                WaChatSheetHeader(
+                    title = detail?.name ?: "جزئیات مشتری",
+                    subtitle = "مشتریان",
+                    onDismiss = onDismiss
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp)
+                ) {
+                Spacer(modifier = Modifier.height(4.dp))
                 if (detailLoading && detail == null) {
                     Box(
                         modifier = Modifier.fillMaxWidth().padding(24.dp),
@@ -315,6 +332,7 @@ private fun CustomerDetailSheet(
                     }
                 } else {
                     Text("اطلاعاتی دریافت نشد", style = MaterialTheme.typography.bodyMedium)
+                }
                 }
             }
         }
