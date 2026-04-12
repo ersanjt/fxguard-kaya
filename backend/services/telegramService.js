@@ -52,13 +52,27 @@ async function sendMessage(text, config = null, opts = {}) {
                 disable_web_page_preview: true
             };
             if (parseMode) body.parse_mode = parseMode;
-            const res = await axios.post(url, body, { timeout: timeoutMs });
-            const d = res.data;
-            if (!d || d.ok !== true) {
-                const msg = (d && d.description) || 'Telegram sendMessage not ok';
-                throw new Error(msg);
+            try {
+                const res = await axios.post(url, body, { timeout: timeoutMs });
+                const d = res.data;
+                if (!d || d.ok !== true) {
+                    const msg = (d && d.description) || 'Telegram sendMessage not ok';
+                    throw new Error(msg);
+                }
+                return res;
+            } catch (err) {
+                const tg = err && err.response && err.response.data;
+                const desc = tg && (tg.description || tg.error);
+                const status = err && err.response && err.response.status;
+                if (desc) throw new Error(desc + (status ? ` (HTTP ${status})` : ''));
+                if (status === 404) {
+                    throw new Error(
+                        'Telegram API 404 — معمولاً توکن ربات نامعتبر است یا ربات حذف شده. توکن را از @BotFather دوباره بگیرید و در فرم بگذارید.'
+                    );
+                }
+                const msg = (err && err.message) || 'Telegram request failed';
+                throw new Error(msg + (status ? ` (HTTP ${status})` : ''));
             }
-            return res;
         })
     );
 

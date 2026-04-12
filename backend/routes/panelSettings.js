@@ -209,9 +209,9 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (emailLoginNotification !== undefined) row.emailLoginNotification = !!emailLoginNotification;
         if (adminAlertsEnabled !== undefined) row.adminAlertsEnabled = !!adminAlertsEnabled;
         if (adminAlertEmails !== undefined) row.adminAlertEmails = adminAlertEmails === '' ? null : String(adminAlertEmails).trim();
-        if (telegramBotToken !== undefined) {
-            const trimmed = String(telegramBotToken).trim();
-            row.telegramBotToken = trimmed || null;
+        /* توکن خالی در فرم یعنی «تغییر نده» — وگرنه هر بار ذخیرهٔ پنل توکن ذخیره‌شده را پاک می‌کرد */
+        if (telegramBotToken !== undefined && String(telegramBotToken).trim() !== '') {
+            row.telegramBotToken = String(telegramBotToken).trim();
         }
         if (telegramChatIds !== undefined) row.telegramChatIds = telegramChatIds === '' ? null : String(telegramChatIds).trim();
         if (telegramTimeoutMs !== undefined) row.telegramTimeoutMs = telegramTimeoutMs === '' ? null : parseInt(telegramTimeoutMs, 10);

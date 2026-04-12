@@ -1479,7 +1479,6 @@
                 emailLoginNotification: !!(document.getElementById('panelSettingEmailLoginNotification') && document.getElementById('panelSettingEmailLoginNotification').checked),
                 adminAlertsEnabled: !!(document.getElementById('panelSettingAdminAlertsEnabled') && document.getElementById('panelSettingAdminAlertsEnabled').checked),
                 adminAlertEmails: get('panelSettingAdminAlertEmails'),
-                telegramBotToken: get('panelSettingTelegramBotToken'),
                 telegramChatIds: get('panelSettingTelegramChatIds'),
                 telegramTimeoutMs: get('panelSettingTelegramTimeoutMs'),
                 clientErrorReportingEnabled: !!(document.getElementById('panelSettingClientErrorReportingEnabled') && document.getElementById('panelSettingClientErrorReportingEnabled').checked),
@@ -1497,6 +1496,8 @@
             payload.languageMode = (langModeEl && validModes.indexOf(langModeEl.value) >= 0) ? langModeEl.value : 'trilingual';
             const defaultLangEl = document.getElementById('panelSettingDefaultLanguage');
             if (defaultLangEl && (defaultLangEl.value === 'fa' || defaultLangEl.value === 'en' || defaultLangEl.value === 'tr')) payload.defaultLanguage = defaultLangEl.value;
+            const tgNewToken = get('panelSettingTelegramBotToken');
+            if (tgNewToken) payload.telegramBotToken = tgNewToken;
             const res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
             const saveText = t('btn_save');
             if (btn) { btn.disabled = false; btn.textContent = saveText; }
