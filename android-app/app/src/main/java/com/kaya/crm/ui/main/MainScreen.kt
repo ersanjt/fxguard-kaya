@@ -38,11 +38,11 @@ fun MainScreen(
         PanelPermissions.visibleTabs(user, hiddenPanelPages)
     }
 
-    var selectedTab by remember { mutableStateOf(MainTab.CONVERSATIONS) }
+    /* قبل از لود کاربر از کش، فقط داشبورد/پروفایل مجازند؛ CONVERSATIONS اولیه باعث ناهماهنگی نوار و محتوا می‌شد */
+    var selectedTab by remember { mutableStateOf(MainTab.DASHBOARD) }
     var pendingOpenConversationId by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(visibleTabs, user, hiddenPanelPages) {
-        if (visibleTabs.isEmpty()) return@LaunchedEffect
         if (selectedTab !in visibleTabs) {
             selectedTab = visibleTabs.first()
         }
@@ -122,10 +122,7 @@ fun MainScreen(
                 MainTab.TICKETS -> TicketsScreen()
                 MainTab.PROFILE -> ProfileScreen(
                     hiddenPanelPages = hiddenPanelPages,
-                    onLogout = {
-                        mainViewModel.logout()
-                        onLogout()
-                    }
+                    onLogout = onLogout
                 )
             }
         }

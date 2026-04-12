@@ -46,9 +46,4 @@ class MainViewModel @Inject constructor(
         }
     }
 
-    fun logout() {
-        viewModelScope.launch {
-            authRepository.logout()
-        }
-    }
 }

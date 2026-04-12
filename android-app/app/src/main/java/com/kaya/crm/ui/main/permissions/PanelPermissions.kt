@@ -36,8 +36,10 @@ object PanelPermissions {
         return !hiddenBlocksPage(hiddenPanelPages, page)
     }
 
-    fun visibleTabs(user: UserResponse?, hiddenPanelPages: Set<String>): List<MainTab> =
-        MainTab.entries.filter { isMainTabVisible(user, it, hiddenPanelPages) }
+    fun visibleTabs(user: UserResponse?, hiddenPanelPages: Set<String>): List<MainTab> {
+        val v = MainTab.entries.filter { isMainTabVisible(user, it, hiddenPanelPages) }
+        return v.ifEmpty { listOf(MainTab.PROFILE) }
+    }
 }
 
 val MainTab.permissionSection: String
