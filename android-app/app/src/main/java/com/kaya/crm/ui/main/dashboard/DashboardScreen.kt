@@ -102,6 +102,16 @@ fun DashboardScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 4.dp, bottom = 12.dp)
                     )
+                    Row(modifier = Modifier.fillMaxWidth()) {
+                        StatCard(
+                            modifier = Modifier.weight(1f),
+                            title = "چت داخلی",
+                            value = "گفتگو با تیم",
+                            icon = Icons.Default.Forum,
+                            onClick = { onNavigateToTab(MainTab.TEAM) }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)

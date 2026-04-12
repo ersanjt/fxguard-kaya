@@ -266,7 +266,7 @@ private fun InternalChatDetailSheet(
             ) {
                 WaChatSheetHeader(
                     title = participantNames,
-                    subtitle = "چت داخلی",
+                    subtitle = "چت سازمان",
                     onDismiss = onDismiss
                 )
                 Box(

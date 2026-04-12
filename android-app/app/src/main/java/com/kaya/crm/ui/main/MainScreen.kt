@@ -20,7 +20,7 @@ enum class MainTab(val title: String, val icon: androidx.compose.ui.graphics.vec
     DASHBOARD("داشبورد", Icons.Default.Dashboard),
     CONVERSATIONS("مکالمات", Icons.AutoMirrored.Filled.Chat),
     CUSTOMERS("مشتریان", Icons.Default.People),
-    TEAM("تیم", Icons.Default.Forum),
+    TEAM("چت داخلی", Icons.Default.Forum),
     TICKETS("تیکت‌ها", Icons.Default.ConfirmationNumber),
     PROFILE("پروفایل", Icons.Default.Person)
 }
@@ -43,7 +43,7 @@ fun MainScreen(
                             MainTab.DASHBOARD -> "داشبورد"
                             MainTab.CONVERSATIONS -> "مکالمات"
                             MainTab.CUSTOMERS -> "مشتریان"
-                            MainTab.TEAM -> "تیم"
+                            MainTab.TEAM -> "چت داخلی"
                             MainTab.TICKETS -> "تیکت‌ها"
                             MainTab.PROFILE -> "پروفایل"
                         },
