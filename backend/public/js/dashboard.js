@@ -1807,6 +1807,17 @@
                         loadGeneralAnnouncementsMarquee();
                         if (typeof updateNavBadges === 'function') updateNavBadges();
                     });
+                    socket.on('main_admin_critical_alert', function(data) {
+                        try {
+                            playInternalChatSound();
+                            const sev = (data && data.severity) || 'ALERT';
+                            const title = (data && data.title) || (LANG === 'fa' ? 'هشدار سیستم' : 'System alert');
+                            const body = String((data && data.body) || '').replace(/\n/g, ' ').trim();
+                            const preview = body.length > 160 ? body.slice(0, 160) + '…' : body;
+                            const msg = sev + ': ' + title + (preview ? ' — ' + preview : '');
+                            toast(msg, 14000);
+                        } catch (e) {}
+                    });
                     socket.on('connect_error', function() { socket = null; });
                 }
             } catch (e) { socket = null; }

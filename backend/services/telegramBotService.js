@@ -536,6 +536,25 @@ async function startPolling(models, config = undefined) {
         const desc = String(me.description || '');
         if (code === 401 || /unauthorized|invalid bot token/i.test(desc)) {
             logger.error('Telegram bot: token invalid (getMe), polling not started', { description: me.description });
+            setImmediate(() => {
+                try {
+                    const { notifyMainAdminsIncident } = require('./mainAdminIncidentNotifier');
+                    const { newCorrelationId } = require('./incidentTelegramPolicy');
+                    notifyMainAdminsIncident({
+                        severity: 'CRITICAL',
+                        kind: 'telegram_bot_token_invalid',
+                        title: 'Telegram bot: invalid or revoked token',
+                        bodyText: [
+                            'Long polling was not started because Telegram API rejected the bot token (getMe).',
+                            'Check Panel → Telegram bot token, or revoke/regenerate the token with BotFather.',
+                            `API: ${desc || 'unauthorized'}`
+                        ].join('\n'),
+                        correlationId: newCorrelationId(),
+                        dedupeKey: 'ma:tg_token_invalid',
+                        dedupeWindowMs: 3600000
+                    }).catch(() => {});
+                } catch (_) {}
+            });
             return;
         }
         logger.warn('Telegram getMe non-fatal', { description: me.description, error_code: code });

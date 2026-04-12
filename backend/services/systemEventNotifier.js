@@ -1,7 +1,7 @@
 const { getPanelSettings, getPanelAlertConfig } = require('./config/panelSettingsLoader');
 const telegramService = require('./telegramService');
 const logger = require('../config/logger');
-const { evaluateSystemEventTelegram } = require('./incidentTelegramPolicy');
+const { evaluateSystemEventTelegram, shouldSkipTelegramDedupe } = require('./incidentTelegramPolicy');
 
 const CACHE_TTL_MS = 10000;
 let cachedConfig = null;
@@ -53,22 +53,52 @@ async function getConfig() {
 
 async function notifySystemEvent(category, title, payload = {}) {
     try {
+        const decision = evaluateSystemEventTelegram(category, title, payload);
+        if (decision.mode === 'skip') return { ok: false, skipped: true, reason: 'incident_policy' };
+
+        if (decision.notifyMainAdmins && decision.text) {
+            try {
+                const { notifyMainAdminsIncident } = require('./mainAdminIncidentNotifier');
+                await notifyMainAdminsIncident({
+                    severity: decision.severity,
+                    kind: `system_event:${String(title).slice(0, 120)}`,
+                    title,
+                    bodyText: decision.text,
+                    correlationId: decision.correlationId || null,
+                    dedupeKey: decision.mainAdminDedupeKey || null,
+                    dedupeWindowMs: decision.mainAdminDedupeWindowMs
+                });
+            } catch (e) {
+                logger.warn('main admin incident notify failed', {
+                    error: e.message || String(e),
+                    category,
+                    title
+                });
+            }
+        }
+
         const cfg = await getConfig();
         const tgConfig = {
             botToken: cfg.telegramBotToken,
             chatIds: cfg.telegramChatIds,
             timeoutMs: cfg.telegramTimeoutMs
         };
-        if (!telegramService.isEnabled(tgConfig)) return { ok: false, skipped: true, reason: 'telegram_not_configured' };
-
-        const decision = evaluateSystemEventTelegram(category, title, payload);
-        if (decision.mode === 'skip') return { ok: false, skipped: true, reason: 'incident_policy' };
+        if (!telegramService.isEnabled(tgConfig)) {
+            return { ok: true, skipped: true, reason: 'telegram_not_configured' };
+        }
 
         if (!isTelegramCategoryAllowed(cfg, category, decision)) {
             return { ok: false, skipped: true, reason: 'category_disabled' };
         }
 
         if (decision.mode === 'send' && decision.text) {
+            if (
+                decision.dedupeKey &&
+                decision.severity !== 'CRITICAL' &&
+                shouldSkipTelegramDedupe(decision.dedupeKey, decision.dedupeWindowMs)
+            ) {
+                return { ok: false, skipped: true, reason: 'telegram_deduped' };
+            }
             return await telegramService.sendMessage(decision.text, tgConfig, { parse_mode: null });
         }
 

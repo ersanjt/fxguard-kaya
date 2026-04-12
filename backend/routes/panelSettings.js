@@ -248,6 +248,22 @@ router.put('/', authMiddleware, async (req, res, next) => {
                 logger.info('Telegram bot: polling restarted after panel bot token change');
             } catch (e) {
                 logger.warn('Telegram bot: polling restart failed after panel save', { error: e.message });
+                setImmediate(() => {
+                    try {
+                        const { notifyMainAdminsIncident } = require('../services/mainAdminIncidentNotifier');
+                        notifyMainAdminsIncident({
+                            severity: 'WARNING',
+                            kind: 'telegram_bot_restart_failed',
+                            title: 'Telegram bot: polling restart failed after panel save',
+                            bodyText: [
+                                'The CRM could not restart Telegram long polling after the bot token was saved.',
+                                String(e.message || e)
+                            ].join('\n'),
+                            dedupeKey: 'ma:tg_restart_panel_fail',
+                            dedupeWindowMs: 300000
+                        }).catch(() => {});
+                    } catch (_) {}
+                });
             }
         }
         const s = await getSettings();

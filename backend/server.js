@@ -24,6 +24,7 @@ const models = require('./models');
 const { sequelize } = models;
 const { sendAdminSecurityAlert } = require('./services/adminAlertService');
 const { notifySystemEvent } = require('./services/systemEventNotifier');
+const { setMainAdminIncidentIo } = require('./services/mainAdminIncidentNotifier');
 const { configureExpress } = require('./app/configureExpress');
 
 const app = express();
@@ -47,6 +48,7 @@ const io = socketIo(server, {
 });
 
 const { redisClient } = configureExpress({ app, io, getRabbitChannel, logger, sequelize });
+setMainAdminIncidentIo(io);
 
 let unansweredInterval = null;
 let isShuttingDown = false;

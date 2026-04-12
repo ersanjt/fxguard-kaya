@@ -7,7 +7,12 @@ const {
     redactPayload,
     shouldTelegramLoginFailure,
     shouldTelegramFrontendErrorBurst,
-    shouldTelegramBackendError
+    shouldTelegramBackendError,
+    shouldSkipTelegramDedupe,
+    newCorrelationId,
+    COOLDOWN_LOGIN_FAIL_MS,
+    COOLDOWN_FE_MS,
+    COOLDOWN_BE_MS
 } = require('./incidentTelegramPolicy');
 
 async function resolveAlertConfig(options = {}) {
@@ -109,31 +114,43 @@ function buildTelegramIncidentText(eventType, data, opts = {}) {
     if (eventType === 'login_failed') {
         const gate = shouldTelegramLoginFailure(ip);
         if (!gate.send) return null;
-        return formatSystemIncident(
-            'WARNING',
-            'Failed login burst (threshold)',
-            `Repeated failed portal sign-ins from one IP (count ${gate.count} in window).`,
-            'Possible brute-force or misconfigured client.',
-            `${gate.count} failures (rolling window)`,
-            safeData,
-            'Review auth logs; consider IP controls or captcha.',
-            null
-        );
+        const correlationId = newCorrelationId();
+        return {
+            text: formatSystemIncident(
+                'WARNING',
+                'Failed login burst (threshold)',
+                `Repeated failed portal sign-ins from one IP (count ${gate.count} in window).`,
+                'Possible brute-force or misconfigured client.',
+                `${gate.count} failures (rolling window)`,
+                safeData,
+                'Review auth logs; consider IP controls or captcha.',
+                correlationId,
+                { state: 'FIRING' }
+            ),
+            dedupeKey: `admin_login_fail:${ip}`,
+            dedupeWindowMs: COOLDOWN_LOGIN_FAIL_MS
+        };
     }
 
     if (eventType === 'frontend_error') {
         const gate = shouldTelegramFrontendErrorBurst();
         if (!gate.send) return null;
-        return formatSystemIncident(
-            'WARNING',
-            'Frontend error burst',
-            'Many client-side error reports in a short interval.',
-            'Users may hit broken UI or API mismatch.',
-            `${gate.count} reports in window`,
-            safeData,
-            'Check recent deploy, API version, and browser console.',
-            null
-        );
+        const correlationId = newCorrelationId();
+        return {
+            text: formatSystemIncident(
+                'WARNING',
+                'Frontend error burst',
+                'Many client-side error reports in a short interval.',
+                'Users may hit broken UI or API mismatch.',
+                `${gate.count} reports in window`,
+                safeData,
+                'Check recent deploy, API version, and browser console.',
+                correlationId,
+                { state: 'FIRING' }
+            ),
+            dedupeKey: 'admin_fe_burst',
+            dedupeWindowMs: COOLDOWN_FE_MS
+        };
     }
 
     if (eventType === 'backend_error') {
@@ -142,16 +159,23 @@ function buildTelegramIncidentText(eventType, data, opts = {}) {
         if (!gate.send) return null;
         const severity = gate.burst ? 'CRITICAL' : 'WARNING';
         const errSnippet = msg.split('\n')[0].slice(0, 280);
-        return formatSystemIncident(
-            severity,
-            gate.burst ? 'Backend error burst' : 'Backend error (deduped)',
-            gate.burst ? 'Same failure signature repeated quickly.' : 'Repeated server error signature.',
-            'API users may see 5xx or failed operations.',
-            gate.burst ? `${gate.count} hits in window` : 'One alert per cooldown per signature',
-            { ...safeData, error: errSnippet },
-            'Inspect stack trace in logs; verify DB/Redis/gateway.',
-            null
-        );
+        const correlationId = newCorrelationId();
+        return {
+            text: formatSystemIncident(
+                severity,
+                gate.burst ? 'Backend error burst' : 'Backend error (deduped)',
+                gate.burst ? 'Same failure signature repeated quickly.' : 'Repeated server error signature.',
+                'API users may see 5xx or failed operations.',
+                gate.burst ? `${gate.count} hits in window` : 'One alert per cooldown per signature',
+                { ...safeData, error: errSnippet },
+                'Inspect stack trace in logs; verify DB/Redis/gateway.',
+                correlationId,
+                { state: 'FIRING' }
+            ),
+            dedupeKey: `admin_be:${gate.fp}:${gate.burst ? 'burst' : 'single'}`,
+            dedupeWindowMs: COOLDOWN_BE_MS,
+            skipTelegramDedupe: severity === 'CRITICAL'
+        };
     }
 
     return null;
@@ -204,16 +228,22 @@ async function sendAdminSecurityAlert(eventType, data = {}, options = {}) {
     if (telegramService.isEnabled(tgConfig)) {
         try {
             const authTelegram = panelSettings.telegramNotifyAuthEvents !== false;
-            const tgText = buildTelegramIncidentText(eventType, data, { authTelegram });
-            if (tgText) {
+            const tgPayload = buildTelegramIncidentText(eventType, data, { authTelegram });
+            if (tgPayload && tgPayload.text) {
                 const pathStr = String(data.path || '');
                 const isProcessFatal =
                     pathStr.includes('uncaughtException') || pathStr.includes('unhandledRejection');
                 const errorsMuted = alertConfig.telegramNotifyErrorEvents === false;
                 if (errorsMuted && (eventType === 'frontend_error' || (eventType === 'backend_error' && !isProcessFatal))) {
                     /* panel disabled routine error TG */
+                } else if (
+                    !tgPayload.skipTelegramDedupe &&
+                    tgPayload.dedupeKey &&
+                    shouldSkipTelegramDedupe(tgPayload.dedupeKey, tgPayload.dedupeWindowMs)
+                ) {
+                    /* duplicate Telegram body in window */
                 } else {
-                    const r = await telegramService.sendMessage(tgText, tgConfig, { parse_mode: null });
+                    const r = await telegramService.sendMessage(tgPayload.text, tgConfig, { parse_mode: null });
                     telegramOk = !!r.ok;
                 }
             }

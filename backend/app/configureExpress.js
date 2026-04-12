@@ -229,7 +229,9 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
                         userId: req.user && req.user.id ? req.user.id : null,
                         ip: (req.headers['x-forwarded-for'] || req.ip || '').toString().split(',')[0].trim()
                     });
-                    if (hit && hit.text) deliverIncidentTelegram(hit.text, hit.kind).catch(() => {});
+                    if (hit && hit.text) {
+                        deliverIncidentTelegram(hit.text, hit.kind, hit.meta || {}).catch(() => {});
+                    }
                 } catch (_) {}
             });
         });
