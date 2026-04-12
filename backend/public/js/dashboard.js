@@ -3385,20 +3385,7 @@
                     openChatFromHistory(historyItem);
                     return;
                 }
-                // Handle elements whose onclick was moved to data-onclick-backup (CSP compliance)
-                const backupEl = target.closest('[data-onclick-backup]');
-                if (backupEl) {
-                    const backup = backupEl.getAttribute('data-onclick-backup');
-                    if (backup) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        try {
-                            const fn = new Function('event', backup);
-                            fn.call(backupEl, e);
-                        } catch (err) { console.error('onclick-backup:', err); }
-                        return;
-                    }
-                }
+                /* onclick روی DOM می‌ماند؛ CSP با script-src-attr 'unsafe-inline' (همان helmet) مجاز است — بدون new Function / unsafe-eval */
                 // Handle buttons with specific functions
                 if (target.matches('[onclick*="openNewConvModal"]')) {
                     e.preventDefault();
@@ -3509,15 +3496,7 @@
         
         /* ========== Remove All Inline Handlers (CSP Compliance) ========== */
         function removeAllInlineHandlers() {
-            // Remove all onclick, onkeyup, onchange, onkeypress attributes to comply with CSP
-            document.querySelectorAll('[onclick]').forEach(function(el) {
-                // Save the onclick content as data attribute for dynamic handler
-                const onclickVal = el.getAttribute('onclick');
-                if (onclickVal && !el.hasAttribute('data-onclick-backup')) {
-                    el.setAttribute('data-onclick-backup', onclickVal);
-                }
-                el.removeAttribute('onclick');
-            });
+            // onclick روی المنت‌ها می‌ماند (helmet: script-src-attr 'unsafe-inline') — بدون new Function / unsafe-eval
             document.querySelectorAll('[onkeyup]').forEach(function(el) {
                 el.removeAttribute('onkeyup');
             });
@@ -3843,7 +3822,7 @@
         }
         
         function handleHeaderQuickBtnClick(e, btn) {
-            const onclick = btn.getAttribute('data-onclick-backup') || btn.getAttribute('data-onclick') || '';
+            const onclick = btn.getAttribute('onclick') || btn.getAttribute('data-onclick-backup') || btn.getAttribute('data-onclick') || '';
             if (onclick === "showPage('conversations'); openNewConvModal();") {
                 showPage('conversations');
                 setTimeout(openNewConvModal, 100);
@@ -4542,8 +4521,19 @@
             apiFetch('/api/conversations/' + id).then(function(res) {
                 if (!res.ok || !res.data) return;
                 currentConvDetail = res.data;
-                if (!barEl || !badgesEl) return;
                 const d = res.data;
+                const custPicRaw = d.customer && d.customer.profilePic ? String(d.customer.profilePic).trim() : '';
+                if (avatarEl && custPicRaw && !currentConvIsGroup) {
+                    const picNorm = normalizeProfilePicUrl(custPicRaw);
+                    if (picNorm && profilePicShowsImage(custPicRaw)) {
+                        const initialH = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
+                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picNorm) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
+                    }
+                }
+                if (!barEl || !badgesEl) {
+                    try { loadConversations(); } catch (_) {}
+                    return;
+                }
                 const assigneeName = userDisplay(d.assignee) || (LANG === 'fa' ? 'بدون تخصیص' : 'Unassigned');
                 const deptName = (d.department && d.department.name) ? d.department.name : '';
                 const statusT = LANG === 'fa' ? { open: 'باز', pending: 'در انتظار', closed: 'بسته', resolved: 'حل\u200cشده', archived: 'آرشیو' } : { open: 'Open', pending: 'Pending', closed: 'Closed', resolved: 'Resolved', archived: 'Archived' };
@@ -4632,6 +4622,7 @@
                         };
                     }
                 }
+                try { loadConversations(); } catch (_) {}
             });
         }
         async function loadConvAssignees() {

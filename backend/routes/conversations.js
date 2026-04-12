@@ -11,6 +11,7 @@ const { canAccessCustomer } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const logger = require('../config/logger');
+const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
 function canArchiveOrDeleteConversation(req) {
@@ -249,6 +250,15 @@ router.get('/:id', async (req, res, next) => {
         if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         if (conversation.status === 'archived' && !(req.canViewArchivedConversations && req.canViewArchivedConversations())) {
             return res.status(403).json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
+        }
+        const meta = conversation.metadata || {};
+        const isGroup = !!(meta.isGroup || (conversation.customer && String(conversation.customer.phone || '').includes('@g.us')));
+        if (!isGroup && conversation.customer) {
+            try {
+                await maybeRefreshWhatsappCustomerAvatar(conversation.customer);
+            } catch (e) {
+                logger.warn('conversation avatar refresh', { customerId: conversation.customerId, err: e && e.message });
+            }
         }
         res.json(conversation);
     } catch (err) {
@@ -655,8 +665,14 @@ router.post('/:id/send', async (req, res, next) => {
         if (hasMedia && media && (media.url || media.filename)) {
             const relPath = media.url || ('/uploads/' + media.filename);
             const uploadsDir = path.join(__dirname, '..', 'uploads');
-            const fileName = (relPath.replace(/^\/uploads\/?/, '') || media.filename || media.name || 'file').split('/').pop();
-            let filePath = path.join(uploadsDir, fileName);
+            /* مسیر کامل زیر uploads (نه فقط نام فایل) — وگرنه فایل در زیرپوشه پیدا نمی‌شود و ارسال به URL شکننده می‌افتد */
+            const relUnderUploads = String(relPath.replace(/^\/uploads\/?/, '') || media.filename || media.name || 'file').replace(/^\/+/, '');
+            let filePath = path.join(uploadsDir, relUnderUploads);
+            const resolvedFile = path.resolve(filePath);
+            const resolvedRoot = path.resolve(uploadsDir);
+            if (!resolvedFile.startsWith(resolvedRoot)) {
+                filePath = path.join(uploadsDir, path.basename(relUnderUploads));
+            }
             let sendMimetype = media.mimetype || 'application/octet-stream';
             let sendFilename = media.filename || media.name || fileName;
             if (!relPath.startsWith('http') && fs.existsSync(filePath)) {

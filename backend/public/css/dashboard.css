@@ -687,7 +687,7 @@
             .mobile-tab-bar .mobile-tab-item.active { color: var(--accent); font-weight: 600; }
             .mobile-tab-bar .mobile-tab-item.active .mobile-tab-icon { color: var(--accent); }
             .mobile-tab-bar .mobile-tab-item.active .mobile-tab-icon svg { stroke-width: 2.5; }
-            .mobile-tab-bar .mobile-tab-item .mobile-tab-badge { position: absolute; top: -4px; right: -4px; min-width: 18px; height: 18px; padding: 0 4px; font-size: 0.65rem; font-weight: 700; line-height: 18px; text-align: center; background: var(--danger, #ef4444); color: #fff; border-radius: 9px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+            .mobile-tab-bar .mobile-tab-item .mobile-tab-badge { position: absolute; top: -2px; inset-inline-end: -2px; min-width: 18px; height: 18px; padding: 0 4px; font-size: 0.65rem; font-weight: 700; line-height: 18px; text-align: center; background: var(--danger, #ef4444); color: #fff; border-radius: 9px; display: flex; align-items: center; justify-content: center; box-shadow: 0 1px 3px rgba(0,0,0,0.3); max-width: calc(100% - 4px); overflow: hidden; text-overflow: ellipsis; }
             .bottom-bar.has-mobile-tab .app-footer { display: none !important; }
         }
         /* ========== هدر و نوار پایین دسکتاپ (ویندوز) — min-width: 769px ========== */
@@ -1370,7 +1370,7 @@
         .chat-send-btn:hover { background: var(--accent-hover); transform: scale(1.02); }
         .chat-send button { padding: 12px 24px; background: var(--accent); color: #fff; border: none; border-radius: var(--radius-sm); font-family: var(--font); font-weight: 600; cursor: pointer; }
         .chat-send button:hover { background: var(--accent-hover); }
-        .conv-page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; padding-bottom: 4px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .conv-page-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; padding-bottom: 4px; border-bottom: 1px solid var(--border); }
         .conv-page-header h2 { margin: 0; font-size: clamp(1.15rem, 2.5vw, 1.35rem); font-weight: 700; letter-spacing: -0.02em; }
         .conv-header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .conv-sync-groups-btn { display: inline-flex; align-items: center; gap: 6px; }
@@ -1379,7 +1379,7 @@
         .conv-page-desc { color: var(--text-secondary); font-size: 0.9rem; margin: 4px 0 0; line-height: 1.5; }
         .conv-stats { display: flex; gap: 20px; margin-bottom: 16px; padding: 12px 20px; background: var(--bg-card); border-radius: var(--radius); border: 1px solid var(--border); font-size: 0.9rem; flex-wrap: wrap; }
         .conv-stat { color: var(--text-secondary); }
-        .conv-stat strong { color: var(--accent); margin-left: 4px; }
+        .conv-stat strong { color: var(--accent); margin-inline-start: 4px; }
         .conv-quick-tabs {
             display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: nowrap;
             overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin;
@@ -1432,7 +1432,7 @@
         .conv-list-item.active { background: var(--accent-soft); border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
         .conv-item-avatar { width: 44px; height: 44px; min-width: 44px; border-radius: 10px; background: var(--accent-soft); color: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem; overflow: hidden; position: relative; flex-shrink: 0; }
         .conv-item-avatar .avatar-fallback { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
-        .conv-item-avatar img { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }
+        .conv-item-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
         .conv-item-body { flex: 1 1 200px; min-width: 0; }
         .conv-item-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
         .conv-item-top .name { font-weight: 600; color: var(--text-primary); flex: 1; min-width: 0; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; word-break: break-word; line-height: 1.35; }
@@ -3321,12 +3321,12 @@
         @media (max-width: 1280px) {
             .header { padding: 10px 20px; gap: 10px; }
             .header-left { max-width: 100%; }
-            .header .search-wrap { max-width: 220px; }
+            .header .search-wrap { max-width: min(300px, 34vw); }
             .header .logo-text { font-size: 1.1rem; }
             .sidebar { width: 260px; min-width: 260px; }
             .content { padding: 20px; }
             .dashboard-cards { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; }
-            .price-ticker { display: flex; flex-wrap: nowrap; gap: 12px 0; padding: 12px 16px; font-size: 0.85rem; }
+            .price-ticker { display: flex; flex-wrap: nowrap; gap: 12px 0; padding: 12px max(18px, env(safe-area-inset-inline)); font-size: 0.85rem; }
             .price-ticker .ticker-header { width: 100%; margin: 0; }
             .price-ticker .ticker-datetime { min-width: 0; flex-direction: row; flex-wrap: wrap; gap: 8px 16px; }
             .price-ticker .ticker-item-track { gap: 8px 12px; }
@@ -3335,7 +3335,7 @@
         }
         /* ========== Responsive: 1100px (لپ‌تاپ کوچک) ========== */
         @media (max-width: 1100px) {
-            .header .search-wrap { max-width: 180px; }
+            .header .search-wrap { max-width: min(260px, 32vw); }
             .header .logo-text { font-size: 1rem; }
             .sidebar { width: 250px; min-width: 250px; }
             .content { padding: 18px; }
@@ -3346,7 +3346,7 @@
         @media (max-width: 1024px) {
             .sidebar { width: 240px; min-width: 240px; max-width: 240px; }
             .conv-list-wrap { flex: 0 1 min(300px, 32vw); min-width: 232px; max-width: 320px; }
-            .header .search-wrap { max-width: 180px; }
+            .header .search-wrap { max-width: min(240px, 30vw); }
             .header-quick-actions { flex-wrap: wrap; gap: 6px; }
             .header-quick-btn { flex-shrink: 0; }
             .header-left { min-width: 0; }
@@ -3529,6 +3529,7 @@
             .conv-filter-chip:active { background: var(--bg-hover); }
             .conv-filter-chip[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent); }
             body[dir="rtl"] .conv-filter-chip { border-radius: 12px 0 0 12px; }
+            .conv-search-bar .conv-filter-chip { height: auto; max-height: none; box-sizing: border-box; }
             /* فیلترهای پیشرفته — bottom-sheet در موبایل */
             .conv-advanced-filters { position: fixed; inset-inline: 0; bottom: 0; top: auto; z-index: 10000; background: var(--bg-card); border-radius: 20px 20px 0 0; padding: 0 0 max(20px, env(safe-area-inset-bottom)); margin: 0; border: none; border-top: 1px solid var(--border); box-shadow: 0 -8px 32px rgba(0,0,0,0.25); transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.32, 0.72, 0, 1); display: flex !important; flex-direction: column; gap: 0; width: 100%; max-height: 80vh; overflow-y: auto; }
             .conv-advanced-filters.show { transform: translateY(0); }
@@ -3613,8 +3614,8 @@
             #ratesAdjustmentsTable, #supPerformanceContent, #supConvList, #supActList, #onlineStaffList, #loginsList { overflow-x: auto; -webkit-overflow-scrolling: touch; }
             .sup-table { min-width: 560px; }
             .sup-table th, .sup-table td { padding: 8px 10px; font-size: 0.85rem; }
-            /* بهینه‌سازی‌های Performance برای موبایل */
-            .conv-list-item, .chat-area, .modal-overlay { transform: translateZ(0); -webkit-transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+            /* بهینه‌سازیٔ لایهٔ ترکیب — آیتم لیست را جدا نمی‌کنیم تا زیر نوار جستجو/فیلتر دیده نشود */
+            .chat-area, .modal-overlay { transform: translateZ(0); -webkit-transform: translateZ(0); backface-visibility: hidden; -webkit-backface-visibility: hidden; }
             .conv-list-pane::-webkit-scrollbar { width: 0; height: 0; }
             .conv-quick-tabs { scroll-padding-inline: max(8px, env(safe-area-inset-inline)); }
             .conv-page-header { padding-inline: 0; }
@@ -3675,14 +3676,20 @@
                     padding-left: 36px !important;
                 }
             }
-            /* مکالمات: قوانین عمومی input موبایل نباید کپسول واتساپ و جستجوی لیست را بشکند */
-            #pageConversations .conv-search-input,
+            /* مکالمات: inputهای عمومی موبایل؛ فیلد داخل نوار جستجو نباید «قرص» جدا شود (با فیلتر ردیف دوم تم WA روی هم می‌افتاد) */
             #pageConversations .conv-filter-input,
             #pageConversations .conv-search-bar input {
                 min-height: 44px !important;
                 padding: 10px 12px !important;
                 border-radius: 12px !important;
                 box-shadow: none !important;
+            }
+            #pageConversations .conv-search-bar .conv-search-input {
+                padding: 10px 0 !important;
+                padding-inline-end: max(8px, env(safe-area-inset-inline-end)) !important;
+                border-radius: 0 !important;
+                background: transparent !important;
+                border: none !important;
             }
             #pageConversations #msgInput.wa-compose-pill,
             #pageConversations .chat-send #msgInput,
@@ -5064,6 +5071,57 @@
             #pageConversations.wa-conversations-theme {
                 background: #0b141a;
             }
+            /* تبلت: هدر و آمار با پالت WA (بین ۷۶۹–۹۰۰px آمار هنوز نمایش داده می‌شود) */
+            #pageConversations.wa-conversations-theme .conv-page-header {
+                border-bottom-color: rgba(134, 150, 160, 0.15);
+            }
+            #pageConversations.wa-conversations-theme .conv-page-header h2 {
+                color: #e9edef;
+            }
+            #pageConversations.wa-conversations-theme .conv-page-desc {
+                color: #8696a0;
+            }
+            #pageConversations.wa-conversations-theme #convStats {
+                background: #111b21;
+                border: 1px solid rgba(134, 150, 160, 0.18);
+                color: #aebac1;
+            }
+            #pageConversations.wa-conversations-theme #convStats .conv-stat {
+                color: #aebac1;
+            }
+            #pageConversations.wa-conversations-theme #convStats .conv-stat strong {
+                color: #25d366;
+            }
+            /* هدر تبلت (۷۶۹–۹۰۰px): دکمه‌ها هم‌رنگ پالت WA */
+            #pageConversations.wa-conversations-theme .conv-page-header .conv-header-actions #btnNewConv {
+                background: #25d366;
+                color: #111b21;
+                border: none;
+                box-shadow: none;
+                min-height: 38px;
+                height: auto;
+                padding: 0 14px;
+                border-radius: 10px;
+                font-weight: 600;
+            }
+            #pageConversations.wa-conversations-theme .conv-page-header .conv-header-actions #btnNewConv:hover {
+                background: #20bd5a;
+                transform: none;
+                filter: none;
+            }
+            #pageConversations.wa-conversations-theme .conv-page-header .conv-header-actions .conv-sync-groups-btn {
+                background: rgba(255, 255, 255, 0.06);
+                color: #e9edef;
+                border-color: rgba(134, 150, 160, 0.32);
+                min-height: 38px;
+                height: auto;
+                padding: 0 12px;
+            }
+            #pageConversations.wa-conversations-theme .conv-page-header .conv-header-actions .conv-sync-groups-btn:hover {
+                background: rgba(255, 255, 255, 0.1);
+                color: #fff;
+                border-color: rgba(134, 150, 160, 0.45);
+            }
             #pageConversations.wa-conversations-theme .conv-quick-tabs {
                 padding-inline: max(12px, env(safe-area-inset-inline));
                 padding-block: 8px 10px;
@@ -5071,6 +5129,24 @@
                 background: #111b21;
                 border-bottom: 1px solid rgba(134, 150, 160, 0.1);
                 scroll-padding-inline: max(12px, env(safe-area-inset-inline));
+                overscroll-behavior-x: contain;
+            }
+            @media (min-width: 769px) {
+                #pageConversations.wa-conversations-theme .conv-quick-tabs {
+                    flex-wrap: wrap;
+                    overflow-x: visible;
+                    row-gap: 8px;
+                    column-gap: 8px;
+                    scrollbar-width: thin;
+                    scrollbar-color: rgba(134, 150, 160, 0.35) transparent;
+                }
+                #pageConversations.wa-conversations-theme .conv-quick-tabs::-webkit-scrollbar {
+                    height: 5px;
+                }
+                #pageConversations.wa-conversations-theme .conv-quick-tabs::-webkit-scrollbar-thumb {
+                    background: rgba(134, 150, 160, 0.35);
+                    border-radius: 6px;
+                }
             }
             #pageConversations.wa-conversations-theme .conv-toolbar {
                 flex-shrink: 0;
@@ -5101,6 +5177,35 @@
             }
             body[dir="rtl"] #pageConversations.wa-conversations-theme .conv-search-bar .conv-filter-chip {
                 border-radius: 0;
+            }
+            @media (max-width: 768px) {
+                #pageConversations.wa-conversations-theme .conv-toolbar {
+                    position: relative;
+                    z-index: 5;
+                }
+                #pageConversations.wa-conversations-theme .conv-quick-tabs {
+                    position: relative;
+                    z-index: 4;
+                }
+                #pageConversations.wa-conversations-theme .conv-layout {
+                    position: relative;
+                    z-index: 1;
+                    isolation: isolate;
+                }
+                #pageConversations.wa-conversations-theme .conv-search-bar {
+                    align-content: stretch;
+                }
+                #pageConversations.wa-conversations-theme .conv-search-bar .conv-search-icon {
+                    order: 1;
+                }
+                #pageConversations.wa-conversations-theme .conv-search-bar .conv-search-input {
+                    order: 2;
+                    flex: 1 1 0;
+                    min-width: 0;
+                }
+                #pageConversations.wa-conversations-theme .conv-search-bar .conv-filter-chip {
+                    order: 3;
+                }
             }
             #pageConversations.wa-conversations-theme .conv-layout {
                 flex: 1;
@@ -5678,6 +5783,15 @@
                 line-height: 1.35;
             }
         }
+        /* تم WA روی لپ‌تاپ: ستون لیست کمی عریض‌تر تا متن کمتر فشرده شود */
+        @media (min-width: 901px) and (max-width: 1440px) {
+            #pageConversations.wa-conversations-theme {
+                grid-template-columns: minmax(300px, min(460px, 42vw)) minmax(0, 1fr);
+            }
+            #pageConversations.wa-conversations-theme .conv-sync-groups-btn .conv-sync-text {
+                max-width: 160px;
+            }
+        }
         #pageConversations.wa-conversations-theme .wa-compose-row {
             position: relative;
         }
@@ -5711,10 +5825,22 @@
                 flex-shrink: 1;
             }
         }
-        @media (min-width: 901px) and (max-width: 1180px) {
-            .header-left { max-width: min(100%, 440px); }
-            .header .search-wrap { max-width: min(200px, 26vw); }
-            .header-quick-actions { max-width: 100%; justify-content: flex-end; }
+        /* لپ‌تاپ میانی: قبلاً جستجو و ستون چپ هدر خیلی فشرده می‌شد (مثل زوم ۱۰۰٪ + نوار کناری) */
+        @media (min-width: 901px) and (max-width: 1320px) {
+            .header-left {
+                flex: 1 1 auto;
+                max-width: min(100%, 580px);
+                min-width: 0;
+            }
+            .header .search-wrap {
+                flex: 1 1 140px;
+                max-width: min(320px, 36vw);
+                min-width: 120px;
+            }
+            .header-quick-actions {
+                flex-shrink: 1;
+                gap: 6px;
+            }
         }
         @media (min-width: 2000px) {
             #pageConversations {

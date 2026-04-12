@@ -85,8 +85,19 @@ async function sendMedia(to, media, caption = '') {
         if (!base) throw new Error('For base64 media with Cloud API, BACKEND_PUBLIC_URL must be set');
         const uploadsDir = path.join(__dirname, '..', 'uploads');
         await fs.mkdir(uploadsDir, { recursive: true }).catch(() => {});
-        const mime = (media.mimetype || 'application/octet-stream').split(';')[0];
-        const ext = mime.includes('image') ? '.jpg' : mime.includes('video') ? '.mp4' : mime.includes('audio') ? '.ogg' : media.filename ? path.extname(media.filename) : '.bin';
+        const mime = (media.mimetype || 'application/octet-stream').split(';')[0].trim().toLowerCase();
+        let ext = media.filename ? path.extname(media.filename) : '';
+        if (!ext || ext === '.') {
+            if (mime.startsWith('image/')) ext = mime.includes('png') ? '.png' : mime.includes('webp') ? '.webp' : mime.includes('gif') ? '.gif' : '.jpg';
+            else if (mime.startsWith('video/')) ext = mime.includes('webm') ? '.webm' : '.mp4';
+            else if (mime.startsWith('audio/')) {
+                if (mime.includes('webm')) ext = '.webm';
+                else if (mime.includes('mpeg') || mime.includes('mp3')) ext = '.mp3';
+                else if (mime.includes('mp4') || mime.includes('m4a') || mime.includes('aac')) ext = '.m4a';
+                else if (mime.includes('wav')) ext = '.wav';
+                else ext = '.ogg';
+            } else ext = '.bin';
+        }
         const fname = 'cloud-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10) + ext;
         const fpath = path.join(uploadsDir, fname);
         await fs.writeFile(fpath, Buffer.from(media.data, 'base64'));
@@ -102,6 +113,10 @@ async function sendMedia(to, media, caption = '') {
 
     const mediaPayload = { link: mediaUrl };
     if (media?.filename) mediaPayload.filename = media.filename;
+    /* پیام صوتی (PTT) — بدون voice گاهی در کلاینت به‌صورت فایل/شکسته دیده می‌شود */
+    if (type === 'audio' && media?.sendAsVoice) {
+        mediaPayload.voice = true;
+    }
 
     const body = {
         messaging_product: 'whatsapp',

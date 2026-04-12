@@ -116,8 +116,67 @@ async function persistRemoteAvatarIfNeeded(customerId, profilePicValue) {
     return local || t;
 }
 
+/** جلوگیری از فراخوانی پشت‌سرهم Gateway برای یک مشتری */
+const _waAvatarRefreshAt = new Map();
+
+function looksLikeExpiringCdnProfilePic(url) {
+    if (!url || typeof url !== 'string') return false;
+    const u = url.toLowerCase();
+    return (
+        u.includes('whatsapp.net') ||
+        u.includes('fbcdn.net') ||
+        u.includes('instagram.com') ||
+        u.includes('googleusercontent.com')
+    );
+}
+
+/**
+ * اگر مشتری واتساپ است و عکس محلی ندارد (یا لینک CDN احتمالاً منقضی است)، از Gateway عکس پروفایل بگیرد و ذخیره کند.
+ * @param {import('sequelize').Model} customer — نمونهٔ Customer با id, phone, source, profilePic
+ * @returns {Promise<string|null>} مقدار جدید profilePic در صورت به‌روزرسانی، وگرنه null
+ */
+async function maybeRefreshWhatsappCustomerAvatar(customer) {
+    if (!customer || !customer.id) return null;
+    const phone = String(customer.phone || '').trim();
+    if (!phone || phone.includes('@g.us')) return null;
+    const src = String(customer.source || '').toLowerCase();
+    if (src && src !== 'whatsapp') return null;
+
+    const pic = String(customer.profilePic || '').trim();
+    if (isAlreadyLocalPath(pic)) return null;
+
+    const now = Date.now();
+    const last = _waAvatarRefreshAt.get(customer.id) || 0;
+    const minGap = pic
+        ? (looksLikeExpiringCdnProfilePic(pic) ? 90 * 1000 : 10 * 60 * 1000)
+        : 45 * 1000;
+    if (last && now - last < minGap) return null;
+    _waAvatarRefreshAt.set(customer.id, now);
+
+    let remoteUrl = '';
+    try {
+        const { gatewayGet } = require('./gatewayClient');
+        const res = await gatewayGet('/api/contacts/profile-pic?phone=' + encodeURIComponent(phone), { timeout: 5000 });
+        remoteUrl = (res && res.data && res.data.profilePicUrl) ? String(res.data.profilePicUrl).trim() : '';
+    } catch (_) {
+        return null;
+    }
+    if (!remoteUrl) return null;
+
+    try {
+        const persisted = await persistRemoteAvatarIfNeeded(customer.id, remoteUrl);
+        const finalPic = persisted || remoteUrl;
+        if (!finalPic || finalPic === pic) return null;
+        await customer.update({ profilePic: finalPic });
+        return finalPic;
+    } catch (_) {
+        return null;
+    }
+}
+
 module.exports = {
     downloadAvatarToUploads,
     persistRemoteAvatarIfNeeded,
     isAlreadyLocalPath,
+    maybeRefreshWhatsappCustomerAvatar,
 };

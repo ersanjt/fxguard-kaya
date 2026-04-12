@@ -1639,20 +1639,7 @@
                     openChatFromHistory(historyItem);
                     return;
                 }
-                // Handle elements whose onclick was moved to data-onclick-backup (CSP compliance)
-                const backupEl = target.closest('[data-onclick-backup]');
-                if (backupEl) {
-                    const backup = backupEl.getAttribute('data-onclick-backup');
-                    if (backup) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        try {
-                            const fn = new Function('event', backup);
-                            fn.call(backupEl, e);
-                        } catch (err) { console.error('onclick-backup:', err); }
-                        return;
-                    }
-                }
+                /* onclick روی DOM می‌ماند؛ CSP با script-src-attr 'unsafe-inline' (همان helmet) مجاز است — بدون new Function / unsafe-eval */
                 // Handle buttons with specific functions
                 if (target.matches('[onclick*="openNewConvModal"]')) {
                     e.preventDefault();
@@ -1763,15 +1750,7 @@
         
         /* ========== Remove All Inline Handlers (CSP Compliance) ========== */
         function removeAllInlineHandlers() {
-            // Remove all onclick, onkeyup, onchange, onkeypress attributes to comply with CSP
-            document.querySelectorAll('[onclick]').forEach(function(el) {
-                // Save the onclick content as data attribute for dynamic handler
-                const onclickVal = el.getAttribute('onclick');
-                if (onclickVal && !el.hasAttribute('data-onclick-backup')) {
-                    el.setAttribute('data-onclick-backup', onclickVal);
-                }
-                el.removeAttribute('onclick');
-            });
+            // onclick روی المنت‌ها می‌ماند (helmet: script-src-attr 'unsafe-inline') — بدون new Function / unsafe-eval
             document.querySelectorAll('[onkeyup]').forEach(function(el) {
                 el.removeAttribute('onkeyup');
             });
