@@ -1021,6 +1021,7 @@ window.__I18N_EN = {
     panel_visibility_desc: 'Hidden sections are not shown in the menu or anywhere on the site. Checked = visible.',
     panel_tab_branding: 'Branding & appearance',
     panel_tab_email: 'Email',
+    panel_tab_telegram: 'Telegram & alerts',
     panel_tab_sections: 'Sections & visibility',
     panel_unsaved: 'Unsaved changes',
     panel_visibility_search: 'Search sections...',

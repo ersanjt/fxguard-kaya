@@ -1002,6 +1002,7 @@ window.__I18N_TR = {
     panel_visibility_desc: 'Gizlediğiniz bölümler menüde ve sitede gösterilmez. İşaretli = görünür.',
     panel_tab_branding: 'Marka ve görünüm',
     panel_tab_email: 'E-posta',
+    panel_tab_telegram: 'Telegram ve uyarılar',
     panel_tab_sections: 'Bölümler ve görünürlük',
     panel_unsaved: 'Kaydedilmemiş değişiklikler',
     panel_visibility_search: 'Bölümlerde ara...',
