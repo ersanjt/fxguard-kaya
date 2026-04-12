@@ -28,8 +28,13 @@ class MainViewModel @Inject constructor(
     private val _hiddenPanelPages = MutableStateFlow<Set<String>>(emptySet())
     val hiddenPanelPages: StateFlow<Set<String>> = _hiddenPanelPages.asStateFlow()
 
+    /** نام سازمان از «ظاهر پنل» (مثلاً Kaya Holding) — برای هدر و هویت سفارشی */
+    private val _organizationTitle = MutableStateFlow<String?>(null)
+    val organizationTitle: StateFlow<String?> = _organizationTitle.asStateFlow()
+
     init {
         refreshPanelVisibility()
+        refreshOrganizationBranding()
     }
 
     /** بخش‌های مخفی‌شده توسط مدیر (مثل منوی وب) */
@@ -41,9 +46,25 @@ class MainViewModel @Inject constructor(
                     _hiddenPanelPages.value = r.body()?.hiddenSections?.toSet() ?: emptySet()
                 }
             } catch (_: Exception) {
-                /* نادیده — بدون مخفی‌سازی اضافه */
+                /* نادیده */
             }
         }
     }
 
+    fun refreshOrganizationBranding() {
+        viewModelScope.launch {
+            try {
+                val r = api.getPublicBranding()
+                if (r.isSuccessful) {
+                    val b = r.body()
+                    val name = b?.siteName?.trim()?.takeIf { it.isNotBlank() }
+                        ?: b?.pageTitle?.trim()?.takeIf { it.isNotBlank() }
+                        ?: b?.loginTitle?.trim()?.takeIf { it.isNotBlank() }
+                    _organizationTitle.value = name
+                }
+            } catch (_: Exception) {
+                /* نادیده */
+            }
+        }
+    }
 }

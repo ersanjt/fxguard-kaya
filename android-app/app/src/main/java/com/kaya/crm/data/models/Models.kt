@@ -384,6 +384,11 @@ data class WhatsAppStatus(
 
 // Panel Settings (public)
 data class PublicBrandingResponse(
+    @SerializedName("siteName") val siteName: String? = null,
+    @SerializedName("pageTitle") val pageTitle: String? = null,
+    @SerializedName("loginTitle") val loginTitle: String? = null,
+    @SerializedName("logoUrl") val logoUrl: String? = null,
+    @SerializedName("primaryColor") val primaryColor: String? = null,
     @SerializedName("iosAppUrl") val iosAppUrl: String? = null,
     @SerializedName("androidAppUrl") val androidAppUrl: String? = null
 )

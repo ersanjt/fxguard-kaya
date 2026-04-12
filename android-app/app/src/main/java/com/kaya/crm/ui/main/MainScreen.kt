@@ -1,12 +1,16 @@
 package com.kaya.crm.ui.main
 
+import android.app.Activity
+import android.view.WindowManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kaya.crm.ui.main.conversations.ConversationsScreen
@@ -32,15 +36,18 @@ fun MainScreen(
     onLogout: () -> Unit,
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val user by mainViewModel.currentUser.collectAsState()
     val hiddenPanelPages by mainViewModel.hiddenPanelPages.collectAsState()
+    val organizationTitle by mainViewModel.organizationTitle.collectAsState()
     val visibleTabs = remember(user, hiddenPanelPages) {
         PanelPermissions.visibleTabs(user, hiddenPanelPages)
     }
 
-    /* قبل از لود کاربر از کش، فقط داشبورد/پروفایل مجازند؛ CONVERSATIONS اولیه باعث ناهماهنگی نوار و محتوا می‌شد */
+    /* قبل از لود کاربر: داشبورد امن؛ بعد از ورود: اولویت با مکالمات (هستهٔ اپ) */
     var selectedTab by remember { mutableStateOf(MainTab.DASHBOARD) }
     var pendingOpenConversationId by remember { mutableStateOf<String?>(null) }
+    var chatHomeApplied by rememberSaveable { mutableStateOf(false) }
 
     LaunchedEffect(visibleTabs, user, hiddenPanelPages) {
         if (selectedTab !in visibleTabs) {
@@ -48,21 +55,57 @@ fun MainScreen(
         }
     }
 
+    LaunchedEffect(user?.id, visibleTabs) {
+        if (chatHomeApplied) return@LaunchedEffect
+        if (user != null && MainTab.CONVERSATIONS in visibleTabs) {
+            selectedTab = MainTab.CONVERSATIONS
+            chatHomeApplied = true
+        }
+    }
+
+    /* جلوگیری از اسکرین‌شات/ضبط صفحه در تب‌های چت (مشتریان و چت داخلی) */
+    DisposableEffect(selectedTab) {
+        val act = context as? Activity
+        val flag = WindowManager.LayoutParams.FLAG_SECURE
+        if (act != null) {
+            if (selectedTab == MainTab.CONVERSATIONS || selectedTab == MainTab.TEAM) {
+                act.window.setFlags(flag, flag)
+            } else {
+                act.window.clearFlags(flag)
+            }
+            onDispose { act.window.clearFlags(flag) }
+        } else {
+            onDispose { }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        when (selectedTab) {
-                            MainTab.DASHBOARD -> "داشبورد"
-                            MainTab.CONVERSATIONS -> "مکالمات"
-                            MainTab.CUSTOMERS -> "مشتریان"
-                            MainTab.TEAM -> "چت داخلی"
-                            MainTab.TICKETS -> "تیکت‌ها"
-                            MainTab.PROFILE -> "پروفایل"
-                        },
-                        style = MaterialTheme.typography.titleLarge
-                    )
+                    val tabShort = when (selectedTab) {
+                        MainTab.DASHBOARD -> "داشبورد"
+                        MainTab.CONVERSATIONS -> "مکالمات"
+                        MainTab.CUSTOMERS -> "مشتریان"
+                        MainTab.TEAM -> "چت داخلی"
+                        MainTab.TICKETS -> "تیکت‌ها"
+                        MainTab.PROFILE -> "پروفایل"
+                    }
+                    val org = organizationTitle?.trim()?.takeIf { it.isNotBlank() }
+                    Column {
+                        Text(
+                            text = org ?: tabShort,
+                            style = MaterialTheme.typography.titleLarge,
+                            maxLines = 1
+                        )
+                        if (org != null) {
+                            Text(
+                                text = tabShort,
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.88f)
+                            )
+                        }
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
