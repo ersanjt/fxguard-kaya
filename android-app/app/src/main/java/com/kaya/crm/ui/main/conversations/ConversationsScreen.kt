@@ -1,16 +1,15 @@
 package com.kaya.crm.ui.main.conversations
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
 import androidx.compose.material.pullrefresh.pullRefresh
@@ -19,9 +18,14 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.kaya.crm.ui.components.WaChatRowDivider
+import com.kaya.crm.ui.components.WaChatSheetHeader
+import com.kaya.crm.ui.components.WaChatThreadRow
+import com.kaya.crm.ui.components.WaMessageBubble
+import com.kaya.crm.ui.components.WaMessageComposer
+import com.kaya.crm.ui.components.waChatBackdropColor
 import com.kaya.crm.data.models.Conversation
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -69,11 +73,16 @@ fun ConversationsScreen(
             CircularProgressIndicator()
         }
     } else {
-        Box(modifier = Modifier.fillMaxSize().pullRefresh(pullRefreshState)) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.surface)
+                .pullRefresh(pullRefreshState)
+        ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 item {
                     OutlinedTextField(
@@ -81,7 +90,8 @@ fun ConversationsScreen(
                         onValueChange = { viewModel.setSearchText(it) },
                         modifier = Modifier.fillMaxWidth(),
                         placeholder = { Text("جستجو نام یا شماره…") },
-                        singleLine = true
+                        singleLine = true,
+                        shape = RoundedCornerShape(24.dp)
                     )
                 }
                 item {
@@ -145,8 +155,10 @@ fun ConversationsScreen(
     }
 
     selectedConversationId?.let { id ->
+        val convTitle = conversations.find { it.id == id }?.displayName ?: "مکالمه"
         ConversationDetailSheet(
             conversationId = id,
+            title = convTitle,
             onDismiss = { viewModel.closeConversation() },
             viewModel = viewModel
         )
@@ -158,78 +170,21 @@ private fun ConversationRow(
     conversation: Conversation,
     onClick: () -> Unit
 ) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)),
-        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
-    ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Surface(
-                shape = MaterialTheme.shapes.medium,
-                color = if (conversation.isGroup)
-                    MaterialTheme.colorScheme.primaryContainer
-                else
-                    MaterialTheme.colorScheme.secondaryContainer
-            ) {
-                Box(
-                    modifier = Modifier.size(48.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = if (conversation.isGroup) "👥" else (conversation.displayName.firstOrNull()?.uppercaseChar() ?: "?").toString(),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = (if (conversation.isGroup) "👥 " else "") + conversation.displayName,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1
-                    )
-                    conversation.lastMessageAt?.let { time ->
-                        val timeStr = if (time.length >= 16) time.drop(11).take(5) else time
-                        Text(
-                            text = timeStr,
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Text(
-                    text = conversation.lastMessagePreview?.let { if (it.length > 45) it.take(45) + "…" else it }
-                        ?: (conversation.department?.name ?: conversation.status),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2
-                )
-            }
-            if (conversation.unreadCount > 0) {
-                Spacer(modifier = Modifier.width(8.dp))
-                Surface(
-                    color = MaterialTheme.colorScheme.error,
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Text(
-                        conversation.unreadCount.toString(),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                        color = MaterialTheme.colorScheme.onError,
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-            }
-        }
+    val preview = conversation.lastMessagePreview?.let { if (it.length > 56) it.take(56) + "…" else it }
+        ?: (conversation.department?.name ?: conversation.status)
+    val timeStr = conversation.lastMessageAt?.takeIf { it.length >= 16 }?.drop(11)?.take(5)
+    val letter = (conversation.displayName.firstOrNull()?.uppercaseChar() ?: "?").toString()
+
+    Column(modifier = Modifier.clickable(onClick = onClick)) {
+        WaChatThreadRow(
+            title = conversation.displayName,
+            preview = preview,
+            timeOrMeta = timeStr,
+            avatarLetter = letter,
+            trailingEmoji = if (conversation.isGroup) "👥" else null,
+            unreadCount = conversation.unreadCount
+        )
+        WaChatRowDivider()
     }
 }
 
@@ -237,6 +192,7 @@ private fun ConversationRow(
 @Composable
 private fun ConversationDetailSheet(
     conversationId: String,
+    title: String,
     onDismiss: () -> Unit,
     viewModel: ConversationsViewModel
 ) {
@@ -273,20 +229,26 @@ private fun ConversationDetailSheet(
         Scaffold(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 520.dp),
-            snackbarHost = { SnackbarHost(snackbarHostState) }
+                .fillMaxHeight(0.92f),
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            containerColor = MaterialTheme.colorScheme.surface
         ) { padding ->
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(padding)
             ) {
-                Text(
-                    "مکالمه",
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                WaChatSheetHeader(
+                    title = title,
+                    subtitle = "مکالمه",
+                    onDismiss = onDismiss
                 )
-                Box(modifier = Modifier.weight(1f)) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxWidth()
+                        .background(waChatBackdropColor())
+                ) {
                     if (messagesLoading && messages.isEmpty()) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -298,8 +260,8 @@ private fun ConversationDetailSheet(
                         LazyColumn(
                             state = listState,
                             modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp)
                         ) {
                             if (hasMore) {
                                 item {
@@ -322,87 +284,33 @@ private fun ConversationDetailSheet(
                             }
                             items(messages, key = { it.id }) { msg ->
                                 val isOutgoing = msg.direction == "outgoing"
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = if (isOutgoing) Arrangement.End else Arrangement.Start
-                                ) {
-                                    Column(
-                                        horizontalAlignment = if (isOutgoing) Alignment.End else Alignment.Start
-                                    ) {
-                                        if (isOutgoing && !msg.user?.name.isNullOrBlank()) {
-                                            Text(
-                                                msg.user!!.name!!,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                                            )
-                                        }
-                                        Surface(
-                                            color = if (isOutgoing)
-                                                MaterialTheme.colorScheme.primaryContainer
-                                            else
-                                                MaterialTheme.colorScheme.surfaceVariant
-                                        ) {
-                                            Text(
-                                                text = msg.displayContent.ifBlank { "—" },
-                                                modifier = Modifier.padding(12.dp)
-                                            )
-                                        }
-                                        val timeStr = msg.timestamp?.takeIf { it.isNotBlank() }
-                                            ?.take(19)?.replace('T', ' ') ?: ""
-                                        if (timeStr.isNotBlank()) {
-                                            Text(
-                                                timeStr,
-                                                style = MaterialTheme.typography.labelSmall,
-                                                modifier = Modifier.padding(top = 2.dp)
-                                            )
-                                        }
-                                    }
-                                }
+                                val timeStr = msg.timestamp?.takeIf { it.isNotBlank() }?.let { ts ->
+                                    if (ts.length >= 16) ts.drop(11).take(5)
+                                    else ts.take(19).replace('T', ' ')
+                                } ?: ""
+                                val sender = if (isOutgoing) msg.user?.name else null
+                                WaMessageBubble(
+                                    isOutgoing = isOutgoing,
+                                    text = msg.displayContent.ifBlank { "—" },
+                                    footer = timeStr.ifBlank { null },
+                                    senderLabel = sender
+                                )
                             }
                         }
                     }
                 }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = inputText,
-                        onValueChange = { inputText = it },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text("پیام…") },
-                        enabled = !sending,
-                        singleLine = false,
-                        maxLines = 4,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                        keyboardActions = KeyboardActions(
-                            onSend = {
-                                val t = inputText.trim()
-                                if (t.isNotEmpty() && !sending) {
-                                    viewModel.sendMessage(conversationId, t)
-                                }
-                            }
-                        )
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    IconButton(
-                        onClick = {
-                            val t = inputText.trim()
-                            if (t.isNotEmpty() && !sending) {
-                                viewModel.sendMessage(conversationId, t)
-                            }
-                        },
-                        enabled = !sending && inputText.isNotBlank()
-                    ) {
-                        if (sending) {
-                            CircularProgressIndicator(modifier = Modifier.size(24.dp), strokeWidth = 2.dp)
-                        } else {
-                            Icon(Icons.AutoMirrored.Filled.Send, contentDescription = "ارسال")
+                WaMessageComposer(
+                    text = inputText,
+                    onTextChange = { inputText = it },
+                    onSend = {
+                        val t = inputText.trim()
+                        if (t.isNotEmpty() && !sending) {
+                            viewModel.sendMessage(conversationId, t)
                         }
-                    }
-                }
+                    },
+                    sending = sending,
+                    placeholder = "پیام…"
+                )
             }
         }
     }
