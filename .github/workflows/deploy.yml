@@ -149,6 +149,9 @@ jobs:
             node scripts/add-customer-profile-fields.js
             echo "  ✅ migration scripts اجرا شد"
 
+            # از اینجا به بعد مسیرها نسبت به ریشهٔ مخزن است (نه backend/)
+            cd ..
+
             # ---- همسان‌سازی ANDROID_APP_* با نسخهٔ اپ (برای به‌روزرسانی از داخل اپ) ----
             echo "📱 همسان‌سازی ANDROID_APP_* از android-app/app/build.gradle.kts ..."
             mkdir -p backend/uploads/releases
@@ -170,6 +173,7 @@ jobs:
             fi
 
             # ---- بررسی syntax فایل‌های اصلی ----
+            cd backend
             echo "🔎 بررسی syntax ..."
             node --check server.js
             node --check middleware/auth.js
@@ -179,11 +183,11 @@ jobs:
             node --check routes/api.js
             node --check routes/panelSettings.js
             node --check scripts/upsert-dotenv.js
+            cd ..
             echo "  ✅ syntax بدون خطا"
 
             # ---- reload با PM2 ----
             echo "🔄 reload سرویس‌ها ..."
-            cd ..
             # سعی می‌کنیم با ecosystem reload کنیم؛ اگر نشد stop/start می‌کنیم
             if pm2 reload ecosystem.config.js --update-env; then
               echo "  ✅ pm2 reload موفق"
