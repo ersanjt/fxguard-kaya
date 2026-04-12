@@ -4545,6 +4545,125 @@
         .msg-status-failed { color: var(--danger, #ef4444); }
 
         /* ========== تم مکالمات شبیه واتساپ (وب) — فقط صفحه مکالمات ========== */
+        /* هدر، فیلتر سریع و جستجو — فشرده‌تر (فقط دسکتاپ؛ موبایل همان حداقل لمس و ۱۶px جستجو) */
+        @media (min-width: 901px) {
+            #pageConversations.wa-conversations-theme .conv-page-header {
+                margin-bottom: 8px;
+                gap: 8px;
+                padding-bottom: 2px;
+                align-items: center;
+            }
+            #pageConversations.wa-conversations-theme .conv-page-header h2 {
+                font-size: 1.05rem;
+                letter-spacing: -0.01em;
+            }
+            #pageConversations.wa-conversations-theme .conv-page-desc {
+                display: none;
+            }
+            #pageConversations.wa-conversations-theme .conv-header-actions {
+                gap: 6px;
+            }
+            #pageConversations.wa-conversations-theme .conv-header-actions .btn-primary,
+            #pageConversations.wa-conversations-theme .conv-header-actions .btn-secondary {
+                padding: 5px 11px;
+                font-size: 0.8rem;
+                min-height: 0;
+                line-height: 1.25;
+            }
+            #pageConversations.wa-conversations-theme .conv-sync-groups-btn .conv-sync-icon svg {
+                width: 16px;
+                height: 16px;
+            }
+            #pageConversations.wa-conversations-theme .conv-quick-tabs-bar {
+                margin-bottom: 8px;
+                gap: 4px;
+            }
+            #pageConversations.wa-conversations-theme .conv-quick-tabs-bar.is-collapsed {
+                margin-bottom: 6px;
+            }
+            #pageConversations.wa-conversations-theme .conv-quick-tabs-toggle {
+                padding: 5px 10px;
+                font-size: 0.76rem;
+                border-radius: 8px;
+            }
+            #pageConversations.wa-conversations-theme .conv-quick-tabs-chevron {
+                width: 16px;
+                height: 16px;
+            }
+            #pageConversations.wa-conversations-theme .conv-quick-tabs {
+                gap: 6px;
+                padding-bottom: 2px;
+            }
+            #pageConversations.wa-conversations-theme .conv-tab {
+                padding: 5px 11px;
+                font-size: 0.78rem;
+                border-radius: 999px;
+            }
+            #pageConversations.wa-conversations-theme .conv-toolbar {
+                margin-bottom: 8px;
+            }
+            #pageConversations.wa-conversations-theme .conv-search-bar {
+                border-radius: 8px;
+            }
+            #pageConversations.wa-conversations-theme .conv-search-icon {
+                padding: 0 6px 0 10px;
+            }
+            html[dir="ltr"] #pageConversations.wa-conversations-theme .conv-search-icon {
+                padding: 0 10px 0 6px;
+            }
+            #pageConversations.wa-conversations-theme .conv-search-icon svg {
+                width: 14px;
+                height: 14px;
+            }
+            #pageConversations.wa-conversations-theme .conv-search-input {
+                padding: 6px 0;
+                font-size: 0.82rem;
+            }
+            #pageConversations.wa-conversations-theme .conv-filter-chip {
+                min-height: 34px;
+                padding: 0 10px;
+                font-size: 0.76rem;
+                gap: 4px;
+            }
+            #pageConversations.wa-conversations-theme .conv-filter-chip svg {
+                width: 13px;
+                height: 13px;
+            }
+            #pageConversations.wa-conversations-theme .conv-filter-active-dot {
+                top: 5px;
+                inset-inline-end: 6px;
+                width: 6px;
+                height: 6px;
+            }
+            #pageConversations.wa-conversations-theme .conv-advanced-filters {
+                padding-top: 8px;
+                margin-top: 8px;
+                gap: 8px;
+            }
+            #pageConversations.wa-conversations-theme .conv-filters-grid {
+                gap: 6px 8px;
+            }
+            #pageConversations.wa-conversations-theme .conv-filters-grid select {
+                padding: 6px 10px;
+                font-size: 0.82rem;
+            }
+            #pageConversations.wa-conversations-theme .conv-filters-actions {
+                padding-top: 2px;
+            }
+            #pageConversations.wa-conversations-theme .conv-filters-apply,
+            #pageConversations.wa-conversations-theme .conv-filters-reset {
+                padding: 6px 14px;
+                font-size: 0.82rem;
+            }
+            @media (max-width: 1100px) {
+                #pageConversations.wa-conversations-theme .conv-sync-groups-btn .conv-sync-text {
+                    display: none;
+                }
+                #pageConversations.wa-conversations-theme .conv-sync-groups-btn {
+                    padding: 5px 9px;
+                }
+            }
+        }
         #pageConversations.wa-conversations-theme .conv-layout {
             direction: ltr;
             border-radius: 0;
