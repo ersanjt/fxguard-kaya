@@ -2026,7 +2026,7 @@
                                                     <div class="form-group">
                                                         <label for="panelSettingLogoUrl" data-i18n="panel_logo_url">لوگوی پنل (URL یا آپلود)</label>
                                                         <div class="panel-branding-url-row">
-                                                            <input type="url" id="panelSettingLogoUrl" placeholder="https://example.com/logo.png" oninput="previewPanelLogo(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <input type="text" id="panelSettingLogoUrl" placeholder="https://… or /uploads/…" dir="ltr" spellcheck="false" oninput="previewPanelLogo(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
                                                             <button type="button" class="btn-secondary btn-sm" onclick="panelPickBrandingUpload('Logo'); return false;" data-i18n="panel_brand_upload_btn">آپلود از دستگاه</button>
                                                         </div>
                                                         <input type="file" id="panelBrandingFileLogo" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,.svg" style="display:none" tabindex="-1" aria-hidden="true">
@@ -2039,7 +2039,7 @@
                                                     <div class="form-group">
                                                         <label for="panelSettingFaviconUrl" data-i18n="panel_favicon_url">فاویکون (URL یا آپلود)</label>
                                                         <div class="panel-branding-url-row">
-                                                            <input type="url" id="panelSettingFaviconUrl" placeholder="https://example.com/favicon.ico" oninput="previewPanelFavicon(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <input type="text" id="panelSettingFaviconUrl" placeholder="https://… or /uploads/…" dir="ltr" spellcheck="false" oninput="previewPanelFavicon(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
                                                             <button type="button" class="btn-secondary btn-sm" onclick="panelPickBrandingUpload('Favicon'); return false;" data-i18n="panel_brand_upload_btn">آپلود از دستگاه</button>
                                                         </div>
                                                         <input type="file" id="panelBrandingFileFavicon" accept="image/png,image/jpeg,image/svg+xml,image/webp,image/x-icon,.ico,.svg" style="display:none" tabindex="-1" aria-hidden="true">
@@ -2052,7 +2052,7 @@
                                                     <div class="form-group">
                                                         <label for="panelSettingLoginLogoUrl" data-i18n="panel_login_logo_url">لوگوی صفحه ورود (اختیاری)</label>
                                                         <div class="panel-branding-url-row">
-                                                            <input type="url" id="panelSettingLoginLogoUrl" placeholder="https://example.com/login-logo.png" oninput="previewPanelLoginLogo(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
+                                                            <input type="text" id="panelSettingLoginLogoUrl" placeholder="https://… or /uploads/…" dir="ltr" spellcheck="false" oninput="previewPanelLoginLogo(this.value); updatePanelLivePreview(); markPanelSettingsChanged();">
                                                             <button type="button" class="btn-secondary btn-sm" onclick="panelPickBrandingUpload('LoginLogo'); return false;" data-i18n="panel_brand_upload_btn">آپلود از دستگاه</button>
                                                         </div>
                                                         <input type="file" id="panelBrandingFileLoginLogo" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml,.svg" style="display:none" tabindex="-1" aria-hidden="true">

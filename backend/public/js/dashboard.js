@@ -7258,6 +7258,8 @@
             set('panelSettingLoginTitle', d.loginTitle);
             set('panelSettingPageTitle', d.pageTitle);
             set('panelSettingFooterText', d.footerText);
+            set('panelSettingIosAppUrl', d.iosAppUrl);
+            set('panelSettingAndroidAppUrl', d.androidAppUrl);
             const footerStyleEl = document.getElementById('panelSettingFooterStyle');
             if (footerStyleEl) footerStyleEl.value = (d.footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(d.footerStyle) >= 0) ? d.footerStyle : 'accent';
             const hideFooterEl = document.getElementById('panelSettingHideFooter');
@@ -7814,6 +7816,8 @@
             payload.languageMode = (langModeEl && validModes.indexOf(langModeEl.value) >= 0) ? langModeEl.value : 'trilingual';
             const defaultLangEl = document.getElementById('panelSettingDefaultLanguage');
             if (defaultLangEl && (defaultLangEl.value === 'fa' || defaultLangEl.value === 'en' || defaultLangEl.value === 'tr')) payload.defaultLanguage = defaultLangEl.value;
+            payload.iosAppUrl = get('panelSettingIosAppUrl');
+            payload.androidAppUrl = get('panelSettingAndroidAppUrl');
             const tgNewToken = get('panelSettingTelegramBotToken');
             if (tgNewToken) payload.telegramBotToken = tgNewToken;
             const res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });

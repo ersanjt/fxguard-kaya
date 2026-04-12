@@ -140,7 +140,12 @@ router.put('/', authMiddleware, async (req, res, next) => {
         const validLogoLike = (v) => {
             if (!v || !String(v).trim()) return true;
             const s = String(v).trim();
-            return /^https?:\/\//i.test(s) || s.startsWith('/uploads/');
+            const lower = s.toLowerCase();
+            return (
+                /^https?:\/\//i.test(s) ||
+                s.startsWith('//') ||
+                lower.startsWith('/uploads/')
+            );
         };
         if (!validLogoLike(logoUrl)) {
             return res.status(400).json({ error: 'آدرس لوگو باید یک URL معتبر یا مسیر /uploads/ باشد' });
@@ -154,7 +159,7 @@ router.put('/', authMiddleware, async (req, res, next) => {
         const validAppUrl = (v) => {
             if (!v || !String(v).trim()) return true;
             const s = String(v).trim();
-            if (s.startsWith('/uploads/')) return true;
+            if (s.toLowerCase().startsWith('/uploads/')) return true;
             return /^(https?:\/\/|itms-services:\/\/|market:\/\/|intent:\/\/)/i.test(s);
         };
         if (!validAppUrl(iosAppUrl)) {
@@ -163,9 +168,10 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (!validAppUrl(androidAppUrl)) {
             return res.status(400).json({ error: 'لینک اپ Android معتبر نیست. از https://، /uploads/... یا market:// استفاده کنید.' });
         }
+        let smtpPortValid = null;
         if (smtpPort !== undefined && smtpPort !== '') {
             const port = parseInt(smtpPort, 10);
-            if (isNaN(port) || port < 1 || port > 65535) return res.status(400).json({ error: 'پورت SMTP باید بین ۱ تا ۶۵۵۳۵ باشد' });
+            if (!isNaN(port) && port >= 1 && port <= 65535) smtpPortValid = port;
         }
         if (smtpFrom && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(smtpFrom).trim())) {
             return res.status(400).json({ error: 'آدرس ایمیل فرستنده SMTP نامعتبر است' });
@@ -175,12 +181,6 @@ router.put('/', authMiddleware, async (req, res, next) => {
         }
         if (telegramChatIds && String(telegramChatIds).trim().length > 1000) {
             return res.status(400).json({ error: 'لیست Chat ID تلگرام بیش از حد طولانی است' });
-        }
-        if (telegramTimeoutMs !== undefined && telegramTimeoutMs !== '') {
-            const timeout = parseInt(telegramTimeoutMs, 10);
-            if (isNaN(timeout) || timeout < 1000 || timeout > 120000) {
-                return res.status(400).json({ error: 'Telegram timeout باید بین 1000 تا 120000 میلی‌ثانیه باشد' });
-            }
         }
         const [row] = await PanelSetting.findOrCreate({
             where: { id: 'default' },
@@ -200,7 +200,10 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (showFooter !== undefined) row.showFooter = !!showFooter;
         if (footerStyle !== undefined) row.footerStyle = (footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(footerStyle) >= 0) ? footerStyle : 'accent';
         if (smtpHost !== undefined) row.smtpHost = smtpHost === '' ? null : String(smtpHost).replace(/\.+$/, '').trim() || null;
-        if (smtpPort !== undefined) row.smtpPort = smtpPort === '' ? null : smtpPort;
+        if (smtpPort !== undefined) {
+            if (smtpPort === '' || smtpPort == null) row.smtpPort = null;
+            else if (smtpPortValid != null) row.smtpPort = String(smtpPortValid);
+        }
         if (smtpUser !== undefined) row.smtpUser = smtpUser === '' ? null : smtpUser;
         if (smtpPass !== undefined && String(smtpPass).trim() !== '') row.smtpPass = String(smtpPass).trim();
         if (smtpFrom !== undefined) row.smtpFrom = smtpFrom === '' ? null : smtpFrom;
@@ -214,7 +217,16 @@ router.put('/', authMiddleware, async (req, res, next) => {
             row.telegramBotToken = String(telegramBotToken).trim();
         }
         if (telegramChatIds !== undefined) row.telegramChatIds = telegramChatIds === '' ? null : String(telegramChatIds).trim();
-        if (telegramTimeoutMs !== undefined) row.telegramTimeoutMs = telegramTimeoutMs === '' ? null : parseInt(telegramTimeoutMs, 10);
+        if (telegramTimeoutMs !== undefined) {
+            if (telegramTimeoutMs === '' || telegramTimeoutMs == null) row.telegramTimeoutMs = null;
+            else {
+                let t = parseInt(String(telegramTimeoutMs), 10);
+                if (!Number.isFinite(t)) t = row.telegramTimeoutMs || 12000;
+                else if (t < 1000) t = 1000;
+                else if (t > 120000) t = 120000;
+                row.telegramTimeoutMs = t;
+            }
+        }
         if (clientErrorReportingEnabled !== undefined) row.clientErrorReportingEnabled = !!clientErrorReportingEnabled;
         if (telegramNotifyAllEvents !== undefined) row.telegramNotifyAllEvents = !!telegramNotifyAllEvents;
         if (telegramNotifyApiRequests !== undefined) row.telegramNotifyApiRequests = !!telegramNotifyApiRequests;
