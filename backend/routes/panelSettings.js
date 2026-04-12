@@ -136,7 +136,23 @@ router.put('/', authMiddleware, async (req, res, next) => {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
         const body = req.body || {};
-        const { siteName, logoUrl, faviconUrl, loginLogoUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, adminAlertsEnabled, adminAlertEmails, telegramBotToken, telegramChatIds, telegramTimeoutMs, clientErrorReportingEnabled, telegramNotifyAllEvents, telegramNotifyApiRequests, telegramNotifyAuthEvents, telegramNotifySocketEvents, telegramNotifyIncomingMessages, telegramNotifySystemEvents, telegramNotifyErrorEvents, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder, iosAppUrl, androidAppUrl } = body;
+        let {
+            siteName, logoUrl, faviconUrl, loginLogoUrl, loginTitle, pageTitle, footerText, showFooter, footerStyle, smtpHost, smtpPort, smtpUser, smtpPass, smtpFrom, smtpFromName, smtpSecure, emailLoginNotification, adminAlertsEnabled, adminAlertEmails, telegramBotToken, telegramChatIds, telegramTimeoutMs, clientErrorReportingEnabled, telegramNotifyAllEvents, telegramNotifyApiRequests, telegramNotifyAuthEvents, telegramNotifySocketEvents, telegramNotifyIncomingMessages, telegramNotifySystemEvents, telegramNotifyErrorEvents, hiddenSections, languageMode, defaultLanguage, primaryColor, fontFamily, fontSize, fontWeight, uiTheme, sidebarOrder, iosAppUrl, androidAppUrl
+        } = body;
+
+        /** مسیرهای آپلود و URLها: بک‌اسلش، کاراکترهای نامرئی bidi، فاصلهٔ اضافه */
+        function normalizePanelMediaUrl(v) {
+            if (v == null || v === '') return v;
+            let s = String(v).trim().replace(/\\/g, '/');
+            s = s.replace(/[\u200e\u200f\u202a-\u202e\ufeff]/g, '');
+            return s.trim();
+        }
+        if (logoUrl !== undefined) logoUrl = normalizePanelMediaUrl(logoUrl);
+        if (faviconUrl !== undefined) faviconUrl = normalizePanelMediaUrl(faviconUrl);
+        if (loginLogoUrl !== undefined) loginLogoUrl = normalizePanelMediaUrl(loginLogoUrl);
+        if (iosAppUrl !== undefined) iosAppUrl = normalizePanelMediaUrl(iosAppUrl);
+        if (androidAppUrl !== undefined) androidAppUrl = normalizePanelMediaUrl(androidAppUrl);
+
         const validLogoLike = (v) => {
             if (!v || !String(v).trim()) return true;
             const s = String(v).trim();
@@ -173,9 +189,9 @@ router.put('/', authMiddleware, async (req, res, next) => {
             const port = parseInt(smtpPort, 10);
             if (!isNaN(port) && port >= 1 && port <= 65535) smtpPortValid = port;
         }
-        if (smtpFrom && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(smtpFrom).trim())) {
-            return res.status(400).json({ error: 'آدرس ایمیل فرستنده SMTP نامعتبر است' });
-        }
+        const smtpFromTrimmed = smtpFrom !== undefined && smtpFrom != null ? String(smtpFrom).trim() : '';
+        const smtpFromLooksValid =
+            !smtpFromTrimmed || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(smtpFromTrimmed);
         if (adminAlertEmails && String(adminAlertEmails).trim().length > 2000) {
             return res.status(400).json({ error: 'لیست ایمیل مدیران بیش از حد طولانی است' });
         }
@@ -206,7 +222,10 @@ router.put('/', authMiddleware, async (req, res, next) => {
         }
         if (smtpUser !== undefined) row.smtpUser = smtpUser === '' ? null : smtpUser;
         if (smtpPass !== undefined && String(smtpPass).trim() !== '') row.smtpPass = String(smtpPass).trim();
-        if (smtpFrom !== undefined) row.smtpFrom = smtpFrom === '' ? null : smtpFrom;
+        if (smtpFrom !== undefined) {
+            if (smtpFrom === '' || smtpFrom == null) row.smtpFrom = null;
+            else if (smtpFromLooksValid) row.smtpFrom = smtpFromTrimmed;
+        }
         if (smtpFromName !== undefined) row.smtpFromName = smtpFromName === '' ? null : smtpFromName;
         if (smtpSecure !== undefined) row.smtpSecure = !!smtpSecure;
         if (emailLoginNotification !== undefined) row.emailLoginNotification = !!emailLoginNotification;

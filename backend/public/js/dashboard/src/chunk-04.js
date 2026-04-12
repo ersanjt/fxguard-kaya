@@ -1093,11 +1093,13 @@
             if (!container) return null;
             const items = [].slice.call(container.querySelectorAll('.sidebar-order-item'));
             items.sort(function(a, b) {
-                const ra = parseInt(a.querySelector('input').value, 10) || 999;
-                const rb = parseInt(b.querySelector('input').value, 10) || 999;
+                const ia = a.querySelector('input');
+                const ib = b.querySelector('input');
+                const ra = ia && ia.value != null ? parseInt(ia.value, 10) || 999 : 999;
+                const rb = ib && ib.value != null ? parseInt(ib.value, 10) || 999 : 999;
                 return ra - rb;
             });
-            return items.map(function(el) { return el.dataset.section; });
+            return items.map(function(el) { return el.dataset.section; }).filter(Boolean);
         }
         function syncPanelColorInput() {
             const colorEl = document.getElementById('panelSettingPrimaryColor');
@@ -1447,15 +1449,18 @@
             const btnFooter = document.getElementById('panelSettingsSaveBtnFooter');
             const statusEl = document.getElementById('panelSettingsSaveStatus');
             const savingText = (LANG === 'fa' ? 'در حال ذخیره...' : LANG === 'tr' ? 'Kaydediliyor...' : 'Saving...');
+            const saveText = t('btn_save');
             if (btn) { btn.disabled = true; btn.textContent = savingText; }
             if (btnFooter) { btnFooter.disabled = true; btnFooter.textContent = savingText; }
             if (statusEl) { statusEl.style.display = 'none'; statusEl.className = 'panel-settings-save-status'; }
             const get = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            let payload;
+            try {
             const hiddenSections = [];
             document.querySelectorAll('#panelVisibilityToggles input[type="checkbox"][data-page]').forEach(function(cb) {
                 if (!cb.checked) hiddenSections.push(cb.dataset.page);
             });
-            const payload = {
+            payload = {
                 siteName: get('panelSettingSiteName'),
                 logoUrl: get('panelSettingLogoUrl'),
                 faviconUrl: get('panelSettingFaviconUrl'),
@@ -1493,6 +1498,17 @@
                 telegramNotifyErrorEvents: !!(document.getElementById('panelSettingTelegramNotifyErrorEvents') && document.getElementById('panelSettingTelegramNotifyErrorEvents').checked),
                 hiddenSections: hiddenSections
             };
+            } catch (buildErr) {
+                toast((LANG === 'fa' ? 'خطا در آماده‌سازی فرم: ' : LANG === 'tr' ? 'Form hazırlanamadı: ' : 'Could not build form: ') + (buildErr && buildErr.message ? buildErr.message : String(buildErr)), true);
+                if (statusEl) {
+                    statusEl.textContent = (buildErr && buildErr.message) || '';
+                    statusEl.className = 'panel-settings-save-status error';
+                    statusEl.style.display = 'inline';
+                }
+                if (btn) { btn.disabled = false; btn.textContent = saveText; }
+                if (btnFooter) { btnFooter.disabled = false; btnFooter.textContent = saveText; }
+                return;
+            }
             const langModeEl = document.getElementById('panelSettingLanguageMode');
             const validModes = ['single', 'single_en', 'single_tr', 'bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'];
             payload.languageMode = (langModeEl && validModes.indexOf(langModeEl.value) >= 0) ? langModeEl.value : 'trilingual';
@@ -1502,8 +1518,20 @@
             payload.androidAppUrl = get('panelSettingAndroidAppUrl');
             const tgNewToken = get('panelSettingTelegramBotToken');
             if (tgNewToken) payload.telegramBotToken = tgNewToken;
-            const res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
-            const saveText = t('btn_save');
+            let res;
+            try {
+                res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
+            } catch (netErr) {
+                toast((netErr && netErr.message) || t('err_generic'), true);
+                if (statusEl) {
+                    statusEl.textContent = (netErr && netErr.message) || t('err_generic');
+                    statusEl.className = 'panel-settings-save-status error';
+                    statusEl.style.display = 'inline';
+                }
+                if (btn) { btn.disabled = false; btn.textContent = saveText; }
+                if (btnFooter) { btnFooter.disabled = false; btnFooter.textContent = saveText; }
+                return;
+            }
             if (btn) { btn.disabled = false; btn.textContent = saveText; }
             if (btnFooter) { btnFooter.disabled = false; btnFooter.textContent = saveText; }
             if (res.ok && res.data) {
