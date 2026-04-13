@@ -6,19 +6,33 @@ on:
       - master
   workflow_dispatch:
 
-# لغو run در حال اجرا با هر push جدید = دیپلوی نیمه‌تمام و زمان‌های ~۳۰–۴۰s گمراه‌کننده.
-# false: هر دیپلوی جدید در صف می‌ماند تا قبلی تمام شود (امن‌تر برای سرور).
+# آخرین push برنده است تا همیشه نتیجهٔ نهایی روی سرور همان کامیت آخر باشد (صف طولانی = حس «بدون نتیجه»).
 concurrency:
   group: deploy-kaya-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
     permissions:
       contents: read
 
     steps:
+      - name: Run info
+        run: |
+          {
+            echo "## Deploy to Server"
+            echo ""
+            echo "| | |"
+            echo "|--|--|"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| Ref | \`${{ github.ref }}\` |"
+            echo "| Trigger | ${{ github.event_name }} |"
+            echo ""
+            echo "اگر این run قرمز شد، **اولین step قرمز** را در لاگ باز کنید (Gradle، SCP یا SSH)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -270,3 +284,12 @@ jobs:
               pm2 logs kayaCRM --lines 30 --nostream || true
               exit 1
             fi
+
+      - name: Summary (success)
+        if: success()
+        run: |
+          {
+            echo ""
+            echo "### نتیجه"
+            echo "دیپلوی این کامیت تمام شد: APK آپلود، \`git pull\` روی سرور، \`npm ci\`، migrationها، PM2 reload، و \`/api/ping\` پاسخ داد."
+          } >> "$GITHUB_STEP_SUMMARY"
