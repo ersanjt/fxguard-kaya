@@ -151,6 +151,7 @@
     <string name="update_up_to_date">نسخهٔ شما به‌روز است (%1$s).</string>
     <string name="update_fetch_error">بررسی به‌روزرسانی انجام نشد.</string>
     <string name="update_download_error">دانلود ناموفق بود.</string>
+    <string name="update_install_no_handler">برنامه‌ای برای نصب APK پیدا نشد. فایل را از «فایل‌ها» باز کنید یا نصب‌کنندهٔ سیستم را فعال کنید.</string>
     <string name="mobile_download_title">دانلود اپ موبایل</string>
     <string name="download_ios">دانلود iOS</string>
     <string name="download_android">دانلود Android</string>

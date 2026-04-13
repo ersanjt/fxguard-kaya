@@ -151,6 +151,7 @@
     <string name="update_up_to_date">You are on the latest version (%1$s).</string>
     <string name="update_fetch_error">Could not check for updates.</string>
     <string name="update_download_error">Download failed.</string>
+    <string name="update_install_no_handler">No app found to install the update. Open the downloaded file from Files or enable the system package installer.</string>
     <string name="mobile_download_title">Mobile apps</string>
     <string name="download_ios">Download iOS</string>
     <string name="download_android">Download Android</string>

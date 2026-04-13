@@ -1,6 +1,5 @@
-# Retrofit
--keepattributes Signature, InnerClasses, EnclosingMethod
--keepattributes RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations
+# Retrofit + Gson (annotations برای @SerializedName و متدهای HTTP)
+-keepattributes Signature, InnerClasses, EnclosingMethod, RuntimeVisibleAnnotations, RuntimeVisibleParameterAnnotations, *Annotation*
 -keepclassmembers,allowshrinking,allowobfuscation interface * {
     @retrofit2.http.* <methods>;
 }
@@ -11,8 +10,6 @@
 -dontwarn retrofit2.KotlinExtensions$*
 
 # Gson — مدل‌های API و هر کلاسی که با Gson دی‌سریال می‌شود
--keepattributes Signature
--keepattributes *Annotation*
 -keep class com.kaya.crm.data.models.** { *; }
 
 # Gson: کلاس خصوصی داخل ApiErrorParser (reflection)
