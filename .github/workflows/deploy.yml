@@ -74,36 +74,38 @@ jobs:
           fi
           ls -lh "$APK"
 
-      # مسیر تخت تا scp ساختار android-app/... را روی سرور نسازد (مشکل رایج appleboy/scp-action)
+      # یک فایل در ریشهٔ runner — scp مسیر نسبی را روی سرور کپی نمی‌کند (برخلاف appleboy که پوشهٔ deploy-artifacts می‌ساخت)
       - name: Stage release APK for upload
         run: |
-          mkdir -p deploy-artifacts
-          cp -f android-app/app/build/outputs/apk/release/app-release.apk deploy-artifacts/app-release.apk
-          ls -lh deploy-artifacts/
+          cp -f android-app/app/build/outputs/apk/release/app-release.apk ./app-release.apk
+          ls -lh ./app-release.apk
 
-      - name: Ensure releases directory on server
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: 92.205.58.83
-          username: fxguard
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 3m
-          command_timeout: 2m
-          script: mkdir -p /var/www/kayaCRM/backend/uploads/releases
+      # انتقال با OpenSSH: مقصد دقیقاً همان مسیری است که backend و OTA انتظار دارند (بدون tar/ساختار اضافه)
+      - name: Upload APK to server (native scp)
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          REMOTE_USER="fxguard"
+          REMOTE_HOST="92.205.58.83"
+          REMOTE_DIR="/var/www/kayaCRM/backend/uploads/releases"
+          REMOTE_PATH="${REMOTE_DIR}/app-release.apk"
+          LOCAL_APK="${GITHUB_WORKSPACE}/app-release.apk"
+          test -f "$LOCAL_APK"
+          if [ -z "${DEPLOY_SSH_KEY:-}" ]; then
+            echo "::error::Secret SSH_PRIVATE_KEY خالی است — در GitHub → Settings → Secrets اضافه کنید."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          KEY="${RUNNER_TEMP}/kaya_deploy_ci"
+          printf '%s\n' "$DEPLOY_SSH_KEY" > "$KEY"
+          chmod 600 "$KEY"
+          SSH_OPTS=(-i "$KEY" -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30)
+          ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" "mkdir -p '${REMOTE_DIR}'"
+          scp "${SSH_OPTS[@]}" "$LOCAL_APK" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}"
+          rm -f "$KEY"
 
-      # v0.1.7 روی runnerهای GitHub پایدارتر از composite v1 بوده؛ مسیر APK از قبل تخت است.
-      - name: Upload APK to server (in-app update)
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: 92.205.58.83
-          username: fxguard
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 5m
-          command_timeout: 15m
-          source: deploy-artifacts/app-release.apk
-          target: /var/www/kayaCRM/backend/uploads/releases/
-
-      # appleboy/scp با source مسیردار، روی سرور پوشهٔ هم‌نام می‌سازد (مثلاً releases/deploy-artifacts/app-release.apk)
       - name: Verify APK on server
         uses: appleboy/ssh-action@v1.2.5
         with:
@@ -116,13 +118,15 @@ jobs:
             set -e
             REL=/var/www/kayaCRM/backend/uploads/releases
             P="$REL/app-release.apk"
-            NESTED="$REL/deploy-artifacts/app-release.apk"
-            if [ -f "$NESTED" ]; then
-              mv -f "$NESTED" "$P"
+            # اگر از دیپلویهای قبلی پوشهٔ appleboy مانده، تمیز کن
+            if [ -d "$REL/deploy-artifacts" ]; then
+              if [ -f "$REL/deploy-artifacts/app-release.apk" ] && [ ! -f "$P" ]; then
+                mv -f "$REL/deploy-artifacts/app-release.apk" "$P"
+              fi
               rm -rf "$REL/deploy-artifacts"
             fi
             if [ ! -f "$P" ]; then
-              echo "::error::APK missing at $P (also checked $NESTED)"
+              echo "::error::APK missing at $P"
               ls -la "$REL" 2>/dev/null || true
               exit 1
             fi

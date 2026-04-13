@@ -64,3 +64,4 @@ gateway/src/uploads/
 
 # CI: staged APK for SCP (runner-only; ignore if created locally)
 deploy-artifacts/
+/app-release.apk
