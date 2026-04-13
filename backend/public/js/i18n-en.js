@@ -1034,6 +1034,8 @@ window.__I18N_EN = {
     panel_telegram_timeout_ms: 'Timeout (ms)',
     panel_telegram_test_message_label: 'Telegram test message',
     panel_telegram_test_message_ph: 'Test from Kaya CRM',
+    panel_telegram_token_saved_hint: 'A token is already saved. Enter a new value to replace it.',
+    panel_telegram_token_none_hint: 'No token saved yet.',
     panel_test_telegram_btn: 'Send test',
     panel_test_telegram_sending: 'Sending…',
     panel_test_telegram_ok: 'Telegram message sent.',

@@ -7217,9 +7217,21 @@
                 return;
             }
             const pubFetchOpts = { credentials: 'include', headers: headers() };
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data) applyBranding(data, { full: true }); }).catch(function() {});
-            fetch(API + '/api/panel-settings/public/visibility', pubFetchOpts).then(function(r) { return r.json(); }).then(function(data) { if (data && data.hiddenSections) applyHiddenSections(data.hiddenSections); }).catch(function() {});
-            fetch(API + '/api/panel-settings/public/languages').then(function(r) { return r.json(); }).then(function(data) { if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage); }).catch(function() {});
+            const safeJson = function(p) {
+                return p.then(function(r) { return r.json(); }).catch(function() { return null; });
+            };
+            try {
+                const [brandingRes, visRes, langRes] = await Promise.all([
+                    safeJson(fetch(API + '/api/panel-settings/public/branding')),
+                    safeJson(fetch(API + '/api/panel-settings/public/visibility', pubFetchOpts)),
+                    safeJson(fetch(API + '/api/panel-settings/public/languages'))
+                ]);
+                if (brandingRes) applyBranding(brandingRes, { full: true });
+                if (visRes && visRes.hiddenSections) applyHiddenSections(visRes.hiddenSections);
+                if (langRes && langRes.supportedLanguages && window.applySupportedLanguages) {
+                    window.applySupportedLanguages(langRes.supportedLanguages, langRes.defaultLanguage);
+                }
+            } catch (_) {}
         }
         const SECTIONS_FOR_VISIBILITY = [
             { page: 'dashboard', labelKey: 'nav_dashboard' },
@@ -7273,7 +7285,9 @@
             const langModeEl = document.getElementById('panelSettingLanguageMode');
             const validModes = ['single', 'single_en', 'single_tr', 'bilingual', 'bilingual_fa_tr', 'bilingual_en_tr', 'trilingual'];
             if (langModeEl) langModeEl.value = validModes.indexOf(d.languageMode) >= 0 ? d.languageMode : 'trilingual';
-            set('panelSettingDefaultLanguage', (d.defaultLanguage === 'fa' || d.defaultLanguage === 'en' || d.defaultLanguage === 'tr') ? d.defaultLanguage : 'fa');
+            const supLangs = Array.isArray(d.supportedLanguages) && d.supportedLanguages.length ? d.supportedLanguages : ['fa', 'en', 'tr'];
+            const defCand = d.defaultLanguage === 'fa' || d.defaultLanguage === 'en' || d.defaultLanguage === 'tr' ? d.defaultLanguage : 'fa';
+            set('panelSettingDefaultLanguage', supLangs.indexOf(defCand) >= 0 ? defCand : (supLangs[0] || 'fa'));
             const colorVal = (d.primaryColor && /^#[0-9a-fA-F]{6}$/.test(d.primaryColor)) ? d.primaryColor : '#10b981';
             const colorEl = document.getElementById('panelSettingPrimaryColor');
             const colorTextEl = document.getElementById('panelSettingPrimaryColorText');
@@ -7324,9 +7338,7 @@
             if (tgTokenEl) tgTokenEl.value = '';
             const tgTokenHint = document.getElementById('panelTelegramTokenHint');
             if (tgTokenHint) {
-                tgTokenHint.textContent = d.telegramBotTokenSet
-                    ? (LANG === 'fa' ? 'توکن از قبل ذخیره شده است. برای تغییر، مقدار جدید وارد کنید.' : 'Token already saved. Enter a new one to replace it.')
-                    : (LANG === 'fa' ? 'توکنی ذخیره نشده است.' : 'No token saved yet.');
+                tgTokenHint.textContent = d.telegramBotTokenSet ? t('panel_telegram_token_saved_hint') : t('panel_telegram_token_none_hint');
             }
             const hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
             const container = document.getElementById('panelVisibilityToggles');
@@ -7500,12 +7512,17 @@
             const container = document.getElementById('panelVisibilityToggles');
             if (!searchEl || !container) return;
             panelSettingsVisibilitySearchInited = true;
+            let visSearchTimer = null;
             searchEl.addEventListener('input', function() {
-                const q = (searchEl.value || '').trim().toLowerCase();
-                container.querySelectorAll('.panel-visibility-item').forEach(function(item) {
-                    const text = item.dataset.searchText || '';
-                    item.classList.toggle('hidden-by-search', q && text.indexOf(q) < 0);
-                });
+                if (visSearchTimer) clearTimeout(visSearchTimer);
+                visSearchTimer = setTimeout(function() {
+                    visSearchTimer = null;
+                    const q = (searchEl.value || '').trim().toLowerCase();
+                    container.querySelectorAll('.panel-visibility-item').forEach(function(item) {
+                        const text = item.dataset.searchText || '';
+                        item.classList.toggle('hidden-by-search', q && text.indexOf(q) < 0);
+                    });
+                }, 120);
             });
         }
         async function loadCompanyEmailUserSelect() {
@@ -7945,7 +7962,7 @@
                     statusEl.style.display = 'inline';
                 }
             } else {
-                const err = (res.data && res.data.error) || t('panel_test_telegram_fail');
+                const err = (res.data && res.data.error) || res.error || t('panel_test_telegram_fail');
                 toast(err, true);
                 if (statusEl) {
                     statusEl.textContent = err;

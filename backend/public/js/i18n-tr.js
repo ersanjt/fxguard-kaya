@@ -1015,6 +1015,8 @@ window.__I18N_TR = {
     panel_telegram_timeout_ms: 'Zaman aşımı (ms)',
     panel_telegram_test_message_label: 'Telegram test mesajı',
     panel_telegram_test_message_ph: 'Kaya CRM test',
+    panel_telegram_token_saved_hint: 'Bir token zaten kayıtlı. Değiştirmek için yeni bir değer girin.',
+    panel_telegram_token_none_hint: 'Henüz token kaydedilmedi.',
     panel_test_telegram_btn: 'Test gönder',
     panel_test_telegram_sending: 'Gönderiliyor…',
     panel_test_telegram_ok: 'Telegram mesajı gönderildi.',

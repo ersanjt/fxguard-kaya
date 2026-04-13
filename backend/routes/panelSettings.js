@@ -7,9 +7,6 @@ const { getPanelSettings, getSupportedLanguages, getPanelEmailConfig } = require
 const emailService = require('../services/emailService');
 const telegramService = require('../services/telegramService');
 
-async function getSettings() {
-    return getPanelSettings();
-}
 
 function applyPublicDemoBranding(req, payload) {
     if (!isPublicAppRequest(req)) return payload;
@@ -64,7 +61,7 @@ function normalizePanelMediaUrl(v) {
 router.get('/public/branding', async (req, res, next) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
     try {
-        const s = await getSettings();
+        const s = await getPanelSettings();
         const out = applyPublicDemoBranding(req, {
             siteName: s.siteName,
             logoUrl: s.logoUrl,
@@ -96,7 +93,7 @@ router.get('/public/languages', async (req, res, next) => {
         if (isPublicAppRequest(req) && isDemoModeEnabled()) {
             return res.json({ languageMode: 'bilingual_en_tr', supportedLanguages: ['en', 'tr'], defaultLanguage: 'en' });
         }
-        const s = await getSettings();
+        const s = await getPanelSettings();
         const supportedLanguages = getSupportedLanguages(s);
         const defaultLanguage = supportedLanguages.indexOf(s.defaultLanguage) >= 0 ? s.defaultLanguage : supportedLanguages[0] || 'fa';
         res.json({ languageMode: s.languageMode, supportedLanguages, defaultLanguage });
@@ -114,7 +111,7 @@ router.get('/public/visibility', optionalAuthMiddleware, async (req, res, next) 
         if (!req.user) {
             return res.json({ hiddenSections: [] });
         }
-        const s = await getSettings();
+        const s = await getPanelSettings();
         res.json({ hiddenSections: s.hiddenSections || [] });
     } catch (err) {
         next(err);
@@ -127,7 +124,7 @@ router.get('/', authMiddleware, async (req, res, next) => {
         if (!req.canAccess || !req.canAccess('panel_settings')) {
             return res.status(403).json({ error: 'دسترسی به تنظیمات ظاهر پنل ندارید.' });
         }
-        const s = await getSettings();
+        const s = await getPanelSettings();
         const out = { ...s };
         delete out.smtpPass;
         delete out.telegramBotToken;
@@ -304,7 +301,12 @@ router.put('/', authMiddleware, async (req, res, next) => {
             if (languageMode === '' || languageMode == null) row.languageMode = null;
             else row.languageMode = validLangModes.indexOf(languageMode) >= 0 ? languageMode : 'trilingual';
         }
-        if (defaultLanguage !== undefined && (defaultLanguage === 'fa' || defaultLanguage === 'en' || defaultLanguage === 'tr')) row.defaultLanguage = defaultLanguage;
+        if (defaultLanguage !== undefined) {
+            const langs = getSupportedLanguages({ languageMode: row.languageMode });
+            if (['fa', 'en', 'tr'].indexOf(defaultLanguage) >= 0 && langs.indexOf(defaultLanguage) >= 0) {
+                row.defaultLanguage = defaultLanguage;
+            }
+        }
         if (primaryColor !== undefined) row.primaryColor = (typeof primaryColor === 'string' && /^#[0-9a-fA-F]{6}$/.test(primaryColor.trim())) ? primaryColor.trim() : (primaryColor === '' ? null : row.primaryColor);
         if (fontFamily !== undefined) row.fontFamily = fontFamily === '' ? null : fontFamily;
         if (fontSize !== undefined && ['small', 'medium', 'large'].indexOf(fontSize) >= 0) row.fontSize = fontSize;
@@ -345,7 +347,7 @@ router.put('/', authMiddleware, async (req, res, next) => {
                 });
             }
         }
-        const s = await getSettings();
+        const s = await getPanelSettings();
         if (footerStyle !== undefined) s.footerStyle = (footerStyle && ['accent', 'minimal', 'compact', 'line'].indexOf(footerStyle) >= 0) ? footerStyle : 'accent';
         s.supportedLanguages = getSupportedLanguages(s);
         delete s.smtpPass;
@@ -360,13 +362,18 @@ router.put('/', authMiddleware, async (req, res, next) => {
 // Cooldown برای ارسال تست ایمیل (۶۰ ثانیه) — جلوگیری از اسپم و فیلتر Gmail
 const testEmailCooldown = new Map();
 const TEST_EMAIL_COOLDOWN_MS = 60000;
+const testTelegramCooldown = new Map();
+const TEST_TELEGRAM_COOLDOWN_MS = 45000;
 // پاک‌سازی خودکار هر ۱۰ دقیقه برای جلوگیری از memory leak
 setInterval(() => {
     const now = Date.now();
     for (const [key, ts] of testEmailCooldown.entries()) {
         if (now - ts > TEST_EMAIL_COOLDOWN_MS * 2) testEmailCooldown.delete(key);
     }
-}, 10 * 60 * 1000);
+    for (const [key, ts] of testTelegramCooldown.entries()) {
+        if (now - ts > TEST_TELEGRAM_COOLDOWN_MS * 2) testTelegramCooldown.delete(key);
+    }
+}, 10 * 60 * 1000).unref();
 
 // ارسال ایمیل تست — برای اطمینان از صحت تنظیمات SMTP
 // اگر smtpHost و smtpPort در body ارسال شوند، از آن‌ها استفاده می‌شود (تست قبل از ذخیره)
@@ -448,13 +455,28 @@ router.post('/test-telegram', authMiddleware, async (req, res, next) => {
         if (!req.canAccess || !req.canAccess('panel_settings')) {
             return res.status(403).json({ error: 'دسترسی به تنظیمات پنل ندارید.' });
         }
+        const userId = req.user && req.user.id;
+        if (userId) {
+            const last = testTelegramCooldown.get(userId) || 0;
+            if (Date.now() - last < TEST_TELEGRAM_COOLDOWN_MS) {
+                const waitSec = Math.ceil((TEST_TELEGRAM_COOLDOWN_MS - (Date.now() - last)) / 1000);
+                return res.status(429).json({ error: `برای جلوگیری از اسپم، ${waitSec} ثانیه صبر کنید و دوباره امتحان کنید.` });
+            }
+        }
         const settings = await getPanelSettings();
         const tokenInput = (req.body.telegramBotToken || '').toString().trim();
         const chatIdsInput = (req.body.telegramChatIds || '').toString().trim();
         const timeoutInput = (req.body.telegramTimeoutMs || '').toString().trim();
         const token = tokenInput || settings.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN || '';
         const chatIds = chatIdsInput || settings.telegramChatIds || process.env.TELEGRAM_CHAT_IDS || '';
-        const timeoutMs = timeoutInput ? parseInt(timeoutInput, 10) : (settings.telegramTimeoutMs || process.env.TELEGRAM_TIMEOUT_MS || 12000);
+        let timeoutMs = Number(settings.telegramTimeoutMs || process.env.TELEGRAM_TIMEOUT_MS || 12000);
+        if (timeoutInput) {
+            const t = parseInt(timeoutInput, 10);
+            if (Number.isFinite(t)) {
+                timeoutMs = t < 1000 ? 1000 : t > 120000 ? 120000 : t;
+            }
+        }
+        if (!Number.isFinite(timeoutMs)) timeoutMs = 12000;
 
         if (!token || !chatIds) {
             return res.status(400).json({ error: 'توکن و Chat ID تلگرام الزامی است.' });
@@ -466,7 +488,10 @@ router.post('/test-telegram', authMiddleware, async (req, res, next) => {
             chatIds,
             timeoutMs
         });
-        if (result.ok) return res.json({ ok: true, message: 'پیام تست تلگرام ارسال شد.' });
+        if (result.ok) {
+            if (userId) testTelegramCooldown.set(userId, Date.now());
+            return res.json({ ok: true });
+        }
         return res.status(500).json({ error: result.error || 'ارسال پیام تلگرام ناموفق بود.' });
     } catch (err) {
         next(err);

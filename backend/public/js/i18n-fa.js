@@ -1033,6 +1033,8 @@ window.__I18N_FA = {
     panel_telegram_timeout_ms: 'Timeout (ms)',
     panel_telegram_test_message_label: 'پیام تست تلگرام',
     panel_telegram_test_message_ph: 'Test from Kaya CRM',
+    panel_telegram_token_saved_hint: 'توکن از قبل ذخیره شده است. برای تغییر، مقدار جدید وارد کنید.',
+    panel_telegram_token_none_hint: 'توکنی ذخیره نشده است.',
     panel_test_telegram_btn: 'ارسال تست',
     panel_test_telegram_sending: 'در حال ارسال…',
     panel_test_telegram_ok: 'پیام تلگرام ارسال شد.',
