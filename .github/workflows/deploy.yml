@@ -103,6 +103,7 @@ jobs:
           source: deploy-artifacts/app-release.apk
           target: /var/www/kayaCRM/backend/uploads/releases/
 
+      # appleboy/scp با source مسیردار، روی سرور پوشهٔ هم‌نام می‌سازد (مثلاً releases/deploy-artifacts/app-release.apk)
       - name: Verify APK on server
         uses: appleboy/ssh-action@v1.2.5
         with:
@@ -113,10 +114,16 @@ jobs:
           command_timeout: 1m
           script: |
             set -e
-            P=/var/www/kayaCRM/backend/uploads/releases/app-release.apk
+            REL=/var/www/kayaCRM/backend/uploads/releases
+            P="$REL/app-release.apk"
+            NESTED="$REL/deploy-artifacts/app-release.apk"
+            if [ -f "$NESTED" ]; then
+              mv -f "$NESTED" "$P"
+              rm -rf "$REL/deploy-artifacts"
+            fi
             if [ ! -f "$P" ]; then
-              echo "::error::APK missing at $P"
-              ls -la /var/www/kayaCRM/backend/uploads/releases/ 2>/dev/null || true
+              echo "::error::APK missing at $P (also checked $NESTED)"
+              ls -la "$REL" 2>/dev/null || true
               exit 1
             fi
             ls -lh "$P"
