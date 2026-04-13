@@ -5,6 +5,10 @@ on:
     branches:
       - master
 
+concurrency:
+  group: deploy-kaya-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -51,34 +55,66 @@ jobs:
           fi
           ls -lh "$APK"
 
+      # مسیر تخت تا scp ساختار android-app/... را روی سرور نسازد (مشکل رایج appleboy/scp-action)
+      - name: Stage release APK for upload
+        run: |
+          mkdir -p deploy-artifacts
+          cp -f android-app/app/build/outputs/apk/release/app-release.apk deploy-artifacts/app-release.apk
+          ls -lh deploy-artifacts/
+
       - name: Ensure releases directory on server
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: 92.205.58.83
           username: fxguard
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 60s
+          protocol: tcp4
+          timeout: 3m
+          command_timeout: 2m
           script: mkdir -p /var/www/kayaCRM/backend/uploads/releases
 
       - name: Upload APK to server (in-app update)
-        uses: appleboy/scp-action@v0.1.7
+        uses: appleboy/scp-action@v1.0.0
         with:
           host: 92.205.58.83
           username: fxguard
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: android-app/app/build/outputs/apk/release/app-release.apk
+          protocol: tcp4
+          timeout: 5m
+          command_timeout: 15m
+          source: deploy-artifacts/app-release.apk
           target: /var/www/kayaCRM/backend/uploads/releases/
+
+      - name: Verify APK on server
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          protocol: tcp4
+          timeout: 3m
+          command_timeout: 1m
+          script: |
+            set -e
+            P=/var/www/kayaCRM/backend/uploads/releases/app-release.apk
+            if [ ! -f "$P" ]; then
+              echo "::error::APK missing at $P"
+              ls -la /var/www/kayaCRM/backend/uploads/releases/ 2>/dev/null || true
+              exit 1
+            fi
+            ls -lh "$P"
 
       # اگر خطای dial tcp ... i/o timeout دیدید: سرور از شبکهٔ GitHub در دسترس نیست (فایروال/پورت ۲۲). دیپلوی دستی را ببینید: docs/DEPLOY-SERVER.md
       # host/user ثابت — اگر خواستی از Secrets استفاده کنی: docs/DEPLOY-GITHUB-SECRETS.md
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: 92.205.58.83
           username: fxguard
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 60s
-          command_timeout: 15m
+          protocol: tcp4
+          timeout: 3m
+          command_timeout: 20m
           script: |
             set -e
 
@@ -146,8 +182,8 @@ jobs:
             cd backend
             # پاک کردن node_modules برای جلوگیری از مشکلات stale cache
             rm -rf node_modules
-            npm install --omit=dev
-            echo "  ✅ npm install موفق"
+            npm ci --omit=dev --no-audit --no-fund
+            echo "  ✅ npm ci موفق"
 
             # ---- اجرای migration scripts ----
             echo "🗄️ اجرای migration scripts ..."
@@ -213,14 +249,14 @@ jobs:
             pm2 save
 
             # ---- بررسی سلامت بعد از deploy (چند تلاش — گاهی PM2/Node کمی دیر گوش می‌دهد) ----
-            echo "⏳ بررسی /api/ping روی پورت ۳۰۰۲ ..."
+            echo "⏳ بررسی /api/ping روی پورت ۳۰۰۲ (IPv4) ..."
             OK=0
-            for i in 1 2 3 4 5 6 7 8; do
-              if curl -sf --max-time 10 http://localhost:3002/api/ping > /dev/null; then
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              if curl -sf --max-time 10 http://127.0.0.1:3002/api/ping > /dev/null; then
                 OK=1
                 break
               fi
-              echo "   تلاش $i از ۸ — هنوز پاسخی نیست، ۱۰ ثانیه بعد دوباره ..."
+              echo "   تلاش $i از ۱۲ — هنوز پاسخی نیست، ۱۰ ثانیه بعد دوباره ..."
               sleep 10
             done
             if [ "$OK" = "1" ]; then
