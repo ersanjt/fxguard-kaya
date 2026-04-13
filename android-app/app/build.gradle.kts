@@ -14,8 +14,8 @@ android {
         applicationId = "com.kaya.crm"
         minSdk = 26
         targetSdk = 36
-        versionCode = 14
-        versionName = "1.4.9"
+        versionCode = 15
+        versionName = "1.5.0"
         buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
     }
 
@@ -61,8 +61,9 @@ android {
             // shrinkResources گاهی فونت/اسپلش را حذف می‌کند و اپ بلافاصله می‌میرد؛ R8 کد را همچنان فشرده می‌کند
             isShrinkResources = false
             isDebuggable = false
+            // proguard-android-optimize گاهی بایت‌کد را می‌شکند؛ نسخهٔ بدون optimize پایدارتر است
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
+                getDefaultProguardFile("proguard-android.txt"),
                 "proguard-rules.pro"
             )
             signingConfig = signingConfigs.getByName("release")

@@ -30,7 +30,9 @@ class AuthPreferences @Inject constructor(
 
     val token: Flow<String?> = context.dataStore.data.map { it[TOKEN] }
     val user: Flow<UserResponse?> = context.dataStore.data.map { json ->
-        json[USER]?.let { Gson().fromJson(it, UserResponse::class.java) }
+        json[USER]?.let { raw ->
+            runCatching { Gson().fromJson(raw, UserResponse::class.java) }.getOrNull()
+        }
     }
     val baseUrl: Flow<String?> = context.dataStore.data.map { it[BASE_URL] }
 

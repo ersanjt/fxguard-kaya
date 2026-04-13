@@ -24,3 +24,8 @@
 
 # کلاس‌های ما + تولید Hilt/KSP (بدون این، release با R8 اغلب بلافاصله کرش می‌کند)
 -keep class com.kaya.crm.** { *; }
+
+# Coil (بارگذاری تصویر — گاهی با R8 در اولین صفحه کرش می‌دهد)
+-keep class coil.** { *; }
+-keep interface coil.** { *; }
+-dontwarn coil.**

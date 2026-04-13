@@ -30,8 +30,12 @@ class MainActivity : AppCompatActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val localeTag = runBlocking(Dispatchers.IO) { authPreferences.getAppLocale() }
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(localeTag))
+        val localeTag = runCatching {
+            runBlocking(Dispatchers.IO) { authPreferences.getAppLocale() }
+        }.getOrDefault("en").let { if (it == "fa") "fa" else "en" }
+        runCatching {
+            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(localeTag))
+        }
         setContent {
             KayaCrmTheme {
                 Surface(
