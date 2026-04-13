@@ -8,16 +8,21 @@ import androidx.lifecycle.viewModelScope
 import com.kaya.crm.data.models.Conversation
 import com.kaya.crm.data.models.MessageItem
 import com.kaya.crm.data.models.UserBrief
+import com.kaya.crm.data.preferences.AuthPreferences
 import com.kaya.crm.data.repository.AuthRepository
 import com.kaya.crm.data.repository.CrmRepository
+import com.kaya.crm.ui.util.MediaUrlResolve
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 import javax.inject.Inject
@@ -31,8 +36,17 @@ data class ReplyDraft(
 class ConversationsViewModel @Inject constructor(
     private val repo: CrmRepository,
     private val authRepo: AuthRepository,
+    authPreferences: AuthPreferences,
     @ApplicationContext private val app: Context
 ) : ViewModel() {
+
+    val serverRoot: StateFlow<String> = authPreferences.baseUrl
+        .map { MediaUrlResolve.serverRootFromSaved(it) }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            MediaUrlResolve.serverRootFromSaved(null)
+        )
 
     private val _conversations = MutableStateFlow<List<Conversation>>(emptyList())
     val conversations: StateFlow<List<Conversation>> = _conversations.asStateFlow()

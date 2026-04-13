@@ -920,6 +920,36 @@
             var n = normalizeProfilePicUrl(url);
             return !!n && (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0);
         }
+        /** میزبان‌های CDN پروفایل (واتساپ/متا/…) — بارگذاری از طریق پروکسی API تا مرورگر مسدود نشود */
+        var PROFILE_PIC_PROXY_SUFFIXES = ['whatsapp.net', 'fbcdn.net', 'facebook.com', 'instagram.com', 'cdninstagram.com', 'googleusercontent.com'];
+        function profilePicHostNeedsProxy(hostname) {
+            if (!hostname || typeof hostname !== 'string') return false;
+            var h = hostname.toLowerCase();
+            for (var i = 0; i < PROFILE_PIC_PROXY_SUFFIXES.length; i++) {
+                var s = PROFILE_PIC_PROXY_SUFFIXES[i];
+                if (h === s || h.endsWith('.' + s)) return true;
+            }
+            return false;
+        }
+        /** URL نهایی برای src تصویر (همان‌origin و data بدون تغییر؛ CDNهای پروفایل → /api/profile-image) */
+        function profilePicDisplaySrc(rawUrl) {
+            if (!rawUrl || typeof rawUrl !== 'string') return '';
+            if (!profilePicShowsImage(rawUrl)) return '';
+            var n = normalizeProfilePicUrl(rawUrl);
+            if (!n) return '';
+            if (n.indexOf('data:') === 0) return n;
+            try {
+                var parsed = new URL(n);
+                if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return n;
+                var pageHost = '';
+                try { pageHost = (window.location && window.location.hostname) ? String(window.location.hostname) : ''; } catch (_e2) {}
+                if (pageHost && parsed.hostname.toLowerCase() === pageHost.toLowerCase()) return n;
+                if (profilePicHostNeedsProxy(parsed.hostname)) {
+                    return '/api/profile-image?url=' + encodeURIComponent(n);
+                }
+            } catch (_e) {}
+            return n;
+        }
         function crmAvatarImgErr(img) {
             try {
                 if (!img) return;

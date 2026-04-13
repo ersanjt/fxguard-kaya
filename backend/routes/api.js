@@ -42,6 +42,7 @@ const announcementsRoutes = require('./announcements');
 const createInternalRouter = require('./internal');
 const companyEmailsRoutes = require('./companyEmails');
 const panelSettingsRoutes = require('./panelSettings');
+const { getProfileImage } = require('./profileImage');
 
 function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     const apiRouter = express.Router();
@@ -49,6 +50,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     const { router: gatewayRouter } = createGatewayRouter(logger);
 
     apiRouter.use((req, res, next) => {
+        if (req.method === 'GET' && req.path === '/profile-image') return next();
         res.setHeader('Content-Type', 'application/json');
         next();
     });
@@ -56,6 +58,8 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.get('/ping', (req, res) => {
         res.json({ ok: true, message: 'API در دسترس است' });
     });
+
+    apiRouter.get('/profile-image', authMiddleware, getProfileImage);
 
     /**
      * پایهٔ https عمومی برای ساخت URL APK وقتی BACKEND_PUBLIC_URL در .env نیست یا http است.

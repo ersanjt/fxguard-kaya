@@ -4,20 +4,34 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.kaya.crm.data.models.CustomerDetail
 import com.kaya.crm.data.models.CustomerItem
+import com.kaya.crm.data.preferences.AuthPreferences
 import com.kaya.crm.data.repository.CrmRepository
+import com.kaya.crm.ui.util.MediaUrlResolve
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class CustomersViewModel @Inject constructor(
-    private val repo: CrmRepository
+    private val repo: CrmRepository,
+    authPreferences: AuthPreferences
 ) : ViewModel() {
+
+    val serverRoot: StateFlow<String> = authPreferences.baseUrl
+        .map { MediaUrlResolve.serverRootFromSaved(it) }
+        .stateIn(
+            viewModelScope,
+            SharingStarted.Eagerly,
+            MediaUrlResolve.serverRootFromSaved(null)
+        )
 
     private val _customers = MutableStateFlow<List<CustomerItem>>(emptyList())
     val customers: StateFlow<List<CustomerItem>> = _customers.asStateFlow()

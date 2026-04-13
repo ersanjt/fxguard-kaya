@@ -137,6 +137,22 @@ function looksLikeExpiringCdnProfilePic(url) {
     );
 }
 
+/** فقط CDNهای پروفایل شناخته‌شده — برای پروکسی تصویر در API (کاهش SSRF) */
+const PROFILE_PIC_PROXY_HOST_SUFFIXES = [
+    'whatsapp.net',
+    'fbcdn.net',
+    'facebook.com',
+    'instagram.com',
+    'cdninstagram.com',
+    'googleusercontent.com',
+];
+
+function isAllowedProfilePicCdnHost(hostname) {
+    if (!hostname || typeof hostname !== 'string') return false;
+    const h = hostname.toLowerCase();
+    return PROFILE_PIC_PROXY_HOST_SUFFIXES.some((suffix) => h === suffix || h.endsWith('.' + suffix));
+}
+
 /**
  * اگر مشتری واتساپ است و عکس محلی ندارد (یا لینک CDN احتمالاً منقضی است)، از Gateway عکس پروفایل بگیرد و ذخیره کند.
  * @param {import('sequelize').Model} customer — نمونهٔ Customer با id, phone, source, profilePic
@@ -190,4 +206,6 @@ module.exports = {
     isAlreadyLocalPath,
     digitsOnlyChatPhone,
     maybeRefreshWhatsappCustomerAvatar,
+    isSafeRemoteUrl,
+    isAllowedProfilePicCdnHost,
 };

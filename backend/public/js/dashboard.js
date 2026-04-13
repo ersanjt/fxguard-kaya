@@ -2693,6 +2693,36 @@
             var n = normalizeProfilePicUrl(url);
             return !!n && (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0);
         }
+        /** میزبان‌های CDN پروفایل (واتساپ/متا/…) — بارگذاری از طریق پروکسی API تا مرورگر مسدود نشود */
+        var PROFILE_PIC_PROXY_SUFFIXES = ['whatsapp.net', 'fbcdn.net', 'facebook.com', 'instagram.com', 'cdninstagram.com', 'googleusercontent.com'];
+        function profilePicHostNeedsProxy(hostname) {
+            if (!hostname || typeof hostname !== 'string') return false;
+            var h = hostname.toLowerCase();
+            for (var i = 0; i < PROFILE_PIC_PROXY_SUFFIXES.length; i++) {
+                var s = PROFILE_PIC_PROXY_SUFFIXES[i];
+                if (h === s || h.endsWith('.' + s)) return true;
+            }
+            return false;
+        }
+        /** URL نهایی برای src تصویر (همان‌origin و data بدون تغییر؛ CDNهای پروفایل → /api/profile-image) */
+        function profilePicDisplaySrc(rawUrl) {
+            if (!rawUrl || typeof rawUrl !== 'string') return '';
+            if (!profilePicShowsImage(rawUrl)) return '';
+            var n = normalizeProfilePicUrl(rawUrl);
+            if (!n) return '';
+            if (n.indexOf('data:') === 0) return n;
+            try {
+                var parsed = new URL(n);
+                if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return n;
+                var pageHost = '';
+                try { pageHost = (window.location && window.location.hostname) ? String(window.location.hostname) : ''; } catch (_e2) {}
+                if (pageHost && parsed.hostname.toLowerCase() === pageHost.toLowerCase()) return n;
+                if (profilePicHostNeedsProxy(parsed.hostname)) {
+                    return '/api/profile-image?url=' + encodeURIComponent(n);
+                }
+            } catch (_e) {}
+            return n;
+        }
         function crmAvatarImgErr(img) {
             try {
                 if (!img) return;
@@ -4662,8 +4692,9 @@
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
                 const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
                 let profilePic = rawPic ? normalizeProfilePicUrl(rawPic) : '';
+                const picSrc = rawPic ? profilePicDisplaySrc(rawPic) : '';
                 const canShowImg = !isGroup && rawPic && profilePicShowsImage(rawPic);
-                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
+                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg && picSrc ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
                 let assigneeMetaSuffix = '';
                 if (assigneeName) {
@@ -4779,7 +4810,7 @@
             }
             if (avatarEl) {
                 const rawOpenPic = (profilePic || '').trim();
-                let pic = rawOpenPic ? normalizeProfilePicUrl(rawOpenPic) : '';
+                let pic = rawOpenPic ? profilePicDisplaySrc(rawOpenPic) : '';
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
                 if (pic && profilePicShowsImage(rawOpenPic)) {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
@@ -4817,10 +4848,10 @@
                 const d = res.data;
                 const custPicRaw = d.customer && d.customer.profilePic ? String(d.customer.profilePic).trim() : '';
                 if (avatarEl && custPicRaw && !currentConvIsGroup) {
-                    const picNorm = normalizeProfilePicUrl(custPicRaw);
-                    if (picNorm && profilePicShowsImage(custPicRaw)) {
+                    const picDisp = profilePicDisplaySrc(custPicRaw);
+                    if (picDisp && profilePicShowsImage(custPicRaw)) {
                         const initialH = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
-                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picNorm) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
+                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picDisp) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
                     }
                 }
                 if (!barEl || !badgesEl) {
@@ -4961,7 +4992,8 @@
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 let profilePic = rawPicNc ? normalizeProfilePicUrl(rawPicNc) : '';
-                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const picSrcNc = rawPicNc ? profilePicDisplaySrc(rawPicNc) : '';
+                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
@@ -5174,9 +5206,23 @@
                     const md = m.mediaData;
                     if (md.url && String(md.url).trim()) {
                         const rawUrl = String(md.url).trim();
-                        const mediaBase = (rawUrl.startsWith('http')) ? '' : (window.location.origin || baseUrl);
-                        mediaUrl = rawUrl.startsWith('http') ? rawUrl : (mediaBase + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
-                        mediaUrl = ensureHttpsUrl(mediaUrl);
+                        if (rawUrl.indexOf('data:') === 0 || rawUrl.indexOf('blob:') === 0) {
+                            mediaUrl = rawUrl;
+                        } else if (rawUrl.indexOf('//') === 0) {
+                            mediaUrl = ensureHttpsUrl('https:' + rawUrl);
+                        } else if (/^https?:\/\//i.test(rawUrl)) {
+                            mediaUrl = ensureHttpsUrl(rawUrl);
+                        } else {
+                            const slashIdx = rawUrl.indexOf('/');
+                            const hostPart = slashIdx >= 0 ? rawUrl.slice(0, slashIdx) : rawUrl;
+                            if (typeof looksLikeSchemelessHttpHost === 'function' && hostPart && looksLikeSchemelessHttpHost(hostPart)) {
+                                mediaUrl = ensureHttpsUrl('https://' + rawUrl.replace(/^\/+/, ''));
+                            } else {
+                                const mediaBase = window.location.origin || baseUrl;
+                                mediaUrl = mediaBase + (rawUrl.startsWith('/') ? '' : '/') + rawUrl;
+                                mediaUrl = ensureHttpsUrl(mediaUrl);
+                            }
+                        }
                     } else if (md.data && (inferMediaType(m) === 'image' || (md.mimetype || '').toLowerCase().indexOf('image/') === 0)) {
                         const mime = (md.mimetype || 'image/jpeg').split(';')[0].trim();
                         mediaUrl = 'data:' + mime + ';base64,' + md.data;
@@ -6111,11 +6157,12 @@
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
                 const rawPicCust = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 let profilePic = rawPicCust ? normalizeProfilePicUrl(rawPicCust) : '';
-                const hasCustPic = !!(rawPicCust && profilePicShowsImage(rawPicCust));
+                const picSrcCust = rawPicCust ? profilePicDisplaySrc(rawPicCust) : '';
+                const hasCustPic = !!(rawPicCust && profilePicShowsImage(rawPicCust) && picSrcCust);
                 const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
                 const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
                 const avatarInner = hasCustPic
-                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">'
+                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(picSrcCust) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">'
                     : '<span class="customer-card-avatar-letter">' + escapeHtml(initial) + '</span>';
                 const avatarHtml = '<div class="' + avClass + '"' + avStyle + '>' + avatarInner + '</div>';
                 const statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
@@ -6340,12 +6387,12 @@
                     }
                 }, 50);
             }
-            let detailProfilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-            detailProfilePic = detailProfilePic ? normalizeProfilePicUrl(detailProfilePic) : '';
-            const avatarClickable = detailProfilePic && profilePicShowsImage(detailProfilePic);
-            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
+            const detailRawPic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+            const detailPicSrc = detailRawPic ? profilePicDisplaySrc(detailRawPic) : '';
+            const avatarClickable = !!(detailPicSrc && profilePicShowsImage(detailRawPic));
+            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailPicSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
             const avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
-            if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailProfilePic) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
+            if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailPicSrc) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             const res = await apiFetch('/api/customers/' + custId + '/conversations');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
@@ -6758,15 +6805,15 @@
         function updateCustomerModalAvatarPreview(url) {
             const el = document.getElementById('customerModalAvatarPreview');
             if (!el) return;
-            let u = (url || '').trim();
-            u = u ? normalizeProfilePicUrl(u) : '';
-            if (u && profilePicShowsImage(u)) {
+            const raw = (url || '').trim();
+            const disp = raw ? profilePicDisplaySrc(raw) : '';
+            if (disp && profilePicShowsImage(raw)) {
                 const img = new Image();
                 img.referrerPolicy = 'no-referrer';
                 img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
                 img.onload = function() { el.innerHTML = ''; el.appendChild(img); };
                 img.onerror = function() { el.textContent = '?'; };
-                img.src = u;
+                img.src = disp;
             } else {
                 el.innerHTML = ''; el.textContent = '?';
             }
@@ -6959,8 +7006,9 @@
             const setAvatar = function(el) {
                 if (!el) return;
                 el.classList.remove('avatar-img-failed');
-                var avatarUrl = normalizeProfilePicUrl((u.avatar || '').trim());
-                if (avatarUrl && profilePicShowsImage(u.avatar)) {
+                var rawAv = (u.avatar || '').trim();
+                var avatarUrl = rawAv ? profilePicDisplaySrc(rawAv) : '';
+                if (avatarUrl && profilePicShowsImage(rawAv)) {
                     const img = document.createElement('img');
                     img.src = avatarUrl;
                     img.alt = '';

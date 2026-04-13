@@ -881,8 +881,9 @@
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
                 const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
                 let profilePic = rawPic ? normalizeProfilePicUrl(rawPic) : '';
+                const picSrc = rawPic ? profilePicDisplaySrc(rawPic) : '';
                 const canShowImg = !isGroup && rawPic && profilePicShowsImage(rawPic);
-                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg ? '<img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
+                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg && picSrc ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
                 let assigneeMetaSuffix = '';
                 if (assigneeName) {
@@ -998,7 +999,7 @@
             }
             if (avatarEl) {
                 const rawOpenPic = (profilePic || '').trim();
-                let pic = rawOpenPic ? normalizeProfilePicUrl(rawOpenPic) : '';
+                let pic = rawOpenPic ? profilePicDisplaySrc(rawOpenPic) : '';
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
                 if (pic && profilePicShowsImage(rawOpenPic)) {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
@@ -1036,10 +1037,10 @@
                 const d = res.data;
                 const custPicRaw = d.customer && d.customer.profilePic ? String(d.customer.profilePic).trim() : '';
                 if (avatarEl && custPicRaw && !currentConvIsGroup) {
-                    const picNorm = normalizeProfilePicUrl(custPicRaw);
-                    if (picNorm && profilePicShowsImage(custPicRaw)) {
+                    const picDisp = profilePicDisplaySrc(custPicRaw);
+                    if (picDisp && profilePicShowsImage(custPicRaw)) {
                         const initialH = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
-                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picNorm) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
+                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picDisp) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
                     }
                 }
                 if (!barEl || !badgesEl) {
@@ -1180,7 +1181,8 @@
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 let profilePic = rawPicNc ? normalizeProfilePicUrl(rawPicNc) : '';
-                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const picSrcNc = rawPicNc ? profilePicDisplaySrc(rawPicNc) : '';
+                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
@@ -1393,9 +1395,23 @@
                     const md = m.mediaData;
                     if (md.url && String(md.url).trim()) {
                         const rawUrl = String(md.url).trim();
-                        const mediaBase = (rawUrl.startsWith('http')) ? '' : (window.location.origin || baseUrl);
-                        mediaUrl = rawUrl.startsWith('http') ? rawUrl : (mediaBase + (rawUrl.startsWith('/') ? '' : '/') + rawUrl);
-                        mediaUrl = ensureHttpsUrl(mediaUrl);
+                        if (rawUrl.indexOf('data:') === 0 || rawUrl.indexOf('blob:') === 0) {
+                            mediaUrl = rawUrl;
+                        } else if (rawUrl.indexOf('//') === 0) {
+                            mediaUrl = ensureHttpsUrl('https:' + rawUrl);
+                        } else if (/^https?:\/\//i.test(rawUrl)) {
+                            mediaUrl = ensureHttpsUrl(rawUrl);
+                        } else {
+                            const slashIdx = rawUrl.indexOf('/');
+                            const hostPart = slashIdx >= 0 ? rawUrl.slice(0, slashIdx) : rawUrl;
+                            if (typeof looksLikeSchemelessHttpHost === 'function' && hostPart && looksLikeSchemelessHttpHost(hostPart)) {
+                                mediaUrl = ensureHttpsUrl('https://' + rawUrl.replace(/^\/+/, ''));
+                            } else {
+                                const mediaBase = window.location.origin || baseUrl;
+                                mediaUrl = mediaBase + (rawUrl.startsWith('/') ? '' : '/') + rawUrl;
+                                mediaUrl = ensureHttpsUrl(mediaUrl);
+                            }
+                        }
                     } else if (md.data && (inferMediaType(m) === 'image' || (md.mimetype || '').toLowerCase().indexOf('image/') === 0)) {
                         const mime = (md.mimetype || 'image/jpeg').split(';')[0].trim();
                         mediaUrl = 'data:' + mime + ';base64,' + md.data;
@@ -2330,11 +2346,12 @@
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
                 const rawPicCust = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 let profilePic = rawPicCust ? normalizeProfilePicUrl(rawPicCust) : '';
-                const hasCustPic = !!(rawPicCust && profilePicShowsImage(rawPicCust));
+                const picSrcCust = rawPicCust ? profilePicDisplaySrc(rawPicCust) : '';
+                const hasCustPic = !!(rawPicCust && profilePicShowsImage(rawPicCust) && picSrcCust);
                 const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
                 const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
                 const avatarInner = hasCustPic
-                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(profilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">'
+                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(picSrcCust) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">'
                     : '<span class="customer-card-avatar-letter">' + escapeHtml(initial) + '</span>';
                 const avatarHtml = '<div class="' + avClass + '"' + avStyle + '>' + avatarInner + '</div>';
                 const statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');

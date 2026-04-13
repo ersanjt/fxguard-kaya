@@ -19,12 +19,12 @@
                     }
                 }, 50);
             }
-            let detailProfilePic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-            detailProfilePic = detailProfilePic ? normalizeProfilePicUrl(detailProfilePic) : '';
-            const avatarClickable = detailProfilePic && profilePicShowsImage(detailProfilePic);
-            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailProfilePic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
+            const detailRawPic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+            const detailPicSrc = detailRawPic ? profilePicDisplaySrc(detailRawPic) : '';
+            const avatarClickable = !!(detailPicSrc && profilePicShowsImage(detailRawPic));
+            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailPicSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
             const avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
-            if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailProfilePic) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
+            if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailPicSrc) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             const res = await apiFetch('/api/customers/' + custId + '/conversations');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
@@ -437,15 +437,15 @@
         function updateCustomerModalAvatarPreview(url) {
             const el = document.getElementById('customerModalAvatarPreview');
             if (!el) return;
-            let u = (url || '').trim();
-            u = u ? normalizeProfilePicUrl(u) : '';
-            if (u && profilePicShowsImage(u)) {
+            const raw = (url || '').trim();
+            const disp = raw ? profilePicDisplaySrc(raw) : '';
+            if (disp && profilePicShowsImage(raw)) {
                 const img = new Image();
                 img.referrerPolicy = 'no-referrer';
                 img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover';
                 img.onload = function() { el.innerHTML = ''; el.appendChild(img); };
                 img.onerror = function() { el.textContent = '?'; };
-                img.src = u;
+                img.src = disp;
             } else {
                 el.innerHTML = ''; el.textContent = '?';
             }
@@ -638,8 +638,9 @@
             const setAvatar = function(el) {
                 if (!el) return;
                 el.classList.remove('avatar-img-failed');
-                var avatarUrl = normalizeProfilePicUrl((u.avatar || '').trim());
-                if (avatarUrl && profilePicShowsImage(u.avatar)) {
+                var rawAv = (u.avatar || '').trim();
+                var avatarUrl = rawAv ? profilePicDisplaySrc(rawAv) : '';
+                if (avatarUrl && profilePicShowsImage(rawAv)) {
                     const img = document.createElement('img');
                     img.src = avatarUrl;
                     img.alt = '';

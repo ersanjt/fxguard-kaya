@@ -60,6 +60,7 @@ fun ConversationsScreen(
     val selectedConversationId by viewModel.selectedConversationId.collectAsState()
     val searchText by viewModel.searchText.collectAsState()
     val statusFilter by viewModel.statusFilter.collectAsState()
+    val serverRoot by viewModel.serverRoot.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.load() }
 
@@ -160,6 +161,7 @@ fun ConversationsScreen(
                 items(conversations, key = { it.id }) { conv ->
                     ConversationRow(
                         conversation = conv,
+                        serverRoot = serverRoot,
                         onClick = { viewModel.openConversation(conv.id) }
                     )
                 }
@@ -186,12 +188,16 @@ fun ConversationsScreen(
 @Composable
 private fun ConversationRow(
     conversation: Conversation,
+    serverRoot: String,
     onClick: () -> Unit
 ) {
     val preview = conversation.lastMessagePreview?.let { if (it.length > 56) it.take(56) + "…" else it }
         ?: (conversation.department?.name ?: conversation.status)
     val timeStr = conversation.lastMessageAt?.takeIf { it.length >= 16 }?.drop(11)?.take(5)
     val letter = (conversation.displayName.firstOrNull()?.uppercaseChar() ?: "?").toString()
+    val avatarUrl = if (!conversation.isGroup) {
+        MediaUrlResolve.profilePicDisplayUrl(conversation.customer?.profilePic, serverRoot)
+    } else null
 
     Column(modifier = Modifier.clickable(onClick = onClick)) {
         WaChatThreadRow(
@@ -200,7 +206,8 @@ private fun ConversationRow(
             timeOrMeta = timeStr,
             avatarLetter = letter,
             trailingEmoji = if (conversation.isGroup) "👥" else null,
-            unreadCount = conversation.unreadCount
+            unreadCount = conversation.unreadCount,
+            avatarImageUrl = avatarUrl
         )
         WaChatRowDivider()
     }

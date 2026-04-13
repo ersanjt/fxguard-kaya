@@ -39,6 +39,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
@@ -170,7 +174,9 @@ fun WaChatThreadRow(
     avatarLetter: String,
     modifier: Modifier = Modifier,
     unreadCount: Int = 0,
-    trailingEmoji: String? = null
+    trailingEmoji: String? = null,
+    /** آدرس مطلق برای Coil (مثلاً پروکسی `/api/profile-image`)؛ اگر خالی باشد فقط حرف نمایش داده می‌شود */
+    avatarImageUrl: String? = null
 ) {
     Row(
         modifier = modifier
@@ -178,6 +184,7 @@ fun WaChatThreadRow(
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        var imageFailed by remember(avatarImageUrl) { mutableStateOf(false) }
         Box(
             modifier = Modifier
                 .size(52.dp)
@@ -195,6 +202,17 @@ fun WaChatThreadRow(
                     text = avatarLetter.uppercase(),
                     style = MaterialTheme.typography.titleMedium,
                     color = ChatWhatsAppStyle.avatarGlyph
+                )
+            }
+            if (!avatarImageUrl.isNullOrBlank() && !imageFailed) {
+                AsyncImage(
+                    model = avatarImageUrl,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .matchParentSize()
+                        .clip(CircleShape),
+                    contentScale = ContentScale.Crop,
+                    onError = { imageFailed = true }
                 )
             }
         }

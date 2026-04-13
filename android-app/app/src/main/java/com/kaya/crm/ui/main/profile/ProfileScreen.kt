@@ -136,8 +136,6 @@ fun ProfileScreen(
     val baseForLinks = savedServerUrl?.trim()?.takeIf { it.isNotBlank() } ?: ApiConfig.BASE_URL
     val iosUrl = iosUrlRaw.takeIf { it.isNotBlank() }?.let { resolveAppLink(it, baseForLinks) }.orEmpty()
     val androidUrl = androidUrlRaw.takeIf { it.isNotBlank() }?.let { resolveAppLink(it, baseForLinks) }.orEmpty()
-    val baseApi = (savedServerUrl?.trim()?.takeIf { it.isNotBlank() } ?: ApiConfig.BASE_URL)
-        .trimEnd('/') + "/api/"
 
     val pickImage = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -236,9 +234,12 @@ fun ProfileScreen(
                 }
 
                 user?.let { u ->
+                    val serverRoot = baseForLinks.trimEnd('/')
                     ProfileHeaderCard(
                         u = u,
-                        avatarUrlResolved = MediaUrlResolve.absoluteFromApiPath(u.avatar, baseApi)
+                        avatarUrlResolved = u.avatar?.let { raw ->
+                            MediaUrlResolve.profilePicDisplayUrl(raw, serverRoot)
+                        }
                     )
                     Spacer(modifier = Modifier.height(16.dp))
 

@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,12 +23,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kaya.crm.ui.components.WaChatRowDivider
 import com.kaya.crm.ui.components.WaChatSheetHeader
 import com.kaya.crm.ui.components.WaChatThreadRow
+import com.kaya.crm.ui.util.MediaUrlResolve
 import com.kaya.crm.data.models.CustomerDetail
 import com.kaya.crm.data.models.CustomerItem
 
@@ -50,6 +55,7 @@ fun CustomersScreen(
     val detailLoading by viewModel.detailLoading.collectAsState()
     val detailError by viewModel.detailError.collectAsState()
     val linkedConversationId by viewModel.linkedConversationId.collectAsState()
+    val serverRoot by viewModel.serverRoot.collectAsState()
 
     LaunchedEffect(Unit) { viewModel.load(reset = true) }
 
@@ -144,6 +150,7 @@ fun CustomersScreen(
                 items(customers, key = { it.id }) { customer ->
                     CustomerListRow(
                         customer = customer,
+                        serverRoot = serverRoot,
                         onClick = { viewModel.openCustomer(customer) }
                     )
                 }
@@ -180,6 +187,7 @@ fun CustomersScreen(
             detailLoading = detailLoading,
             detailError = detailError,
             linkedConversationId = linkedConversationId,
+            serverRoot = serverRoot,
             onDismiss = { viewModel.closeCustomerDetail() },
             onOpenConversation = onOpenConversation,
             onClearDetailError = { viewModel.clearDetailError() }
@@ -190,6 +198,7 @@ fun CustomersScreen(
 @Composable
 private fun CustomerListRow(
     customer: CustomerItem,
+    serverRoot: String,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -208,6 +217,7 @@ private fun CustomerListRow(
         }
     }.ifBlank { customer.phone ?: customer.email ?: "—" }.take(58)
     val initial = (title.firstOrNull() ?: '?').toString()
+    val avatarUrl = MediaUrlResolve.profilePicDisplayUrl(customer.profilePic, serverRoot)
 
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -222,7 +232,8 @@ private fun CustomerListRow(
                 title = title,
                 preview = preview,
                 timeOrMeta = customer.status?.takeIf { it.isNotBlank() },
-                avatarLetter = initial
+                avatarLetter = initial,
+                avatarImageUrl = avatarUrl
             )
             WaChatRowDivider()
         }
@@ -249,6 +260,7 @@ private fun CustomerDetailSheet(
     detailLoading: Boolean,
     detailError: String?,
     linkedConversationId: String?,
+    serverRoot: String,
     onDismiss: () -> Unit,
     onOpenConversation: (String) -> Unit,
     onClearDetailError: () -> Unit
@@ -298,6 +310,23 @@ private fun CustomerDetailSheet(
                         CircularProgressIndicator()
                     }
                 } else if (detail != null) {
+                    val avatarDisp = MediaUrlResolve.profilePicDisplayUrl(detail.profilePic, serverRoot)
+                    if (!avatarDisp.isNullOrBlank()) {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            AsyncImage(
+                                model = avatarDisp,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(96.dp)
+                                    .clip(CircleShape),
+                                contentScale = ContentScale.Crop
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
                     DetailFields(detail = detail)
                     detail.phone?.takeIf { it.isNotBlank() }?.let { phone ->
                         Spacer(modifier = Modifier.height(12.dp))

@@ -263,6 +263,7 @@ data class CustomerItem(
     @SerializedName("phone") val phone: String?,
     @SerializedName("email") val email: String? = null,
     @SerializedName("status") val status: String? = null,
+    @SerializedName("profilePic") val profilePic: String? = null,
     @SerializedName("lastContactAt") val lastContactAt: String? = null,
     @SerializedName("lastOpenConv") val lastOpenConv: LastOpenConversationBrief? = null
 )

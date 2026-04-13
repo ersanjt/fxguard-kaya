@@ -123,6 +123,18 @@ async function runTests() {
         assert(!r.body.password, 'Password must not be in /me response');
     });
 
+    await test('GET /api/profile-image without auth returns 401', async () => {
+        const r = await req.get('/api/profile-image?url=' + encodeURIComponent('https://pps.whatsapp.net/v/t61/test'));
+        assert.strictEqual(r.status, 401);
+    });
+
+    await test('GET /api/profile-image with token rejects non-CDN host', async () => {
+        const r = await req.get('/api/profile-image?url=' + encodeURIComponent('https://example.com/pic.jpg'))
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 400);
+        assert(r.body.error, 'Expected error body');
+    });
+
     // ── Auth: Presence ───────────────────────────────────────────────────────
     section('Auth — Presence');
 
