@@ -12,14 +12,21 @@ import dagger.hilt.android.HiltAndroidApp
 @HiltAndroidApp
 class KayaCrmApp : Application(), ImageLoaderFactory {
     override fun newImageLoader(): ImageLoader {
-        val okHttp = EntryPointAccessors.fromApplication(
-            applicationContext,
-            CoilOkHttpEntryPoint::class.java
-        ).okHttpClient()
-        return ImageLoader.Builder(applicationContext)
-            .okHttpClient(okHttp)
-            .crossfade(true)
-            .build()
+        return runCatching {
+            val okHttp = EntryPointAccessors.fromApplication(
+                applicationContext,
+                CoilOkHttpEntryPoint::class.java
+            ).okHttpClient()
+            ImageLoader.Builder(applicationContext)
+                .okHttpClient(okHttp)
+                .crossfade(true)
+                .build()
+        }.getOrElse {
+            // Fallback: do not crash app startup if DI/entrypoint fails on some devices.
+            ImageLoader.Builder(applicationContext)
+                .crossfade(true)
+                .build()
+        }
     }
 
     override fun onCreate() {
