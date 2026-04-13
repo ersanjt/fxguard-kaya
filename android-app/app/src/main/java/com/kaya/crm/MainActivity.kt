@@ -26,11 +26,12 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var authPreferences: AuthPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        val localeTag = runBlocking(Dispatchers.IO) { authPreferences.getAppLocale() }
-        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(localeTag))
+        // splash قبل از super؛ تزریق Hilt معمولاً در زنجیرهٔ super.onCreate انجام می‌شود — قبل از آن به lateinit دست نزنید
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val localeTag = runBlocking(Dispatchers.IO) { authPreferences.getAppLocale() }
+        AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(localeTag))
         setContent {
             KayaCrmTheme {
                 Surface(

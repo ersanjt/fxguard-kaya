@@ -14,8 +14,8 @@ android {
         applicationId = "com.kaya.crm"
         minSdk = 26
         targetSdk = 36
-        versionCode = 12
-        versionName = "1.4.7"
+        versionCode = 13
+        versionName = "1.4.8"
         buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
     }
 
