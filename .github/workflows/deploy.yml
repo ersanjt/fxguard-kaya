@@ -6,9 +6,11 @@ on:
       - master
   workflow_dispatch:
 
+# لغو run در حال اجرا با هر push جدید = دیپلوی نیمه‌تمام و زمان‌های ~۳۰–۴۰s گمراه‌کننده.
+# false: هر دیپلوی جدید در صف می‌ماند تا قبلی تمام شود (امن‌تر برای سرور).
 concurrency:
   group: deploy-kaya-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
