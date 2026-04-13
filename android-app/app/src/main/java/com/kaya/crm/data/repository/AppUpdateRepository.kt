@@ -51,6 +51,9 @@ class AppUpdateRepository @Inject constructor(
         onProgress: (Int) -> Unit
     ): Result<File> = withContext(Dispatchers.IO) {
         runCatching {
+            if (apkUrl.isBlank() || !apkUrl.startsWith("https://", ignoreCase = true)) {
+                error("invalid apkUrl")
+            }
             val dir = File(appContext.filesDir, "updates").apply { mkdirs() }
             val outFile = File(dir, "kaya-crm-update.apk")
             val request = Request.Builder().url(apkUrl).get().build()

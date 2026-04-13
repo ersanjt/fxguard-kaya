@@ -78,6 +78,8 @@ jobs:
         working-directory: android-app
     env:
       GRADLE_OPTS: "-Xmx3584m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
+      # اختیاری: اگر در GitHub Secrets تنظیم شود، به‌جای پیش‌فرض «android» برای keystore استفاده می‌شود
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4

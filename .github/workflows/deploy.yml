@@ -62,6 +62,7 @@ jobs:
         env:
           # حافظهٔ بیشتر برای Compose/KSP روی runner (گرادل پیش‌فرض ۲۰۴۸م گاهی OOM می‌دهد)
           GRADLE_OPTS: "-Xmx3584m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon --stacktrace
 
       - name: Verify release APK exists

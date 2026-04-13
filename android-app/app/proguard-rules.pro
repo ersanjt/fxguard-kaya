@@ -10,6 +10,24 @@
 -dontwarn retrofit2.KotlinExtensions
 -dontwarn retrofit2.KotlinExtensions$*
 
-# Gson — نگه‌داشت فیلدهای مدل‌های API هنگام فعال شدن R8
+# Gson — مدل‌های API و هر کلاسی که با Gson دی‌سریال می‌شود
 -keepattributes Signature
--keepclassmembers class com.kaya.crm.data.models.** { <fields>; }
+-keepattributes *Annotation*
+-keep class com.kaya.crm.data.models.** { *; }
+
+# Gson: کلاس خصوصی داخل ApiErrorParser (reflection)
+-keep class com.kaya.crm.data.util.ApiErrorParser$ErrorResponse { *; }
+-keepclassmembers class com.kaya.crm.data.util.ApiErrorParser$ErrorResponse { *; }
+
+# OkHttp / Conscrypt (R8)
+-dontwarn okhttp3.internal.platform.**
+-dontwarn org.conscrypt.**
+-dontwarn org.bouncycastle.**
+-dontwarn org.openjsse.**
+
+# Kotlin
+-keep class kotlin.Metadata { *; }
+
+# BuildConfig؛ بقیهٔ Hilt/Dagger از consumer rules وابستگی‌ها merge می‌شود
+-keep class com.kaya.crm.BuildConfig { *; }
+-keep @dagger.hilt.android.lifecycle.HiltViewModel class * { *; }

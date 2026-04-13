@@ -14,29 +14,35 @@ android {
         applicationId = "com.kaya.crm"
         minSdk = 26
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.4.5"
+        versionCode = 11
+        versionName = "1.4.6"
         buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
     }
 
     signingConfigs {
         // اولویت: keystore ثابت ریشهٔ پروژه اندروید (GitHub Actions + امضای یکسان هر OTA)
         // وگرنه ~/.android/debug.keystore برای بیلد لوکال
+        // رمز: ANDROID_KEYSTORE_PASSWORD یا androidKeystorePassword در gradle.properties — وگرنه پیش‌فرض android (همان CI فعلی)
         create("release") {
             val ciKeystore = rootProject.file("ci-android-release.keystore")
             val debugKeystore = File(System.getProperty("user.home"), ".android/debug.keystore")
+            val keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: (project.findProperty("androidKeystorePassword") as? String)?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+                ?: "android"
             when {
                 ciKeystore.isFile -> {
                     storeFile = ciKeystore
-                    storePassword = "android"
+                    storePassword = keystorePassword
                     keyAlias = "androiddebugkey"
-                    keyPassword = "android"
+                    keyPassword = keystorePassword
                 }
                 debugKeystore.exists() -> {
                     storeFile = debugKeystore
-                    storePassword = "android"
+                    storePassword = keystorePassword
                     keyAlias = "androiddebugkey"
-                    keyPassword = "android"
+                    keyPassword = keystorePassword
                 }
             }
         }
@@ -51,7 +57,8 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
         }
         release {
-            isMinifyEnabled = false  // برای تست نصب راحت‌تر؛ بعداً true کنید
+            isMinifyEnabled = true
+            isShrinkResources = true
             isDebuggable = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
