@@ -1,6 +1,8 @@
 package com.kaya.crm.ui.theme
 
 import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
@@ -8,8 +10,16 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
+
+private tailrec fun findActivity(context: Context): Activity? =
+    when (context) {
+        is Activity -> context
+        is ContextWrapper -> findActivity(context.baseContext)
+        else -> null
+    }
 
 private val Primary = Color(0xFF075E54)
 private val PrimaryDark = Color(0xFF054D45)
@@ -58,10 +68,11 @@ fun KayaCrmTheme(
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
     val view = LocalView.current
-    if (!view.isInEditMode) {
+    val activity = findActivity(LocalContext.current)
+    if (activity != null && !view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = !darkTheme
+            val w = activity.window
+            WindowCompat.getInsetsController(w, w.decorView).isAppearanceLightStatusBars = !darkTheme
         }
     }
     MaterialTheme(
