@@ -14,8 +14,8 @@ android {
         applicationId = "com.kaya.crm"
         minSdk = 26
         targetSdk = 36
-        versionCode = 15
-        versionName = "1.5.0"
+        versionCode = 16
+        versionName = "1.5.1"
         buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
     }
 
@@ -57,15 +57,10 @@ android {
             buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
         }
         release {
-            isMinifyEnabled = true
-            // shrinkResources گاهی فونت/اسپلش را حذف می‌کند و اپ بلافاصله می‌میرد؛ R8 کد را همچنان فشرده می‌کند
+            // مثل نسخه‌های پایدار قبلی: بدون R8/minify تا کرش release و رفتار متفاوت با debug از بین برود (حجم APK بیشتر).
+            isMinifyEnabled = false
             isShrinkResources = false
             isDebuggable = false
-            // proguard-android-optimize گاهی بایت‌کد را می‌شکند؛ نسخهٔ بدون optimize پایدارتر است
-            proguardFiles(
-                getDefaultProguardFile("proguard-android.txt"),
-                "proguard-rules.pro"
-            )
             signingConfig = signingConfigs.getByName("release")
         }
     }
