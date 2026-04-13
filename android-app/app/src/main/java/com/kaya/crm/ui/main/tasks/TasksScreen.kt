@@ -4,7 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,13 +21,14 @@ fun TasksScreen(viewModel: TasksViewModel = hiltViewModel()) {
 
     LaunchedEffect(Unit) { viewModel.load() }
 
-    if (error != null && tasks.isEmpty()) {
+    val err = error
+    if (err != null && tasks.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(error!!, color = MaterialTheme.colorScheme.error)
+                Text(err, color = MaterialTheme.colorScheme.error)
                 Spacer(modifier = Modifier.height(16.dp))
                 Button(onClick = { viewModel.clearError(); viewModel.load() }) { Text("تلاش مجدد") }
             }
@@ -59,7 +60,7 @@ private fun TaskItem(task: TaskItem) {
             modifier = Modifier.padding(16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(Icons.Default.Assignment, contentDescription = null)
+            Icon(Icons.AutoMirrored.Filled.Assignment, contentDescription = null)
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(

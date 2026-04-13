@@ -14,9 +14,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import com.kaya.crm.R
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 
 sealed interface AppUpdateUi {
@@ -38,7 +38,6 @@ class AppUpdateViewModel @Inject constructor(
     val ui: StateFlow<AppUpdateUi> = _ui.asStateFlow()
 
     private val fetchMutex = Mutex()
-    private val fetchRunning = AtomicBoolean(false)
     private var coldStartCheckDone = false
     private var lastFetchElapsedMs: Long = 0L
     private var resumeCheckJob: Job? = null
@@ -73,31 +72,31 @@ class AppUpdateViewModel @Inject constructor(
     }
 
     private suspend fun runFetch(showChecking: Boolean, forceManual: Boolean = false) {
-        if (!fetchRunning.compareAndSet(false, true)) return
-        try {
-            fetchMutex.withLock {
-                if (_ui.value is AppUpdateUi.Downloading) return@withLock
-                val skipped = authPreferences.getSkippedAndroidUpdateVersionCode()
-                if (showChecking) _ui.value = AppUpdateUi.Checking
-                val result = repository.fetchAvailableUpdate(skipped)
-                lastFetchElapsedMs = android.os.SystemClock.elapsedRealtime()
-                if (result.isSuccess) {
-                    val info = result.getOrNull()
-                    _ui.value = when {
-                        info != null -> AppUpdateUi.Available(info)
-                        forceManual -> AppUpdateUi.Error("نسخهٔ شما به‌روز است (${BuildConfig.VERSION_NAME})")
-                        else -> AppUpdateUi.Idle
-                    }
+        fetchMutex.withLock {
+            if (_ui.value is AppUpdateUi.Downloading) return@withLock
+            val skipped = authPreferences.getSkippedAndroidUpdateVersionCode()
+            if (showChecking) _ui.value = AppUpdateUi.Checking
+            val result = repository.fetchAvailableUpdate(skipped)
+            lastFetchElapsedMs = android.os.SystemClock.elapsedRealtime()
+            if (result.isSuccess) {
+                val info = result.getOrNull()
+                _ui.value = when {
+                    info != null -> AppUpdateUi.Available(info)
+                    forceManual -> AppUpdateUi.Error(
+                        appContext.getString(R.string.update_up_to_date, BuildConfig.VERSION_NAME)
+                    )
+                    else -> AppUpdateUi.Idle
+                }
+            } else {
+                _ui.value = if (forceManual) {
+                    AppUpdateUi.Error(
+                        result.exceptionOrNull()?.message
+                            ?: appContext.getString(R.string.update_fetch_error)
+                    )
                 } else {
-                    _ui.value = if (forceManual) {
-                        AppUpdateUi.Error(result.exceptionOrNull()?.message ?: "خطا در دریافت اطلاعات")
-                    } else {
-                        AppUpdateUi.Idle
-                    }
+                    AppUpdateUi.Idle
                 }
             }
-        } finally {
-            fetchRunning.set(false)
         }
     }
 
@@ -125,7 +124,9 @@ class AppUpdateViewModel @Inject constructor(
                 _ui.value = AppUpdateUi.Idle
                 AppUpdateInstaller.install(appContext, file)
             }.onFailure { e ->
-                _ui.value = AppUpdateUi.Error(e.message ?: "خطا در دانلود")
+                _ui.value = AppUpdateUi.Error(
+                    e.message ?: appContext.getString(R.string.update_download_error)
+                )
             }
         }
     }

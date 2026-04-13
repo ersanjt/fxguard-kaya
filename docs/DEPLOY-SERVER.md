@@ -197,9 +197,26 @@ pm2 save && pm2 startup
 
 ---
 
-## اگر دیپلوی GitHub Actions خطای «i/o timeout» داد
+## اگر دیپلوی GitHub Actions خطای «i/o timeout» یا «Connection timed out» داد
 
-وقتی در GitHub Actions خطای `dial tcp 92.205.58.83:22: i/o timeout` می‌بینید، یعنی رانر GitHub به پورت ۲۲ سرور شما وصل نمی‌شود (فایروال، یا سرور از IPهای GitHub در دسترس نیست). در این حالت می‌توانید **دیپلوی دستی** انجام دهید.
+وقتی در GitHub Actions یکی از این پیام‌ها را می‌بینید:
+
+- `dial tcp 92.205.58.83:22: i/o timeout` (مثلاً با اکشن‌های قدیمی‌تر)
+- `ssh: connect to host 92.205.58.83 port 22: Connection timed out` (OpenSSH روی runner)
+
+یعنی **رانر GitHub به پورت ۲۲ سرور شما نمی‌رسد** — معمولاً **فایروال** (روی سرور، پنل هاست، یا شبکهٔ میزبان) اتصال ورودی از اینترنت یا از **IPهای GitHub Actions** را مسدود کرده است. این موضوع با کد مخزن حل نمی‌شود؛ باید روی شبکه/هاست باز شود. تا آن زمان می‌توانید **دیپلوی دستی** انجام دهید.
+
+### لیست IPهای GitHub Actions (برای allowlist فایروال)
+
+آدرس زیر را باز کنید و آرایهٔ **`actions`** را در فایروال خود allow کنید (لیست گاهی به‌روز می‌شود):
+
+**https://api.github.com/meta**
+
+مثال گرفتن فقط بلوک `actions` با `jq`:
+
+```bash
+curl -sS https://api.github.com/meta | jq -r '.actions[]'
+```
 
 ### از کامپیوتر خود (با SSH به سرور)
 

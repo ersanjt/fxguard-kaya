@@ -25,6 +25,8 @@ class AuthPreferences @Inject constructor(
     private val BASE_URL = stringPreferencesKey("base_url")
     /** نسخهٔ سروری که کاربر «بعداً» زده — برای آپدیت اختیاری دوباره نپرس تا نسخهٔ جدیدتر بیاید */
     private val SKIPPED_ANDROID_UPDATE_VC = intPreferencesKey("skipped_android_update_vc")
+    /** زبان رابط کاربری: `en` (پیش‌فرض) یا `fa` — با AppCompatDelegate هم‌خوان */
+    private val APP_LOCALE = stringPreferencesKey("app_locale")
 
     val token: Flow<String?> = context.dataStore.data.map { it[TOKEN] }
     val user: Flow<UserResponse?> = context.dataStore.data.map { json ->
@@ -34,6 +36,20 @@ class AuthPreferences @Inject constructor(
 
     val skippedAndroidUpdateVersionCode: Flow<Int> =
         context.dataStore.data.map { it[SKIPPED_ANDROID_UPDATE_VC] ?: 0 }
+
+    val appLocale: Flow<String> = context.dataStore.data.map { prefs ->
+        when (prefs[APP_LOCALE]) {
+            "fa" -> "fa"
+            else -> "en"
+        }
+    }
+
+    suspend fun setAppLocale(tag: String) {
+        val t = if (tag == "fa") "fa" else "en"
+        context.dataStore.edit { it[APP_LOCALE] = t }
+    }
+
+    suspend fun getAppLocale(): String = appLocale.first()
 
     suspend fun setToken(token: String) {
         context.dataStore.edit { it[TOKEN] = token }
@@ -48,7 +64,13 @@ class AuthPreferences @Inject constructor(
     }
 
     suspend fun clear() {
-        context.dataStore.edit { it.clear() }
+        context.dataStore.edit { prefs ->
+            val locale = prefs[APP_LOCALE]
+            val skipped = prefs[SKIPPED_ANDROID_UPDATE_VC]
+            prefs.clear()
+            locale?.let { prefs[APP_LOCALE] = it }
+            skipped?.let { prefs[SKIPPED_ANDROID_UPDATE_VC] = it }
+        }
     }
 
     suspend fun getToken(): String? = token.first()

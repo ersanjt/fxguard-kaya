@@ -80,11 +80,12 @@ jobs:
           cp -f android-app/app/build/outputs/apk/release/app-release.apk ./app-release.apk
           ls -lh ./app-release.apk
 
-      # انتقال با OpenSSH: مقصد دقیقاً همان مسیری است که backend و OTA انتظار دارند (بدون tar/ساختار اضافه)
+      # انتقال با OpenSSH: مقصد دقیقاً همان مسیری است که backend و OTA انتظار دارند.
+      # اگر «Connection timed out» دیدید = پورت ۲۲ از IPهای GitHub به سرور بسته است (فایروال/هاست) — نه باگ اسکریپت؛ docs/DEPLOY-SERVER.md
       - name: Upload APK to server (native scp)
         env:
           DEPLOY_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: |
           set -euo pipefail
           REMOTE_USER="fxguard"
@@ -101,10 +102,40 @@ jobs:
           KEY="${RUNNER_TEMP}/kaya_deploy_ci"
           printf '%s\n' "$DEPLOY_SSH_KEY" > "$KEY"
           chmod 600 "$KEY"
-          SSH_OPTS=(-i "$KEY" -o BatchMode=yes -o StrictHostKeyChecking=accept-new -o ConnectTimeout=30)
-          ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" "mkdir -p '${REMOTE_DIR}'"
-          scp "${SSH_OPTS[@]}" "$LOCAL_APK" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}"
+          SSH_OPTS=(
+            -i "$KEY"
+            -o BatchMode=yes
+            -o StrictHostKeyChecking=accept-new
+            -o ConnectTimeout=60
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=4
+          )
+          ok=0
+          for attempt in 1 2 3; do
+            echo "::notice::SSH/SCP به ${REMOTE_HOST}:22 — تلاش ${attempt}/3"
+            set +e
+            ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" "mkdir -p '${REMOTE_DIR}'"
+            s1=$?
+            if [ "$s1" -eq 0 ]; then
+              scp "${SSH_OPTS[@]}" "$LOCAL_APK" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}"
+              s2=$?
+            else
+              s2=1
+            fi
+            set -euo pipefail
+            if [ "$s1" -eq 0 ] && [ "$s2" -eq 0 ]; then
+              ok=1
+              break
+            fi
+            echo "::warning::تلاش ${attempt} ناموفق (ssh=$s1 scp=$s2). اگر شبکه ناپایدار است ۴۵ ثانیه بعد دوباره…"
+            if [ "$attempt" -lt 3 ]; then sleep 45; fi
+          done
           rm -f "$KEY"
+          if [ "$ok" != "1" ]; then
+            echo "::error::اتصال SSH/SCP به ${REMOTE_HOST}:22 برقرار نشد (timeout یا رد اتصال)."
+            echo "::error::فایروال/هاست باید ورودی TCP 22 را برای محدودهٔ IPهای GitHub Actions باز کند. راهنما: docs/DEPLOY-SERVER.md — لیست IP: https://api.github.com/meta (کلید actions)"
+            exit 255
+          fi
 
       - name: Verify APK on server
         uses: appleboy/ssh-action@v1.2.5

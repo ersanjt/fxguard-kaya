@@ -11,7 +11,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.kaya.crm.R
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.kaya.crm.ui.main.conversations.ConversationsScreen
 import com.kaya.crm.ui.main.customers.CustomersScreen
@@ -20,20 +22,22 @@ import com.kaya.crm.ui.main.internalchat.InternalChatScreen
 import com.kaya.crm.ui.main.permissions.PanelPermissions
 import com.kaya.crm.ui.main.profile.ProfileScreen
 import com.kaya.crm.ui.main.tickets.TicketsScreen
+import com.kaya.crm.update.AppUpdateViewModel
 
-enum class MainTab(val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    DASHBOARD("داشبورد", Icons.Default.Dashboard),
-    CONVERSATIONS("مکالمات", Icons.AutoMirrored.Filled.Chat),
-    CUSTOMERS("مشتریان", Icons.Default.People),
-    TEAM("چت داخلی", Icons.Default.Forum),
-    TICKETS("تیکت‌ها", Icons.Default.ConfirmationNumber),
-    PROFILE("پروفایل", Icons.Default.Person)
+enum class MainTab(val titleRes: Int, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
+    DASHBOARD(R.string.tab_dashboard, Icons.Default.Dashboard),
+    CONVERSATIONS(R.string.tab_conversations, Icons.AutoMirrored.Filled.Chat),
+    CUSTOMERS(R.string.tab_customers, Icons.Default.People),
+    TEAM(R.string.tab_team, Icons.Default.Forum),
+    TICKETS(R.string.tab_tickets, Icons.Default.ConfirmationNumber),
+    PROFILE(R.string.tab_profile, Icons.Default.Person)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     onLogout: () -> Unit,
+    appUpdateViewModel: AppUpdateViewModel,
     mainViewModel: MainViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -83,14 +87,7 @@ fun MainScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    val tabShort = when (selectedTab) {
-                        MainTab.DASHBOARD -> "داشبورد"
-                        MainTab.CONVERSATIONS -> "مکالمات"
-                        MainTab.CUSTOMERS -> "مشتریان"
-                        MainTab.TEAM -> "چت داخلی"
-                        MainTab.TICKETS -> "تیکت‌ها"
-                        MainTab.PROFILE -> "پروفایل"
-                    }
+                    val tabShort = stringResource(selectedTab.titleRes)
                     val org = organizationTitle?.trim()?.takeIf { it.isNotBlank() }
                     Column {
                         Text(
@@ -122,8 +119,13 @@ fun MainScreen(
                     NavigationBarItem(
                         selected = selectedTab == tab,
                         onClick = { selectedTab = tab },
-                        icon = { Icon(tab.icon, contentDescription = tab.title) },
-                        label = { Text(tab.title, maxLines = 1) },
+                        icon = {
+                            Icon(
+                                tab.icon,
+                                contentDescription = stringResource(tab.titleRes)
+                            )
+                        },
+                        label = { Text(stringResource(tab.titleRes), maxLines = 1) },
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = MaterialTheme.colorScheme.primary,
                             selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -165,7 +167,8 @@ fun MainScreen(
                 MainTab.TICKETS -> TicketsScreen()
                 MainTab.PROFILE -> ProfileScreen(
                     hiddenPanelPages = hiddenPanelPages,
-                    onLogout = onLogout
+                    onLogout = onLogout,
+                    appUpdateViewModel = appUpdateViewModel
                 )
             }
         }

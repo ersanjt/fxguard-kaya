@@ -9,3 +9,7 @@
 -dontwarn kotlin.Unit
 -dontwarn retrofit2.KotlinExtensions
 -dontwarn retrofit2.KotlinExtensions$*
+
+# Gson — نگه‌داشت فیلدهای مدل‌های API هنگام فعال شدن R8
+-keepattributes Signature
+-keepclassmembers class com.kaya.crm.data.models.** { <fields>; }

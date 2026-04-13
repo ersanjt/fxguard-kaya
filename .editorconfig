@@ -12,5 +12,16 @@ indent_size = 4
 [*.{json,yml,yaml}]
 indent_size = 2
 
+# Kotlin / Gradle (Android)
+[*.{kt,kts}]
+indent_size = 4
+
+[*.gradle]
+indent_size = 4
+
+# Shell / env
+[*.sh]
+indent_size = 2
+
 [*.md]
 trim_trailing_whitespace = false

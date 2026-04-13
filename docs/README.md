@@ -2,7 +2,8 @@
 
 | سند | موضوع |
 |-----|--------|
-| [PROJECT-STANDARDS.md](PROJECT-STANDARDS.md) | ساختار مخزن، دستورات lint/test، قرارداد کد |
+| [../AGENTS.md](../AGENTS.md) | راهنمای کوتاه برای مشارکت‌کنندگان و ابزارهای AI (Cursor) |
+| [PROJECT-STANDARDS.md](PROJECT-STANDARDS.md) | ساختار مخزن، استانداردهای مهندسی، دستورات lint/test/build، CI |
 | [TECH-AND-TEAM-OVERVIEW.md](TECH-AND-TEAM-OVERVIEW.md) | تکنولوژی‌ها و تیم (متن) |
 | [tech-and-team-overview.html](tech-and-team-overview.html) | همان نمای کلی به‌صورت صفحهٔ HTML |
 | [DASHBOARD-REFACTOR.md](DASHBOARD-REFACTOR.md) | تاریخچهٔ سبک‌سازی داشبورد و i18n |

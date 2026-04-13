@@ -13,6 +13,7 @@
         let tickerTimeInterval = null;
         let presenceInterval = null;
         let staffActivityInterval = null;
+        let staffActivityAttendanceInitDone = false;
         let socket = null;
         let loadConversationsDebounceTimer = null;
         function debouncedLoadConversations(ms) {

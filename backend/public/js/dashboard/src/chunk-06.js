@@ -980,7 +980,7 @@
             }
             if (d.users && d.users.length) {
                 html += '<h3 class="sup-section-title">' + t('sup_by_user') + '</h3><div class="sup-user-cards">';
-                d.users.forEach(function(u) { const bn = (u.branch && u.branch.name) ? u.branch.name : ''; html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '�') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div>' + (function() { const u2 = u; const extras = []; if (u2.avgResponseTimeMinutes != null) extras.push((LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + u2.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')); if (u2.avgRating != null) extras.push((LANG === 'fa' ? 'رضایت: ' : 'Rating: ') + u2.avgRating + ' ★'); return extras.length ? '<div class="sup-user-extra">' + extras.join(' · ') + '</div>' : ''; })() + '</div>'; });
+                d.users.forEach(function(u) { const bn = (u.branch && u.branch.name) ? u.branch.name : ''; html += '<div class="sup-user-card" data-user-id="' + escapeHtml(u.id) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" title="' + (LANG === 'fa' ? 'جزئیات فعالیت' : 'Activity detail') + '"><div class="sup-user-name">' + escapeHtml(u.name || u.email || '') + '</div><div class="sup-user-meta">' + (u.branch && u.branch.name ? escapeHtml(u.branch.name) : '\u2014') + '</div><div class="sup-user-count">' + (u.outgoingMessageCount || 0) + '</div>' + (function() { const u2 = u; const extras = []; if (u2.avgResponseTimeMinutes != null) extras.push((LANG === 'fa' ? 'زمان پاسخ: ' : 'Response: ') + u2.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min')); if (u2.avgRating != null) extras.push((LANG === 'fa' ? 'رضایت: ' : 'Rating: ') + u2.avgRating + ' ★'); return extras.length ? '<div class="sup-user-extra">' + extras.join(' · ') + '</div>' : ''; })() + '</div>'; });
                 html += '</div>';
             }
             el.className = '';
@@ -1018,7 +1018,8 @@
             }).join('') + '</tbody></table>';
         }
 
-        async function loadStaffActivity() {
+        async function loadStaffActivity(opts) {
+            const refreshAttendance = !!(opts && opts.refreshAttendance);
             const onlineList = document.getElementById('onlineStaffList');
             const loginsList = document.getElementById('loginsList');
             const countEl = document.getElementById('onlineCount');
@@ -1038,13 +1039,17 @@
                     else onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('label_name') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_status') + '</th><th>' + t('th_last_login') + '</th><th>' + t('th_ip') + '</th><th>' + t('th_country') + '</th></tr></thead><tbody>' + users.map(function(u) {
                         const statusClass = (u.status || 'offline').toLowerCase();
                         const statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
-                        const lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '�';
-                        const branchName = (u.branch && u.branch.name) ? u.branch.name : '�';
+                        const lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '\u2014';
+                        const branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
                         const ip = u.lastLoginIp || '\u2014'; const country = u.lastLoginCountry || '\u2014';
                         const lbl = [t('label_name'),t('th_email'),t('th_branch'),t('th_status'),t('th_last_login'),t('th_ip'),t('th_country')]; return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer"><td data-label="'+lbl[0]+'">' + escapeHtml(userDisplay(u)) + '</td><td data-label="'+lbl[1]+'">' + escapeHtml(u.email || '\u2014') + '</td><td data-label="'+lbl[2]+'">' + escapeHtml(branchName) + '</td><td data-label="'+lbl[3]+'"><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td data-label="'+lbl[4]+'">' + lastLogin + '</td><td data-label="'+lbl[5]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+lbl[6]+'">' + escapeHtml(country) + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
-            } else { if (onlineList) onlineList.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; if (countEl) countEl.textContent = '0'; }
+            } else {
+                const onlineErr = (onlineRes.data && onlineRes.data.error) ? String(onlineRes.data.error) : t('loading_err');
+                if (onlineList) onlineList.innerHTML = '<div class="empty">' + escapeHtml(onlineErr) + '</div>';
+                if (countEl) countEl.textContent = '0';
+            }
             const loginsRes = await apiFetch('/api/supervision/logins?limit=50');
             if (loginsRes.needLogin) return;
             if (loginsRes.ok && loginsRes.data && loginsRes.data.data) {
@@ -1053,12 +1058,13 @@
                 function isToday(d) { try { return d && fmtTZ(d, 'date') === todayStr; } catch(e) { return false; } }
                 const loginsToday = rows.filter(function(r) { return isToday(r.createdAt); }).length;
                 if (loginsTodayEl) loginsTodayEl.textContent = loginsToday;
-                if (loginsTotalEl) loginsTotalEl.textContent = rows.length;
+                const totalLogins = (typeof loginsRes.data.total === 'number') ? loginsRes.data.total : rows.length;
+                if (loginsTotalEl) loginsTotalEl.textContent = totalLogins;
                 if (loginsList) {
                     if (rows.length === 0) loginsList.innerHTML = '<div class="empty">' + t('empty_no_logins') + '</div>';
                     else loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_ip') + '</th><th>' + t('th_country') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
                         const user = r.user || {};
-                        const branch = r.branch ? r.branch.name : '�';
+                        const branch = r.branch ? r.branch.name : '\u2014';
                         const time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
                         const uid = r.userId || (user && user.id) || '';
                         const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
@@ -1066,9 +1072,21 @@
                         const ll = [t('th_user'),t('th_email'),t('th_branch'),t('th_login_time'),t('th_ip'),t('th_country'),t('th_summary')]; return '<tr' + rowAttrs + '><td data-label="'+ll[0]+'">' + escapeHtml(userDisplay(user)) + '</td><td data-label="'+ll[1]+'">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="'+ll[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+ll[3]+'">' + time + '</td><td data-label="'+ll[4]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+ll[5]+'">' + escapeHtml(country) + '</td><td data-label="'+ll[6]+'">' + escapeHtml(r.summary || '') + '</td></tr>';
                     }).join('') + '</tbody></table>';
                 }
-            } else { if (loginsList) loginsList.innerHTML = '<div class="empty">' + t('login_err_load') + '</div>'; if (loginsTodayEl) loginsTodayEl.textContent = '0'; if (loginsTotalEl) loginsTotalEl.textContent = '0'; }
+            } else {
+                const loginsErr = (loginsRes.data && loginsRes.data.error) ? String(loginsRes.data.error) : t('login_err_load');
+                if (loginsList) loginsList.innerHTML = '<div class="empty">' + escapeHtml(loginsErr) + '</div>';
+                if (loginsTodayEl) loginsTodayEl.textContent = '0';
+                if (loginsTotalEl) loginsTotalEl.textContent = '0';
+            }
             if (updatedEl) { updatedEl.style.display = 'block'; updatedEl.textContent = (LANG === 'fa' ? 'آخرین به\u200Cروزرسانی: ' : 'Last updated: ') + fmtTZ(new Date().toISOString(), 'datetime'); }
-            loadAttendanceReportFilters().then(function() { loadAttendanceReport(); });
+            if (!staffActivityAttendanceInitDone) {
+                loadAttendanceReportFilters().then(function() {
+                    staffActivityAttendanceInitDone = true;
+                    loadAttendanceReport();
+                });
+            } else if (refreshAttendance) {
+                loadAttendanceReport();
+            }
         }
 
         async function loadAttendanceReportFilters() {
@@ -1076,17 +1094,32 @@
             const userSel = document.getElementById('attendanceUser');
             const fromInp = document.getElementById('attendanceFrom');
             const toInp = document.getElementById('attendanceTo');
-            if (!branchSel && !userSel) return;
+            if (!branchSel && !userSel) return Promise.resolve();
+
             const today = new Date();
             const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
-            if (fromInp) fromInp.value = fmtTZ(firstDay, 'date');
-            if (toInp) toInp.value = fmtTZ(today, 'date');
+            if (fromInp && toInp && !fromInp.value && !toInp.value) {
+                fromInp.value = fmtTZ(firstDay, 'date');
+                toInp.value = fmtTZ(today, 'date');
+            }
+
+            const prevBranch = branchSel ? branchSel.value : '';
+            const prevUser = userSel ? userSel.value : '';
+
             const [branchRes, userRes] = await Promise.all([apiFetch('/api/branches'), apiFetch('/api/users')]);
             if (branchRes.ok && branchRes.data && branchRes.data.data && branchSel) {
                 branchSel.innerHTML = '<option value="">' + (t('all_branches') || 'همه شعب') + '</option>' + branchRes.data.data.filter(function(b){ return b.isActive !== false; }).map(function(b){ return '<option value="' + b.id + '">' + escapeHtml(b.name || '') + '</option>'; }).join('');
+                if (prevBranch) {
+                    branchSel.value = prevBranch;
+                    if (branchSel.value !== prevBranch) branchSel.value = '';
+                }
             }
             if (userRes.ok && userRes.data && userRes.data.data && userSel) {
                 userSel.innerHTML = '<option value="">' + (t('all_users') || 'همه کاربران') + '</option>' + userRes.data.data.filter(function(u){ return u.isActive !== false; }).map(function(u){ return '<option value="' + u.id + '">' + escapeHtml(userDisplay(u)) + '</option>'; }).join('');
+                if (prevUser) {
+                    userSel.value = prevUser;
+                    if (userSel.value !== prevUser) userSel.value = '';
+                }
             }
         }
 

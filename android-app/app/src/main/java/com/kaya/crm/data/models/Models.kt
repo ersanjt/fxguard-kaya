@@ -421,6 +421,8 @@ data class PublicBrandingResponse(
     @SerializedName("pageTitle") val pageTitle: String? = null,
     @SerializedName("loginTitle") val loginTitle: String? = null,
     @SerializedName("logoUrl") val logoUrl: String? = null,
+    @SerializedName("loginLogoUrl") val loginLogoUrl: String? = null,
+    @SerializedName("footerText") val footerText: String? = null,
     @SerializedName("primaryColor") val primaryColor: String? = null,
     @SerializedName("iosAppUrl") val iosAppUrl: String? = null,
     @SerializedName("androidAppUrl") val androidAppUrl: String? = null

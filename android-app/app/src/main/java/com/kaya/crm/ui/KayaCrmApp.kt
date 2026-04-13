@@ -44,8 +44,14 @@ fun KayaCrmApp(
             NetworkBanner(isOnline = isOnline)
             Box(modifier = Modifier.weight(1f).fillMaxSize()) {
                 when {
-                    isLoggedIn == true -> MainScreen(onLogout = { viewModel.logout() })
-                    needTotp != null -> TotpScreen(onVerified = { })
+                    isLoggedIn == true -> MainScreen(
+                        onLogout = { viewModel.logout() },
+                        appUpdateViewModel = appUpdateViewModel
+                    )
+                    needTotp != null -> TotpScreen(
+                        onVerified = { },
+                        onBack = { viewModel.cancelTotpChallenge() }
+                    )
                     else -> LoginScreen(
                         onLoginSuccess = { },
                         onNeedTotp = { }

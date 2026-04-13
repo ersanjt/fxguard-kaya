@@ -610,8 +610,9 @@
             // Refresh button
             const refreshBtn = document.getElementById('staffActivityRefresh');
             if (refreshBtn) {
-                refreshBtn.removeEventListener('click', loadStaffActivity);
-                refreshBtn.addEventListener('click', loadStaffActivity);
+                const staffRefreshHandler = function() { loadStaffActivity({ refreshAttendance: true }); };
+                refreshBtn.removeEventListener('click', staffRefreshHandler);
+                refreshBtn.addEventListener('click', staffRefreshHandler);
             }
             
             // Attendance apply button

@@ -1,5 +1,6 @@
 package com.kaya.crm.di
 
+import com.kaya.crm.BuildConfig
 import com.kaya.crm.data.ApiConfig
 import com.kaya.crm.data.api.ApiService
 import com.kaya.crm.data.network.RetryInterceptor
@@ -54,7 +55,9 @@ object AppModule {
     @Singleton
     fun provideOkHttpClient(authInterceptor: Interceptor): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
+            level =
+                if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+                else HttpLoggingInterceptor.Level.NONE
         }
         return OkHttpClient.Builder()
             .addInterceptor(RetryInterceptor())

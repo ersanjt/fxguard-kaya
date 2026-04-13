@@ -1,143 +1,108 @@
-# اپلیکیشن اندروید صرافی کایا (Kaya CRM)
+# اپ اندروید — پورتال کارکنان (کلاینت رسمی CRM)
 
-اپلیکیشن اندروید حرفه‌ای برای دسترسی به پورتال CRM واتساپ از طریق موبایل.
-
----
-
-## 📥 ساخت APK برای نصب روی موبایل
-
-### روش ۱: با Android Studio (پیشنهادی)
-
-1. **Android Studio** را نصب کنید: https://developer.android.com/studio
-2. پروژه را باز کنید: `File` → `Open` → پوشه `android-app` را انتخاب کنید
-3. صبر کنید تا Gradle sync تمام شود
-4. `Build` → `Build Bundle(s) / APK(s)` → `Build APK(s)`
-5. بعد از اتمام، روی **locate** کلیک کنید یا به این مسیر بروید:
-   ```
-   android-app/app/build/outputs/apk/debug/app-debug.apk
-   ```
-6. فایل `app-debug.apk` را به موبایل منتقل کنید (کابل USB، تلگرام، واتساپ، و غیره)
-7. روی موبایل فایل را باز کنید و نصب کنید
-
-### روش ۲: با اسکریپت (اگر Android Studio نصب دارید)
-
-1. روی فایل `build-apk.bat` دوبار کلیک کنید
-2. صبر کنید تا ساخت تمام شود
-3. APK در پوشه `app/build/outputs/apk/debug/` ساخته می‌شود
-
-### بیلد از خط فرمان (PowerShell / CMD)
-
-برای `gradlew.bat` لازم است **JDK 17** نصب باشد و متغیر **`JAVA_HOME`** به پوشه نصب JDK اشاره کند؛ در غیر این صورت با خطای `JAVA_HOME is not set` مواجه می‌شوید. پس از تنظیم، از پوشه `android-app` اجرا کنید:
-
-```powershell
-.\gradlew.bat assembleDebug
-```
-
-خروجی معمولاً: `app/build/outputs/apk/debug/app-debug.apk`
+این اپ **کلاینت اختصاصی** همان سامانهٔ وب است؛ **نام سازمان، لوگوی ورود، لینک‌های نصب موبایل** و بخشی از هویت بصری از **تنظیمات پنل** (مسیر وب: **ظاهر پنل** / `#panel-settings`، API: `GET /api/panel-settings/public/branding`) خوانده می‌شود — بدون نیاز به بیلد مجدد APK برای تغییر عنوان سایت.
 
 ---
 
-## ویژگی‌ها
-
-- **ورود امن** با پشتیبانی از احراز هویت دو مرحله‌ای (TOTP)
-- **تنظیم آدرس سرور** از صفحه ورود یا پروفایل (بدون نیاز به بیلد مجدد)
-- **تشخیص وضعیت شبکه** و نمایش پیام «اتصال اینترنت برقرار نیست»
-- **تلاش مجدد خودکار** در صورت خطای موقت شبکه
-- **مکالمات واتساپ** لیست مکالمات با پیش‌نمایش آخرین پیام، pull-to-refresh، ارسال پیام، نمایش زمان
-- **چت داخلی سازمان** گفتگو با همکاران، ایجاد ترد جدید، ارسال پیام، pull-to-refresh
-- **داشبورد** با خلاصه آمار مکالمات، مشتریان، تیکت‌ها و تسک‌ها
-- **مشتریان** مشاهده لیست مشتریان
-- **تیکت‌ها** مدیریت تیکت‌های داخلی
-- **وظایف** لیست تسک‌ها و وظایف
-- **پروفایل** اطلاعات کاربر، تغییر آدرس سرور، لینک دانلود اپ‌های موبایل (از تنظیمات پنل) و خروج
-
-## پیش‌نیازها
-
-- Android Studio Hedgehog (2023.1.1) یا بالاتر
-- JDK 17
-- حداقل SDK: 26
-- هدف: SDK 34
-
-## نصب و اجرا
-
-1. پروژه را در Android Studio باز کنید:
-   ```
-   File > Open > android-app
-   ```
-
-2. آدرس سرور API را در فایل `data/ApiConfig.kt` تنظیم کنید:
-   ```kotlin
-   const val BASE_URL = "https://YOUR-SERVER.com/"
-   ```
-
-3. پروژه را Build و Run کنید:
-   ```
-   Build > Make Project
-   Run > Run 'app'
-   ```
-
-## ساختار پروژه
+## ساختار پوشه‌ها (ماژول `app`)
 
 ```
 app/src/main/java/com/kaya/crm/
-├── data/           # API، مدل‌ها، Repository
-├── di/             # Hilt Dependency Injection
-├── ui/             # Compose UI
-│   ├── auth/       # ورود و TOTP
-│   ├── main/       # صفحات اصلی
-│   └── theme/      # تم و استایل
-└── KayaCrmApp.kt   # Application
+├── data/              # API (Retrofit)، مدل‌ها، Repository، DataStore، شبکه
+├── di/                # Hilt
+├── media/             # ضبط صدا و …
+├── update/            # به‌روزرسانی درون‌برنامه‌ای APK
+├── ui/
+│   ├── auth/          # ورود، TOTP، فراموشی رمز
+│   ├── main/          # داشبورد، مکالمات، مشتریان، تیکت، چت داخلی، پروفایل
+│   ├── theme/         # Material 3
+│   └── util/          # ابزارهای UI (مثلاً حل URL فایل/لوگو)
+├── MainActivity.kt
+└── KayaCrmApp.kt      # کلاس Application (@HiltAndroidApp)
 ```
 
-## تکنولوژی‌ها
-
-- **Kotlin** + **Jetpack Compose** - UI مدرن
-- **Material Design 3** - طراحی حرفه‌ای
-- **Hilt** - تزریق وابستگی
-- **Retrofit** - ارتباط با API
-- **DataStore** - ذخیره توکن و تنظیمات
-
-## اتصال به سرور
-
-به‌طور پیش‌فرض اپ به آدرس `https://kaya.fxguard.io/api/` متصل می‌شود.
-
-**برای تغییر آدرس سرور:**
-فایل `data/ApiConfig.kt` را باز کنید و `BASE_URL` را تغییر دهید:
-```kotlin
-// برای تست لوکال (IP کامپیوترتان را بگذارید):
-const val BASE_URL = "http://192.168.1.100:3002/"
-
-// برای production:
-const val BASE_URL = "https://kaya.fxguard.io/"
-```
-
-## APIهای استفاده‌شده
-
-| مسیر | توضیح |
-|------|-------|
-| POST auth/login | ورود |
-| POST auth/totp/verify-login | تأیید TOTP |
-| GET auth/me | پروفایل کاربر |
-| GET panel-settings/public/branding | لینک‌های دانلود اپ (iOS/Android) و برندینگ عمومی |
-| GET analytics/dashboard | آمار داشبورد |
-| GET conversations | لیست مکالمات |
-| GET conversations/:id/messages | پیام‌های مکالمه |
-| POST conversations/:id/send | ارسال پیام |
-| GET customers | لیست مشتریان |
-| GET tickets | لیست تیکت‌ها |
-| GET tasks | لیست تسک‌ها |
-| GET announcements/for-me | اعلان‌ها |
-| GET gateway/status | وضعیت واتساپ |
-| GET internal/threads | تردهای چت داخلی |
-| GET internal/threads/:id/messages | پیام‌های ترد |
-| POST internal/threads/:id/messages | ارسال پیام چت داخلی |
-| POST internal/threads | ایجاد ترد جدید |
-| GET internal/users | لیست کاربران برای چت |
-
-## پشتیبانی RTL
-
-اپ به‌طور کامل از راست‌به‌چپ (فارسی) پشتیبانی می‌کند.
+`AndroidManifest` برچسب لانچر را از `res/values/strings.xml` می‌گیرد (**نام کوتاه عمومی**). **عنوان کامل سازمان** در صفحهٔ ورود و هدر اصلی از API برندینگ پر می‌شود.
 
 ---
 
-© صرافی کایا
+## پیش‌نیازها
+
+- **Android Studio** Hedgehog یا جدیدتر — https://developer.android.com/studio  
+- **JDK 17** (ترجیحاً همان **JBR** داخل Android Studio)  
+- **minSdk** 26، **compileSdk / targetSdk** مطابق `app/build.gradle.kts` (فعلی: 36)
+
+---
+
+## نصب توسعه‌دهنده و اجرا
+
+1. در Android Studio: **File → Open** → پوشه **`android-app`**
+2. پس از sync، **Run → Run 'app'**
+3. **آدرس سرور:** پیش‌فرض در `BuildConfig.API_BASE_URL` است؛ برای سرور دیگر از **آیکن چرخ‌دنده** روی صفحهٔ ورود آدرس پایه را ذخیره کنید و **یک‌بار اپ را ببندید و دوباره باز کنید** تا Retrofit با `baseUrl` جدید ساخته شود.
+
+جزئیات فنی آدرس API: `app/src/main/java/com/kaya/crm/data/ApiConfig.kt` و `di/AppModule.kt`.
+
+---
+
+## ساخت APK
+
+### Android Studio
+
+**Build → Build Bundle(s) / APK(s) → Build APK(s)**  
+خروجی معمول:
+
+- دیباگ: `app/build/outputs/apk/debug/app-debug.apk`
+- ریلیز: `app/build/outputs/apk/release/app-release.apk` (نیاز به امضا طبق `signingConfigs` در `build.gradle.kts`)
+
+### خط فرمان (Windows)
+
+متغیر **`JAVA_HOME`** باید به JDK 17 اشاره کند (مثلاً `C:\Program Files\Android\Android Studio\jbr`):
+
+```powershell
+cd android-app
+.\gradlew.bat assembleDebug
+```
+
+### اسکریپت
+
+در صورت وجود، `build-apk.bat` در همین پوشه.
+
+---
+
+## ویژگی‌های اصلی
+
+- **Splash Screen** استاندارد (Android 12+ با سازگاری عقب‌گرد)
+- ورود امن + **TOTP**
+- **برندینگ پویا** از API (عنوان ورود، لوگو، بارگذاری/تازه‌سازی ظاهر، لینک‌های iOS/Android در پروفایل)
+- **دسترسی‌پذیری**: توضیح برای TalkBack روی دکمه ورود، آیکن‌ها و فیلدها؛ **نمایش/مخفی رمز**؛ **imePadding** برای کیبورد
+- **StrictMode** (فقط Debug) برای تشخیص زودهنگام مشکلات دیسک/منابع
+- **رشته‌های انگلیسی** (`values-en/`) برای کاربران با زبان دستگاه English
+- تنظیم آدرس سرور از ورود / پروفایل
+- وضعیت شبکه، تلاش مجدد شبکه
+- مکالمات، چت داخلی، داشبورد، مشتریان، تیکت‌ها، تسک‌ها، پروفایل
+
+---
+
+## APIهای پرکاربرد (نسبت به `/api/`)
+
+| مسیر | کاربرد |
+|------|--------|
+| `GET panel-settings/public/branding` | نام سایت، لوگو، لینک اپ‌ها |
+| `GET panel-settings/public/visibility` | بخش‌های مخفی منو |
+| `POST auth/login` | ورود |
+| `POST auth/totp/verify-login` | تأیید TOTP |
+| `GET auth/me` | پروفایل |
+
+لیست کامل‌تر در `ApiService.kt`.
+
+---
+
+## RTL
+
+رابط کاربری برای **فارسی (RTL)** تنظیم شده است.
+
+---
+
+## مستندات مخزن
+
+استانداردهای کل monorepo: **`../docs/PROJECT-STANDARDS.md`**  
+راهنمای کوتاه برای ابزارها و مشارکت‌کنندگان: **`../AGENTS.md`**

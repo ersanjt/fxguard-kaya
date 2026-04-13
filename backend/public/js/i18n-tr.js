@@ -648,6 +648,7 @@ window.__I18N_TR = {
     staff_logins_today: 'Bugünkü girişler',
     staff_online_hint: 'Detay için tıklayın',
     staff_logins_hint: 'Son 50 giriş',
+    staff_logins_total_registered: 'Kayıtlı toplam giriş',
     last_logins: 'Son girişler',
     refresh: 'Yenile',
     sup_intro: 'Performans özeti ve aktivite — sahip',

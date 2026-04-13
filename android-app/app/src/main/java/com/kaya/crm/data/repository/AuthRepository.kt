@@ -7,6 +7,7 @@ import com.kaya.crm.data.models.LoginResponse
 import com.kaya.crm.data.models.TotpRequest
 import com.kaya.crm.data.models.UserResponse
 import com.kaya.crm.data.preferences.AuthPreferences
+import com.kaya.crm.data.util.ApiErrorParser
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
@@ -23,7 +24,8 @@ class AuthRepository @Inject constructor(
         return try {
             val response = api.login(LoginRequest(email, password))
             if (response.isSuccessful) {
-                val body = response.body()!!
+                val body = response.body()
+                    ?: return Result.failure(Exception(ApiErrorParser.parseError(null)))
                 if (body.needTotp) {
                     Result.success(body)
                 } else {
@@ -32,16 +34,11 @@ class AuthRepository @Inject constructor(
                     Result.success(body)
                 }
             } else {
-                val errorBodyStr = response.errorBody()?.string()
-                val error = if (errorBodyStr != null) {
-                    try {
-                        com.google.gson.Gson().fromJson(errorBodyStr, ErrorBody::class.java)?.error
-                    } catch (_: Exception) { null }
-                } else null
-                Result.failure(Exception(error ?: "خطا در ورود"))
+                val msg = ApiErrorParser.parseError(response.errorBody()?.string())
+                Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 
@@ -51,16 +48,8 @@ class AuthRepository @Inject constructor(
             if (response.isSuccessful) {
                 Result.success(Unit)
             } else {
-                val errorBodyStr = response.errorBody()?.string()
-                val raw = if (errorBodyStr != null) {
-                    try {
-                        com.google.gson.Gson().fromJson(errorBodyStr, ErrorBody::class.java)?.error
-                    } catch (_: Exception) {
-                        null
-                    }
-                } else null
+                val raw = ApiErrorParser.parseError(response.errorBody()?.string())
                 val msg = when {
-                    raw.isNullOrBlank() -> "ارسال درخواست ناموفق بود"
                     raw.contains("could not send", ignoreCase = true) ||
                         raw.contains("password reset email", ignoreCase = true) ->
                         "ارسال ایمیل بازیابی انجام نشد. بعداً دوباره تلاش کنید یا با مدیر سیستم تماس بگیرید."
@@ -69,7 +58,7 @@ class AuthRepository @Inject constructor(
                 Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
-            Result.failure(Exception(e.message ?: "خطا در اتصال به سرور"))
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 
@@ -77,21 +66,17 @@ class AuthRepository @Inject constructor(
         return try {
             val response = api.verifyTotp(TotpRequest(tempToken, code))
             if (response.isSuccessful) {
-                val body = response.body()!!
+                val body = response.body()
+                    ?: return Result.failure(Exception(ApiErrorParser.parseError(null)))
                 body.token?.let { prefs.setToken(it) }
                 body.user?.let { prefs.setUser(it) }
                 Result.success(body)
             } else {
-                val errorBodyStr = response.errorBody()?.string()
-                val error = if (errorBodyStr != null) {
-                    try {
-                        com.google.gson.Gson().fromJson(errorBodyStr, ErrorBody::class.java)?.error
-                    } catch (_: Exception) { null }
-                } else null
-                Result.failure(Exception(error ?: "کد نامعتبر است"))
+                val msg = ApiErrorParser.parseError(response.errorBody()?.string())
+                Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 
@@ -107,17 +92,16 @@ class AuthRepository @Inject constructor(
         return try {
             val response = api.getMe()
             if (response.isSuccessful) {
-                response.body()?.let {
-                    prefs.setUser(it)
-                    Result.success(it)
-                } ?: Result.failure(Exception("پاسخ خالی"))
+                val user = response.body()
+                    ?: return Result.failure(Exception(ApiErrorParser.parseError(null)))
+                prefs.setUser(user)
+                Result.success(user)
             } else {
-                Result.failure(Exception("خطا در بارگذاری پروفایل"))
+                val msg = ApiErrorParser.parseError(response.errorBody()?.string())
+                Result.failure(Exception(msg))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 }
-
-private data class ErrorBody(val error: String?)

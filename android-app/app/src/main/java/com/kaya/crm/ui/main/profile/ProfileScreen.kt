@@ -1,5 +1,6 @@
 package com.kaya.crm.ui.main.profile
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -13,6 +14,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.pullrefresh.PullRefreshIndicator
@@ -24,9 +26,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -40,7 +42,10 @@ import com.kaya.crm.data.models.TelegramStatusResponse
 import com.kaya.crm.data.models.UserResponse
 import com.kaya.crm.data.models.WhatsAppStatus
 import com.kaya.crm.ui.main.permissions.canShowDashboardCard
+import com.kaya.crm.ui.util.MediaUrlResolve
+import com.kaya.crm.R
 import com.kaya.crm.update.AppUpdateViewModel
+import androidx.compose.ui.res.stringResource
 
 private fun resolveAppLink(raw: String, base: String): String {
     val s = raw.trim()
@@ -54,23 +59,16 @@ private fun resolveAppLink(raw: String, base: String): String {
     return if (s.startsWith("/")) base.trimEnd('/') + s else s
 }
 
-/** آدرس کامل برای تصویر پروفایل (نسبی یا مطلق) */
-fun absoluteFromApiPath(path: String?, baseApi: String): String? {
-    if (path.isNullOrBlank()) return null
-    if (path.startsWith("http://", true) || path.startsWith("https://", true)) return path
-    val origin = baseApi.trimEnd('/').removeSuffix("/api").removeSuffix("/api/")
-    return origin + if (path.startsWith("/")) path else "/$path"
-}
-
 @OptIn(ExperimentalMaterialApi::class, ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     hiddenPanelPages: Set<String> = emptySet(),
     onLogout: () -> Unit,
+    appUpdateViewModel: AppUpdateViewModel,
     viewModel: ProfileViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
     val user by viewModel.user.collectAsState()
     val publicBranding by viewModel.publicBranding.collectAsState()
     val savedServerUrl by viewModel.savedServerUrl.collectAsState(initial = null)
@@ -87,7 +85,11 @@ fun ProfileScreen(
     val telegramStatus by viewModel.telegramStatus.collectAsState()
     val telegramToken by viewModel.telegramToken.collectAsState()
     val telegramBusy by viewModel.telegramBusy.collectAsState()
-    val appUpdateViewModel: AppUpdateViewModel = hiltViewModel()
+    val presenceBusy by viewModel.presenceBusy.collectAsState()
+    val appLocale by viewModel.appLocale.collectAsState()
+    val clipTelegramCmd = stringResource(R.string.clipboard_telegram_command_copied)
+    val clipTelegramToken = stringResource(R.string.clipboard_telegram_token_copied)
+    val clipTotpSecret = stringResource(R.string.clipboard_totp_secret_copied)
     var showServerDialog by remember { mutableStateOf(false) }
     var showDisableTotp by remember { mutableStateOf(false) }
     var disableTotpPassword by remember { mutableStateOf("") }
@@ -117,8 +119,10 @@ fun ProfileScreen(
     val scope = rememberCoroutineScope()
 
     fun copyToClipboard(label: String, text: String) {
-        clipboard.setText(AnnotatedString(text))
-        scope.launch { snackbarHostState.showSnackbar(label) }
+        scope.launch {
+            clipboard.setClipEntry(ClipData.newPlainText("kaya", text).toClipEntry())
+            snackbarHostState.showSnackbar(label)
+        }
     }
 
     LaunchedEffect(saveMessage) {
@@ -159,19 +163,45 @@ fun ProfileScreen(
                     .verticalScroll(rememberScrollState())
                     .padding(20.dp)
             ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 12.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.language_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    FilterChip(
+                        selected = appLocale != "fa",
+                        onClick = { viewModel.setAppLocale("en") },
+                        label = { Text(stringResource(R.string.language_english)) }
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    FilterChip(
+                        selected = appLocale == "fa",
+                        onClick = { viewModel.setAppLocale("fa") },
+                        label = { Text(stringResource(R.string.language_farsi)) }
+                    )
+                }
                 Text(
-                    text = "پروفایل من",
+                    text = stringResource(R.string.profile_title),
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
                 Text(
-                    text = "نام کاربری، نام، نام خانوادگی، تاریخ تولد، تلفن و تصویر را می‌توانید ویرایش کنید. ایمیل و دپارتمان توسط مدیر تنظیم می‌شود مگر دسترسی مدیریت کاربران داشته باشید.",
+                    text = stringResource(R.string.profile_intro),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
 
-                if (profileError != null) {
+                val profileErr = profileError
+                if (profileErr != null) {
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)
@@ -181,13 +211,13 @@ fun ProfileScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                profileError!!,
+                                profileErr,
                                 modifier = Modifier.weight(1f),
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 style = MaterialTheme.typography.bodySmall
                             )
                             TextButton(onClick = { viewModel.clearProfileError(); viewModel.refreshAll(initial = false) }) {
-                                Text("تلاش مجدد")
+                                Text(stringResource(R.string.retry))
                             }
                         }
                     }
@@ -206,7 +236,10 @@ fun ProfileScreen(
                 }
 
                 user?.let { u ->
-                    ProfileHeaderCard(u = u, avatarUrlResolved = absoluteFromApiPath(u.avatar, baseApi))
+                    ProfileHeaderCard(
+                        u = u,
+                        avatarUrlResolved = MediaUrlResolve.absoluteFromApiPath(u.avatar, baseApi)
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
 
                     Card(
@@ -214,25 +247,38 @@ fun ProfileScreen(
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("اطلاعات فقط‌خواندنی", style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.profile_readonly), style = MaterialTheme.typography.titleMedium)
                             Spacer(modifier = Modifier.height(8.dp))
-                            ProfileRow("ایمیل", u.email)
+                            ProfileRow(stringResource(R.string.email), u.email)
                             Spacer(modifier = Modifier.height(8.dp))
                             ProfileRow(
-                                "دپارتمان",
-                                u.department?.name ?: u.departmentId?.takeIf { it.isNotBlank() } ?: "—"
+                                stringResource(R.string.department),
+                                u.department?.name ?: u.departmentId?.takeIf { it.isNotBlank() }
+                                    ?: stringResource(R.string.placeholder_em_dash)
                             )
+                            u.lastLoginAt?.takeIf { it.isNotBlank() }?.let { last ->
+                                Spacer(modifier = Modifier.height(8.dp))
+                                ProfileRow(stringResource(R.string.last_login), last)
+                            }
                         }
                     }
 
                     Spacer(modifier = Modifier.height(16.dp))
 
+                    ProfilePresenceCard(
+                        currentStatus = u.status,
+                        busy = presenceBusy,
+                        onSelect = { viewModel.setPresenceStatus(it) }
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                     ) {
                         Column(modifier = Modifier.padding(16.dp)) {
-                            Text("اطلاعات قابل ویرایش", style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.profile_editable), style = MaterialTheme.typography.titleMedium)
                             Spacer(modifier = Modifier.height(12.dp))
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 OutlinedButton(
@@ -248,7 +294,7 @@ fun ProfileScreen(
                                     } else {
                                         Icon(Icons.Default.PhotoCamera, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text("تصویر از گالری")
+                                        Text(stringResource(R.string.photo_from_gallery))
                                     }
                                 }
                             }
@@ -256,7 +302,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = username,
                                 onValueChange = { username = it },
-                                label = { Text("نام کاربری (اختیاری)") },
+                                label = { Text(stringResource(R.string.field_username)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 enabled = !saving
@@ -265,7 +311,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = firstName,
                                 onValueChange = { firstName = it },
-                                label = { Text("نام") },
+                                label = { Text(stringResource(R.string.field_first_name)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 enabled = !saving
@@ -274,7 +320,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = lastName,
                                 onValueChange = { lastName = it },
-                                label = { Text("نام خانوادگی") },
+                                label = { Text(stringResource(R.string.field_last_name)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 enabled = !saving
@@ -283,7 +329,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = dateOfBirth,
                                 onValueChange = { dateOfBirth = it },
-                                label = { Text("تاریخ تولد (YYYY-MM-DD)") },
+                                label = { Text(stringResource(R.string.field_dob)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 enabled = !saving
@@ -292,7 +338,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = phone,
                                 onValueChange = { phone = it },
-                                label = { Text("تلفن") },
+                                label = { Text(stringResource(R.string.field_phone)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 enabled = !saving
@@ -301,7 +347,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = avatarUrl,
                                 onValueChange = { avatarUrl = it },
-                                label = { Text("آدرس URL تصویر (اختیاری)") },
+                                label = { Text(stringResource(R.string.field_avatar_url)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = false,
                                 minLines = 2,
@@ -312,7 +358,7 @@ fun ProfileScreen(
                                 OutlinedTextField(
                                     value = adminEmail,
                                     onValueChange = { adminEmail = it },
-                                    label = { Text("ایمیل (قابل ویرایش برای مدیر)") },
+                                    label = { Text(stringResource(R.string.field_email_admin)) },
                                     modifier = Modifier.fillMaxWidth(),
                                     singleLine = true,
                                     enabled = !saving
@@ -322,7 +368,7 @@ fun ProfileScreen(
                             OutlinedTextField(
                                 value = newPassword,
                                 onValueChange = { newPassword = it },
-                                label = { Text("رمز عبور جدید (در صورت تمایل)") },
+                                label = { Text(stringResource(R.string.field_new_password)) },
                                 modifier = Modifier.fillMaxWidth(),
                                 singleLine = true,
                                 enabled = !saving
@@ -352,7 +398,7 @@ fun ProfileScreen(
                                         strokeWidth = 2.dp
                                     )
                                 } else {
-                                    Text("ذخیره تغییرات")
+                                    Text(stringResource(R.string.save_changes))
                                 }
                             }
                         }
@@ -373,8 +419,8 @@ fun ProfileScreen(
                         busy = telegramBusy,
                         onGenerate = { viewModel.generateTelegramToken() },
                         onUnlink = { viewModel.unlinkTelegram() },
-                        onCopyCommand = { copyToClipboard("دستور کپی شد — در تلگرام برای بات بفرستید", it) },
-                        onCopyTokenOnly = { copyToClipboard("کد اتصال کپی شد", it) },
+                        onCopyCommand = { copyToClipboard(clipTelegramCmd, it) },
+                        onCopyTokenOnly = { copyToClipboard(clipTelegramToken, it) },
                         onOpenBot = { url ->
                             runCatching {
                                 context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
@@ -413,7 +459,7 @@ fun ProfileScreen(
                 ) {
                     Icon(Icons.AutoMirrored.Filled.Logout, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("خروج")
+                    Text(stringResource(R.string.sign_out))
                 }
             }
 
@@ -428,7 +474,7 @@ fun ProfileScreen(
     totpSetup?.let { setup ->
         AlertDialog(
             onDismissRequest = { viewModel.clearTotpSetup(); totpConfirmCode = "" },
-            title = { Text("فعال‌سازی Google Authenticator") },
+            title = { Text(stringResource(R.string.totp_setup_title)) },
             text = {
                 Column(
                     modifier = Modifier
@@ -445,7 +491,7 @@ fun ProfileScreen(
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                     Text(
-                        "ابتدا QR را در Google Authenticator اسکن کنید، یا کلید زیر را کپی کرده و در اپ به‌صورت دستی اضافه کنید؛ سپس کد شش‌رقمی را اینجا وارد کنید.",
+                        text = stringResource(R.string.totp_setup_instructions),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -453,7 +499,7 @@ fun ProfileScreen(
                     setup.qrCode?.let { qr ->
                         AsyncImage(
                             model = qr,
-                            contentDescription = "QR",
+                            contentDescription = stringResource(R.string.totp_qr_cd),
                             modifier = Modifier
                                 .size(200.dp)
                                 .align(Alignment.CenterHorizontally),
@@ -466,34 +512,37 @@ fun ProfileScreen(
                             value = sec,
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text("کلید مخفی (دستی)") },
+                            label = { Text(stringResource(R.string.totp_secret_label)) },
                             textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
                             modifier = Modifier.fillMaxWidth(),
                             trailingIcon = {
                                 IconButton(
                                     onClick = {
-                                        copyToClipboard("کلید احراز دو مرحله‌ای کپی شد", sec)
+                                        copyToClipboard(clipTotpSecret, sec)
                                     }
                                 ) {
-                                    Icon(Icons.Default.ContentCopy, contentDescription = "کپی کلید")
+                                    Icon(
+                                        Icons.Default.ContentCopy,
+                                        contentDescription = stringResource(R.string.cd_copy_totp_secret)
+                                    )
                                 }
                             }
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedButton(
-                            onClick = { copyToClipboard("کلید احراز دو مرحله‌ای کپی شد", sec) },
+                            onClick = { copyToClipboard(clipTotpSecret, sec) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
                             Spacer(Modifier.width(8.dp))
-                            Text("کپی کلید مخفی")
+                            Text(stringResource(R.string.totp_copy_secret))
                         }
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                     OutlinedTextField(
                         value = totpConfirmCode,
                         onValueChange = { v -> totpConfirmCode = v.filter { ch -> ch.isDigit() }.take(6) },
-                        label = { Text("کد شش‌رقمی از Authenticator") },
+                        label = { Text(stringResource(R.string.totp_code_from_app)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
@@ -508,12 +557,12 @@ fun ProfileScreen(
                     },
                     enabled = !totpBusy && totpConfirmCode.replace(Regex("\\s"), "").length == 6
                 ) {
-                    Text("تأیید")
+                    Text(stringResource(R.string.totp_confirm))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.clearTotpSetup(); totpConfirmCode = "" }) {
-                    Text("انصراف")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -522,12 +571,12 @@ fun ProfileScreen(
     if (showDisableTotp) {
         AlertDialog(
             onDismissRequest = { showDisableTotp = false; disableTotpPassword = "" },
-            title = { Text("غیرفعال کردن احراز دو مرحله‌ای") },
+            title = { Text(stringResource(R.string.totp_disable_title)) },
             text = {
                 OutlinedTextField(
                     value = disableTotpPassword,
                     onValueChange = { disableTotpPassword = it },
-                    label = { Text("رمز عبور فعلی") },
+                    label = { Text(stringResource(R.string.totp_current_password)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -541,12 +590,12 @@ fun ProfileScreen(
                     },
                     enabled = disableTotpPassword.isNotBlank() && !totpBusy
                 ) {
-                    Text("غیرفعال کن")
+                    Text(stringResource(R.string.totp_disable_action))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDisableTotp = false; disableTotpPassword = "" }) {
-                    Text("انصراف")
+                    Text(stringResource(R.string.cancel))
                 }
             }
         )
@@ -562,6 +611,64 @@ fun ProfileScreen(
             }
         )
     }
+}
+
+@Composable
+private fun ProfilePresenceCard(
+    currentStatus: String?,
+    busy: Boolean,
+    onSelect: (String) -> Unit
+) {
+    val normalized = currentStatus?.trim()?.lowercase()?.takeIf { it.isNotEmpty() } ?: "online"
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(stringResource(R.string.presence_title), style = MaterialTheme.typography.titleMedium)
+            Text(
+                stringResource(R.string.presence_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(12.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+            ) {
+                PresenceFilterChip("online", stringResource(R.string.presence_online), normalized, busy, onSelect)
+                PresenceFilterChip("away", stringResource(R.string.presence_away), normalized, busy, onSelect)
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+            ) {
+                PresenceFilterChip("busy", stringResource(R.string.presence_busy), normalized, busy, onSelect)
+                PresenceFilterChip("offline", stringResource(R.string.presence_offline), normalized, busy, onSelect)
+            }
+            if (busy) {
+                Spacer(modifier = Modifier.height(8.dp))
+                LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+            }
+        }
+    }
+}
+
+@Composable
+private fun PresenceFilterChip(
+    id: String,
+    label: String,
+    current: String,
+    busy: Boolean,
+    onSelect: (String) -> Unit
+) {
+    FilterChip(
+        selected = current == id,
+        onClick = { onSelect(id) },
+        label = { Text(label) },
+        enabled = !busy
+    )
 }
 
 @Composable
@@ -625,7 +732,11 @@ private fun ProfileHeaderCard(u: UserResponse, avatarUrlResolved: String?) {
                 }
                 u.lastLoginAt?.takeIf { it.isNotBlank() }?.let { t ->
                     val short = if (t.length >= 16) t.replace('T', ' ').take(16) else t
-                    Text("آخرین ورود: $short", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        stringResource(R.string.last_login_inline, short),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
@@ -644,16 +755,19 @@ private fun TotpSection(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("احراز هویت دو مرحله‌ای", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.totp_section_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                "ورود امن‌تر با Google Authenticator. پس از زدن «فعال‌سازی»، QR یا کلید را کپی کنید؛ در اپ کد شش‌رقمی را وارد و تأیید کنید.",
+                stringResource(R.string.totp_section_intro),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                if (totpEnabled) "وضعیت: فعال" else "وضعیت: غیرفعال",
+                stringResource(
+                    R.string.totp_status_line,
+                    stringResource(if (totpEnabled) R.string.totp_state_on else R.string.totp_state_off)
+                ),
                 style = MaterialTheme.typography.bodyLarge,
                 color = if (totpEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -661,11 +775,11 @@ private fun TotpSection(
             if (!totpEnabled) {
                 Button(onClick = onEnableClick, enabled = !totpBusy) {
                     if (totpBusy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    else Text("فعال‌سازی")
+                    else Text(stringResource(R.string.totp_activate))
                 }
             } else {
                 OutlinedButton(onClick = onDisableClick, enabled = !totpBusy) {
-                    Text("غیرفعال کردن (نیاز به رمز)")
+                    Text(stringResource(R.string.totp_disable_need_password))
                 }
             }
         }
@@ -688,28 +802,31 @@ private fun TelegramSection(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("اتصال به بات تلگرام", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.telegram_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                "کد را از کادر زیر کپی کنید، در تلگرام برای بات بفرستید، یا با «باز کردن بات» وارد شوید.",
+                stringResource(R.string.telegram_section_intro),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
             val linked = status?.linked == true
             Text(
-                if (linked) "وضعیت: متصل" else "وضعیت: غیرمتصل",
+                stringResource(
+                    R.string.telegram_status_line,
+                    stringResource(if (linked) R.string.telegram_state_linked else R.string.telegram_state_not_linked)
+                ),
                 style = MaterialTheme.typography.bodyMedium
             )
             Spacer(modifier = Modifier.height(12.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = onGenerate, enabled = !busy) {
                     if (busy) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
-                    else Text("دریافت کد اتصال")
+                    else Text(stringResource(R.string.telegram_get_code))
                 }
                 if (linked) {
                     OutlinedButton(onClick = onUnlink, enabled = !busy) {
-                        Text("قطع اتصال")
+                        Text(stringResource(R.string.telegram_unlink))
                     }
                 }
             }
@@ -720,12 +837,12 @@ private fun TelegramSection(
                     value = fullCommand,
                     onValueChange = {},
                     readOnly = true,
-                    label = { Text("دستور برای بات (حدود ۱۵ دقیقه اعتبار)") },
+                    label = { Text(stringResource(R.string.telegram_command_label)) },
                     textStyle = MaterialTheme.typography.bodyMedium.copy(fontFamily = FontFamily.Monospace),
                     modifier = Modifier.fillMaxWidth(),
                     trailingIcon = {
                         IconButton(onClick = { onCopyCommand(fullCommand) }) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "کپی دستور کامل")
+                            Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.cd_copy_full_command))
                         }
                     }
                 )
@@ -740,13 +857,13 @@ private fun TelegramSection(
                     ) {
                         Icon(Icons.Default.ContentCopy, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
-                        Text("کپی دستور", maxLines = 1)
+                        Text(stringResource(R.string.telegram_copy_cmd), maxLines = 1)
                     }
                     OutlinedButton(
                         onClick = { onCopyTokenOnly(t) },
                         modifier = Modifier.weight(1f)
                     ) {
-                        Text("فقط کد", maxLines = 1)
+                        Text(stringResource(R.string.telegram_copy_code_only), maxLines = 1)
                     }
                 }
                 token.botUrl?.takeIf { it.isNotBlank() }?.let { url ->
@@ -755,9 +872,9 @@ private fun TelegramSection(
                         onClick = { onOpenBot(url) },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
+                        Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("باز کردن بات در تلگرام")
+                        Text(stringResource(R.string.telegram_open_bot))
                     }
                 }
                 token.instruction?.takeIf { it.isNotBlank() }?.let { ins ->
@@ -779,7 +896,7 @@ private fun GatewayCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("وضعیت واتساپ / Gateway", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.gateway_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             when {
                 gatewayError != null -> Text(gatewayError, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
@@ -787,19 +904,19 @@ private fun GatewayCard(
                     val g = gatewayStatus
                     val ok = g.isConnected
                     Text(
-                        if (ok) "متصل" else "غیرمتصل",
+                        stringResource(if (ok) R.string.gateway_state_connected else R.string.gateway_state_disconnected),
                         color = if (ok) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
                         style = MaterialTheme.typography.bodyLarge
                     )
                     g.phone?.takeIf { it.isNotBlank() }?.let { ph ->
                         Spacer(modifier = Modifier.height(6.dp))
-                        Text("شماره: $ph", style = MaterialTheme.typography.bodySmall)
+                        Text(stringResource(R.string.gateway_phone, ph), style = MaterialTheme.typography.bodySmall)
                     }
                     g.status?.takeIf { it.isNotBlank() }?.let { st ->
                         Text(st, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }
-                else -> Text("—", style = MaterialTheme.typography.bodySmall)
+                else -> Text(stringResource(R.string.placeholder_em_dash), style = MaterialTheme.typography.bodySmall)
             }
         }
     }
@@ -820,14 +937,14 @@ private fun ServerUrlCard(savedServerUrl: String?, onChangeClick: () -> Unit) {
             Icon(Icons.Default.Settings, contentDescription = null)
             Spacer(modifier = Modifier.width(16.dp))
             Column(modifier = Modifier.weight(1f)) {
-                Text("آدرس سرور", style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.server_address), style = MaterialTheme.typography.labelMedium)
                 Text(
                     savedServerUrl?.takeIf { it.isNotBlank() } ?: ApiConfig.BASE_URL,
                     style = MaterialTheme.typography.bodySmall,
                     maxLines = 2
                 )
             }
-            TextButton(onClick = onChangeClick) { Text("تغییر") }
+            TextButton(onClick = onChangeClick) { Text(stringResource(R.string.change)) }
         }
     }
 }
@@ -839,10 +956,10 @@ private fun AppUpdateCard(appUpdateViewModel: AppUpdateViewModel) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("به‌روزرسانی اپ", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.app_update_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "نسخهٔ نصب‌شده: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})",
+                stringResource(R.string.app_version_installed, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -851,7 +968,7 @@ private fun AppUpdateCard(appUpdateViewModel: AppUpdateViewModel) {
                 onClick = { appUpdateViewModel.checkManual() },
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text("بررسی به‌روزرسانی از سرور")
+                Text(stringResource(R.string.check_update))
             }
         }
     }
@@ -864,20 +981,20 @@ private fun StoreLinksCard(iosUrl: String, androidUrl: String, context: Context)
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text("دانلود اپ موبایل", style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.mobile_download_title), style = MaterialTheme.typography.titleMedium)
             Spacer(modifier = Modifier.height(8.dp))
             if (iosUrl.isNotBlank()) {
                 OutlinedButton(
                     onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(iosUrl))) } },
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("دانلود iOS") }
+                ) { Text(stringResource(R.string.download_ios)) }
             }
             if (androidUrl.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
                     onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(androidUrl))) } },
                     modifier = Modifier.fillMaxWidth()
-                ) { Text("دانلود Android") }
+                ) { Text(stringResource(R.string.download_android)) }
             }
         }
     }
@@ -900,11 +1017,11 @@ private fun ServerUrlDialog(
     var url by remember { mutableStateOf(currentUrl) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("آدرس سرور") },
+        title = { Text(stringResource(R.string.server_url_title)) },
         text = {
             Column {
                 Text(
-                    "برای اعمال تغییرات، اپ را ببندید و دوباره باز کنید.",
+                    text = stringResource(R.string.server_url_apply_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -912,17 +1029,17 @@ private fun ServerUrlDialog(
                 OutlinedTextField(
                     value = url,
                     onValueChange = { url = it },
-                    label = { Text("مثال: https://kaya.fxguard.io") },
+                    label = { Text(stringResource(R.string.server_url_example_label)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
             }
         },
         confirmButton = {
-            TextButton(onClick = { onSave(url.trim()) }) { Text("ذخیره") }
+            TextButton(onClick = { onSave(url.trim()) }) { Text(stringResource(R.string.save)) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("انصراف") }
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
         }
     )
 }

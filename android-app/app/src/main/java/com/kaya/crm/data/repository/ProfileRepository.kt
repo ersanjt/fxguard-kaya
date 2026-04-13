@@ -9,8 +9,10 @@ import com.kaya.crm.data.models.TelegramStatusResponse
 import com.kaya.crm.data.models.TotpConfirmBody
 import com.kaya.crm.data.models.TotpDisableBody
 import com.kaya.crm.data.models.TotpSetupResponse
+import com.kaya.crm.data.models.PresenceBody
 import com.kaya.crm.data.models.UploadResponse
 import com.kaya.crm.data.models.UserResponse
+import com.kaya.crm.data.util.ApiErrorParser
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -33,10 +35,24 @@ class ProfileRepository @Inject constructor(
                 val body = r.body() ?: return@withContext Result.failure(Exception("پاسخ خالی"))
                 Result.success(body)
             } else {
-                Result.failure(Exception(parseError(r.errorBody()?.string())))
+                Result.failure(Exception(ApiErrorParser.parseError(r.errorBody()?.string())))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
+        }
+    }
+
+    suspend fun patchPresence(status: String): Result<String> = withContext(Dispatchers.IO) {
+        try {
+            val r = api.patchPresence(PresenceBody(status))
+            if (r.isSuccessful) {
+                val s = (r.body()?.get("status") as? String)?.trim()?.takeIf { it.isNotEmpty() } ?: status
+                Result.success(s)
+            } else {
+                Result.failure(Exception(ApiErrorParser.parseError(r.errorBody()?.string())))
+            }
+        } catch (e: Exception) {
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 
@@ -56,10 +72,10 @@ class ProfileRepository @Inject constructor(
                 if (!url.isNullOrBlank()) Result.success(url)
                 else Result.failure(Exception(r.body()?.error ?: "آپلود ناموفق"))
             } else {
-                Result.failure(Exception(parseError(r.errorBody()?.string())))
+                Result.failure(Exception(ApiErrorParser.parseError(r.errorBody()?.string())))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 
@@ -71,10 +87,10 @@ class ProfileRepository @Inject constructor(
                 if (!body.error.isNullOrBlank()) return@withContext Result.failure(Exception(body.error))
                 Result.success(body)
             } else {
-                Result.failure(Exception(parseError(r.errorBody()?.string())))
+                Result.failure(Exception(ApiErrorParser.parseError(r.errorBody()?.string())))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 
@@ -85,10 +101,10 @@ class ProfileRepository @Inject constructor(
                 val msg = (r.body()?.get("message") as? String) ?: "احراز دو مرحله‌ای فعال شد"
                 Result.success(msg)
             } else {
-                Result.failure(Exception(parseError(r.errorBody()?.string())))
+                Result.failure(Exception(ApiErrorParser.parseError(r.errorBody()?.string())))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 
@@ -99,10 +115,10 @@ class ProfileRepository @Inject constructor(
                 val msg = (r.body()?.get("message") as? String) ?: "غیرفعال شد"
                 Result.success(msg)
             } else {
-                Result.failure(Exception(parseError(r.errorBody()?.string())))
+                Result.failure(Exception(ApiErrorParser.parseError(r.errorBody()?.string())))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 
@@ -113,10 +129,10 @@ class ProfileRepository @Inject constructor(
                 val body = r.body() ?: return@withContext Result.failure(Exception("پاسخ خالی"))
                 Result.success(body)
             } else {
-                Result.failure(Exception(parseError(r.errorBody()?.string())))
+                Result.failure(Exception(ApiErrorParser.parseError(r.errorBody()?.string())))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 
@@ -128,10 +144,10 @@ class ProfileRepository @Inject constructor(
                 if (!body.error.isNullOrBlank()) return@withContext Result.failure(Exception(body.error))
                 Result.success(body)
             } else {
-                Result.failure(Exception(parseError(r.errorBody()?.string())))
+                Result.failure(Exception(ApiErrorParser.parseError(r.errorBody()?.string())))
             }
         } catch (e: Exception) {
-            Result.failure(e)
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 
@@ -142,20 +158,10 @@ class ProfileRepository @Inject constructor(
                 val msg = (r.body()?.get("message") as? String) ?: "اتصال قطع شد"
                 Result.success(msg)
             } else {
-                Result.failure(Exception(parseError(r.errorBody()?.string())))
+                Result.failure(Exception(ApiErrorParser.parseError(r.errorBody()?.string())))
             }
         } catch (e: Exception) {
-            Result.failure(e)
-        }
-    }
-
-    private fun parseError(raw: String?): String {
-        if (raw.isNullOrBlank()) return "خطای ناشناخته"
-        return try {
-            val obj = com.google.gson.JsonParser.parseString(raw).asJsonObject
-            obj.get("error")?.asString ?: raw
-        } catch (_: Exception) {
-            raw
+            Result.failure(Exception(ApiErrorParser.parseException(e)))
         }
     }
 }

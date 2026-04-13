@@ -221,6 +221,7 @@
         function stopStaffActivityLive() {
             if (staffActivityInterval) { clearInterval(staffActivityInterval); staffActivityInterval = null; }
             if (typeof document !== 'undefined') document.removeEventListener('visibilitychange', _staffActivityVisibilityHandler);
+            staffActivityAttendanceInitDone = false;
         }
 
         function doHeaderSearch() {

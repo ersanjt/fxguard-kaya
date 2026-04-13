@@ -669,6 +669,7 @@ window.__I18N_EN = {
     staff_logins_today: 'Logins today',
     staff_online_hint: 'Click for activity details',
     staff_logins_hint: 'Last 50 logins',
+    staff_logins_total_registered: 'Total logins recorded',
     last_logins: 'Recent logins',
     refresh: 'Refresh',
     sup_intro: 'Performance summary, conversations and staff activity logs — for owner',

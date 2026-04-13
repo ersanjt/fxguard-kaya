@@ -691,6 +691,7 @@ window.__I18N_FA = {
     staff_logins_today: 'ورود امروز',
     staff_online_hint: 'کلیک برای جزئیات فعالیت',
     staff_logins_hint: '۵۰ ورود اخیر',
+    staff_logins_total_registered: 'کل ورودهای ثبت‌شده',
     last_logins: 'آخرین ورودها',
     refresh: 'به\u200Cروزرسانی',
     sup_intro: 'خلاصه عملکرد، مکالمات و لاگ فعالیت کارکنان — برای مالک مجموعه',
