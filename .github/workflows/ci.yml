@@ -101,3 +101,10 @@ jobs:
           APK="app/build/outputs/apk/release/app-release.apk"
           test -f "$APK"
           ls -lh "$APK"
+
+      - name: Upload release APK (دانلود از تب Actions → آخرین run → Artifacts)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaya-crm-app-release-${{ github.sha }}
+          path: android-app/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
