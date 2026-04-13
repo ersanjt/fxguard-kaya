@@ -1616,18 +1616,18 @@
                 telegramTimeoutMs: get('panelSettingTelegramTimeoutMs'),
                 text: get('panelTestTelegramText')
             };
-            if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ارسال...' : 'Sending...'); }
+            if (btn) { btn.disabled = true; btn.textContent = t('panel_test_telegram_sending'); }
             if (statusEl) statusEl.style.display = 'none';
             const res = await apiFetch('/api/panel-settings/test-telegram', { method: 'POST', body: JSON.stringify(payload) });
             if (res.ok && res.data && res.data.ok) {
-                toast(res.data.message || (LANG === 'fa' ? 'پیام تلگرام ارسال شد.' : 'Telegram message sent.'));
+                toast(res.data.message || t('panel_test_telegram_ok'));
                 if (statusEl) {
-                    statusEl.textContent = (LANG === 'fa' ? 'ارسال شد' : 'Sent');
+                    statusEl.textContent = t('panel_test_telegram_sent');
                     statusEl.className = 'panel-test-email-status success';
                     statusEl.style.display = 'inline';
                 }
             } else {
-                const err = (res.data && res.data.error) || (LANG === 'fa' ? 'ارسال ناموفق' : 'Send failed');
+                const err = (res.data && res.data.error) || t('panel_test_telegram_fail');
                 toast(err, true);
                 if (statusEl) {
                     statusEl.textContent = err;
@@ -1636,7 +1636,7 @@
                 }
             }
             if (btn) btn.disabled = false;
-            if (btn) btn.textContent = (LANG === 'fa' ? 'ارسال تست' : 'Send test');
+            if (btn) btn.textContent = t('panel_test_telegram_btn');
         }
         const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
         function applyHashRoute() {
