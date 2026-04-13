@@ -22,68 +22,68 @@
                             <div id="panelTabTelegram" class="panel-settings-tab-panel" role="tabpanel" hidden>
                                 <div class="panel-settings-sections">
                                     <section class="panel-settings-section">
-                                        <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span><span>تنظیمات تلگرام</span></h3>
-                                        <p class="panel-settings-section-desc">توکن ربات و Chat ID ها را اینجا تنظیم کنید. این مقادیر برای اعلان‌های امنیتی مدیر استفاده می‌شوند.</p>
+                                        <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span><span data-i18n="panel_section_telegram">تنظیمات تلگرام</span></h3>
+                                        <p class="panel-settings-section-desc" data-i18n="panel_telegram_intro">توکن ربات و Chat ID ها را اینجا تنظیم کنید. این مقادیر برای اعلان‌های امنیتی مدیر استفاده می‌شوند.</p>
                                         <div class="form-group">
-                                            <label for="panelSettingTelegramBotToken">توکن ربات تلگرام</label>
-                                            <input type="password" id="panelSettingTelegramBotToken" placeholder="123456:ABCDEF..." autocomplete="new-password" oninput="markPanelSettingsChanged();">
+                                            <label for="panelSettingTelegramBotToken" data-i18n="panel_telegram_bot_token">توکن ربات تلگرام</label>
+                                            <input type="password" id="panelSettingTelegramBotToken" data-i18n-ph="panel_telegram_bot_token_ph" placeholder="123456:ABCDEF..." autocomplete="new-password" oninput="markPanelSettingsChanged();">
                                             <span id="panelTelegramTokenHint" class="form-hint"></span>
                                         </div>
                                         <div class="form-group">
-                                            <label for="panelSettingTelegramChatIds">Chat ID ها (با کاما جدا کنید)</label>
-                                            <input type="text" id="panelSettingTelegramChatIds" placeholder="123456789,-1001234567890" oninput="markPanelSettingsChanged();">
+                                            <label for="panelSettingTelegramChatIds" data-i18n="panel_telegram_chat_ids">Chat ID ها (با کاما جدا کنید)</label>
+                                            <input type="text" id="panelSettingTelegramChatIds" data-i18n-ph="panel_telegram_chat_ids_ph" placeholder="123456789,-1001234567890" oninput="markPanelSettingsChanged();">
                                         </div>
                                         <div class="form-row-2">
                                             <div class="form-group">
-                                                <label for="panelSettingTelegramTimeoutMs">Timeout (ms)</label>
+                                                <label for="panelSettingTelegramTimeoutMs" data-i18n="panel_telegram_timeout_ms">Timeout (ms)</label>
                                                 <input type="number" id="panelSettingTelegramTimeoutMs" min="1000" max="120000" placeholder="12000" oninput="markPanelSettingsChanged();">
                                             </div>
                                             <div class="form-group panel-test-email-row">
-                                                <label for="panelTestTelegramText">پیام تست تلگرام</label>
+                                                <label for="panelTestTelegramText" data-i18n="panel_telegram_test_message_label">پیام تست تلگرام</label>
                                                 <div class="panel-test-email-inline">
-                                                    <input type="text" id="panelTestTelegramText" placeholder="Test from Kaya CRM" class="panel-test-email-input">
-                                                    <button type="button" id="panelTestTelegramBtn" class="btn-secondary panel-test-email-btn" onclick="typeof sendPanelTestTelegram==='function'&&sendPanelTestTelegram()">ارسال تست</button>
+                                                    <input type="text" id="panelTestTelegramText" data-i18n-ph="panel_telegram_test_message_ph" placeholder="Test from Kaya CRM" class="panel-test-email-input">
+                                                    <button type="button" id="panelTestTelegramBtn" class="btn-secondary panel-test-email-btn" onclick="typeof sendPanelTestTelegram==='function'&&sendPanelTestTelegram()" data-i18n="panel_test_telegram_btn">ارسال تست</button>
                                                 </div>
                                                 <span id="panelTestTelegramStatus" class="panel-test-email-status" style="display:none;"></span>
                                             </div>
                                         </div>
                                     </section>
                                     <section class="panel-settings-section">
-                                        <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg></span><span>اعلان‌های مدیر</span></h3>
+                                        <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20V10"/><path d="M18 20V4"/><path d="M6 20v-4"/></svg></span><span data-i18n="panel_section_admin_alerts">اعلان‌های مدیر</span></h3>
                                         <div class="form-group form-group-checkbox">
                                             <label class="checkbox-label">
                                                 <input type="checkbox" id="panelSettingAdminAlertsEnabled" value="1" onchange="markPanelSettingsChanged();">
-                                                <span>فعال بودن اعلان‌های امنیتی مدیر</span>
+                                                <span data-i18n="panel_admin_alerts_enabled">فعال بودن اعلان‌های امنیتی مدیر</span>
                                             </label>
                                         </div>
                                         <div class="form-group">
-                                            <label for="panelSettingAdminAlertEmails">ایمیل مدیران (با کاما جدا کنید)</label>
-                                            <input type="text" id="panelSettingAdminAlertEmails" placeholder="admin@example.com,owner@example.com" oninput="markPanelSettingsChanged();">
+                                            <label for="panelSettingAdminAlertEmails" data-i18n="panel_admin_alert_emails">ایمیل مدیران (با کاما جدا کنید)</label>
+                                            <input type="text" id="panelSettingAdminAlertEmails" data-i18n-ph="panel_admin_alert_emails_ph" placeholder="admin@example.com,owner@example.com" oninput="markPanelSettingsChanged();">
                                         </div>
                                         <div class="form-group form-group-checkbox">
                                             <label class="checkbox-label">
                                                 <input type="checkbox" id="panelSettingClientErrorReportingEnabled" value="1" onchange="markPanelSettingsChanged();">
-                                                <span>گزارش خطاهای فرانت/بک‌اند فعال باشد</span>
+                                                <span data-i18n="panel_client_error_reporting">گزارش خطاهای فرانت/بک‌اند فعال باشد</span>
                                             </label>
                                         </div>
                                         <hr style="border-color:var(--border-color);opacity:.5;margin:12px 0;">
                                         <div class="form-group form-group-checkbox">
                                             <label class="checkbox-label">
                                                 <input type="checkbox" id="panelSettingTelegramNotifyAllEvents" value="1" onchange="markPanelSettingsChanged();">
-                                                <span>ارسال رویدادهای سیستم به تلگرام (سراسری)</span>
+                                                <span data-i18n="panel_telegram_notify_all">ارسال رویدادهای سیستم به تلگرام (سراسری)</span>
                                             </label>
                                         </div>
                                         <div class="form-row-2">
                                             <div class="form-group form-group-checkbox">
                                                 <label class="checkbox-label">
                                                     <input type="checkbox" id="panelSettingTelegramNotifyApiRequests" value="1" onchange="markPanelSettingsChanged();">
-                                                    <span>رویداد API</span>
+                                                    <span data-i18n="panel_telegram_notify_api">رویداد API</span>
                                                 </label>
                                             </div>
                                             <div class="form-group form-group-checkbox">
                                                 <label class="checkbox-label">
                                                     <input type="checkbox" id="panelSettingTelegramNotifyAuthEvents" value="1" onchange="markPanelSettingsChanged();">
-                                                    <span>رویداد ورود/خروج</span>
+                                                    <span data-i18n="panel_telegram_notify_auth">رویداد ورود/خروج</span>
                                                 </label>
                                             </div>
                                         </div>
@@ -91,13 +91,13 @@
                                             <div class="form-group form-group-checkbox">
                                                 <label class="checkbox-label">
                                                     <input type="checkbox" id="panelSettingTelegramNotifySocketEvents" value="1" onchange="markPanelSettingsChanged();">
-                                                    <span>رویداد Socket</span>
+                                                    <span data-i18n="panel_telegram_notify_socket">رویداد Socket</span>
                                                 </label>
                                             </div>
                                             <div class="form-group form-group-checkbox">
                                                 <label class="checkbox-label">
                                                     <input type="checkbox" id="panelSettingTelegramNotifyIncomingMessages" value="1" onchange="markPanelSettingsChanged();">
-                                                    <span>رویداد پیام‌ها</span>
+                                                    <span data-i18n="panel_telegram_notify_messages">رویداد پیام‌ها</span>
                                                 </label>
                                             </div>
                                         </div>
@@ -105,13 +105,13 @@
                                             <div class="form-group form-group-checkbox">
                                                 <label class="checkbox-label">
                                                     <input type="checkbox" id="panelSettingTelegramNotifySystemEvents" value="1" onchange="markPanelSettingsChanged();">
-                                                    <span>رویدادهای سیستمی</span>
+                                                    <span data-i18n="panel_telegram_notify_system">رویدادهای سیستمی</span>
                                                 </label>
                                             </div>
                                             <div class="form-group form-group-checkbox">
                                                 <label class="checkbox-label">
                                                     <input type="checkbox" id="panelSettingTelegramNotifyErrorEvents" value="1" onchange="markPanelSettingsChanged();">
-                                                    <span>خطاها</span>
+                                                    <span data-i18n="panel_telegram_notify_errors">خطاها</span>
                                                 </label>
                                             </div>
                                         </div>

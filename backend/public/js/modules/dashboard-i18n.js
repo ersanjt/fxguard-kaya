@@ -33,7 +33,14 @@ window.t = function (k) {
     if (isFxguardPublicHost()) {
         return (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || (window.__I18N_EN && window.__I18N_EN[k]) || (window.__I18N_TR && window.__I18N_TR[k]) || k;
     }
-    return (I18N.fa && I18N.fa[k]) || (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || k;
+    /* بدون کلید در زبان جاری، هرگز قبل از زبان‌های دیگر به fa برنگرد (باعث تب فارسی در UI انگلیسی می‌شد) */
+    if (LANG === 'en') {
+        return (I18N.en && I18N.en[k]) || (window.__I18N_EN && window.__I18N_EN[k]) || (I18N.tr && I18N.tr[k]) || (I18N.fa && I18N.fa[k]) || k;
+    }
+    if (LANG === 'tr') {
+        return (I18N.tr && I18N.tr[k]) || (window.__I18N_TR && window.__I18N_TR[k]) || (I18N.en && I18N.en[k]) || (I18N.fa && I18N.fa[k]) || k;
+    }
+    return (I18N.fa && I18N.fa[k]) || (window.__I18N_FA && window.__I18N_FA[k]) || (I18N.en && I18N.en[k]) || (I18N.tr && I18N.tr[k]) || k;
 };
 
 window.setLang = function (l) {
@@ -74,22 +81,29 @@ window.setLang = function (l) {
 window.applyTranslations = function () {
     document.querySelectorAll('[data-i18n]').forEach(function (el) {
         var k = el.getAttribute('data-i18n');
-        if (k && t(k)) el.textContent = t(k);
+        if (!k) return;
+        var txt = t(k);
+        if (txt != null && txt !== '') el.textContent = txt;
     });
     document.querySelectorAll('[data-i18n-ph]').forEach(function (el) {
         var k = el.getAttribute('data-i18n-ph');
-        if (k && t(k)) el.placeholder = t(k);
+        if (!k) return;
+        var ph = t(k);
+        if (ph != null && ph !== '') el.placeholder = ph;
     });
     document.querySelectorAll('[data-i18n-title]').forEach(function (el) {
         var k = el.getAttribute('data-i18n-title');
-        if (k && t(k)) {
-            el.title = t(k);
-            if (el.classList.contains('nav-link') && el.closest('.sidebar')) el.setAttribute('data-tooltip', t(k));
-        }
+        if (!k) return;
+        var ttl = t(k);
+        if (ttl == null || ttl === '') return;
+        el.title = ttl;
+        if (el.classList.contains('nav-link') && el.closest('.sidebar')) el.setAttribute('data-tooltip', ttl);
     });
     document.querySelectorAll('[data-i18n-aria-label]').forEach(function (el) {
         var k = el.getAttribute('data-i18n-aria-label');
-        if (k && t(k)) el.setAttribute('aria-label', t(k));
+        if (!k) return;
+        var al = t(k);
+        if (al != null && al !== '') el.setAttribute('aria-label', al);
     });
     if (typeof initSidebarCollapsedState === 'function') initSidebarCollapsedState();
     if (typeof window.refreshConversationUiAfterLang === 'function') window.refreshConversationUiAfterLang();

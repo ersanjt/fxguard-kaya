@@ -1059,6 +1059,7 @@
             initPanelVisibilitySearch();
             initSidebarOrderList(d.sidebarOrder);
             clearPanelSettingsChanged();
+            if (typeof window.applyTranslations === 'function') window.applyTranslations();
         }
         const SIDEBAR_SECTIONS = [
             { section: 'dashboard', labelKey: 'nav_dashboard' },
