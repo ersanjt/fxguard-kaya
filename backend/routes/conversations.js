@@ -693,16 +693,16 @@ router.post('/:id/send', async (req, res, next) => {
                     const fileBuf = await fsPromises.readFile(filePath);
                     const base64 = fileBuf.toString('base64');
                     payload.media = { data: base64, mimetype: sendMimetype, filename: sendFilename };
-                    if (msgType === 'audio') payload.media.sendAsVoice = true;
+                    if (msgType === 'audio' && /^audio\/(ogg|opus)/i.test(sendMimetype || '')) payload.media.sendAsVoice = true;
                 } catch (readErr) {
                     if (mediaUrl) {
                         payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
-                        if (msgType === 'audio') payload.media.sendAsVoice = true;
+                        if (msgType === 'audio' && /^audio\/(ogg|opus)/i.test((media.mimetype || '').toLowerCase())) payload.media.sendAsVoice = true;
                     }
                 }
             } else if (mediaUrl) {
                 payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
-                if (msgType === 'audio') payload.media.sendAsVoice = true;
+                if (msgType === 'audio' && /^audio\/(ogg|opus)/i.test((media.mimetype || '').toLowerCase())) payload.media.sendAsVoice = true;
             }
         }
         if (replyTo) payload.replyTo = replyTo;

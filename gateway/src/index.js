@@ -928,7 +928,7 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
             const mime = media.mimetype || 'application/octet-stream';
             const mediaObj = new MessageMedia(mime, media.data, media.filename || null);
             sendOpts.caption = message || '';
-            if (media.sendAsVoice || /^audio\/(ogg|webm|opus)/i.test(mime)) {
+            if (media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime)) {
                 sendOpts.sendAudioAsVoice = true;
             }
             sentMsg = await client.sendMessage(chatId, mediaObj, sendOpts);
@@ -940,7 +940,7 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
             sendOpts.caption = message || '';
             if (
                 media.sendAsVoice ||
-                (media.mimetype && /^audio\/(ogg|webm|opus)/i.test(media.mimetype))
+                (media.mimetype && /^audio\/(ogg|opus)/i.test(media.mimetype))
             ) {
                 sendOpts.sendAudioAsVoice = true;
             }
@@ -1055,7 +1055,7 @@ async function sendWhatsAppMessage(data) {
         const mime = media.mimetype || 'application/octet-stream';
         const mediaObj = new MessageMedia(mime, media.data, media.filename || null);
         sendOpts.caption = message || '';
-        if (media.sendAsVoice || /^audio\/(ogg|webm|opus)/i.test(mime)) {
+        if (media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime)) {
             sendOpts.sendAudioAsVoice = true;
         }
         return client.sendMessage(chatId, mediaObj, sendOpts);
@@ -1067,7 +1067,7 @@ async function sendWhatsAppMessage(data) {
         sendOpts.caption = message || '';
         if (
             media.sendAsVoice ||
-            (media.mimetype && /^audio\/(ogg|webm|opus)/i.test(media.mimetype))
+            (media.mimetype && /^audio\/(ogg|opus)/i.test(media.mimetype))
         ) {
             sendOpts.sendAudioAsVoice = true;
         }

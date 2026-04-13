@@ -1432,7 +1432,6 @@
                     } else if (mediaType === 'audio') {
                         const isPtt = (m.type || '').toLowerCase() === 'ptt' || /voice|\.ogg|\.webm|پیام صوتی|ptt/i.test(m.mediaData.filename || m.content || '');
                         const voiceClass = isPtt ? ' msg-media-voice' : ' msg-media-audio';
-                        const typeAttr = mdMime ? ' type="' + escapeHtml(mdMime) + '"' : '';
                         const errHint = LANG === 'fa' ? 'پخش در مرورگر ممکن نیست — از دانلود استفاده کنید.' : 'Playback failed — try download.';
                         const voiceLabel = isPtt
                             ? ('<div class="msg-voice-meta"><span class="msg-voice-ic" aria-hidden="true">🎙</span><span>' + (LANG === 'fa' ? 'پیام صوتی' : 'Voice message') + '</span></div>')
@@ -1441,9 +1440,7 @@
                             '<div class="msg-media' + voiceClass + '">' +
                             voiceLabel +
                             '<div class="msg-audio-shell">' +
-                            '<audio class="msg-audio-el" controls preload="auto" playsinline onerror="var w=this.closest(\'.msg-media\');if(w){w.classList.add(\'msg-media-error\');}">' +
-                            '<source src="' + escapeHtml(mediaUrl) + '"' + typeAttr + '>' +
-                            '</audio></div>' +
+                            '<audio class="msg-audio-el" src="' + escapeHtml(mediaUrl) + '" controls preload="metadata" playsinline onerror="var w=this.closest(\'.msg-media\');if(w){w.classList.add(\'msg-media-error\');}try{if(!this.dataset.retryBlob){this.dataset.retryBlob=\'1\';var el=this;fetch(el.src,{credentials:\'include\'}).then(function(r){if(!r.ok)throw new Error(\'http \'+r.status);return r.blob();}).then(function(b){if(!b||!b.size)throw new Error(\'empty\');var bu=URL.createObjectURL(b);el.src=bu;el.load();var ww=el.closest(\'.msg-media\');if(ww){ww.classList.remove(\'msg-media-error\');}}).catch(function(){});}}catch(_e){}"></audio></div>' +
                             '<p class="msg-media-audio-err" role="alert">' + escapeHtml(errHint) + '</p>' +
                             '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-dl" data-open="1">' + (LANG === 'fa' ? 'دانلود فایل صوتی' : 'Download audio') + '</a>' +
                             '</div>';

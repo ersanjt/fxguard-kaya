@@ -7,6 +7,7 @@
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs').promises;
+const FormData = require('form-data');
 const { getWhatsappConnectionConfig, isCloudApiConfigured: isCloudConfigured } = require('./whatsappConnectionLoader');
 
 const API_BASE = 'https://graph.facebook.com/v18.0';
@@ -75,35 +76,60 @@ async function sendMedia(to, media, caption = '') {
     if (!phone) throw new Error('Invalid phone number');
 
     let mediaUrl = null;
+    let mediaId = null;
     const baseUrl = (process.env.BACKEND_PUBLIC_URL || process.env.GATEWAY_URL || 'http://localhost:3002').replace(/\/$/, '');
+    async function uploadBufferToCloud(buffer, opts = {}) {
+        if (!buffer || !buffer.length) throw new Error('Empty media buffer');
+        const form = new FormData();
+        form.append('messaging_product', 'whatsapp');
+        form.append('file', buffer, {
+            filename: opts.filename || 'file',
+            contentType: opts.mimetype || 'application/octet-stream',
+        });
+        if (opts.mimetype) form.append('type', opts.mimetype);
+        const upRes = await axios.post(`${API_BASE}/${cfg.cloudPhoneNumberId}/media`, form, {
+            headers: {
+                ...form.getHeaders(),
+                Authorization: `Bearer ${cfg.cloudAccessToken}`,
+            },
+            maxBodyLength: Infinity,
+            maxContentLength: Infinity,
+            timeout: 30000,
+        });
+        const id = upRes?.data?.id;
+        if (!id) throw new Error('Cloud media upload failed: no media id');
+        return id;
+    }
     if (media?.url && (media.url.startsWith('http://') || media.url.startsWith('https://'))) {
         mediaUrl = media.url;
     } else if (media?.url && media.url.startsWith('/uploads/')) {
-        mediaUrl = baseUrl + media.url;
-    } else if (media?.data) {
-        const base = (process.env.BACKEND_PUBLIC_URL || '').replace(/\/$/, '');
-        if (!base) throw new Error('For base64 media with Cloud API, BACKEND_PUBLIC_URL must be set');
-        const uploadsDir = path.join(__dirname, '..', 'uploads');
-        await fs.mkdir(uploadsDir, { recursive: true }).catch(() => {});
-        const mime = (media.mimetype || 'application/octet-stream').split(';')[0].trim().toLowerCase();
-        let ext = media.filename ? path.extname(media.filename) : '';
-        if (!ext || ext === '.') {
-            if (mime.startsWith('image/')) ext = mime.includes('png') ? '.png' : mime.includes('webp') ? '.webp' : mime.includes('gif') ? '.gif' : '.jpg';
-            else if (mime.startsWith('video/')) ext = mime.includes('webm') ? '.webm' : '.mp4';
-            else if (mime.startsWith('audio/')) {
-                if (mime.includes('webm')) ext = '.webm';
-                else if (mime.includes('mpeg') || mime.includes('mp3')) ext = '.mp3';
-                else if (mime.includes('mp4') || mime.includes('m4a') || mime.includes('aac')) ext = '.m4a';
-                else if (mime.includes('wav')) ext = '.wav';
-                else ext = '.ogg';
-            } else ext = '.bin';
+        // اولویت: آپلود مستقیم در Meta با media_id (پایدارتر از link)
+        try {
+            const uploadsDir = path.join(__dirname, '..', 'uploads');
+            const rel = String(media.url).replace(/^\/uploads\/?/, '').replace(/^\/+/, '');
+            const localPath = path.resolve(uploadsDir, rel);
+            const root = path.resolve(uploadsDir);
+            if (localPath.startsWith(root + path.sep) || localPath === root) {
+                const buf = await fs.readFile(localPath);
+                mediaId = await uploadBufferToCloud(buf, {
+                    filename: media.filename || path.basename(localPath) || 'file',
+                    mimetype: (media.mimetype || '').split(';')[0].trim() || 'application/octet-stream',
+                });
+            } else {
+                mediaUrl = baseUrl + media.url;
+            }
+        } catch (_e) {
+            mediaUrl = baseUrl + media.url;
         }
-        const fname = 'cloud-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10) + ext;
-        const fpath = path.join(uploadsDir, fname);
-        await fs.writeFile(fpath, Buffer.from(media.data, 'base64'));
-        mediaUrl = base + '/uploads/' + fname;
+    } else if (media?.data) {
+        const mime = (media.mimetype || 'application/octet-stream').split(';')[0].trim().toLowerCase();
+        const buf = Buffer.from(media.data, 'base64');
+        mediaId = await uploadBufferToCloud(buf, {
+            filename: media.filename || 'file',
+            mimetype: mime || 'application/octet-stream',
+        });
     }
-    if (!mediaUrl) throw new Error('Media must have url or data (with BACKEND_PUBLIC_URL for base64)');
+    if (!mediaId && !mediaUrl) throw new Error('Media must have url or data');
 
     const mime = (media?.mimetype || '').toLowerCase();
     let type = 'document';
@@ -111,12 +137,8 @@ async function sendMedia(to, media, caption = '') {
     else if (mime.startsWith('audio/') || mime.includes('ogg') || mime.includes('opus')) type = 'audio';
     else if (mime.startsWith('video/')) type = 'video';
 
-    const mediaPayload = { link: mediaUrl };
+    const mediaPayload = mediaId ? { id: mediaId } : { link: mediaUrl };
     if (media?.filename) mediaPayload.filename = media.filename;
-    /* پیام صوتی (PTT) — بدون voice گاهی در کلاینت به‌صورت فایل/شکسته دیده می‌شود */
-    if (type === 'audio' && media?.sendAsVoice) {
-        mediaPayload.voice = true;
-    }
 
     const body = {
         messaging_product: 'whatsapp',
