@@ -73,6 +73,7 @@ jobs:
     timeout-minutes: 60
     permissions:
       contents: read
+      actions: write # لازم برای actions/upload-artifact وقتی contents محدود است
     defaults:
       run:
         working-directory: android-app
@@ -103,8 +104,20 @@ jobs:
           ls -lh "$APK"
 
       - name: Upload release APK (دانلود از تب Actions → آخرین run → Artifacts)
+        if: github.event_name == 'push'
         uses: actions/upload-artifact@v4
         with:
           name: kaya-crm-app-release-${{ github.sha }}
           path: android-app/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
+          retention-days: 30
+
+      - name: Summary — APK artifact
+        if: github.event_name == 'push'
+        run: |
+          {
+            echo "## اندروید"
+            echo "بعد از سبز شدن این job، در **پایین همین صفحه** بخش **Artifacts** را باز کنید و زیپ \`kaya-crm-app-release-*\` را دانلود کنید؛ داخل آن \`app-release.apk\` است (نسخه از \`android-app/app/build.gradle.kts\`)."
+            echo ""
+            echo "اگر runهای قدیمی‌تر CI به‌صورت **Canceled** مانده‌اند، به‌خاطر \`cancel-in-progress: true\` است؛ فقط آخرین run برای همان branch معتبر است."
+          } >> "$GITHUB_STEP_SUMMARY"
