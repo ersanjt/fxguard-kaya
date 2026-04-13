@@ -100,7 +100,8 @@ jobs:
           fi
           mkdir -p ~/.ssh
           KEY="${RUNNER_TEMP}/kaya_deploy_ci"
-          printf '%s\n' "$DEPLOY_SSH_KEY" > "$KEY"
+          # Strip CR so keys pasted from Windows / CRLF secrets do not break ssh -i (invalid format).
+          printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > "$KEY"
           chmod 600 "$KEY"
           SSH_OPTS=(
             -i "$KEY"
