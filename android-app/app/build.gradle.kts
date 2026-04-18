@@ -13,9 +13,9 @@ android {
     defaultConfig {
         applicationId = "com.kaya.crm"
         minSdk = 26
-        targetSdk = 36
-        versionCode = 18
-        versionName = "1.5.3"
+        targetSdk = 35
+        versionCode = 20
+        versionName = "1.5.5"
         buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
     }
 
@@ -79,15 +79,17 @@ android {
     lint {
         abortOnError = true
         checkReleaseBuilds = true
+        // ادغام mipmap-anydpi-v26 → mipmap-anydpi در این پروژه باعث خطای لینک منابع (AAPT) شد
+        disable += "ObsoleteSdkInt"
     }
 }
 
 dependencies {
     implementation("androidx.appcompat:appcompat:1.7.0")
-    implementation("androidx.core:core-ktx:1.16.0")
+    implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.core:core-splashscreen:1.2.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
     implementation("androidx.activity:activity-compose:1.13.0")
 
     // Compose
@@ -103,7 +105,8 @@ dependencies {
     // Hilt (با KSP به‌جای kapt - پایدارتر)
     implementation("com.google.dagger:hilt-android:2.54")
     ksp("com.google.dagger:hilt-android-compiler:2.54")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
+    implementation("androidx.hilt:hilt-lifecycle-viewmodel-compose:1.3.0")
 
     // Retrofit & OkHttp
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
@@ -111,7 +114,7 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
     // DataStore
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
 
     // Coil for images
     implementation("io.coil-kt:coil-compose:2.7.0")

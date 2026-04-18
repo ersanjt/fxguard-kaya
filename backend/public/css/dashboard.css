@@ -857,16 +857,240 @@
             flex-direction: column;
             align-items: stretch;
             gap: 8px;
-            padding: 6px 0 4px;
+            padding: 2px 0 4px;
             width: 100%;
             max-width: min(100%, 340px);
         }
+        .msg-voice-footer-hide-time .msg-footer > .time {
+            display: none !important;
+        }
+        /* Telegram-style voice bubble */
+        .msg-voice-player--telegram {
+            position: relative;
+            overflow: hidden;
+            width: 100%;
+            max-width: 308px;
+            min-width: 240px;
+            padding: 11px 13px 9px;
+            border-radius: 18px;
+            box-sizing: border-box;
+        }
+        .msg.in .msg-voice-player--telegram {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+        }
+        .msg.in .msg-media-voice-tg .msg-voice-player--telegram::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 11px;
+            width: 10px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.08);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transform: rotate(45deg);
+        }
+        .msg.out .msg-voice-player--telegram {
+            background: rgba(0, 0, 0, 0.22);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+        .msg.out .msg-media-voice-tg .msg-voice-player--telegram::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            right: 11px;
+            left: auto;
+            width: 10px;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.22);
+            border-right: 1px solid rgba(255, 255, 255, 0.14);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+            transform: rotate(-45deg);
+        }
+        .msg-voice-tg-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 34px;
+        }
+        .msg-voice-play {
+            flex-shrink: 0;
+            width: 40px;
+            height: 40px;
+            margin: 0;
+            padding: 0;
+            border: none;
+            border-radius: 50%;
+            background: transparent;
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.15s ease, transform 0.12s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .msg.out .msg-voice-play { color: rgba(255, 255, 255, 0.98); }
+        .msg.in .msg-voice-play:hover { opacity: 0.85; transform: scale(1.06); }
+        .msg.out .msg-voice-play:hover { opacity: 0.92; transform: scale(1.06); }
+        .msg-voice-play:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        .msg.out .msg-voice-play:focus-visible { outline-color: #fff; }
+        .msg-voice-icon { display: block; }
+        .msg-voice-icon--pause { display: none; }
+        .msg-voice-player--playing .msg-voice-icon--play { display: none; }
+        .msg-voice-player--playing .msg-voice-icon--pause { display: block; }
+        .msg-voice-wave-area {
+            flex: 1;
+            min-width: 0;
+            position: relative;
+            height: 34px;
+            cursor: pointer;
+            border-radius: 10px;
+            align-self: center;
+        }
+        .msg-voice-wave-area:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: 10px;
+        }
+        .msg.out .msg-voice-wave-area:focus-visible { outline-color: #fff; }
+        .msg-voice-wave-bars {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 2px;
+            height: 26px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 2px;
+            opacity: 0.5;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .msg.out .msg-voice-wave-bars { opacity: 0.55; }
+        .msg-voice-bar {
+            flex: 1;
+            min-width: 2px;
+            max-width: 4px;
+            border-radius: 999px;
+            background: var(--text-muted);
+            align-self: flex-end;
+            transition: height 0.12s ease-out, opacity 0.15s ease;
+        }
+        .msg.out .msg-voice-bar { background: rgba(255, 255, 255, 0.42); }
+        .msg-voice-bar:nth-child(6n+1) { height: 32%; }
+        .msg-voice-bar:nth-child(6n+2) { height: 55%; }
+        .msg-voice-bar:nth-child(6n+3) { height: 78%; }
+        .msg-voice-bar:nth-child(6n+4) { height: 44%; }
+        .msg-voice-bar:nth-child(6n+5) { height: 92%; }
+        .msg-voice-bar:nth-child(6n) { height: 62%; }
+        .msg-voice-player--playing .msg-voice-bar {
+            animation: msg-voice-tg-pulse 0.85s ease-in-out infinite;
+        }
+        .msg-voice-player--playing .msg-voice-bar:nth-child(3n) { animation-delay: 0.12s; }
+        .msg-voice-player--playing .msg-voice-bar:nth-child(3n+1) { animation-delay: 0.24s; }
+        @keyframes msg-voice-tg-pulse {
+            0%, 100% { opacity: 0.55; transform: scaleY(0.92); }
+            50% { opacity: 1; transform: scaleY(1.08); }
+        }
+        .msg-voice-wave-played {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 0%;
+            max-width: 100%;
+            border-radius: 8px;
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.38), rgba(34, 197, 94, 0.12));
+            pointer-events: none;
+            z-index: 0;
+            transition: width 0.06s linear;
+        }
+        .msg.out .msg-voice-wave-played {
+            background: linear-gradient(90deg, rgba(74, 222, 128, 0.45), rgba(74, 222, 128, 0.15));
+        }
+        .msg-voice-playhead {
+            position: absolute;
+            top: 50%;
+            left: 0%;
+            width: 11px;
+            height: 11px;
+            margin-left: -5px;
+            margin-top: -5px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.35);
+            pointer-events: none;
+            z-index: 4;
+            transition: left 0.06s linear;
+        }
+        .msg.out .msg-voice-playhead {
+            background: #4ade80;
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.35);
+        }
+        .msg-voice-speed {
+            flex-shrink: 0;
+            min-width: 40px;
+            padding: 7px 11px;
+            margin: 0;
+            border: none;
+            border-radius: 20px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 0.02em;
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.42);
+            color: rgba(255, 255, 255, 0.96);
+            transition: background 0.15s ease, transform 0.1s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .msg.in .msg-voice-speed { background: rgba(0, 0, 0, 0.38); }
+        .msg-voice-speed:hover { filter: brightness(1.08); transform: scale(1.02); }
+        .msg-voice-speed:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+        .msg-voice-tg-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 7px;
+            padding: 0 3px 0 2px;
+            font-size: 0.74rem;
+            font-variant-numeric: tabular-nums;
+            color: var(--text-muted);
+        }
+        .msg.out .msg-voice-tg-meta { color: rgba(255, 255, 255, 0.78); }
+        .msg-voice-tg-time { opacity: 0.95; }
+        .msg-voice-dur { opacity: 0.75; font-weight: 500; }
+        .msg-voice-sent-time { opacity: 0.88; font-weight: 500; }
         .msg-media.msg-media-audio .msg-audio-el,
         .msg-media.msg-media-voice .msg-audio-el {
-            width: 100%;
-            min-width: 0;
-            height: 44px;
-            border-radius: 10px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            clip-path: inset(50%);
+            white-space: nowrap;
+            border: 0;
+            opacity: 0;
+            pointer-events: none;
+            appearance: none;
+            -webkit-appearance: none;
         }
         .msg-media-audio-err {
             display: none;
@@ -876,7 +1100,9 @@
             line-height: 1.4;
         }
         .msg-media-error .msg-media-audio-err { display: block; }
-        .msg-media-error .msg-audio-el { opacity: 0.4; pointer-events: none; }
+        .msg-media-error .msg-voice-play,
+        .msg-media-error .msg-voice-speed { opacity: 0.45; pointer-events: none; }
+        .msg-media-error .msg-voice-wave-area { pointer-events: none; opacity: 0.55; }
         .msg.out .msg-media-audio-err { color: #fde68a; }
         .msg-media-dl { font-size: 0.85rem; font-weight: 500; }
         .msg-media-placeholder { padding: 10px 14px; background: var(--bg-secondary); border-radius: 10px; border: 1px solid var(--border); font-size: 0.9rem; color: var(--text-secondary); }
@@ -1088,31 +1314,11 @@
             border-radius: 22px;
         }
         .chat-compose-send .chat-send-text { font-weight: 600; font-size: 0.9rem; }
-        .msg-voice-meta {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.82rem;
-            font-weight: 600;
-            margin-bottom: 2px;
+        .msg-media-dl.msg-voice-dl-subtle {
+            font-size: 0.78rem;
+            opacity: 0.88;
+            align-self: flex-start;
         }
-        .msg.in .msg-voice-meta { color: var(--text-secondary); }
-        .msg.out .msg-voice-meta { color: rgba(255, 255, 255, 0.92); }
-        .msg-voice-meta--file .msg-voice-ic { opacity: 0.9; }
-        .msg-audio-shell {
-            border-radius: 12px;
-            padding: 4px 8px;
-            background: rgba(0, 0, 0, 0.07);
-        }
-        .msg.out .msg-audio-shell {
-            background: rgba(0, 0, 0, 0.25);
-        }
-        .msg.out .msg-media.msg-media-voice .msg-audio-el,
-        .msg.out .msg-media.msg-media-audio .msg-audio-el {
-            color-scheme: dark;
-            accent-color: #fff;
-        }
-        .msg.in .msg-audio-el { accent-color: var(--accent); }
         @media (max-width: 520px) {
             .chat-compose-send .chat-send-text { display: none; }
             .chat-compose-send.chat-send-btn { padding: 0; width: 44px; min-width: 44px; justify-content: center; }

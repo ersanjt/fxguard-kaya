@@ -3,7 +3,7 @@ package com.kaya.crm.ui.main.profile
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -32,7 +32,7 @@ import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 import com.kaya.crm.BuildConfig
@@ -424,7 +424,7 @@ fun ProfileScreen(
                         onCopyTokenOnly = { copyToClipboard(clipTelegramToken, it) },
                         onOpenBot = { url ->
                             runCatching {
-                                context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                                context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
                             }
                         }
                     )
@@ -986,14 +986,14 @@ private fun StoreLinksCard(iosUrl: String, androidUrl: String, context: Context)
             Spacer(modifier = Modifier.height(8.dp))
             if (iosUrl.isNotBlank()) {
                 OutlinedButton(
-                    onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(iosUrl))) } },
+                    onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, iosUrl.toUri())) } },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(stringResource(R.string.download_ios)) }
             }
             if (androidUrl.isNotBlank()) {
                 Spacer(modifier = Modifier.height(8.dp))
                 Button(
-                    onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(androidUrl))) } },
+                    onClick = { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, androidUrl.toUri())) } },
                     modifier = Modifier.fillMaxWidth()
                 ) { Text(stringResource(R.string.download_android)) }
             }

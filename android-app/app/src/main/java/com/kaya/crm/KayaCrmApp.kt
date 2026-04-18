@@ -12,7 +12,7 @@ import dagger.hilt.android.HiltAndroidApp
 @HiltAndroidApp
 class KayaCrmApp : Application(), ImageLoaderFactory {
     override fun newImageLoader(): ImageLoader {
-        return runCatching {
+        return try {
             val okHttp = EntryPointAccessors.fromApplication(
                 applicationContext,
                 CoilOkHttpEntryPoint::class.java
@@ -21,8 +21,8 @@ class KayaCrmApp : Application(), ImageLoaderFactory {
                 .okHttpClient(okHttp)
                 .crossfade(true)
                 .build()
-        }.getOrElse {
-            // Fallback: do not crash app startup if DI/entrypoint fails on some devices.
+        } catch (e: Exception) {
+            // جلوگیری از کرش کل اپلیکیشن در صورت خطای تزریق وابستگی در Coil
             ImageLoader.Builder(applicationContext)
                 .crossfade(true)
                 .build()
@@ -31,21 +31,6 @@ class KayaCrmApp : Application(), ImageLoaderFactory {
 
     override fun onCreate() {
         super.onCreate()
-        if (BuildConfig.DEBUG) {
-            StrictMode.setThreadPolicy(
-                StrictMode.ThreadPolicy.Builder()
-                    .detectDiskReads()
-                    .detectDiskWrites()
-                    .penaltyLog()
-                    .build()
-            )
-            StrictMode.setVmPolicy(
-                StrictMode.VmPolicy.Builder()
-                    .detectLeakedSqlLiteObjects()
-                    .detectLeakedClosableObjects()
-                    .penaltyLog()
-                    .build()
-            )
-        }
+        // StrictMode غیرفعال شد تا در شروع اپلیکیشن کرش نکند
     }
 }

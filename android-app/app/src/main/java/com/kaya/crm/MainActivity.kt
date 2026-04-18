@@ -11,13 +11,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.os.LocaleListCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.lifecycle.lifecycleScope
 import com.kaya.crm.data.network.NetworkMonitor
 import com.kaya.crm.data.preferences.AuthPreferences
-import com.kaya.crm.ui.KayaCrmApp
+import com.kaya.crm.ui.MainAppNavigation
 import com.kaya.crm.ui.theme.KayaCrmTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -26,23 +28,31 @@ class MainActivity : AppCompatActivity() {
     @Inject lateinit var authPreferences: AuthPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // splash قبل از super؛ تزریق Hilt معمولاً در زنجیرهٔ super.onCreate انجام می‌شود — قبل از آن به lateinit دست نزنید
+        // splash قبل از super
         installSplashScreen()
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val localeTag = runCatching {
-            runBlocking(Dispatchers.IO) { authPreferences.getAppLocale() }
-        }.getOrDefault("en").let { if (it == "fa") "fa" else "en" }
-        runCatching {
-            AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(localeTag))
+
+        // اجرای کاملاً ایمن و غیرمسدودکننده برای تغییر زبان
+        lifecycleScope.launch(Dispatchers.Main) {
+            try {
+                val localeTag = withContext(Dispatchers.IO) {
+                    authPreferences.getAppLocale()
+                }.let { if (it == "fa") "fa" else "en" }
+
+                AppCompatDelegate.setApplicationLocales(LocaleListCompat.forLanguageTags(localeTag))
+            } catch (e: Exception) {
+                // نادیده گرفتن خطا در استارت‌آپ برای جلوگیری از کرش
+            }
         }
+
         setContent {
             KayaCrmTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    KayaCrmApp(networkMonitor = networkMonitor)
+                    MainAppNavigation(networkMonitor = networkMonitor)
                 }
             }
         }

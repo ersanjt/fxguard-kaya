@@ -2,6 +2,7 @@ package com.kaya.crm.ui.main.customers
 
 import android.content.Intent
 import android.net.Uri
+import androidx.core.net.toUri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -28,7 +29,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.kaya.crm.ui.components.WaChatRowDivider
 import com.kaya.crm.ui.components.WaChatSheetHeader
 import com.kaya.crm.ui.components.WaChatThreadRow
@@ -242,7 +243,7 @@ private fun CustomerListRow(
                 onClick = {
                     runCatching {
                         context.startActivity(
-                            Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(phone)}"))
+                            Intent(Intent.ACTION_DIAL, "tel:${Uri.encode(phone)}".toUri())
                         )
                     }
                 }
@@ -334,7 +335,7 @@ private fun CustomerDetailSheet(
                             onClick = {
                                 runCatching {
                                     context.startActivity(
-                                        Intent(Intent.ACTION_DIAL, Uri.parse("tel:${Uri.encode(phone)}"))
+                                        Intent(Intent.ACTION_DIAL, "tel:${Uri.encode(phone)}".toUri())
                                     )
                                 }
                             },

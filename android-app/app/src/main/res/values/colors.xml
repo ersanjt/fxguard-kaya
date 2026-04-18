@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#0D47A1</color>
-    <color name="ic_launcher_foreground">#FFFFFF</color>
     <!-- پس‌زمینهٔ Splash (هم‌خوان با تم روشن اپ) -->
     <color name="splash_background">#F0F7F5</color>
 </resources>

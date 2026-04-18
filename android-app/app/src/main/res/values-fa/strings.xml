@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">پورتال کارکنان</string>
-    <string name="login_title_fallback">پورتال کارکنان</string>
+    <string name="app_name">کایا سی‌آر‌ام</string>
+    <string name="login_title_fallback">کایا سی‌آر‌ام</string>
     <string name="login_tagline">ورود امن به پورتال مدیریت مشتری</string>
     <string name="action_refresh_branding">به‌روزرسانی ظاهر از سرور</string>
     <string name="cd_login_logo">لوگوی سازمان</string>
@@ -155,19 +155,4 @@
     <string name="mobile_download_title">دانلود اپ موبایل</string>
     <string name="download_ios">دانلود iOS</string>
     <string name="download_android">دانلود Android</string>
-
-    <string name="customers_search_hint">جستجو نام، شماره یا ایمیل…</string>
-    <string name="customers_filter_all">همه</string>
-    <string name="customers_filter_active">فعال</string>
-    <string name="customers_filter_inactive">غیرفعال</string>
-    <string name="customers_filter_blocked">مسدود</string>
-    <string name="customers_empty">مشتری یافت نشد</string>
-    <string name="customers_load_more">بارگذاری بیشتر (%1$d از %2$d)</string>
-    <string name="customers_call">تماس تلفنی</string>
-    <string name="customers_open_chat">رفتن به مکالمه</string>
-    <string name="customers_no_detail">اطلاعاتی دریافت نشد</string>
-
-    <string name="internal_new_chat_title">شروع گفتگوی جدید</string>
-    <string name="internal_no_users">کاربری برای چت یافت نشد</string>
-    <string name="internal_remove_attachments">حذف پیوست‌ها</string>
 </resources>

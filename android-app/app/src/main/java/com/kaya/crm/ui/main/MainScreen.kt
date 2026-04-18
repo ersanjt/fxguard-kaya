@@ -14,7 +14,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.kaya.crm.R
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.kaya.crm.ui.main.conversations.ConversationsScreen
 import com.kaya.crm.ui.main.customers.CustomersScreen
 import com.kaya.crm.ui.main.dashboard.DashboardScreen

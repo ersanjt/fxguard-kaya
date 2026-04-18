@@ -9,6 +9,7 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -25,21 +26,37 @@ object AppModule {
 
     @Provides
     @Singleton
+    @Named("dynamicBaseUrl")
+    fun provideDynamicBaseUrlInterceptor(prefs: AuthPreferences): Interceptor = Interceptor { chain ->
+        var request = chain.request()
+        // استفاده از runBlocking در اینترسپتور اجباری است اما با رعایت احتیاط
+        val savedBaseUrl = runBlocking { prefs.baseUrl.firstOrNull() }?.trim()?.trimEnd('/')
+
+        if (!savedBaseUrl.isNullOrBlank()) {
+            val newBaseUrl = if (savedBaseUrl.endsWith("/api")) savedBaseUrl else "$savedBaseUrl/api"
+            val finalUrl = request.url.toString().replace(ApiConfig.API_BASE.trimEnd('/'), newBaseUrl)
+            request = request.newBuilder().url(finalUrl).build()
+        }
+        chain.proceed(request)
+    }
+
+    @Provides
+    @Singleton
+    @Named("auth")
     fun provideAuthInterceptor(prefs: AuthPreferences): Interceptor = Interceptor { chain ->
-        val token = runBlocking { prefs.getToken() }
+        val token = runBlocking { prefs.token.firstOrNull() }
         val request = chain.request().newBuilder().apply {
             token?.let { addHeader("Authorization", "Bearer $it") }
             addHeader("Accept", "application/json")
-            // Content-Type را اینجا ست نکنید تا multipart و JSON هر کدام هدر درست داشته باشند
         }.build()
+
         val response = chain.proceed(request)
         if (response.code == 401) {
             runBlocking { prefs.clear() }
         }
-        response
+        return@Interceptor response
     }
 
-    /** بدون هدر JSON — مناسب دانلود APK */
     @Provides
     @Singleton
     @Named("updateDownloader")
@@ -53,13 +70,16 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideOkHttpClient(authInterceptor: Interceptor): OkHttpClient {
+    fun provideOkHttpClient(
+        @Named("auth") authInterceptor: Interceptor,
+        @Named("dynamicBaseUrl") dynamicBaseUrlInterceptor: Interceptor
+    ): OkHttpClient {
         val logging = HttpLoggingInterceptor().apply {
-            level =
-                if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
-                else HttpLoggingInterceptor.Level.NONE
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
+            else HttpLoggingInterceptor.Level.NONE
         }
         return OkHttpClient.Builder()
+            .addInterceptor(dynamicBaseUrlInterceptor)
             .addInterceptor(RetryInterceptor())
             .addInterceptor(authInterceptor)
             .addInterceptor(logging)
@@ -71,14 +91,9 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideRetrofit(okHttpClient: OkHttpClient, prefs: AuthPreferences): Retrofit {
-        val saved = runBlocking { prefs.getBaseUrl() }?.trim()
-        val baseUrl = if (!saved.isNullOrBlank()) {
-            val clean = saved.trimEnd('/')
-            if (clean.endsWith("/api")) "$clean/" else "$clean/api/"
-        } else ApiConfig.API_BASE
+    fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
         return Retrofit.Builder()
-            .baseUrl(baseUrl)
+            .baseUrl(ApiConfig.API_BASE)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <string name="app_name">Staff portal</string>
-    <string name="login_title_fallback">Staff portal</string>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:locale="en">
+    <string name="app_name">KayaCRM</string>
+    <string name="login_title_fallback">KayaCRM</string>
     <string name="login_tagline">Secure sign-in to your CRM workspace</string>
     <string name="action_refresh_branding">Refresh appearance from server</string>
     <string name="cd_login_logo">Organization logo</string>
@@ -155,19 +155,4 @@
     <string name="mobile_download_title">Mobile apps</string>
     <string name="download_ios">Download iOS</string>
     <string name="download_android">Download Android</string>
-
-    <string name="customers_search_hint">Search name, phone or email…</string>
-    <string name="customers_filter_all">All</string>
-    <string name="customers_filter_active">Active</string>
-    <string name="customers_filter_inactive">Inactive</string>
-    <string name="customers_filter_blocked">Blocked</string>
-    <string name="customers_empty">No customers found</string>
-    <string name="customers_load_more">Load more (%1$d of %2$d)</string>
-    <string name="customers_call">Phone call</string>
-    <string name="customers_open_chat">Open conversation</string>
-    <string name="customers_no_detail">No details</string>
-
-    <string name="internal_new_chat_title">Start new chat</string>
-    <string name="internal_no_users">No users available to chat</string>
-    <string name="internal_remove_attachments">Remove attachments</string>
 </resources>

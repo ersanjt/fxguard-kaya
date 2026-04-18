@@ -102,9 +102,9 @@ data class WaBubbleAttachment(
 @Composable
 fun WaChatSheetHeader(
     title: String,
-    subtitle: String? = null,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    subtitle: String? = null,
     onVoiceCall: (() -> Unit)? = null,
     onVideoCall: (() -> Unit)? = null,
     trailing: (@Composable () -> Unit)? = null

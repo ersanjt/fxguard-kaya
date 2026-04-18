@@ -18,10 +18,10 @@ import com.kaya.crm.ui.components.NetworkBanner
 import com.kaya.crm.ui.main.MainScreen
 import com.kaya.crm.update.AppUpdateDialogHost
 import com.kaya.crm.update.AppUpdateViewModel
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @Composable
-fun KayaCrmApp(
+fun MainAppNavigation(
     networkMonitor: NetworkMonitor,
     viewModel: LoginViewModel = hiltViewModel(),
     appUpdateViewModel: AppUpdateViewModel = hiltViewModel()
