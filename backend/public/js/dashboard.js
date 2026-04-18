@@ -5284,13 +5284,11 @@
             if (isOut) {
                 var um = m.user || {};
                 var hasStaff = (um.name || um.username || um.email || '').trim();
-                if (!hasStaff && typeof currentUser !== 'undefined' && currentUser) {
-                    um = {
-                        name: currentUser.name || '',
-                        username: currentUser.username || '',
-                        email: currentUser.email || '',
-                        avatar: currentUser.avatar
-                    };
+                // نباید از currentUser استفاده کرد — آواتار بیننده (مثلاً owner) با فرستندهٔ واقعی اشتباه می‌شود. اگر API کاربر پیام را نداد، مسئول مکالمه (assignee) بهترین حدس است.
+                if (!hasStaff && currentConvDetail && currentConvDetail.assignee) {
+                    var asn = currentConvDetail.assignee;
+                    um = { name: asn.name || '', username: asn.username || '', email: asn.email || '', avatar: asn.avatar };
+                    hasStaff = (um.name || um.username || um.email || '').trim();
                 }
                 var av = typeof internalMsgAvatarHtml === 'function' ? internalMsgAvatarHtml(um, 'msg-voice-wa-avatar') : '<span class="msg-voice-wa-avatar-fb">?</span>';
                 return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap">' + av + '<span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';

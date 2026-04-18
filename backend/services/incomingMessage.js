@@ -559,9 +559,23 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             }
         }
 
+        // پیام خروجی از اپ واتساپ روی موبایل: در CRM قبلاً userId نداشت → در UI به‌اشتباه آواتار کاربرِ در حال مشاهده (مثلاً owner) دیده می‌شد. تخصیص به مسئول مکالمه یا آخرین کارمندی که از پنل پاسخ داده.
+        let outboundUserId = null;
+        if (isFromMe) {
+            outboundUserId = conversation.assignedTo || null;
+            if (!outboundUserId) {
+                const lastStaff = await Message.findOne({
+                    where: { conversationId: conversation.id, direction: 'outgoing', userId: { [Op.ne]: null } },
+                    order: [['timestamp', 'DESC']],
+                    attributes: ['userId']
+                });
+                if (lastStaff && lastStaff.userId) outboundUserId = lastStaff.userId;
+            }
+        }
         const newMessage = await Message.create({
             conversationId: conversation.id,
             customerId: customer.id,
+            userId: isFromMe ? outboundUserId : null,
             whatsappId: messageData.id || null,
             direction: isFromMe ? 'outgoing' : 'incoming',
             content: body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '',
