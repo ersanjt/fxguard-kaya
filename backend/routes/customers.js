@@ -334,12 +334,23 @@ router.delete('/:id', async (req, res, next) => {
         const customerId = customer.id;
         const t = await sequelize.transaction();
         try {
-            const convs = await Conversation.findAll({ where: { customerId }, attributes: ['id'], transaction: t });
-            const convIds = convs.map(c => c.id);
-            if (convIds.length > 0) {
-                await Message.destroy({ where: { conversationId: { [Op.in]: convIds } }, transaction: t });
+            const convRows = await Conversation.findAll({ where: { customerId }, transaction: t });
+            for (const conv of convRows) {
+                await conv.setTags([], { transaction: t });
             }
+            await Message.destroy({ where: { customerId }, transaction: t });
             await Conversation.destroy({ where: { customerId }, transaction: t });
+            await customer.setTags([], { transaction: t });
+            const docs = await CustomerDocument.findAll({ where: { customerId }, transaction: t });
+            for (const doc of docs) {
+                try {
+                    const absPath = path.join(__dirname, '..', 'public', doc.filePath);
+                    const absPath2 = path.join(__dirname, '..', String(doc.filePath).replace(/^\//, ''));
+                    if (fs.existsSync(absPath2)) fs.unlinkSync(absPath2);
+                    else if (fs.existsSync(absPath)) fs.unlinkSync(absPath);
+                } catch (_) {}
+                await doc.destroy({ transaction: t });
+            }
             await CustomerNote.destroy({ where: { customerId }, transaction: t });
             await ActivityLog.destroy({ where: { customerId }, transaction: t });
             await Transaction.update({ customerId: null }, { where: { customerId }, transaction: t });

@@ -575,6 +575,32 @@ async function runTests() {
     // ── Customers: Delete ────────────────────────────────────────────────────
     section('Customers — Delete');
 
+    await test('DELETE /api/customers/:id succeeds when customer has documents and tags', async () => {
+        const { CustomerDocument, Tag, Customer } = require('../models');
+        const cr = await req.post('/api/customers')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ name: 'Delete FK Test', phone: '09001112233', status: 'active' });
+        assert.strictEqual(cr.status, 201, `create: ${JSON.stringify(cr.body)}`);
+        const cid = cr.body.id;
+        const tag = await Tag.findOne();
+        if (tag) {
+            const cust = await Customer.findByPk(cid);
+            await cust.setTags([tag.id]);
+        }
+        await CustomerDocument.create({
+            customerId: cid,
+            category: 'other',
+            title: 'doc',
+            filePath: 'uploads/customers/_test/dummy.txt',
+            fileName: 'dummy.txt',
+            fileType: 'document',
+            source: 'manual'
+        });
+        const dr = await req.delete(`/api/customers/${cid}`)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(dr.status, 200, `delete: ${JSON.stringify(dr.body)}`);
+    });
+
     await test('DELETE /api/customers/:id with invalid UUID returns 400', async () => {
         const r = await req.delete('/api/customers/bad-id')
             .set('Authorization', `Bearer ${adminToken}`);
