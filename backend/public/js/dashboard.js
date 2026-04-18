@@ -2737,6 +2737,7 @@
             } catch (_) {}
         }
         window.crmAvatarImgErr = crmAvatarImgErr;
+        /** وقتی پروکسی /api/profile-image به‌جای خطا PNG ۱×۱ برمی‌گرداند، حرف اول را نشان بده */
         function crmAvatarImgLoaded(img) {
             try {
                 if (!img) return;
@@ -5265,6 +5266,27 @@
                 }
             });
         }
+        /** آواتار کنار پلیر ویس — شبیه واتساپ وب (کارمند / مشتری / حرف گروه) */
+        function buildVoiceWaAvatarCol(isOut, m) {
+            if (isOut) {
+                var um = m.user || {};
+                var av = typeof internalMsgAvatarHtml === 'function' ? internalMsgAvatarHtml(um, 'msg-voice-wa-avatar') : '<span class="msg-voice-wa-avatar-fb">?</span>';
+                return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap">' + av + '<span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
+            }
+            if (currentConvIsGroup) {
+                var sn = (m.metadata && m.metadata.senderName) ? String(m.metadata.senderName).trim() : '';
+                var ch = sn ? sn.charAt(0).toUpperCase() : '?';
+                return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap msg-voice-wa-avatar-wrap--letter"><span class="avatar-fallback">' + escapeHtml(ch) + '</span><span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
+            }
+            var cust = (currentConvDetail && currentConvDetail.customer) ? currentConvDetail.customer : null;
+            var name = cust ? (cust.name || cust.phone || '?') : '?';
+            var initial = String(name).charAt(0).toUpperCase();
+            var rawPic = cust && cust.profilePic ? String(cust.profilePic).trim() : '';
+            var picSrc = rawPic && typeof profilePicDisplaySrc === 'function' ? profilePicDisplaySrc(rawPic) : '';
+            var canImg = !!(rawPic && typeof profilePicShowsImage === 'function' && profilePicShowsImage(rawPic) && picSrc);
+            var img = canImg ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '';
+            return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap">' + '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>' + img + '<span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
+        }
         async function loadMessages(id, loadOlder) {
             // لغو درخواست قبلی در صورت تغییر مکالمه
             if (_loadMessagesController) { _loadMessagesController.abort(); _loadMessagesController = null; }
@@ -5402,8 +5424,27 @@
                         const speedAria = LANG === 'fa' ? 'سرعت پخش' : 'Playback speed';
                         var voiceBars = '';
                         for (var vb = 0; vb < 36; vb++) voiceBars += '<span class="msg-voice-bar"></span>';
-                        mediaHtml =
-                            '<div class="msg-media msg-media-voice-tg' + voiceClass + '">' +
+                        var dcVoice = (m.content || '').trim();
+                        if (isOut && dcVoice.indexOf('🤖 ') === 0) dcVoice = dcVoice.slice(2).trim();
+                        else if (isOut && dcVoice.indexOf('AI KAYA: ') === 0) dcVoice = dcVoice.slice(9).trim();
+                        var fnCapVoice = ((m.mediaData && m.mediaData.filename) || '').trim();
+                        var dcLoV = dcVoice.toLowerCase();
+                        var fnLoV = fnCapVoice.toLowerCase();
+                        if (fnCapVoice && (dcVoice === fnCapVoice || dcLoV === fnLoV)) dcVoice = '';
+                        else if (/^voice\.(webm|ogg|m4a|mp3|wav)$/i.test(dcVoice)) dcVoice = '';
+                        else if (dcVoice === 'file' || dcVoice === '📎 فایل') dcVoice = '';
+                        var voiceBubbleCompact = !dcVoice;
+                        var voiceWaStatus = '';
+                        if (voiceBubbleCompact && isOut && m.status && m.status !== 'pending') {
+                            var voiceStsTit = (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '');
+                            voiceWaStatus = '<span class="msg-voice-wa-inline-status msg-status msg-status-' + m.status + '" title="' + escapeAttr(voiceStsTit) + '">' + waMsgStatusTicks(m.status) + '</span>';
+                        }
+                        var voiceMetaSent = voiceBubbleCompact
+                            ? '<span class="msg-voice-sent-wrap"><span class="msg-voice-sent-time">' + escapeHtml(time) + '</span>' + voiceWaStatus + '</span>'
+                            : '<span class="msg-voice-sent-time">' + escapeHtml(time) + '</span>';
+                        var waShellCls = 'msg-voice-wa-shell' + (isOut ? ' msg-voice-wa-shell--out' : ' msg-voice-wa-shell--in');
+                        var waRowCls = 'msg-voice-wa-row' + (isOut ? ' msg-voice-wa-row--out' : ' msg-voice-wa-row--in');
+                        var voicePlayerCore =
                             '<div class="msg-voice-player msg-voice-player--telegram" role="group" aria-label="' + escapeAttr(groupAria) + '" dir="ltr">' +
                             '<div class="msg-voice-tg-row">' +
                             '<button type="button" class="msg-voice-play" aria-label="' + escapeAttr(playAria) + '" aria-pressed="false">' +
@@ -5419,13 +5460,29 @@
                             '</div>' +
                             '<div class="msg-voice-tg-meta">' +
                             '<span class="msg-voice-tg-time"><span class="msg-voice-curr">0:00</span><span class="msg-voice-dur"></span></span>' +
-                            '<span class="msg-voice-sent-time">' + escapeHtml(time) + '</span>' +
+                            voiceMetaSent +
                             '</div>' +
                             '<audio class="msg-audio-el" src="' + escapeHtml(mediaUrl) + '" preload="metadata" playsinline onerror="var w=this.closest(\'.msg-media\');if(w){w.classList.add(\'msg-media-error\');}try{if(!this.dataset.retryBlob){this.dataset.retryBlob=\'1\';var el=this;fetch(el.src,{credentials:\'include\'}).then(function(r){if(!r.ok)throw new Error(\'http \'+r.status);return r.blob();}).then(function(b){if(!b||!b.size)throw new Error(\'empty\');var bu=URL.createObjectURL(b);el.src=bu;el.load();var ww=el.closest(\'.msg-media\');if(ww){ww.classList.remove(\'msg-media-error\');}}).catch(function(){});}}catch(_e){}"></audio>' +
-                            '</div>' +
-                            '<p class="msg-media-audio-err" role="alert">' + escapeHtml(errHint) + '</p>' +
-                            '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-dl msg-voice-dl-subtle" data-open="1">' + (LANG === 'fa' ? 'دانلود فایل صوتی' : 'Download audio') + '</a>' +
                             '</div>';
+                        var voiceTail = '<p class="msg-media-audio-err" role="alert">' + escapeHtml(errHint) + '</p>' +
+                            '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-dl msg-voice-dl-subtle" data-open="1">' + (LANG === 'fa' ? 'دانلود فایل صوتی' : 'Download audio') + '</a>';
+                        if (voiceBubbleCompact) {
+                            mediaHtml =
+                                '<div class="msg-media msg-media-voice-tg msg-media-voice-wa-compact' + voiceClass + '">' +
+                                '<div class="' + waShellCls + '">' +
+                                '<div class="' + waRowCls + '">' +
+                                buildVoiceWaAvatarCol(isOut, m) +
+                                voicePlayerCore +
+                                '</div></div>' +
+                                voiceTail +
+                                '</div>';
+                        } else {
+                            mediaHtml =
+                                '<div class="msg-media msg-media-voice-tg' + voiceClass + '">' +
+                                voicePlayerCore +
+                                voiceTail +
+                                '</div>';
+                        }
                     } else {
                         mediaHtml = '<div class="msg-media"><a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-file-link msg-media-link" data-open="1">📎 ' + escapeHtml(m.mediaData.filename || m.content || (LANG === 'fa' ? 'فایل' : 'File')) + '</a></div>';
                     }
@@ -5461,9 +5518,10 @@
                 }
                 const replyTitle = escapeAttr((typeof t === 'function' && t('msg_reply_short')) || (LANG === 'fa' ? 'پاسخ' : LANG === 'tr' ? 'Yanıtla' : 'Reply'));
                 const replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeAttr(m.whatsappId) + '" data-preview="' + escapeAttr(replyPreviewSender + preview) + '" title="' + replyTitle + '">↩</button>' : '';
-                const statusHtml = (isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + waMsgStatusTicks(m.status) + '</span>' : '';
                 const voiceTgHideFooterTime = (resolvedMediaType === 'audio' && !displayContent);
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + (voiceTgHideFooterTime ? ' msg-voice-footer-hide-time' : '') + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
+                const statusHtml = (!voiceTgHideFooterTime && isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + waMsgStatusTicks(m.status) + '</span>' : '';
+                const msgWaExtra = voiceTgHideFooterTime ? ' msg-voice-footer-hide-time msg-voice-wa-msg' : '';
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');
             if (loadOlder) {
                 // اضافه کردن پیام‌های قدیمی‌تر به ابتدای لیست با حفظ scroll position
