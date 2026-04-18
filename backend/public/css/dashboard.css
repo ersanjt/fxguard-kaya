@@ -4107,6 +4107,66 @@
             /* safe-area برای نوار composer؛ ناحیه پیام فقط اسکرول می‌خورد */
             .chat-messages { flex: 1; min-height: 0; min-width: 0; padding: 12px; padding-bottom: 12px; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; touch-action: pan-y; scroll-padding-bottom: max(20px, calc(env(safe-area-inset-bottom) + var(--crm-ios-kb, 0px) + 12px)); }
             .chat-messages .msg { max-width: 90%; }
+            /* پیام صوتی (واتساپ‌وب): جا برای آواتار + موج بدون overflow افقی */
+            .chat-messages .msg.msg-voice-wa-msg {
+                max-width: min(98%, calc(100vw - 12px));
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .chat-messages .msg-media.msg-media-voice-tg {
+                max-width: 100% !important;
+                min-width: 0;
+            }
+            .msg-voice-wa-shell {
+                max-width: 100%;
+                padding: 8px 10px 6px;
+            }
+            .msg-voice-wa-row {
+                gap: 8px;
+                align-items: center;
+            }
+            .msg-voice-wa-avatar-col,
+            .msg-voice-wa-avatar-wrap {
+                width: 42px;
+                height: 42px;
+            }
+            .msg-voice-wa-avatar-wrap .msg-avatar {
+                width: 42px;
+                height: 42px;
+            }
+            .msg-voice-wa-mic-badge {
+                width: 18px;
+                height: 18px;
+                background-size: 9px;
+            }
+            .msg-voice-player--telegram {
+                min-width: 0 !important;
+                max-width: 100%;
+            }
+            .msg-voice-wa-shell .msg-voice-player--telegram {
+                flex: 1;
+                min-width: 0;
+            }
+            .msg-voice-tg-row {
+                gap: 4px;
+            }
+            .msg-voice-play svg {
+                width: 22px;
+                height: 22px;
+            }
+            .msg-voice-speed {
+                min-width: 36px;
+                padding: 6px 8px;
+                font-size: 0.72rem;
+            }
+            .msg-voice-wave-area {
+                min-height: 40px;
+                touch-action: none;
+            }
+            .msg-voice-tg-meta {
+                flex-wrap: wrap;
+                row-gap: 2px;
+            }
             .chat-messages .msg-media video { max-height: min(200px, 35vh); }
             /* --crm-ios-kb از JS (visualViewport) برای فاصلهٔ بالای کیبورد مجازی iOS */
             .chat-send { padding: 10px 12px; gap: 8px; flex-wrap: nowrap; flex-direction: column; align-items: stretch; padding-inline: max(12px, env(safe-area-inset-inline)); padding-bottom: max(10px, calc(env(safe-area-inset-bottom) + var(--crm-ios-kb, 0px))); }
@@ -5464,6 +5524,14 @@
         #pageConversations.wa-conversations-theme .msg-file-link {
             color: #53bdeb;
         }
+        #pageConversations.wa-conversations-theme .msg-media-voice-tg .msg-voice-dl-subtle,
+        #pageConversations.wa-conversations-theme .msg-media-voice-tg .msg-media-dl {
+            color: #53bdeb;
+            opacity: 0.95;
+        }
+        #pageConversations.wa-conversations-theme .msg-media-audio-err {
+            color: #fbbf24;
+        }
         #pageConversations.wa-conversations-theme .chat-messages a.msg-text-link {
             color: #53bdeb;
         }
@@ -6045,6 +6113,15 @@
                 overflow-wrap: anywhere;
                 word-break: break-word;
             }
+            #pageConversations.wa-conversations-theme .msg.msg-voice-wa-msg {
+                max-width: min(98%, calc(100vw - 10px));
+            }
+            #pageConversations.wa-conversations-theme .chat-messages .msg.msg-voice-wa-msg.in::after,
+            #pageConversations.wa-conversations-theme .chat-messages .msg.msg-voice-wa-msg.out::after,
+            html[dir="rtl"] #pageConversations.wa-conversations-theme .chat-messages .msg.msg-voice-wa-msg.in::after,
+            html[dir="rtl"] #pageConversations.wa-conversations-theme .chat-messages .msg.msg-voice-wa-msg.out::after {
+                display: none;
+            }
             #pageConversations.wa-conversations-theme .msg-media-image img {
                 max-height: min(220px, 40svh);
             }
@@ -6115,6 +6192,25 @@
             #pageConversations.wa-conversations-theme .wa-chat-call-btn svg {
                 width: 18px;
                 height: 18px;
+            }
+            .msg-voice-wa-avatar-col,
+            .msg-voice-wa-avatar-wrap {
+                width: 38px;
+                height: 38px;
+            }
+            .msg-voice-wa-avatar-wrap .msg-avatar {
+                width: 38px;
+                height: 38px;
+            }
+            .msg-voice-wa-shell {
+                padding: 7px 8px 5px;
+            }
+            .msg-voice-wave-bars {
+                gap: 1px;
+            }
+            .msg-voice-bar {
+                min-width: 1px;
+                max-width: 3px;
             }
             /* نوار ضبط: فضای کم — موج ساده‌تر */
             #pageConversations.wa-conversations-theme .chat-voice-wave span:nth-child(n + 9) {

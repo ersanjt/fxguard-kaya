@@ -1065,10 +1065,7 @@ async function sendWhatsAppMessage(data) {
         if (!isSafeMediaUrl(media.url)) throw new Error('Invalid or unsafe media URL');
         const mediaObj = await MessageMedia.fromUrl(media.url);
         sendOpts.caption = message || '';
-        if (
-            media.sendAsVoice ||
-            (media.mimetype && /^audio\/(ogg|opus)/i.test(media.mimetype))
-        ) {
+        if (media.sendAsVoice || (media.mimetype && /^audio\/(ogg|opus)/i.test(media.mimetype))) {
             sendOpts.sendAudioAsVoice = true;
         }
         return client.sendMessage(chatId, mediaObj, sendOpts);

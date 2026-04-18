@@ -4756,6 +4756,8 @@
         }
 
         let currentConvDetail = null;
+        /** تا قبل از رسیدن پاسخ GET مکالمه، برای آواتار ویس ورودی از همین دادهٔ هدر/لیست استفاده می‌شود */
+        let openChatCustomerPreview = null;
         function toggleChatDetailBar() {
             const bar = document.getElementById('convDetailBar');
             const btn = document.getElementById('chatDetailToggle');
@@ -4796,6 +4798,9 @@
             currentConvId = id;
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
+            openChatCustomerPreview = !currentConvIsGroup
+                ? { name: String(name || '').trim(), phone: String(phone || '').trim(), profilePic: String(profilePic || '').trim() }
+                : null;
             cancelReply();
             if (chatTemplatesCache.length === 0) { apiFetch('/api/message-templates').then(function(res) { if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data; }).catch(function(){}); }
             const headerEl = document.getElementById('chatHeader');
@@ -4856,6 +4861,14 @@
                 if (!res.ok || !res.data) return;
                 currentConvDetail = res.data;
                 const d = res.data;
+                if (!currentConvIsGroup && d.customer) {
+                    var ck = d.customer;
+                    openChatCustomerPreview = {
+                        name: String((ck.name || '') || '').trim(),
+                        phone: String((ck.phone || '') || '').trim(),
+                        profilePic: String((ck.profilePic || '') || '').trim()
+                    };
+                }
                 const custPicRaw = d.customer && d.customer.profilePic ? String(d.customer.profilePic).trim() : '';
                 if (avatarEl && custPicRaw && !currentConvIsGroup) {
                     const picDisp = profilePicDisplaySrc(custPicRaw);
@@ -5270,6 +5283,15 @@
         function buildVoiceWaAvatarCol(isOut, m) {
             if (isOut) {
                 var um = m.user || {};
+                var hasStaff = (um.name || um.username || um.email || '').trim();
+                if (!hasStaff && typeof currentUser !== 'undefined' && currentUser) {
+                    um = {
+                        name: currentUser.name || '',
+                        username: currentUser.username || '',
+                        email: currentUser.email || '',
+                        avatar: currentUser.avatar
+                    };
+                }
                 var av = typeof internalMsgAvatarHtml === 'function' ? internalMsgAvatarHtml(um, 'msg-voice-wa-avatar') : '<span class="msg-voice-wa-avatar-fb">?</span>';
                 return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap">' + av + '<span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
             }
@@ -5279,8 +5301,18 @@
                 return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap msg-voice-wa-avatar-wrap--letter"><span class="avatar-fallback">' + escapeHtml(ch) + '</span><span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
             }
             var cust = (currentConvDetail && currentConvDetail.customer) ? currentConvDetail.customer : null;
-            var name = cust ? (cust.name || cust.phone || '?') : '?';
-            var initial = String(name).charAt(0).toUpperCase();
+            if (!cust && openChatCustomerPreview) {
+                cust = {
+                    name: openChatCustomerPreview.name,
+                    phone: openChatCustomerPreview.phone,
+                    profilePic: openChatCustomerPreview.profilePic
+                };
+            }
+            var name = cust ? String(cust.name || cust.phone || '').trim() : '';
+            if (!name && openChatCustomerPreview) {
+                name = String(openChatCustomerPreview.phone || openChatCustomerPreview.name || '').trim();
+            }
+            var initial = name ? name.charAt(0).toUpperCase() : '?';
             var rawPic = cust && cust.profilePic ? String(cust.profilePic).trim() : '';
             var picSrc = rawPic && typeof profilePicDisplaySrc === 'function' ? profilePicDisplaySrc(rawPic) : '';
             var canImg = !!(rawPic && typeof profilePicShowsImage === 'function' && profilePicShowsImage(rawPic) && picSrc);
