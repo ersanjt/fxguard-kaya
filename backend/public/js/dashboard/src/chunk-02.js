@@ -964,8 +964,18 @@
             } catch (_) {}
         }
         window.crmAvatarImgErr = crmAvatarImgErr;
+        /** وقتی پروکسی /api/profile-image به‌جای خطا PNG ۱×۱ برمی‌گرداند، حرف اول را نشان بده */
+        function crmAvatarImgLoaded(img) {
+            try {
+                if (!img) return;
+                var s = String(img.currentSrc || img.src || '');
+                if (s.indexOf('/api/profile-image') === -1) return;
+                if (img.naturalWidth <= 1 && img.naturalHeight <= 1) crmAvatarImgErr(img);
+            } catch (_e) {}
+        }
+        window.crmAvatarImgLoaded = crmAvatarImgLoaded;
         function resolveAvatarUrl(avatar) { return normalizeProfilePicUrl(avatar); }
-        function internalMsgAvatarHtml(fromUser, extraClass) { const u = fromUser || {}; const name = (u.name || u.username || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); const cls = 'msg-avatar' + (extraClass ? ' ' + extraClass : ''); if (pic) return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)"></span>'; return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>'; }
+        function internalMsgAvatarHtml(fromUser, extraClass) { const u = fromUser || {}; const name = (u.name || u.username || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); const cls = 'msg-avatar' + (extraClass ? ' ' + extraClass : ''); if (pic) return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)"></span>'; return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>'; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         function refreshDashboard() {

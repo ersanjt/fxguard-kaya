@@ -2737,8 +2737,17 @@
             } catch (_) {}
         }
         window.crmAvatarImgErr = crmAvatarImgErr;
+        function crmAvatarImgLoaded(img) {
+            try {
+                if (!img) return;
+                var s = String(img.currentSrc || img.src || '');
+                if (s.indexOf('/api/profile-image') === -1) return;
+                if (img.naturalWidth <= 1 && img.naturalHeight <= 1) crmAvatarImgErr(img);
+            } catch (_e) {}
+        }
+        window.crmAvatarImgLoaded = crmAvatarImgLoaded;
         function resolveAvatarUrl(avatar) { return normalizeProfilePicUrl(avatar); }
-        function internalMsgAvatarHtml(fromUser, extraClass) { const u = fromUser || {}; const name = (u.name || u.username || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); const cls = 'msg-avatar' + (extraClass ? ' ' + extraClass : ''); if (pic) return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)"></span>'; return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>'; }
+        function internalMsgAvatarHtml(fromUser, extraClass) { const u = fromUser || {}; const name = (u.name || u.username || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); const cls = 'msg-avatar' + (extraClass ? ' ' + extraClass : ''); if (pic) return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)"></span>'; return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>'; }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         function refreshDashboard() {
@@ -4694,7 +4703,7 @@
                 let profilePic = rawPic ? normalizeProfilePicUrl(rawPic) : '';
                 const picSrc = rawPic ? profilePicDisplaySrc(rawPic) : '';
                 const canShowImg = !isGroup && rawPic && profilePicShowsImage(rawPic);
-                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg && picSrc ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '');
+                const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg && picSrc ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
                 let assigneeMetaSuffix = '';
                 if (assigneeName) {
@@ -4813,7 +4822,7 @@
                 let pic = rawOpenPic ? profilePicDisplaySrc(rawOpenPic) : '';
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
                 if (pic && profilePicShowsImage(rawOpenPic)) {
-                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
+                    avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">';
                 } else {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 }
@@ -4851,7 +4860,7 @@
                     const picDisp = profilePicDisplaySrc(custPicRaw);
                     if (picDisp && profilePicShowsImage(custPicRaw)) {
                         const initialH = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
-                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picDisp) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">';
+                        avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picDisp) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">';
                     }
                 }
                 if (!barEl || !badgesEl) {
@@ -4993,7 +5002,7 @@
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 let profilePic = rawPicNc ? normalizeProfilePicUrl(rawPicNc) : '';
                 const picSrcNc = rawPicNc ? profilePicDisplaySrc(rawPicNc) : '';
-                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
@@ -6323,7 +6332,7 @@
                 const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
                 const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
                 const avatarInner = hasCustPic
-                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(picSrcCust) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)">'
+                    ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(picSrcCust) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">'
                     : '<span class="customer-card-avatar-letter">' + escapeHtml(initial) + '</span>';
                 const avatarHtml = '<div class="' + avClass + '"' + avStyle + '>' + avatarInner + '</div>';
                 const statusClass = (c.status === 'blocked' ? 'blocked' : c.status === 'inactive' ? 'inactive' : 'active');
