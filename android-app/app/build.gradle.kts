@@ -103,8 +103,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.9.7")
 
     // Hilt (با KSP به‌جای kapt - پایدارتر)
-    implementation("com.google.dagger:hilt-android:2.54")
-    ksp("com.google.dagger:hilt-android-compiler:2.54")
+    implementation("com.google.dagger:hilt-android:2.58")
+    ksp("com.google.dagger:hilt-android-compiler:2.58")
     implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
     implementation("androidx.hilt:hilt-lifecycle-viewmodel-compose:1.3.0")
 
