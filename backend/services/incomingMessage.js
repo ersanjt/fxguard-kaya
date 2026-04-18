@@ -14,7 +14,7 @@ const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayCli
 const { gatewayGet } = require('../lib/gatewayClient');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessages');
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
-const { persistRemoteAvatarIfNeeded, digitsOnlyChatPhone } = require('../lib/customerAvatar');
+const { persistRemoteAvatarIfNeeded, digitsOnlyChatPhone, maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
 const { notifySystemEvent } = require('./systemEventNotifier');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
@@ -711,6 +711,14 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 }
             }
         }
+
+        // عکس پروفایل: گاهی در رویداد اول null است — یک بار دیگر از گیت‌وی (با throttle داخلی) تلاش می‌کنیم تا کلاینت همان لحظه به‌روز شود.
+        if (!isGroup && !isFromMe) {
+            try {
+                await maybeRefreshWhatsappCustomerAvatar(customer);
+            } catch (_av) {}
+        }
+        await customer.reload({ attributes: ['id', 'name', 'phone', 'profilePic', 'source'] }).catch(() => {});
 
         io.emit('new_message', {
             conversationId: conversation.id,
