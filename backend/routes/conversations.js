@@ -209,10 +209,20 @@ router.get('/', async (req, res, next) => {
             where[Op.or] = orConditions;
         }
 
-        // escape کاراکترهای خاص LIKE برای جلوگیری از wildcard abuse
-        const escapedSearch = search ? search.replace(/[%_\\]/g, '\\$&') : null;
+        // حذف wildcardهای SQL برای جلوگیری از abuse و بار ناخواسته روی DB
+        const normalizedSearch = search
+            ? String(search).replace(/[%_]+/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 120)
+            : null;
+        const customerSearchWhere = normalizedSearch
+            ? {
+                [Op.or]: [
+                    { name: { [Op.like]: '%' + normalizedSearch + '%' } },
+                    { phone: { [Op.like]: '%' + normalizedSearch + '%' } }
+                ]
+            }
+            : null;
         const include = [
-            { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'], ...(escapedSearch ? { where: { [Op.or]: [{ name: { [Op.like]: '%' + escapedSearch + '%' } }, { phone: { [Op.like]: '%' + escapedSearch + '%' } }] }, required: true } : {}) },
+            { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'], ...(customerSearchWhere ? { where: customerSearchWhere, required: true } : {}) },
             { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
             { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
             { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
@@ -227,7 +237,42 @@ router.get('/', async (req, res, next) => {
             limit: l,
             offset
         });
-        res.json({ data: rows, total: count, page: p });
+        // شمارش‌های تجمیعی برای UI (بر اساس همان فیلترهای فعلی)
+        const [openCount, unreadCountRaw] = await Promise.all([
+            Conversation.count({
+                where: { ...where, status: 'open' },
+                include: customerSearchWhere
+                    ? [{
+                        model: Customer,
+                        as: 'customer',
+                        attributes: [],
+                        where: customerSearchWhere,
+                        required: true
+                    }]
+                    : undefined,
+                distinct: true,
+                col: 'id'
+            }),
+            Conversation.sum('unreadCount', {
+                where,
+                include: customerSearchWhere
+                    ? [{
+                        model: Customer,
+                        as: 'customer',
+                        attributes: [],
+                        where: customerSearchWhere,
+                        required: true
+                    }]
+                    : undefined
+            })
+        ]);
+        res.json({
+            data: rows,
+            total: count,
+            page: p,
+            openCount: Number(openCount) || 0,
+            unreadCount: Number(unreadCountRaw) || 0
+        });
     } catch (err) {
         next(err);
     }
@@ -289,7 +334,23 @@ router.get('/:id/messages', async (req, res, next) => {
         if (beforeId) {
             const { isValidUUID } = require('../lib/validation');
             if (!isValidUUID(beforeId)) return res.status(400).json({ error: 'شناسه پیام (before) نامعتبر است' });
-            msgWhere.id = { [Op.lt]: beforeId };
+            // UUIDv4 ترتیب زمانی ندارد؛ پیام مرجع را می‌گیریم و صفحه‌بندی را روی timestamp انجام می‌دهیم.
+            const beforeMsg = await Message.findOne({
+                where: { id: beforeId, conversationId: req.params.id },
+                attributes: ['id', 'timestamp']
+            });
+            if (!beforeMsg || !beforeMsg.timestamp) {
+                return res.status(404).json({ error: 'پیام مرجع برای صفحه‌بندی یافت نشد' });
+            }
+            msgWhere[Op.or] = [
+                { timestamp: { [Op.lt]: beforeMsg.timestamp } },
+                {
+                    [Op.and]: [
+                        { timestamp: beforeMsg.timestamp },
+                        { id: { [Op.lt]: beforeMsg.id } }
+                    ]
+                }
+            ];
         }
         const total = await Message.count({ where: { conversationId: req.params.id } });
         const messages = await Message.findAll({
@@ -347,7 +408,7 @@ router.get('/:id/stats', async (req, res, next) => {
         }
         // Use SQL aggregation instead of loading all messages into memory
         const convId = req.params.id;
-        const [counts, firstIncoming, firstOutgoing, responderRows] = await Promise.all([
+        const [counts, firstIncoming, responderRows] = await Promise.all([
             // Total and outgoing counts
             Message.findAll({
                 where: { conversationId: convId },
@@ -365,13 +426,6 @@ router.get('/:id/stats', async (req, res, next) => {
                 order: [['timestamp', 'ASC']],
                 raw: true
             }),
-            // First outgoing message timestamp (after first incoming)
-            Message.findOne({
-                where: { conversationId: convId, direction: 'outgoing', timestamp: { [Op.ne]: null } },
-                attributes: ['timestamp'],
-                order: [['timestamp', 'ASC']],
-                raw: true
-            }),
             // Distinct responders (users who sent outgoing messages)
             Message.findAll({
                 where: { conversationId: convId, direction: 'outgoing', userId: { [Op.ne]: null } },
@@ -382,6 +436,19 @@ router.get('/:id/stats', async (req, res, next) => {
                 raw: false
             })
         ]);
+        // First outgoing message timestamp AFTER first incoming
+        const firstOutgoing = firstIncoming?.timestamp
+            ? await Message.findOne({
+                where: {
+                    conversationId: convId,
+                    direction: 'outgoing',
+                    timestamp: { [Op.gte]: firstIncoming.timestamp }
+                },
+                attributes: ['timestamp'],
+                order: [['timestamp', 'ASC']],
+                raw: true
+            })
+            : null;
 
         const countMap = {};
         for (const r of counts) countMap[r.direction] = parseInt(r.cnt, 10);

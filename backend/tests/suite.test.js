@@ -47,6 +47,8 @@ let adminToken = null;
 let agentToken = null;
 let createdUserId = null;
 let createdCustomerId = null;
+let createdConversationId = null;
+let filterConversationId = null;
 
 // ─── Tests ───────────────────────────────────────────────────────────────────
 
@@ -436,6 +438,43 @@ async function runTests() {
         assert.strictEqual(r.status, 200);
         assert(Array.isArray(r.body.data));
         assert(typeof r.body.total === 'number');
+        assert(typeof r.body.openCount === 'number');
+        assert(typeof r.body.unreadCount === 'number');
+    });
+
+    await test('POST /api/conversations creates conversation for customer', async () => {
+        const r = await req.post('/api/conversations')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ customerId: createdCustomerId });
+        assert.strictEqual(r.status, 201);
+        assert(r.body && r.body.id, 'Expected conversation id');
+        createdConversationId = r.body.id;
+    });
+
+    await test('Agent cannot access unassigned conversation detail (403)', async () => {
+        const r = await req.get(`/api/conversations/${createdConversationId}`)
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(r.status, 403);
+    });
+
+    await test('Agent cannot patch unassigned conversation (403)', async () => {
+        const r = await req.patch(`/api/conversations/${createdConversationId}`)
+            .set('Authorization', `Bearer ${agentToken}`)
+            .send({ status: 'pending' });
+        assert.strictEqual(r.status, 403);
+    });
+
+    await test('Agent cannot send message to unassigned conversation (403)', async () => {
+        const r = await req.post(`/api/conversations/${createdConversationId}/send`)
+            .set('Authorization', `Bearer ${agentToken}`)
+            .send({ content: 'hello' });
+        assert.strictEqual(r.status, 403);
+    });
+
+    await test('Agent cannot delete conversation (403)', async () => {
+        const r = await req.delete(`/api/conversations/${createdConversationId}`)
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(r.status, 403);
     });
 
     await test('GET /api/conversations/:id with invalid UUID returns 400', async () => {
@@ -454,6 +493,128 @@ async function runTests() {
         const r = await req.get('/api/conversations/00000000-0000-0000-0000-000000000001/messages?before=not-uuid')
             .set('Authorization', `Bearer ${adminToken}`);
         assert([400, 404].includes(r.status), `Expected 400 or 404, got ${r.status}`);
+    });
+
+    await test('POST /api/conversations/:id/read marks conversation as read (admin)', async () => {
+        const r = await req.post(`/api/conversations/${createdConversationId}/read`)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.body.ok, true);
+    });
+
+    await test('Agent cannot mark unassigned conversation as read (403)', async () => {
+        const r = await req.post(`/api/conversations/${createdConversationId}/read`)
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(r.status, 403);
+    });
+
+    await test('GET /api/conversations/:id/stats returns stats shape (admin)', async () => {
+        const r = await req.get(`/api/conversations/${createdConversationId}/stats`)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert(typeof r.body.messageCount === 'number');
+        assert(typeof r.body.outgoingCount === 'number');
+        assert(typeof r.body.unreadCount === 'number');
+        assert(Array.isArray(r.body.responders));
+    });
+
+    await test('Agent cannot read stats of unassigned conversation (403)', async () => {
+        const r = await req.get(`/api/conversations/${createdConversationId}/stats`)
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(r.status, 403);
+    });
+
+    await test('PATCH /api/conversations/:id archive works for main admin', async () => {
+        const r = await req.patch(`/api/conversations/${createdConversationId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ status: 'archived' });
+        assert.strictEqual(r.status, 200);
+        assert.strictEqual(r.body.status, 'archived');
+    });
+
+    await test('POST /api/conversations/:id/send to archived conversation returns 400', async () => {
+        const r = await req.post(`/api/conversations/${createdConversationId}/send`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ content: 'after archive' });
+        assert.strictEqual(r.status, 400);
+    });
+
+    await test('GET /api/conversations?status=archived includes archived conversation', async () => {
+        const r = await req.get('/api/conversations?status=archived&limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert(Array.isArray(r.body.data));
+        assert(r.body.data.some(c => c.id === createdConversationId), 'Archived conversation should be in archived list');
+    });
+
+    await test('Prepare a second conversation for filters', async () => {
+        const customerRes = await req.post('/api/customers')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ name: 'Filter Test Customer', phone: '09009998877', status: 'active' });
+        assert.strictEqual(customerRes.status, 201, `customer create failed: ${JSON.stringify(customerRes.body)}`);
+
+        const convRes = await req.post('/api/conversations')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ customerId: customerRes.body.id });
+        assert.strictEqual(convRes.status, 201, `conversation create failed: ${JSON.stringify(convRes.body)}`);
+        filterConversationId = convRes.body.id;
+        assert(filterConversationId, 'Expected filter conversation id');
+    });
+
+    await test('GET /api/conversations?unassigned=true returns only unassigned conversations', async () => {
+        const assignRes = await req.patch(`/api/conversations/${filterConversationId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ assignedTo: null, departmentId: null, status: 'open' });
+        assert.strictEqual(assignRes.status, 200);
+
+        const r = await req.get('/api/conversations?unassigned=true&limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert(Array.isArray(r.body.data));
+        assert(r.body.data.length > 0, 'Expected at least one unassigned conversation');
+        assert(r.body.data.some(c => c.id === filterConversationId), 'Prepared unassigned conversation should be present');
+        assert(r.body.data.every(c => !c.assignedTo && !c.departmentId), 'All results must be unassigned and without department');
+    });
+
+    await test('GET /api/conversations?assignedTo=<agent> for agent returns own conversations only', async () => {
+        const assignRes = await req.patch(`/api/conversations/${filterConversationId}`)
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ assignedTo: createdUserId, status: 'open' });
+        assert.strictEqual(assignRes.status, 200);
+
+        const r = await req.get(`/api/conversations?assignedTo=${createdUserId}&limit=50`)
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(r.status, 200);
+        assert(Array.isArray(r.body.data));
+        assert(r.body.data.length > 0, 'Agent should see assigned conversation');
+        assert(r.body.data.every(c => c.assignedTo === createdUserId), 'Agent result should be limited to own assignments');
+    });
+
+    await test('GET /api/conversations?unread=true includes conversation with unreadCount > 0', async () => {
+        const { Conversation } = require('../models');
+        const conv = await Conversation.findByPk(filterConversationId);
+        assert(conv, 'Prepared conversation not found');
+        await conv.update({ unreadCount: 2, status: 'open' });
+
+        const r = await req.get('/api/conversations?unread=true&limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert(Array.isArray(r.body.data));
+        assert(r.body.data.some(c => c.id === filterConversationId), 'Unread conversation should appear in unread filter');
+        assert(r.body.data.every(c => (c.unreadCount || 0) > 0), 'Unread filter should only include unread conversations');
+    });
+
+    await test('GET /api/conversations?isGroup=true includes conversations with metadata.isGroup', async () => {
+        const { Conversation } = require('../models');
+        const conv = await Conversation.findByPk(filterConversationId);
+        assert(conv, 'Prepared conversation not found');
+        await conv.update({ metadata: { ...(conv.metadata || {}), isGroup: true, groupName: 'Test Group' } });
+
+        const r = await req.get('/api/conversations?isGroup=true&limit=50')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert(Array.isArray(r.body.data));
+        assert(r.body.data.some(c => c.id === filterConversationId), 'Group conversation should appear in group filter');
     });
 
     // ── Security: Auth Boundaries ────────────────────────────────────────────

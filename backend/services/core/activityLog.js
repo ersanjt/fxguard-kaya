@@ -7,6 +7,7 @@ const logger = require('../../config/logger');
 const VALID_ACTIONS = new Set([
     'user_login', 'user_logout', 'login_failed',
     'conversation_created', 'conversation_updated', 'conversation_closed', 'conversation_archived',
+    'conversation_assigned', 'conversation_department_changed',
     'message_sent', 'message_received',
     'customer_created', 'customer_updated', 'customer_deleted',
     'ticket_created', 'ticket_updated', 'ticket_closed', 'ticket_deleted',
@@ -18,6 +19,7 @@ const VALID_ACTIONS = new Set([
     'transaction_approved', 'transaction_rejected',
     'process_created', 'process_updated', 'process_completed',
     'internal_thread_created', 'internal_message_sent',
+    'bulk_message_sent', 'customers_imported',
     'customer_note_added',
 ]);
 
