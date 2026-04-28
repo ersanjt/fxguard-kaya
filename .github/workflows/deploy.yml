@@ -3,7 +3,7 @@ name: Deploy to Server
 on:
   push:
     branches:
-      - master
+      - main
   workflow_dispatch:
 
 # آخرین push برنده است تا همیشه نتیجهٔ نهایی روی سرور همان کامیت آخر باشد (صف طولانی = حس «بدون نتیجه»).
@@ -31,7 +31,7 @@ jobs:
             echo "| Trigger | ${{ github.event_name }} |"
             echo ""
             echo "### دربارهٔ وضعیت **Canceled**"
-            echo "برای \`master\`، \`cancel-in-progress: true\` فعال است: اگر چند بار پشت‌سرهم push کنید، runهای قدیمی‌تر **عمداً لغو** می‌شوند تا فقط **آخرین کامیت** دیپلوی شود. این خطا نیست؛ خروجی سبز همان آخرین run است."
+            echo "برای \`main\`، \`cancel-in-progress: true\` فعال است: اگر چند بار پشت‌سرهم push کنید، runهای قدیمی‌تر **عمداً لغو** می‌شوند تا فقط **آخرین کامیت** دیپلوی شود. این خطا نیست؛ خروجی سبز همان آخرین run است."
             echo ""
             echo "اگر این run **قرمز (failure)** شد، **اولین step قرمز** را در لاگ باز کنید (Gradle، SCP یا SSH)."
           } >> "$GITHUB_STEP_SUMMARY"
@@ -94,7 +94,7 @@ jobs:
           set -euo pipefail
           REMOTE_USER="fxguard"
           REMOTE_HOST="92.205.58.83"
-          REMOTE_DIR="/var/www/kayaCRM/backend/uploads/releases"
+          REMOTE_DIR="/var/www/fxguard-kaya/backend/uploads/releases"
           REMOTE_PATH="${REMOTE_DIR}/app-release.apk"
           LOCAL_APK="${GITHUB_WORKSPACE}/app-release.apk"
           test -f "$LOCAL_APK"
@@ -152,7 +152,7 @@ jobs:
           command_timeout: 1m
           script: |
             set -e
-            REL=/var/www/kayaCRM/backend/uploads/releases
+            REL=/var/www/fxguard-kaya/backend/uploads/releases
             P="$REL/app-release.apk"
             # اگر از دیپلویهای قبلی پوشهٔ appleboy مانده، تمیز کن
             if [ -d "$REL/deploy-artifacts" ]; then
@@ -181,7 +181,7 @@ jobs:
           script: |
             set -e
 
-            cd /var/www/kayaCRM
+            cd /var/www/fxguard-kaya
 
             # ---- بررسی متغیرهای الزامی در .env قبل از هر کاری ----
             echo "🔍 بررسی متغیرهای .env ..."
@@ -238,7 +238,7 @@ jobs:
             # ---- دریافت کد جدید ----
             echo "📥 دریافت کد جدید از git ..."
             git fetch origin
-            git reset --hard origin/master
+            git reset --hard origin/main
 
             # ---- نصب dependencies ----
             echo "📦 نصب dependencies ..."
@@ -312,10 +312,10 @@ jobs:
             pm2 save
 
             # ---- بررسی سلامت بعد از deploy (چند تلاش — گاهی PM2/Node کمی دیر گوش می‌دهد) ----
-            echo "⏳ بررسی /api/ping روی پورت ۳۰۰۲ (IPv4) ..."
+            echo "⏳ بررسی /api/ping روی پورت ۳۲۰۲ (IPv4) ..."
             OK=0
             for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
-              if curl -sf --max-time 10 http://127.0.0.1:3002/api/ping > /dev/null; then
+              if curl -sf --max-time 10 http://127.0.0.1:3202/api/ping > /dev/null; then
                 OK=1
                 break
               fi
@@ -326,9 +326,8 @@ jobs:
               echo "✅ Deploy موفق — سرور پاسخ می‌دهد"
             else
               echo "❌ هشدار: سرور پس از deploy پاسخ نمی‌دهد — لاگ‌ها را بررسی کنید"
-              pm2 logs crm-backend --lines 40 --nostream || true
-              pm2 logs crm-gateway --lines 20 --nostream || true
-              pm2 logs kayaCRM --lines 30 --nostream || true
+              pm2 logs fxguard-backend-kaya --lines 40 --nostream || true
+              pm2 logs fxguard-gateway-kaya --lines 20 --nostream || true
               exit 1
             fi
 
