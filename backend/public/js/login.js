@@ -61,9 +61,9 @@
             demo_title:           'نسخه دمو',
             demo_credentials:     'نام کاربری: {username} | رمز عبور: {password}',
             demo_buy:             'مشاهده پلن‌ها و خرید',
-            demo_brand_name:      'دمو FXGuard',
+            demo_brand_name:      'دمو کایا CRM',
             demo_login_sub:       'ورود به محیط نمایشی — در دمو عمومی تغییرات ذخیره نمی‌شود',
-            demo_page_title:      'ورود | دمو FXGuard',
+            demo_page_title:      'ورود | دمو کایا CRM',
             forgot_email_ph:      'email@example.com',
             reset_new_ph:         'حداقل ۸ کاراکتر، یک حرف و یک عدد',
             reset_confirm_ph:     'تکرار رمز',
@@ -123,9 +123,9 @@
             demo_title:           'Demo Access',
             demo_credentials:     'Username: {username} | Password: {password}',
             demo_buy:             'View plans and purchase',
-            demo_brand_name:      'FXGuard Demo',
+            demo_brand_name:      'Kaya CRM Demo',
             demo_login_sub:       'Sign in to the read-only public demo',
-            demo_page_title:      'Sign in | FXGuard Demo',
+            demo_page_title:      'Sign in | Kaya CRM Demo',
             forgot_email_ph:      'you@example.com',
             reset_new_ph:         'At least 8 characters, one letter & one number',
             reset_confirm_ph:     'Confirm password',
@@ -185,9 +185,9 @@
             demo_title:           'Demo Erişimi',
             demo_credentials:     'Kullanıcı adı: {username} | Şifre: {password}',
             demo_buy:             'Planları incele ve satın al',
-            demo_brand_name:      'FXGuard Demo',
+            demo_brand_name:      'Kaya CRM Demo',
             demo_login_sub:       'Salt okunur genel demo ortamına giriş',
-            demo_page_title:      'Giriş | FXGuard Demo',
+            demo_page_title:      'Giriş | Kaya CRM Demo',
             forgot_email_ph:      'ornek@email.com',
             reset_new_ph:         'En az 8 karakter, bir harf ve bir rakam',
             reset_confirm_ph:     'Şifre tekrar',
@@ -215,9 +215,10 @@
     function t(k) {
         return (I18N[lang] && I18N[lang][k]) || (I18N['fa'] && I18N['fa'][k]) || k;
     }
-    var DEMO_INFO = { enabled: false, publicSite: false, username: 'demo', password: '123456', salesUrl: 'https://kaya.fxguard.io' };
+    var DEMO_INFO = { enabled: false, publicSite: false, username: 'demo', password: '123456', salesUrl: '/contact' };
 
-    function detectFxguardPublicSite(c) {
+    /** Legacy API flag name `fxguardPublicSite`: restricted public demo host (e.g. app.fxguard.io). */
+    function detectPublicDemoSite(c) {
         try {
             if (c && c.fxguardPublicSite) return true;
             return /^app\.fxguard\.io$/i.test(window.location.hostname || '');
@@ -245,7 +246,16 @@
         var buyLink = document.getElementById('lpDemoBuyLink');
         if (buyLink) {
             buyLink.textContent = t('demo_buy');
-            buyLink.href = DEMO_INFO.salesUrl || 'https://kaya.fxguard.io';
+            var url = DEMO_INFO.salesUrl || '/contact';
+            buyLink.href = url;
+            try {
+                var abs = new URL(url, window.location.origin);
+                var same = abs.origin === window.location.origin;
+                buyLink.target = same ? '_self' : '_blank';
+                buyLink.rel = same ? 'noopener' : 'noopener noreferrer';
+            } catch (e) {
+                buyLink.target = '_self';
+            }
         }
     }
 
@@ -601,7 +611,9 @@
                 var loginLogoSrc = lpResolveLoginLogoSrc(d);
                 if (logoWrap && loginLogoSrc) {
                     var img = document.createElement('img');
-                    img.src = loginLogoSrc; img.alt = 'logo';
+                    img.src = loginLogoSrc;
+                    img.alt = '';
+                    img.decoding = 'async';
                     logoWrap.innerHTML = '';
                     logoWrap.appendChild(img);
                 }
@@ -648,11 +660,11 @@
         var subEl = document.getElementById('lpBrandSub');
         if (subEl) subEl.setAttribute('data-i18n', 'demo_login_sub');
         var fav = document.getElementById('lpFavicon');
-        if (fav) fav.href = '/favicon-fxguard.svg';
+        if (fav) fav.href = '/favicon-kaya.svg';
         var lpApple = document.getElementById('lpAppleTouch');
-        if (lpApple) lpApple.href = '/favicon-fxguard.svg';
+        if (lpApple) lpApple.href = '/favicon-kaya.svg';
         var lpAppTitle = document.getElementById('lpAppTitle');
-        if (lpAppTitle) lpAppTitle.setAttribute('content', 'FXGuard');
+        if (lpAppTitle) lpAppTitle.setAttribute('content', 'Kaya CRM');
         applyLang(lang);
     }
 
@@ -662,10 +674,10 @@
             .then(function(c) {
                 c = c || {};
                 DEMO_INFO.enabled = !!c.demoMode;
-                DEMO_INFO.publicSite = detectFxguardPublicSite(c);
+                DEMO_INFO.publicSite = detectPublicDemoSite(c);
                 DEMO_INFO.username = c.demoUsername || 'demo';
                 DEMO_INFO.password = c.demoPassword || '123456';
-                DEMO_INFO.salesUrl = c.salesUrl || 'https://kaya.fxguard.io';
+                DEMO_INFO.salesUrl = (c.salesUrl && String(c.salesUrl).trim()) || '/contact';
                 var supportLink = document.getElementById('lpSupportLink');
                 if (supportLink && c.supportUrl) supportLink.href = c.supportUrl;
                 if (DEMO_INFO.publicSite) {
@@ -679,7 +691,7 @@
                 renderDemoBox();
             })
             .catch(function() {
-                DEMO_INFO.publicSite = detectFxguardPublicSite(null);
+                DEMO_INFO.publicSite = detectPublicDemoSite(null);
                 if (DEMO_INFO.publicSite) {
                     SUPPORTED = ['en', 'tr'];
                     if (lang === 'fa' || SUPPORTED.indexOf(lang) < 0) lang = 'en';
@@ -775,7 +787,7 @@
         /* Apply stored language */
         applyLang(lang);
 
-        /* Config + panel branding (skipped in demo mode — FXGuard demo labels instead) */
+        /* Config + panel branding (public demo host uses demo_* i18n + Kaya favicon) */
         loadPublicConfigAndBranding();
 
         /* Redirect if already logged in */
