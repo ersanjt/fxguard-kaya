@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=5.0,viewport-fit=cover,user-scalable=yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" id="lpAppTitle" content="کایا CRM">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#080d1a">
+    <title>ورود | کایا CRM</title>
+    <link rel="icon" id="lpFavicon" href="/favicon-kaya.svg">
+    <link rel="apple-touch-icon" id="lpAppleTouch" href="/favicon-kaya.svg">
+    <meta name="description" content="ورود به پورتال کارکنان کایا CRM">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet" media="print" onload="this.media='all'">
+    <noscript>
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    </noscript>
+    <link rel="stylesheet" href="/css/login.css?v=5">
+    <script>(function(){try{
+        document.documentElement.style.background='#080d1a';
+        document.documentElement.style.color='#f0f4fc';
+    }catch(e){}})();</script>
+</head>
+<body>
+
+<!-- SVG icon sprites -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+    <defs>
+        <symbol id="lp-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/>
+        </symbol>
+        <symbol id="lp-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </symbol>
+        <symbol id="lp-eye-off" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>
+        </symbol>
+        <symbol id="lp-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+        </symbol>
+        <symbol id="lp-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </symbol>
+        <symbol id="lp-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="20 6 9 17 4 12"/>
+        </symbol>
+        <symbol id="lp-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </symbol>
+    </defs>
+</svg>
+
+<!-- Animated background -->
+<div class="lp-bg" aria-hidden="true">
+    <div class="lp-blob lp-blob-1"></div>
+    <div class="lp-blob lp-blob-2"></div>
+    <div class="lp-blob lp-blob-3"></div>
+</div>
+
+<!-- Main content -->
+<main class="lp-main" id="lpMain">
+    <div class="lp-card" role="main">
+
+        <!-- Header -->
+        <header class="lp-header">
+            <div class="lp-logo-wrap" id="lpLogoWrap" aria-hidden="true">
+                <svg><use href="#lp-logo"/></svg>
+            </div>
+            <h1 class="lp-brand" id="lpBrandName">KAYA</h1>
+            <p class="lp-brand-sub" id="lpBrandSub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
+        </header>
+
+        <!-- Language switcher — NO onclick, handled by JS -->
+        <div class="lp-lang-wrap" id="lpLangWrap">
+            <div class="lp-lang" id="lpLangSwitch" role="group" aria-label="انتخاب زبان">
+                <button type="button" data-lang="fa" class="active" aria-pressed="true">فارسی</button>
+                <button type="button" data-lang="en" aria-pressed="false">English</button>
+                <button type="button" data-lang="tr" aria-pressed="false">Türkçe</button>
+            </div>
+        </div>
+
+        <!-- Step 1: Login -->
+        <section class="lp-step active" id="stepLogin" aria-label="ورود">
+            <h2 class="lp-step-title" data-i18n="login_title">پورتال کارکنان</h2>
+            <div id="lpDemoBox" class="lp-demo-box" style="display:none;">
+                <div class="lp-demo-title">نسخه دمو</div>
+                <p class="lp-demo-text" id="lpDemoText">نام کاربری: demo | رمز عبور: 123456</p>
+                <a id="lpDemoBuyLink" class="lp-demo-link" href="https://fxguard.io" target="_blank" rel="noopener">مشاهده پلن‌ها و خرید</a>
+            </div>
+
+            <div class="lp-field">
+                <label for="lpEmail" data-i18n="login_email_lbl">ایمیل یا نام کاربری</label>
+                <input type="text" id="lpEmail" class="lp-input"
+                       data-i18n-ph="login_email_lbl"
+                       placeholder="ایمیل یا نام کاربری"
+                       autocomplete="username" autocorrect="off" autocapitalize="none" spellcheck="false">
+            </div>
+
+            <div class="lp-field">
+                <label for="lpPass" data-i18n="login_pass_lbl">رمز عبور</label>
+                <div class="lp-input-wrap">
+                    <input type="password" id="lpPass" class="lp-input"
+                           data-i18n-ph="login_pass_lbl"
+                           placeholder="رمز عبور" autocomplete="current-password">
+                    <button type="button" id="btnTogglePass" class="lp-toggle-pass"
+                            title="نمایش رمز عبور" aria-label="نمایش رمز عبور" aria-pressed="false">
+                        <svg aria-hidden="true"><use href="#lp-eye" id="lpEyeIcon"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <button type="button" id="btnLogin" class="lp-btn">
+                <div class="lp-spinner" aria-hidden="true"></div>
+                <span class="lp-btn-text" data-i18n="login_btn">ورود به سیستم</span>
+                <svg class="lp-btn-icon" aria-hidden="true" style="margin-inline-start:4px;opacity:.7"><use href="#lp-arrow"/></svg>
+            </button>
+
+            <div class="lp-forgot-row">
+                <a href="#" id="lpForgotLink" data-i18n="login_forgot_password">فراموشی رمز عبور</a>
+            </div>
+
+            <div class="lp-msg error" id="loginMsg" role="alert" aria-live="polite"></div>
+        </section>
+
+        <!-- Step 2: TOTP -->
+        <section class="lp-step" id="stepTotp" aria-label="احراز هویت دو مرحله‌ای">
+            <div class="lp-success-icon" style="margin-bottom:12px;background:rgba(99,102,241,0.15);border-color:rgba(99,102,241,0.35);color:#6366f1;">
+                <svg width="28" height="28" aria-hidden="true"><use href="#lp-shield"/></svg>
+            </div>
+            <h2 class="lp-step-title" data-i18n="totp_title">احراز هویت دو مرحله‌ای</h2>
+            <p class="lp-step-sub" id="totpFor" data-i18n="totp_sub">کد شش‌رقمی اپلیکیشن Google Authenticator را وارد کنید.</p>
+
+            <div class="lp-field">
+                <label for="lpTotpCode" data-i18n="totp_code_lbl">کد ۶ رقمی</label>
+                <input type="text" id="lpTotpCode" class="lp-input lp-totp-input"
+                       placeholder="• • • • • •"
+                       maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code" dir="ltr">
+            </div>
+
+            <button type="button" id="btnTotpVerify" class="lp-btn">
+                <div class="lp-spinner" aria-hidden="true"></div>
+                <span class="lp-btn-text" data-i18n="totp_verify_btn">تأیید و ورود</span>
+            </button>
+
+            <button type="button" id="btnTotpBack" class="lp-btn-secondary">
+                <svg width="16" height="16" aria-hidden="true"><use href="#lp-arrow"/></svg>
+                <span data-i18n="totp_back">بازگشت</span>
+            </button>
+
+            <div class="lp-msg error" id="totpMsg" role="alert" aria-live="polite"></div>
+        </section>
+
+        <!-- Step 3: Forgot Password -->
+        <section class="lp-step" id="stepForgot" aria-label="بازیابی رمز عبور">
+            <h2 class="lp-step-title" data-i18n="forgot_title">بازیابی رمز عبور</h2>
+            <p class="lp-step-sub" data-i18n="forgot_sub">ایمیل حساب خود را وارد کنید. در صورت وجود حساب، لینک بازیابی ارسال می‌شود.</p>
+
+            <div class="lp-field">
+                <label for="lpForgotEmail" data-i18n="forgot_email_lbl">ایمیل حساب</label>
+                <input type="email" id="lpForgotEmail" class="lp-input"
+                       data-i18n-ph="forgot_email_ph"
+                       placeholder="email@example.com" autocomplete="email" dir="ltr">
+            </div>
+
+            <button type="button" id="btnForgotSend" class="lp-btn">
+                <div class="lp-spinner" aria-hidden="true"></div>
+                <svg class="lp-btn-icon" aria-hidden="true"><use href="#lp-send"/></svg>
+                <span class="lp-btn-text" data-i18n="forgot_send_btn">ارسال لینک بازیابی</span>
+            </button>
+
+            <button type="button" id="btnForgotBack" class="lp-btn-secondary">
+                <svg width="16" height="16" aria-hidden="true"><use href="#lp-arrow"/></svg>
+                <span data-i18n="forgot_back">بازگشت به ورود</span>
+            </button>
+
+            <div class="lp-msg error"   id="forgotMsg"     role="alert" aria-live="polite"></div>
+            <div class="lp-msg success" id="forgotSuccess" role="status" aria-live="polite"></div>
+        </section>
+
+        <!-- Step 4: Reset Password -->
+        <section class="lp-step" id="stepReset" aria-label="تعیین رمز عبور جدید">
+            <h2 class="lp-step-title" data-i18n="reset_title">تعیین رمز عبور جدید</h2>
+            <p class="lp-step-sub" data-i18n="reset_sub">رمز عبور جدید و تکرار آن را وارد کنید.</p>
+
+            <div class="lp-field">
+                <label for="lpResetNew" data-i18n="reset_new_lbl">رمز عبور جدید</label>
+                <input type="password" id="lpResetNew" class="lp-input"
+                       data-i18n-ph="reset_new_ph"
+                       placeholder="At least 8 characters, letter &amp; number" autocomplete="new-password">
+            </div>
+
+            <div class="lp-field">
+                <label for="lpResetConfirm" data-i18n="reset_confirm_lbl">تکرار رمز عبور</label>
+                <input type="password" id="lpResetConfirm" class="lp-input"
+                       data-i18n-ph="reset_confirm_ph"
+                       placeholder="تکرار رمز" autocomplete="new-password">
+            </div>
+
+            <button type="button" id="btnResetSubmit" class="lp-btn">
+                <div class="lp-spinner" aria-hidden="true"></div>
+                <svg class="lp-btn-icon" aria-hidden="true"><use href="#lp-check"/></svg>
+                <span class="lp-btn-text" data-i18n="reset_btn">تغییر رمز و ورود</span>
+            </button>
+
+            <button type="button" id="btnResetBack" class="lp-btn-secondary">
+                <svg width="16" height="16" aria-hidden="true"><use href="#lp-arrow"/></svg>
+                <span data-i18n="forgot_back">بازگشت به ورود</span>
+            </button>
+
+            <div class="lp-msg error" id="resetMsg" role="alert" aria-live="polite"></div>
+        </section>
+
+        <div class="lp-divider" aria-hidden="true"></div>
+        <p class="lp-support">
+            <span data-i18n="cant_signin">نمی‌توانید وارد شوید؟</span>
+            <a href="#" id="lpSupportLink" data-i18n="contact_support"> با پشتیبانی تماس بگیرید</a>
+        </p>
+
+    </div>
+</main>
+
+<script src="/js/login.js?v=5"></script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+# آخرین push برنده است تا همیشه نتیجهٔ نهایی روی سرور همان کامیت آخر باشد (صف طولانی = حس «بدون نتیجه»).
+concurrency:
+  group: deploy-kaya-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    permissions:
+      contents: read
+
+    steps:
+      - name: Run info
+        run: |
+          {
+            echo "## Deploy to Server"
+            echo ""
+            echo "| | |"
+            echo "|--|--|"
+            echo "| Commit | \`${{ github.sha }}\` |"
+            echo "| Ref | \`${{ github.ref }}\` |"
+            echo "| Trigger | ${{ github.event_name }} |"
+            echo ""
+            echo "### دربارهٔ وضعیت **Canceled**"
+            echo "برای \`master\`، \`cancel-in-progress: true\` فعال است: اگر چند بار پشت‌سرهم push کنید، runهای قدیمی‌تر **عمداً لغو** می‌شوند تا فقط **آخرین کامیت** دیپلوی شود. این خطا نیست؛ خروجی سبز همان آخرین run است."
+            echo ""
+            echo "اگر این run **قرمز (failure)** شد، **اولین step قرمز** را در لاگ باز کنید (Gradle، SCP یا SSH)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/checkout@v5
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android-app/**/*.gradle*', 'android-app/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+
+      - name: Install Android platform (compileSdk)
+        run: yes | sdkmanager "platforms;android-36" >/dev/null
+
+      - name: Build Android release APK (OTA)
+        working-directory: android-app
+        env:
+          # حافظهٔ بیشتر برای Compose/KSP روی runner (گرادل پیش‌فرض ۲۰۴۸م گاهی OOM می‌دهد)
+          GRADLE_OPTS: "-Xmx3584m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Verify release APK exists
+        run: |
+          APK="android-app/app/build/outputs/apk/release/app-release.apk"
+          if [ ! -f "$APK" ]; then
+            echo "::error::Release APK not found at $APK — see Gradle step logs above."
+            ls -la android-app/app/build/outputs/apk/release/ 2>/dev/null || ls -laR android-app/app/build/outputs/ 2>/dev/null || true
+            exit 1
+          fi
+          ls -lh "$APK"
+
+      # یک فایل در ریشهٔ runner — scp مسیر نسبی را روی سرور کپی نمی‌کند (برخلاف appleboy که پوشهٔ deploy-artifacts می‌ساخت)
+      - name: Stage release APK for upload
+        run: |
+          cp -f android-app/app/build/outputs/apk/release/app-release.apk ./app-release.apk
+          ls -lh ./app-release.apk
+
+      # انتقال با OpenSSH: مقصد دقیقاً همان مسیری است که backend و OTA انتظار دارند.
+      # اگر «Connection timed out» دیدید = پورت ۲۲ از IPهای GitHub به سرور بسته است (فایروال/هاست) — نه باگ اسکریپت؛ docs/DEPLOY-SERVER.md
+      - name: Upload APK to server (native scp)
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        timeout-minutes: 15
+        run: |
+          set -euo pipefail
+          REMOTE_USER="fxguard"
+          REMOTE_HOST="92.205.58.83"
+          REMOTE_DIR="/var/www/kayaCRM/backend/uploads/releases"
+          REMOTE_PATH="${REMOTE_DIR}/app-release.apk"
+          LOCAL_APK="${GITHUB_WORKSPACE}/app-release.apk"
+          test -f "$LOCAL_APK"
+          if [ -z "${DEPLOY_SSH_KEY:-}" ]; then
+            echo "::error::Secret SSH_PRIVATE_KEY خالی است — در GitHub → Settings → Secrets اضافه کنید."
+            exit 1
+          fi
+          mkdir -p ~/.ssh
+          KEY="${RUNNER_TEMP}/kaya_deploy_ci"
+          # Strip CR so keys pasted from Windows / CRLF secrets do not break ssh -i (invalid format).
+          printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > "$KEY"
+          chmod 600 "$KEY"
+          SSH_OPTS=(
+            -i "$KEY"
+            -o BatchMode=yes
+            -o StrictHostKeyChecking=accept-new
+            -o ConnectTimeout=60
+            -o ServerAliveInterval=15
+            -o ServerAliveCountMax=4
+          )
+          ok=0
+          for attempt in 1 2 3; do
+            echo "::notice::SSH/SCP به ${REMOTE_HOST}:22 — تلاش ${attempt}/3"
+            set +e
+            ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" "mkdir -p '${REMOTE_DIR}'"
+            s1=$?
+            if [ "$s1" -eq 0 ]; then
+              scp "${SSH_OPTS[@]}" "$LOCAL_APK" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}"
+              s2=$?
+            else
+              s2=1
+            fi
+            set -euo pipefail
+            if [ "$s1" -eq 0 ] && [ "$s2" -eq 0 ]; then
+              ok=1
+              break
+            fi
+            echo "::warning::تلاش ${attempt} ناموفق (ssh=$s1 scp=$s2). اگر شبکه ناپایدار است ۴۵ ثانیه بعد دوباره…"
+            if [ "$attempt" -lt 3 ]; then sleep 45; fi
+          done
+          rm -f "$KEY"
+          if [ "$ok" != "1" ]; then
+            echo "::error::اتصال SSH/SCP به ${REMOTE_HOST}:22 برقرار نشد (timeout یا رد اتصال)."
+            echo "::error::فایروال/هاست باید ورودی TCP 22 را برای محدودهٔ IPهای GitHub Actions باز کند. راهنما: docs/DEPLOY-SERVER.md — لیست IP: https://api.github.com/meta (کلید actions)"
+            exit 255
+          fi
+
+      - name: Verify APK on server
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 3m
+          command_timeout: 1m
+          script: |
+            set -e
+            REL=/var/www/kayaCRM/backend/uploads/releases
+            P="$REL/app-release.apk"
+            # اگر از دیپلویهای قبلی پوشهٔ appleboy مانده، تمیز کن
+            if [ -d "$REL/deploy-artifacts" ]; then
+              if [ -f "$REL/deploy-artifacts/app-release.apk" ] && [ ! -f "$P" ]; then
+                mv -f "$REL/deploy-artifacts/app-release.apk" "$P"
+              fi
+              rm -rf "$REL/deploy-artifacts"
+            fi
+            if [ ! -f "$P" ]; then
+              echo "::error::APK missing at $P"
+              ls -la "$REL" 2>/dev/null || true
+              exit 1
+            fi
+            ls -lh "$P"
+
+      # اگر خطای dial tcp ... i/o timeout دیدید: سرور از شبکهٔ GitHub در دسترس نیست (فایروال/پورت ۲۲). دیپلوی دستی را ببینید: docs/DEPLOY-SERVER.md
+      # host/user ثابت — اگر خواستی از Secrets استفاده کنی: docs/DEPLOY-GITHUB-SECRETS.md
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.5
+        with:
+          host: 92.205.58.83
+          username: fxguard
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          timeout: 3m
+          command_timeout: 20m
+          script: |
+            set -e
+
+            cd /var/www/kayaCRM
+
+            # ---- بررسی متغیرهای الزامی در .env قبل از هر کاری ----
+            echo "🔍 بررسی متغیرهای .env ..."
+            ENV_FILE="backend/.env"
+            check_env() {
+              VAR=$1
+              if ! grep -q "^${VAR}=" "$ENV_FILE" 2>/dev/null; then
+                echo "❌ خطا: متغیر ${VAR} در ${ENV_FILE} تنظیم نشده است"
+                exit 1
+              fi
+              VAL=$(grep "^${VAR}=" "$ENV_FILE" | cut -d= -f2-)
+              if [ -z "$VAL" ]; then
+                echo "❌ خطا: متغیر ${VAR} در ${ENV_FILE} خالی است"
+                exit 1
+              fi
+              echo "  ✅ ${VAR} تنظیم شده"
+            }
+            check_env "JWT_SECRET"
+            check_env "ENCRYPT_SECRET"
+            check_env "MAIN_ADMIN_EMAIL"
+            check_env "MAIN_ADMIN_PASSWORD"
+            check_env "WEBHOOK_SECRET"
+
+            # بررسی طول JWT_SECRET (حداقل ۳۲ کاراکتر)
+            JWT_LEN=$(grep "^JWT_SECRET=" "$ENV_FILE" | cut -d= -f2- | wc -c)
+            if [ "$JWT_LEN" -lt 33 ]; then
+              echo "❌ خطا: JWT_SECRET باید حداقل ۳۲ کاراکتر باشد"
+              exit 1
+            fi
+            echo "  ✅ JWT_SECRET طول کافی دارد"
+
+            # بررسی طول ENCRYPT_SECRET (حداقل ۳۲ کاراکتر)
+            ENC_LEN=$(grep "^ENCRYPT_SECRET=" "$ENV_FILE" | cut -d= -f2- | wc -c)
+            if [ "$ENC_LEN" -lt 33 ]; then
+              echo "❌ خطا: ENCRYPT_SECRET باید حداقل ۳۲ کاراکتر باشد"
+              echo "   برای تولید: openssl rand -hex 32"
+              exit 1
+            fi
+            # بررسی اینکه ENCRYPT_SECRET با JWT_SECRET یکسان نباشد
+            JWT_VAL=$(grep "^JWT_SECRET=" "$ENV_FILE" | cut -d= -f2-)
+            ENC_VAL=$(grep "^ENCRYPT_SECRET=" "$ENV_FILE" | cut -d= -f2-)
+            if [ "$JWT_VAL" = "$ENC_VAL" ]; then
+              echo "❌ خطا: ENCRYPT_SECRET نباید با JWT_SECRET یکسان باشد"
+              exit 1
+            fi
+            echo "  ✅ ENCRYPT_SECRET طول کافی دارد و با JWT_SECRET متفاوت است"
+
+            # ---- بکاپ دیتابیس ----
+            echo "💾 بکاپ دیتابیس ..."
+            cd backend
+            node scripts/backup-database.js || true
+            cd ..
+
+            # ---- دریافت کد جدید ----
+            echo "📥 دریافت کد جدید از git ..."
+            git fetch origin
+            git reset --hard origin/master
+
+            # ---- نصب dependencies ----
+            echo "📦 نصب dependencies ..."
+            cd backend
+            # پاک کردن node_modules برای جلوگیری از مشکلات stale cache
+            rm -rf node_modules
+            npm ci --omit=dev --no-audit --no-fund
+            echo "  ✅ npm ci موفق"
+
+            # ---- اجرای migration scripts ----
+            echo "🗄️ اجرای migration scripts ..."
+            node scripts/add-unanswered-columns.js
+            node scripts/add-auto-messages-columns.js
+            node scripts/add-activitylog-customerid.js
+            node scripts/add-last-message-preview.js
+            node scripts/add-ticket-number.js
+            node scripts/add-transaction-customerid.js
+            node scripts/add-ai-columns.js
+            node scripts/add-conversation-indexes.js
+            node scripts/add-customer-profile-fields.js
+            echo "  ✅ migration scripts اجرا شد"
+
+            # از اینجا به بعد مسیرها نسبت به ریشهٔ مخزن است (نه backend/)
+            cd ..
+
+            # ---- همسان‌سازی ANDROID_APP_* با نسخهٔ اپ (برای به‌روزرسانی از داخل اپ) ----
+            echo "📱 همسان‌سازی ANDROID_APP_* از android-app/app/build.gradle.kts ..."
+            mkdir -p backend/uploads/releases
+            GKF="android-app/app/build.gradle.kts"
+            CODE=$(grep -E 'versionCode\s*=' "$GKF" | head -1 | sed -E 's/[^0-9]*([0-9]+).*/\1/')
+            VER=$(grep -E 'versionName\s*=' "$GKF" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+            if [ -z "$CODE" ] || [ -z "$VER" ]; then
+              echo "❌ خطا: خواندن versionCode/versionName از $GKF ناموفق بود"
+              exit 1
+            fi
+            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_VERSION_CODE "$CODE"
+            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_VERSION_NAME "$VER"
+            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_APK_URL "/uploads/releases/app-release.apk"
+            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_RELEASE_NOTES "نسخه ${VER} — چت، برندینگ سازمان، امنیت شبکه"
+            if [ -f backend/uploads/releases/app-release.apk ]; then
+              echo "  ✅ APK روی سرور: app-release.apk"
+            else
+              echo "  ⚠️ APK روی سرور دیده نشد — مسیر uploads/releases را بررسی کنید"
+            fi
+
+            # ---- بررسی syntax فایل‌های اصلی ----
+            cd backend
+            echo "🔎 بررسی syntax ..."
+            node --check server.js
+            node --check middleware/auth.js
+            node --check middleware/socketAuth.js
+            node --check lib/encrypt.js
+            node --check routes/upload.js
+            node --check routes/api.js
+            node --check routes/panelSettings.js
+            node --check scripts/upsert-dotenv.js
+            cd ..
+            echo "  ✅ syntax بدون خطا"
+
+            # ---- reload با PM2 ----
+            echo "🔄 reload سرویس‌ها ..."
+            # سعی می‌کنیم با ecosystem reload کنیم؛ اگر نشد stop/start می‌کنیم
+            if pm2 reload ecosystem.config.js --update-env; then
+              echo "  ✅ pm2 reload موفق"
+            else
+              echo "  ⚠️ reload شکست خورد، stop/start می‌کنیم..."
+              pm2 stop ecosystem.config.js 2>/dev/null || true
+              sleep 3
+              pm2 start ecosystem.config.js --update-env
+            fi
+            pm2 save
+
+            # ---- بررسی سلامت بعد از deploy (چند تلاش — گاهی PM2/Node کمی دیر گوش می‌دهد) ----
+            echo "⏳ بررسی /api/ping روی پورت ۳۰۰۲ (IPv4) ..."
+            OK=0
+            for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
+              if curl -sf --max-time 10 http://127.0.0.1:3002/api/ping > /dev/null; then
+                OK=1
+                break
+              fi
+              echo "   تلاش $i از ۱۲ — هنوز پاسخی نیست، ۱۰ ثانیه بعد دوباره ..."
+              sleep 10
+            done
+            if [ "$OK" = "1" ]; then
+              echo "✅ Deploy موفق — سرور پاسخ می‌دهد"
+            else
+              echo "❌ هشدار: سرور پس از deploy پاسخ نمی‌دهد — لاگ‌ها را بررسی کنید"
+              pm2 logs crm-backend --lines 40 --nostream || true
+              pm2 logs crm-gateway --lines 20 --nostream || true
+              pm2 logs kayaCRM --lines 30 --nostream || true
+              exit 1
+            fi
+
+      - name: Summary (success)
+        if: success()
+        run: |
+          {
+            echo ""
+            echo "### نتیجه"
+            echo "دیپلوی این کامیت تمام شد: APK آپلود، \`git pull\` روی سرور، \`npm ci\`، migrationها، PM2 reload، و \`/api/ping\` پاسخ داد."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,21 @@
+# مستندات kayaCRM
+
+| سند | موضوع |
+|-----|--------|
+| [../AGENTS.md](../AGENTS.md) | راهنمای کوتاه برای مشارکت‌کنندگان و ابزارهای AI (Cursor) |
+| [PROJECT-STANDARDS.md](PROJECT-STANDARDS.md) | ساختار مخزن، استانداردهای مهندسی، دستورات lint/test/build، CI |
+| [TECH-AND-TEAM-OVERVIEW.md](TECH-AND-TEAM-OVERVIEW.md) | تکنولوژی‌ها و تیم (متن) |
+| [tech-and-team-overview.html](tech-and-team-overview.html) | همان نمای کلی به‌صورت صفحهٔ HTML |
+| [DASHBOARD-REFACTOR.md](DASHBOARD-REFACTOR.md) | تاریخچهٔ سبک‌سازی داشبورد و i18n |
+| [DEPLOY-SERVER.md](DEPLOY-SERVER.md) / [DEPLOY-SETUP.md](DEPLOY-SETUP.md) | استقرار |
+| [DEPLOY-GITHUB-SECRETS.md](DEPLOY-GITHUB-SECRETS.md) | Secrets دیپلوی (اجباری بعد از به‌روزرسانی workflow) |
+| [PRODUCTION-PUSH-CHECKLIST.md](PRODUCTION-PUSH-CHECKLIST.md) | قبل از push به master |
+| [WHATSAPP-GATEWAY.md](WHATSAPP-GATEWAY.md) | عیب‌یابی Gateway واتساپ (QR) |
+| [IRAN_ACCESS.md](IRAN_ACCESS.md) | دسترسی از ایران |
+| [SERVER-STATUS-COMMANDS.md](SERVER-STATUS-COMMANDS.md) | دستورات وضعیت سرور |
+| [CONSOLE-FIXES.md](CONSOLE-FIXES.md) | رفع خطاهای کنسول |
+| [SYSTEM-ANALYSIS-REPORT.md](SYSTEM-ANALYSIS-REPORT.md) | گزارش تحلیل سیستم |
+| [REFACTORING-PLAN.md](REFACTORING-PLAN.md) | طرح بازسازی |
+| [SECURITY-UPDATE-GUIDE.md](SECURITY-UPDATE-GUIDE.md) | به‌روزرسانی امنیتی |
+
+مستندات فنی backend: پوشهٔ `../backend/docs/` — از جمله [CODEBASE-LAYOUT.md](../backend/docs/CODEBASE-LAYOUT.md) · اسکریپت‌های یک‌باره: [backend/scripts/README.md](../backend/scripts/README.md)

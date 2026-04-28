@@ -1,0 +1,282 @@
+const express = require('express');
+const router = express.Router();
+const { Task, TaskUpdate, User, Department, Branch } = require('../models');
+const { Op } = require('sequelize');
+const { isMainAdmin } = require('../lib/permissions');
+const notificationService = require('../services/notificationService');
+const logger = require('../config/logger');
+const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
+
+const VALID_TASK_STATUSES = new Set(['pending', 'in_progress', 'done', 'cancelled']);
+const VALID_TASK_PRIORITIES = new Set(['low', 'normal', 'high', 'urgent']);
+
+/** ساخت شرط دسترسی: ادمین/مالک همه؛ مدیر دپارتمان خودش؛ کارمند/ناظر تسک‌های اختصاص‌یافته به خود + تسک‌های دپارتمان خود */
+async function taskAccessWhere(req) {
+    const u = req.user;
+    if (isMainAdmin(u) || u.role === 'owner' || u.role === 'admin') return {};
+    if ((u.role === 'manager' || u.role === 'supervisor') && u.departmentId) {
+        const deptUserIds = await User.findAll({
+            where: { departmentId: u.departmentId, isActive: true },
+            attributes: ['id']
+        }).then(rows => rows.map(r => r.id));
+        return {
+            [Op.or]: [
+                { assignedToDepartmentId: u.departmentId },
+                { assignedTo: { [Op.in]: deptUserIds } },
+                { assignedTo: u.id },
+                { createdBy: u.id }
+            ]
+        };
+    }
+    return {
+        [Op.or]: [
+            { assignedTo: u.id },
+            ...(u.departmentId ? [{ assignedToDepartmentId: u.departmentId }] : [])
+        ]
+    };
+}
+
+/** بررسی دسترسی به یک تسک (خواندن/ویرایش) */
+async function canAccessTask(req, taskId) {
+    const task = await Task.findByPk(taskId);
+    if (!task) return { ok: false, status: 404 };
+    const u = req.user;
+    if (isMainAdmin(u) || u.role === 'owner' || u.role === 'admin') return { ok: true, task };
+    if ((u.role === 'manager' || u.role === 'supervisor') && u.departmentId) {
+        const deptUserIds = await User.findAll({
+            where: { departmentId: u.departmentId },
+            attributes: ['id']
+        }).then(rows => rows.map(r => r.id));
+        const ok =
+            task.assignedToDepartmentId === u.departmentId ||
+            (task.assignedTo && deptUserIds.includes(task.assignedTo)) ||
+            task.assignedTo === u.id ||
+            task.createdBy === u.id;
+        return ok ? { ok: true, task } : { ok: false, status: 403 };
+    }
+    if (task.assignedTo === u.id || task.createdBy === u.id) return { ok: true, task };
+    if (u.departmentId && task.assignedToDepartmentId === u.departmentId) return { ok: true, task };
+    return { ok: false, status: 403 };
+}
+
+const includeList = [
+    { model: User, as: 'creator', attributes: ['id', 'name', 'email'] },
+    { model: User, as: 'assignee', attributes: ['id', 'name', 'email'] },
+    { model: User, as: 'completedByUser', attributes: ['id', 'name'], required: false },
+    { model: Department, as: 'department', attributes: ['id', 'name'], required: false },
+    { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false }
+];
+
+// لیست تسک‌ها با فیلتر
+router.get('/', async (req, res, next) => {
+    try {
+        const accessWhere = await taskAccessWhere(req);
+        const { status, assignedTo, assignedToDepartmentId, branchId, createdBy, search } = req.query;
+        const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
+        const where = { ...accessWhere };
+        if (status) {
+            if (!VALID_TASK_STATUSES.has(status)) return res.status(400).json({ error: 'وضعیت تسک نامعتبر است' });
+            where.status = status;
+        }
+        if (assignedTo) where.assignedTo = assignedTo;
+        if (assignedToDepartmentId) where.assignedToDepartmentId = assignedToDepartmentId;
+        if (branchId) where.branchId = branchId;
+        if (createdBy) where.createdBy = createdBy;
+        if (search && String(search).trim()) {
+            const safeTerm = '%' + String(search).trim().replace(/[%_\\]/g, '\\$&') + '%';
+            const searchOr = [
+                { title: { [Op.like]: safeTerm } },
+                { description: { [Op.like]: safeTerm } }
+            ];
+            where[Op.and] = where[Op.and] || [];
+            where[Op.and].push({ [Op.or]: searchOr });
+        }
+
+        const { rows, count } = await Task.findAndCountAll({
+            where,
+            include: includeList,
+            order: [['createdAt', 'DESC']],
+            limit,
+            offset
+        });
+        res.json({ data: rows, total: count, page });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// خلاصه برای نمایش به تفکیک کارمند/دپارتمان (برای مدیر کل و مدیر دپارتمان)
+router.get('/summary', async (req, res, next) => {
+    try {
+        const accessWhere = await taskAccessWhere(req);
+        const tasks = await Task.findAll({
+            where: accessWhere,
+            attributes: ['id', 'status', 'assignedTo', 'assignedToDepartmentId', 'createdBy'],
+            include: [
+                { model: User, as: 'assignee', attributes: ['id', 'name'] },
+                { model: Department, as: 'department', attributes: ['id', 'name'], required: false }
+            ]
+        });
+        const byUser = {};
+        const byDept = {};
+        tasks.forEach(t => {
+            if (t.assignedTo && t.assignee) {
+                const id = t.assignedTo;
+                if (!byUser[id]) byUser[id] = { user: t.assignee, pending: 0, in_progress: 0, done: 0, cancelled: 0 };
+                if (t.status in byUser[id]) byUser[id][t.status]++; else byUser[id][t.status] = 1;
+            }
+            if (t.assignedToDepartmentId && t.department) {
+                const id = t.assignedToDepartmentId;
+                if (!byDept[id]) byDept[id] = { department: t.department, pending: 0, in_progress: 0, done: 0, cancelled: 0 };
+                if (t.status in byDept[id]) byDept[id][t.status]++; else byDept[id][t.status] = 1;
+            }
+        });
+        res.json({ byUser: Object.values(byUser), byDepartment: Object.values(byDept) });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// جزئیات یک تسک + بروزرسانی‌های پیگیری
+router.get('/:id', async (req, res, next) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تسک نامعتبر است' });
+    try {
+        const { ok, status, task } = await canAccessTask(req, req.params.id);
+        if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
+        const full = await Task.findByPk(task.id, {
+            include: [
+                ...includeList,
+                { model: TaskUpdate, as: 'updates', include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }], order: [['createdAt', 'ASC']] }
+            ]
+        });
+        res.json(full);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ایجاد تسک
+router.post('/', async (req, res, next) => {
+    try {
+        const { title, description, assignedTo, assignedToDepartmentId, dueDate, priority, branchId } = req.body;
+        if (!title || !title.trim()) return res.status(400).json({ error: 'عنوان تسک الزامی است' });
+        if (String(title).trim().length > 300) return res.status(400).json({ error: 'عنوان تسک بیش از ۳۰۰ کاراکتر مجاز نیست' });
+        if (!assignedTo && !assignedToDepartmentId) return res.status(400).json({ error: 'تسک باید به یک کارمند یا یک دپارتمان اختصاص داده شود' });
+        if (assignedTo && !isValidUUID(assignedTo)) return res.status(400).json({ error: 'شناسه کارمند نامعتبر است' });
+        if (assignedToDepartmentId && !isValidUUID(assignedToDepartmentId)) return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
+        if (branchId && !isValidUUID(branchId)) return res.status(400).json({ error: 'شناسه شعبه نامعتبر است' });
+        const resolvedPriority = priority || 'normal';
+        if (!VALID_TASK_PRIORITIES.has(resolvedPriority)) return res.status(400).json({ error: 'اولویت تسک نامعتبر است' });
+
+        const task = await Task.create({
+            title: title.trim(),
+            description: (description || '').trim(),
+            createdBy: req.userId,
+            assignedTo: assignedTo || null,
+            assignedToDepartmentId: assignedToDepartmentId || null,
+            dueDate: dueDate ? new Date(dueDate) : null,
+            priority: resolvedPriority,
+            branchId: branchId || null,
+            status: 'pending'
+        });
+        const withIncludes = await Task.findByPk(task.id, { include: includeList });
+        
+        // ارسال اطلاع تخصیص تسک
+        if (assignedTo) {
+            const io = req.app.get('io');
+            setImmediate(() => {
+                notificationService.notifyTaskAssigned(task, io).catch(err => {
+                    logger.error('Task notification error', { error: err.message });
+                });
+            });
+        }
+        
+        res.status(201).json(withIncludes);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// ویرایش تسک (وضعیت، تخصیص، عنوان، توضیحات، مهلت)
+router.put('/:id', async (req, res, next) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تسک نامعتبر است' });
+    try {
+        const { ok, status, task } = await canAccessTask(req, req.params.id);
+        if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
+
+        const { title, description, status: newStatus, assignedTo, assignedToDepartmentId, dueDate, priority, branchId } = req.body;
+        const oldAssignedTo = task.assignedTo;
+        
+        if (title !== undefined) task.title = title.trim();
+        if (description !== undefined) task.description = description;
+        if (newStatus !== undefined) {
+            if (!VALID_TASK_STATUSES.has(newStatus)) return res.status(400).json({ error: 'وضعیت تسک نامعتبر است' });
+            task.status = newStatus;
+            if (newStatus === 'done' || newStatus === 'cancelled') {
+                task.completedAt = new Date();
+                task.completedBy = req.userId;
+            }
+        }
+        if (assignedTo !== undefined) task.assignedTo = assignedTo || null;
+        if (assignedToDepartmentId !== undefined) task.assignedToDepartmentId = assignedToDepartmentId || null;
+        if (dueDate !== undefined) task.dueDate = dueDate ? new Date(dueDate) : null;
+        if (priority !== undefined) {
+            if (!VALID_TASK_PRIORITIES.has(priority)) return res.status(400).json({ error: 'اولویت تسک نامعتبر است' });
+            task.priority = priority;
+        }
+        if (branchId !== undefined) task.branchId = branchId || null;
+        await task.save();
+        const updated = await Task.findByPk(task.id, { include: includeList });
+        
+        // اگر تخصیص تغیر یافت، اطلاع جدید
+        if (assignedTo !== undefined && String(oldAssignedTo || '') !== String(assignedTo || '')) {
+            if (assignedTo) {
+                const io = req.app.get('io');
+                setImmediate(() => {
+                    notificationService.notifyTaskAssigned(updated, io).catch(err => {
+                        logger.error('Task update notification error', { error: err.message });
+                    });
+                });
+            }
+        }
+        
+        res.json(updated);
+    } catch (err) {
+        next(err);
+    }
+});
+
+// افزودن بروزرسانی/پیگیری به تسک
+router.post('/:id/updates', async (req, res, next) => {
+    if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تسک نامعتبر است' });
+    try {
+        const { ok, status, task } = await canAccessTask(req, req.params.id);
+        if (!ok) return res.status(status).json({ error: status === 404 ? 'تسک یافت نشد' : 'دسترسی غیرمجاز' });
+
+        const content = safeString(req.body.content, 5000);
+        const statusChange = req.body.statusChange || null;
+        if (!content && !statusChange) return res.status(400).json({ error: 'متن پیگیری یا تغییر وضعیت الزامی است' });
+        if (statusChange && !VALID_TASK_STATUSES.has(statusChange)) return res.status(400).json({ error: 'وضعیت تسک نامعتبر است' });
+        if (statusChange && VALID_TASK_STATUSES.has(statusChange)) {
+            task.status = statusChange;
+            if (statusChange === 'done' || statusChange === 'cancelled') {
+                task.completedAt = new Date();
+                task.completedBy = req.userId;
+            }
+            await task.save();
+        }
+
+        const update = await TaskUpdate.create({
+            taskId: task.id,
+            userId: req.userId,
+            content: content || (statusChange ? (statusChange === 'done' ? 'انجام شد' : statusChange === 'cancelled' ? 'لغو شد' : 'وضعیت تغییر کرد') : ''),
+            statusChange
+        });
+        const withUser = await TaskUpdate.findByPk(update.id, { include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }] });
+        res.status(201).json(withUser);
+    } catch (err) {
+        next(err);
+    }
+});
+
+module.exports = router;

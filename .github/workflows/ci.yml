@@ -1,0 +1,143 @@
+# Lint + tests (backend uses SQLite in-memory — no external DB)
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run test:all
+      # اگر chunkها عوض شده باشند و dashboard.js / dashboard.html دوباره باندل نشده باشد، CI قرمز می‌شود.
+      - name: Verify dashboard bundle matches chunks
+        run: npm run build:dashboard && git diff --exit-code public/js/dashboard.js public/dashboard.html
+
+  gateway:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: gateway
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: gateway/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format
+
+  dashboard:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run build
+
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      actions: write # لازم برای actions/upload-artifact وقتی contents محدود است
+    defaults:
+      run:
+        working-directory: android-app
+    env:
+      GRADLE_OPTS: "-Xmx3584m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
+      # اختیاری: اگر در GitHub Secrets تنظیم شود، به‌جای پیش‌فرض «android» برای keystore استفاده می‌شود
+      ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: gradle
+      - uses: android-actions/setup-android@v4
+      - name: Install Android platform (compileSdk)
+        run: yes | sdkmanager "platforms;android-36" >/dev/null
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      - name: Lint and assemble debug
+        run: ./gradlew lintDebug assembleDebug --no-daemon --stacktrace
+      - name: Assemble release (same as Deploy workflow)
+        run: ./gradlew assembleRelease --no-daemon --stacktrace
+      - name: Verify release APK exists
+        run: |
+          APK="app/build/outputs/apk/release/app-release.apk"
+          test -f "$APK"
+          ls -lh "$APK"
+
+      - name: Prepare branded APK filename (KAYA)
+        if: github.event_name == 'push'
+        run: |
+          GKF="app/build.gradle.kts"
+          VERSION_CODE=$(grep -E 'versionCode\s*=' "$GKF" | head -1 | sed -E 's/[^0-9]*([0-9]+).*/\1/')
+          VERSION_NAME=$(grep -E 'versionName\s*=' "$GKF" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+          if [ -z "$VERSION_CODE" ] || [ -z "$VERSION_NAME" ]; then
+            echo "::error::Could not read versionCode/versionName from $GKF"
+            exit 1
+          fi
+          BRANDED_APK="app/build/outputs/apk/release/KAYA-v${VERSION_NAME}-${VERSION_CODE}.apk"
+          cp -f app/build/outputs/apk/release/app-release.apk "$BRANDED_APK"
+          ls -lh "$BRANDED_APK"
+          echo "APK_VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+          echo "APK_VERSION_CODE=$VERSION_CODE" >> "$GITHUB_ENV"
+          echo "BRANDED_APK_PATH=$BRANDED_APK" >> "$GITHUB_ENV"
+
+      - name: Upload release APK (دانلود از تب Actions → آخرین run → Artifacts)
+        if: github.event_name == 'push'
+        uses: actions/upload-artifact@v4
+        with:
+          name: KAYA-v${{ env.APK_VERSION_NAME }}-${{ env.APK_VERSION_CODE }}
+          path: android-app/${{ env.BRANDED_APK_PATH }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Summary — APK artifact
+        if: github.event_name == 'push'
+        run: |
+          {
+            echo "## اندروید"
+            echo "بعد از سبز شدن این job، در **پایین همین صفحه** بخش **Artifacts** را باز کنید و زیپ \`KAYA-v${APK_VERSION_NAME}-${APK_VERSION_CODE}\` را دانلود کنید؛ داخل آن \`KAYA-v${APK_VERSION_NAME}-${APK_VERSION_CODE}.apk\` است."
+            echo ""
+            echo "اگر runهای قدیمی‌تر CI به‌صورت **Canceled** مانده‌اند، به‌خاطر \`cancel-in-progress: true\` است؛ فقط آخرین run برای همان branch معتبر است."
+          } >> "$GITHUB_STEP_SUMMARY"

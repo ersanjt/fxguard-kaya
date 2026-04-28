@@ -1,0 +1,540 @@
+                    <button type="button" class="rates-marquee-icon rates-marquee-icon-btn" onclick="showPage('rates-charts'); event.stopPropagation();" title="مشاهده چارت ارزها" aria-label="مشاهده چارت ارزها"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></button>
+                    <div class="rates-marquee-track-wrap" id="ratesMarqueeTrackWrap" title="">
+                        <div class="rates-marquee-track" id="ratesMarqueeTrack" onmouseenter="pauseTickerRatesMarquee()" onmouseleave="resumeTickerRatesMarquee()">
+                            <div class="rates-marquee-inner" id="ratesMarqueeInner"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="app-footer app-footer--accent" id="appFooter" role="contentinfo" aria-label="پایین صفحه">
+                <div class="app-footer-accent" aria-hidden="true"></div>
+                <div class="app-footer-inner">
+                    <span class="app-footer-brand" id="appFooterBrand" data-i18n="footer_text">صرافی کایا — پورتال کارکنان</span>
+                    <span class="app-footer-sep" aria-hidden="true"></span>
+                    <span class="app-footer-meta"><span id="appFooterYear" aria-hidden="true"></span></span>
+                </div>
+            </footer>
+            <!-- فوتر موبایل — نوار تب سبک اپلیکیشن (فقط موبایل) -->
+            <nav class="mobile-tab-bar" id="mobileTabBar" role="tablist" aria-label="ناوبری اصلی موبایل" style="display:none;">
+                <a href="#dashboard" class="mobile-tab-item" data-page="dashboard" data-section="dashboard" role="tab" onclick="showPage('dashboard'); closeSidebarMobile(); return false;" aria-selected="true">
+                    <span class="mobile-tab-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span>
+                    <span class="mobile-tab-label" data-i18n="nav_dashboard">داشبورد</span>
+                </a>
+                <a href="#conversations" class="mobile-tab-item" data-page="conversations" data-section="conversations" role="tab" onclick="showPage('conversations'); closeSidebarMobile(); return false;" aria-selected="false">
+                    <span class="mobile-tab-icon"><svg viewBox="0 0 24 24"><use href="#icon-chat"/></svg></span>
+                    <span class="mobile-tab-label" data-i18n="nav_conversations">مکالمات</span>
+                    <span class="mobile-tab-badge" id="mobileTabConvBadge" style="display:none;">0</span>
+                </a>
+                <a href="#customers" class="mobile-tab-item" data-page="customers" data-section="customers" role="tab" onclick="showPage('customers'); closeSidebarMobile(); return false;" aria-selected="false">
+                    <span class="mobile-tab-icon"><svg viewBox="0 0 24 24"><use href="#icon-users"/></svg></span>
+                    <span class="mobile-tab-label" data-i18n="nav_customers">مشتریان</span>
+                </a>
+                <a href="#announcements" class="mobile-tab-item" data-page="announcements" data-section="announcements" role="tab" onclick="showPage('announcements'); closeSidebarMobile(); return false;" aria-selected="false">
+                    <span class="mobile-tab-icon"><svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg></span>
+                    <span class="mobile-tab-label" data-i18n="nav_announcements">اعلان‌ها</span>
+                    <span class="mobile-tab-badge" id="mobileTabAnnBadge" style="display:none;">0</span>
+                </a>
+                <a href="#more" class="mobile-tab-item mobile-tab-more" data-page="more" role="tab" onclick="toggleSidebarMobile(); return false;" aria-selected="false">
+                    <span class="mobile-tab-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/></svg></span>
+                    <span class="mobile-tab-label" data-i18n="nav_more">بیشتر</span>
+                </a>
+            </nav>
+        </div>
+        <div id="internalCallInviteModal" class="modal-overlay" style="display:none;">
+            <div class="modal-box" style="max-width:360px;">
+                <div class="modal-header"><h3 id="internalCallInviteTitle" data-i18n="invite_to_call">دعوت به تماس</h3><button type="button" class="modal-close" onclick="rejectInternalCallInvite()">&times;</button></div>
+                <div class="modal-body" style="text-align:center;">
+                    <p id="internalCallInviteText" style="margin:0 0 20px; color:var(--text-secondary);"></p>
+                    <div style="display:flex; gap:12px; justify-content:center;">
+                        <button type="button" class="internal-call-action-btn accept" onclick="acceptInternalCallInvite()" data-i18n="accept_call">پذیرش</button>
+                        <button type="button" class="internal-call-action-btn reject" onclick="rejectInternalCallInvite()" data-i18n="reject_call">رد</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="internalCallModal" class="internal-call-modal" style="display:none;">
+            <div class="internal-call-content">
+                <div id="internalCallStatus" class="internal-call-status"></div>
+                <div id="internalCallDuration" class="internal-call-duration" style="display:none;"></div>
+                <div id="internalCallConnectionStatus" class="internal-call-connection-status" style="display:none;"></div>
+                <div id="internalCallVoicePlaceholder" class="internal-call-voice-placeholder" style="display:none;">
+                    <div class="internal-call-voice-avatar" id="internalCallVoiceAvatar"></div>
+                    <span class="internal-call-voice-name" id="internalCallVoiceName"></span>
+                    <div class="internal-call-voice-pulse" aria-hidden="true"></div>
+                </div>
+                <div class="internal-call-videos" id="internalCallVideos">
+                    <div id="internalCallRemoteVideos" class="internal-call-remote-videos"></div>
+                    <video id="internalCallLocalVideo" autoplay muted playsinline class="internal-call-local-video"></video>
+                </div>
+                <div class="internal-call-actions">
+                    <button type="button" id="internalCallMicBtn" class="internal-call-action-btn toggle-mic" onclick="toggleInternalCallMic()" style="display:none;" title="قطع/وصل میکروفون" data-i18n-title="call_mute" aria-label="میکروفون"><svg class="icon-mic-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 1 3 3v8a3 3 0 0 1-6 0V4a3 3 0 0 1 3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg><svg class="icon-mic-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M1 1l22 22"/><path d="M9 9v3a3 3 0 0 0 5.12 2.12M15 9.34V4a3 3 0 0 0-5.94-.6"/><path d="M17 16.95A7 7 0 0 1 5 12v-2m14 0v2a7 7 0 0 1-.11 1.23"/></svg></button>
+                    <button type="button" id="internalCallCameraBtn" class="internal-call-action-btn toggle-camera" onclick="toggleInternalCallCamera()" style="display:none;" title="قطع/وصل دوربین" data-i18n-title="call_camera_off" aria-label="دوربین"><svg class="icon-camera-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg><svg class="icon-camera-off" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:none;"><path d="M1 1l22 22"/><path d="M16 16v2a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h2"/><path d="M23 7v10a2 2 0 0 1-2 2h-4"/><path d="M15 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button>
+                    <button type="button" id="internalCallAddBtn" class="internal-call-action-btn add" onclick="showAddToCallModal()" style="display:none;" data-i18n="add_to_call" title="افزودن به تماس" aria-label="افزودن به تماس"><svg class="internal-call-add-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><use href="#icon-user-plus"/></svg><span class="internal-call-add-label" data-i18n="add_to_call">افزودن به تماس</span></button>
+                    <button type="button" id="internalCallAcceptBtn" class="internal-call-action-btn accept" onclick="acceptInternalCall()" style="display:none;" data-i18n="accept_call">پذیرش</button>
+                    <button type="button" id="internalCallRejectBtn" class="internal-call-action-btn reject" onclick="rejectInternalCall()" data-i18n="reject_call">رد</button>
+                    <button type="button" id="internalCallEndBtn" class="internal-call-action-btn end" onclick="endInternalCall()" style="display:none;" data-i18n="end_call">قطع تماس</button>
+                </div>
+            </div>
+        </div>
+        <div id="addToCallModal" class="modal-overlay" style="display:none;">
+            <div class="modal-box add-to-call-modal-box">
+                <div class="modal-header">
+                    <h3 data-i18n="add_to_call">افزودن به تماس</h3>
+                    <p class="add-to-call-subtitle" data-i18n="add_to_call_subtitle">چند نفر را برای تماس صوتی یا تصویری انتخاب کنید</p>
+                    <button type="button" class="modal-close" onclick="closeAddToCallModal()" aria-label="بستن">&times;</button>
+                </div>
+                <div class="add-to-call-toolbar">
+                    <input type="text" id="addToCallSearch" class="add-to-call-search" placeholder="جستجو نام..." data-i18n-ph="add_to_call_search" oninput="filterAddToCallList()">
+                    <label class="add-to-call-select-all"><input type="checkbox" id="addToCallSelectAll" onchange="toggleAddToCallSelectAll(this.checked)"> <span data-i18n="add_to_call_select_all">همه</span></label>
+                </div>
+                <div class="modal-body add-to-call-body">
+                    <div id="addToCallList" class="add-to-call-list"></div>
+                </div>
+                <div class="add-to-call-footer">
+                    <button type="button" class="btn-secondary" onclick="closeAddToCallModal()" data-i18n="cancel">انصراف</button>
+                    <button type="button" id="addToCallInviteBtn" class="btn-primary add-to-call-invite-btn" onclick="inviteSelectedToCall()" data-i18n="add_to_call_invite_selected">دعوت انتخاب‌شدگان</button>
+                </div>
+            </div>
+        </div>
+        <div id="currencyModal" class="modal-overlay currency-modal-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="currencyModalTitle" onclick="if(event.target===this) closeCurrencyModal();">
+            <div class="modal-box currency-modal-box" style="max-width:420px;" onclick="event.stopPropagation();">
+                <div class="modal-header"><h3 id="currencyModalTitle" data-i18n="rates_add_currency">افزودن ارز</h3><button type="button" class="modal-close" onclick="closeCurrencyModal()" aria-label="بستن">&times;</button></div>
+                <div class="modal-body">
+                    <input type="hidden" id="currencyModalKeyOriginal" value="">
+                    <div class="form-group">
+                        <label for="currencyModalKey" data-i18n="rates_currency_key">کلید ارز (انگلیسی، مثلاً usd)</label>
+                        <input type="text" id="currencyModalKey" placeholder="usd" pattern="[a-z0-9_]+" maxlength="32" style="text-transform:lowercase;">
+                        <span class="form-hint" data-i18n="rates_currency_key_hint">فقط حروف کوچک و عدد؛ در حالت ویرایش غیرقابل تغییر است.</span>
+                    </div>
+                    <div class="form-group">
+                        <label for="currencyModalLabel" data-i18n="rates_currency_label">نام نمایشی</label>
+                        <input type="text" id="currencyModalLabel" placeholder="دلار">
+                    </div>
+                    <div class="form-group">
+                        <label for="currencyModalApiKeys" data-i18n="rates_currency_apikeys">کلیدهای API (با کاما)</label>
+                        <input type="text" id="currencyModalApiKeys" placeholder="usd_sell, usd_buy" data-i18n-ph="rates_currency_apikeys_ph">
+                        <span class="form-hint" data-i18n="rates_currency_apikeys_hint">نام فیلدهای پاسخ API ناواسان؛ در صورت خالی بودن از کلید ارز حدس زده می‌شود.</span>
+                    </div>
+                </div>
+                <div class="modal-footer currency-modal-footer" style="display:flex; gap:10px; justify-content:flex-end; padding:14px 20px; border-top:1px solid var(--border);">
+                    <button type="button" class="btn-secondary" onclick="closeCurrencyModal()" data-i18n="cancel">انصراف</button>
+                    <button type="button" id="currencyModalSubmitBtn" class="btn-primary" onclick="saveCurrencyFromModal()" data-i18n="btn_save">ذخیره</button>
+                </div>
+            </div>
+        </div>
+        <button id="internalChatFloatingBtn" class="internal-chat-floating-btn" style="display:none" aria-label="چت داخلی" title="چت داخلی">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chat"/></svg>
+            <span id="internalChatFloatingBadge" class="internal-chat-floating-badge" style="display:none">0</span>
+        </button>
+        <div id="internalChatPopup" class="internal-chat-popup" style="display:none;">
+            <div class="internal-chat-popup-header-compact">
+                <div class="internal-chat-popup-avatar"><span>💬</span></div>
+                <span id="internalChatPopupTitle" class="internal-chat-popup-title"></span>
+                <div class="internal-chat-popup-actions">
+                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-minimize" data-i18n-title="chat_minimize" title="کوچک‌سازی" aria-label="کوچک‌سازی"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/></svg></button>
+                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-expand" data-i18n-title="internal_chat_open_full" title="باز کردن چت کامل" aria-label="باز کردن چت کامل"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-expand"/></svg></button>
+                    <button type="button" class="internal-chat-popup-btn internal-chat-popup-close" data-i18n-title="close" title="بستن" aria-label="بستن"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg></button>
+                </div>
+            </div>
+            <div id="internalChatPopupBody" class="internal-chat-popup-body">
+                <div id="internalChatPopupThreadList" class="internal-chat-popup-thread-list" style="display:none;"></div>
+                <div id="internalChatPopupQuickReplies" class="internal-chat-quick-replies" style="display:none;"></div>
+                <div id="internalChatPopupMessages" class="internal-chat-popup-messages"></div>
+                <div class="internal-chat-popup-send" style="display:none;">
+                    <div class="internal-chat-popup-send-inner">
+                        <input type="text" id="internalChatPopupInput" data-i18n-ph="msg_ph_short" placeholder="پیام...">
+                        <div class="internal-chat-popup-attach-wrap">
+                            <input type="file" id="internalChatPopupFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" class="internal-chat-popup-file-input">
+                            <span id="internalChatPopupFileLabel" class="internal-chat-popup-file-label" style="display:none;"></span>
+                            <button type="button" class="internal-chat-popup-attach-btn" data-i18n-title="attach_file" title="پیوست فایل" aria-label="پیوست فایل"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-file-plus"/></svg></button>
+                        </div>
+                    </div>
+                    <button type="button" class="internal-chat-popup-send-btn" data-i18n="btn_send">ارسال</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="newConvModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:480px;">
+            <div class="modal-header"><h3 data-i18n="conv_new">مکالمه جدید</h3><button type="button" class="modal-close" onclick="closeNewConvModal()">&times;</button></div>
+            <div class="modal-body">
+                <label data-i18n="conv_select_customer">انتخاب مشتری</label>
+                <input type="text" id="newConvCustomerSearch" class="conv-filter-input" data-i18n-ph="header_search" placeholder="جستجو نام یا شماره..." style="margin-bottom:12px;" oninput="var v=this.value;clearTimeout(window._newConvSearchT);window._newConvSearchT=setTimeout(function(){loadNewConvCustomers(v);},300);">
+                <div id="newConvCustomerList" class="new-conv-customer-list"></div>
+            </div>
+        </div>
+    </div>
+    <div id="announcementModal" class="modal-overlay announcement-modal-overlay" style="display:none;" onclick="if(event.target===this)closeAnnouncementModal()">
+        <div class="modal-box announcement-modal-box" id="announcementModalBox">
+            <div class="announcement-modal-icon-wrap" id="annModalIconWrap">
+                <div class="announcement-modal-icon"><svg viewBox="0 0 24 24"><use href="#icon-megaphone"/></svg></div>
+                <span id="annModalTypeBadge" class="announcement-modal-type-badge" style="display:none;"></span>
+            </div>
+            <div class="modal-header announcement-modal-header">
+                <h3 id="annModalTitle" data-i18n="modal_ann_title">اعلان مهم</h3>
+                <button type="button" class="modal-close" onclick="closeAnnouncementModal()" aria-label="بستن">&times;</button>
+            </div>
+            <div id="annModalMeta" class="announcement-modal-meta" style="display:none;"></div>
+            <div class="modal-body announcement-modal-body" id="annModalBody"></div>
+            <div class="announcement-modal-footer">
+                <button type="button" class="btn-primary announcement-modal-btn-gotit" onclick="closeAnnouncementModal()" data-i18n="modal_ann_gotit">متوجه شدم</button>
+            </div>
+        </div>
+    </div>
+    <div id="supInternalChatDetailModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:640px;max-height:85vh;overflow:hidden;display:flex;flex-direction:column;">
+            <div class="modal-header"><h3 id="supIntChatModalTitle" data-i18n="sup_internal_chat_detail">جزئیات چت داخلی</h3><button type="button" class="modal-close" onclick="closeSupInternalChatModal()">&times;</button></div>
+            <div class="modal-body" style="overflow-y:auto;flex:1;min-height:0;">
+                <div id="supIntChatModalContent" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+            </div>
+        </div>
+    </div>
+    <div id="staffDetailModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box staff-detail-modal" style="max-width:720px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;">
+            <div class="modal-header"><h3 id="staffDetailTitle" data-i18n="staff_detail_title">جزئیات فعالیت کارمند</h3><button type="button" class="modal-close" onclick="closeStaffDetailModal()">&times;</button></div>
+            <div class="modal-body staff-detail-body" id="staffDetailBody" style="overflow-y:auto;flex:1;min-height:0;">
+                <div class="loading-skeleton loading-row" id="staffDetailLoading"></div>
+                <div id="staffDetailContent" style="display:none;"></div>
+            </div>
+        </div>
+    </div>
+    <div id="toast" class="toast" style="display:none;"></div>
+    <div id="userEditModal" class="modal-overlay user-edit-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="userEditModalTitle" onclick="if(event.target===this) closeUserEditModal();">
+        <div class="modal-box user-edit-modal" role="document" onclick="event.stopPropagation();">
+            <div class="user-edit-modal-header">
+                <h2 id="userEditModalTitle" class="user-edit-modal-title" data-i18n="modal_user_edit">ویرایش کاربر</h2>
+                <button type="button" class="user-edit-modal-close" onclick="closeUserEditModal()" aria-label="بستن">&times;</button>
+            </div>
+            <div class="user-edit-tabs" role="tablist">
+                <button type="button" class="user-edit-tab active" role="tab" aria-selected="true" aria-controls="userEditTabInfo" id="userEditTabInfoBtn" data-tab="info" data-i18n="user_tab_info">اطلاعات پایه</button>
+                <button type="button" class="user-edit-tab" role="tab" aria-selected="false" aria-controls="userEditTabPerms" id="userEditTabPermsBtn" data-tab="perms" data-i18n="user_tab_perms">دسترسی‌ها</button>
+            </div>
+            <div class="user-edit-body">
+                <input type="hidden" id="userEditId" value="">
+                <div id="userEditTabInfo" class="user-edit-tab-panel active" role="tabpanel" aria-labelledby="userEditTabInfoBtn">
+                    <div class="user-edit-form-section">
+                        <div class="user-form-grid user-edit-form-grid">
+                            <div class="user-edit-field"><label data-i18n="label_name">نام کامل</label><input type="text" id="userEditName" placeholder="" autocomplete="name"></div>
+                            <div class="user-edit-field"><label data-i18n="profile_username">نام کاربری</label><input type="text" id="userEditUsername" placeholder="" autocomplete="username"></div>
+                            <div class="user-edit-field"><label data-i18n="label_email">ایمیل</label><input type="email" id="userEditEmail" placeholder="" autocomplete="email"></div>
+                            <div class="user-edit-field"><label data-i18n="label_role">نقش</label><select id="userEditRole"><option value="agent" data-i18n="role_agent">کارمند</option><option value="supervisor" data-i18n="role_supervisor">ناظر</option><option value="manager" data-i18n="role_manager">مدیر</option><option value="admin" data-i18n="role_admin">ادمین</option><option value="owner" data-i18n="role_owner">مالک</option></select></div>
+                            <div class="user-edit-field"><label data-i18n="label_position">سمت</label><input type="text" id="userEditPosition" data-i18n-ph="position_ph" placeholder="مثلاً مدیر فروش، حسابدار"></div>
+                            <div class="user-edit-field"><label data-i18n="label_dept">دپارتمان</label><select id="userEditDept"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select></div>
+                            <div class="user-edit-field"><label data-i18n="label_branch">شعبه</label><select id="userEditBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select></div>
+                            <div class="user-edit-field user-edit-field-wide"><label data-i18n="user_skills_keywords">تخصص (کلمات کلیدی)</label><input type="text" id="userEditSkillsKeywords" placeholder="" data-i18n-ph="user_skills_ph"></div>
+                        </div>
+                        <label class="user-edit-check">
+                            <input type="checkbox" id="userEditActive" checked>
+                            <span class="user-edit-check-text" data-i18n="modal_user_active">حساب فعال (غیرفعال = مسدود)</span>
+                        </label>
+                        <div class="user-edit-password">
+                            <label data-i18n="user_change_password">تغییر رمز عبور (خالی = بدون تغییر)</label>
+                            <input type="password" id="userEditPassword" placeholder="" data-i18n-ph="user_ph_pass" autocomplete="new-password">
+                        </div>
+                    </div>
+                </div>
+                <div id="userEditTabPerms" class="user-edit-tab-panel" role="tabpanel" aria-labelledby="userEditTabPermsBtn" style="display:none;">
+                    <div class="user-edit-perms-zone">
+                        <p class="user-edit-perms-hint" data-i18n="user_perms_hint">بخش‌هایی که این کاربر می‌تواند در پنل ببیند و استفاده کند.</p>
+                        <div class="user-edit-perms-actions">
+                            <button type="button" class="btn-user-perms-toggle btn-perms-all" onclick="userPermsSelectAll(true)" data-i18n="user_perms_select_all">همه دسترسی‌ها</button>
+                            <button type="button" class="btn-user-perms-toggle btn-perms-none" onclick="userPermsSelectAll(false)" data-i18n="user_perms_select_none">هیچ‌کدام</button>
+                        </div>
+                        <div id="userEditPerms" class="user-edit-perms-grid" role="group"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="user-edit-footer modal-footer">
+                <div class="user-edit-footer-actions">
+                    <button type="button" class="btn-secondary" onclick="closeUserEditModal()" data-i18n="btn_cancel">انصراف</button>
+                    <button type="button" class="btn-primary" onclick="saveUserEdit()" data-i18n="btn_save">ذخیره</button>
+                </div>
+                <div class="user-edit-footer-danger">
+                    <button type="button" class="btn-danger btn-danger-outline" id="btnUserDelete" onclick="openDeleteUserModal()" style="display:none;" data-i18n="user_delete_transfer">حذف و انتقال داده‌ها</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="deleteUserModal" class="modal-overlay delete-user-overlay" style="display:none;">
+        <div class="modal-box delete-user-modal" style="max-width:440px;" role="alertdialog" aria-labelledby="deleteUserModalTitle" aria-modal="true">
+            <div class="delete-user-modal-header">
+                <h2 id="deleteUserModalTitle" class="delete-user-modal-title" data-i18n="user_delete_confirm_title">حذف کاربر و انتقال داده‌ها</h2>
+                <button type="button" class="modal-close" onclick="closeDeleteUserModal()" aria-label="بستن">&times;</button>
+            </div>
+            <div class="modal-body delete-user-modal-body">
+                <p id="deleteUserModalText" class="delete-user-modal-desc"></p>
+                <label class="delete-user-transfer-label" data-i18n="user_transfer_to">انتقال مکالمات، تسک‌ها، تیکت‌ها و فرایندها به:</label>
+                <select id="deleteUserTransferTo" class="delete-user-transfer-select">
+                    <option value="" data-i18n="select_user_task">انتخاب کاربر</option>
+                </select>
+                <label class="delete-user-permanent-label">
+                    <input type="checkbox" id="deleteUserPermanent">
+                    <span data-i18n="user_delete_permanent_label">حذف دائمی از سیستم (غیرقابل بازگشت)</span>
+                </label>
+            </div>
+            <div class="modal-footer delete-user-modal-footer">
+                <button type="button" class="btn-secondary" onclick="closeDeleteUserModal()" data-i18n="btn_cancel">انصراف</button>
+                <button type="button" class="btn-danger" id="btnConfirmDeleteUser" onclick="confirmDeleteUser()" data-i18n="user_delete_confirm_btn">حذف و انتقال</button>
+            </div>
+        </div>
+    </div>
+    <div id="totpSetupModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:420px;">
+            <div class="modal-header"><h3 data-i18n="modal_totp_setup">فعال‌سازی Google Authenticator</h3><button type="button" class="modal-close" id="closeTotpSetupModalBtn">&times;</button></div>
+            <div class="modal-body">
+                <p style="margin:0 0 12px; font-size:0.9rem;" data-i18n="modal_totp_scan">با اپلیکیشن Google Authenticator QR زیر را اسکن کنید (یا کلید را دستی وارد کنید):</p>
+                <div id="totpSetupQr" style="text-align:center; margin:12px 0;"></div>
+                <p id="totpSetupSecret" style="font-size:0.8rem; word-break:break-all; color:var(--text-muted); margin:8px 0;"></p>
+                <label>کد شش‌رقمی فعلی را وارد کنید</label>
+                <input type="text" id="totpSetupCode" placeholder="۱۲۳۴۵۶" maxlength="6" pattern="[0-9]*" inputmode="numeric" style="margin-top:4px;">
+            </div>
+            <button type="button" class="btn-primary" id="confirmTotpSetupBtn" data-i18n="modal_totp_confirm">تأیید و فعال‌سازی</button>
+        </div>
+    </div>
+    <div id="totpDisableModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:400px;">
+            <div class="modal-header"><h3 data-i18n="modal_totp_disable">غیرفعال کردن احراز دو مرحله‌ای</h3><button type="button" class="modal-close" id="closeTotpDisableModalBtn">&times;</button></div>
+            <div class="modal-body">
+                <p style="margin:0 0 12px;" data-i18n="modal_totp_enter_pw">رمز عبور خود را وارد کنید:</p>
+                <input type="password" id="totpDisablePassword" data-i18n-ph="modal_totp_password_ph" placeholder="رمز عبور">
+            </div>
+            <button type="button" class="btn-primary" id="disableTotpSubmitBtn" data-i18n="totp_disable_btn">غیرفعال کردن</button>
+        </div>
+    </div>
+    <div id="templateModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box tpl-modal-box">
+            <div class="tpl-modal-header">
+                <div class="tpl-modal-header-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
+                <div class="tpl-modal-header-text">
+                    <h3 id="templateModalTitle" data-i18n="template_add">افزودن تمپلیت</h3>
+                    <p>تمپلیت متنی برای ارسال سریع در مکالمات</p>
+                </div>
+                <button type="button" class="modal-close" id="closeTemplateModalBtn">&times;</button>
+            </div>
+            <div class="modal-body tpl-modal-body">
+                <input type="hidden" id="templateModalId">
+                <div class="tpl-modal-grid">
+                    <div class="tpl-modal-field">
+                        <label data-i18n="template_name">نام تمپلیت</label>
+                        <input type="text" id="templateModalName" placeholder="مثال: سلام و خوش‌آمدگویی">
+                    </div>
+                    <div class="tpl-modal-field">
+                        <label data-i18n="template_category">دسته‌بندی <span class="tpl-optional">(اختیاری)</span></label>
+                        <input type="text" id="templateModalCategory" placeholder="مثال: خوش‌آمدگویی، پشتیبانی">
+                    </div>
+                </div>
+                <div class="tpl-modal-field tpl-modal-field-full">
+                    <label data-i18n="template_content">محتوای پیام</label>
+                    <div class="tpl-vars-bar">
+                        <span class="tpl-vars-label">متغیرها:</span>
+                        <button type="button" class="tpl-var-chip" onclick="insertVar('{name}')"><code>{name}</code> نام</button>
+                        <button type="button" class="tpl-var-chip" onclick="insertVar('{phone}')"><code>{phone}</code> تلفن</button>
+                        <button type="button" class="tpl-var-chip" onclick="insertVar('{date}')"><code>{date}</code> تاریخ</button>
+                        <button type="button" class="tpl-var-chip" onclick="insertVar('{time}')"><code>{time}</code> ساعت</button>
+                        <button type="button" class="tpl-var-chip" onclick="insertVar('{email}')"><code>{email}</code> ایمیل</button>
+                    </div>
+                    <textarea id="templateModalContent" rows="5" placeholder="سلام {name} عزیز،&#10;امروز {date} در خدمت شما هستیم."></textarea>
+                </div>
+                <div class="tpl-modal-toggle">
+                    <label class="tpl-toggle-label">
+                        <input type="checkbox" id="templateModalActive" checked class="tpl-toggle-input">
+                        <span class="tpl-toggle-track"></span>
+                        <span data-i18n="template_active">تمپلیت فعال باشد</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelTemplateModalBtn" data-i18n="btn_cancel">انصراف</button>
+                <button type="button" class="btn-primary" id="saveTemplateBtn" data-i18n="btn_save">ذخیره</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="fileTemplateModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box tpl-modal-box">
+            <div class="tpl-modal-header">
+                <div class="tpl-modal-header-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                </div>
+                <div class="tpl-modal-header-text">
+                    <h3 id="fileTemplateModalTitle">بارگذاری فایل پرکاربرد</h3>
+                    <p>فایل‌های آماده برای ارسال سریع در مکالمات</p>
+                </div>
+                <button type="button" class="modal-close" id="closeFileTemplateModalBtn">&times;</button>
+            </div>
+            <div class="modal-body tpl-modal-body">
+                <input type="hidden" id="fileTemplateModalId">
+                <div class="tpl-modal-grid">
+                    <div class="tpl-modal-field">
+                        <label>نام فایل برای نمایش</label>
+                        <input type="text" id="fileTemplateModalName" placeholder="مثال: فرم درخواست حساب">
+                    </div>
+                    <div class="tpl-modal-field">
+                        <label>دسته‌بندی <span class="tpl-optional">(اختیاری)</span></label>
+                        <input type="text" id="fileTemplateModalCategory" placeholder="مثال: فرم‌ها، قراردادها">
+                    </div>
+                </div>
+                <div class="tpl-modal-field tpl-modal-field-full">
+                    <label>توضیحات <span class="tpl-optional">(اختیاری)</span></label>
+                    <textarea id="fileTemplateModalDescription" rows="2" placeholder="توضیحات کوتاه درباره فایل"></textarea>
+                </div>
+                <div class="tpl-modal-field tpl-modal-field-full">
+                    <label>برچسب‌ها <span class="tpl-optional">(با کاما جدا کنید)</span></label>
+                    <input type="text" id="fileTemplateModalTags" placeholder="مثال: فرم, اکانت, مشتری">
+                </div>
+                
+                <div id="fileTemplateUploadArea" class="tpl-upload-area-wrap">
+                    <label class="tpl-upload-label">
+                        <input type="file" id="fileTemplateFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp,.ppt,.pptx,.mp4,.mp3" style="display:none;">
+                        <div class="tpl-upload-box" id="tplUploadBox">
+                            <div class="tpl-upload-icon">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                            </div>
+                            <p class="tpl-upload-title"><strong>کلیک کنید</strong> یا فایل را اینجا بکشید</p>
+                            <p class="tpl-upload-hint">PDF, Word, Excel, تصاویر، ویدیو، صوت — حداکثر ۵۰ مگابایت</p>
+                        </div>
+                    </label>
+                    <div id="fileTemplateFileName" class="tpl-selected-file" style="display:none;"></div>
+                </div>
+                
+                <div id="fileTemplateEditArea" class="tpl-current-file-box" style="display:none;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg>
+                    <div>
+                        <span class="tpl-current-file-label">فایل فعلی:</span>
+                        <span id="fileTemplateCurrentFile" class="tpl-current-file-name"></span>
+                    </div>
+                </div>
+                
+                <div class="tpl-modal-toggle">
+                    <label class="tpl-toggle-label">
+                        <input type="checkbox" id="fileTemplateModalActive" checked class="tpl-toggle-input">
+                        <span class="tpl-toggle-track"></span>
+                        <span>فایل فعال باشد</span>
+                    </label>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-secondary" id="cancelFileTemplateModalBtn">انصراف</button>
+                <button type="button" class="btn-primary" id="saveFileTemplateBtn">ذخیره</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="modalProcessTemplate" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:520px;">
+            <div class="modal-header"><h3 id="processTemplateModalTitle" data-i18n="process_add_template">افزودن قالب فرایند</h3><button type="button" class="modal-close" onclick="closeProcessTemplateModal()">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="processTemplateId">
+                <label data-i18n="process_template_name">نام قالب</label>
+                <input type="text" id="processTemplateName" data-i18n-ph="dept_ph_name" placeholder="مثال: پشتیبانی تیکت">
+                <label data-i18n="process_template_desc">توضیحات</label>
+                <input type="text" id="processTemplateDesc" data-i18n-ph="dept_ph_optional" placeholder="اختیاری">
+                <label data-i18n="process_stages">مراحل (به ترتیب)</label>
+                <div id="processTemplateStagesContainer"></div>
+                <button type="button" class="btn-secondary" onclick="addProcessTemplateStageRow()" data-i18n="process_add_stage">افزودن مرحله</button>
+            </div>
+            <button type="button" class="btn-primary" onclick="saveProcessTemplate()" data-i18n="btn_save">ذخیره</button>
+        </div>
+    </div>
+    <div id="modalProcessStartInstance" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:420px;">
+            <div class="modal-header"><h3 data-i18n="process_start_instance">شروع نمونه</h3><button type="button" class="modal-close" onclick="closeProcessStartInstanceModal()">&times;</button></div>
+            <div class="modal-body">
+                <input type="hidden" id="processStartRefType">
+                <input type="hidden" id="processStartRefId">
+                <label data-i18n="process_templates">قالب فرایند</label>
+                <select id="processStartTemplateSel"><option value="" data-i18n="all_templates">انتخاب قالب</option></select>
+                <label data-i18n="process_instance_title">عنوان نمونه</label>
+                <input type="text" id="processStartTitle" data-i18n-ph="ticket_ph_subject" placeholder="عنوان">
+                <label data-i18n="assign_to">اختصاص به</label>
+                <select id="processStartAssignedTo"><option value="" data-i18n="no_user">انتخاب کارمند</option></select>
+            </div>
+            <button type="button" class="btn-primary" onclick="startProcessInstance()" data-i18n="process_start_instance">شروع نمونه</button>
+        </div>
+    </div>
+    <!-- مودال ارسال انبوه -->
+    <div id="modalBulkSend" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:520px;">
+            <div class="modal-header"><h3 data-i18n="bulk_send">ارسال انبوه</h3><button type="button" class="modal-close" onclick="closeBulkSendModal()">&times;</button></div>
+            <div class="modal-body">
+                <p class="bulk-hint" data-i18n="bulk_send_hint">مشتریان را از لیست انتخاب کنید یا «همه فیلترشده» را بزنید. متغیرها: {name}, {phone}, {date}, {time}</p>
+                <div class="bulk-select-actions">
+                    <button type="button" class="btn-secondary btn-sm" onclick="bulkSelectFiltered()" data-i18n="bulk_select_filtered">انتخاب همه فیلترشده</button>
+                    <button type="button" class="btn-secondary btn-sm" onclick="bulkClearSelection()" data-i18n="bulk_clear">پاک کردن انتخاب</button>
+                </div>
+                <span class="bulk-selected-count" id="bulkSelectedCount">۰ مشتری انتخاب شده</span>
+                <label data-i18n="bulk_message">متن پیام</label>
+                <textarea id="bulkMessageContent" rows="5" data-i18n-ph="bulk_message_ph" placeholder="سلام {name} عزیز، ..."></textarea>
+                <label data-i18n="bulk_delay">تأخیر بین پیام‌ها (ثانیه)</label>
+                <input type="number" id="bulkDelaySec" min="2" max="60" value="5" style="width:80px;">
+            </div>
+            <button type="button" class="btn-primary" id="bulkSendSubmitBtn" onclick="submitBulkSend()" data-i18n="bulk_send_submit">شروع ارسال</button>
+        </div>
+    </div>
+    <!-- مودال ورود از Excel -->
+    <div id="imagePreviewModal" class="modal-overlay image-preview-modal" style="display:none;" onclick="if(event.target===this)closeImagePreviewModal()" role="dialog" aria-modal="true" aria-label="پیش‌نمایش تصویر">
+        <div class="image-preview-content" onclick="event.stopPropagation()">
+            <img id="imagePreviewImg" src="" alt="" style="max-width:90vw;max-height:90vh;object-fit:contain;border-radius:12px;">
+            <button type="button" class="image-preview-close" onclick="closeImagePreviewModal()" aria-label="بستن">&times;</button>
+        </div>
+    </div>
+    <div id="modalImportCustomers" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:480px;">
+            <div class="modal-header"><h3 data-i18n="import_customers">ورود از Excel</h3><button type="button" class="modal-close" onclick="closeImportCustomersModal()">&times;</button></div>
+            <div class="modal-body">
+                <p class="import-hint" data-i18n="import_hint">فایل Excel با ستون‌های: name (نام)، phone (شماره تلفن). ستون email اختیاری است.</p>
+                <input type="file" id="importExcelFile" accept=".xlsx,.xls" style="display:none;">
+                <label class="import-file-label" for="importExcelFile">
+                    <span class="import-file-btn" data-i18n="import_select_file">انتخاب فایل Excel</span>
+                </label>
+                <div id="importPreview" class="import-preview" style="display:none;"></div>
+            </div>
+            <button type="button" class="btn-primary" id="btnImportSubmit" onclick="submitImportCustomers()" disabled data-i18n="import_submit">ورود مخاطبین</button>
+        </div>
+    </div>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="/js/modules/constants.js?v=1" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=1" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=1" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=7" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=7" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=7" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=7" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=40" charset="utf-8"></script>
+    <script>
+    (function() {
+        function updateMobileHeaderHeight() {
+            var wrap = document.getElementById('headerStickyWrap');
+            if (wrap) {
+                var h = wrap.offsetHeight;
+                document.documentElement.style.setProperty('--mobile-header-height', h + 'px');
+            }
+        }
+        updateMobileHeaderHeight();
+        window.addEventListener('resize', updateMobileHeaderHeight);
+        document.addEventListener('DOMContentLoaded', updateMobileHeaderHeight);
+        var mo = new MutationObserver(updateMobileHeaderHeight);
+        document.addEventListener('DOMContentLoaded', function() {
+            var wrap = document.getElementById('headerStickyWrap');
+            if (wrap) mo.observe(wrap, { childList: true, subtree: true, attributes: true });
+        });
+
+        // toggle فیلترهای مشتریان
+        document.addEventListener('DOMContentLoaded', function() {
+            var btn = document.getElementById('customerFilterToggle');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    var el = document.getElementById('customerAdvancedFilters');
+                    if (!el) return;
+                    el.classList.toggle('show');
+                    btn.setAttribute('aria-expanded', el.classList.contains('show'));
+                });
+            }
+        });
+    })();
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "name": "kaya-crm",
+  "version": "1.1.0",
+  "private": true,
+  "description": "Kaya CRM — backend (API + dashboard), gateway, mobile",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "quality": "npm run lint && npm test && npm run dashboard:build",
+    "lint": "npm run lint --prefix backend && npm run lint --prefix gateway",
+    "lint:backend": "npm run lint --prefix backend",
+    "lint:gateway": "npm run lint --prefix gateway",
+    "lint:fix": "npm run lint:fix --prefix backend && npm run lint:fix --prefix gateway",
+    "format": "npm run format --prefix backend && npm run format --prefix gateway",
+    "format:write": "npm run format:write --prefix backend && npm run format:write --prefix gateway",
+    "test": "npm test --prefix backend",
+    "test:all": "npm run test:all --prefix backend",
+    "dashboard:dev": "npm run dev --prefix frontend",
+    "dashboard:build": "npm run build --prefix frontend"
+  }
+}

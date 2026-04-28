@@ -1,0 +1,545 @@
+                                </div>
+                                <div id="internalChatCallBtns" class="internal-chat-call-btns" style="display:none;">
+                                    <button type="button" class="internal-call-btn internal-call-btn-sm" data-call-type="voice" title="تماس صوتی" data-i18n-title="voice_call" aria-label="تماس صوتی"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg></button>
+                                    <button type="button" class="internal-call-btn internal-call-btn-sm" data-call-type="video" title="تماس تصویری" data-i18n-title="video_call" aria-label="تماس تصویری"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
+                                </div>
+                            </div>
+                            <div id="internalChatQuickReplies" class="internal-chat-full-quick-replies" style="display:none;"></div>
+                            <div class="chat-messages internal-chat-messages" id="internalChatMessages" style="min-height:200px;"></div>
+                            <div class="internal-chat-send-wrap">
+                                <input type="file" id="internalChatFile" accept=".pdf,.doc,.docx,.xls,.xlsx,.txt,.zip,.rar,.png,.jpg,.jpeg,.gif,.webp" data-i18n-title="attach_file" style="display:none">
+                                <label id="internalChatFileOption" class="internal-chat-file-option" style="display:none"><input type="checkbox" id="internalChatAllowDownload" checked> <span data-i18n="file_allow_download">مجاز به دانلود</span></label>
+                                <div class="internal-chat-send-inner">
+                                    <button type="button" class="internal-chat-attach-btn-sm" data-i18n-title="attach_file" aria-label="پیوست"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg></button>
+                                    <input type="text" id="internalChatInput" class="internal-chat-input" data-i18n-ph="msg_ph_short" placeholder="پیام بنویسید...">
+                                    <button type="button" class="internal-chat-send-btn-sm" aria-label="ارسال"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg></button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="internalNewChatForm" style="display:none; margin-top:12px;" class="form-box">
+                        <label data-i18n="start_chat_with">شروع گفتگو با</label>
+                        <select id="internalNewChatUser" multiple style="min-height:80px;"><option value="" data-i18n="select_user">انتخاب کاربر</option></select>
+                        <small class="text-muted" style="display:block; margin-top:4px;" data-i18n="select_multiple_hint">برای گفتگوی گروهی، چند نفر را انتخاب کنید</small>
+                        <button type="button" id="btnInternalStartChat" data-i18n="start_chat">شروع چت</button>
+                        <button type="button" class="btn-secondary" id="btnInternalCancelChat" data-i18n="cancel">انصراف</button>
+                    </div>
+                </div>
+                <div id="pageBranches" class="page branch-page">
+                    <div class="branch-page-header">
+                        <h2 data-i18n="page_branches">شعب</h2>
+                        <p class="branch-intro" data-i18n="branch_intro">شعب برای تفکیک جغرافیایی و تخصیص کاربران و مکالمات استفاده می‌شوند.</p>
+                    </div>
+                    <div class="branch-form-box form-box">
+                        <h3 class="branch-form-title" data-i18n="add_branch">افزودن شعبه</h3>
+                        <div class="branch-form-grid">
+                            <div class="branch-form-field">
+                                <label for="branchName" data-i18n="branch_name">نام شعبه</label>
+                                <input id="branchName" data-i18n-ph="branch_ph_name" placeholder="مثال: دفتر تهران">
+                            </div>
+                            <div class="branch-form-field">
+                                <label for="branchCity" data-i18n="branch_city">شهر</label>
+                                <input id="branchCity" data-i18n-ph="branch_ph_city" placeholder="مثال: تهران">
+                            </div>
+                            <div class="branch-form-field branch-form-field-wide">
+                                <label for="branchCountry" data-i18n="branch_country">کشور</label>
+                                <input id="branchCountry" data-i18n-ph="branch_ph_country" placeholder="مثال: ایران">
+                            </div>
+                        </div>
+                        <div class="branch-form-actions">
+                            <button type="button" class="btn-primary" id="btnBranchSave" onclick="addBranch()" data-i18n="add_branch">افزودن شعبه</button>
+                            <button type="button" class="btn-secondary" id="btnBranchCancel" onclick="cancelBranchEdit()" style="display:none;" data-i18n="cancel">انصراف</button>
+                        </div>
+                    </div>
+                    <div class="branch-list-section">
+                        <h3 class="branch-list-title" data-i18n="page_branches">شعب</h3>
+                        <div id="branchList" class="branch-list branch-cards"></div>
+                    </div>
+                </div>
+                <div id="pageStaffActivity" class="page staff-activity-page">
+                    <div class="staff-activity-header">
+                        <h2 data-i18n="page_staff_activity">ورودها و وضعیت آنلاین کارکنان</h2>
+                        <p class="staff-activity-intro text-muted" data-i18n="staff_intro">مشاهده کارکنان آنلاین، آخرین ورودها و جزئیات فعالیت هر نفر — برای مدیر و بالاتر</p>
+                        <div class="staff-activity-meta">
+                            <p class="staff-activity-updated text-muted" id="staffActivityUpdated" style="display:none;"></p>
+                            <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" title="به‌روزرسانی" aria-label="به‌روزرسانی"><span class="refresh-icon">↻</span> <span data-i18n="refresh">به‌روزرسانی</span></button>
+                        </div>
+                    </div>
+                    <div class="staff-activity-stats-row">
+                        <div class="stat-card stat-card-accent staff-stat-online">
+                            <div class="stat-card-icon">🟢</div>
+                            <div class="stat-card-content">
+                                <div class="val" id="onlineCount">0</div>
+                                <div class="label" data-i18n="staff_online">کارکنان آنلاین</div>
+                            </div>
+                        </div>
+                        <div class="stat-card staff-stat-logins">
+                            <div class="stat-card-icon">📋</div>
+                            <div class="stat-card-content">
+                                <div class="val" id="loginsTodayCount">0</div>
+                                <div class="label" data-i18n="staff_logins_today">ورود امروز</div>
+                            </div>
+                        </div>
+                        <div class="stat-card staff-stat-total">
+                            <div class="stat-card-icon">📊</div>
+                            <div class="stat-card-content">
+                                <div class="val" id="loginsTotalCount">0</div>
+                                <div class="label" data-i18n="staff_logins_total_registered">کل ورودهای ثبت‌شده</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="staff-activity-sections">
+                        <div class="staff-activity-section staff-section-online">
+                            <div class="staff-section-header">
+                                <h3 class="staff-activity-section-title" data-i18n="staff_online">کارکنان آنلاین</h3>
+                                <span class="staff-section-hint" data-i18n="staff_online_hint">کلیک برای جزئیات فعالیت</span>
+                            </div>
+                            <div id="onlineStaffList" class="staff-activity-list empty" data-i18n="loading">در حال بارگذاری...</div>
+                        </div>
+                        <div class="staff-activity-section staff-section-logins">
+                            <div class="staff-section-header">
+                                <h3 class="staff-activity-section-title" data-i18n="last_logins">آخرین ورودها</h3>
+                                <span class="staff-section-hint" data-i18n="staff_logins_hint">۵۰ ورود اخیر</span>
+                            </div>
+                            <div id="loginsList" class="staff-activity-list empty" data-i18n="loading">در حال بارگذاری...</div>
+                        </div>
+                    </div>
+                    <div class="staff-activity-section staff-section-attendance" style="grid-column:1/-1;">
+                        <div class="staff-section-header">
+                            <h3 class="staff-activity-section-title" data-i18n="attendance_report">گزارش حضور و غیاب</h3>
+                            <span class="staff-section-hint" data-i18n="attendance_report_hint">به تفکیک شعبه و بازه زمانی</span>
+                        </div>
+                        <div class="attendance-filter-row">
+                            <select id="attendanceBranch"><option value="">همه شعب</option></select>
+                            <select id="attendanceUser"><option value="">همه کاربران</option></select>
+                            <input type="date" id="attendanceFrom" title="از تاریخ">
+                            <input type="date" id="attendanceTo" title="تا تاریخ">
+                            <button type="button" class="btn-primary btn-sm" id="attendanceApplyBtn" data-i18n="apply_filter">اعمال</button>
+                        </div>
+                        <div id="attendanceReportContent" class="attendance-report-content empty" data-i18n="loading">در حال بارگذاری...</div>
+                    </div>
+                </div>
+                <div id="pageSupervision" class="page sup-page">
+                    <div class="sup-page-header">
+                        <h2 data-i18n="page_supervision">نظارت و مونیتورینگ (مالک)</h2>
+                        <p class="sup-intro" data-i18n="sup_intro">خلاصه عملکرد، مکالمات و لاگ فعالیت کارکنان — برای مالک مجموعه</p>
+                    </div>
+                    <div class="supervision-tabs-wrap">
+                        <div class="supervision-tabs" role="tablist">
+                            <button type="button" class="sup-tab active" data-tab="performance" data-i18n="sup_performance">خلاصه عملکرد</button>
+                            <button type="button" class="sup-tab" data-tab="conversations" data-i18n="sup_conversations">مکالمات</button>
+                            <button type="button" class="sup-tab" data-tab="internal-chats" data-i18n="sup_internal_chats">چت‌های داخلی</button>
+                            <button type="button" class="sup-tab" data-tab="activity" data-i18n="sup_activity">لاگ فعالیت</button>
+                        </div>
+                    </div>
+                    <div id="supPerformance" class="sup-panel show">
+                        <div id="supPerformanceContent" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    </div>
+                    <div id="supConversations" class="sup-panel">
+                        <div class="form-box sup-filter-box">
+                            <label data-i18n="sup_branch_status">شعبه / دپارتمان / مسئول / وضعیت</label>
+                            <div class="sup-filter-row" id="supConvFilterRow">
+                                <select id="supBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                                <select id="supDept"><option value="" data-i18n="all_departments">همه دپارتمان‌ها</option></select>
+                                <select id="supUser"><option value="" data-i18n="any_assignee">هر مسئول</option></select>
+                                <select id="supStatus"><option value="" data-i18n="all_statuses">همه وضعیت‌ها</option><option value="open" data-i18n="status_open">باز</option><option value="closed" data-i18n="status_closed">بسته</option><option value="pending" data-i18n="status_pending">در انتظار</option><option value="resolved" data-i18n="status_resolved">حل شده</option></select>
+                                <label class="sup-check-wrap"><input type="checkbox" id="supUnassigned"> <span data-i18n="sup_unassigned_only">فقط بدون تخصیص</span></label>
+                                <button type="button" class="btn-primary" onclick="loadSupervisionConversations()" data-i18n="apply_filter">اعمال فیلتر</button>
+                            </div>
+                        </div>
+                        <div id="supConvList"></div>
+                    </div>
+                    <div id="supInternalChats" class="sup-panel">
+                        <div class="form-box sup-filter-box">
+                            <label data-i18n="sup_internal_chats_filter">فیلتر چت‌های داخلی</label>
+                            <div class="sup-filter-row">
+                                <select id="supIntChatUser"><option value="" data-i18n="all_users">همه کاربران</option></select>
+                                <button type="button" class="btn-primary" onclick="loadSupervisionInternalChats()" data-i18n="apply_filter">اعمال فیلتر</button>
+                            </div>
+                        </div>
+                        <div id="supIntChatList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    </div>
+                    <div id="supActivity" class="sup-panel">
+                        <div class="form-box sup-filter-box">
+                            <label data-i18n="filter">فیلتر</label>
+                            <div class="sup-filter-row" id="supActFilterRow">
+                                <select id="supActBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                                <select id="supActUser"><option value="" data-i18n="all_users">همه کاربران</option></select>
+                                <select id="supActAction"><option value="" data-i18n="all_actions">همه عملیات</option><option value="message_sent" data-i18n="action_message_sent">ارسال پیام</option><option value="conversation_assigned" data-i18n="action_conv_assigned">تخصیص مکالمه</option><option value="conversation_department_changed" data-i18n="action_dept_changed">تغییر دپارتمان</option><option value="customer_note_added" data-i18n="action_note_added">ثبت گزارش/یادداشت</option><option value="user_login" data-i18n="action_login">ورود</option><option value="user_logout" data-i18n="action_logout">خروج</option></select>
+                                <button type="button" class="btn-primary" onclick="loadSupervisionActivity()" data-i18n="btn_apply">اعمال</button>
+                            </div>
+                        </div>
+                        <div id="supActList"></div>
+                    </div>
+                </div>
+                <div id="pageWhatsapp" class="page whatsapp-page" role="main" aria-labelledby="whatsapp-page-title">
+                    <header class="whatsapp-page-header">
+                        <div class="whatsapp-header-badge" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                            </svg>
+                        </div>
+                        <div class="whatsapp-header-text">
+                            <h2 id="whatsapp-page-title" data-i18n="page_whatsapp">اتصال واتساپ</h2>
+                            <p class="whatsapp-intro text-muted" data-i18n="whatsapp_intro">پیام‌های واتساپ به‌صورت خودکار در مکالمات ذخیره می‌شوند. بر اساس کلمات کلیدی دپارتمان‌ها، تخصیص خودکار انجام می‌شود.</p>
+                        </div>
+                    </header>
+                    <section class="whatsapp-stats-row" id="whatsappStatsRow" aria-label="آمار مکالمات">
+                        <article class="whatsapp-stat-card" data-stat="open">
+                            <div class="whatsapp-stat-inner">
+                                <span class="whatsapp-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+                                <div class="whatsapp-stat-content">
+                                    <span class="whatsapp-stat-value" id="whatsappStatOpen" aria-live="polite">—</span>
+                                    <span class="whatsapp-stat-label" data-i18n="whatsapp_stat_open">مکالمات باز</span>
+                                </div>
+                            </div>
+                            <a href="#conversations" class="whatsapp-stat-link" data-stat="open" data-i18n="whatsapp_view">مشاهده</a>
+                        </article>
+                        <article class="whatsapp-stat-card" data-stat="unassigned">
+                            <div class="whatsapp-stat-inner">
+                                <span class="whatsapp-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span>
+                                <div class="whatsapp-stat-content">
+                                    <span class="whatsapp-stat-value" id="whatsappStatUnassigned" aria-live="polite">—</span>
+                                    <span class="whatsapp-stat-label" data-i18n="whatsapp_stat_unassigned">بدون تخصیص</span>
+                                </div>
+                            </div>
+                            <a href="#conversations" class="whatsapp-stat-link" data-stat="unassigned" data-i18n="whatsapp_view">مشاهده</a>
+                        </article>
+                        <article class="whatsapp-stat-card" data-stat="unanswered">
+                            <div class="whatsapp-stat-inner">
+                                <span class="whatsapp-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+                                <div class="whatsapp-stat-content">
+                                    <span class="whatsapp-stat-value" id="whatsappStatUnanswered" aria-live="polite">—</span>
+                                    <span class="whatsapp-stat-label" data-i18n="whatsapp_stat_unanswered">بدون پاسخ</span>
+                                </div>
+                            </div>
+                            <a href="#conversations" class="whatsapp-stat-link" data-stat="unanswered" data-i18n="whatsapp_view">مشاهده</a>
+                        </article>
+                    </section>
+                    <nav class="whatsapp-pro-nav" role="tablist" aria-label="WhatsApp sections">
+                        <button type="button" class="whatsapp-pro-tab active" role="tab" aria-selected="true" data-wa-tab="channels" id="waTabChannels" data-i18n="whatsapp_tab_channels">اتصال و کانال‌ها</button>
+                        <button type="button" class="whatsapp-pro-tab" role="tab" aria-selected="false" data-wa-tab="automation" id="waTabAutomation" data-i18n="whatsapp_tab_automation">پیام‌رسانی و هوش مصنوعی</button>
+                        <button type="button" class="whatsapp-pro-tab" role="tab" aria-selected="false" data-wa-tab="routing" id="waTabRouting" data-i18n="whatsapp_tab_routing">مسیریابی و صف</button>
+                    </nav>
+                    <div id="whatsappPanelChannels" class="whatsapp-pro-panel whatsapp-pro-panel--active" role="tabpanel" aria-labelledby="waTabChannels" aria-hidden="false">
+                    <div class="whatsapp-page-layout">
+                        <aside class="whatsapp-col whatsapp-col-connection">
+                            <div class="whatsapp-card whatsapp-connection-card">
+                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_connection_title">وضعیت اتصال</h3>
+                                <div id="gatewayStatus" class="whatsapp-status-line empty" data-i18n="whatsapp_checking">در حال بررسی...</div>
+                                <div id="whatsappAuthFailure" class="whatsapp-auth-failure" style="display:none;" role="alert"></div>
+                                <div id="whatsappStatusBadge" class="whatsapp-status-badge whatsapp-status-checking" aria-hidden="true"></div>
+                                <div class="qr-box" id="qrBox" style="display:none;">
+                                    <p class="qr-box-title" data-i18n="whatsapp_scan_qr">QR را با اپلیکیشن واتساپ موبایل اسکن کنید</p>
+                                    <p class="qr-box-hint" data-i18n="whatsapp_qr_expiry">کد تا حدود ۶۰ ثانیه معتبر است. پس از اسکن، اتصال ظرف چند ثانیه برقرار می‌شود.</p>
+                                    <div class="qr-box-img-wrap">
+                                        <img id="qrImg" alt="QR Code" class="qr-box-img">
+                                    </div>
+                                    <p id="qrWaitingMsg" class="qr-waiting-msg" style="display:none;" data-i18n="whatsapp_scan_waiting">در حال بررسی اتصال... لطفا صبر کنید.</p>
+                                    <div class="qr-box-troubleshoot" aria-live="polite">
+                                        <p class="qr-box-troubleshoot-title" data-i18n="whatsapp_phone_cannot_connect_title">اگر روی موبایل پیام «نمیشه وصل شد، بعداً امتحان کنید» دیدید:</p>
+                                        <p class="qr-box-troubleshoot-text" data-i18n="whatsapp_phone_cannot_connect_hint">این پیام از واتساپ است. اینترنت و VPN را چک کنید؛ دستگاه‌های متصل (حداکثر ۴) را در واتساپ موبایل ببینید و در صورت نیاز یکی را خارج کنید. QR را با «بروزرسانی وضعیت» تازه کنید و دوباره اسکن کنید.</p>
+                                        <p class="qr-box-troubleshoot-text qr-box-troubleshoot-after" data-i18n="whatsapp_after_scan_trouble">اگر بعد از اسکن اتفاقی نیفتاد: دسترسی سرور به اینترنت و واتساپ را چک کنید؛ لاگ Gateway روی سرور (error.log) را ببینید.</p>
+                                    </div>
+                                </div>
+                                <div id="whatsappQrUnavailable" class="qr-unavailable" style="display:none;">
+                                    <p data-i18n="whatsapp_qr_not_ready">QR هنوز آماده نیست. روی «شروع واتساپ» کلیک کنید و چند ثانیه صبر کنید.</p>
+                                </div>
+                                <div class="whatsapp-actions">
+                                    <button type="button" id="btnStartGateway" class="btn-primary" style="display:none;" data-i18n="whatsapp_start_btn">شروع Gateway واتساپ</button>
+                                    <button type="button" id="btnStartWhatsApp" class="btn-primary" style="display:none;" data-i18n="whatsapp_start_client_btn">شروع واتساپ</button>
+                                    <button type="button" id="btnRefreshStatus" class="btn-secondary" style="display:inline-flex; align-items:center; gap:8px;" data-i18n="whatsapp_refresh_status" title=""><span class="wa-refresh-ico" aria-hidden="true">↻</span><span class="wa-refresh-label" data-i18n="whatsapp_refresh_status">بروزرسانی وضعیت</span></button>
+                                    <button type="button" id="btnDisconnectWhatsApp" class="btn-secondary" disabled title="" data-i18n="whatsapp_disconnect_btn">قطع اتصال واتساپ</button>
+                                    <a href="https://web.whatsapp.com" target="_blank" rel="noopener" class="btn-secondary whatsapp-link-btn" data-i18n="whatsapp_open_web">باز کردن واتساپ وب</a>
+                                    <a href="#conversations" class="btn-secondary whatsapp-link-btn" id="whatsappManageConvsLink" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
+                                </div>
+                            </div>
+                            <div id="whatsappLastConnectionCard" class="whatsapp-card whatsapp-last-connection" style="display:none;">
+                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_last_connection">اطلاعات آخرین اتصال</h3>
+                                <p id="whatsappCloudApiInfo" class="whatsapp-cloud-api-info text-muted" style="display:none;font-size:0.85rem;margin:0 0 12px;"></p>
+                                <dl class="whatsapp-meta-list">
+                                    <dt data-i18n="whatsapp_status_label">وضعیت</dt><dd id="whatsappLastStatus">—</dd>
+                                    <dt data-i18n="whatsapp_number_label">شماره</dt><dd id="whatsappLastNumber">—</dd>
+                                    <dt data-i18n="whatsapp_connection_result">اتصال</dt><dd id="whatsappLastResult">—</dd>
+                                </dl>
+                            </div>
+                        </aside>
+                        <div class="whatsapp-col whatsapp-col-settings">
+                            <div id="whatsappConnectionSettingsBox" class="whatsapp-card form-box">
+                                <h3 class="whatsapp-card-title" data-i18n="whatsapp_connection_settings_title">تنظیمات اتصال واتساپ</h3>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_connection_settings_hint">روش اتصال را انتخاب کنید. Cloud API (Meta رسمی) بدون QR؛ Gateway با اسکن QR. هر دو را می‌توانید فعال کنید — Cloud API در اولویت است.</p>
+                                <div class="whatsapp-connection-mode-row">
+                                    <label data-i18n="whatsapp_connection_mode">حالت اتصال</label>
+                                    <select id="whatsappConnectionMode" class="whatsapp-select">
+                                        <option value="cloud_first" data-i18n="whatsapp_mode_cloud_first">Cloud API در اولویت، Gateway پشتیبان</option>
+                                        <option value="cloud" data-i18n="whatsapp_mode_cloud_only">فقط Cloud API</option>
+                                        <option value="gateway" data-i18n="whatsapp_mode_gateway_only">فقط Gateway (QR)</option>
+                                    </select>
+                                </div>
+                                <div class="whatsapp-connection-tabs">
+                                    <button type="button" class="whatsapp-conn-tab active" data-tab="cloud" data-i18n="whatsapp_tab_cloud">Cloud API (Meta)</button>
+                                    <button type="button" class="whatsapp-conn-tab" data-tab="gateway" data-i18n="whatsapp_tab_gateway">Gateway (QR)</button>
+                                </div>
+                                <div id="whatsappCloudSettings" class="whatsapp-conn-panel active">
+                                    <label class="whatsapp-check-label"><input type="checkbox" id="whatsappCloudEnabled" checked> <span data-i18n="whatsapp_cloud_enabled">فعال</span></label>
+                                    <div class="whatsapp-form-row"><label for="whatsappCloudAccessToken" data-i18n="whatsapp_cloud_access_token">Access Token</label><input type="password" id="whatsappCloudAccessToken" class="whatsapp-input" placeholder="EAAxxx..." autocomplete="off"></div>
+                                    <div class="whatsapp-form-row"><label for="whatsappCloudPhoneNumberId" data-i18n="whatsapp_cloud_phone_id">Phone Number ID</label><input type="text" id="whatsappCloudPhoneNumberId" class="whatsapp-input" placeholder="1007665702430638"></div>
+                                    <div class="whatsapp-form-row"><label for="whatsappCloudVerifyToken" data-i18n="whatsapp_cloud_verify_token">Verify Token (وب‌هوک Meta)</label><input type="text" id="whatsappCloudVerifyToken" class="whatsapp-input" placeholder="کد تأیید دلخواه"></div>
+                                </div>
+                                <div id="whatsappGatewaySettings" class="whatsapp-conn-panel" style="display:none;">
+                                    <label class="whatsapp-check-label"><input type="checkbox" id="whatsappGatewayEnabled" checked> <span data-i18n="whatsapp_gateway_enabled">فعال</span></label>
+                                    <div class="whatsapp-form-row"><label for="whatsappGatewayUrl" data-i18n="whatsapp_gateway_url">آدرس Gateway</label><input type="text" id="whatsappGatewayUrl" class="whatsapp-input" placeholder="http://localhost:3001"></div>
+                                    <div class="whatsapp-form-row"><label for="whatsappGatewayApiSecret" data-i18n="whatsapp_gateway_secret">API Secret</label><input type="password" id="whatsappGatewayApiSecret" class="whatsapp-input" placeholder="اختیاری" autocomplete="off"></div>
+                                </div>
+                                <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappConnection" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                        </div>
+                    </div>
+                    </div>
+                    <div id="whatsappPanelAutomation" class="whatsapp-pro-panel" role="tabpanel" aria-labelledby="waTabAutomation" aria-hidden="true">
+                        <div class="whatsapp-automation-grid">
+                            <div id="whatsappWelcomeBox" class="whatsapp-card form-box whatsapp-card--pro">
+                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">💬</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_welcome_title">پاسخ خودکار به اولین پیام</h3></div>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_welcome_hint">هر کسی که برای اولین بار به شما پیام می‌دهد، این متن به‌صورت خودکار برایش ارسال می‌شود. خالی = غیرفعال</p>
+                                <label class="whatsapp-check-label"><input type="checkbox" id="whatsappWelcomeEnabled" checked> <span data-i18n="whatsapp_welcome_enabled">فعال</span></label>
+                                <textarea id="whatsappWelcomeMessage" rows="4" data-i18n-ph="whatsapp_welcome_ph" placeholder="سلام! به صرافی کایا خوش آمدید. در خدمت شما هستیم." class="whatsapp-textarea"></textarea>
+                                <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappWelcome" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                            <div id="whatsappAIBox" class="whatsapp-card form-box whatsapp-card--pro">
+                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">✨</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی (OpenAI)</h3></div>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون پاسخ خودکار (کلمات کلیدی) جواب ندهد، هوش مصنوعی به پیام مشتری پاسخ می‌دهد. مسیریابی به دپارتمان مناسب هم با AI انجام می‌شود.</p>
+                                <div class="whatsapp-openai-key-row">
+                                    <label for="whatsappOpenAIApiKey" data-i18n="whatsapp_openai_key_label">کلید API اوپن‌ای‌آی</label>
+                                    <div class="whatsapp-openai-key-wrap">
+                                        <input type="password" id="whatsappOpenAIApiKey" class="whatsapp-input" data-i18n-ph="whatsapp_openai_key_ph" placeholder="sk-... از platform.openai.com" autocomplete="off">
+                                        <a href="#" id="whatsappOpenAIClearKey" class="whatsapp-clear-key" style="display:none" data-i18n="whatsapp_openai_clear_key">پاک کردن کلید</a>
+                                    </div>
+                                    <span id="whatsappOpenAIKeyStatus" class="whatsapp-key-status"></span>
+                                </div>
+                                <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAIEnabled" checked> <span data-i18n="whatsapp_ai_enabled">فعال</span></label>
+                                <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappAI" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                            <div id="whatsappAutoMessagesBox" class="whatsapp-card form-box whatsapp-card--pro whatsapp-card--wide">
+                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">📋</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_auto_messages_title">پیام‌های خودکار تخصیص و معرفی</h3></div>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_auto_messages_hint">متن پیام‌هایی که هنگام تخصیص به دپارتمان یا معرفی کارمند ارسال می‌شوند. از {{deptName}} و {{name}} برای جایگزینی استفاده کنید. خالی = پیش‌فرض.</p>
+                                <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAutoAssignmentMessagesEnabled" checked> <span data-i18n="whatsapp_auto_messages_enabled">ارسال پیام‌های تخصیص و معرفی</span></label>
+                                <div class="whatsapp-auto-messages-grid">
+                                    <div class="whatsapp-auto-message-field">
+                                        <label data-i18n="whatsapp_dept_assigned_msg">پیام تخصیص به دپارتمان</label>
+                                        <textarea id="whatsappDeptAssignedMessage" rows="2" class="whatsapp-textarea" data-i18n-ph="whatsapp_dept_assigned_ph" placeholder="شما به دپارتمان {{deptName}} وصل شدید. به زودی پاسخگوی شما خواهیم بود."></textarea>
+                                    </div>
+                                    <div class="whatsapp-auto-message-field">
+                                        <label data-i18n="whatsapp_employee_intro_msg">پیام معرفی کارمند</label>
+                                        <textarea id="whatsappEmployeeIntroMessage" rows="2" class="whatsapp-textarea" data-i18n-ph="whatsapp_employee_intro_ph" placeholder="من {{name}} از دپارتمان {{deptName}} هستم."></textarea>
+                                    </div>
+                                </div>
+                                <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappAutoMessages" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                            <div id="whatsappUnansweredBox" class="whatsapp-card form-box whatsapp-card--pro whatsapp-card--wide">
+                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">⏱</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3></div>
+                                <p class="text-muted whatsapp-hint" data-i18n="whatsapp_unanswered_hint">وقتی مشتری پیام می‌دهد و کسی جواب نمی‌دهد، بعد از مدت مشخص اعلان ارسال می‌شود و در صورت ادامه، مکالمه به دپارتمان پشتیبانی برگردانده می‌شود.</p>
+                                <div class="whatsapp-unanswered-grid">
+                                    <div><label data-i18n="whatsapp_alert_after">اعلان بعد از (دقیقه)</label><input type="number" id="whatsappAlertMinutes" min="1" max="120" value="5" class="whatsapp-input-num"></div>
+                                    <div><label data-i18n="whatsapp_escalate_after">Escalation بعد از (دقیقه)</label><input type="number" id="whatsappEscalateMinutes" min="1" max="240" value="15" class="whatsapp-input-num"></div>
+                                </div>
+                                <div class="whatsapp-dept-row"><label data-i18n="whatsapp_escalation_dept">دپارتمان مقصد (خالی = پشتیبانی پیش‌فرض)</label><select id="whatsappEscalationDept" class="whatsapp-select-full"><option value="">پشتیبانی (پیش‌فرض)</option></select></div>
+                                <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappUnanswered" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="whatsappPanelRouting" class="whatsapp-pro-panel" role="tabpanel" aria-labelledby="waTabRouting" aria-hidden="true">
+                    <div id="whatsappDeptRouting" class="whatsapp-card form-box whatsapp-dept-routing whatsapp-card--pro" style="display:none;">
+                        <div class="whatsapp-dept-routing-header">
+                            <h3 class="whatsapp-card-title" data-i18n="whatsapp_dept_routing">تخصیص خودکار به دپارتمان</h3>
+                            <a href="#departments" class="btn-secondary btn-sm whatsapp-edit-depts" id="whatsappEditDeptsLink" data-i18n="whatsapp_edit_depts">ویرایش دپارتمان‌ها و کلمات کلیدی</a>
+                        </div>
+                        <p class="text-muted whatsapp-hint" data-i18n="whatsapp_dept_routing_hint">بر اساس کلمات کلیدی در متن پیام، مکالمه به دپارتمان مربوطه هدایت می‌شود.</p>
+                        <div id="whatsappDeptList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                    </div>
+                    <div id="whatsappUnassignedBox" class="whatsapp-card form-box whatsapp-card--pro" style="display:none;">
+                        <h3 class="whatsapp-card-title" data-i18n="whatsapp_unassigned">مکالمات بدون تخصیص</h3>
+                        <p class="text-muted whatsapp-hint" data-i18n="whatsapp_unassigned_hint">این مکالمات نیاز به تخصیص دپارتمان یا مسئول دارند.</p>
+                        <div id="whatsappUnassignedList" class="empty" data-i18n="loading">در حال بارگذاری...</div>
+                        <a href="#conversations" class="btn-secondary" id="whatsappUnassignedManageLink" style="margin-top:12px; display:inline-block; text-decoration:none;" data-i18n="whatsapp_manage_convs">مدیریت مکالمات</a>
+                    </div>
+                    </div>
+                </div>
+                <div id="pageMessageTemplates" class="page message-templates-page tpl-pro-page">
+                    <header class="tpl-pro-hero">
+                        <div class="tpl-pro-hero-badge" aria-hidden="true">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+                        </div>
+                        <div class="tpl-pro-hero-main">
+                            <div class="tpl-pro-hero-text">
+                                <h2 data-i18n="page_message_templates">تمپلیت‌های پیام و فایل</h2>
+                                <p data-i18n="message_templates_intro">پیام‌های پرکاربرد با متغیرهای داینامیک برای ارسال سریع در مکالمات.</p>
+                            </div>
+                            <a href="#conversations" class="tpl-pro-hero-link" data-i18n="tpl_link_conversations">مکالمات ←</a>
+                        </div>
+                    </header>
+
+                    <section class="tpl-pro-stats" aria-label="Summary">
+                        <article class="tpl-pro-stat tpl-pro-stat--text">
+                            <div class="tpl-pro-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                            <div class="tpl-pro-stat-body">
+                                <span class="tpl-pro-stat-value" id="tplStatTextCount">—</span>
+                                <span class="tpl-pro-stat-label" data-i18n="tpl_stat_text">تمپلیت متنی</span>
+                            </div>
+                        </article>
+                        <article class="tpl-pro-stat tpl-pro-stat--file">
+                            <div class="tpl-pro-stat-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="13 2 13 9 20 9"/></svg></div>
+                            <div class="tpl-pro-stat-body">
+                                <span class="tpl-pro-stat-value" id="tplStatFileCount">—</span>
+                                <span class="tpl-pro-stat-label" data-i18n="tpl_stat_files">فایل پرکاربرد</span>
+                            </div>
+                        </article>
+                    </section>
+
+                    <div class="tpl-pro-vars" role="region" aria-label="Variables">
+                        <span class="tpl-pro-vars-title" data-i18n="tpl_vars_title">متغیرها در متن تمپلیت</span>
+                        <p class="tpl-pro-vars-hint" data-i18n="tpl_vars_hint">کلیک = کپی در حافظه — در مکالمه هنگام ارسال جایگزین می‌شوند.</p>
+                        <div class="tpl-pro-vars-chips" id="tplProVarChips">
+                            <button type="button" class="tpl-var-pill" data-tpl-copy="{name}" title="{name}"><code>{name}</code></button>
+                            <button type="button" class="tpl-var-pill" data-tpl-copy="{phone}" title="{phone}"><code>{phone}</code></button>
+                            <button type="button" class="tpl-var-pill" data-tpl-copy="{email}" title="{email}"><code>{email}</code></button>
+                            <button type="button" class="tpl-var-pill" data-tpl-copy="{date}" title="{date}"><code>{date}</code></button>
+                            <button type="button" class="tpl-var-pill" data-tpl-copy="{time}" title="{time}"><code>{time}</code></button>
+                        </div>
+                    </div>
+
+                    <nav class="tpl-pro-nav" role="tablist" aria-label="Templates">
+                        <button type="button" class="tpl-pro-tab active" role="tab" aria-selected="true" data-tab="text" id="templatesTabText">
+                            <span class="tpl-pro-tab-inner">
+                                <span class="tpl-pro-tab-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></span>
+                                <span data-i18n="text_templates">تمپلیت‌های متنی</span>
+                                <span class="tpl-tab-count tpl-pro-count" id="textTemplatesCount"></span>
+                            </span>
+                        </button>
+                        <button type="button" class="tpl-pro-tab" role="tab" aria-selected="false" data-tab="file" id="templatesTabFile">
+                            <span class="tpl-pro-tab-inner">
+                                <span class="tpl-pro-tab-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span>
+                                <span data-i18n="file_templates">فایل‌های پرکاربرد</span>
+                                <span class="tpl-tab-count tpl-pro-count" id="fileTemplatesCount"></span>
+                            </span>
+                        </button>
+                    </nav>
+
+                    <div id="textTemplatesContent" class="tpl-pro-panel tpl-pro-panel--active" role="tabpanel" aria-labelledby="templatesTabText">
+                        <div class="tpl-pro-toolbar">
+                            <div class="tpl-pro-search-wrap">
+                                <svg class="tpl-pro-search-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="search" id="textTemplatesSearch" class="tpl-pro-search" data-i18n-ph="tpl_search_text" placeholder="جستجو در نام، دسته یا متن…" autocomplete="off">
+                            </div>
+                            <button type="button" class="btn-primary tpl-pro-btn-add" id="btnAddTextTemplate">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                <span data-i18n="template_add">افزودن تمپلیت</span>
+                            </button>
+                        </div>
+                        <div id="textTemplatesCategoryFilter" class="tpl-category-filter tpl-pro-cat-bar"></div>
+                        <div id="messageTemplatesList" class="tpl-grid tpl-pro-grid"></div>
+                    </div>
+
+                    <div id="fileTemplatesContent" class="tpl-pro-panel" role="tabpanel" aria-labelledby="templatesTabFile" aria-hidden="true">
+                        <div class="tpl-pro-toolbar">
+                            <div class="tpl-pro-search-wrap">
+                                <svg class="tpl-pro-search-ico" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                <input type="search" id="fileTemplatesSearch" class="tpl-pro-search" data-i18n-ph="search_files" placeholder="جستجو در فایل‌ها…" autocomplete="off">
+                            </div>
+                            <button type="button" class="btn-primary tpl-pro-btn-add" id="btnAddFileTemplate">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                <span data-i18n="upload_file">بارگذاری فایل</span>
+                            </button>
+                        </div>
+                        <div id="fileTemplatesList" class="tpl-grid tpl-pro-grid tpl-pro-grid--files"></div>
+                    </div>
+                </div>
+                <div id="pageRates" class="page rates-page">
+                    <header class="rates-page-header">
+                        <h2 data-i18n="page_rates">تنظیم نرخ ارزها</h2>
+                        <p class="rates-intro text-muted" data-i18n="rates_intro">قیمت‌ها از API دریافت می‌شوند و در نوار زیر پنل برای همه نمایش داده می‌شوند.</p>
+                    </header>
+                    <div class="rates-page-layout">
+                        <div class="rates-page-col rates-page-col-left">
+                            <div id="ratesCurrenciesBox" class="rates-currencies-section form-box" style="display:none;">
+                                <h3 class="rates-section-title" data-i18n="rates_manage_currencies">مدیریت ارزها</h3>
+                                <p class="rates-section-hint" data-i18n="rates_manage_currencies_hint">ارزهای نمایش‌داده‌شده در نرخ‌ها و نوار قیمت را اضافه، ویرایش یا حذف کنید. فقط برای کاربران دارای دسترسی نرخ ارز.</p>
+                                <div class="rates-currencies-toolbar">
+                                    <button type="button" class="btn-primary" onclick="openCurrencyModal()" data-i18n="rates_add_currency">افزودن ارز</button>
+                                </div>
+                                <div id="ratesCurrenciesList" class="rates-currencies-list empty" data-i18n="loading">در حال بارگذاری...</div>
+                            </div>
+                            <div id="ratesTickerConfigBox" class="rates-ticker-section form-box" style="display:none;">
+                                <h3 class="rates-section-title" data-i18n="rates_ticker_currencies">ارزهای نوار قیمت</h3>
+                                <p class="rates-section-hint" data-i18n="rates_ticker_currencies_hint">ارزهایی که می‌خواهید در نوار پایین پنل نمایش داده شوند را انتخاب کنید. ترتیب را با کشیدن تغییر دهید.</p>
+                                <div id="ratesTickerConfigList" class="ticker-config-list"></div>
+                                <div id="ratesTickerConfigAvailable" class="ticker-config-available"></div>
+                                <button type="button" class="btn-primary" onclick="saveTickerConfig()" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                        </div>
+                        <div class="rates-page-col rates-page-col-right">
+                            <div class="rates-adjust-types-info">
+                                <h3 class="rates-section-title" data-i18n="rates_adjust_type">نوع تعدیل</h3>
+                                <div class="rates-adjust-types-grid">
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_none">بدون تغییر</span><span class="rates-adjust-type-desc" data-i18n="rates_none_desc">نرخ API بدون تغییر نمایش داده می‌شود.</span></div>
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_fixed">ثابت</span><span class="rates-adjust-type-desc" data-i18n="rates_fixed_desc">نرخ ثابت مدنظر شما به‌جای API.</span></div>
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_delta">± تومان</span><span class="rates-adjust-type-desc" data-i18n="rates_delta_desc">مبلغی به نرخ API اضافه یا کم می‌شود.</span></div>
+                                    <div class="rates-adjust-type-item"><span class="rates-adjust-type-label" data-i18n="rates_percent">± درصد</span><span class="rates-adjust-type-desc" data-i18n="rates_percent_desc">درصدی به نرخ API اضافه یا کم می‌شود.</span></div>
+                                </div>
+                            </div>
+                            <div class="rates-adjustments-section">
+                                <h3 class="rates-section-title" data-i18n="rates_adjustments">تعدیل نرخ‌ها</h3>
+                                <div id="ratesAdjustmentsTable" class="rates-adjustments-content empty" data-i18n="loading">در حال بارگذاری...</div>
+                                <div class="rates-adjustments-actions">
+                                    <button type="button" class="btn-primary" onclick="saveRatesAdjustments()" data-i18n="btn_save">ذخیره تعدیلات</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div id="pageRatesCharts" class="page rates-charts-page">
+                    <header class="rates-charts-page-header">
+                        <div class="rates-charts-header-content">
+                            <div class="rates-charts-header-badge"><svg viewBox="0 0 24 24"><use href="#icon-trending-up"/></svg></div>
+                            <div>
+                                <h2 data-i18n="rates_charts_title">چارت ارزها</h2>
+                                <p class="rates-charts-intro text-muted" data-i18n="rates_charts_intro">نمودار نرخ دلار، یورو و سایر ارزها نسبت به تومان.</p>
+                            </div>
+                        </div>
+                    </header>
+                    <div class="rates-charts-stats-row" id="ratesChartsStatsRow">
+                        <!-- Populated by JS: current, min, max, change -->
+                    </div>
+                    <div class="rates-charts-controls">
+                        <div class="rates-charts-currency-tabs" role="tablist" aria-label="انتخاب ارز">
+                            <button type="button" class="rates-chart-tab active" data-currency="usd" onclick="setRatesChartCurrency('usd')" data-i18n="currency_usd"><span class="tab-icon">$</span> دلار</button>
+                            <button type="button" class="rates-chart-tab" data-currency="eur" onclick="setRatesChartCurrency('eur')" data-i18n="currency_eur"><span class="tab-icon">€</span> یورو</button>
+                            <button type="button" class="rates-chart-tab" data-currency="gbp" onclick="setRatesChartCurrency('gbp')" data-i18n="currency_gbp"><span class="tab-icon">£</span> پوند</button>
+                            <button type="button" class="rates-chart-tab" data-currency="aed" onclick="setRatesChartCurrency('aed')" data-i18n="currency_aed"><span class="tab-icon">د.إ</span> درهم</button>
+                            <button type="button" class="rates-chart-tab" data-currency="try" onclick="setRatesChartCurrency('try')" data-i18n="currency_try"><span class="tab-icon">₺</span> لیر</button>
+                            <button type="button" class="rates-chart-tab" data-currency="gold" onclick="setRatesChartCurrency('gold')" data-i18n="currency_gold"><span class="tab-icon">Au</span> طلا</button>
+                        </div>
+                        <div class="rates-charts-controls-right">
+                            <div class="rates-charts-period">
+                                <select id="ratesChartPeriod" onchange="loadRatesCharts()" aria-label="بازه زمانی">
+                                    <option value="7" data-i18n="chart_7days">۷ روز</option>
+                                    <option value="14" data-i18n="chart_14days">۱۴ روز</option>
+                                    <option value="30" selected data-i18n="chart_30days">۳۰ روز</option>
+                                </select>
+                            </div>
+                            <button type="button" class="rates-charts-refresh-btn" onclick="loadRatesCharts()" title="بروزرسانی" aria-label="بروزرسانی نمودار">
+                                <svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M23 4v6h-6M1 20v-6h6"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="rates-charts-canvas-wrap">
+                        <div class="rates-charts-canvas-inner">
+                            <canvas id="ratesChartCanvas" role="img" aria-label="نمودار نرخ ارز"></canvas>
+                            <div class="rates-charts-loading-overlay" id="ratesChartsLoadingOverlay">
+                                <span class="rates-charts-loading-spinner"></span>
+                                <span data-i18n="loading">در حال بارگذاری...</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rates-charts-summary" id="ratesChartsSummary"></div>
+                </div>
+                <div id="pageServices" class="page services-page">

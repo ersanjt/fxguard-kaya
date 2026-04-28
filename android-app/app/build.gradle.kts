@@ -1,0 +1,121 @@
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+    id("org.jetbrains.kotlin.plugin.compose")
+    id("com.google.dagger.hilt.android")
+    id("com.google.devtools.ksp")
+}
+
+android {
+    namespace = "com.kaya.crm"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.kaya.crm"
+        minSdk = 26
+        targetSdk = 35
+        versionCode = 20
+        versionName = "1.5.5"
+        buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
+    }
+
+    signingConfigs {
+        // اولویت: keystore ثابت ریشهٔ پروژه اندروید (GitHub Actions + امضای یکسان هر OTA)
+        // وگرنه ~/.android/debug.keystore برای بیلد لوکال
+        // رمز: ANDROID_KEYSTORE_PASSWORD یا androidKeystorePassword در gradle.properties — وگرنه پیش‌فرض android (همان CI فعلی)
+        create("release") {
+            val ciKeystore = rootProject.file("ci-android-release.keystore")
+            val debugKeystore = File(System.getProperty("user.home"), ".android/debug.keystore")
+            val keystorePassword = System.getenv("ANDROID_KEYSTORE_PASSWORD")?.trim()
+                ?.takeIf { it.isNotEmpty() }
+                ?: (project.findProperty("androidKeystorePassword") as? String)?.trim()
+                    ?.takeIf { it.isNotEmpty() }
+                ?: "android"
+            when {
+                ciKeystore.isFile -> {
+                    storeFile = ciKeystore
+                    storePassword = keystorePassword
+                    keyAlias = "androiddebugkey"
+                    keyPassword = keystorePassword
+                }
+                debugKeystore.exists() -> {
+                    storeFile = debugKeystore
+                    storePassword = keystorePassword
+                    keyAlias = "androiddebugkey"
+                    keyPassword = keystorePassword
+                }
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            isMinifyEnabled = false
+            isDebuggable = true
+            // روی گوشی واقعی 10.0.2.2 کار نمی‌کند (فقط امولاتور). پیش‌فرض = همان سرور release؛
+            // برای بک‌اند لوکال از آیکن چرخ‌دندهٔ ورود آدرس بگذارید و اپ را یک‌بار ببندید و باز کنید.
+            buildConfigField("String", "API_BASE_URL", "\"https://kaya.fxguard.io/\"")
+        }
+        release {
+            // مثل نسخه‌های پایدار قبلی: بدون R8/minify تا کرش release و رفتار متفاوت با debug از بین برود (حجم APK بیشتر).
+            isMinifyEnabled = false
+            isShrinkResources = false
+            isDebuggable = false
+            signingConfig = signingConfigs.getByName("release")
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    lint {
+        abortOnError = true
+        checkReleaseBuilds = true
+        // ادغام mipmap-anydpi-v26 → mipmap-anydpi در این پروژه باعث خطای لینک منابع (AAPT) شد
+        disable += "ObsoleteSdkInt"
+    }
+}
+
+dependencies {
+    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.core:core-splashscreen:1.2.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.10.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.10.0")
+    implementation("androidx.activity:activity-compose:1.13.0")
+
+    // Compose
+    implementation(platform("androidx.compose:compose-bom:2026.03.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.ui:ui-graphics")
+    implementation("androidx.compose.ui:ui-tooling-preview")
+    implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
+    implementation("androidx.compose.material:material")
+    implementation("androidx.navigation:navigation-compose:2.9.7")
+
+    // Hilt (با KSP به‌جای kapt - پایدارتر)
+    implementation("com.google.dagger:hilt-android:2.58")
+    ksp("com.google.dagger:hilt-android-compiler:2.58")
+    implementation("androidx.hilt:hilt-navigation-compose:1.3.0")
+    implementation("androidx.hilt:hilt-lifecycle-viewmodel-compose:1.3.0")
+
+    // Retrofit & OkHttp
+    implementation("com.squareup.retrofit2:retrofit:2.11.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.11.0")
+    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
+
+    // DataStore
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
+
+    // Coil for images
+    implementation("io.coil-kt:coil-compose:2.7.0")
+}

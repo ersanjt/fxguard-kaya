@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">کایا سی‌آر‌ام</string>
+    <string name="login_title_fallback">کایا سی‌آر‌ام</string>
+    <string name="login_tagline">ورود امن به پورتال مدیریت مشتری</string>
+    <string name="action_refresh_branding">به‌روزرسانی ظاهر از سرور</string>
+    <string name="cd_login_logo">لوگوی سازمان</string>
+    <string name="cd_server_settings">تنظیم آدرس سرور</string>
+    <string name="cd_email_field">ایمیل</string>
+    <string name="cd_password_field">رمز عبور</string>
+    <string name="cd_show_password">نمایش رمز عبور</string>
+    <string name="cd_hide_password">مخفی کردن رمز عبور</string>
+    <string name="cd_sign_in">ورود به حساب</string>
+    <string name="totp_back_cd">بازگشت به صفحهٔ ورود</string>
+
+    <string name="language_label">زبان</string>
+    <string name="language_english">English</string>
+    <string name="language_farsi">فارسی</string>
+
+    <string name="tab_dashboard">داشبورد</string>
+    <string name="tab_conversations">مکالمات</string>
+    <string name="tab_customers">مشتریان</string>
+    <string name="tab_team">چت داخلی</string>
+    <string name="tab_tickets">تیکت‌ها</string>
+    <string name="tab_profile">پروفایل</string>
+
+    <string name="retry">تلاش مجدد</string>
+    <string name="network_offline">اتصال اینترنت برقرار نیست</string>
+
+    <string name="email">ایمیل</string>
+    <string name="password">رمز عبور</string>
+    <string name="forgot_password">فراموشی رمز عبور</string>
+    <string name="sign_in">ورود</string>
+    <string name="error_invalid_email">فرمت ایمیل معتبر نیست.</string>
+    <string name="error_email_required">ایمیل را وارد کنید.</string>
+    <string name="error_forgot_send_failed">ارسال ایمیل بازیابی انجام نشد.</string>
+    <string name="error_login_failed">خطا در ورود</string>
+    <string name="error_totp_invalid">کد نامعتبر است</string>
+
+    <string name="forgot_success_message">در صورت وجود حساب با این ایمیل، لینک تعیین رمز جدید از همان سامانهٔ ایمیل پنل برای شما ارسال شده است.\n\nصندوق ورودی و پوشهٔ هرزنامه را بررسی کنید؛ با باز کردن لینک در مرورگر، رمز جدید را انتخاب کنید.</string>
+    <string name="forgot_hint_email_body">ایمیل حساب خود را وارد کنید. همان مسیر ارسال ایمیل وب‌سایت است؛ رمز به‌صورت خودکار در متن ایمیل نیست، بلکه از طریق لینک امن تعیین می‌شود.</string>
+
+    <string name="profile_presence_update_failed">تغییر وضعیت انجام نشد</string>
+    <string name="profile_presence_updated_panel">وضعیت در پنل به «%1$s» به‌روز شد</string>
+    <string name="profile_saved">ذخیره شد</string>
+    <string name="profile_save_error">خطا در ذخیره</string>
+    <string name="profile_avatar_updated">تصویر پروفایل به‌روز شد</string>
+    <string name="profile_avatar_url_save_error">خطا در ذخیرهٔ آدرس تصویر</string>
+    <string name="profile_upload_error">خطا در آپلود</string>
+
+    <string name="placeholder_em_dash">—</string>
+
+    <string name="totp_setup_instructions">ابتدا QR را در Google Authenticator اسکن کنید، یا کلید زیر را کپی کرده و در اپ به‌صورت دستی اضافه کنید؛ سپس کد شش‌رقمی را اینجا وارد کنید.</string>
+    <string name="totp_qr_cd">کد QR برای فعال‌سازی احراز دو مرحله‌ای</string>
+    <string name="cd_copy_totp_secret">کپی کلید</string>
+    <string name="totp_section_intro">ورود امن‌تر با Google Authenticator. پس از زدن «فعال‌سازی»، QR یا کلید را کپی کنید؛ در اپ کد شش‌رقمی را وارد و تأیید کنید.</string>
+    <string name="totp_status_line">وضعیت: %1$s</string>
+    <string name="totp_state_on">فعال</string>
+    <string name="totp_state_off">غیرفعال</string>
+
+    <string name="telegram_section_intro">کد را از کادر زیر کپی کنید، در تلگرام برای بات بفرستید، یا با «باز کردن بات» وارد شوید.</string>
+    <string name="telegram_status_line">وضعیت: %1$s</string>
+    <string name="telegram_state_linked">متصل</string>
+    <string name="telegram_state_not_linked">غیرمتصل</string>
+    <string name="cd_copy_full_command">کپی دستور کامل</string>
+
+    <string name="gateway_state_connected">متصل</string>
+    <string name="gateway_state_disconnected">غیرمتصل</string>
+
+    <string name="last_login_inline">آخرین ورود: %1$s</string>
+
+    <string name="app_version_installed">نسخهٔ نصب‌شده: %1$s (%2$d)</string>
+    <string name="server_url_apply_note">برای اعمال تغییرات، اپ را ببندید و دوباره باز کنید.</string>
+
+    <string name="clipboard_telegram_command_copied">دستور کپی شد — در تلگرام برای بات بفرستید</string>
+    <string name="clipboard_telegram_token_copied">کد اتصال کپی شد</string>
+    <string name="clipboard_totp_secret_copied">کلید احراز دو مرحله‌ای کپی شد</string>
+
+    <string name="cd_network_offline">اتصال اینترنت برقرار نیست</string>
+
+    <string name="totp_title_toolbar">احراز هویت دو مرحله‌ای</string>
+    <string name="totp_hint_body">کد شش‌رقمی را از اپلیکیشن Google Authenticator (یا سازگار با TOTP) وارد کنید.</string>
+    <string name="totp_code_label">کد ۶ رقمی</string>
+    <string name="totp_code_progress">%1$d/۶</string>
+    <string name="totp_confirm_button">تأیید و ورود</string>
+    <string name="totp_back_hint">با بازگشت، دوباره ایمیل و رمز را وارد می‌کنید.</string>
+
+    <string name="forgot_title">بازیابی رمز عبور</string>
+    <string name="forgot_close">بستن</string>
+    <string name="forgot_send_link">ارسال لینک بازیابی</string>
+    <string name="forgot_cancel">انصراف</string>
+    <string name="server_url_title">آدرس سرور</string>
+    <string name="server_url_hint">آدرس پایه API سرور را وارد کنید. برای اعمال تغییرات، اپ را ببندید و دوباره باز کنید.</string>
+    <string name="server_url_example_label">مثال: https://kaya.fxguard.io</string>
+    <string name="save">ذخیره</string>
+    <string name="cancel">انصراف</string>
+
+    <string name="profile_title">پروفایل من</string>
+    <string name="profile_intro">نام کاربری، نام، نام خانوادگی، تاریخ تولد، تلفن و تصویر را می‌توانید ویرایش کنید. ایمیل و دپارتمان توسط مدیر تنظیم می‌شود مگر دسترسی مدیریت کاربران داشته باشید.</string>
+    <string name="profile_readonly">اطلاعات فقط‌خواندنی</string>
+    <string name="profile_editable">اطلاعات قابل ویرایش</string>
+    <string name="photo_from_gallery">تصویر از گالری</string>
+    <string name="field_username">نام کاربری (اختیاری)</string>
+    <string name="field_first_name">نام</string>
+    <string name="field_last_name">نام خانوادگی</string>
+    <string name="field_dob">تاریخ تولد (YYYY-MM-DD)</string>
+    <string name="field_phone">تلفن</string>
+    <string name="field_avatar_url">آدرس URL تصویر (اختیاری)</string>
+    <string name="field_email_admin">ایمیل (قابل ویرایش برای مدیر)</string>
+    <string name="field_new_password">رمز عبور جدید (در صورت تمایل)</string>
+    <string name="save_changes">ذخیره تغییرات</string>
+    <string name="sign_out">خروج</string>
+    <string name="department">دپارتمان</string>
+    <string name="last_login">آخرین ورود</string>
+
+    <string name="presence_title">وضعیت در پنل</string>
+    <string name="presence_subtitle">همان وضعتی است که در داشبورد وب برای همکاران نمایش داده می‌شود.</string>
+    <string name="presence_online">آنلاین</string>
+    <string name="presence_away">دور از دسترس</string>
+    <string name="presence_busy">مشغول</string>
+    <string name="presence_offline">آفلاین</string>
+
+    <string name="totp_setup_title">فعال‌سازی Google Authenticator</string>
+    <string name="totp_secret_label">کلید مخفی (دستی)</string>
+    <string name="totp_copy_secret">کپی کلید مخفی</string>
+    <string name="totp_code_from_app">کد شش‌رقمی از Authenticator</string>
+    <string name="totp_confirm">تأیید</string>
+    <string name="totp_disable_title">غیرفعال کردن احراز دو مرحله‌ای</string>
+    <string name="totp_current_password">رمز عبور فعلی</string>
+    <string name="totp_disable_action">غیرفعال کن</string>
+    <string name="totp_activate">فعال‌سازی</string>
+    <string name="totp_disable_need_password">غیرفعال کردن (نیاز به رمز)</string>
+    <string name="totp_section_title">احراز هویت دو مرحله‌ای</string>
+
+    <string name="telegram_title">اتصال به بات تلگرام</string>
+    <string name="telegram_get_code">دریافت کد اتصال</string>
+    <string name="telegram_unlink">قطع اتصال</string>
+    <string name="telegram_command_label">دستور برای بات (حدود ۱۵ دقیقه اعتبار)</string>
+    <string name="telegram_copy_cmd">کپی دستور</string>
+    <string name="telegram_copy_code_only">فقط کد</string>
+    <string name="telegram_open_bot">باز کردن بات در تلگرام</string>
+
+    <string name="gateway_title">وضعیت واتساپ / Gateway</string>
+    <string name="gateway_phone">شماره: %1$s</string>
+
+    <string name="server_address">آدرس سرور</string>
+    <string name="change">تغییر</string>
+    <string name="app_update_title">به‌روزرسانی اپ</string>
+    <string name="check_update">بررسی به‌روزرسانی از سرور</string>
+    <string name="update_checking">در حال بررسی به‌روزرسانی…</string>
+    <string name="update_up_to_date">نسخهٔ شما به‌روز است (%1$s).</string>
+    <string name="update_fetch_error">بررسی به‌روزرسانی انجام نشد.</string>
+    <string name="update_download_error">دانلود ناموفق بود.</string>
+    <string name="update_install_no_handler">برنامه‌ای برای نصب APK پیدا نشد. فایل را از «فایل‌ها» باز کنید یا نصب‌کنندهٔ سیستم را فعال کنید.</string>
+    <string name="mobile_download_title">دانلود اپ موبایل</string>
+    <string name="download_ios">دانلود iOS</string>
+    <string name="download_android">دانلود Android</string>
+</resources>
