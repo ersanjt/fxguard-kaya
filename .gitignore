@@ -34,6 +34,9 @@ gateway/uploads/
 gateway/.wwebjs_auth/
 gateway/.wwebjs_cache/
 gateway/sessions/
+gateway/sessions*/
+gateway/.wwebjs_auth*/
+gateway/.wwebjs_cache*/
 
 backend/.env
 backend/env-production-paste.txt
