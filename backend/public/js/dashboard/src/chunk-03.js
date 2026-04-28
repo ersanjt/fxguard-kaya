@@ -2191,7 +2191,7 @@
             if (file) {
                 const fd = new FormData();
                 fd.append('file', file);
-                const uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+                const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
                 const uploadData = await uploadRes.json().catch(function() { return {}; });
                 if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
                 media = { url: uploadData.url, filename: uploadData.name || file.name, mimetype: file.type };
@@ -2536,7 +2536,7 @@
             // Create new blob with clean MIME type so server accepts it
             const cleanBlob = new Blob([blob], { type: baseMime });
             fd.append('file', cleanBlob, 'voice' + ext);
-            const uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+            const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
             const uploadData = await uploadRes.json().catch(function() { return {}; });
             if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
             const media = { url: uploadData.url, filename: uploadData.name || 'voice' + ext, mimetype: baseMime };
@@ -2741,7 +2741,7 @@
                 if (!file) return;
                 const fd = new FormData();
                 fd.append('file', file);
-                const res = await fetch(API + '/api/customers/import/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('crm_token') || '') }, body: fd });
+                const res = await fetch(API + '/api/customers/import/upload', { method: 'POST', credentials: 'include', body: fd });
                 const data = await res.json().catch(function() { return {}; });
                 if (data.rows && data.rows.length > 0) {
                     window._importFileRows = data.rows;

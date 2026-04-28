@@ -6,7 +6,7 @@
  * منبع: public/js/dashboard/src/chunk-NN.js — بعد از ویرایش: npm run build:dashboard
  */
         const API = '';
-        let token = localStorage.getItem('crm_token');
+        let token = null;
         let currentConvId = null;
         let currentUser = null;
         let ratesInterval = null;
@@ -109,9 +109,7 @@
         }
 
         function headers() {
-            const h = { 'Content-Type': 'application/json' };
-            if (token) h['Authorization'] = 'Bearer ' + token;
-            return h;
+            return { 'Content-Type': 'application/json' };
         }
         if (window.CRM && window.CRM.Api) {
             window.CRM_API_BASE = API || '';
@@ -120,7 +118,6 @@
                 getLang: function () { return LANG; },
                 on401: function () {
                     token = null;
-                    localStorage.removeItem('crm_token');
                     document.documentElement.classList.remove('auth-has-token');
                     document.getElementById('loginBox').style.display = 'flex';
                     document.getElementById('app').classList.remove('show');
@@ -2054,7 +2051,7 @@
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
-                token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
+                token = null; document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
                 const errEl = document.getElementById('loginErr');
                 if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
@@ -2163,7 +2160,6 @@
             }
             if (data.token) {
                 token = data.token;
-                localStorage.setItem('crm_token', token);
                 document.documentElement.classList.add('auth-has-token');
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
@@ -2280,7 +2276,7 @@
             if (btn) btn.disabled = false;
         }
         (function checkResetPasswordUrl() {
-            if (localStorage.getItem('crm_token')) return;
+            if (token) return;
             const params = new URLSearchParams(window.location.search);
             const reset = params.get('reset');
             const token = params.get('token');
@@ -2298,7 +2294,6 @@
             if (data.token) {
                 window._totpTempToken = null;
                 token = data.token;
-                localStorage.setItem('crm_token', token);
                 document.documentElement.classList.add('auth-has-token');
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
@@ -2526,7 +2521,7 @@
         async function uploadProfileAvatar(file) {
             const formData = new FormData();
             formData.append('file', file);
-            const r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+            const r = await fetch((API || '') + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
             const data = await r.json().catch(function() { return {}; });
             if (data.url) {
                 const avatarInput = document.getElementById('profileAvatar');
@@ -2611,7 +2606,6 @@
             disconnectSocket();
             token = null;
             currentUser = null;
-            localStorage.removeItem('crm_token');
             document.documentElement.classList.remove('auth-has-token');
             document.getElementById('loginBox').style.display = 'flex';
             const appEl = document.getElementById('app');
@@ -6012,7 +6006,7 @@
             if (file) {
                 const fd = new FormData();
                 fd.append('file', file);
-                const uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+                const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
                 const uploadData = await uploadRes.json().catch(function() { return {}; });
                 if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
                 media = { url: uploadData.url, filename: uploadData.name || file.name, mimetype: file.type };
@@ -6357,7 +6351,7 @@
             // Create new blob with clean MIME type so server accepts it
             const cleanBlob = new Blob([blob], { type: baseMime });
             fd.append('file', cleanBlob, 'voice' + ext);
-            const uploadRes = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
+            const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
             const uploadData = await uploadRes.json().catch(function() { return {}; });
             if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
             const media = { url: uploadData.url, filename: uploadData.name || 'voice' + ext, mimetype: baseMime };
@@ -6562,7 +6556,7 @@
                 if (!file) return;
                 const fd = new FormData();
                 fd.append('file', file);
-                const res = await fetch(API + '/api/customers/import/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('crm_token') || '') }, body: fd });
+                const res = await fetch(API + '/api/customers/import/upload', { method: 'POST', credentials: 'include', body: fd });
                 const data = await res.json().catch(function() { return {}; });
                 if (data.rows && data.rows.length > 0) {
                     window._importFileRows = data.rows;
@@ -7187,7 +7181,7 @@
                     if (!fileInput.files || !fileInput.files[0]) return;
                     const formData = new FormData();
                     formData.append('file', fileInput.files[0]);
-                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
                     const data = await r.json().catch(function() { return {}; });
                     if (data.url) {
                         document.getElementById('customerModalProfilePic').value = data.url;
@@ -8088,7 +8082,7 @@
                     if (!fi.files || !fi.files[0]) return;
                     const formData = new FormData();
                     formData.append('file', fi.files[0]);
-                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
                     const data = await r.json().catch(function() { return {}; });
                     if (data.url) {
                         const urlEl = document.getElementById(p.urlId);
@@ -8605,7 +8599,7 @@
             if (fileInput && fileInput.files && fileInput.files[0]) {
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-                const up = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                const up = await fetch((API || '') + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
                 const upData = await up.json().catch(function() { return {}; });
                 if (!up.ok || !upData.url) { toast((upData.error || (LANG === 'fa' ? 'خطا در آپلود فایل' : 'Upload failed')), true); return; }
                 attachments.push({ url: upData.url, name: upData.name || (t('file') || 'فایل'), size: upData.size });
@@ -10067,7 +10061,7 @@
             if (fileInput && fileInput.files && fileInput.files[0]) {
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-                const up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                const up = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
                 const upData = await up.json();
                 if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size, allowDownload: allowDownload });
             }
@@ -10182,7 +10176,7 @@
             if (fileInput && fileInput.files && fileInput.files[0]) {
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-                const up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                const up = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
                 const upData = await up.json();
                 if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size, allowDownload: true });
             }

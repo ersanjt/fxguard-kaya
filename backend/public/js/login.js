@@ -376,8 +376,7 @@
                 return;
             }
 
-            if (data && data.token) {
-                localStorage.setItem('crm_token', data.token);
+            if (data && (data.token || data.user)) {
                 window.location.href = '/dashboard';
                 return;
             }
@@ -408,8 +407,7 @@
             return r.json().catch(function() { return {}; });
         }).then(function(data) {
             setBtnLoading('btnTotpVerify', false, t('totp_verify_btn'));
-            if (data && data.token) {
-                localStorage.setItem('crm_token', data.token);
+            if (data && (data.token || data.user)) {
                 window.location.href = '/dashboard';
                 return;
             }
@@ -704,13 +702,10 @@
         } catch(_) {}
     }
 
-    /* ── Check existing token ────────────────────── */
+    /* ── Check existing auth cookie ──────────────── */
     function checkExistingToken() {
-        var existing = localStorage.getItem('crm_token');
-        if (!existing) return;
         fetch('/api/auth/me', {
-            credentials: 'include',
-            headers: { 'Authorization': 'Bearer ' + existing }
+            credentials: 'include'
         }).then(function(r) {
             return r.json().then(function(d) {
                 return { ok: r.ok, d: d };
@@ -720,12 +715,8 @@
         }).then(function(res) {
             if (res.ok && res.d && res.d.email && !res.d.error) {
                 window.location.href = '/dashboard';
-            } else {
-                localStorage.removeItem('crm_token');
             }
-        }).catch(function() {
-            localStorage.removeItem('crm_token');
-        });
+        }).catch(function() {});
     }
 
     /* ── DOMContentLoaded — attach ALL event listeners ── */

@@ -559,7 +559,7 @@
                     if (!fileInput.files || !fileInput.files[0]) return;
                     const formData = new FormData();
                     formData.append('file', fileInput.files[0]);
-                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
                     const data = await r.json().catch(function() { return {}; });
                     if (data.url) {
                         document.getElementById('customerModalProfilePic').value = data.url;
@@ -1460,7 +1460,7 @@
                     if (!fi.files || !fi.files[0]) return;
                     const formData = new FormData();
                     formData.append('file', fi.files[0]);
-                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                    const r = await fetch((API || '') + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
                     const data = await r.json().catch(function() { return {}; });
                     if (data.url) {
                         const urlEl = document.getElementById(p.urlId);
@@ -1977,7 +1977,7 @@
             if (fileInput && fileInput.files && fileInput.files[0]) {
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-                const up = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                const up = await fetch((API || '') + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
                 const upData = await up.json().catch(function() { return {}; });
                 if (!up.ok || !upData.url) { toast((upData.error || (LANG === 'fa' ? 'خطا در آپلود فایل' : 'Upload failed')), true); return; }
                 attachments.push({ url: upData.url, name: upData.name || (t('file') || 'فایل'), size: upData.size });

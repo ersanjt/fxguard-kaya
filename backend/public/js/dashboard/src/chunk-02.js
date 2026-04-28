@@ -281,7 +281,7 @@
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
-                token = null; localStorage.removeItem('crm_token'); document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
+                token = null; document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
                 const errEl = document.getElementById('loginErr');
                 if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
@@ -390,7 +390,6 @@
             }
             if (data.token) {
                 token = data.token;
-                localStorage.setItem('crm_token', token);
                 document.documentElement.classList.add('auth-has-token');
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
@@ -507,7 +506,7 @@
             if (btn) btn.disabled = false;
         }
         (function checkResetPasswordUrl() {
-            if (localStorage.getItem('crm_token')) return;
+            if (token) return;
             const params = new URLSearchParams(window.location.search);
             const reset = params.get('reset');
             const token = params.get('token');
@@ -525,7 +524,6 @@
             if (data.token) {
                 window._totpTempToken = null;
                 token = data.token;
-                localStorage.setItem('crm_token', token);
                 document.documentElement.classList.add('auth-has-token');
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
@@ -753,7 +751,7 @@
         async function uploadProfileAvatar(file) {
             const formData = new FormData();
             formData.append('file', file);
-            const r = await fetch((API || '') + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+            const r = await fetch((API || '') + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
             const data = await r.json().catch(function() { return {}; });
             if (data.url) {
                 const avatarInput = document.getElementById('profileAvatar');
@@ -838,7 +836,6 @@
             disconnectSocket();
             token = null;
             currentUser = null;
-            localStorage.removeItem('crm_token');
             document.documentElement.classList.remove('auth-has-token');
             document.getElementById('loginBox').style.display = 'flex';
             const appEl = document.getElementById('app');

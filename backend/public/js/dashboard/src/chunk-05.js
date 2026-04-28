@@ -1441,7 +1441,7 @@
             if (fileInput && fileInput.files && fileInput.files[0]) {
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-                const up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                const up = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
                 const upData = await up.json();
                 if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size, allowDownload: allowDownload });
             }
@@ -1556,7 +1556,7 @@
             if (fileInput && fileInput.files && fileInput.files[0]) {
                 const formData = new FormData();
                 formData.append('file', fileInput.files[0]);
-                const up = await fetch(API + '/api/upload', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData });
+                const up = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: formData });
                 const upData = await up.json();
                 if (upData.url) attachments.push({ url: upData.url, name: upData.name || t('file'), size: upData.size, allowDownload: true });
             }

@@ -6,7 +6,7 @@
  * منبع: public/js/dashboard/src/chunk-NN.js — بعد از ویرایش: npm run build:dashboard
  */
         const API = '';
-        let token = localStorage.getItem('crm_token');
+        let token = null;
         let currentConvId = null;
         let currentUser = null;
         let ratesInterval = null;
@@ -109,9 +109,7 @@
         }
 
         function headers() {
-            const h = { 'Content-Type': 'application/json' };
-            if (token) h['Authorization'] = 'Bearer ' + token;
-            return h;
+            return { 'Content-Type': 'application/json' };
         }
         if (window.CRM && window.CRM.Api) {
             window.CRM_API_BASE = API || '';
@@ -120,7 +118,6 @@
                 getLang: function () { return LANG; },
                 on401: function () {
                     token = null;
-                    localStorage.removeItem('crm_token');
                     document.documentElement.classList.remove('auth-has-token');
                     document.getElementById('loginBox').style.display = 'flex';
                     document.getElementById('app').classList.remove('show');

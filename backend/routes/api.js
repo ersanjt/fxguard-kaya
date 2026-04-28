@@ -2,6 +2,7 @@
  * API Router — aggregates all /api endpoints
  */
 const express = require('express');
+const crypto = require('crypto');
 const { authMiddleware, requireSection } = require('../middleware/auth');
 const { createWebhookAuth } = require('../middleware/webhookAuth');
 const { processIncomingMessage } = require('../services/incomingMessage');
@@ -43,6 +44,29 @@ const createInternalRouter = require('./internal');
 const companyEmailsRoutes = require('./companyEmails');
 const panelSettingsRoutes = require('./panelSettings');
 const { getProfileImage } = require('./profileImage');
+
+function getCloudWebhookAppSecret() {
+    return String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim();
+}
+
+function extractMetaSignature(req) {
+    const signature = req.get('x-hub-signature-256') || req.get('X-Hub-Signature-256') || '';
+    return String(signature).trim();
+}
+
+function isValidMetaSignature(req) {
+    const appSecret = getCloudWebhookAppSecret();
+    if (!appSecret || !req.rawBody || !Buffer.isBuffer(req.rawBody)) return false;
+
+    const received = extractMetaSignature(req);
+    if (!received || !received.startsWith('sha256=')) return false;
+
+    const expectedHex = crypto.createHmac('sha256', appSecret).update(req.rawBody).digest('hex');
+    const expected = Buffer.from(`sha256=${expectedHex}`, 'utf8');
+    const actual = Buffer.from(received, 'utf8');
+    if (expected.length !== actual.length) return false;
+    return crypto.timingSafeEqual(expected, actual);
+}
 
 function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     const apiRouter = express.Router();
@@ -228,9 +252,22 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     });
 
     // WhatsApp Cloud API — incoming messages from Meta
-    apiRouter.post('/webhook/whatsapp-cloud', express.json({ limit: '1mb' }), async (req, res) => {
+    apiRouter.post('/webhook/whatsapp-cloud', express.json({
+        limit: '1mb',
+        verify: (req, _res, buf) => {
+            req.rawBody = Buffer.from(buf);
+        }
+    }), async (req, res) => {
         try {
             if (!(await isCloudApiConfigured())) return res.status(404).send('Cloud API not configured');
+            if (!getCloudWebhookAppSecret()) {
+                logger.error('Cloud webhook rejected: WHATSAPP_CLOUD_APP_SECRET is not configured');
+                return res.status(503).send('Webhook secret is not configured');
+            }
+            if (!isValidMetaSignature(req)) {
+                logger.warn('Cloud webhook rejected: invalid Meta signature');
+                return res.status(401).send('Invalid signature');
+            }
             const body = req.body;
             if (!body || body.object !== 'whatsapp_business_account') return res.status(200).send('ok');
             const entries = body.entry || [];
