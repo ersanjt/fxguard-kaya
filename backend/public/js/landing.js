@@ -162,7 +162,7 @@
         revealEls.forEach(function(el) { el.classList.add('visible'); });
     }
 
-    const url = (typeof PANEL_URL !== 'undefined') ? PANEL_URL : 'https://kaya.fxguard.io';
+    const url = (typeof PANEL_URL !== 'undefined') ? PANEL_URL : '/dashboard';
     document.querySelectorAll('#btnPanel, #btnPanelMob').forEach(function(btn){ if(btn) btn.href = url; });
 
     window.addEventListener('scroll', function() {
