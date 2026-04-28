@@ -295,6 +295,42 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
         res.set('Expires', '0');
         res.sendFile(path.join(__dirname, '..', 'public', 'dashboard.html'));
     });
+    // Legacy deep-links like /dashboard/settings should open SPA sections via hash.
+    app.get('/dashboard/:legacyPage', (req, res) => {
+        const rawPage = String(req.params.legacyPage || '').trim().toLowerCase();
+        const pageAlias = {
+            settings: 'panel-settings',
+            panel: 'panel-settings',
+            ratescharts: 'rates-charts',
+            rateschartsv2: 'rates-charts',
+            internalchat: 'internal-chat',
+            staffactivity: 'staff-activity'
+        };
+        const page = pageAlias[rawPage] || rawPage;
+        const validPages = new Set([
+            'dashboard',
+            'conversations',
+            'customers',
+            'departments',
+            'users',
+            'tickets',
+            'tasks',
+            'processes',
+            'whatsapp',
+            'message-templates',
+            'branches',
+            'supervision',
+            'staff-activity',
+            'profile',
+            'announcements',
+            'internal-chat',
+            'rates',
+            'rates-charts',
+            'services',
+            'panel-settings'
+        ]);
+        return res.redirect(validPages.has(page) ? `/dashboard#${page}` : '/dashboard');
+    });
     app.get('/dashboard/', (req, res) => res.redirect('/dashboard'));
     app.get('/dashboard.html', (req, res) => res.redirect('/dashboard'));
     app.get('/contact', (req, res) => {

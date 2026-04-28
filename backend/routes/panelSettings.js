@@ -198,10 +198,16 @@ router.put('/', authMiddleware, async (req, res, next) => {
             if (!v || !String(v).trim()) return true;
             const s = String(v).trim();
             const lower = s.toLowerCase();
+            const isSafeStaticPath =
+                s.startsWith('/') &&
+                !s.startsWith('//') &&
+                !s.includes('..') &&
+                /^\/[A-Za-z0-9._~!$&'()*+,;=:@\/%-]+$/.test(s);
             return (
                 /^https?:\/\//i.test(s) ||
                 s.startsWith('//') ||
-                lower.startsWith('/uploads/')
+                lower.startsWith('/uploads/') ||
+                isSafeStaticPath
             );
         };
         if (!validLogoLike(logoUrl)) {
