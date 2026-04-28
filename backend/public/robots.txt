@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://fxguard.io/sitemap.xml
+Sitemap: https://kaya.fxguard.io/sitemap.xml

@@ -614,7 +614,7 @@ async function sendConversationAssigned(user, conversation, customerName = '', a
 
 /**
  * ارسال فرم تماس لندینگ — به ایمیل فروش/پشتیبانی
- * toEmail: ایمیل گیرنده (از env: CONTACT_EMAIL یا sales@fxguard.io)
+ * toEmail: ایمیل گیرنده (از env: CONTACT_EMAIL یا sales@kaya.fxguard.io)
  */
 async function sendContactForm({ purpose, name, email, phone, message, emailConfig = null }) {
     if (!isValidEmail(email)) {
@@ -622,7 +622,7 @@ async function sendContactForm({ purpose, name, email, phone, message, emailConf
         return { ok: false, error: 'Invalid email address' };
     }
 
-    const toEmail = process.env.CONTACT_EMAIL || 'sales@fxguard.io';
+    const toEmail = process.env.CONTACT_EMAIL || 'sales@kaya.fxguard.io';
     if (!isValidEmail(toEmail)) {
         logger.warn('Invalid recipient email', { toEmail });
         return { ok: false, error: 'Invalid recipient email' };

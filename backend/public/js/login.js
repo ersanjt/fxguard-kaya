@@ -215,7 +215,7 @@
     function t(k) {
         return (I18N[lang] && I18N[lang][k]) || (I18N['fa'] && I18N['fa'][k]) || k;
     }
-    var DEMO_INFO = { enabled: false, publicSite: false, username: 'demo', password: '123456', salesUrl: 'https://fxguard.io' };
+    var DEMO_INFO = { enabled: false, publicSite: false, username: 'demo', password: '123456', salesUrl: 'https://kaya.fxguard.io' };
 
     function detectFxguardPublicSite(c) {
         try {
@@ -245,7 +245,7 @@
         var buyLink = document.getElementById('lpDemoBuyLink');
         if (buyLink) {
             buyLink.textContent = t('demo_buy');
-            buyLink.href = DEMO_INFO.salesUrl || 'https://fxguard.io';
+            buyLink.href = DEMO_INFO.salesUrl || 'https://kaya.fxguard.io';
         }
     }
 
@@ -665,7 +665,7 @@
                 DEMO_INFO.publicSite = detectFxguardPublicSite(c);
                 DEMO_INFO.username = c.demoUsername || 'demo';
                 DEMO_INFO.password = c.demoPassword || '123456';
-                DEMO_INFO.salesUrl = c.salesUrl || 'https://fxguard.io';
+                DEMO_INFO.salesUrl = c.salesUrl || 'https://kaya.fxguard.io';
                 var supportLink = document.getElementById('lpSupportLink');
                 if (supportLink && c.supportUrl) supportLink.href = c.supportUrl;
                 if (DEMO_INFO.publicSite) {

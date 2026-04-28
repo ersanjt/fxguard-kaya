@@ -33,7 +33,7 @@
             faq_title: 'Frequently Asked Questions', faq_sub: 'Quick answers about WhatsApp CRM and pricing',
             faq1_q: 'What is WhatsApp CRM?', faq1_a: 'WhatsApp CRM is a professional panel that lets multiple staff reply from one WhatsApp number. It includes customer management, bulk messaging, auto-response 24/7, and reports — all in one place.',
             faq2_q: 'How much does it cost?', faq2_a: 'Monthly: $49/month. Yearly: $490/year (save 2 months). Custom plans available. Contact us for demo or quote.',
-            faq3_q: 'How can I contact for purchase or demo?', faq3_a: 'WhatsApp +90 501 067 6486, email sales@fxguard.io, or fill the form below. We respond within 24 hours on business days.',
+            faq3_q: 'How can I contact for purchase or demo?', faq3_a: 'WhatsApp +90 501 067 6486, email sales@kaya.fxguard.io, or fill the form below. We respond within 24 hours on business days.',
             faq4_q: 'Is there a free trial or demo?', faq4_a: 'Yes. Contact us via WhatsApp or the form to request a free demo. We\'ll set up a short demo so you can see the panel in action before deciding.',
             contact_demo: 'Request Demo', contact_buy: 'Buy Now', contact_quote: 'Get Quote', contact_support: 'Support',
             channel_wa: 'WhatsApp', channel_sales: 'Sales', channel_support: 'Support',
@@ -75,7 +75,7 @@
             faq_title: 'سوالات متداول', faq_sub: 'پاسخ سریع درباره CRM واتساپ و قیمت',
             faq1_q: 'CRM واتساپ چیست؟', faq1_a: 'CRM واتساپ پنلی حرفه‌ای است که چند کارمند از یک شماره واتساپ پاسخ می‌دهند. مدیریت مشتری، پیام انبوه، پاسخ خودکار ۲۴/۷ و گزارشات — همه در یک جا.',
             faq2_q: 'قیمت چقدر است؟', faq2_a: 'ماهانه: ۴۹ دلار. سالانه: ۴۹۰ دلار (۲ ماه رایگان). پلن سفارشی موجود است. <a href="#contact-form">تماس با ما</a> برای دمو یا پیشنهاد.',
-            faq3_q: 'چطور برای خرید یا دمو تماس بگیرم؟', faq3_a: 'واتساپ ۰۰۹۰۵۰۱۰۶۷۶۴۸۶، ایمیل sales@fxguard.io یا فرم زیر. در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهیم.',
+            faq3_q: 'چطور برای خرید یا دمو تماس بگیرم؟', faq3_a: 'واتساپ ۰۰۹۰۵۰۱۰۶۷۶۴۸۶، ایمیل sales@kaya.fxguard.io یا فرم زیر. در روزهای کاری ظرف ۲۴ ساعت پاسخ می‌دهیم.',
             faq4_q: 'دمو یا آزمایش رایگان دارید؟', faq4_a: 'بله. از واتساپ یا فرم تماس بگیرید تا دمو رایگان تنظیم کنیم و پنل را قبل از تصمیم ببینید.',
             contact_demo: 'درخواست دمو', contact_buy: 'خرید', contact_quote: 'دریافت پیشنهاد', contact_support: 'پشتیبانی',
             channel_wa: 'واتساپ', channel_sales: 'فروش', channel_support: 'پشتیبانی',
@@ -117,7 +117,7 @@
             faq_title: 'Sık Sorulan Sorular', faq_sub: 'WhatsApp CRM ve fiyatlandırma hakkında hızlı cevaplar',
             faq1_q: 'WhatsApp CRM nedir?', faq1_a: 'WhatsApp CRM, birden fazla personelin tek WhatsApp numarasından yanıt vermesini sağlayan profesyonel bir panel. Müşteri yönetimi, toplu mesaj, 7/24 otomatik yanıt ve raporlar — hepsi tek yerde.',
             faq2_q: 'Fiyatı ne kadar?', faq2_a: 'Aylık: 49$/ay. Yıllık: 490$/yıl (2 ay tasarruf). Özel planlar mevcut. Demo veya teklif için <a href="#contact-form">bize ulaşın</a>.',
-            faq3_q: 'Satın alma veya demo için nasıl iletişime geçebilirim?', faq3_a: 'WhatsApp +90 501 067 6486, e-posta sales@fxguard.io veya aşağıdaki formu doldurun. İş günlerinde 24 saat içinde yanıt veriyoruz.',
+            faq3_q: 'Satın alma veya demo için nasıl iletişime geçebilirim?', faq3_a: 'WhatsApp +90 501 067 6486, e-posta sales@kaya.fxguard.io veya aşağıdaki formu doldurun. İş günlerinde 24 saat içinde yanıt veriyoruz.',
             faq4_q: 'Ücretsiz deneme veya demo var mı?', faq4_a: 'Evet. Ücretsiz demo için WhatsApp veya form üzerinden bize ulaşın. Karar vermeden önce paneli görebilirsiniz.',
             contact_demo: 'Demo İste', contact_buy: 'Satın Al', contact_quote: 'Teklif Al', contact_support: 'Destek',
             channel_wa: 'WhatsApp', channel_sales: 'Satış', channel_support: 'Destek',
@@ -192,7 +192,7 @@
         revealEls.forEach(function(el) { el.classList.add('visible'); });
     }
 
-    var url = (typeof PANEL_URL !== 'undefined') ? PANEL_URL : 'https://app.fxguard.io';
+    var url = (typeof PANEL_URL !== 'undefined') ? PANEL_URL : 'https://kaya.fxguard.io';
     document.querySelectorAll('#btnPanel, #btnPanelMob').forEach(function(btn){ if(btn) btn.href = url; });
 
     window.addEventListener('scroll', function() {

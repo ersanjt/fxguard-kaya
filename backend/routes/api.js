@@ -152,7 +152,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
             demoMode,
             demoUsername: demoMode ? getDemoUsername() : null,
             demoPassword: demoMode ? (process.env.DEMO_PASSWORD || '123456') : null,
-            salesUrl: process.env.SALES_URL || 'https://fxguard.io',
+            salesUrl: process.env.SALES_URL || 'https://kaya.fxguard.io',
             fxguardPublicSite,
             androidAppUpdate
         });

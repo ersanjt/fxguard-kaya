@@ -43,4 +43,4 @@
 
 ## فایل‌های اضافی (اختیاری)
 
-- **dashboard.html** – اگر پنل CRM روی cPanel اجرا نمی‌شود، می‌توانید حذفش کنید یا لینک آن را به `contact` یا `app.fxguard.io` هدایت کنید.
+- **dashboard.html** – اگر پنل CRM روی cPanel اجرا نمی‌شود، می‌توانید حذفش کنید یا لینک آن را به `contact` یا `kaya.fxguard.io` هدایت کنید.

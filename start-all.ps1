@@ -68,7 +68,7 @@ Write-Host "شروع Gateway روی پورت 3001..." -ForegroundColor Green
 Write-Host ""
 Write-Host "  داشبورد: " -NoNewline
 Write-Host "http://localhost:3002/" -ForegroundColor Cyan
-Write-Host "  ورود پیش‌فرض: admin@company.com / Admin@123" -ForegroundColor Gray
+Write-Host "  ورود پیش‌فرض: admin@kaya.fxguard.io / Admin@123" -ForegroundColor Gray
 Write-Host ""
 Write-Host "  پس از ورود، به بخش «اتصال واتساپ» بروید و QR را اسکن کنید." -ForegroundColor Gray
 Write-Host "  Stop: Ctrl+C" -ForegroundColor Gray

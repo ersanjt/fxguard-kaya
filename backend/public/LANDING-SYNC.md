@@ -8,8 +8,8 @@
 
 | محیط | مسیر | فایل‌ها |
 |------|------|---------|
-| **cPanel** (fxguard.io) | `public_html/` | آپلود از `cpanel-landing/` |
-| **Node.js** (app.fxguard.io) | `backend/public/` | همگام با cpanel-landing |
+| **cPanel** (kaya.fxguard.io) | `public_html/` | آپلود از `cpanel-landing/` |
+| **Node.js** (kaya.fxguard.io) | `backend/public/` | همگام با cpanel-landing |
 
 ## تفاوت‌های backend
 

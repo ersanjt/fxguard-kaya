@@ -308,7 +308,7 @@ show_final_info() {
     
     print_success "اطلاعات ورود پیش‌فرض:"
     echo ""
-    echo "  ایمیل:     admin@company.com"
+    echo "  ایمیل:     admin@kaya.fxguard.io"
     echo "  رمز عبور:  Admin@123"
     echo ""
     

@@ -6,8 +6,7 @@
 # php -- END cPanel-generated handler, do not edit
 
 # ========== Domain Structure ==========
-# fxguard.io (root) = Landing pages (index, contact)
-# app.fxguard.io = CRM Panel (subdomain)
+# kaya.fxguard.io = Landing + CRM panel
 
 # ========== URL Rewrites & Redirects ==========
 RewriteEngine On
@@ -16,9 +15,9 @@ RewriteBase /
 # /contact -> contact.html (SEO-friendly URL, preserves ?lang= etc)
 RewriteRule ^contact$ contact.html [L,QSA]
 
-# Optional: redirect /dashboard to app subdomain (uncomment if CRM runs on app.fxguard.io)
+# Optional: redirect /dashboard to panel subdomain (uncomment if needed)
 # RewriteCond %{REQUEST_URI} ^/dashboard
-# RewriteRule ^dashboard(.*)$ https://app.fxguard.io$1 [R=302,L]
+# RewriteRule ^dashboard(.*)$ https://kaya.fxguard.io$1 [R=302,L]
 
 # ========== Force HTTPS (recommended for SEO & security) ==========
 # SSL active - redirect HTTP to HTTPS

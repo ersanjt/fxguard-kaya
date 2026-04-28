@@ -88,7 +88,7 @@ npm start
 
 2. اطلاعات ورود پیش‌فرض:
    ```
-   ایمیل: admin@company.com
+   ایمیل: admin@kaya.fxguard.io
    رمز عبور: Admin@123
    ```
 
@@ -118,7 +118,7 @@ npm start
 
 📝 مثال:
 نام: علی احمدی
-ایمیل: ali@company.com
+ایمیل: ali@kaya.fxguard.io
 رمز عبور: Ali@123
 نقش: Agent
 دپارتمان: پشتیبانی
@@ -231,7 +231,7 @@ npm run reset-admin-password
 
 # یا در دیتابیس:
 psql -U crm_user whatsapp_crm
-UPDATE "Users" SET password = '$2b$10$...' WHERE email = 'admin@company.com';
+UPDATE "Users" SET password = '$2b$10$...' WHERE email = 'admin@kaya.fxguard.io';
 ```
 
 ---
@@ -266,7 +266,7 @@ sudo nano /etc/nginx/sites-available/whatsapp-crm
 # محتوا:
 server {
     listen 80;
-    server_name crm.yourcompany.com;
+    server_name kaya.fxguard.io;
 
     location / {
         proxy_pass http://localhost:3000;
@@ -289,7 +289,7 @@ sudo systemctl restart nginx
 
 # 4. نصب SSL (رایگان)
 sudo apt install certbot python3-certbot-nginx
-sudo certbot --nginx -d crm.yourcompany.com
+sudo certbot --nginx -d kaya.fxguard.io
 ```
 
 ---
@@ -361,7 +361,7 @@ crontab -e
 ---
 
 **سوال یا مشکل؟**  
-📧 support@company.com  
+📧 support@kaya.fxguard.io
 💬 @company_support
 
 **آیا این پروژه به شما کمک کرد؟**  

@@ -11,7 +11,7 @@ module.exports = (sequelize) => {
             type: DataTypes.STRING(255),
             allowNull: false,
             unique: true,
-            comment: 'آدرس ایمیل شرکتی (مثلاً support@company.com)'
+            comment: 'آدرس ایمیل شرکتی (مثلاً support@kaya.fxguard.io)'
         },
         label: {
             type: DataTypes.STRING(255),

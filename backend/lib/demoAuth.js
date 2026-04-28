@@ -21,7 +21,7 @@ function getRequestHost(req) {
 }
 
 function getPublicAppHost() {
-    return (process.env.PUBLIC_APP_HOST || 'app.fxguard.io').toString().trim().toLowerCase();
+    return (process.env.PUBLIC_APP_HOST || 'kaya.fxguard.io').toString().trim().toLowerCase();
 }
 
 function isPublicAppRequest(req) {
@@ -37,7 +37,7 @@ function getDemoUserPayload() {
         name: 'Demo User',
         firstName: 'Demo',
         lastName: 'User',
-        email: (process.env.DEMO_EMAIL || 'demo@fxguard.io').toString().trim().toLowerCase(),
+        email: (process.env.DEMO_EMAIL || 'demo@kaya.fxguard.io').toString().trim().toLowerCase(),
         role: 'admin',
         departmentId: null,
         branchId: null,

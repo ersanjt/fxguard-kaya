@@ -63,7 +63,7 @@
 1. **Backend:** `cd backend` و `node server.js`
 2. **Gateway:** `cd gateway` و `node src/index.js` و اسکن QR با واتساپ
 3. **داشبورد:** در مرورگر باز کنید: **http://localhost:3002/dashboard.html**
-4. ورود با `admin@company.com` / `Admin@123`
+4. ورود با `admin@kaya.fxguard.io` / `Admin@123`
 5. از تب مکالمات، یک مکالمه را باز کنید و پیام بفرستید.
 
 بدون نیاز به RabbitMQ، Redis یا PostgreSQL (با USE_SQLITE=true) سیستم قابل استفاده است.
