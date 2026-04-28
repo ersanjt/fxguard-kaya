@@ -202,7 +202,7 @@ router.put('/', authMiddleware, async (req, res, next) => {
                 s.startsWith('/') &&
                 !s.startsWith('//') &&
                 !s.includes('..') &&
-                /^\/[A-Za-z0-9._~!$&'()*+,;=:@\/%-]+$/.test(s);
+                /^\/[A-Za-z0-9._~!$&'()*+,;=:@/%-]+$/.test(s);
             return (
                 /^https?:\/\//i.test(s) ||
                 s.startsWith('//') ||
