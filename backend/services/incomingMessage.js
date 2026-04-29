@@ -78,7 +78,7 @@ async function resolveIncomingMedia(media, logger) {
             timeout: 30000,
             maxContentLength: 20 * 1024 * 1024,
             maxRedirects: 5,
-            headers: { 'User-Agent': 'KayaCRM-Backend/1.0', 'Accept': 'image/*,video/*,audio/*,*/*' }
+            headers: { 'User-Agent': 'fxguard-kaya-backend/1.0', 'Accept': 'image/*,video/*,audio/*,*/*' }
         });
         if (!res.data || (res.status !== 200 && res.status !== 206)) throw new Error('Bad response ' + res.status);
         const buf = Buffer.from(res.data);

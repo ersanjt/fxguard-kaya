@@ -1,4 +1,4 @@
-# راه‌اندازی لوکال kayaCRM
+# راه‌اندازی لوکال fxguard-kaya
 # اجرا: .\start-local.ps1
 
 $env:Path = "C:\Program Files\nodejs;" + $env:Path

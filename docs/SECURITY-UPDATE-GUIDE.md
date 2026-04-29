@@ -22,7 +22,7 @@ ssh fxguard@92.205.58.83
 ### ۱.۲ بررسی `.env` فعلی
 
 ```bash
-cat /var/www/kayaCRM/backend/.env
+cat /var/www/fxguard-kaya/backend/.env
 ```
 
 ### ۱.۳ تولید کلیدهای تصادفی
@@ -37,7 +37,7 @@ echo "ENCRYPT_SECRET: $(openssl rand -hex 32)"
 ### ۱.۴ ویرایش `.env` بکند
 
 ```bash
-nano /var/www/kayaCRM/backend/.env
+nano /var/www/fxguard-kaya/backend/.env
 ```
 
 متغیرهای زیر را اضافه یا آپدیت کن:
@@ -65,7 +65,7 @@ WEBHOOK_SECRET=<مقدار تولیدشده>
 ### ۱.۵ آپدیت `.env` گیت‌وی
 
 ```bash
-nano /var/www/kayaCRM/gateway/.env
+nano /var/www/fxguard-kaya/gateway/.env
 ```
 
 اضافه کن:
@@ -80,7 +80,7 @@ WEBHOOK_SECRET=<همان مقدار>
 ## مرحله ۲ — تست دستی روی سرور (اختیاری ولی توصیه می‌شود)
 
 ```bash
-cd /var/www/kayaCRM
+cd /var/www/fxguard-kaya
 
 # بررسی syntax فایل‌های تغییر کرده
 node --check backend/server.js
@@ -151,7 +151,7 @@ curl http://localhost:3002/api/ping
 
 ```bash
 ssh fxguard@92.205.58.83
-cd /var/www/kayaCRM
+cd /var/www/fxguard-kaya
 
 # برگشت به commit قبلی
 git log --oneline -5

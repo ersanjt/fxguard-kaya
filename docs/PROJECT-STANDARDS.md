@@ -1,4 +1,4 @@
-# استانداردها و ساختار پروژه (Kaya CRM)
+# استانداردها و ساختار پروژه (fxguard-kaya)
 
 این سند **قرارداد مهندسی** مخزن را مشخص می‌کند تا چیدمان، ابزارها و سبک کد با الگوهای رایج صنعتی (Open Source / Enterprise) هم‌راستا باشد.
 
@@ -7,7 +7,7 @@
 ## ساختار مخزن (واقعی — به‌روز)
 
 ```
-kayaCRM/
+fxguard-kaya/
 ├── backend/              # API (Express + Sequelize)، داشبورد کلاسیک (public/)، خروجی Vite در public/js/app/
 ├── frontend/             # داشبورد مدرن (Vite + ES modules) — `npm run build` → backend/public/js/app/
 ├── gateway/              # سرویس واتساپ (whatsapp-web.js، Redis، صف)

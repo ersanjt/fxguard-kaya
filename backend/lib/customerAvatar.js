@@ -80,7 +80,7 @@ async function downloadAvatarToUploads(customerId, sourceUrl) {
             validateStatus: (s) => s === 200,
             headers: {
                 Accept: 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-                'User-Agent': 'Mozilla/5.0 (compatible; KayaCRM/1.0; +https://github.com/ersanjt/kayaCRM)',
+                'User-Agent': 'Mozilla/5.0 (compatible; fxguard-kaya/1.0; +https://github.com/ersanjt/fxguard-kaya)',
             },
         });
         const ct = (res.headers['content-type'] || '').split(';')[0].trim().toLowerCase();

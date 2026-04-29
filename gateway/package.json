@@ -1,7 +1,7 @@
 {
-  "name": "kaya-crm-gateway",
+  "name": "fxguard-kaya-gateway",
   "version": "1.0.0",
-  "description": "Kaya CRM — WhatsApp gateway service",
+  "description": "fxguard-kaya — WhatsApp gateway service",
   "main": "src/index.js",
   "scripts": {
     "start": "node src/index.js",

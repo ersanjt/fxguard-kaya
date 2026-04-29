@@ -20,8 +20,8 @@ apt install -y git nginx
 
 echo "==> Done. Next steps:"
 echo "  cd /var/www"
-echo "  git clone https://github.com/ersanjt/kayaCRM.git"
-echo "  cd kayaCRM/backend"
+echo "  git clone https://github.com/ersanjt/fxguard-kaya.git"
+echo "  cd fxguard-kaya/backend"
 echo "  npm install --production"
 echo "  cp .env.example .env   # then edit .env"
 echo "  node seed-admin.js"

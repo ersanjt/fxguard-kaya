@@ -44,8 +44,8 @@ apt install -y git
 
 ```bash
 cd /var/www   # یا هر مسیر دلخواه
-git clone https://github.com/ersanjt/kayaCRM.git
-cd kayaCRM/backend
+git clone https://github.com/ersanjt/fxguard-kaya.git
+cd fxguard-kaya/backend
 ```
 
 ### مرحله ۴: نصب وابستگی‌ها و تنظیم محیط
@@ -81,7 +81,7 @@ GATEWAY_URL=http://127.0.0.1:3001
 
 > **⚠️ اگر سرور با خطای `ENCRYPT_SECRET باید در .env تنظیم شود` متوقف شد:**
 > ```bash
-> cd /var/www/kayaCRM/backend
+> cd /var/www/fxguard-kaya/backend
 > echo "ENCRYPT_SECRET=$(openssl rand -hex 32)" >> .env
 > pm2 restart ecosystem.config.js --update-env
 > ```
@@ -163,7 +163,7 @@ certbot --nginx -d yourdomain.com
 **دستی** روی سرور:
 
 ```bash
-cd /var/www/kayaCRM
+cd /var/www/fxguard-kaya
 bash scripts/deploy.sh
 ```
 
@@ -184,8 +184,8 @@ curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
 apt install -y nodejs git nginx
 npm install -g pm2
 mkdir -p /var/www && cd /var/www
-git clone https://github.com/ersanjt/kayaCRM.git
-cd kayaCRM/backend
+git clone https://github.com/ersanjt/fxguard-kaya.git
+cd fxguard-kaya/backend
 npm install --production
 # بعد .env را بسازید و مقداردهی کنید
 node seed-admin.js
@@ -231,7 +231,7 @@ ssh fxguard@92.205.58.83
 
 ```bash
 set -e
-cd /var/www/kayaCRM
+cd /var/www/fxguard-kaya
 git fetch origin
 git reset --hard origin/master
 cd backend

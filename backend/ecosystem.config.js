@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: "kayaCRM",
+      name: "fxguard-kaya",
       script: "server.js",
       exec_mode: "fork",
       instances: 1,

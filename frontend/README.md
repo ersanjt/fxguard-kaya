@@ -1,4 +1,4 @@
-# `@kaya-crm/dashboard` — فرانت مدرن (Vite)
+# `@fxguard-kaya/dashboard` — فرانت مدرن (Vite)
 
 ## ساختار
 

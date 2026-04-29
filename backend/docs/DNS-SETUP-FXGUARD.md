@@ -105,7 +105,7 @@ location / {
 
 ### عیب‌یابی خطای 502 Bad Gateway
 
-1. بررسی اجرای بک‌اند: `pm2 status` و `pm2 logs kayaCRM`
+1. بررسی اجرای بک‌اند: `pm2 status` و `pm2 logs fxguard-kaya`
 2. بررسی پورت: `curl http://127.0.0.1:3002/health`
 3. لاگ Apache: `tail -f /var/log/apache2/error.log`
 4. اگر Cloudflare 502 می‌دهد: موقتاً Proxy را خاموش کنید (DNS only) و تست کنید

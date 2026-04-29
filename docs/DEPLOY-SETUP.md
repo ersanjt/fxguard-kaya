@@ -14,7 +14,7 @@
    | `SSH_PRIVATE_KEY` | کلید خصوصی SSH برای اتصال به سرور | محتوای فایل `~/.ssh/id_rsa` |
    | `DEPLOY_HOST` | IP یا دامنه سرور | `92.205.58.83` |
    | `DEPLOY_USER` | نام کاربر SSH | `fxguard` یا `root` |
-   | `DEPLOY_PATH` | مسیر پروژه روی سرور | `/var/www/kayaCRM` |
+   | `DEPLOY_PATH` | مسیر پروژه روی سرور | `/var/www/fxguard-kaya` |
 
 2. **روی سرور:**  
    پروژه باید قبلاً کلون شده و با PM2 اجرا شده باشد (طبق `docs/DEPLOY-SERVER.md`).
@@ -25,8 +25,8 @@
 
 ```bash
 cd /var/www
-git clone https://github.com/YOUR_USER/kayaCRM.git
-cd kayaCRM
+git clone https://github.com/YOUR_USER/fxguard-kaya.git
+cd fxguard-kaya
 
 # Backend
 cd backend

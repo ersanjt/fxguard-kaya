@@ -1,4 +1,4 @@
-# طرح بازساخت و حرفه‌ای‌سازی kayaCRM
+# طرح بازساخت و حرفه‌ای‌سازی fxguard-kaya
 
 **تاریخ:** مارس ۲۰۲۶  
 **نسخه:** ۱.۰
@@ -10,7 +10,7 @@
 ### ۱.۱ ساختار کلی پروژه
 
 ```
-kayaCRM/
+fxguard-kaya/
 ├── backend/           # سرور Node.js + Express (پورت ۳۰۰۲)
 ├── gateway/           # سرویس WhatsApp Web.js (پورت ۳۰۰۱)
 ├── android-app/       # اپ موبایل اندروید (Kotlin)
