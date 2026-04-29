@@ -16,7 +16,6 @@ const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
-const { isDemoModeEnabled, isDemoCredentialMatch, getDemoUserPayload, isPublicAppRequest } = require('../lib/demoAuth');
 
 const JWT_OPTIONS = { expiresIn: process.env.JWT_EXPIRES_IN || '7d' };
 const TOTP_TEMP_EXPIRY = '5m';
@@ -93,38 +92,6 @@ router.post('/login', async (req, res, _next) => {
         const password = req.body.password;
         if (!identifier || !password) {
             return sendJson(400, { error: 'ایمیل/نام کاربری و رمز عبور الزامی است' });
-        }
-        if (isPublicAppRequest(req)) {
-            if (!isDemoModeEnabled()) {
-                return sendJson(503, {
-                    error: 'دامنهٔ دمو موقتاً غیرفعال است. برای ورود به پنل سازمان از آدرس اختصاصی خود استفاده کنید.'
-                });
-            }
-            if (!isDemoCredentialMatch(identifier, password)) {
-                return sendJson(403, {
-                    error: 'این دامنه فقط برای پیش‌نمایش دمو است؛ ورود با حساب واقعی تنها از آدرس اختصاصی پنل سازمان (مثل پنل کایا) امکان‌پذیر است.'
-                });
-            }
-            const demoUser = getDemoUserPayload();
-            const token = jwt.sign(
-                {
-                    id: demoUser.id,
-                    email: demoUser.email,
-                    isDemo: true
-                },
-                process.env.JWT_SECRET,
-                JWT_OPTIONS
-            );
-            setAuthCookie(res, token);
-            return sendJson(200, {
-                token,
-                user: {
-                    ...demoUser,
-                    canDeleteCustomer: false,
-                    canDeleteUser: false,
-                    canManageTickets: false
-                }
-            });
         }
         if (identifier.length > 255) return sendJson(400, { error: 'ایمیل یا نام کاربری نامعتبر است' });
         let user = null;
@@ -425,17 +392,6 @@ const { authMiddleware } = require('../middleware/auth');
 
 router.get('/me', authMiddleware, async (req, res, next) => {
     try {
-        if (req.user && req.user.isDemo) {
-            const u = {
-                ...getDemoUserPayload(),
-                branch: null,
-                department: null,
-                canDeleteCustomer: false,
-                canDeleteUser: false,
-                canManageTickets: false
-            };
-            return res.json(u);
-        }
         const user = await User.findByPk(req.user.id, {
             attributes: { exclude: ['password'] },
             include: [
@@ -501,10 +457,6 @@ router.post('/totp/disable', authMiddleware, async (req, res, next) => {
 
 router.post('/logout', authMiddleware, async (req, res, next) => {
     try {
-        if (req.user && req.user.isDemo) {
-            clearAuthCookie(res);
-            return res.json({ ok: true, message: 'خروج انجام شد' });
-        }
         clearAuthCookie(res);
         const user = req.user;
         await user.update({ status: 'offline' });

@@ -12,7 +12,6 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const compression = require('compression');
 const crypto = require('crypto');
-const jwt = require('jsonwebtoken');
 
 const { allowedOrigins } = require('../config/cors');
 const { createRedisClient } = require('../services/redis');
@@ -22,8 +21,6 @@ const socketAuth = require('../middleware/socketAuth');
 const errorHandler = require('../middleware/errorHandler');
 const { assertWebhookSecretBeforeBody } = require('../middleware/webhookAuth');
 const { onApiResponseFinished, deliverIncidentTelegram } = require('../services/incidentTelegramPolicy');
-const { isDemoModeEnabled } = require('../lib/demoAuth');
-const { publicDemoSiteApiGuard } = require('../middleware/publicDemoSiteGuard');
 
 function normalizedRequestPath(req) {
     try {
@@ -183,32 +180,6 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
         }
         return limiter(req, res, next);
     });
-
-    app.use('/api', (req, res, next) => {
-        if (!isDemoModeEnabled()) return next();
-        const method = (req.method || 'GET').toUpperCase();
-        if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return next();
-        if (req.path && (req.path.endsWith('/auth/login') || req.path.endsWith('/auth/logout'))) return next();
-        try {
-            let token = null;
-            const authHeader = req.headers.authorization;
-            if (authHeader && authHeader.startsWith('Bearer ')) {
-                token = authHeader.split(' ')[1];
-            } else if (req.cookies && req.cookies.crm_token) {
-                token = req.cookies.crm_token;
-            }
-            if (!token) return next();
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
-            if (decoded && decoded.isDemo) {
-                return res.status(403).json({
-                    error: 'حساب دمو فقط نمایشی است و امکان تغییر داده‌ها را ندارد'
-                });
-            }
-        } catch (_) {}
-        return next();
-    });
-
-    app.use('/api', publicDemoSiteApiGuard);
 
     app.set('io', io);
     app.set('redisClient', redisClient);

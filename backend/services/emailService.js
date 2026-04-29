@@ -628,7 +628,7 @@ async function sendContactForm({ purpose, name, email, phone, message, emailConf
         return { ok: false, error: 'Invalid recipient email' };
     }
 
-    const purposeLabels = { demo: 'Demo Request', purchase: 'Purchase', quote: 'Custom Quote', support: 'Support', other: 'Other' };
+    const purposeLabels = { purchase: 'Purchase', quote: 'Custom Quote', support: 'Support', other: 'Other' };
     const subject = 'WhatsApp CRM - ' + (purposeLabels[purpose] || purpose || 'New Contact');
     const text = [
         `Purpose: ${purposeLabels[purpose] || purpose}`,

@@ -1,0 +1,10 @@
+/**
+ * استایل‌های عمومی داشبورد Vite — متغیرها، پایه، و چیدمان کلی.
+ * استایل هر صفحه در styles/pages/ و هر بخش پوسته در styles/sections/.
+ */
+@import './sections/tokens.css';
+@import './sections/base.css';
+@import './sections/layout-shell.css';
+@import './sections/navigation.css';
+@import './sections/sidebar.css';
+@import './sections/content-area.css';

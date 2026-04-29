@@ -15,8 +15,6 @@ const { createGatewayRouter } = require('./gateway');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { getPanelSettings } = require('../services/panelSettingsLoader');
-const { isDemoModeEnabled, getDemoUsername, isPublicAppRequest } = require('../lib/demoAuth');
-const { publicDemoReadStub } = require('../middleware/publicDemoReadStub');
 
 const authRoutes = require('./auth');
 const userRoutes = require('./users');
@@ -142,18 +140,10 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         const supportUrl = process.env.SUPPORT_URL || null;
         const supportEmail = process.env.SUPPORT_EMAIL || null;
         const supportLink = supportUrl || (supportEmail ? 'mailto:' + supportEmail : null);
-        const isPublicApp = isPublicAppRequest(req);
-        const demoMode = isDemoModeEnabled() && isPublicApp;
-        const fxguardPublicSite = isPublicApp;
         const androidAppUpdate = parseAndroidAppUpdate(req);
         res.json({
             timezone: process.env.APP_TIMEZONE || 'Europe/Istanbul',
             supportUrl: supportLink,
-            demoMode,
-            demoUsername: demoMode ? getDemoUsername() : null,
-            demoPassword: demoMode ? (process.env.DEMO_PASSWORD || '123456') : null,
-            salesUrl: process.env.SALES_URL || '/contact',
-            fxguardPublicSite,
             androidAppUpdate
         });
     });
@@ -161,9 +151,6 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     // گزارش خطاهای فرانت‌اند (landing/dashboard)
     apiRouter.post('/client-errors', async (req, res) => {
         try {
-            if (isDemoModeEnabled() && isPublicAppRequest(req)) {
-                return res.json({ ok: true, ignored: true });
-            }
             const body = req.body || {};
             const message = (body.message || '').toString().trim();
             if (!message) return res.status(400).json({ error: 'message is required' });
@@ -196,30 +183,30 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.use('/', gatewayRouter);
 
     apiRouter.use('/auth', authRoutes);
-    apiRouter.use('/users', authMiddleware, publicDemoReadStub, userRoutes);
-    apiRouter.use('/conversations', authMiddleware, publicDemoReadStub, conversationRoutes);
-    apiRouter.use('/departments', authMiddleware, publicDemoReadStub, departmentRoutes);
-    apiRouter.use('/analytics', authMiddleware, publicDemoReadStub, analyticsRoutes);
-    apiRouter.use('/customers', authMiddleware, publicDemoReadStub, customerRoutes);
-    apiRouter.use('/tags', authMiddleware, publicDemoReadStub, tagsRoutes);
-    apiRouter.use('/message-templates', authMiddleware, publicDemoReadStub, templatesRoutes);
-    apiRouter.use('/file-templates', authMiddleware, publicDemoReadStub, fileTemplatesRoutes);
-    apiRouter.use('/bulk', authMiddleware, publicDemoReadStub, bulkRoutes);
-    apiRouter.use('/customers/import', authMiddleware, publicDemoReadStub, customersImportRoutes);
-    apiRouter.use('/tickets', authMiddleware, requireSection('tickets'), publicDemoReadStub, createTicketsRouter(io));
-    apiRouter.use('/branches', authMiddleware, publicDemoReadStub, branchRoutes);
-    apiRouter.use('/supervision', authMiddleware, publicDemoReadStub, supervisionRoutes);
-    apiRouter.use('/tasks', authMiddleware, requireSection('tasks'), publicDemoReadStub, taskRoutes);
-    apiRouter.use('/processes', authMiddleware, publicDemoReadStub, processRoutes);
-    apiRouter.use('/upload', authMiddleware, publicDemoReadStub, uploadRoutes);
-    apiRouter.use('/rates', authMiddleware, publicDemoReadStub, ratesRoutes);
-    apiRouter.use('/services', authMiddleware, publicDemoReadStub, servicesRoutes);
-    apiRouter.use('/exchange', authMiddleware, publicDemoReadStub, exchangeRoutes);
-    apiRouter.use('/whatsapp', authMiddleware, publicDemoReadStub, whatsappRoutes);
-    apiRouter.use('/announcements', authMiddleware, requireSection('announcements'), publicDemoReadStub, announcementsRoutes);
-    apiRouter.use('/internal', authMiddleware, requireSection('internal_chat'), publicDemoReadStub, createInternalRouter(io));
+    apiRouter.use('/users', authMiddleware, userRoutes);
+    apiRouter.use('/conversations', authMiddleware, conversationRoutes);
+    apiRouter.use('/departments', authMiddleware, departmentRoutes);
+    apiRouter.use('/analytics', authMiddleware, analyticsRoutes);
+    apiRouter.use('/customers', authMiddleware, customerRoutes);
+    apiRouter.use('/tags', authMiddleware, tagsRoutes);
+    apiRouter.use('/message-templates', authMiddleware, templatesRoutes);
+    apiRouter.use('/file-templates', authMiddleware, fileTemplatesRoutes);
+    apiRouter.use('/bulk', authMiddleware, bulkRoutes);
+    apiRouter.use('/customers/import', authMiddleware, customersImportRoutes);
+    apiRouter.use('/tickets', authMiddleware, requireSection('tickets'), createTicketsRouter(io));
+    apiRouter.use('/branches', authMiddleware, branchRoutes);
+    apiRouter.use('/supervision', authMiddleware, supervisionRoutes);
+    apiRouter.use('/tasks', authMiddleware, requireSection('tasks'), taskRoutes);
+    apiRouter.use('/processes', authMiddleware, processRoutes);
+    apiRouter.use('/upload', authMiddleware, uploadRoutes);
+    apiRouter.use('/rates', authMiddleware, ratesRoutes);
+    apiRouter.use('/services', authMiddleware, servicesRoutes);
+    apiRouter.use('/exchange', authMiddleware, exchangeRoutes);
+    apiRouter.use('/whatsapp', authMiddleware, whatsappRoutes);
+    apiRouter.use('/announcements', authMiddleware, requireSection('announcements'), announcementsRoutes);
+    apiRouter.use('/internal', authMiddleware, requireSection('internal_chat'), createInternalRouter(io));
     apiRouter.use('/panel-settings', panelSettingsRoutes);
-    apiRouter.use('/company-emails', authMiddleware, publicDemoReadStub, companyEmailsRoutes);
+    apiRouter.use('/company-emails', authMiddleware, companyEmailsRoutes);
 
     // بدنه با express.json در server.js (WEBHOOK_BODY_LIMIT، پیش‌فرض 25mb) پارس شده
     apiRouter.post('/webhook/incoming-message', webhookAuth, (req, res) => {
