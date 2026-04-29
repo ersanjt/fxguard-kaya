@@ -1,0 +1,12 @@
+/**
+ * چیدمان پوستهٔ اپ (ناوبری، نوار کناری، محتوا) — هنگام مهاجرت UI گسترش یابد.
+ */
+.kaya-shell {
+    min-height: 100vh;
+}
+
+.kaya-shell-main {
+    max-width: 42rem;
+    margin: 2rem auto;
+    padding: var(--kaya-space);
+}

@@ -42,7 +42,7 @@ function createContactRouter(logger) {
             return res.status(400).json({ error: 'پیام بیش از حد مجاز است.' });
         }
 
-        const purposeVal = ['demo', 'purchase', 'quote', 'support', 'other'].includes(purpose)
+        const purposeVal = ['purchase', 'quote', 'support', 'other'].includes(purpose)
             ? purpose
             : 'other';
 

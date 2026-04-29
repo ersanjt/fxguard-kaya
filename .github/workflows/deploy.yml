@@ -204,6 +204,8 @@ jobs:
             check_env "MAIN_ADMIN_EMAIL"
             check_env "MAIN_ADMIN_PASSWORD"
             check_env "WEBHOOK_SECRET"
+            check_env "FRONTEND_URL"
+            check_env "CORS_ORIGINS"
 
             # بررسی طول JWT_SECRET (حداقل ۳۲ کاراکتر)
             JWT_LEN=$(grep "^JWT_SECRET=" "$ENV_FILE" | cut -d= -f2- | wc -c)
@@ -228,6 +230,33 @@ jobs:
               exit 1
             fi
             echo "  ✅ ENCRYPT_SECRET طول کافی دارد و با JWT_SECRET متفاوت است"
+
+            # ---- قفل دامنه/برند: فقط kaya.fxguard.io ----
+            FRONTEND_URL_VAL=$(grep "^FRONTEND_URL=" "$ENV_FILE" | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
+            CORS_VAL=$(grep "^CORS_ORIGINS=" "$ENV_FILE" | cut -d= -f2- | tr -d '"' | tr -d "'")
+            if [ "$FRONTEND_URL_VAL" != "https://kaya.fxguard.io" ]; then
+              echo "❌ خطا: FRONTEND_URL باید دقیقاً https://kaya.fxguard.io باشد"
+              echo "   مقدار فعلی: $FRONTEND_URL_VAL"
+              exit 1
+            fi
+            if ! printf '%s' "$CORS_VAL" | grep -Eq '(^|,)\s*https://kaya\.fxguard\.io\s*(,|$)'; then
+              echo "❌ خطا: CORS_ORIGINS باید شامل https://kaya.fxguard.io باشد"
+              echo "   مقدار فعلی: $CORS_VAL"
+              exit 1
+            fi
+            echo "  ✅ دامنهٔ اصلی kaya.fxguard.io در .env تایید شد"
+
+            # جلوگیری از تنظیمات دمو/دامنهٔ خارجی در پروژهٔ تک‌برند کایا
+            if grep -Eq '^(DEMO_MODE|DEMO_USERNAME|DEMO_PASSWORD|DEMO_EMAIL|PUBLIC_APP_HOST)=' "$ENV_FILE"; then
+              echo "❌ خطا: تنظیمات دمو در backend/.env مجاز نیست (پروژه فقط برند کایا است)"
+              grep -E '^(DEMO_MODE|DEMO_USERNAME|DEMO_PASSWORD|DEMO_EMAIL|PUBLIC_APP_HOST)=' "$ENV_FILE" || true
+              exit 1
+            fi
+            if grep -Eq 'app\.fxguard\.io|app\.fxgaurd\.io' "$ENV_FILE"; then
+              echo "❌ خطا: دامنه app.fxguard.io/app.fxgaurd.io در backend/.env مجاز نیست"
+              exit 1
+            fi
+            echo "  ✅ هیچ تنظیم دمو/دامنهٔ غیرمجاز در .env وجود ندارد"
 
             # ---- بکاپ دیتابیس ----
             echo "💾 بکاپ دیتابیس ..."

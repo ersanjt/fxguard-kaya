@@ -58,12 +58,6 @@
             reset_fail:           'خطا در تغییر رمز عبور.',
             cant_signin:          'نمی‌توانید وارد شوید؟',
             contact_support:      'با پشتیبانی تماس بگیرید',
-            demo_title:           'نسخه دمو',
-            demo_credentials:     'نام کاربری: {username} | رمز عبور: {password}',
-            demo_buy:             'مشاهده پلن‌ها و خرید',
-            demo_brand_name:      'دمو کایا CRM',
-            demo_login_sub:       'ورود به محیط نمایشی — در دمو عمومی تغییرات ذخیره نمی‌شود',
-            demo_page_title:      'ورود | دمو کایا CRM',
             forgot_email_ph:      'email@example.com',
             reset_new_ph:         'حداقل ۸ کاراکتر، یک حرف و یک عدد',
             reset_confirm_ph:     'تکرار رمز',
@@ -120,12 +114,6 @@
             reset_fail:           'Failed to reset password.',
             cant_signin:          "Can't sign in?",
             contact_support:      'Contact support',
-            demo_title:           'Demo Access',
-            demo_credentials:     'Username: {username} | Password: {password}',
-            demo_buy:             'View plans and purchase',
-            demo_brand_name:      'Kaya CRM Demo',
-            demo_login_sub:       'Sign in to the read-only public demo',
-            demo_page_title:      'Sign in | Kaya CRM Demo',
             forgot_email_ph:      'you@example.com',
             reset_new_ph:         'At least 8 characters, one letter & one number',
             reset_confirm_ph:     'Confirm password',
@@ -182,12 +170,6 @@
             reset_fail:           'Şifre sıfırlama başarısız.',
             cant_signin:          'Giriş yapamıyor musunuz?',
             contact_support:      'Destekle iletişime geçin',
-            demo_title:           'Demo Erişimi',
-            demo_credentials:     'Kullanıcı adı: {username} | Şifre: {password}',
-            demo_buy:             'Planları incele ve satın al',
-            demo_brand_name:      'Kaya CRM Demo',
-            demo_login_sub:       'Salt okunur genel demo ortamına giriş',
-            demo_page_title:      'Giriş | Kaya CRM Demo',
             forgot_email_ph:      'ornek@email.com',
             reset_new_ph:         'En az 8 karakter, bir harf ve bir rakam',
             reset_confirm_ph:     'Şifre tekrar',
@@ -198,65 +180,14 @@
     var SUPPORTED = ['fa', 'en', 'tr'];
     var lang = localStorage.getItem('crm_lang') || 'fa';
     if (SUPPORTED.indexOf(lang) < 0) lang = 'fa';
-    (function syncAppHostLoginLangEarly() {
-        try {
-            if (/^app\.fxguard\.io$/i.test(window.location.hostname || '')) {
-                SUPPORTED = ['en', 'tr'];
-                if (lang === 'fa' || SUPPORTED.indexOf(lang) < 0) lang = 'en';
-                localStorage.setItem('crm_lang', lang);
-            }
-        } catch (e) {}
-    })();
-
-    function loginIsPublicRestricted() {
-        return !!(DEMO_INFO.publicSite || /^app\.fxguard\.io$/i.test(window.location.hostname || ''));
-    }
+    function loginIsPublicRestricted() { return false; }
 
     function t(k) {
         return (I18N[lang] && I18N[lang][k]) || (I18N['fa'] && I18N['fa'][k]) || k;
     }
-    var DEMO_INFO = { enabled: false, publicSite: false, username: 'demo', password: '123456', salesUrl: '/contact' };
-
-    /** Legacy API flag name `fxguardPublicSite`: restricted public demo host (e.g. app.fxguard.io). */
-    function detectPublicDemoSite(c) {
-        try {
-            if (c && c.fxguardPublicSite) return true;
-            return /^app\.fxguard\.io$/i.test(window.location.hostname || '');
-        } catch (e) {
-            return !!(c && c.fxguardPublicSite);
-        }
-    }
-
     function renderDemoBox() {
         var box = document.getElementById('lpDemoBox');
-        if (!box) return;
-        if (!DEMO_INFO.enabled) {
-            box.style.display = 'none';
-            return;
-        }
-        box.style.display = '';
-        var titleEl = box.querySelector('.lp-demo-title');
-        if (titleEl) titleEl.textContent = t('demo_title');
-        var textEl = document.getElementById('lpDemoText');
-        if (textEl) {
-            textEl.textContent = t('demo_credentials')
-                .replace('{username}', DEMO_INFO.username || 'demo')
-                .replace('{password}', DEMO_INFO.password || '123456');
-        }
-        var buyLink = document.getElementById('lpDemoBuyLink');
-        if (buyLink) {
-            buyLink.textContent = t('demo_buy');
-            var url = DEMO_INFO.salesUrl || '/contact';
-            buyLink.href = url;
-            try {
-                var abs = new URL(url, window.location.origin);
-                var same = abs.origin === window.location.origin;
-                buyLink.target = same ? '_self' : '_blank';
-                buyLink.rel = same ? 'noopener' : 'noopener noreferrer';
-            } catch (e) {
-                buyLink.target = '_self';
-            }
-        }
+        if (box) box.style.display = 'none';
     }
 
     /* ── Apply Language ───────────────────────────── */
@@ -301,9 +232,6 @@
             var v = t(el.getAttribute('data-i18n-ph'));
             if (v) el.placeholder = v;
         });
-        if (DEMO_INFO.enabled || DEMO_INFO.publicSite) {
-            document.title = t('demo_page_title');
-        }
         renderDemoBox();
     }
 
@@ -654,52 +582,18 @@
             })
             .catch(function() {});
     }
-    function applyDemoPortalBranding() {
-        var nameEl = document.getElementById('lpBrandName');
-        if (nameEl) nameEl.setAttribute('data-i18n', 'demo_brand_name');
-        var subEl = document.getElementById('lpBrandSub');
-        if (subEl) subEl.setAttribute('data-i18n', 'demo_login_sub');
-        var fav = document.getElementById('lpFavicon');
-        if (fav) fav.href = '/favicon-kaya.svg';
-        var lpApple = document.getElementById('lpAppleTouch');
-        if (lpApple) lpApple.href = '/favicon-kaya.svg';
-        var lpAppTitle = document.getElementById('lpAppTitle');
-        if (lpAppTitle) lpAppTitle.setAttribute('content', 'Kaya CRM');
-        applyLang(lang);
-    }
-
     function loadPublicConfigAndBranding() {
         fetch('/api/config')
             .then(function(r) { return r.json().catch(function() { return {}; }); })
             .then(function(c) {
                 c = c || {};
-                DEMO_INFO.enabled = !!c.demoMode;
-                DEMO_INFO.publicSite = detectPublicDemoSite(c);
-                DEMO_INFO.username = c.demoUsername || 'demo';
-                DEMO_INFO.password = c.demoPassword || '123456';
-                DEMO_INFO.salesUrl = (c.salesUrl && String(c.salesUrl).trim()) || '/contact';
                 var supportLink = document.getElementById('lpSupportLink');
                 if (supportLink && c.supportUrl) supportLink.href = c.supportUrl;
-                if (DEMO_INFO.publicSite) {
-                    SUPPORTED = ['en', 'tr'];
-                    if (lang === 'fa' || SUPPORTED.indexOf(lang) < 0) lang = 'en';
-                    localStorage.setItem('crm_lang', lang);
-                    applyDemoPortalBranding();
-                } else {
-                    loadBranding();
-                }
+                loadBranding();
                 renderDemoBox();
             })
             .catch(function() {
-                DEMO_INFO.publicSite = detectPublicDemoSite(null);
-                if (DEMO_INFO.publicSite) {
-                    SUPPORTED = ['en', 'tr'];
-                    if (lang === 'fa' || SUPPORTED.indexOf(lang) < 0) lang = 'en';
-                    localStorage.setItem('crm_lang', lang);
-                    applyDemoPortalBranding();
-                } else {
-                    loadBranding();
-                }
+                loadBranding();
                 renderDemoBox();
             });
     }
@@ -787,7 +681,7 @@
         /* Apply stored language */
         applyLang(lang);
 
-        /* Config + panel branding (public demo host uses demo_* i18n + Kaya favicon) */
+        /* Config + panel branding */
         loadPublicConfigAndBranding();
 
         /* Redirect if already logged in */

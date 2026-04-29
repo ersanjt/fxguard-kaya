@@ -1,0 +1,12 @@
+/**
+ * متغیرهای طراحی مشترک (رنگ، فاصله، شعاع).
+ */
+:root {
+    --kaya-font-sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+    --kaya-color-bg: #0f1419;
+    --kaya-color-surface: #1a2332;
+    --kaya-color-text: #e8eaed;
+    --kaya-color-muted: #9aa0a6;
+    --kaya-radius: 8px;
+    --kaya-space: 1rem;
+}

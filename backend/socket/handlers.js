@@ -228,25 +228,21 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     clearTimeout(statusDebounceTimers[socket.userId]);
                     delete statusDebounceTimers[socket.userId];
                 }
-                if (socket.isDemo) {
+                try {
+                    await User.update({ status: 'offline' }, { where: { id: socket.userId } });
+                    await logActivity({
+                        userId: socket.userId,
+                        branchId: socket.branchId || null,
+                        departmentId: socket.departmentId || null,
+                        action: 'user_logout',
+                        entityType: 'user',
+                        entityId: socket.userId,
+                        summary: 'خروج از پورتال (قطع اتصال)',
+                        metadata: {}
+                    });
                     io.emit('user_status', { userId: socket.userId, status: 'offline' });
-                } else {
-                    try {
-                        await User.update({ status: 'offline' }, { where: { id: socket.userId } });
-                        await logActivity({
-                            userId: socket.userId,
-                            branchId: socket.branchId || null,
-                            departmentId: socket.departmentId || null,
-                            action: 'user_logout',
-                            entityType: 'user',
-                            entityId: socket.userId,
-                            summary: 'خروج از پورتال (قطع اتصال)',
-                            metadata: {}
-                        });
-                        io.emit('user_status', { userId: socket.userId, status: 'offline' });
-                    } catch (e) {
-                        logger.warn('Disconnect status update:', e.message);
-                    }
+                } catch (e) {
+                    logger.warn('Disconnect status update:', e.message);
                 }
             }
         });

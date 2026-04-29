@@ -1,0 +1,29 @@
+/**
+ * پایهٔ تایپ و بدنه — جهت RTL برای پنل فارسی.
+ */
+html {
+    box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+    box-sizing: inherit;
+}
+
+body {
+    margin: 0;
+    font-family: var(--kaya-font-sans);
+    background: var(--kaya-color-bg);
+    color: var(--kaya-color-text);
+    line-height: 1.6;
+    direction: rtl;
+}
+
+code {
+    font-family: ui-monospace, monospace;
+    background: color-mix(in srgb, var(--kaya-color-surface) 80%, transparent);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.9em;
+}

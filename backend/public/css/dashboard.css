@@ -6746,34 +6746,3 @@
             }
         }
 
-.demo-banner {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 10px 16px 0;
-    padding: 10px 12px;
-    border-radius: 10px;
-    border: 1px solid rgba(245, 158, 11, 0.35);
-    background: rgba(245, 158, 11, 0.12);
-    color: #92400e;
-}
-.demo-banner-badge {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.04em;
-    padding: 3px 8px;
-    border-radius: 999px;
-    background: rgba(245, 158, 11, 0.25);
-}
-.demo-banner-text { font-size: 0.87rem; flex: 1; }
-.demo-banner-link {
-    color: #b45309;
-    text-decoration: none;
-    font-size: 0.84rem;
-    font-weight: 700;
-    white-space: nowrap;
-}
-.demo-banner-link:hover { text-decoration: underline; }
-@media (max-width: 900px) {
-    .demo-banner { margin: 8px 10px 0; flex-wrap: wrap; }
-}
