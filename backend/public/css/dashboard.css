@@ -807,7 +807,7 @@
         .internal-chat-page > h2 { flex-shrink: 0; }
         .internal-chat-box { flex: 1; min-height: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .content h2 { color: var(--text-primary); font-size: 1.2rem; font-weight: 600; margin: 0 0 20px; }
-        .page { display: none; max-width: 100%; min-width: 0; width: 100%; overflow-x: hidden; }
+        .page { display: none !important; max-width: 100%; min-width: 0; width: 100%; overflow-x: hidden; }
         .page.show { display: block; }
         /* جدول‌ها و لیست‌های گسترده: اسکرول افقی داخل باکس تا کل صفحه بدون زوم درست دیده شود */
         #ratesAdjustmentsTable, #supPerformanceContent, #supConvList, #supActList, #onlineStaffList, #loginsList { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; }

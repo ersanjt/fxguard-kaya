@@ -1721,7 +1721,11 @@
         /** مقداردهی بعد از تأیید /api/auth/me — ناو، تنظیمات، رویدادها، سوکت، نرخ، حضور، TOTP. قابل استخراج به ماژول auth. */
         async function runAfterAuthReady() {
             applyNavByRole();
-            await loadPanelSettingsAndApply();
+            try {
+                await loadPanelSettingsAndApply();
+            } catch (e) {
+                console.error('Panel settings:', e);
+            }
             applyHashRoute();
             loadGeneralAnnouncementsMarquee();
             removeAllInlineHandlers();
