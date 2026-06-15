@@ -96,7 +96,12 @@ async function startOutgoingCall(client, to, isVideo, logger, opts = {}) {
     try {
         const uiOk = await tryUiCallClickForChat(client, chatId, isVideo);
         if (uiOk) {
-            logger.info('Outgoing call started via WhatsApp Web UI', { chatId, isVideo, isGroup, hasIntro: !!introText });
+            logger.info('Outgoing call started via WhatsApp Web UI', {
+                chatId,
+                isVideo,
+                isGroup,
+                hasIntro: !!introText,
+            });
             return { ok: true, method: 'ui', isGroup, introSent: !!introText };
         }
     } catch (e) {
@@ -117,7 +122,9 @@ async function startOutgoingCall(client, to, isVideo, logger, opts = {}) {
         : isVideo
           ? 'برای پیوستن به تماس تصویری روی لینک زیر بزنید:'
           : 'برای پیوستن به تماس صوتی روی لینک زیر بزنید:';
-    const text = introText ? `${introText}\n\n${linkLead}\n${callLink}` : `${linkLead}\n${callLink}`;
+    const text = introText
+        ? `${introText}\n\n${linkLead}\n${callLink}`
+        : `${linkLead}\n${callLink}`;
     if (!introText) {
         await client.sendMessage(chatId, text);
     } else {
