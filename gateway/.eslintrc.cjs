@@ -12,4 +12,10 @@ module.exports = {
     'no-var': 'warn',
   },
   ignorePatterns: ['node_modules/', 'sessions/'],
+  overrides: [
+    {
+      files: ['src/waCalls.js'],
+      env: { node: true, browser: true },
+    },
+  ],
 };
