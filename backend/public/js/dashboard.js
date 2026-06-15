@@ -6115,6 +6115,14 @@
                     }
                     if (typeof toast === 'function') toast(startMsg, false);
                 }
+                if (data.introText && typeof toast === 'function') {
+                    var introToast = typeof t === 'function' ? t('wa_call_intro_sent') : '';
+                    if (!introToast || introToast === 'wa_call_intro_sent') {
+                        introToast = LANG === 'fa' ? 'معرفی تماس برای مشتری ارسال شد.' : 'Call introduction sent to customer.';
+                    }
+                    toast(introToast, false);
+                }
+                if (typeof loadMessages === 'function' && currentConvId) loadMessages(currentConvId);
             } catch (e) {
                 if (typeof toast === 'function') toast((typeof t === 'function' ? t('err_generic') : 'Error'), true);
             } finally {
@@ -9566,7 +9574,9 @@
             if (posEl) posEl.value = u.position || '';
             const waSenderEl = document.getElementById('userEditWhatsappSender');
             if (waSenderEl) waSenderEl.value = u.whatsappSenderName || '';
-            const editFields = ['userEditName','userEditUsername','userEditEmail','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition','userEditWhatsappSender'];
+            const waHonorificEl = document.getElementById('userEditWhatsappHonorific');
+            if (waHonorificEl) waHonorificEl.value = u.whatsappHonorific || '';
+            const editFields = ['userEditName','userEditUsername','userEditEmail','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition','userEditWhatsappSender','userEditWhatsappHonorific'];
             editFields.forEach(function(fid) { const el = document.getElementById(fid); if (el) el.disabled = isProtected; });
             let protectedBanner = document.getElementById('userEditProtectedBanner');
             if (!protectedBanner) {
@@ -9645,6 +9655,7 @@
             const skillsEl = document.getElementById('userEditSkillsKeywords');
             const posEl = document.getElementById('userEditPosition');
             const waSenderEl = document.getElementById('userEditWhatsappSender');
+            const waHonorificEl = document.getElementById('userEditWhatsappHonorific');
             const editEmail = document.getElementById('userEditEmail').value.trim();
             if (!editEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail)) { toast(LANG === 'fa' ? 'فرمت ایمیل نامعتبر است' : 'Invalid email format', true); return; }
             const payload = {
@@ -9654,6 +9665,7 @@
                 role: document.getElementById('userEditRole').value,
                 position: posEl ? posEl.value.trim() || null : undefined,
                 whatsappSenderName: waSenderEl ? waSenderEl.value.trim() || null : undefined,
+                whatsappHonorific: waHonorificEl ? waHonorificEl.value.trim() || null : undefined,
                 departmentId: document.getElementById('userEditDept').value || null,
                 branchId: document.getElementById('userEditBranch').value || null,
                 isActive: document.getElementById('userEditActive').checked,
@@ -10787,9 +10799,11 @@
                 if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
                 const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
                 const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+                const callMsg = document.getElementById('whatsappCallIntroMessage');
                 const autoAsgCb = document.getElementById('whatsappAutoAssignmentMessagesEnabled');
                 if (deptMsg) deptMsg.value = res.data.deptAssignedMessage || '';
                 if (empMsg) empMsg.value = res.data.employeeIntroMessage || '';
+                if (callMsg) callMsg.value = res.data.callIntroMessage || '';
                 if (autoAsgCb) autoAsgCb.checked = res.data.autoAssignmentMessagesEnabled !== false;
                 if (deptSel) {
                     const deptRes = await apiFetch('/api/departments');
@@ -10870,6 +10884,7 @@
         async function saveWhatsappAutoMessagesConfig() {
             const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
             const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+            const callMsg = document.getElementById('whatsappCallIntroMessage');
             const autoAsgCb = document.getElementById('whatsappAutoAssignmentMessagesEnabled');
             const btn = document.getElementById('btnSaveWhatsappAutoMessages');
             if (!deptMsg || !empMsg) return;
@@ -10880,6 +10895,7 @@
                     body: JSON.stringify({
                         deptAssignedMessage: deptMsg.value.trim(),
                         employeeIntroMessage: empMsg.value.trim(),
+                        callIntroMessage: callMsg ? callMsg.value.trim() : '',
                         autoAssignmentMessagesEnabled: autoAsgCb ? autoAsgCb.checked : true
                     })
                 });

@@ -54,6 +54,11 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'پیام معرفی کارمند — {{name}} و {{deptName}}. خالی = پیش‌فرض'
         },
+        callIntroMessage: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'پیام قبل از تماس — {{orgName}} {{deptName}} {{honorific}} {{name}}. خالی = پیش‌فرض'
+        },
         autoAssignmentMessagesEnabled: {
             type: DataTypes.BOOLEAN,
             defaultValue: true,

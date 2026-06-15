@@ -101,6 +101,11 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'نام نمایشی در پیام‌های واتساپ (توسط مدیر ثبت می‌شود)'
         },
+        whatsappHonorific: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment: 'آقای/خانم در تماس و پیام — male/female یا متن آزاد'
+        },
         settings: {
             type: DataTypes.JSON,
             defaultValue: {
