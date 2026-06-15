@@ -33,143 +33,12 @@ jobs:
             echo "### دربارهٔ وضعیت **Canceled**"
             echo "برای \`main\`، \`cancel-in-progress: true\` فعال است: اگر چند بار پشت‌سرهم push کنید، runهای قدیمی‌تر **عمداً لغو** می‌شوند تا فقط **آخرین کامیت** دیپلوی شود. این خطا نیست؛ خروجی سبز همان آخرین run است."
             echo ""
-            echo "اگر این run **قرمز (failure)** شد، **اولین step قرمز** را در لاگ باز کنید (Gradle، SCP یا SSH)."
+            echo "اگر این run **قرمز (failure)** شد، **اولین step قرمز** را در لاگ باز کنید (SSH یا npm)."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - uses: actions/checkout@v5
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: "17"
-
-      - name: Cache Gradle
-        uses: actions/cache@v5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('android-app/**/*.gradle*', 'android-app/**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v4
-
-      - name: Install Android platform (compileSdk)
-        run: yes | sdkmanager "platforms;android-36" >/dev/null
-
-      - name: Build Android release APK (OTA)
-        working-directory: android-app
-        env:
-          # حافظهٔ بیشتر برای Compose/KSP روی runner (گرادل پیش‌فرض ۲۰۴۸م گاهی OOM می‌دهد)
-          GRADLE_OPTS: "-Xmx3584m -XX:MaxMetaspaceSize=512m -Dfile.encoding=UTF-8"
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-        run: chmod +x gradlew && ./gradlew assembleRelease --no-daemon --stacktrace
-
-      - name: Verify release APK exists
-        run: |
-          APK="android-app/app/build/outputs/apk/release/app-release.apk"
-          if [ ! -f "$APK" ]; then
-            echo "::error::Release APK not found at $APK — see Gradle step logs above."
-            ls -la android-app/app/build/outputs/apk/release/ 2>/dev/null || ls -laR android-app/app/build/outputs/ 2>/dev/null || true
-            exit 1
-          fi
-          ls -lh "$APK"
-
-      # یک فایل در ریشهٔ runner — scp مسیر نسبی را روی سرور کپی نمی‌کند (برخلاف appleboy که پوشهٔ deploy-artifacts می‌ساخت)
-      - name: Stage release APK for upload
-        run: |
-          cp -f android-app/app/build/outputs/apk/release/app-release.apk ./app-release.apk
-          ls -lh ./app-release.apk
-
-      # انتقال با OpenSSH: مقصد دقیقاً همان مسیری است که backend و OTA انتظار دارند.
-      # اگر «Connection timed out» دیدید = پورت ۲۲ از IPهای GitHub به سرور بسته است (فایروال/هاست) — نه باگ اسکریپت؛ docs/DEPLOY-SERVER.md
-      - name: Upload APK to server (native scp)
-        env:
-          DEPLOY_SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        timeout-minutes: 15
-        run: |
-          set -euo pipefail
-          REMOTE_USER="fxguard"
-          REMOTE_HOST="92.205.58.83"
-          REMOTE_DIR="/var/www/fxguard-kaya/backend/uploads/releases"
-          REMOTE_PATH="${REMOTE_DIR}/app-release.apk"
-          LOCAL_APK="${GITHUB_WORKSPACE}/app-release.apk"
-          test -f "$LOCAL_APK"
-          if [ -z "${DEPLOY_SSH_KEY:-}" ]; then
-            echo "::error::Secret SSH_PRIVATE_KEY خالی است — در GitHub → Settings → Secrets اضافه کنید."
-            exit 1
-          fi
-          mkdir -p ~/.ssh
-          KEY="${RUNNER_TEMP}/kaya_deploy_ci"
-          # Strip CR so keys pasted from Windows / CRLF secrets do not break ssh -i (invalid format).
-          printf '%s\n' "$DEPLOY_SSH_KEY" | tr -d '\r' > "$KEY"
-          chmod 600 "$KEY"
-          SSH_OPTS=(
-            -i "$KEY"
-            -o BatchMode=yes
-            -o StrictHostKeyChecking=accept-new
-            -o ConnectTimeout=60
-            -o ServerAliveInterval=15
-            -o ServerAliveCountMax=4
-          )
-          ok=0
-          for attempt in 1 2 3; do
-            echo "::notice::SSH/SCP به ${REMOTE_HOST}:22 — تلاش ${attempt}/3"
-            set +e
-            ssh "${SSH_OPTS[@]}" "${REMOTE_USER}@${REMOTE_HOST}" "mkdir -p '${REMOTE_DIR}'"
-            s1=$?
-            if [ "$s1" -eq 0 ]; then
-              scp "${SSH_OPTS[@]}" "$LOCAL_APK" "${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_PATH}"
-              s2=$?
-            else
-              s2=1
-            fi
-            set -euo pipefail
-            if [ "$s1" -eq 0 ] && [ "$s2" -eq 0 ]; then
-              ok=1
-              break
-            fi
-            echo "::warning::تلاش ${attempt} ناموفق (ssh=$s1 scp=$s2). اگر شبکه ناپایدار است ۴۵ ثانیه بعد دوباره…"
-            if [ "$attempt" -lt 3 ]; then sleep 45; fi
-          done
-          rm -f "$KEY"
-          if [ "$ok" != "1" ]; then
-            echo "::error::اتصال SSH/SCP به ${REMOTE_HOST}:22 برقرار نشد (timeout یا رد اتصال)."
-            echo "::error::فایروال/هاست باید ورودی TCP 22 را برای محدودهٔ IPهای GitHub Actions باز کند. راهنما: docs/DEPLOY-SERVER.md — لیست IP: https://api.github.com/meta (کلید actions)"
-            exit 255
-          fi
-
-      - name: Verify APK on server
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: 92.205.58.83
-          username: fxguard
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          timeout: 3m
-          command_timeout: 1m
-          script: |
-            set -e
-            REL=/var/www/fxguard-kaya/backend/uploads/releases
-            P="$REL/app-release.apk"
-            # اگر از دیپلویهای قبلی پوشهٔ appleboy مانده، تمیز کن
-            if [ -d "$REL/deploy-artifacts" ]; then
-              if [ -f "$REL/deploy-artifacts/app-release.apk" ] && [ ! -f "$P" ]; then
-                mv -f "$REL/deploy-artifacts/app-release.apk" "$P"
-              fi
-              rm -rf "$REL/deploy-artifacts"
-            fi
-            if [ ! -f "$P" ]; then
-              echo "::error::APK missing at $P"
-              ls -la "$REL" 2>/dev/null || true
-              exit 1
-            fi
-            ls -lh "$P"
-
-      # اگر خطای dial tcp ... i/o timeout دیدید: سرور از شبکهٔ GitHub در دسترس نیست (فایروال/پورت ۲۲). دیپلوی دستی را ببینید: docs/DEPLOY-SERVER.md
-      # host/user ثابت — اگر خواستی از Secrets استفاده کنی: docs/DEPLOY-GITHUB-SECRETS.md
+      # اگر android-app برگردد، مراحل Gradle/APK را دوباره فعال کنید.
       - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.2.5
         with:
@@ -307,26 +176,6 @@ jobs:
             # از اینجا به بعد مسیرها نسبت به ریشهٔ مخزن است (نه backend/)
             cd ..
 
-            # ---- همسان‌سازی ANDROID_APP_* با نسخهٔ اپ (برای به‌روزرسانی از داخل اپ) ----
-            echo "📱 همسان‌سازی ANDROID_APP_* از android-app/app/build.gradle.kts ..."
-            mkdir -p backend/uploads/releases
-            GKF="android-app/app/build.gradle.kts"
-            CODE=$(grep -E 'versionCode\s*=' "$GKF" | head -1 | sed -E 's/[^0-9]*([0-9]+).*/\1/')
-            VER=$(grep -E 'versionName\s*=' "$GKF" | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
-            if [ -z "$CODE" ] || [ -z "$VER" ]; then
-              echo "❌ خطا: خواندن versionCode/versionName از $GKF ناموفق بود"
-              exit 1
-            fi
-            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_VERSION_CODE "$CODE"
-            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_VERSION_NAME "$VER"
-            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_APK_URL "/uploads/releases/app-release.apk"
-            node backend/scripts/upsert-dotenv.js backend/.env ANDROID_APP_RELEASE_NOTES "نسخه ${VER} — چت، برندینگ سازمان، امنیت شبکه"
-            if [ -f backend/uploads/releases/app-release.apk ]; then
-              echo "  ✅ APK روی سرور: app-release.apk"
-            else
-              echo "  ⚠️ APK روی سرور دیده نشد — مسیر uploads/releases را بررسی کنید"
-            fi
-
             # ---- بررسی syntax فایل‌های اصلی ----
             cd backend
             echo "🔎 بررسی syntax ..."
@@ -380,5 +229,5 @@ jobs:
           {
             echo ""
             echo "### نتیجه"
-            echo "دیپلوی این کامیت تمام شد: APK آپلود، \`git pull\` روی سرور، \`npm ci\`، migrationها، PM2 reload، و \`/api/ping\` پاسخ داد."
+            echo "دیپلوی این کامیت تمام شد: \`git pull\` روی سرور، \`npm ci\`، migrationها، PM2 reload، و \`/api/ping\` پاسخ داد."
           } >> "$GITHUB_STEP_SUMMARY"
