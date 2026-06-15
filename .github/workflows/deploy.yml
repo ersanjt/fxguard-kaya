@@ -152,6 +152,10 @@ jobs:
             git fetch origin
             git reset --hard origin/main
 
+            # پوشه‌های موبایل عمداً دیپلوی نمی‌شوند — باقی‌ماندهٔ قدیمی روی سرور را پاک کن
+            echo "🧹 حذف android-app و ios-app از سرور (دیپلوی نمی‌شوند) ..."
+            rm -rf android-app ios-app
+
             # ---- نصب dependencies ----
             echo "📦 نصب dependencies ..."
             cd backend
