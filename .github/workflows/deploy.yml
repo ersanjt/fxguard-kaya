@@ -150,7 +150,16 @@ jobs:
             # ---- دریافت کد جدید ----
             echo "📥 دریافت کد جدید از git ..."
             git fetch origin
-            git reset --hard origin/main
+            if git rev-parse --verify origin/main >/dev/null 2>&1; then
+              git reset --hard origin/main
+            elif git rev-parse --verify origin/master >/dev/null 2>&1; then
+              echo "⚠️ branch main روی origin نیست — از origin/master استفاده می‌شود"
+              git reset --hard origin/master
+            else
+              echo "❌ خطا: نه origin/main و نه origin/master روی remote وجود دارد"
+              git branch -r || true
+              exit 1
+            fi
 
             # پوشه‌های موبایل عمداً دیپلوی نمی‌شوند — باقی‌ماندهٔ قدیمی روی سرور را پاک کن
             echo "🧹 حذف android-app و ios-app از سرور (دیپلوی نمی‌شوند) ..."
