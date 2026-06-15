@@ -50,7 +50,7 @@ jobs:
           script: |
             set -e
 
-            cd /var/www/fxguard-kaya
+            cd /var/www/kayaCRM-kaya
 
             # ---- بررسی متغیرهای الزامی در .env قبل از هر کاری ----
             echo "🔍 بررسی متغیرهای .env ..."
@@ -162,10 +162,16 @@ jobs:
             # پاک کردن node_modules برای جلوگیری از مشکلات stale cache
             rm -rf node_modules
             npm ci --omit=dev --no-audit --no-fund
-            echo "  ✅ npm ci موفق"
+            echo "  ✅ backend npm ci موفق"
+            cd ../gateway
+            rm -rf node_modules
+            npm ci --omit=dev --no-audit --no-fund
+            echo "  ✅ gateway npm ci موفق"
+            cd ..
 
             # ---- اجرای migration scripts ----
             echo "🗄️ اجرای migration scripts ..."
+            cd backend
             node scripts/add-unanswered-columns.js
             node scripts/add-auto-messages-columns.js
             node scripts/add-activitylog-customerid.js
@@ -176,8 +182,6 @@ jobs:
             node scripts/add-conversation-indexes.js
             node scripts/add-customer-profile-fields.js
             echo "  ✅ migration scripts اجرا شد"
-
-            # از اینجا به بعد مسیرها نسبت به ریشهٔ مخزن است (نه backend/)
             cd ..
 
             # ---- بررسی syntax فایل‌های اصلی ----
@@ -194,24 +198,25 @@ jobs:
             cd ..
             echo "  ✅ syntax بدون خطا"
 
-            # ---- reload با PM2 ----
+            # ---- reload با PM2 (نام‌های واقعی روی سرور کایا) ----
             echo "🔄 reload سرویس‌ها ..."
-            # سعی می‌کنیم با ecosystem reload کنیم؛ اگر نشد stop/start می‌کنیم
-            if pm2 reload ecosystem.config.js --update-env; then
+            if pm2 reload crm-backend-kaya crm-gateway-kaya --update-env; then
               echo "  ✅ pm2 reload موفق"
+            elif pm2 reload ecosystem.config.js --update-env; then
+              echo "  ✅ pm2 reload ecosystem موفق"
             else
               echo "  ⚠️ reload شکست خورد، stop/start می‌کنیم..."
-              pm2 stop ecosystem.config.js 2>/dev/null || true
-              sleep 3
-              pm2 start ecosystem.config.js --update-env
+              pm2 restart crm-backend-kaya crm-gateway-kaya --update-env 2>/dev/null || pm2 start ecosystem.config.js --update-env
             fi
             pm2 save
 
-            # ---- بررسی سلامت بعد از deploy (چند تلاش — گاهی PM2/Node کمی دیر گوش می‌دهد) ----
-            echo "⏳ بررسی /api/ping روی پورت ۳۲۰۲ (IPv4) ..."
+            # ---- بررسی سلامت بعد از deploy ----
+            BACKEND_PORT=$(grep "^PORT=" backend/.env 2>/dev/null | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d ' ')
+            if [ -z "$BACKEND_PORT" ]; then BACKEND_PORT=3202; fi
+            echo "⏳ بررسی /api/ping روی پورت ${BACKEND_PORT} (IPv4) ..."
             OK=0
             for i in 1 2 3 4 5 6 7 8 9 10 11 12; do
-              if curl -sf --max-time 10 http://127.0.0.1:3202/api/ping > /dev/null; then
+              if curl -sf --max-time 10 "http://127.0.0.1:${BACKEND_PORT}/api/ping" > /dev/null; then
                 OK=1
                 break
               fi
@@ -222,8 +227,8 @@ jobs:
               echo "✅ Deploy موفق — سرور پاسخ می‌دهد"
             else
               echo "❌ هشدار: سرور پس از deploy پاسخ نمی‌دهد — لاگ‌ها را بررسی کنید"
-              pm2 logs fxguard-backend-kaya --lines 40 --nostream || true
-              pm2 logs fxguard-gateway-kaya --lines 20 --nostream || true
+              pm2 logs crm-backend-kaya --lines 40 --nostream || true
+              pm2 logs crm-gateway-kaya --lines 20 --nostream || true
               exit 1
             fi
 
