@@ -84,6 +84,7 @@ async function runPreSync(sequelize, logger) {
                 ['escalatedAt', { type: DataTypes.DATE, allowNull: true }],
                 ['lastIncomingMessageAt', { type: DataTypes.DATE, allowNull: true }],
                 ['lastOutgoingIsAutoReply', { type: DataTypes.BOOLEAN, allowNull: true }],
+                ['isHiddenFromStaff', { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: false }],
             ];
             for (const [col, def] of convCols) {
                 if (!convDesc[col]) {

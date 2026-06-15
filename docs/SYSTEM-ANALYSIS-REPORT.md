@@ -1,4 +1,4 @@
-# گزارش تحلیل جامع سیستم kayaCRM
+# گزارش تحلیل جامع سیستم fxguard-kaya
 
 **تاریخ بررسی:** مارس ۲۰۲۶  
 **نسخه سند:** ۱.۰
@@ -7,7 +7,7 @@
 
 ## ۱. نمای کلی پروژه
 
-**kayaCRM** یک سیستم **CRM سازمانی با محوریت واتساپ** است که شامل:
+**fxguard-kaya** یک سیستم **CRM سازمانی با محوریت واتساپ** است که شامل:
 
 - **Backend** (Node.js + Express) — API، احراز هویت، دیتابیس، Socket.IO
 - **Gateway واتساپ** (whatsapp-web.js) — اتصال واتساپ وِب و ارسال/دریافت پیام
@@ -194,7 +194,7 @@
 ## ۶. اپ موبایل
 
 - **اندروید:** Kotlin در `android-app/` — MainActivity، ViewModels (Login, Dashboard, Conversations, Customers, Tickets, Tasks, Profile, InternalChat)، Repository، DI.
-- **iOS:** Swift در `ios-app/` — KayaCRMApp، Views و ViewModels مشابه، ApiService.
+- **iOS:** Swift در `ios-app/` — fxguard-kaya app، Views و ViewModels مشابه، ApiService.
 - هر دو از همان Base URL و APIهای Backend استفاده می‌کنند (مثلاً `/api/auth`, `/api/conversations`, `/api/customers`).
 
 ---
@@ -276,7 +276,7 @@
 
 ## ۱۲. خلاصه یک پاراگرافی
 
-**kayaCRM** یک CRM سازمانی با هسته واتساپ است: Backend با Node/Express و Sequelize (PostgreSQL/SQLite) و Socket.IO، Gateway واتساپ (وب و Cloud API)، پنل SPA با Vanilla JS در یک فایل بزرگ، و اپ‌های اندروید و iOS. احراز با JWT/Cookie و سیستم مجوز بخش‌بندی‌شده دارد؛ مستندات و ساختار پروژه برای توسعه و بازساخت بعدی تا حد خوبی آماده است. اصلی‌ترین نقطه قابل بهبود، تفکیک و کوچک‌سازی فرانت‌اند (dashboard.js) و جداسازی منطق از routeها در Backend است.
+**fxguard-kaya** یک CRM سازمانی با هسته واتساپ است: Backend با Node/Express و Sequelize (PostgreSQL/SQLite) و Socket.IO، Gateway واتساپ (وب و Cloud API)، پنل SPA با Vanilla JS در یک فایل بزرگ، و اپ‌های اندروید و iOS. احراز با JWT/Cookie و سیستم مجوز بخش‌بندی‌شده دارد؛ مستندات و ساختار پروژه برای توسعه و بازساخت بعدی تا حد خوبی آماده است. اصلی‌ترین نقطه قابل بهبود، تفکیک و کوچک‌سازی فرانت‌اند (dashboard.js) و جداسازی منطق از routeها در Backend است.
 
 ---
 

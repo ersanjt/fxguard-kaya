@@ -7,6 +7,7 @@ const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayCli
 const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { logActivity } = require('../services/activityLog');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
+const { canAccessConversation } = require('../lib/conversationAccess');
 
 const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
 const CALL_ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 ساعت
@@ -84,10 +85,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 if (!user) return socket.emit('error', { message: 'Unauthorized' });
                 if (!user.isActive) return socket.emit('error', { message: 'حساب کاربری غیرفعال است' });
 
-                const isPrivileged = ['owner', 'admin', 'manager', 'supervisor'].includes(user.role);
-                const isAssigned = conversation.assignedTo === socket.userId;
-                const sameDept = user.departmentId && conversation.departmentId && String(user.departmentId) === String(conversation.departmentId);
-                if (!isPrivileged && !isAssigned && !sameDept) {
+                if (!canAccessConversation(user, socket.userId, conversation)) {
                     return socket.emit('error', { message: 'دسترسی به این مکالمه ندارید' });
                 }
 

@@ -120,7 +120,7 @@ function buildMailOpts(config, { to, subject, text, html, attachments = [] }) {
         html: html || (text ? text.replace(/\n/g, '<br>') : ''),
         attachments: attachments || [],
         headers: {
-            'X-Mailer': 'KayaCRM',
+            'X-Mailer': 'fxguard-kaya',
             'Reply-To': fromAddr,
             'List-Unsubscribe': `<${unsubscribeUrl}>`,
             'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',

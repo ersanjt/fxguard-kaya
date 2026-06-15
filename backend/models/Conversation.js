@@ -97,6 +97,12 @@ const ConversationModel = (sequelize) => {
             allowNull: true,
             defaultValue: null,
             comment: 'آیا آخرین پیام خروجی از AI/خودکار بوده — برای نمایش AI assistant در پنل'
+        },
+        isHiddenFromStaff: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+            comment: 'مخفی از کارکنان — فقط مالک/ادمین/ادمین اصلی در لیست مکالمات می‌بینند'
         }
     }, {
         timestamps: true,

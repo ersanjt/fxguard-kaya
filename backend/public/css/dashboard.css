@@ -89,6 +89,9 @@
         .skip-link { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); z-index: 10001; padding: 12px 24px; background: var(--accent); color: #fff; font-weight: 600; border-radius: var(--radius-sm); text-decoration: none; font-family: var(--font); font-size: 0.95rem; transition: top 0.2s ease; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
         .skip-link:focus { top: max(12px, env(safe-area-inset-top)); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
         /* با توکن، پنل از همان اول نمایش داده شود */
+        html.login-boot-pending:not(.auth-verifying) .login-wrap { visibility: hidden; }
+        html.auth-verifying .login-wrap { display: none !important; }
+        html.auth-verifying .app { display: flex !important; }
         html.auth-has-token .login-wrap { display: none !important; }
         html.auth-has-token .app { display: flex !important; }
         /* جلوگیری از flash سبز: اپ تا زمانی که app-ready نشود مخفی است */
@@ -5099,6 +5102,10 @@
         .msg-footer .time { margin: 0; }
         .msg-reply-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; font-size: 1rem; opacity: 0.7; }
         .msg-reply-btn:hover { color: var(--accent); opacity: 1; }
+        .msg-forward-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; font-size: 1rem; opacity: 0.7; }
+        .msg-forward-btn:hover { color: var(--accent); opacity: 1; }
+        .forward-msg-preview-label { font-size: 0.8rem; color: var(--text-muted); margin: 0 0 6px; }
+        .forward-msg-preview { background: var(--bg-muted, rgba(0,0,0,.04)); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; font-size: 0.85rem; color: var(--text-secondary); max-height: 72px; overflow: hidden; }
         .msg-status { font-size: 0.72rem; color: var(--text-muted); letter-spacing: -0.06em; line-height: 1; }
         .msg-status-read { color: #53bdeb; }
         .msg-status-delivered { color: rgba(255, 255, 255, 0.55); }

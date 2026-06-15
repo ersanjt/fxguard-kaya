@@ -281,7 +281,14 @@
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
-                token = null; document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
+                token = null;
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                    window.LoginBootstrap.setLoggedOut();
+                } else {
+                    document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
+                }
+                document.getElementById('loginBox').style.display = 'flex';
+                document.getElementById('app').classList.remove('show');
                 const errEl = document.getElementById('loginErr');
                 if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
@@ -390,7 +397,11 @@
             }
             if (data.token) {
                 token = data.token;
-                document.documentElement.classList.add('auth-has-token');
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
+                    window.LoginBootstrap.setAuthenticated();
+                } else {
+                    document.documentElement.classList.add('auth-has-token');
+                }
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
                 document.getElementById('loginBox').style.display = 'none';
@@ -524,7 +535,11 @@
             if (data.token) {
                 window._totpTempToken = null;
                 token = data.token;
-                document.documentElement.classList.add('auth-has-token');
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
+                    window.LoginBootstrap.setAuthenticated();
+                } else {
+                    document.documentElement.classList.add('auth-has-token');
+                }
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
                 document.getElementById('loginBox').style.display = 'none';
@@ -836,7 +851,11 @@
             disconnectSocket();
             token = null;
             currentUser = null;
-            document.documentElement.classList.remove('auth-has-token');
+            if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                window.LoginBootstrap.setLoggedOut();
+            } else {
+                document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
+            }
             document.getElementById('loginBox').style.display = 'flex';
             const appEl = document.getElementById('app');
             if (appEl) { appEl.classList.remove('show', 'app-loading', 'app-ready'); }
@@ -1756,6 +1775,20 @@
                     const waId = msgReplyBtn.getAttribute('data-wa-id');
                     const prev = msgReplyBtn.getAttribute('data-preview');
                     setReplyTo(waId, prev != null ? prev : '');
+                    return;
+                }
+                const msgForwardBtn = target.closest('.msg-forward-btn[data-msg-id]');
+                if (msgForwardBtn && typeof openForwardMsgModal === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openForwardMsgModal(msgForwardBtn.getAttribute('data-msg-id') || '', msgForwardBtn.getAttribute('data-preview') || '');
+                    return;
+                }
+                const forwardCust = target.closest('.forward-customer-item[data-forward-customer-id]');
+                if (forwardCust && typeof forwardMessageToCustomer === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    forwardMessageToCustomer(forwardCust.getAttribute('data-forward-customer-id') || '', forwardCust.getAttribute('data-forward-customer-name') || '');
                     return;
                 }
                 // چت داخلی — دکمه‌ها و المان‌های کلیکی

@@ -1,7 +1,7 @@
 {
-  "name": "kaya-crm-backend",
+  "name": "fxguard-kaya-backend",
   "version": "1.1.0",
-  "description": "Kaya CRM — backend API and staff portal",
+  "description": "fxguard-kaya — backend API and staff portal",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

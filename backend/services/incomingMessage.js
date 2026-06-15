@@ -78,7 +78,7 @@ async function resolveIncomingMedia(media, logger) {
             timeout: 30000,
             maxContentLength: 20 * 1024 * 1024,
             maxRedirects: 5,
-            headers: { 'User-Agent': 'KayaCRM-Backend/1.0', 'Accept': 'image/*,video/*,audio/*,*/*' }
+            headers: { 'User-Agent': 'fxguard-kaya-backend/1.0', 'Accept': 'image/*,video/*,audio/*,*/*' }
         });
         if (!res.data || (res.status !== 200 && res.status !== 206)) throw new Error('Bad response ' + res.status);
         const buf = Buffer.from(res.data);
@@ -702,6 +702,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                             conversationId: conversation.id,
                             customerId: customer.id,
                             message: autoMsg,
+                            isHiddenFromStaff: !!conversation.isHiddenFromStaff,
                             customer: { id: customer.id, name: customer.name, phone: customer.phone, profilePic: customer.profilePic }
                         });
                     }
@@ -724,13 +725,15 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             conversationId: conversation.id,
             customerId: customer.id,
             message: newMessage,
+            isHiddenFromStaff: !!conversation.isHiddenFromStaff,
             customer: { id: customer.id, name: customer.name, phone: customer.phone, profilePic: customer.profilePic }
         });
 
         if (conversation.assignedTo) {
             io.to(`user_${conversation.assignedTo}`).emit('assigned_message', {
                 conversationId: conversation.id,
-                message: newMessage
+                message: newMessage,
+                isHiddenFromStaff: !!conversation.isHiddenFromStaff,
             });
         }
 

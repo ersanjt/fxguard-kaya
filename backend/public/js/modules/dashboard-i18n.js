@@ -149,4 +149,13 @@ window.applySupportedLanguages = function (supported, defaultLanguage) {
     document.querySelectorAll('.lang-switch').forEach(function (wrap) {
         wrap.style.display = window.SUPPORTED_LANGUAGES.length <= 1 ? 'none' : '';
     });
+    if (window.LoginBootstrap && typeof window.LoginBootstrap.cachePanelLanguages === 'function') {
+        window.LoginBootstrap.cachePanelLanguages({
+            supportedLanguages: window.SUPPORTED_LANGUAGES,
+            defaultLanguage: cur
+        });
+    }
+    if (window.LoginBootstrap && typeof window.LoginBootstrap.markReady === 'function') {
+        window.LoginBootstrap.markReady();
+    }
 };

@@ -1,32 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const fs = require('fs');
-const fsPromises = require('fs').promises;
-const path = require('path');
 const { sequelize, Conversation, Customer, Message, User, Branch, Department } = require('../models');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { canAccessCustomer } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
+const { canAccessConversation: userCanAccessConversation, conversationListWhere } = require('../lib/conversationAccess');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const logger = require('../config/logger');
 const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
+const { deliverOutboundConversationMessage } = require('../lib/conversationOutbound');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
 function canArchiveOrDeleteConversation(req) {
     return req.canManageConversations && req.canManageConversations();
 }
 
-/** آیا کاربر جاری به این مکالمه دسترسی دارد؟ فقط: تخصیص به خود، دپارتمان، یا نقش مدیریتی */
+/** آیا کاربر جاری به این مکالمه دسترسی دارد؟ */
 async function canAccessConversation(req, conversation) {
-    if (!conversation) return false;
-    if (isMainAdmin(req.user)) return true;
-    const role = req.user.role;
-    if (role === 'owner' || role === 'admin' || role === 'manager') return true;
-    if (conversation.assignedTo === req.userId) return true;
-    if (req.user.departmentId && conversation.departmentId === req.user.departmentId) return true;
-    return false;
+    return userCanAccessConversation(req.user, req.userId, conversation);
 }
 
 /** آیا کاربر می‌تواند مکالمه را تخصیص/بست/تغییر وضعیت دهد؟ (ادمین اصلی، owner، admin، manager) */
@@ -202,11 +195,13 @@ router.get('/', async (req, res, next) => {
             ]);
         }
 
-        // کارمند/ناظر: فقط مکالمات تخصیص‌یافته به خود یا دپارتمان خود (بدون شعبه، مشارکت قبلی، یا مشتریان دیگر)
-        if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.role !== 'manager') {
-            const orConditions = [{ assignedTo: req.userId }];
-            if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
-            where[Op.or] = orConditions;
+        // سیاست دسترسی لیست + مخفی‌سازی از کارکنان
+        const listAccess = conversationListWhere(req.user, req.userId);
+        if (listAccess[Op.or]) {
+            where[Op.or] = listAccess[Op.or];
+        }
+        if (listAccess.isHiddenFromStaff === false) {
+            where.isHiddenFromStaff = false;
         }
 
         // حذف wildcardهای SQL برای جلوگیری از abuse و بار ناخواسته روی DB
@@ -284,6 +279,90 @@ const conversationDetailInclude = [
     { model: Branch, as: 'branch', required: false },
     { model: Department, as: 'department', required: false },
 ];
+
+// ——— فوروارد پیام به مشتری دیگر
+router.post('/forward', async (req, res, next) => {
+    try {
+        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        const { messageId, customerId } = req.body || {};
+        if (!isValidUUID(messageId)) return res.status(400).json({ error: 'شناسه پیام نامعتبر است' });
+        if (!isValidUUID(customerId)) return res.status(400).json({ error: 'شناسه مشتری نامعتبر است' });
+
+        const sourceMsg = await Message.findByPk(messageId, {
+            include: [{ model: Conversation, as: 'conversation', include: [{ model: Customer, as: 'customer' }] }],
+        });
+        if (!sourceMsg || !sourceMsg.conversation) return res.status(404).json({ error: 'پیام یافت نشد' });
+        if (!(await canAccessConversation(req, sourceMsg.conversation))) {
+            return res.status(403).json({ error: 'دسترسی به پیام مبدأ ندارید' });
+        }
+        if (!(await canAccessCustomer(req, customerId))) {
+            return res.status(403).json({ error: 'دسترسی به مشتری مقصد ندارید' });
+        }
+
+        const customer = await Customer.findByPk(customerId);
+        if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
+
+        let targetConv = await Conversation.findOne({
+            where: { customerId, status: { [Op.notIn]: ['closed', 'archived'] } },
+            include: [
+                { model: Customer, as: 'customer' },
+                { model: Department, as: 'department', required: false },
+            ],
+        });
+        if (!targetConv) {
+            targetConv = await Conversation.create({
+                customerId,
+                status: 'open',
+                priority: 'normal',
+                source: 'whatsapp',
+                branchId: req.user.branchId || null,
+                departmentId: req.user.departmentId || null,
+                assignedTo: req.userId,
+                assignedAt: new Date(),
+            });
+            targetConv = await Conversation.findByPk(targetConv.id, {
+                include: [
+                    { model: Customer, as: 'customer' },
+                    { model: Department, as: 'department', required: false },
+                ],
+            });
+        }
+        if (!(await canAccessConversation(req, targetConv))) {
+            return res.status(403).json({ error: 'دسترسی به مکالمه مقصد ندارید' });
+        }
+
+        let content = String(sourceMsg.content || '').trim();
+        let media = null;
+        if (sourceMsg.hasMedia && sourceMsg.mediaData) {
+            const md = sourceMsg.mediaData;
+            media = {
+                url: md.url,
+                filename: md.filename || sourceMsg.content || 'file',
+                mimetype: md.mimetype || 'application/octet-stream',
+                type: sourceMsg.type,
+            };
+            if (/^voice\.(webm|ogg|m4a|mp3|wav)$/i.test(content)) content = '';
+            else if (content === md.filename || content === 'file' || content === '📎 فایل') content = '';
+        }
+        if (!content && !media) return res.status(400).json({ error: 'این پیام محتوای قابل فوروارد ندارد' });
+
+        const sourceCustomer = sourceMsg.conversation.customer;
+        const metadata = {
+            forwardedFrom: {
+                messageId: sourceMsg.id,
+                conversationId: sourceMsg.conversationId,
+                customerId: sourceMsg.customerId,
+                customerName: sourceCustomer ? (sourceCustomer.name || sourceCustomer.phone || '') : '',
+            },
+        };
+
+        const result = await deliverOutboundConversationMessage(req, targetConv, { content, media, metadata });
+        if (result.error) return res.status(result.status || 500).json({ error: result.error, message: result.msg });
+        res.json({ ok: true, message: result.msg, conversation: { id: targetConv.id, customerId: targetConv.customerId } });
+    } catch (err) {
+        next(err);
+    }
+});
 
 // ——— جزئیات یک مکالمه
 router.get('/:id', async (req, res, next) => {
@@ -495,7 +574,7 @@ router.patch('/:id', async (req, res, next) => {
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
         if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
 
-        const { assignedTo, departmentId, branchId, status, priority, subject, markRead, rating, feedback } = req.body;
+        const { assignedTo, departmentId, branchId, status, priority, subject, markRead, rating, feedback, isHiddenFromStaff } = req.body;
 
         if (markRead === true || markRead === 'true') {
             await conversation.update({ unreadCount: 0 });
@@ -537,6 +616,12 @@ router.patch('/:id', async (req, res, next) => {
         if (canManage && subject !== undefined) updateData.subject = subject;
         if (rating !== undefined && Number(rating) >= 1 && Number(rating) <= 5) updateData.rating = Math.round(Number(rating));
         if (feedback !== undefined) updateData.feedback = String(feedback || '').trim() || null;
+        if (isHiddenFromStaff !== undefined) {
+            if (!(req.canViewHiddenConversations && req.canViewHiddenConversations())) {
+                return res.status(403).json({ error: 'فقط مالک یا ادمین می‌تواند مکالمه را از دید کارکنان مخفی کند' });
+            }
+            updateData.isHiddenFromStaff = isHiddenFromStaff === true || isHiddenFromStaff === 'true';
+        }
 
         await conversation.update(updateData);
 
@@ -648,155 +733,13 @@ router.post('/:id/send', async (req, res, next) => {
         const conversation = await Conversation.findByPk(req.params.id, { include: [{ model: Customer, as: 'customer' }, { model: Department, as: 'department', required: false }] });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
         if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
-        if (conversation.status === 'archived') return res.status(400).json({ error: 'امکان ارسال پیام به مکالمه آرشیو شده وجود ندارد. ابتدا وضعیت را تغییر دهید.' });
         const content = safeString(req.body.content, 10000);
         const media = req.body.media || null;
         const replyTo = req.body.replyTo || null;
         if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
-        // معرفی کارمند قبل از اولین پاسخ او
-        if (req.userId) {
-            const user = await User.findByPk(req.userId, { include: [{ model: Department, as: 'department', required: false }] });
-            const dept = conversation.department || (user && user.department) || null;
-            await maybeSendEmployeeIntro(conversation, req.userId, user, dept);
-        }
-        const proto = req.get('x-forwarded-proto') || req.protocol;
-        const host = req.get('host') || '';
-        const baseUrl = process.env.BACKEND_PUBLIC_URL || (proto + '://' + host);
-        let mediaUrl = null;
-        let msgType = req.body.type || 'text';
-        let hasMedia = false;
-        let mediaData = null;
-        if (media && (media.url || media.filename)) {
-            hasMedia = true;
-            const relPath = media.url || ('/uploads/' + media.filename);
-            if (relPath.startsWith('http')) {
-                mediaUrl = relPath;
-            } else {
-                const root = (process.env.BACKEND_PUBLIC_URL && process.env.BACKEND_PUBLIC_URL.replace(/\/$/, '')) || baseUrl.replace(/\/$/, '');
-                mediaUrl = root + (relPath.startsWith('/') ? relPath : '/' + relPath);
-            }
-            const mime = media.mimetype || '';
-            if (mime.startsWith('image/')) msgType = 'image';
-            else if (mime.startsWith('video/')) msgType = 'video';
-            else if (mime.startsWith('audio/')) msgType = 'audio';
-            else msgType = 'document';
-            mediaData = { url: relPath, filename: media.filename || media.name, mimetype: media.mimetype };
-        }
-        const msg = await Message.create({
-            conversationId: conversation.id,
-            customerId: conversation.customerId,
-            userId: req.userId,
-            direction: 'outgoing',
-            content: content || (hasMedia ? (media.filename || media.name || '') : ''),
-            type: msgType,
-            hasMedia,
-            mediaData,
-            timestamp: new Date()
-        });
-        let preview = (content || '').slice(0, 120) || (hasMedia ? '📎 فایل' : '');
-        if ((content || '').length > 120) preview += '…';
-        const now = new Date();
-        const updateData = { lastMessageAt: now, lastOutgoingMessageAt: now, lastOutgoingIsAutoReply: false, lastMessagePreview: preview, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };
-        if (!conversation.firstReplyAt) updateData.firstReplyAt = now;
-        if (!conversation.branchId && req.user.branchId) updateData.branchId = req.user.branchId;
-        await conversation.update(updateData);
-        // ذخیره خودکار فایل ارسالی در آرشیو مشتری
-        if (hasMedia && mediaData && conversation.customerId) {
-            try {
-                const { CustomerDocument } = require('../models');
-                if (CustomerDocument) {
-                    const mime = mediaData.mimetype || '';
-                    let fType = 'other';
-                    if (mime.startsWith('image/')) fType = 'image';
-                    else if (mime.startsWith('video/')) fType = 'video';
-                    else if (mime.startsWith('audio/')) fType = 'audio';
-                    else if (mime.includes('pdf') || mime.includes('word') || mime.includes('excel') || mime.includes('text') || mime.includes('spreadsheet') || mime.includes('presentation')) fType = 'document';
-                    await CustomerDocument.create({
-                        customerId: conversation.customerId,
-                        title: mediaData.filename || 'فایل ارسالی',
-                        category: 'media',
-                        filePath: mediaData.url || '',
-                        fileName: mediaData.filename || 'file',
-                        mimeType: mime,
-                        fileType: fType,
-                        source: 'conversation',
-                        messageId: msg.id,
-                        conversationId: conversation.id,
-                        uploadedBy: req.userId
-                    });
-                }
-            } catch (_) {}
-        }
-        const { sendWhatsAppMessage } = require('../lib/gatewayClient');
-        const { getSendTarget } = require('../lib/phoneUtils');
-        const toPhone = getSendTarget(conversation.customer.phone) || conversation.customer.phone;
-        if (!toPhone) return res.status(400).json({ error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح (مثلاً 09121234567 یا 989121234567) وارد کنید.' });
-        const payload = { to: toPhone, message: content };
-        if (hasMedia && media && (media.url || media.filename)) {
-            const relPath = media.url || ('/uploads/' + media.filename);
-            const uploadsDir = path.join(__dirname, '..', 'uploads');
-            /* مسیر کامل زیر uploads (نه فقط نام فایل) — وگرنه فایل در زیرپوشه پیدا نمی‌شود و ارسال به URL شکننده می‌افتد */
-            const relUnderUploads = String(relPath.replace(/^\/uploads\/?/, '') || media.filename || media.name || 'file').replace(/^\/+/, '');
-            let filePath = path.join(uploadsDir, relUnderUploads);
-            const resolvedFile = path.resolve(filePath);
-            const resolvedRoot = path.resolve(uploadsDir);
-            if (!resolvedFile.startsWith(resolvedRoot)) {
-                filePath = path.join(uploadsDir, path.basename(relUnderUploads));
-            }
-            let sendMimetype = media.mimetype || 'application/octet-stream';
-            let sendFilename = media.filename || media.name || path.basename(relUnderUploads) || 'file';
-            if (!relPath.startsWith('http') && fs.existsSync(filePath)) {
-                try {
-                    // For audio/voice: convert to ogg/opus so WhatsApp accepts it as voice message
-                    if (msgType === 'audio') {
-                        try {
-                            const { ensureVoiceFormat } = require('../lib/audioConverter');
-                            const converted = await ensureVoiceFormat(filePath, sendMimetype, sendFilename);
-                            filePath = converted.filePath;
-                            sendMimetype = converted.mimetype;
-                            sendFilename = converted.filename;
-                        } catch (_convErr) { /* use original if converter not available */ }
-                    }
-                    const fileBuf = await fsPromises.readFile(filePath);
-                    const base64 = fileBuf.toString('base64');
-                    payload.media = { data: base64, mimetype: sendMimetype, filename: sendFilename };
-                    if (msgType === 'audio' && /^audio\/(ogg|opus)/i.test(sendMimetype || '')) payload.media.sendAsVoice = true;
-                } catch (readErr) {
-                    if (mediaUrl) {
-                        payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
-                        if (msgType === 'audio' && /^audio\/(ogg|opus)/i.test((media.mimetype || '').toLowerCase())) payload.media.sendAsVoice = true;
-                    }
-                }
-            } else if (mediaUrl) {
-                payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
-                if (msgType === 'audio' && /^audio\/(ogg|opus)/i.test((media.mimetype || '').toLowerCase())) payload.media.sendAsVoice = true;
-            }
-        }
-        if (replyTo) payload.replyTo = replyTo;
-        try {
-            const gwRes = await sendWhatsAppMessage(payload, { timeout: 15000 });
-            const waId = gwRes?.data?.messageId;
-            if (waId) await msg.update({ whatsappId: waId, status: 'sent' });
-        } catch (gwErr) {
-            let errMsg = gwErr?.response?.data?.error || gwErr?.message || 'خطا در ارسال به واتساپ';
-            if (errMsg.includes('Invalid or unsafe media URL') || errMsg.includes('media URL')) {
-                errMsg += ' — برای پیام صوتی/فایل، در Gateway: MEDIA_ALLOW_LOCALHOST=true یا MEDIA_URL_WHITELIST تنظیم کنید؛ در Backend: BACKEND_PUBLIC_URL را به آدرسی که Gateway به آن دسترسی دارد تنظیم کنید.';
-            }
-            await msg.update({ status: 'failed' });
-            return res.status(502).json({ error: 'پیام در پنل ذخیره شد اما به واتساپ ارسال نشد: ' + errMsg });
-        }
-        await logActivity({
-            userId: req.userId,
-            branchId: req.user.branchId || conversation.branchId,
-            departmentId: req.user.departmentId || conversation.departmentId,
-            action: 'message_sent',
-            entityType: 'message',
-            entityId: msg.id,
-            customerId: conversation.customerId,
-            summary: `پیام به مشتری ${conversation.customer.phone || conversation.customerId}`,
-            metadata: { conversationId: conversation.id, contentLength: (content || '').length, hasMedia: !!hasMedia }
-        });
-        res.json(msg);
+        const result = await deliverOutboundConversationMessage(req, conversation, { content, media, replyTo });
+        if (result.error) return res.status(result.status || 500).json({ error: result.error, message: result.msg });
+        res.json(result.msg);
     } catch (err) {
         next(err);
     }

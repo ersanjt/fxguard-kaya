@@ -1,6 +1,7 @@
 const { Conversation } = require('../models');
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('./permissions');
+const { hiddenConversationWhere } = require('./conversationAccess');
 
 /**
  * شناسه مشتری‌هایی که این کاربر مجاز به دیدنشان است.
@@ -10,7 +11,7 @@ const { isMainAdmin } = require('./permissions');
 async function getAccessibleCustomerIds(req) {
     if (isMainAdmin(req.user)) return null;
     if (req.user.role === 'owner' || req.user.role === 'admin' || req.user.role === 'manager') return null;
-    const convWhere = { [Op.or]: [{ assignedTo: req.userId }] };
+    const convWhere = { [Op.or]: [{ assignedTo: req.userId }], ...hiddenConversationWhere(req.user) };
     if (req.user.departmentId) convWhere[Op.or].push({ departmentId: req.user.departmentId });
     const convs = await Conversation.findAll({ where: convWhere, attributes: ['customerId'], raw: true });
     return [...new Set(convs.map((c) => c.customerId).filter(Boolean))];
