@@ -2314,8 +2314,8 @@
             if (token) return;
             const params = new URLSearchParams(window.location.search);
             const reset = params.get('reset');
-            const token = params.get('token');
-            if (reset === '1' && token && typeof showResetStep === 'function') showResetStep(token);
+            const resetToken = params.get('token');
+            if (reset === '1' && resetToken && typeof showResetStep === 'function') showResetStep(resetToken);
         })();
         async function verifyTotpLogin() {
             const code = (document.getElementById('totpCode') && document.getElementById('totpCode').value || '').replace(/\s/g, '');
