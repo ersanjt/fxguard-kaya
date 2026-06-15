@@ -72,6 +72,7 @@ function me(req, res) {
         avatar: u.avatar,
         role: u.role,
         position: u.position,
+        whatsappSenderName: u.whatsappSenderName,
         departmentId: u.departmentId,
         branchId: u.branchId,
         status: u.status,
@@ -91,7 +92,7 @@ function me(req, res) {
 async function patchMe(req, res, next) {
     try {
         const user = req.user;
-        const { username, firstName, lastName, dateOfBirth, name, phone, password, avatar, email } = req.body;
+        const { username, firstName, lastName, dateOfBirth, name, phone, password, avatar, email, whatsappSenderName } = req.body;
         if (username !== undefined) {
             const trimmed = String(username).trim();
             if (trimmed) {
@@ -118,6 +119,9 @@ async function patchMe(req, res, next) {
         }
         if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth ? String(dateOfBirth).trim() || null : null;
         if (phone !== undefined) user.phone = phone ? String(phone).trim() : null;
+        if (whatsappSenderName !== undefined && req.canManageUsers()) {
+            user.whatsappSenderName = whatsappSenderName ? String(whatsappSenderName).trim() : null;
+        }
         if (avatar !== undefined) {
             const a = avatar ? String(avatar).trim() : null;
             if (a && !/^https?:\/\//i.test(a) && !a.startsWith('/uploads/')) {
@@ -185,7 +189,7 @@ async function create(req, res, next) {
         if (!req.canManageUsers()) {
             return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر جدید بسازد' });
         }
-        const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords, position } = req.body;
+        const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords, position, whatsappSenderName } = req.body;
         if (!name || !email || !password) {
             return res.status(400).json({ error: 'نام، ایمیل و رمز الزامی است' });
         }
@@ -219,6 +223,7 @@ async function create(req, res, next) {
             password,
             role: role || 'agent',
             position: position ? String(position).trim() : null,
+            whatsappSenderName: whatsappSenderName ? String(whatsappSenderName).trim() : null,
             departmentId: departmentId || null,
             branchId: finalBranchId,
             permissions: permissions && typeof permissions === 'object' ? permissions : {},
@@ -267,13 +272,16 @@ async function update(req, res, next) {
                 error: 'اطلاعات ادمین اصلی سیستم غیر قابل ویرایش است. هیچ کاربری حتی با بالاترین سطح دسترسی امکان ویرایش ادمین اصلی را ندارد.',
             });
         }
-        const { name, username, email, role, departmentId, branchId, isActive, permissions, position } = req.body;
+        const { name, username, email, role, departmentId, branchId, isActive, permissions, position, whatsappSenderName } = req.body;
         if (name !== undefined) {
             const trimmedName = String(name).trim();
             if (!trimmedName) return res.status(400).json({ error: 'نام نمی‌تواند خالی باشد' });
             user.name = trimmedName;
         }
         if (position !== undefined) user.position = position ? String(position).trim() : null;
+        if (whatsappSenderName !== undefined) {
+            user.whatsappSenderName = whatsappSenderName ? String(whatsappSenderName).trim() : null;
+        }
         if (username !== undefined) {
             const trimmed = String(username || '').trim();
             if (trimmed) {

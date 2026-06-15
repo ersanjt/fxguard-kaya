@@ -175,6 +175,7 @@ async function runPreSync(sequelize, logger) {
                 ['telegramChatId', { type: DataTypes.STRING, allowNull: true }],
                 ['telegramLinkToken', { type: DataTypes.STRING, allowNull: true }],
                 ['telegramLinkTokenExpiry', { type: DataTypes.DATE, allowNull: true }],
+                ['whatsappSenderName', { type: DataTypes.STRING, allowNull: true }],
             ];
             for (const [col, def] of userCols) {
                 if (!userDesc[col]) {

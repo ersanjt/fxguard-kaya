@@ -96,6 +96,11 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'سمت کاربر (مثلاً مدیر فروش، حسابدار)'
         },
+        whatsappSenderName: {
+            type: DataTypes.STRING,
+            allowNull: true,
+            comment: 'نام نمایشی در پیام‌های واتساپ (توسط مدیر ثبت می‌شود)'
+        },
         settings: {
             type: DataTypes.JSON,
             defaultValue: {

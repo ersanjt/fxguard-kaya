@@ -2200,14 +2200,49 @@
             openWaUnifiedPicker('gif');
         }
         function waConvVoiceCall() {
-            var msg = typeof t === 'function' ? t('wa_calls_not_in_panel') : '';
-            if (!msg || msg === 'wa_calls_not_in_panel') msg = LANG === 'fa' ? 'تماس صوتی مشتری از این پنل برقرار نمی‌شود؛ از اپ واتساپ استفاده کنید.' : LANG === 'tr' ? 'Sesli arama bu panelden yapılmaz; WhatsApp uygulamasını kullanın.' : 'Voice calls are not started from this CRM panel.';
-            if (typeof toast === 'function') toast(msg, false);
+            waConvStartCall('voice');
         }
         function waConvVideoCall() {
-            var msg = typeof t === 'function' ? t('wa_calls_not_in_panel_video') : '';
-            if (!msg || msg === 'wa_calls_not_in_panel_video') msg = LANG === 'fa' ? 'تماس تصویری از این پنل برقرار نمی‌شود؛ از اپ واتساپ استفاده کنید.' : LANG === 'tr' ? 'Görüntülü arama bu panelden yapılmaz; WhatsApp uygulamasını kullanın.' : 'Video calls are not started from this CRM panel.';
-            if (typeof toast === 'function') toast(msg, false);
+            waConvStartCall('video');
+        }
+        async function waConvStartCall(callType) {
+            if (!currentConvId) return;
+            var btnId = callType === 'video' ? 'waChatVideoBtn' : 'waChatVoiceBtn';
+            var btn = document.getElementById(btnId);
+            if (btn) btn.disabled = true;
+            try {
+                var res = await apiFetch('/api/conversations/' + currentConvId + '/call', { method: 'POST', body: JSON.stringify({ type: callType }) });
+                if (res.needLogin) return;
+                if (!res.ok) {
+                    var errMsg = (res.data && res.data.error) || (typeof t === 'function' ? t('err_generic') : 'Error');
+                    if (typeof toast === 'function') toast(errMsg, true);
+                    return;
+                }
+                var data = res.data || {};
+                var isGrp = !!(data.isGroup || currentConvIsGroup);
+                if (data.method === 'link' && data.callLink) {
+                    try { window.open(data.callLink, '_blank', 'noopener,noreferrer'); } catch (_) {}
+                    var linkMsg = typeof t === 'function' ? (isGrp ? t('wa_call_group_link_sent') : t('wa_call_link_sent')) : '';
+                    if (!linkMsg || linkMsg === 'wa_call_group_link_sent' || linkMsg === 'wa_call_link_sent') {
+                        linkMsg = isGrp
+                            ? (LANG === 'fa' ? 'لینک تماس گروهی در چت ارسال شد. پنجره تماس باز شد (تا ۱۰ نفر).' : LANG === 'tr' ? 'Grup arama bağlantısı gönderildi.' : 'Group call link sent to the chat.')
+                            : (LANG === 'fa' ? 'لینک تماس برای مشتری ارسال شد. پنجره تماس باز شد.' : LANG === 'tr' ? 'Arama bağlantısı müşteriye gönderildi.' : 'Call link sent to customer.');
+                    }
+                    if (typeof toast === 'function') toast(linkMsg, false);
+                } else {
+                    var startMsg = typeof t === 'function' ? (isGrp ? t('wa_call_group_started') : t('wa_call_started')) : '';
+                    if (!startMsg || startMsg === 'wa_call_group_started' || startMsg === 'wa_call_started') {
+                        startMsg = isGrp
+                            ? (LANG === 'fa' ? 'تماس گروهی در حال برقراری است. در واتساپ وب تا ۱۰ نفر می‌توانند بپیوندند.' : LANG === 'tr' ? 'Grup araması başlatılıyor.' : 'Group call is being placed (up to 10 participants on WhatsApp Pro).')
+                            : (LANG === 'fa' ? 'تماس در حال برقراری است. در صورت نیاز در واتساپ وب پاسخ دهید.' : LANG === 'tr' ? 'Arama başlatılıyor.' : 'Call is being placed. Answer in WhatsApp Web if prompted.');
+                    }
+                    if (typeof toast === 'function') toast(startMsg, false);
+                }
+            } catch (e) {
+                if (typeof toast === 'function') toast((typeof t === 'function' ? t('err_generic') : 'Error'), true);
+            } finally {
+                if (btn) btn.disabled = false;
+            }
         }
 
         function clearFilePreview() {

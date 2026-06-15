@@ -3,9 +3,9 @@ const fsPromises = require('fs').promises;
 const path = require('path');
 const { Message } = require('../models');
 const { logActivity } = require('../services/activityLog');
-const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { sendWhatsAppMessage } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
+const { buildWhatsAppOutboundText, validateOutboundSender } = require('./outboundMessagePrefix');
 
 /**
  * ارسال پیام خروجی به مشتری (متن/مدیا) و همگام‌سازی با واتساپ.
@@ -23,11 +23,23 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         return { msg: null, error: 'متن پیام یا فایل الزامی است', status: 400 };
     }
 
-    if (!skipIntro && req.userId) {
-        const { User, Department } = require('../models');
-        const user = await User.findByPk(req.userId, { include: [{ model: Department, as: 'department', required: false }] });
-        const dept = conversation.department || (user && user.department) || null;
-        await maybeSendEmployeeIntro(conversation, req.userId, user, dept);
+    const isForwarded = !!(metadata && metadata.forwardedFrom);
+    const { User, Department } = require('../models');
+    let senderUser = req.user;
+    let senderDept = conversation.department || null;
+    if (req.userId) {
+        if (!senderUser || !senderUser.whatsappSenderName) {
+            senderUser = await User.findByPk(req.userId, {
+                include: [{ model: Department, as: 'department', required: false }],
+            });
+        }
+        if (!senderDept && senderUser && senderUser.department) senderDept = senderUser.department;
+        if (!isForwarded) {
+            const senderCheck = validateOutboundSender(senderUser);
+            if (!senderCheck.ok) {
+                return { msg: null, error: senderCheck.error, status: 400 };
+            }
+        }
     }
 
     const proto = req.get('x-forwarded-proto') || req.protocol;
@@ -117,7 +129,12 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         return { msg, error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح وارد کنید.', status: 400 };
     }
 
-    const payload = { to: toPhone, message: text };
+    const waMessageText =
+        req.userId && !isForwarded
+            ? buildWhatsAppOutboundText(senderUser, senderDept, text)
+            : text;
+
+    const payload = { to: toPhone, message: waMessageText };
     if (hasMedia && media && (media.url || media.filename)) {
         const relPath = media.url || ('/uploads/' + media.filename);
         const uploadsDir = path.join(__dirname, '..', 'uploads');
