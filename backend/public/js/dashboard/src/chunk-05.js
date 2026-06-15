@@ -727,7 +727,9 @@
             if (posEl) posEl.value = u.position || '';
             const waSenderEl = document.getElementById('userEditWhatsappSender');
             if (waSenderEl) waSenderEl.value = u.whatsappSenderName || '';
-            const editFields = ['userEditName','userEditUsername','userEditEmail','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition','userEditWhatsappSender'];
+            const waHonorificEl = document.getElementById('userEditWhatsappHonorific');
+            if (waHonorificEl) waHonorificEl.value = u.whatsappHonorific || '';
+            const editFields = ['userEditName','userEditUsername','userEditEmail','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition','userEditWhatsappSender','userEditWhatsappHonorific'];
             editFields.forEach(function(fid) { const el = document.getElementById(fid); if (el) el.disabled = isProtected; });
             let protectedBanner = document.getElementById('userEditProtectedBanner');
             if (!protectedBanner) {
@@ -806,6 +808,7 @@
             const skillsEl = document.getElementById('userEditSkillsKeywords');
             const posEl = document.getElementById('userEditPosition');
             const waSenderEl = document.getElementById('userEditWhatsappSender');
+            const waHonorificEl = document.getElementById('userEditWhatsappHonorific');
             const editEmail = document.getElementById('userEditEmail').value.trim();
             if (!editEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail)) { toast(LANG === 'fa' ? 'فرمت ایمیل نامعتبر است' : 'Invalid email format', true); return; }
             const payload = {
@@ -815,6 +818,7 @@
                 role: document.getElementById('userEditRole').value,
                 position: posEl ? posEl.value.trim() || null : undefined,
                 whatsappSenderName: waSenderEl ? waSenderEl.value.trim() || null : undefined,
+                whatsappHonorific: waHonorificEl ? waHonorificEl.value.trim() || null : undefined,
                 departmentId: document.getElementById('userEditDept').value || null,
                 branchId: document.getElementById('userEditBranch').value || null,
                 isActive: document.getElementById('userEditActive').checked,

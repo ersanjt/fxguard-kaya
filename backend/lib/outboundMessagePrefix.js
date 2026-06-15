@@ -1,6 +1,8 @@
 'use strict';
 
 const DEFAULT_PREFIX = 'این پیام از دپارتمان {{deptName}} {{name}} می‌باشد.';
+const DEFAULT_CALL_INTRO =
+    'از مجموعه {{orgName}}، دپارتمان {{deptName}}، {{honorific}}{{name}} با شما تماس می‌گیرد.';
 
 /**
  * نام نمایشی کاربر در پیام‌های واتساپ (اولویت: whatsappSenderName)
@@ -20,12 +22,51 @@ function getDepartmentName(department) {
     return (department && department.name && String(department.name).trim()) || 'پشتیبانی';
 }
 
+function getOrganizationName(siteName) {
+    const n = (siteName && String(siteName).trim()) || '';
+    return n || 'کایا هولدینگ';
+}
+
+/** آقای / خانم — از فیلد اختیاری یا خالی */
+function getUserHonorific(user) {
+    if (!user) return '';
+    const h = (user.whatsappHonorific || '').trim();
+    if (!h) return '';
+    if (h === 'male' || h === 'm') return 'آقای ';
+    if (h === 'female' || h === 'f') return 'خانم ';
+    return h.endsWith(' ') ? h : `${h} `;
+}
+
+function applyStaffTemplate(tpl, { orgName, deptName, name, honorific }) {
+    return tpl
+        .replace(/\{\{orgName\}\}/g, orgName)
+        .replace(/\{\{deptName\}\}/g, deptName)
+        .replace(/\{\{honorific\}\}/g, honorific || '')
+        .replace(/\{\{name\}\}/g, name);
+}
+
 function buildPrefixLine(user, department, template) {
     const name = getUserWhatsAppSenderName(user);
     if (!name) return null;
     const deptName = getDepartmentName(department);
     const tpl = (template && String(template).trim()) || DEFAULT_PREFIX;
-    return tpl.replace(/\{\{deptName\}\}/g, deptName).replace(/\{\{name\}\}/g, name);
+    return applyStaffTemplate(tpl, { orgName: getOrganizationName(), deptName, name, honorific: '' });
+}
+
+/**
+ * متن معرفی قبل از تماس واتساپ (ارسال به مشتری)
+ */
+function buildCallIntroText(user, department, orgName, template) {
+    const name = getUserWhatsAppSenderName(user);
+    if (!name) return null;
+    const deptName = getDepartmentName(department);
+    const tpl = (template && String(template).trim()) || DEFAULT_CALL_INTRO;
+    return applyStaffTemplate(tpl, {
+        orgName: getOrganizationName(orgName),
+        deptName,
+        name,
+        honorific: getUserHonorific(user),
+    });
 }
 
 /**
@@ -56,7 +97,11 @@ function buildWhatsAppOutboundText(user, department, content, template) {
 
 module.exports = {
     getUserWhatsAppSenderName,
+    getDepartmentName,
+    getOrganizationName,
     buildWhatsAppOutboundText,
+    buildCallIntroText,
     validateOutboundSender,
     DEFAULT_PREFIX,
+    DEFAULT_CALL_INTRO,
 };

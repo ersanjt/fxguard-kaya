@@ -234,9 +234,11 @@
                 if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
                 const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
                 const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+                const callMsg = document.getElementById('whatsappCallIntroMessage');
                 const autoAsgCb = document.getElementById('whatsappAutoAssignmentMessagesEnabled');
                 if (deptMsg) deptMsg.value = res.data.deptAssignedMessage || '';
                 if (empMsg) empMsg.value = res.data.employeeIntroMessage || '';
+                if (callMsg) callMsg.value = res.data.callIntroMessage || '';
                 if (autoAsgCb) autoAsgCb.checked = res.data.autoAssignmentMessagesEnabled !== false;
                 if (deptSel) {
                     const deptRes = await apiFetch('/api/departments');
@@ -317,6 +319,7 @@
         async function saveWhatsappAutoMessagesConfig() {
             const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
             const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+            const callMsg = document.getElementById('whatsappCallIntroMessage');
             const autoAsgCb = document.getElementById('whatsappAutoAssignmentMessagesEnabled');
             const btn = document.getElementById('btnSaveWhatsappAutoMessages');
             if (!deptMsg || !empMsg) return;
@@ -327,6 +330,7 @@
                     body: JSON.stringify({
                         deptAssignedMessage: deptMsg.value.trim(),
                         employeeIntroMessage: empMsg.value.trim(),
+                        callIntroMessage: callMsg ? callMsg.value.trim() : '',
                         autoAssignmentMessagesEnabled: autoAsgCb ? autoAsgCb.checked : true
                     })
                 });

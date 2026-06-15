@@ -963,11 +963,11 @@ app.post('/api/calls/start', sendLimiter, async (req, res) => {
     try {
         if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
 
-        const { to, type } = req.body || {};
+        const { to, type, introText } = req.body || {};
         if (!to) return res.status(400).json({ error: 'to is required' });
         const isVideo = type === 'video';
 
-        const result = await startOutgoingCall(client, to, isVideo, logger);
+        const result = await startOutgoingCall(client, to, isVideo, logger, { introText });
         return res.json({ success: true, ...result });
     } catch (error) {
         const msg = error?.message || 'call_failed';

@@ -751,18 +751,17 @@ router.post('/:id/call', async (req, res, next) => {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id, {
-            include: [{ model: Customer, as: 'customer' }],
+            include: [
+                { model: Customer, as: 'customer' },
+                { model: Department, as: 'department', required: false },
+            ],
         });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
         if (!(await canAccessConversation(req, conversation))) {
             return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         }
-        const meta = conversation.metadata && typeof conversation.metadata === 'object' ? conversation.metadata : {};
-        const isGroup = !!(meta.isGroup || (conversation.customer?.phone || '').includes('@g.us'));
-        const target = (conversation.customer?.phone || '').trim();
-        if (!target) return res.status(400).json({ error: isGroup ? 'شناسه گروه واتساپ یافت نشد' : 'شماره مشتری یافت نشد' });
 
-        const { gatewayPost, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
+        const { getWhatsappConnectionConfig } = require('../lib/gatewayClient');
         const cfg = await getWhatsappConnectionConfig();
         if (!cfg.gatewayEnabled) {
             return res.status(503).json({
@@ -771,8 +770,10 @@ router.post('/:id/call', async (req, res, next) => {
         }
 
         const callType = req.body?.type === 'video' ? 'video' : 'voice';
-        const gwRes = await gatewayPost('/api/calls/start', { to: target, type: callType, isGroup }, { timeout: 45000 });
-        res.json(gwRes.data);
+        const { startWaConversationCall } = require('../lib/waCallOutbound');
+        const result = await startWaConversationCall(req, conversation, callType);
+        if (result.error) return res.status(result.status || 500).json({ error: result.error });
+        res.json(result.data);
     } catch (err) {
         if (err.response?.status === 503) {
             return res.status(503).json({

@@ -22,6 +22,7 @@ router.get('/config', async (req, res, next) => {
             openaiApiKeySet: !!(cfg.openaiApiKey && String(cfg.openaiApiKey).trim().length > 10),
             deptAssignedMessage: cfg.deptAssignedMessage ?? '',
             employeeIntroMessage: cfg.employeeIntroMessage ?? '',
+            callIntroMessage: cfg.callIntroMessage ?? '',
             autoAssignmentMessagesEnabled: cfg.autoAssignmentMessagesEnabled !== false
         });
     } catch (err) {
@@ -46,7 +47,7 @@ router.get('/config', async (req, res, next) => {
 router.put('/config', async (req, res, next) => {
     try {
         if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
-        const { welcomeMessage, welcomeEnabled, alertUnansweredAfterMinutes, escalateUnansweredAfterMinutes, escalationDepartmentId, aiAnswerEnabled, openaiApiKey, deptAssignedMessage, employeeIntroMessage, autoAssignmentMessagesEnabled } = req.body || {};
+        const { welcomeMessage, welcomeEnabled, alertUnansweredAfterMinutes, escalateUnansweredAfterMinutes, escalationDepartmentId, aiAnswerEnabled, openaiApiKey, deptAssignedMessage, employeeIntroMessage, callIntroMessage, autoAssignmentMessagesEnabled } = req.body || {};
         const [cfg] = await WhatsappConfig.findOrCreate({
             where: { id: 'default' },
             defaults: { welcomeMessage: null, welcomeEnabled: true, alertUnansweredAfterMinutes: 5, escalateUnansweredAfterMinutes: 15, aiAnswerEnabled: true }
@@ -83,6 +84,11 @@ router.put('/config', async (req, res, next) => {
             if (msg.length > 500) return res.status(400).json({ error: 'پیام معرفی کارمند بیش از ۵۰۰ کاراکتر مجاز نیست' });
             cfg.employeeIntroMessage = msg || null;
         }
+        if (callIntroMessage !== undefined) {
+            const msg = String(callIntroMessage || '').trim();
+            if (msg.length > 500) return res.status(400).json({ error: 'پیام قبل از تماس بیش از ۵۰۰ کاراکتر مجاز نیست' });
+            cfg.callIntroMessage = msg || null;
+        }
         if (autoAssignmentMessagesEnabled !== undefined) cfg.autoAssignmentMessagesEnabled = !!autoAssignmentMessagesEnabled;
         await cfg.save();
         res.json({
@@ -95,6 +101,7 @@ router.put('/config', async (req, res, next) => {
             openaiApiKeySet: !!(cfg.openaiApiKey && String(cfg.openaiApiKey).trim().length > 10),
             deptAssignedMessage: cfg.deptAssignedMessage ?? '',
             employeeIntroMessage: cfg.employeeIntroMessage ?? '',
+            callIntroMessage: cfg.callIntroMessage ?? '',
             autoAssignmentMessagesEnabled: cfg.autoAssignmentMessagesEnabled !== false
         });
     } catch (err) {

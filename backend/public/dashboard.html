@@ -1557,6 +1557,10 @@
                                         <label data-i18n="whatsapp_employee_intro_msg">پیام معرفی کارمند</label>
                                         <textarea id="whatsappEmployeeIntroMessage" rows="2" class="whatsapp-textarea" data-i18n-ph="whatsapp_employee_intro_ph" placeholder="من {{name}} از دپارتمان {{deptName}} هستم."></textarea>
                                     </div>
+                                    <div class="whatsapp-auto-message-field">
+                                        <label data-i18n="whatsapp_call_intro_msg">پیام قبل از تماس واتساپ</label>
+                                        <textarea id="whatsappCallIntroMessage" rows="2" class="whatsapp-textarea" data-i18n-ph="whatsapp_call_intro_ph" placeholder="از مجموعه {{orgName}}، دپارتمان {{deptName}}، {{honorific}}{{name}} با شما تماس می‌گیرد."></textarea>
+                                    </div>
                                 </div>
                                 <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappAutoMessages" data-i18n="btn_save">ذخیره</button>
                             </div>
@@ -3239,6 +3243,7 @@
                             <div class="user-edit-field"><label data-i18n="label_role">نقش</label><select id="userEditRole"><option value="agent" data-i18n="role_agent">کارمند</option><option value="supervisor" data-i18n="role_supervisor">ناظر</option><option value="manager" data-i18n="role_manager">مدیر</option><option value="admin" data-i18n="role_admin">ادمین</option><option value="owner" data-i18n="role_owner">مالک</option></select></div>
                             <div class="user-edit-field"><label data-i18n="label_position">سمت</label><input type="text" id="userEditPosition" data-i18n-ph="position_ph" placeholder="مثلاً مدیر فروش، حسابدار"></div>
                             <div class="user-edit-field user-edit-field-wide"><label data-i18n="user_whatsapp_sender_name">نام در پیام واتساپ</label><input type="text" id="userEditWhatsappSender" data-i18n-ph="user_whatsapp_sender_ph" placeholder="مثلاً پروانه اکبری"></div>
+                            <div class="user-edit-field"><label data-i18n="user_whatsapp_honorific">آقا / خانم</label><select id="userEditWhatsappHonorific"><option value="" data-i18n="user_honorific_none">—</option><option value="male" data-i18n="user_honorific_male">آقای</option><option value="female" data-i18n="user_honorific_female">خانم</option></select></div>
                             <div class="user-edit-field"><label data-i18n="label_dept">دپارتمان</label><select id="userEditDept"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select></div>
                             <div class="user-edit-field"><label data-i18n="label_branch">شعبه</label><select id="userEditBranch"><option value="" data-i18n="no_branch">بدون شعبه</option></select></div>
                             <div class="user-edit-field user-edit-field-wide"><label data-i18n="user_skills_keywords">تخصص (کلمات کلیدی)</label><input type="text" id="userEditSkillsKeywords" placeholder="" data-i18n-ph="user_skills_ph"></div>

@@ -15,7 +15,8 @@ async function run() {
 
         const cols = [
             { name: 'deptAssignedMessage', def: { type: DataTypes.TEXT, allowNull: true } },
-            { name: 'employeeIntroMessage', def: { type: DataTypes.TEXT, allowNull: true } }
+            { name: 'employeeIntroMessage', def: { type: DataTypes.TEXT, allowNull: true } },
+            { name: 'callIntroMessage', def: { type: DataTypes.TEXT, allowNull: true } },
         ];
 
         for (const c of cols) {

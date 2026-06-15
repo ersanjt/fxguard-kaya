@@ -73,6 +73,7 @@ function me(req, res) {
         role: u.role,
         position: u.position,
         whatsappSenderName: u.whatsappSenderName,
+        whatsappHonorific: u.whatsappHonorific,
         departmentId: u.departmentId,
         branchId: u.branchId,
         status: u.status,
@@ -189,7 +190,7 @@ async function create(req, res, next) {
         if (!req.canManageUsers()) {
             return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر جدید بسازد' });
         }
-        const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords, position, whatsappSenderName } = req.body;
+        const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords, position, whatsappSenderName, whatsappHonorific } = req.body;
         if (!name || !email || !password) {
             return res.status(400).json({ error: 'نام، ایمیل و رمز الزامی است' });
         }
@@ -224,6 +225,7 @@ async function create(req, res, next) {
             role: role || 'agent',
             position: position ? String(position).trim() : null,
             whatsappSenderName: whatsappSenderName ? String(whatsappSenderName).trim() : null,
+            whatsappHonorific: whatsappHonorific ? String(whatsappHonorific).trim() : null,
             departmentId: departmentId || null,
             branchId: finalBranchId,
             permissions: permissions && typeof permissions === 'object' ? permissions : {},
@@ -272,7 +274,7 @@ async function update(req, res, next) {
                 error: 'اطلاعات ادمین اصلی سیستم غیر قابل ویرایش است. هیچ کاربری حتی با بالاترین سطح دسترسی امکان ویرایش ادمین اصلی را ندارد.',
             });
         }
-        const { name, username, email, role, departmentId, branchId, isActive, permissions, position, whatsappSenderName } = req.body;
+        const { name, username, email, role, departmentId, branchId, isActive, permissions, position, whatsappSenderName, whatsappHonorific } = req.body;
         if (name !== undefined) {
             const trimmedName = String(name).trim();
             if (!trimmedName) return res.status(400).json({ error: 'نام نمی‌تواند خالی باشد' });
@@ -281,6 +283,9 @@ async function update(req, res, next) {
         if (position !== undefined) user.position = position ? String(position).trim() : null;
         if (whatsappSenderName !== undefined) {
             user.whatsappSenderName = whatsappSenderName ? String(whatsappSenderName).trim() : null;
+        }
+        if (whatsappHonorific !== undefined) {
+            user.whatsappHonorific = whatsappHonorific ? String(whatsappHonorific).trim() : null;
         }
         if (username !== undefined) {
             const trimmed = String(username || '').trim();

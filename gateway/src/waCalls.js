@@ -81,17 +81,23 @@ async function createWaCallLink(client, isVideo) {
  * 1) Click UI call button in linked WhatsApp Web session
  * 2) Fallback: send call link message to chat
  */
-async function startOutgoingCall(client, to, isVideo, logger) {
+async function startOutgoingCall(client, to, isVideo, logger, opts = {}) {
     const raw = String(to || '').trim();
     const chatId =
         raw.includes('@c.us') || raw.includes('@g.us') ? raw : `${raw.replace(/\D/g, '')}@c.us`;
     const isGroup = chatId.includes('@g.us');
+    const introText = (opts.introText && String(opts.introText).trim()) || '';
+
+    if (introText) {
+        await client.sendMessage(chatId, introText);
+        await sleep(900);
+    }
 
     try {
         const uiOk = await tryUiCallClickForChat(client, chatId, isVideo);
         if (uiOk) {
-            logger.info('Outgoing call started via WhatsApp Web UI', { chatId, isVideo, isGroup });
-            return { ok: true, method: 'ui', isGroup };
+            logger.info('Outgoing call started via WhatsApp Web UI', { chatId, isVideo, isGroup, hasIntro: !!introText });
+            return { ok: true, method: 'ui', isGroup, introSent: !!introText };
         }
     } catch (e) {
         logger.warn('UI call click failed, trying call link fallback', {
@@ -104,16 +110,21 @@ async function startOutgoingCall(client, to, isVideo, logger) {
     const callLink = await createWaCallLink(client, isVideo);
     if (!callLink) throw new Error('call_link_failed');
 
-    const text = isGroup
+    const linkLead = isGroup
         ? isVideo
-            ? `برای پیوستن به تماس تصویری گروهی روی لینک زیر بزنید (تا ۱۰ نفر):\n${callLink}`
-            : `برای پیوستن به تماس صوتی گروهی روی لینک زیر بزنید (تا ۱۰ نفر):\n${callLink}`
+            ? 'برای پیوستن به تماس تصویری گروهی روی لینک زیر بزنید (تا ۱۰ نفر):'
+            : 'برای پیوستن به تماس صوتی گروهی روی لینک زیر بزنید (تا ۱۰ نفر):'
         : isVideo
-          ? `برای پیوستن به تماس تصویری روی لینک زیر بزنید:\n${callLink}`
-          : `برای پیوستن به تماس صوتی روی لینک زیر بزنید:\n${callLink}`;
-    await client.sendMessage(chatId, text);
-    logger.info('Call link sent', { chatId, isVideo, isGroup });
-    return { ok: true, method: 'link', callLink, isGroup };
+          ? 'برای پیوستن به تماس تصویری روی لینک زیر بزنید:'
+          : 'برای پیوستن به تماس صوتی روی لینک زیر بزنید:';
+    const text = introText ? `${introText}\n\n${linkLead}\n${callLink}` : `${linkLead}\n${callLink}`;
+    if (!introText) {
+        await client.sendMessage(chatId, text);
+    } else {
+        await client.sendMessage(chatId, `${linkLead}\n${callLink}`);
+    }
+    logger.info('Call link sent', { chatId, isVideo, isGroup, introSent: !!introText });
+    return { ok: true, method: 'link', callLink, isGroup, introSent: !!introText };
 }
 
 module.exports = {

@@ -2238,6 +2238,14 @@
                     }
                     if (typeof toast === 'function') toast(startMsg, false);
                 }
+                if (data.introText && typeof toast === 'function') {
+                    var introToast = typeof t === 'function' ? t('wa_call_intro_sent') : '';
+                    if (!introToast || introToast === 'wa_call_intro_sent') {
+                        introToast = LANG === 'fa' ? 'معرفی تماس برای مشتری ارسال شد.' : 'Call introduction sent to customer.';
+                    }
+                    toast(introToast, false);
+                }
+                if (typeof loadMessages === 'function' && currentConvId) loadMessages(currentConvId);
             } catch (e) {
                 if (typeof toast === 'function') toast((typeof t === 'function' ? t('err_generic') : 'Error'), true);
             } finally {
