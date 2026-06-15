@@ -621,6 +621,11 @@
                 setElText('profileLastLogin', (LANG === 'fa' ? 'آخرین ورود: ' : 'Last login: ') + lastLogin);
                 setElText('profileEmail', u.email);
                 setElText('profileDepartment', deptName);
+                const waSenderEl = document.getElementById('profileWhatsappSenderName');
+                if (waSenderEl) {
+                    const waName = (u.whatsappSenderName || '').trim() || displayName;
+                    waSenderEl.textContent = waName || '\u2014';
+                }
                 const canEditEmail = !!(currentUser && currentUser.permissions && currentUser.permissions.manage_users);
                 const emailGroup = document.getElementById('profileEmailGroup');
                 const emailReadonlyRow = document.getElementById('profileEmailReadonlyRow');

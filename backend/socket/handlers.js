@@ -4,10 +4,10 @@
 const { User, Conversation, Message, Department } = require('../models');
 const { getSendTarget } = require('../lib/phoneUtils');
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
-const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { logActivity } = require('../services/activityLog');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { canAccessConversation } = require('../lib/conversationAccess');
+const { buildWhatsAppOutboundText, validateOutboundSender } = require('../lib/outboundMessagePrefix');
 
 const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
 const CALL_ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 ساعت
@@ -89,17 +89,20 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     return socket.emit('error', { message: 'دسترسی به این مکالمه ندارید' });
                 }
 
-                if (socket.userId) {
-                    const dept = conversation.department || (user && user.department) || null;
-                    await maybeSendEmployeeIntro(conversation, socket.userId, user, dept);
+                const senderCheck = validateOutboundSender(user);
+                if (!senderCheck.ok) {
+                    return socket.emit('error', { message: senderCheck.error });
                 }
+
+                const dept = conversation.department || (user && user.department) || null;
+                const waContent = buildWhatsAppOutboundText(user, dept, trimmedContent);
 
                 const newMessage = await Message.create({
                     conversationId: conversation.id,
                     customerId: conversation.customerId,
                     userId: socket.userId,
                     direction: 'outgoing',
-                    content: content,
+                    content: trimmedContent,
                     type: type || 'text',
                     timestamp: new Date()
                 });
@@ -108,10 +111,10 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 const rabbitChannel = typeof getRabbitChannel === 'function' ? getRabbitChannel() : getRabbitChannel;
                 if (rabbitChannel && !isCloudApiConfigured()) {
                     rabbitChannel.sendToQueue('outgoing_messages', Buffer.from(JSON.stringify({
-                        to: toPhone, message: content, media: media, conversationId: conversation.id
+                        to: toPhone, message: waContent, media: media, conversationId: conversation.id
                     })), { persistent: true });
                 } else {
-                    sendWhatsAppMessage({ to: toPhone, message: content, media: media || null }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
+                    sendWhatsAppMessage({ to: toPhone, message: waContent, media: media || null }, { timeout: 10000 }).catch(err => logger.error('Gateway send error:', err.message));
                 }
 
                 const now = new Date();

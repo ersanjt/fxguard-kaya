@@ -725,7 +725,9 @@
             if (skillsEl) skillsEl.value = (u.settings && u.settings.skillsKeywords) || '';
             const posEl = document.getElementById('userEditPosition');
             if (posEl) posEl.value = u.position || '';
-            const editFields = ['userEditName','userEditUsername','userEditEmail','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition'];
+            const waSenderEl = document.getElementById('userEditWhatsappSender');
+            if (waSenderEl) waSenderEl.value = u.whatsappSenderName || '';
+            const editFields = ['userEditName','userEditUsername','userEditEmail','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition','userEditWhatsappSender'];
             editFields.forEach(function(fid) { const el = document.getElementById(fid); if (el) el.disabled = isProtected; });
             let protectedBanner = document.getElementById('userEditProtectedBanner');
             if (!protectedBanner) {
@@ -803,6 +805,7 @@
             });
             const skillsEl = document.getElementById('userEditSkillsKeywords');
             const posEl = document.getElementById('userEditPosition');
+            const waSenderEl = document.getElementById('userEditWhatsappSender');
             const editEmail = document.getElementById('userEditEmail').value.trim();
             if (!editEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editEmail)) { toast(LANG === 'fa' ? 'فرمت ایمیل نامعتبر است' : 'Invalid email format', true); return; }
             const payload = {
@@ -811,6 +814,7 @@
                 email: editEmail,
                 role: document.getElementById('userEditRole').value,
                 position: posEl ? posEl.value.trim() || null : undefined,
+                whatsappSenderName: waSenderEl ? waSenderEl.value.trim() || null : undefined,
                 departmentId: document.getElementById('userEditDept').value || null,
                 branchId: document.getElementById('userEditBranch').value || null,
                 isActive: document.getElementById('userEditActive').checked,
@@ -853,7 +857,9 @@
             const skillsKeywords = (skillsEl && skillsEl.value.trim()) || null;
             const positionEl = document.getElementById('userPositionAdd');
             const positionVal = (positionEl && positionEl.value.trim()) || null;
-            const res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms, skillsKeywords: skillsKeywords, position: positionVal }) });
+            const waSenderAdd = document.getElementById('userWhatsappSenderAdd');
+            const whatsappSenderName = (waSenderAdd && waSenderAdd.value.trim()) || null;
+            const res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms, skillsKeywords: skillsKeywords, position: positionVal, whatsappSenderName: whatsappSenderName }) });
             if (res.needLogin) return;
             if (res.ok) {
                 document.getElementById('userName').value = '';
@@ -862,6 +868,7 @@
                 document.getElementById('userPass').value = '';
                 if (document.getElementById('userSkillsAdd')) document.getElementById('userSkillsAdd').value = '';
                 if (positionEl) positionEl.value = '';
+                if (waSenderAdd) waSenderAdd.value = '';
                 toast(t('toast_user_added')); loadUsers(); toggleUserForm();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }

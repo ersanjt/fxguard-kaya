@@ -15,6 +15,7 @@ const axios = require('axios');
 const cron = require('node-cron');
 const fs = require('fs').promises;
 const path = require('path');
+const { startOutgoingCall } = require('./waCalls');
 require('dotenv').config();
 
 // ==================== Config ====================
@@ -954,6 +955,29 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
     } catch (error) {
         logger.error('Send message error', { error: error?.message });
         return res.status(500).json({ error: error?.message || 'send_failed' });
+    }
+});
+
+// تماس صوتی/تصویری — از طریق UI واتساپ وب یا ارسال لینک تماس
+app.post('/api/calls/start', sendLimiter, async (req, res) => {
+    try {
+        if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
+
+        const { to, type } = req.body || {};
+        if (!to) return res.status(400).json({ error: 'to is required' });
+        const isVideo = type === 'video';
+
+        const result = await startOutgoingCall(client, to, isVideo, logger);
+        return res.json({ success: true, ...result });
+    } catch (error) {
+        const msg = error?.message || 'call_failed';
+        if (msg === 'call_link_failed') {
+            return res.status(503).json({
+                error: 'امکان ایجاد لینک تماس وجود ندارد. نسخه واتساپ وب را بررسی کنید.',
+            });
+        }
+        logger.error('Start call error', { error: msg });
+        return res.status(500).json({ error: msg });
     }
 });
 

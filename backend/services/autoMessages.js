@@ -113,7 +113,7 @@ async function maybeSendEmployeeIntro(conversation, userId, user, department) {
             where: { conversationId: conversation.id, userId, direction: 'outgoing' }
         });
         if (prevCount > 0) return;
-        const name = (user && (user.name || user.username || user.email)) || 'کارشناس';
+        const name = require('../lib/outboundMessagePrefix').getUserWhatsAppSenderName(user) || 'کارشناس';
         const deptName = (department && department.name) ? department.name : 'پشتیبانی';
         let template = DEFAULT_EMPLOYEE_INTRO;
         try {
