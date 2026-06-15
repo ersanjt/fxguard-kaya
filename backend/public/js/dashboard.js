@@ -3571,6 +3571,20 @@
                     setReplyTo(waId, prev != null ? prev : '');
                     return;
                 }
+                const msgForwardBtn = target.closest('.msg-forward-btn[data-msg-id]');
+                if (msgForwardBtn && typeof openForwardMsgModal === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openForwardMsgModal(msgForwardBtn.getAttribute('data-msg-id') || '', msgForwardBtn.getAttribute('data-preview') || '');
+                    return;
+                }
+                const forwardCust = target.closest('.forward-customer-item[data-forward-customer-id]');
+                if (forwardCust && typeof forwardMessageToCustomer === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    forwardMessageToCustomer(forwardCust.getAttribute('data-forward-customer-id') || '', forwardCust.getAttribute('data-forward-customer-name') || '');
+                    return;
+                }
                 // چت داخلی — دکمه‌ها و المان‌های کلیکی
                 if (target.closest('.internal-chat-new-btn') && typeof showNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); showNewChatForm(); return; }
                 if (target.closest('.internal-chat-back-btn') && typeof backToInternalChatList === 'function') { e.preventDefault(); e.stopPropagation(); backToInternalChatList(); return; }
@@ -4272,6 +4286,17 @@
             if (newConvModalClose) {
                 newConvModalClose.removeEventListener('click', closeNewConvModal);
                 newConvModalClose.addEventListener('click', closeNewConvModal);
+            }
+
+            const forwardModalClose = document.querySelector('#forwardMsgModal .modal-close');
+            if (forwardModalClose) {
+                forwardModalClose.removeEventListener('click', closeForwardMsgModal);
+                forwardModalClose.addEventListener('click', closeForwardMsgModal);
+            }
+            const forwardSearch = document.getElementById('forwardMsgCustomerSearch');
+            if (forwardSearch) {
+                forwardSearch.removeEventListener('input', onForwardCustomerSearchInput);
+                forwardSearch.addEventListener('input', onForwardCustomerSearchInput);
             }
             
             // Conversation detail delete/archive buttons
@@ -5052,6 +5077,76 @@
             loadNewConvCustomers();
         }
         function closeNewConvModal() { document.getElementById('newConvModal').style.display = 'none'; }
+        window._forwardingMessage = null;
+        function onForwardCustomerSearchInput() {
+            var v = this.value;
+            clearTimeout(window._forwardConvSearchT);
+            window._forwardConvSearchT = setTimeout(function() { loadForwardCustomers(v); }, 300);
+        }
+        function openForwardMsgModal(messageId, preview) {
+            if (!messageId) return;
+            window._forwardingMessage = { id: messageId, preview: preview || '' };
+            var modal = document.getElementById('forwardMsgModal');
+            var previewEl = document.getElementById('forwardMsgPreview');
+            var searchEl = document.getElementById('forwardMsgCustomerSearch');
+            if (previewEl) previewEl.textContent = (preview || '').slice(0, 160) + ((preview || '').length > 160 ? '…' : '');
+            if (searchEl) searchEl.value = '';
+            if (modal) modal.style.display = 'flex';
+            loadForwardCustomers();
+        }
+        function closeForwardMsgModal() {
+            window._forwardingMessage = null;
+            var modal = document.getElementById('forwardMsgModal');
+            if (modal) modal.style.display = 'none';
+        }
+        window.openForwardMsgModal = openForwardMsgModal;
+        window.closeForwardMsgModal = closeForwardMsgModal;
+        async function loadForwardCustomers(search) {
+            const list = document.getElementById('forwardMsgCustomerList');
+            if (!list) return;
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            let q = '?limit=30';
+            if (search && String(search).trim()) q += '&search=' + encodeURIComponent(String(search).trim());
+            const res = await apiFetch('/api/customers' + q);
+            if (res.needLogin) return;
+            if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
+            const data = res.data;
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
+            const currentCustId = currentConvDetail && currentConvDetail.customerId;
+            list.innerHTML = data.data.map(function(c) {
+                const name = c.name || c.phone || t('customer');
+                const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
+                const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
+                const picSrcNc = rawPicNc ? profilePicDisplaySrc(rawPicNc) : '';
+                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const sameHint = (currentCustId && c.id === currentCustId) ? ' <span class="meta">(' + escapeHtml(LANG === 'fa' ? 'همین چت' : 'This chat') + ')</span>' : '';
+                return '<div class="new-conv-customer-item forward-customer-item" role="button" tabindex="0" data-forward-customer-id="' + escapeAttr(String(c.id)) + '" data-forward-customer-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + sameHint + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
+            }).join('');
+        }
+        async function forwardMessageToCustomer(customerId, customerName) {
+            if (!window._forwardingMessage || !window._forwardingMessage.id) return;
+            const res = await apiFetch('/api/conversations/forward', {
+                method: 'POST',
+                body: JSON.stringify({ messageId: window._forwardingMessage.id, customerId: customerId })
+            });
+            if (res.needLogin) return;
+            if (res.ok) {
+                closeForwardMsgModal();
+                toast(t('toast_forward_sent') || (LANG === 'fa' ? 'پیام فوروارد شد' : 'Message forwarded'));
+                loadConversations();
+                if (res.data && res.data.conversation && res.data.conversation.id) {
+                    const convId = res.data.conversation.id;
+                    const cust = res.data.message && res.data.message.customer;
+                    setTimeout(function() {
+                        openChat(convId, customerName || (cust && cust.name) || '', (cust && cust.phone) || '', (cust && cust.profilePic) || '', false);
+                        loadMessages(convId);
+                    }, 150);
+                }
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
+        }
+        window.forwardMessageToCustomer = forwardMessageToCustomer;
         async function loadNewConvCustomers(search) {
             const list = document.getElementById('newConvCustomerList');
             if (!list) return;
@@ -5622,11 +5717,13 @@
                     if (rSn) replyPreviewSender = rSn + ': ';
                 }
                 const replyTitle = escapeAttr((typeof t === 'function' && t('msg_reply_short')) || (LANG === 'fa' ? 'پاسخ' : LANG === 'tr' ? 'Yanıtla' : 'Reply'));
+                const forwardTitle = escapeAttr((typeof t === 'function' && t('msg_forward_short')) || (LANG === 'fa' ? 'فوروارد' : LANG === 'tr' ? 'İlet' : 'Forward'));
                 const replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeAttr(m.whatsappId) + '" data-preview="' + escapeAttr(replyPreviewSender + preview) + '" title="' + replyTitle + '">↩</button>' : '';
+                const forwardBtn = m.id ? '<button type="button" class="msg-forward-btn" data-msg-id="' + escapeAttr(m.id) + '" data-preview="' + escapeAttr(replyPreviewSender + preview) + '" title="' + forwardTitle + '">➦</button>' : '';
                 const voiceTgHideFooterTime = (resolvedMediaType === 'audio' && !displayContent);
                 const statusHtml = (!voiceTgHideFooterTime && isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + waMsgStatusTicks(m.status) + '</span>' : '';
                 const msgWaExtra = voiceTgHideFooterTime ? ' msg-voice-footer-hide-time msg-voice-wa-msg' : '';
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + forwardBtn + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');
             if (loadOlder) {
                 // اضافه کردن پیام‌های قدیمی‌تر به ابتدای لیست با حفظ scroll position

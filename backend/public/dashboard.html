@@ -3166,6 +3166,18 @@
             </div>
         </div>
     </div>
+    <div id="forwardMsgModal" class="modal-overlay" style="display:none;">
+        <div class="modal-box" style="max-width:480px;">
+            <div class="modal-header"><h3 data-i18n="conv_forward">فوروارد پیام</h3><button type="button" class="modal-close">&times;</button></div>
+            <div class="modal-body">
+                <p class="forward-msg-preview-label" data-i18n="conv_forward_preview">پیام انتخاب‌شده</p>
+                <div id="forwardMsgPreview" class="forward-msg-preview"></div>
+                <label data-i18n="conv_forward_select">ارسال به مشتری</label>
+                <input type="text" id="forwardMsgCustomerSearch" class="conv-filter-input" data-i18n-ph="header_search" placeholder="جستجو نام یا شماره..." style="margin-bottom:12px;">
+                <div id="forwardMsgCustomerList" class="new-conv-customer-list"></div>
+            </div>
+        </div>
+    </div>
     <div id="announcementModal" class="modal-overlay announcement-modal-overlay" style="display:none;" onclick="if(event.target===this)closeAnnouncementModal()">
         <div class="modal-box announcement-modal-box" id="announcementModalBox">
             <div class="announcement-modal-icon-wrap" id="annModalIconWrap">

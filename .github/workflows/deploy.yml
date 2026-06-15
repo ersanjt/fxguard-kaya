@@ -247,9 +247,23 @@ jobs:
             echo "  ✅ دامنهٔ اصلی kaya.fxguard.io در .env تایید شد"
 
             # جلوگیری از تنظیمات دمو/دامنهٔ خارجی در پروژهٔ تک‌برند کایا
-            if grep -Eq '^(DEMO_MODE|DEMO_USERNAME|DEMO_PASSWORD|DEMO_EMAIL|PUBLIC_APP_HOST)=' "$ENV_FILE"; then
+            DEMO_BAD=0
+            if grep -Eiq '^DEMO_MODE=(true|1|yes)\s*$' "$ENV_FILE"; then
+              echo "  ❌ DEMO_MODE فعال است"
+              DEMO_BAD=1
+            fi
+            if grep -E '^DEMO_(USERNAME|PASSWORD|EMAIL)=[^[:space:]]' "$ENV_FILE"; then
+              echo "  ❌ متغیرهای DEMO_USERNAME / DEMO_PASSWORD / DEMO_EMAIL نباید در .env باشند"
+              grep -E '^DEMO_(USERNAME|PASSWORD|EMAIL)=' "$ENV_FILE" || true
+              DEMO_BAD=1
+            fi
+            if grep -E '^PUBLIC_APP_HOST=' "$ENV_FILE"; then
+              echo "  ❌ PUBLIC_APP_HOST نباید در .env باشد"
+              grep -E '^PUBLIC_APP_HOST=' "$ENV_FILE" || true
+              DEMO_BAD=1
+            fi
+            if [ "$DEMO_BAD" = "1" ]; then
               echo "❌ خطا: تنظیمات دمو در backend/.env مجاز نیست (پروژه فقط برند کایا است)"
-              grep -E '^(DEMO_MODE|DEMO_USERNAME|DEMO_PASSWORD|DEMO_EMAIL|PUBLIC_APP_HOST)=' "$ENV_FILE" || true
               exit 1
             fi
             if grep -Eq 'app\.fxguard\.io|app\.fxgaurd\.io' "$ENV_FILE"; then

@@ -5102,6 +5102,10 @@
         .msg-footer .time { margin: 0; }
         .msg-reply-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; font-size: 1rem; opacity: 0.7; }
         .msg-reply-btn:hover { color: var(--accent); opacity: 1; }
+        .msg-forward-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; font-size: 1rem; opacity: 0.7; }
+        .msg-forward-btn:hover { color: var(--accent); opacity: 1; }
+        .forward-msg-preview-label { font-size: 0.8rem; color: var(--text-muted); margin: 0 0 6px; }
+        .forward-msg-preview { background: var(--bg-muted, rgba(0,0,0,.04)); border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; font-size: 0.85rem; color: var(--text-secondary); max-height: 72px; overflow: hidden; }
         .msg-status { font-size: 0.72rem; color: var(--text-muted); letter-spacing: -0.06em; line-height: 1; }
         .msg-status-read { color: #53bdeb; }
         .msg-status-delivered { color: rgba(255, 255, 255, 0.55); }

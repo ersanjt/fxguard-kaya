@@ -1777,6 +1777,20 @@
                     setReplyTo(waId, prev != null ? prev : '');
                     return;
                 }
+                const msgForwardBtn = target.closest('.msg-forward-btn[data-msg-id]');
+                if (msgForwardBtn && typeof openForwardMsgModal === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openForwardMsgModal(msgForwardBtn.getAttribute('data-msg-id') || '', msgForwardBtn.getAttribute('data-preview') || '');
+                    return;
+                }
+                const forwardCust = target.closest('.forward-customer-item[data-forward-customer-id]');
+                if (forwardCust && typeof forwardMessageToCustomer === 'function') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    forwardMessageToCustomer(forwardCust.getAttribute('data-forward-customer-id') || '', forwardCust.getAttribute('data-forward-customer-name') || '');
+                    return;
+                }
                 // چت داخلی — دکمه‌ها و المان‌های کلیکی
                 if (target.closest('.internal-chat-new-btn') && typeof showNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); showNewChatForm(); return; }
                 if (target.closest('.internal-chat-back-btn') && typeof backToInternalChatList === 'function') { e.preventDefault(); e.stopPropagation(); backToInternalChatList(); return; }
