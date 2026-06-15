@@ -25,15 +25,14 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
 
     const isForwarded = !!(metadata && metadata.forwardedFrom);
     const { User, Department } = require('../models');
-    let senderUser = req.user;
-    let senderDept = conversation.department || null;
+    let senderUser = null;
+    let senderDept = null;
     if (req.userId) {
-        if (!senderUser || !senderUser.whatsappSenderName) {
-            senderUser = await User.findByPk(req.userId, {
-                include: [{ model: Department, as: 'department', required: false }],
-            });
-        }
-        if (!senderDept && senderUser && senderUser.department) senderDept = senderUser.department;
+        senderUser = await User.findByPk(req.userId, {
+            include: [{ model: Department, as: 'department', required: false }],
+        });
+        // دپارتمان و نام همان کاربری که الان پیام می‌فرستد (نه لزوماً دپارتمان مکالمه)
+        senderDept = (senderUser && senderUser.department) || conversation.department || null;
         if (!isForwarded) {
             const senderCheck = validateOutboundSender(senderUser);
             if (!senderCheck.ok) {
@@ -129,12 +128,12 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         return { msg, error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح وارد کنید.', status: 400 };
     }
 
-    const waMessageText =
+    const waCaption =
         req.userId && !isForwarded
             ? buildWhatsAppOutboundText(senderUser, senderDept, text)
             : text;
 
-    const payload = { to: toPhone, message: waMessageText };
+    const payload = { to: toPhone, message: waCaption };
     if (hasMedia && media && (media.url || media.filename)) {
         const relPath = media.url || ('/uploads/' + media.filename);
         const uploadsDir = path.join(__dirname, '..', 'uploads');

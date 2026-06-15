@@ -41,17 +41,9 @@ gateway/.wwebjs_cache*/
 backend/.env
 backend/env-production-paste.txt
 
-# android
-android-app/.gradle/
-android-app/app/build/
-android-app/build/
-android-app/local.properties
-android-app/releases/*.apk
-android-app/query
-
-# ios
-ios-app/build/
-ios-app/DerivedData/
+# android / ios — از دیپلوی سرور حذف شده؛ پوشهٔ لوکال commit نشود
+android-app/
+ios-app/
 *.xcworkspace/xcuserdata/
 *.xcodeproj/xcuserdata/
 

@@ -94,7 +94,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     return socket.emit('error', { message: senderCheck.error });
                 }
 
-                const dept = conversation.department || (user && user.department) || null;
+                const dept = (user && user.department) || conversation.department || null;
                 const waContent = buildWhatsAppOutboundText(user, dept, trimmedContent);
 
                 const newMessage = await Message.create({
