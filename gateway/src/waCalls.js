@@ -24,28 +24,32 @@ async function openChatInWaWeb(client, chatId) {
 async function tryUiCallClickForChat(client, chatId, isVideo) {
     await openChatInWaWeb(client, chatId);
     await sleep(700);
-    const clicked = await client.pupPage.evaluate((iconName) => {
-        const selectors = [
-            `span[data-icon="${iconName}"]`,
-            `button span[data-icon="${iconName}"]`,
-            `[data-icon="${iconName}"]`,
-        ];
-        let el = null;
-        for (const sel of selectors) {
-            el = document.querySelector(sel);
-            if (el) break;
-        }
-        if (!el) {
-            const header = document.querySelector('header') || document.querySelector('#main header');
-            if (header) {
-                el = header.querySelector(`[data-icon="${iconName}"]`);
+    const clicked = await client.pupPage.evaluate(
+        (iconName) => {
+            const selectors = [
+                `span[data-icon="${iconName}"]`,
+                `button span[data-icon="${iconName}"]`,
+                `[data-icon="${iconName}"]`,
+            ];
+            let el = null;
+            for (const sel of selectors) {
+                el = document.querySelector(sel);
+                if (el) break;
             }
-        }
-        if (!el) return false;
-        const btn = el.closest('button') || el.closest('[role="button"]') || el;
-        btn.click();
-        return true;
-    }, isVideo ? 'video-call' : 'voice-call');
+            if (!el) {
+                const header =
+                    document.querySelector('header') || document.querySelector('#main header');
+                if (header) {
+                    el = header.querySelector(`[data-icon="${iconName}"]`);
+                }
+            }
+            if (!el) return false;
+            const btn = el.closest('button') || el.closest('[role="button"]') || el;
+            btn.click();
+            return true;
+        },
+        isVideo ? 'video-call' : 'voice-call'
+    );
     return clicked;
 }
 
@@ -80,9 +84,7 @@ async function createWaCallLink(client, isVideo) {
 async function startOutgoingCall(client, to, isVideo, logger) {
     const raw = String(to || '').trim();
     const chatId =
-        raw.includes('@c.us') || raw.includes('@g.us')
-            ? raw
-            : `${raw.replace(/\D/g, '')}@c.us`;
+        raw.includes('@c.us') || raw.includes('@g.us') ? raw : `${raw.replace(/\D/g, '')}@c.us`;
     const isGroup = chatId.includes('@g.us');
 
     try {
@@ -92,7 +94,11 @@ async function startOutgoingCall(client, to, isVideo, logger) {
             return { ok: true, method: 'ui', isGroup };
         }
     } catch (e) {
-        logger.warn('UI call click failed, trying call link fallback', { error: e?.message, chatId, isGroup });
+        logger.warn('UI call click failed, trying call link fallback', {
+            error: e?.message,
+            chatId,
+            isGroup,
+        });
     }
 
     const callLink = await createWaCallLink(client, isVideo);
