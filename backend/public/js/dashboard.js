@@ -33,12 +33,31 @@
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
-        fetch((API || '') + '/api/panel-settings/public/languages').then(function(r){ return r.json(); }).then(function(data){
-            if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage);
-            else if (typeof setLang === 'function') setLang(LANG);
-        }).catch(function(){
-            if (typeof setLang === 'function') setLang(LANG);
-        });
+        function applyLoginBootstrapData(data) {
+            if (data && data.languages && data.languages.supportedLanguages && window.applySupportedLanguages) {
+                window.applySupportedLanguages(data.languages.supportedLanguages, data.languages.defaultLanguage);
+            } else if (typeof setLang === 'function') setLang(LANG);
+            if (data && data.branding && typeof applyBranding === 'function') applyBranding(data.branding, { full: true });
+            else if (window.LoginBootstrap && typeof window.LoginBootstrap.markReady === 'function') window.LoginBootstrap.markReady();
+        }
+        if (window.LoginBootstrap && window.LoginBootstrap.readyPromise) {
+            window.LoginBootstrap.readyPromise.then(applyLoginBootstrapData).catch(function () {
+                if (typeof setLang === 'function') setLang(LANG);
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.markReady === 'function') window.LoginBootstrap.markReady();
+            });
+        } else {
+            fetch((API || '') + '/api/panel-settings/public/languages')
+                .then(function (r) {
+                    return r.json();
+                })
+                .then(function (data) {
+                    if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage);
+                    else if (typeof setLang === 'function') setLang(LANG);
+                })
+                .catch(function () {
+                    if (typeof setLang === 'function') setLang(LANG);
+                });
+        }
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
             if (c && c.supportUrl) {
@@ -118,7 +137,11 @@
                 getLang: function () { return LANG; },
                 on401: function () {
                     token = null;
-                    document.documentElement.classList.remove('auth-has-token');
+                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                        window.LoginBootstrap.setLoggedOut();
+                    } else {
+                        document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
+                    }
                     document.getElementById('loginBox').style.display = 'flex';
                     document.getElementById('app').classList.remove('show');
                     const errEl = document.getElementById('loginErr');
@@ -1633,6 +1656,7 @@
                         }
                     });
                     socket.on('new_message', function(data) {
+                        if (data.isHiddenFromStaff && typeof canViewHiddenConversations === 'function' && !canViewHiddenConversations()) return;
                         const active = document.querySelector('.nav-link.active');
                         const onConv = active && active.getAttribute('data-page') === 'conversations';
                         const convId = data.conversationId || (data.conversation && data.conversation.id);
@@ -2051,7 +2075,14 @@
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
-                token = null; document.documentElement.classList.remove('auth-has-token'); document.getElementById('loginBox').style.display = 'flex'; document.getElementById('app').classList.remove('show');
+                token = null;
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                    window.LoginBootstrap.setLoggedOut();
+                } else {
+                    document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
+                }
+                document.getElementById('loginBox').style.display = 'flex';
+                document.getElementById('app').classList.remove('show');
                 const errEl = document.getElementById('loginErr');
                 if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
@@ -2160,7 +2191,11 @@
             }
             if (data.token) {
                 token = data.token;
-                document.documentElement.classList.add('auth-has-token');
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
+                    window.LoginBootstrap.setAuthenticated();
+                } else {
+                    document.documentElement.classList.add('auth-has-token');
+                }
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
                 document.getElementById('loginBox').style.display = 'none';
@@ -2294,7 +2329,11 @@
             if (data.token) {
                 window._totpTempToken = null;
                 token = data.token;
-                document.documentElement.classList.add('auth-has-token');
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
+                    window.LoginBootstrap.setAuthenticated();
+                } else {
+                    document.documentElement.classList.add('auth-has-token');
+                }
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
                 document.getElementById('loginBox').style.display = 'none';
@@ -2606,7 +2645,11 @@
             disconnectSocket();
             token = null;
             currentUser = null;
-            document.documentElement.classList.remove('auth-has-token');
+            if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                window.LoginBootstrap.setLoggedOut();
+            } else {
+                document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
+            }
             document.getElementById('loginBox').style.display = 'flex';
             const appEl = document.getElementById('app');
             if (appEl) { appEl.classList.remove('show', 'app-loading', 'app-ready'); }
@@ -4243,6 +4286,12 @@
                 convArchiveBtn.removeEventListener('click', archiveConversation);
                 convArchiveBtn.addEventListener('click', archiveConversation);
             }
+
+            const convHideBtn = document.getElementById('btnConvHide');
+            if (convHideBtn) {
+                convHideBtn.removeEventListener('click', toggleConvHidden);
+                convHideBtn.addEventListener('click', toggleConvHidden);
+            }
             
             const assignBtn = document.getElementById('btnAssignToMe');
             if (assignBtn) {
@@ -4534,6 +4583,7 @@
             if (el && btn) { el.classList.toggle('show'); btn.setAttribute('aria-expanded', el.classList.contains('show')); }
         }
         function canViewArchivedConversations() { const r = (currentUser && currentUser.role) || ''; return ['owner','admin','manager'].indexOf(r) >= 0; }
+        function canViewHiddenConversations() { const r = (currentUser && currentUser.role) || ''; return r === 'owner' || r === 'admin'; }
         function canManageConversations() { const r = (currentUser && currentUser.role) || ''; return r === 'owner'; }
         async function loadConvFiltersInit() {
             await loadConvAssignees();
@@ -4602,7 +4652,7 @@
             var deptName = (d.department && d.department.name) ? d.department.name : '';
             var statusLabel = convStatusLabelUi(d.status);
             var prioLabel = convPriorityLabelUi(d.priority);
-            badgesEl.innerHTML = '<span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_status')) + '</span>' + escapeHtml(statusLabel) + '</span><span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_priority')) + '</span>' + escapeHtml(prioLabel) + '</span><span role="listitem" class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + escapeHtml(t('conv_form_assignee')) + '</span><span class="conv-badge-assignee-wrap">' + (d.assignee ? internalMsgAvatarHtml(d.assignee, 'conv-badge-assignee-avatar') : '') + '<span class="conv-badge-assignee-name">' + escapeHtml(assigneeName) + '</span></span></span>' + (deptName ? '<span role="listitem" class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + escapeHtml(t('label_dept')) + '</span>' + escapeHtml(deptName) + '</span>' : '');
+            badgesEl.innerHTML = '<span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_status')) + '</span>' + escapeHtml(statusLabel) + '</span><span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_priority')) + '</span>' + escapeHtml(prioLabel) + '</span><span role="listitem" class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + escapeHtml(t('conv_form_assignee')) + '</span><span class="conv-badge-assignee-wrap">' + (d.assignee ? internalMsgAvatarHtml(d.assignee, 'conv-badge-assignee-avatar') : '') + '<span class="conv-badge-assignee-name">' + escapeHtml(assigneeName) + '</span></span></span>' + (deptName ? '<span role="listitem" class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + escapeHtml(t('label_dept')) + '</span>' + escapeHtml(deptName) + '</span>' : '') + (d.isHiddenFromStaff ? '<span role="listitem" class="conv-detail-badge conv-badge-hidden"><span class="conv-badge-label">' + escapeHtml(t('conv_hidden_badge')) + '</span>' + escapeHtml(t('conv_hidden_yes')) + '</span>' : '');
         }
         window.refreshConversationDetailBadges = function() {
             if (currentConvDetail) renderConvDetailBadges(currentConvDetail);
@@ -4718,9 +4768,10 @@
                     const waitStr = mins < 60 ? (mins + (LANG === 'fa' ? ' دقیقه' : ' min')) : (mins < 1440 ? (Math.floor(mins / 60) + (LANG === 'fa' ? ' ساعت' : ' hr')) : (Math.floor(mins / 1440) + (LANG === 'fa' ? ' روز' : ' days')));
                     unansweredBadge = '<span class="badge urgent" title="' + (LANG === 'fa' ? 'منتظر پاسخ' : 'Awaiting reply') + '">' + waitStr + '</span>';
                 }
+                const hiddenBadge = c.isHiddenFromStaff ? '<span class="badge conv-hidden-badge" title="' + escapeHtml(t('conv_hidden_badge')) + '">🔒</span>' : '';
                 const activeClass = (c.id === currentConvId) ? ' active' : '';
                 // نام و شماره در data-* ذخیره می‌شن — event handler میتواند کلیک رو handle کند
-                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="' + convAvatarClass + '">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + assigneeMetaSuffix + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + (c.isHiddenFromStaff ? ' conv-is-hidden' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="' + convAvatarClass + '">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + (c.isHiddenFromStaff ? '<span class="conv-hidden-inline" title="' + escapeHtml(t('conv_hidden_badge')) + '">🔒</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + assigneeMetaSuffix + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + hiddenBadge + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
             if (appendMode) {
                 // آیتم‌های جدید به انتهای لیست اضافه می‌شن
@@ -4915,6 +4966,12 @@
                 }
                 const archBtn = document.getElementById('btnConvArchive');
                 const delBtn = document.getElementById('btnConvDelete');
+                const hideBtn = document.getElementById('btnConvHide');
+                if (hideBtn) {
+                    hideBtn.style.display = canViewHiddenConversations() ? '' : 'none';
+                    hideBtn.textContent = d.isHiddenFromStaff ? (t('btn_conv_unhide') || 'Show to staff') : (t('btn_conv_hide') || 'Hide from staff');
+                    hideBtn.setAttribute('data-i18n', d.isHiddenFromStaff ? 'btn_conv_unhide' : 'btn_conv_hide');
+                }
                 if (archBtn) archBtn.style.display = (canManageConversations() && d.status !== 'archived') ? '' : 'none';
                 if (delBtn) delBtn.style.display = canManageConversations() ? '' : 'none';
                 if (actionsEl) {
@@ -4925,7 +4982,8 @@
                         var fApply = applyBtn2 && applyBtn2.style.display !== 'none';
                         var fArch = archBtn && archBtn.style.display !== 'none';
                         var fDel = delBtn && delBtn.style.display !== 'none';
-                        footerEl2.style.display = (fApply || fArch || fDel) ? '' : 'none';
+                        var fHide = hideBtn && hideBtn.style.display !== 'none';
+                        footerEl2.style.display = (fApply || fArch || fDel || fHide) ? '' : 'none';
                         footVis = footerEl2.style.display !== 'none';
                     }
                     var gridVis = actionsEl.querySelector('.conv-detail-fields-grid');
@@ -5084,6 +5142,27 @@
             const res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { toast(t('btn_save') || 'Saved'); if (currentConvDetail) currentConvDetail = res.data; const h = document.getElementById('chatHeader'); const activeItem = document.querySelector('.conv-list-item.active[data-id="' + currentConvId + '"]'); const pic = (activeItem && activeItem.getAttribute('data-profile-pic')) || (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.profilePic) || ''; const ig = (activeItem && activeItem.getAttribute('data-is-group') === '1') || (res.data && res.data.metadata && res.data.metadata.isGroup); openChat(currentConvId, (currentConvDetail && (currentConvDetail.customer && currentConvDetail.customer.name)) || (h ? h.textContent.replace(/^👥\s*/, '') : ''), (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.phone) || '', pic, ig); loadConversations(); } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+        async function toggleConvHidden() {
+            if (!currentConvId || !canViewHiddenConversations()) {
+                toast(LANG === 'fa' ? 'فقط مالک یا ادمین می‌تواند مکالمه را مخفی کند' : 'Only owner or admin can hide conversations', true);
+                return;
+            }
+            const isHidden = !!(currentConvDetail && currentConvDetail.isHiddenFromStaff);
+            const msg = isHidden
+                ? (LANG === 'fa' ? 'این مکالمه برای همه کارکنان نمایش داده شود؟' : 'Show this conversation to all staff?')
+                : (LANG === 'fa' ? 'این مکالمه از دید همه کارکنان (به‌جز مالک و ادمین) مخفی شود؟' : 'Hide this conversation from all staff except owner and admin?');
+            if (!confirm(msg)) return;
+            const res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify({ isHiddenFromStaff: !isHidden }) });
+            if (res.needLogin) return;
+            if (res.ok) {
+                toast(isHidden ? (t('conv_unhidden_toast') || 'Conversation visible to staff') : (t('conv_hidden_toast') || 'Conversation hidden from staff'));
+                currentConvDetail = res.data;
+                openChat(currentConvId, (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.name) || '', (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.phone) || '', (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.profilePic) || '', currentConvDetail && currentConvDetail.metadata && currentConvDetail.metadata.isGroup);
+                loadConversations();
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
         }
         async function archiveConversation() {
             if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را آرشیو کند' : 'Only owner can archive', true); return; }
@@ -7462,6 +7541,9 @@
             const fw = (b.fontWeight && ['normal', 'medium', 'bold'].indexOf(b.fontWeight) >= 0) ? b.fontWeight : 'normal';
             document.body.style.fontWeight = fw;
             if (Array.isArray(b.sidebarOrder) && b.sidebarOrder.length > 0) applySidebarOrder(b.sidebarOrder);
+            if (window.LoginBootstrap && typeof window.LoginBootstrap.cachePanelBranding === 'function') {
+                window.LoginBootstrap.cachePanelBranding(b);
+            }
         }
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');
@@ -12067,7 +12149,11 @@
                 currentUser = u;
                 if (u && u.email) {
                     setUserDisplay(u);
-                    document.documentElement.classList.add('auth-has-token');
+                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
+                        window.LoginBootstrap.setAuthenticated();
+                    } else {
+                        document.documentElement.classList.add('auth-has-token');
+                    }
                     document.getElementById('loginBox').style.display = 'none';
                     document.getElementById('app').classList.add('show');
                     try {
@@ -12077,6 +12163,4 @@
                     if (appEl) { appEl.classList.remove('app-loading'); appEl.classList.add('app-ready'); }
                 } else { logout(); }
             }).catch(function() { logout(); });
-        } else {
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data) applyBranding(data, { full: true }); }).catch(function() {});
         }

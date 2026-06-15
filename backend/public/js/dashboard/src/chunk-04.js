@@ -840,6 +840,9 @@
             const fw = (b.fontWeight && ['normal', 'medium', 'bold'].indexOf(b.fontWeight) >= 0) ? b.fontWeight : 'normal';
             document.body.style.fontWeight = fw;
             if (Array.isArray(b.sidebarOrder) && b.sidebarOrder.length > 0) applySidebarOrder(b.sidebarOrder);
+            if (window.LoginBootstrap && typeof window.LoginBootstrap.cachePanelBranding === 'function') {
+                window.LoginBootstrap.cachePanelBranding(b);
+            }
         }
         function applySidebarOrder(order) {
             const inner = document.querySelector('.sidebar .sidebar-inner');

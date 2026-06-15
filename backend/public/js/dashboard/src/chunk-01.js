@@ -33,12 +33,31 @@
         window.APP_TIMEZONE = 'Europe/Istanbul';
         window.navBadgeCounts = {};
         window.hasNewInternalChat = false;
-        fetch((API || '') + '/api/panel-settings/public/languages').then(function(r){ return r.json(); }).then(function(data){
-            if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage);
-            else if (typeof setLang === 'function') setLang(LANG);
-        }).catch(function(){
-            if (typeof setLang === 'function') setLang(LANG);
-        });
+        function applyLoginBootstrapData(data) {
+            if (data && data.languages && data.languages.supportedLanguages && window.applySupportedLanguages) {
+                window.applySupportedLanguages(data.languages.supportedLanguages, data.languages.defaultLanguage);
+            } else if (typeof setLang === 'function') setLang(LANG);
+            if (data && data.branding && typeof applyBranding === 'function') applyBranding(data.branding, { full: true });
+            else if (window.LoginBootstrap && typeof window.LoginBootstrap.markReady === 'function') window.LoginBootstrap.markReady();
+        }
+        if (window.LoginBootstrap && window.LoginBootstrap.readyPromise) {
+            window.LoginBootstrap.readyPromise.then(applyLoginBootstrapData).catch(function () {
+                if (typeof setLang === 'function') setLang(LANG);
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.markReady === 'function') window.LoginBootstrap.markReady();
+            });
+        } else {
+            fetch((API || '') + '/api/panel-settings/public/languages')
+                .then(function (r) {
+                    return r.json();
+                })
+                .then(function (data) {
+                    if (data && data.supportedLanguages) window.applySupportedLanguages(data.supportedLanguages, data.defaultLanguage);
+                    else if (typeof setLang === 'function') setLang(LANG);
+                })
+                .catch(function () {
+                    if (typeof setLang === 'function') setLang(LANG);
+                });
+        }
         fetch((API || '') + '/api/config').then(function(r){ return r.json(); }).then(function(c){
             if (c && c.timezone) window.APP_TIMEZONE = c.timezone;
             if (c && c.supportUrl) {
@@ -118,7 +137,11 @@
                 getLang: function () { return LANG; },
                 on401: function () {
                     token = null;
-                    document.documentElement.classList.remove('auth-has-token');
+                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                        window.LoginBootstrap.setLoggedOut();
+                    } else {
+                        document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
+                    }
                     document.getElementById('loginBox').style.display = 'flex';
                     document.getElementById('app').classList.remove('show');
                     const errEl = document.getElementById('loginErr');
@@ -1633,6 +1656,7 @@
                         }
                     });
                     socket.on('new_message', function(data) {
+                        if (data.isHiddenFromStaff && typeof canViewHiddenConversations === 'function' && !canViewHiddenConversations()) return;
                         const active = document.querySelector('.nav-link.active');
                         const onConv = active && active.getAttribute('data-page') === 'conversations';
                         const convId = data.conversationId || (data.conversation && data.conversation.id);

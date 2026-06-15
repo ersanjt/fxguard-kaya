@@ -9,6 +9,7 @@ const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { canAccessCustomer } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
+const { canAccessConversation: userCanAccessConversation, conversationListWhere } = require('../lib/conversationAccess');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const logger = require('../config/logger');
 const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
@@ -18,15 +19,9 @@ function canArchiveOrDeleteConversation(req) {
     return req.canManageConversations && req.canManageConversations();
 }
 
-/** آیا کاربر جاری به این مکالمه دسترسی دارد؟ فقط: تخصیص به خود، دپارتمان، یا نقش مدیریتی */
+/** آیا کاربر جاری به این مکالمه دسترسی دارد؟ */
 async function canAccessConversation(req, conversation) {
-    if (!conversation) return false;
-    if (isMainAdmin(req.user)) return true;
-    const role = req.user.role;
-    if (role === 'owner' || role === 'admin' || role === 'manager') return true;
-    if (conversation.assignedTo === req.userId) return true;
-    if (req.user.departmentId && conversation.departmentId === req.user.departmentId) return true;
-    return false;
+    return userCanAccessConversation(req.user, req.userId, conversation);
 }
 
 /** آیا کاربر می‌تواند مکالمه را تخصیص/بست/تغییر وضعیت دهد؟ (ادمین اصلی، owner، admin، manager) */
@@ -202,11 +197,13 @@ router.get('/', async (req, res, next) => {
             ]);
         }
 
-        // کارمند/ناظر: فقط مکالمات تخصیص‌یافته به خود یا دپارتمان خود (بدون شعبه، مشارکت قبلی، یا مشتریان دیگر)
-        if (!isMainAdmin(req.user) && req.user.role !== 'owner' && req.user.role !== 'admin' && req.user.role !== 'manager') {
-            const orConditions = [{ assignedTo: req.userId }];
-            if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
-            where[Op.or] = orConditions;
+        // سیاست دسترسی لیست + مخفی‌سازی از کارکنان
+        const listAccess = conversationListWhere(req.user, req.userId);
+        if (listAccess[Op.or]) {
+            where[Op.or] = listAccess[Op.or];
+        }
+        if (listAccess.isHiddenFromStaff === false) {
+            where.isHiddenFromStaff = false;
         }
 
         // حذف wildcardهای SQL برای جلوگیری از abuse و بار ناخواسته روی DB
@@ -495,7 +492,7 @@ router.patch('/:id', async (req, res, next) => {
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
         if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
 
-        const { assignedTo, departmentId, branchId, status, priority, subject, markRead, rating, feedback } = req.body;
+        const { assignedTo, departmentId, branchId, status, priority, subject, markRead, rating, feedback, isHiddenFromStaff } = req.body;
 
         if (markRead === true || markRead === 'true') {
             await conversation.update({ unreadCount: 0 });
@@ -537,6 +534,12 @@ router.patch('/:id', async (req, res, next) => {
         if (canManage && subject !== undefined) updateData.subject = subject;
         if (rating !== undefined && Number(rating) >= 1 && Number(rating) <= 5) updateData.rating = Math.round(Number(rating));
         if (feedback !== undefined) updateData.feedback = String(feedback || '').trim() || null;
+        if (isHiddenFromStaff !== undefined) {
+            if (!(req.canViewHiddenConversations && req.canViewHiddenConversations())) {
+                return res.status(403).json({ error: 'فقط مالک یا ادمین می‌تواند مکالمه را از دید کارکنان مخفی کند' });
+            }
+            updateData.isHiddenFromStaff = isHiddenFromStaff === true || isHiddenFromStaff === 'true';
+        }
 
         await conversation.update(updateData);
 

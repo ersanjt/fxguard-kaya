@@ -145,6 +145,13 @@ function canViewArchivedConversations(user) {
     return ['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1;
 }
 
+/** مالک (مدیرعامل)، ادمین و ادمین اصلی می‌توانند مکالمات مخفی از کارکنان را ببینند */
+function canViewHiddenConversations(user) {
+    if (!user) return false;
+    if (isMainAdmin(user)) return true;
+    return ['owner', 'admin'].indexOf(user.role || '') !== -1;
+}
+
 /** مالک و هر کاربری که دسترسی manage_tickets دارد می‌تواند تیکت را حذف یا آرشیو کند */
 function canManageTickets(user) {
     if (!user) return false;
@@ -171,6 +178,7 @@ module.exports = {
     canDeleteUser,
     canManageConversations,
     canViewArchivedConversations,
+    canViewHiddenConversations,
     isMainAdmin,
     getSectionKeys,
     getManageUsersKey,

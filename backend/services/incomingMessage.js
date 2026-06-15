@@ -702,6 +702,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                             conversationId: conversation.id,
                             customerId: customer.id,
                             message: autoMsg,
+                            isHiddenFromStaff: !!conversation.isHiddenFromStaff,
                             customer: { id: customer.id, name: customer.name, phone: customer.phone, profilePic: customer.profilePic }
                         });
                     }
@@ -724,13 +725,15 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             conversationId: conversation.id,
             customerId: customer.id,
             message: newMessage,
+            isHiddenFromStaff: !!conversation.isHiddenFromStaff,
             customer: { id: customer.id, name: customer.name, phone: customer.phone, profilePic: customer.profilePic }
         });
 
         if (conversation.assignedTo) {
             io.to(`user_${conversation.assignedTo}`).emit('assigned_message', {
                 conversationId: conversation.id,
-                message: newMessage
+                message: newMessage,
+                isHiddenFromStaff: !!conversation.isHiddenFromStaff,
             });
         }
 

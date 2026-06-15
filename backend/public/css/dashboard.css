@@ -89,6 +89,9 @@
         .skip-link { position: absolute; top: -100px; left: 50%; transform: translateX(-50%); z-index: 10001; padding: 12px 24px; background: var(--accent); color: #fff; font-weight: 600; border-radius: var(--radius-sm); text-decoration: none; font-family: var(--font); font-size: 0.95rem; transition: top 0.2s ease; min-height: 44px; display: inline-flex; align-items: center; justify-content: center; }
         .skip-link:focus { top: max(12px, env(safe-area-inset-top)); outline: none; box-shadow: 0 0 0 3px var(--accent-soft); }
         /* با توکن، پنل از همان اول نمایش داده شود */
+        html.login-boot-pending:not(.auth-verifying) .login-wrap { visibility: hidden; }
+        html.auth-verifying .login-wrap { display: none !important; }
+        html.auth-verifying .app { display: flex !important; }
         html.auth-has-token .login-wrap { display: none !important; }
         html.auth-has-token .app { display: flex !important; }
         /* جلوگیری از flash سبز: اپ تا زمانی که app-ready نشود مخفی است */

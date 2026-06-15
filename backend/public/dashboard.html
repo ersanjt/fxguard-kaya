@@ -19,9 +19,9 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=50">
+    <link rel="stylesheet" href="/css/dashboard.css?v=51">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=1" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script>(function(){try{var t=localStorage.getItem('crm_token');if(t&&t.length>0){document.documentElement.classList.add('auth-has-token');}}catch(e){}})();</script>
 </head>
 <body>
     <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
@@ -513,6 +513,7 @@
                                         </div>
                                         <div class="conv-detail-actions-footer">
                                             <button type="button" id="convDetailApplyBtn" class="btn-secondary btn-sm conv-detail-btn-apply" data-i18n="btn_apply">اعمال</button>
+                                            <button type="button" id="btnConvHide" class="btn-secondary btn-sm" data-i18n="btn_conv_hide" style="display:none;">مخفی از کارکنان</button>
                                             <button type="button" id="btnConvArchive" class="btn-secondary btn-sm" data-i18n="btn_archive" style="display:none;">ارسال به آرشیو</button>
                                             <button type="button" id="btnConvDelete" class="btn-danger btn-sm" data-i18n="btn_delete" style="display:none;">حذف</button>
                                         </div>

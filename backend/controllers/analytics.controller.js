@@ -14,14 +14,10 @@ const {
 } = require('../models');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
+const { conversationListWhere } = require('../lib/conversationAccess');
 
 function conversationWhere(req) {
-    if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role) !== -1) {
-        return {};
-    }
-    const orConditions = [{ assignedTo: req.userId }];
-    if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
-    return { [Op.or]: orConditions };
+    return conversationListWhere(req.user, req.userId);
 }
 
 function ticketAccessWhere(req) {

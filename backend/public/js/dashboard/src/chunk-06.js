@@ -1740,7 +1740,11 @@
                 currentUser = u;
                 if (u && u.email) {
                     setUserDisplay(u);
-                    document.documentElement.classList.add('auth-has-token');
+                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
+                        window.LoginBootstrap.setAuthenticated();
+                    } else {
+                        document.documentElement.classList.add('auth-has-token');
+                    }
                     document.getElementById('loginBox').style.display = 'none';
                     document.getElementById('app').classList.add('show');
                     try {
@@ -1750,6 +1754,4 @@
                     if (appEl) { appEl.classList.remove('app-loading'); appEl.classList.add('app-ready'); }
                 } else { logout(); }
             }).catch(function() { logout(); });
-        } else {
-            fetch(API + '/api/panel-settings/public/branding').then(function(r) { return r.json(); }).then(function(data) { if (data) applyBranding(data, { full: true }); }).catch(function() {});
         }
