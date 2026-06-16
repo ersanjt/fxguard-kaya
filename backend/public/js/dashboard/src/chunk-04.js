@@ -1695,9 +1695,12 @@
             if (pt) { pt.textContent = titleText; pt.setAttribute('data-i18n', titleKey); }
             if (pb) pb.textContent = titleText;
             if (pm) pm.textContent = titleText;
-            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
             const ids = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_IDS : {};
-            if (ids[page]) { const el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations' || page === 'internal-chat') ? 'flex' : 'block'; el.classList.add('show'); } }
+            if (ids[page]) {
+                const el = document.getElementById(ids[page]);
+                if (el) el.classList.add('show');
+            }
             const content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
             if (page === 'dashboard') loadDashboard();
