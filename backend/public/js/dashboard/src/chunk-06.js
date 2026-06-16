@@ -1727,9 +1727,6 @@
                 console.error('Panel settings:', e);
             }
             applyHashRoute();
-            if ((location.hash || '#dashboard').replace(/^#/, '') === 'dashboard' && typeof loadDashboard === 'function') {
-                loadDashboard();
-            }
             loadGeneralAnnouncementsMarquee();
             removeAllInlineHandlers();
             initCspInlineMutationStrip();

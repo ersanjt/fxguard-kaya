@@ -1010,6 +1010,7 @@
             if (container) container.innerHTML = '<div class="dashboard-load-error empty">' + (message || t('loading_err')) + '</div>';
             if (cardsTitleEl) cardsTitleEl.style.display = 'none';
         }
+        let _loadDashboardSeq = 0;
         async function loadDashboard() {
             const container = document.getElementById('dashboardCards');
             const summaryEl = document.getElementById('dashboardSummary');
@@ -1017,8 +1018,16 @@
             const attentionEl = document.getElementById('dashboardAttention');
             const cardsTitleEl = document.getElementById('dashboardCardsTitle');
             if (!container) return;
-            const perms = (currentUser && currentUser.permissions) || {};
-            const can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
+            if (!currentUser || !currentUser.id) return;
+            const seq = ++_loadDashboardSeq;
+            const can = (typeof canAccessSection === 'function')
+                ? canAccessSection
+                : function(section) {
+                    const perms = (currentUser && currentUser.permissions) || {};
+                    const role = (currentUser && currentUser.role) || '';
+                    const isOwnerOrAdmin = (role === 'owner' || role === 'admin');
+                    return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true);
+                };
             if (container) container.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (summaryEl) summaryEl.innerHTML = '';
             if (quickEl) quickEl.innerHTML = '';
@@ -1038,6 +1047,7 @@
                 setDashboardError(container, cardsTitleEl, getApiError(res));
                 return;
             }
+            if (seq !== _loadDashboardSeq) return;
             const stats = res.data || {};
             const n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
             if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {

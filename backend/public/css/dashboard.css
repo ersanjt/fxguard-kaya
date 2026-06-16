@@ -95,6 +95,7 @@
         html.auth-has-token .login-wrap { display: none !important; }
         html.auth-has-token .app { display: flex !important; }
         /* جلوگیری از flash سبز: اپ تا زمانی که app-ready نشود مخفی است */
+        html.auth-verifying .app:not(.app-ready),
         html.auth-has-token .app:not(.app-ready) { opacity: 0 !important; pointer-events: none !important; }
         /* نوار قیمت ارز و طلا — همیشه در پایین برای همه کارکنان */
         .bottom-bar { position: fixed; bottom: 0; left: 0; right: 0; width: 100%; max-width: 100vw; z-index: 500; display: flex; flex-direction: column; flex-shrink: 0; overflow-x: hidden; min-width: 0; background: linear-gradient(180deg, #0a0f1a 0%, #0d1525 100%); box-sizing: border-box; }
@@ -808,16 +809,8 @@
         .internal-chat-box { flex: 1; min-height: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
         .content h2 { color: var(--text-primary); font-size: 1.2rem; font-weight: 600; margin: 0 0 20px; }
         .page { display: none; max-width: 100%; min-width: 0; width: 100%; overflow-x: hidden; }
-        .content > .page:not(.show) {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-            overflow: hidden !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            pointer-events: none !important;
-        }
-        .page.show { display: block !important; visibility: visible !important; height: auto !important; overflow-x: hidden; pointer-events: auto !important; }
+        .content > .page:not(.show) { display: none !important; }
+        .page.show { display: block !important; }
         .page.show.dept-page,
         .page.show.branch-page,
         .page.show.whatsapp-page,
