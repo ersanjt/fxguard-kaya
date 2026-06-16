@@ -658,11 +658,14 @@
             setAvatar(avatarEl);
             setAvatar(avatarMobile);
         }
-        function applyNavByRole() {
+        function canAccessSection(section) {
             const perms = (currentUser && currentUser.permissions) || {};
             const role = (currentUser && currentUser.role) || '';
             const isOwnerOrAdmin = (role === 'owner' || role === 'admin');
-            const can = function(section) { return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
+            return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true);
+        }
+        function applyNavByRole() {
+            const can = canAccessSection;
             document.querySelectorAll('.nav-link[data-section]').forEach(function(link) {
                 const section = link.getAttribute('data-section');
                 link.style.display = can(section) ? '' : 'none';
@@ -707,6 +710,7 @@
             });
             const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
+            if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
         function updateBottomBarVisibility() {
             const bottomBar = document.getElementById('bottomBar');
@@ -854,8 +858,7 @@
         var HIDDEN_SECTIONS = [];
         function applyHiddenSections(hidden) {
             HIDDEN_SECTIONS = Array.isArray(hidden) ? hidden : [];
-            const perms = (currentUser && currentUser.permissions) || {};
-            const can = function(section) { return section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true); };
+            const can = canAccessSection;
             const pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
                 const page = link.getAttribute('data-page');
@@ -893,6 +896,8 @@
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 sub.style.display = hasVisible ? '' : 'none';
             });
+            const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
+            if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
         async function loadPanelSettingsAndApply() {
             const res = await apiFetch('/api/panel-settings');
@@ -1672,6 +1677,7 @@
         function toggleSidebarDesktop() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; const collapsed = s.classList.toggle('sidebar-collapsed'); try { localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0'); } catch (_) {} btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true'); btn.setAttribute('aria-label', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); btn.setAttribute('title', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); const txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = collapsed ? t('sidebar_toggle_expand') : t('sidebar_toggle_collapse'); }
         function initSidebarCollapsedState() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; let collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
         function showPage(page) {
+            if (!currentUser || !currentUser.id) return;
             const perms = (currentUser && currentUser.permissions) || {};
             const pageToSection = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TO_SECTION : {};
             const section = pageToSection[page];
