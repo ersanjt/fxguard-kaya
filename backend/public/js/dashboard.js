@@ -5285,9 +5285,9 @@
             const isGrp = el.getAttribute('data-is-group') === '1';
             if (!convId) return;
             // نمایش صفحه مکالمات
-            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
             const convPage = document.getElementById('pageConversations');
-            if (convPage) { convPage.style.display = 'flex'; convPage.classList.add('show'); }
+            if (convPage) convPage.classList.add('show');
             const content = document.querySelector('.content');
             if (content) content.classList.add('page-conversations');
             // آپدیت sidebar active link
@@ -6803,9 +6803,9 @@
         let currentCustomerData = null;
         async function showCustomerHistory(custId, name) {
             currentCustomerId = custId;
-            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
-            document.getElementById('pageCustomerDetail').style.display = 'block';
-            document.getElementById('pageCustomerDetail').classList.add('show');
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
+            const detailPage = document.getElementById('pageCustomerDetail');
+            if (detailPage) detailPage.classList.add('show');
             document.querySelectorAll('.sidebar .nav-link[data-page]').forEach(function(l) { l.classList.remove('active'); });
             const custLink = document.querySelector('.sidebar .nav-link[data-page="customers"]');
             if (custLink) custLink.classList.add('active');
@@ -8541,9 +8541,12 @@
             if (pt) { pt.textContent = titleText; pt.setAttribute('data-i18n', titleKey); }
             if (pb) pb.textContent = titleText;
             if (pm) pm.textContent = titleText;
-            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.display = 'none'; });
+            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
             const ids = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_IDS : {};
-            if (ids[page]) { const el = document.getElementById(ids[page]); if (el) { el.style.display = (page === 'conversations' || page === 'internal-chat') ? 'flex' : 'block'; el.classList.add('show'); } }
+            if (ids[page]) {
+                const el = document.getElementById(ids[page]);
+                if (el) el.classList.add('show');
+            }
             const content = document.querySelector('.content');
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
             if (page === 'dashboard') loadDashboard();
@@ -12292,6 +12295,9 @@
                 console.error('Panel settings:', e);
             }
             applyHashRoute();
+            if ((location.hash || '#dashboard').replace(/^#/, '') === 'dashboard' && typeof loadDashboard === 'function') {
+                loadDashboard();
+            }
             loadGeneralAnnouncementsMarquee();
             removeAllInlineHandlers();
             initCspInlineMutationStrip();
