@@ -12344,26 +12344,33 @@
 
         /** مقداردهی بعد از تأیید /api/auth/me — ناو، تنظیمات، رویدادها، سوکت، نرخ، حضور، TOTP. قابل استخراج به ماژول auth. */
         async function runAfterAuthReady() {
-            applyNavByRole();
-            // Render the requested page and wire up handlers FIRST so the UI is
-            // never left blank when /api/panel-settings is slow or unreachable.
-            // Branding/theme/visibility are applied right after and only restyle
-            // already-visible content. (Previously this awaited panel-settings
-            // before applyHashRoute, so a slow request left the dashboard empty
-            // until the user manually navigated to another section.)
-            applyHashRoute();
-            loadGeneralAnnouncementsMarquee();
-            removeAllInlineHandlers();
-            initCspInlineMutationStrip();
-            setupGlobalDelegatedHandlers();
-            setupLoginEventHandlers();
-            setupGlobalEventHandlers();
-            checkAnnouncementMarqueeVisibility();
-            startRatesInterval();
-            startPresenceInterval();
-            connectSocket();
-            startNavBadgeRefresh();
-            showTotpPromptIfNeeded();
+            // Run each init step in isolation. Previously these were called in a
+            // bare sequence, so if any one threw (e.g. for a specific account or
+            // role) every later step was skipped — which left the header/menu
+            // buttons unbound and pages blank, with the error swallowed by the
+            // async function's rejected promise. Isolating each step guarantees
+            // the rest still run and surfaces the real failure by name.
+            const safe = function (label, fn) {
+                try { fn(); } catch (e) { console.error('[init] ' + label + ' failed:', e); }
+            };
+            // Wire up event handlers BEFORE rendering the page, so header/menu
+            // buttons always work even if page rendering or nav setup throws.
+            safe('applyNavByRole', applyNavByRole);
+            safe('removeAllInlineHandlers', removeAllInlineHandlers);
+            safe('initCspInlineMutationStrip', initCspInlineMutationStrip);
+            safe('setupGlobalDelegatedHandlers', setupGlobalDelegatedHandlers);
+            safe('setupLoginEventHandlers', setupLoginEventHandlers);
+            safe('setupGlobalEventHandlers', setupGlobalEventHandlers);
+            // Render the requested page. Branding/theme/visibility are applied
+            // right after (below) and only restyle already-visible content.
+            safe('applyHashRoute', applyHashRoute);
+            safe('loadGeneralAnnouncementsMarquee', loadGeneralAnnouncementsMarquee);
+            safe('checkAnnouncementMarqueeVisibility', checkAnnouncementMarqueeVisibility);
+            safe('startRatesInterval', startRatesInterval);
+            safe('startPresenceInterval', startPresenceInterval);
+            safe('connectSocket', connectSocket);
+            safe('startNavBadgeRefresh', startNavBadgeRefresh);
+            safe('showTotpPromptIfNeeded', showTotpPromptIfNeeded);
             try {
                 await loadPanelSettingsAndApply();
             } catch (e) {
