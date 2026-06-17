@@ -607,11 +607,22 @@
             }
         }
         async function loadProfile() {
-            let u = null;
-            const res = await apiFetch('/api/users/me');
-            if (res.ok && res.data) { u = res.data; currentUser = res.data; }
-            else if (currentUser) u = currentUser;
+            // Paint immediately from the cached user so the page is never blank,
+            // then refresh from the server with a timeout so a slow/hung
+            // /api/users/me request can't leave the profile stuck on empty "—"
+            // placeholders (previously this awaited the request before rendering
+            // anything, so a slow response showed an empty profile until the user
+            // navigated to another section and back).
+            if (currentUser) renderProfile(currentUser);
+            const res = await apiFetch('/api/users/me', { timeoutMs: 12000 });
+            const u = (res.ok && res.data) ? (currentUser = res.data) : currentUser;
+            renderProfile(u);
+            setupProfileEventHandlers();
+            await refreshTelegramProfileSection();
+        }
+        function renderProfile(u) {
             if (u) {
+                setUserDisplay(u);
                 const roleLabel = (LANG === 'fa' ? { owner: 'مالک', admin: 'ادمین', manager: 'مدیر', supervisor: 'ناظر', agent: 'کارمند' } : { owner: 'Owner', admin: 'Admin', manager: 'Manager', supervisor: 'Supervisor', agent: 'Agent' })[u.role] || u.role;
                 const branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
                 const deptName = (u.department && u.department.name) ? u.department.name : '\u2014';
@@ -682,8 +693,6 @@
                     actionsEl.innerHTML = '<button type="button" class="btn-primary" id="totpSetupBtnDynamic">' + t('totp_setup_btn') + '</button>';
                 }
             }
-            setupProfileEventHandlers();
-            await refreshTelegramProfileSection();
         }
         async function refreshTelegramProfileSection() {
             const statusEl = document.getElementById('telegramLinkStatus');
