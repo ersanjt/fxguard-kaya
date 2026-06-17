@@ -1754,12 +1754,14 @@
                         document.documentElement.classList.add('auth-has-token');
                     }
                     document.getElementById('loginBox').style.display = 'none';
-                    document.getElementById('app').classList.add('show');
+                    const appEl = document.getElementById('app');
+                    if (appEl) {
+                        appEl.classList.add('show', 'app-ready');
+                        appEl.classList.remove('app-loading');
+                    }
                     try {
                         await runAfterAuthReady();
                     } catch (e) { console.error('Post-me init:', e); }
-                    const appEl = document.getElementById('app');
-                    if (appEl) { appEl.classList.remove('app-loading'); appEl.classList.add('app-ready'); }
                 } else { logout(); }
             }).catch(function() { logout(); });
         }

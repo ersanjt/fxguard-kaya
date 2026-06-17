@@ -2199,7 +2199,8 @@
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
                 document.getElementById('loginBox').style.display = 'none';
-                document.getElementById('app').classList.add('show');
+                const appElLogin = document.getElementById('app');
+                if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
                 try {
                     applyNavByRole();
                     await loadPanelSettingsAndApply();
@@ -2337,7 +2338,8 @@
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
                 document.getElementById('loginBox').style.display = 'none';
-                document.getElementById('app').classList.add('show');
+                const appElLogin = document.getElementById('app');
+                if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
                 try {
                     applyNavByRole();
                     await loadPanelSettingsAndApply();
@@ -7752,7 +7754,6 @@
                 links.forEach(function(l) { if (l.style.display !== 'none') hasVisible = true; });
                 sub.style.display = hasVisible ? '' : 'none';
             });
-            const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
         async function loadPanelSettingsAndApply() {
@@ -8533,7 +8534,6 @@
         function toggleSidebarDesktop() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; const collapsed = s.classList.toggle('sidebar-collapsed'); try { localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0'); } catch (_) {} btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true'); btn.setAttribute('aria-label', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); btn.setAttribute('title', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); const txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = collapsed ? t('sidebar_toggle_expand') : t('sidebar_toggle_collapse'); }
         function initSidebarCollapsedState() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; let collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
         function showPage(page) {
-            if (!currentUser || !currentUser.id) return;
             const perms = (currentUser && currentUser.permissions) || {};
             const pageToSection = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TO_SECTION : {};
             const section = pageToSection[page];
@@ -12338,12 +12338,14 @@
                         document.documentElement.classList.add('auth-has-token');
                     }
                     document.getElementById('loginBox').style.display = 'none';
-                    document.getElementById('app').classList.add('show');
+                    const appEl = document.getElementById('app');
+                    if (appEl) {
+                        appEl.classList.add('show', 'app-ready');
+                        appEl.classList.remove('app-loading');
+                    }
                     try {
                         await runAfterAuthReady();
                     } catch (e) { console.error('Post-me init:', e); }
-                    const appEl = document.getElementById('app');
-                    if (appEl) { appEl.classList.remove('app-loading'); appEl.classList.add('app-ready'); }
                 } else { logout(); }
             }).catch(function() { logout(); });
         }
