@@ -2,6 +2,8 @@
 
 | سند | موضوع |
 |-----|--------|
+| **[CODEBASE-MAP.md](CODEBASE-MAP.md)** | **نقشهٔ ناوبری کد — اولین مرجع برای تغییر هر بخش** |
+| [AUTHOR.md](AUTHOR.md) | مالکیت و امضای کد (Ersan Jahed Tabrizi) |
 | [../AGENTS.md](../AGENTS.md) | راهنمای کوتاه برای مشارکت‌کنندگان و ابزارهای AI (Cursor) |
 | [PROJECT-STANDARDS.md](PROJECT-STANDARDS.md) | ساختار مخزن، استانداردهای مهندسی، دستورات lint/test/build، CI |
 | [TECH-AND-TEAM-OVERVIEW.md](TECH-AND-TEAM-OVERVIEW.md) | تکنولوژی‌ها و تیم (متن) |

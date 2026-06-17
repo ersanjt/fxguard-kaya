@@ -8,6 +8,9 @@ module.exports = async (socket, next) => {
             return next(new Error('احراز هویت الزامی است'));
         }
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.totpStep) {
+            return next(new Error('احراز دو مرحله‌ای تکمیل نشده است'));
+        }
         const user = await User.findByPk(decoded.id || decoded.userId);
         if (!user || !user.isActive) {
             return next(new Error('کاربر نامعتبر یا غیرفعال است'));

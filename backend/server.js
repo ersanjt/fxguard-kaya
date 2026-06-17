@@ -1,6 +1,11 @@
 /**
- * نقطه ورود سرور CRM — راه‌اندازی اتصالات، سوکت و خاموشی تمیز.
- * پیکربندی Express در app/configureExpress.js است.
+ * Kaya CRM — نقطه ورود سرور API
+ * @file    server.js
+ * @layer   backend
+ * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
+ * @see     docs/CODEBASE-MAP.md
+ *
+ * راه‌اندازی: DB، RabbitMQ، Socket.IO، cron — پیکربندی Express در app/configureExpress.js
  */
 const { validateEnv } = require('./config/env');
 const { MAIN_ADMIN_EMAIL, MAIN_ADMIN_PASSWORD } = validateEnv();

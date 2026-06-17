@@ -1,5 +1,11 @@
 /**
- * Bootstrap صفحه ورود داخل /dashboard — زبان و برندینگ قبل از نمایش (بدون فلش استایل).
+ * Kaya CRM — Bootstrap صفحه ورود داخل /dashboard
+ * @file    public/js/modules/dashboard-login-bootstrap.js
+ * @layer   frontend/dashboard
+ * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
+ * @see     docs/CODEBASE-MAP.md
+ *
+ * زبان و برندینگ قبل از نمایش (بدون فلش استایل).
  */
 (function (global) {
     'use strict';
@@ -17,8 +23,17 @@
 
     function hasAuthToken() {
         try {
-            var t = global.localStorage.getItem('crm_token');
+            var t = global.sessionStorage.getItem('crm_token');
             return !!(t && t.length);
+        } catch (_e) {
+            return false;
+        }
+    }
+
+    function isDashboardPage() {
+        try {
+            var p = String(global.location.pathname || '').toLowerCase();
+            return p === '/dashboard' || p === '/dashboard/' || p.endsWith('/dashboard.html');
         } catch (_e) {
             return false;
         }
@@ -184,7 +199,8 @@
         applyLangEarly(lang);
         global.SUPPORTED_LANGUAGES = langPack.supported;
         if (cache.branding) applyBrandingEarly(cache.branding);
-        if (hasAuthToken()) document.documentElement.classList.add('auth-verifying');
+        // On dashboard always verify session via cookie before showing login UI.
+        if (isDashboardPage() || hasAuthToken()) document.documentElement.classList.add('auth-verifying');
         else document.documentElement.classList.add('login-boot-pending');
     }
 

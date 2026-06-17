@@ -1,3 +1,10 @@
+/**
+ * Kaya CRM — WhatsApp Gateway
+ * @file    gateway/src/index.js
+ * @layer   gateway
+ * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
+ * @see     docs/CODEBASE-MAP.md
+ */
 'use strict';
 
 const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');

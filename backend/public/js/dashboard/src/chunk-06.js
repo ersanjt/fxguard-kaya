@@ -115,6 +115,7 @@
             }
         }
 
+        /* ========== Kaya CRM chunk-06 | واتساپ، قالب پیام، runAfterAuthReady | docs/CODEBASE-MAP.md ========== */
         var _whatsappBurstT = [];
         function clearWhatsappStatusBurst() {
             _whatsappBurstT.forEach(function(id) { try { clearTimeout(id); } catch (_e) {} });
@@ -1731,8 +1732,6 @@
             window.filterInternalThreads = filterInternalThreads;
             window.toggleInternalChatFloating = toggleInternalChatFloating;
             window.selectThreadInPopup = selectThreadInPopup;
-            window.filterInternalThreads = filterInternalThreads;
-            window.toggleInternalChatFloating = toggleInternalChatFloating;
         })();
 
         /** مقداردهی بعد از تأیید /api/auth/me — ناو، تنظیمات، رویدادها، سوکت، نرخ، حضور، TOTP. قابل استخراج به ماژول auth. */
@@ -1771,27 +1770,49 @@
             }
         }
 
-        if (token) {
-            apiFetch('/api/auth/me').then(async function(res) {
-                if (res.needLogin || !res.ok) { logout(); return; }
-                const u = res.data;
-                currentUser = u;
-                if (u && u.email) {
-                    setUserDisplay(u);
-                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
-                        window.LoginBootstrap.setAuthenticated();
+        /** بازیابی نشست از کوکی httpOnly — همیشه اجرا می‌شود (نه فقط وقتی token در حافظه باشد). */
+        async function restoreSessionFromServer() {
+            document.documentElement.classList.add('auth-verifying');
+            try {
+                const res = await apiFetch('/api/auth/me');
+                if (res.needLogin || !res.ok || !res.data || !res.data.email) {
+                    persistAuthToken(null);
+                    if (redirectToLoginPage()) return;
+                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                        window.LoginBootstrap.setLoggedOut();
                     } else {
-                        document.documentElement.classList.add('auth-has-token');
+                        document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
                     }
-                    document.getElementById('loginBox').style.display = 'none';
-                    const appEl = document.getElementById('app');
-                    if (appEl) {
-                        appEl.classList.add('show', 'app-ready');
-                        appEl.classList.remove('app-loading');
-                    }
-                    try {
-                        await runAfterAuthReady();
-                    } catch (e) { console.error('Post-me init:', e); }
-                } else { logout(); }
-            }).catch(function() { logout(); });
+                    const loginBox = document.getElementById('loginBox');
+                    if (loginBox) loginBox.style.display = 'flex';
+                    return;
+                }
+                const u = res.data;
+                if (u.token) persistAuthToken(u.token);
+                currentUser = u;
+                setUserDisplay(u);
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
+                    window.LoginBootstrap.setAuthenticated();
+                } else {
+                    document.documentElement.classList.add('auth-has-token');
+                }
+                const loginBox = document.getElementById('loginBox');
+                if (loginBox) loginBox.style.display = 'none';
+                const appEl = document.getElementById('app');
+                if (appEl) {
+                    appEl.classList.add('show', 'app-ready');
+                    appEl.classList.remove('app-loading');
+                }
+                try {
+                    await runAfterAuthReady();
+                } catch (e) { console.error('Post-me init:', e); }
+            } catch (e) {
+                console.error('restoreSession:', e);
+                persistAuthToken(null);
+                if (redirectToLoginPage()) return;
+            } finally {
+                document.documentElement.classList.remove('auth-verifying');
+            }
         }
+
+        restoreSessionFromServer();
