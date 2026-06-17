@@ -899,7 +899,7 @@
             if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
         async function loadPanelSettingsAndApply() {
-            const res = await apiFetch('/api/panel-settings');
+            const res = await apiFetch('/api/panel-settings', { timeoutMs: 10000 });
             if (res.ok && res.data) {
                 applyBranding(res.data, { full: true });
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);

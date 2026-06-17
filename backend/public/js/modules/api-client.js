@@ -26,19 +26,33 @@
         }
         const apiBase = window.CRM_API_BASE != null ? window.CRM_API_BASE : '';
         let r, text;
+        // Optional per-request timeout: only active when opt.timeoutMs is set, so
+        // existing calls are unaffected. Prevents requests from hanging forever
+        // (e.g. WhatsApp gateway status) and leaving the UI stuck on a loading state.
+        let _ac = null;
+        let _to = null;
+        if (opt.timeoutMs && typeof AbortController !== 'undefined') {
+            _ac = new AbortController();
+            _to = setTimeout(function () {
+                try { _ac.abort(); } catch (_e) {}
+            }, opt.timeoutMs);
+        }
         try {
             r = await fetch(apiBase + url, {
                 ...opt,
                 credentials: 'include',
                 headers: { ...h, ...(opt.headers || {}) },
                 body: opt.body,
+                signal: _ac ? _ac.signal : opt.signal,
             });
             text = await r.text();
         } catch (e) {
         const lang = config.getLang ? config.getLang() : 'fa';
+        const timedOut = !!(_ac && _ac.signal && _ac.signal.aborted);
         return {
             ok: false,
             needLogin: false,
+            timeout: timedOut,
             error:
                 lang === 'tr'
                     ? 'Sunucuya bağlanılamadı. Ağ veya sunucu adresini kontrol edin.'
@@ -46,6 +60,8 @@
                       ? 'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.'
                       : 'Could not connect to server. Check network or server address.',
         };
+    } finally {
+        if (_to) clearTimeout(_to);
     }
     if ((text || '').trim().startsWith('<')) {
         const lang2 = config.getLang ? config.getLang() : 'fa';

@@ -267,11 +267,18 @@
             const h = opt.auth === false ? { 'Content-Type': 'application/json' } : headers();
             if (opt.body instanceof FormData) { delete h['Content-Type']; }
             let r, text;
+            let _ac = null, _to = null;
+            if (opt.timeoutMs && typeof AbortController !== 'undefined') {
+                _ac = new AbortController();
+                _to = setTimeout(function () { try { _ac.abort(); } catch (_e) {} }, opt.timeoutMs);
+            }
             try {
-                r = await fetch(API + url, { ...opt, credentials: 'include', headers: { ...h, ...opt.headers }, body: opt.body });
+                r = await fetch(API + url, { ...opt, credentials: 'include', headers: { ...h, ...opt.headers }, body: opt.body, signal: _ac ? _ac.signal : opt.signal });
                 text = await r.text();
             } catch (e) {
-                return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.' : 'Could not connect to server. Check network or server address.') };
+                return { ok: false, needLogin: false, timeout: !!(_ac && _ac.signal && _ac.signal.aborted), error: (LANG === 'fa' ? 'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.' : 'Could not connect to server. Check network or server address.') };
+            } finally {
+                if (_to) clearTimeout(_to);
             }
             if ((text || '').trim().startsWith('<')) {
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'سرور به جای JSON پاسخ داد. مطمئن شوید backend در حال اجراست.' : 'Server returned non-JSON. Ensure backend is running.') };
@@ -409,13 +416,13 @@
                 if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
                 try {
                     applyNavByRole();
-                    await loadPanelSettingsAndApply();
                     applyHashRoute();
                     startRatesInterval();
                     startPresenceInterval();
                     connectSocket();
                     startNavBadgeRefresh();
                     showTotpPromptIfNeeded();
+                    await loadPanelSettingsAndApply();
                 } catch (e) { console.error('Post-login init:', e); }
             } else {
                 document.getElementById('loginErr').textContent = data.error || t('login_err_fail');
@@ -548,13 +555,13 @@
                 if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
                 try {
                     applyNavByRole();
-                    await loadPanelSettingsAndApply();
                     applyHashRoute();
                     startRatesInterval();
                     startPresenceInterval();
                     connectSocket();
                     startNavBadgeRefresh();
                     showTotpPromptIfNeeded();
+                    await loadPanelSettingsAndApply();
                 } catch (e) { console.error('Post-TOTP init:', e); }
             } else {
                 document.getElementById('totpErr').textContent = data.error || t('login_totp_bad');
