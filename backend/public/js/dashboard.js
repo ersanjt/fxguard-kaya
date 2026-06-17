@@ -2061,11 +2061,18 @@
             const h = opt.auth === false ? { 'Content-Type': 'application/json' } : headers();
             if (opt.body instanceof FormData) { delete h['Content-Type']; }
             let r, text;
+            let _ac = null, _to = null;
+            if (opt.timeoutMs && typeof AbortController !== 'undefined') {
+                _ac = new AbortController();
+                _to = setTimeout(function () { try { _ac.abort(); } catch (_e) {} }, opt.timeoutMs);
+            }
             try {
-                r = await fetch(API + url, { ...opt, credentials: 'include', headers: { ...h, ...opt.headers }, body: opt.body });
+                r = await fetch(API + url, { ...opt, credentials: 'include', headers: { ...h, ...opt.headers }, body: opt.body, signal: _ac ? _ac.signal : opt.signal });
                 text = await r.text();
             } catch (e) {
-                return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.' : 'Could not connect to server. Check network or server address.') };
+                return { ok: false, needLogin: false, timeout: !!(_ac && _ac.signal && _ac.signal.aborted), error: (LANG === 'fa' ? 'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.' : 'Could not connect to server. Check network or server address.') };
+            } finally {
+                if (_to) clearTimeout(_to);
             }
             if ((text || '').trim().startsWith('<')) {
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'سرور به جای JSON پاسخ داد. مطمئن شوید backend در حال اجراست.' : 'Server returned non-JSON. Ensure backend is running.') };
@@ -2203,13 +2210,13 @@
                 if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
                 try {
                     applyNavByRole();
-                    await loadPanelSettingsAndApply();
                     applyHashRoute();
                     startRatesInterval();
                     startPresenceInterval();
                     connectSocket();
                     startNavBadgeRefresh();
                     showTotpPromptIfNeeded();
+                    await loadPanelSettingsAndApply();
                 } catch (e) { console.error('Post-login init:', e); }
             } else {
                 document.getElementById('loginErr').textContent = data.error || t('login_err_fail');
@@ -2342,13 +2349,13 @@
                 if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
                 try {
                     applyNavByRole();
-                    await loadPanelSettingsAndApply();
                     applyHashRoute();
                     startRatesInterval();
                     startPresenceInterval();
                     connectSocket();
                     startNavBadgeRefresh();
                     showTotpPromptIfNeeded();
+                    await loadPanelSettingsAndApply();
                 } catch (e) { console.error('Post-TOTP init:', e); }
             } else {
                 document.getElementById('totpErr').textContent = data.error || t('login_totp_bad');
@@ -7755,7 +7762,7 @@
             if (activePage === 'dashboard' && typeof loadDashboard === 'function') loadDashboard();
         }
         async function loadPanelSettingsAndApply() {
-            const res = await apiFetch('/api/panel-settings');
+            const res = await apiFetch('/api/panel-settings', { timeoutMs: 10000 });
             if (res.ok && res.data) {
                 applyBranding(res.data, { full: true });
                 if (res.data.hiddenSections) applyHiddenSections(res.data.hiddenSections);
@@ -10534,7 +10541,7 @@
             const perms = (currentUser && currentUser.permissions) || {};
             if (!token || perms.whatsapp === false) return;
             try {
-                const res = await apiFetch('/api/gateway/status');
+                const res = await apiFetch('/api/gateway/status', { timeoutMs: 10000 });
                 if (res.ok && res.data && res.data.whatsapp) setWhatsappStatusBadge('connected');
                 else setWhatsappStatusBadge('disconnected');
             } catch (_) { setWhatsappStatusBadge('disconnected'); }
@@ -10571,7 +10578,7 @@
                 if (af) { af.style.display = 'none'; af.textContent = ''; }
             }
             let ping;
-            try { ping = await apiFetch('/api/ping', { auth: false }); } catch (e) { ping = { needLogin: true }; }
+            try { ping = await apiFetch('/api/ping', { auth: false, timeoutMs: 8000 }); } catch (e) { ping = { needLogin: true }; }
             if (!waAlive()) return;
             if (ping.needLogin || (ping.data && !ping.data.ok)) {
                 st.className = 'whatsapp-status-line empty';
@@ -10579,9 +10586,22 @@
                 setWhatsappStatusBadge('disconnected');
                 return;
             }
-            const res = await apiFetch('/api/gateway/status');
+            const res = await apiFetch('/api/gateway/status', { timeoutMs: 15000 });
             if (!waAlive()) return;
             if (res.needLogin) return;
+            // No payload at all = network error or timeout. Never leave the UI stuck
+            // on "checking"; show a clear error and keep retry/start buttons usable.
+            if (!res.ok && !res.data) {
+                st.className = 'whatsapp-status-line empty';
+                st.textContent = res.timeout
+                    ? (LANG === 'fa' ? 'سرور به‌موقع پاسخ نداد. دوباره تلاش کنید.' : 'Server did not respond in time. Try again.')
+                    : t('whatsapp_server_err');
+                setWhatsappStatusBadge('disconnected');
+                if (btnDisconnect) btnDisconnect.disabled = true;
+                if (btn) { btn.style.display = 'inline-block'; btn.textContent = t('whatsapp_start_btn'); }
+                if (qrUnavailable) qrUnavailable.style.display = 'none';
+                return;
+            }
             const data = res.data;
             if (data && data.error) {
                 st.className = 'whatsapp-status-line empty';
@@ -10655,7 +10675,7 @@
             const cloudApiInfoEl = document.getElementById('whatsappCloudApiInfo');
             if (cloudApiInfoEl) cloudApiInfoEl.style.display = 'none';
             if (waAlive()) loadWhatsappDeptRouting();
-            const qrRes = await apiFetch('/api/gateway/qr');
+            const qrRes = await apiFetch('/api/gateway/qr', { timeoutMs: 13000 });
             if (!waAlive()) return;
             if (qrRes.needLogin) return;
             const qrData = qrRes.data;
@@ -10934,9 +10954,9 @@
                 el.textContent = '\u00a0';
             });
             try {
-                const resOpen = apiFetch('/api/conversations?status=open&limit=1');
-                const resUnassigned = apiFetch('/api/conversations?unassigned=1&limit=1');
-                const resUnanswered = apiFetch('/api/conversations?unanswered=1&limit=1');
+                const resOpen = apiFetch('/api/conversations?status=open&limit=1', { timeoutMs: 12000 });
+                const resUnassigned = apiFetch('/api/conversations?unassigned=1&limit=1', { timeoutMs: 12000 });
+                const resUnanswered = apiFetch('/api/conversations?unanswered=1&limit=1', { timeoutMs: 12000 });
                 const arr = await Promise.all([resOpen, resUnassigned, resUnanswered]);
                 if (openEl) {
                     openEl.classList.remove('whatsapp-stat-skel', 'loading-skeleton');
@@ -12303,11 +12323,12 @@
         /** مقداردهی بعد از تأیید /api/auth/me — ناو، تنظیمات، رویدادها، سوکت، نرخ، حضور، TOTP. قابل استخراج به ماژول auth. */
         async function runAfterAuthReady() {
             applyNavByRole();
-            try {
-                await loadPanelSettingsAndApply();
-            } catch (e) {
-                console.error('Panel settings:', e);
-            }
+            // Render the requested page and wire up handlers FIRST so the UI is
+            // never left blank when /api/panel-settings is slow or unreachable.
+            // Branding/theme/visibility are applied right after and only restyle
+            // already-visible content. (Previously this awaited panel-settings
+            // before applyHashRoute, so a slow request left the dashboard empty
+            // until the user manually navigated to another section.)
             applyHashRoute();
             loadGeneralAnnouncementsMarquee();
             removeAllInlineHandlers();
@@ -12321,6 +12342,11 @@
             connectSocket();
             startNavBadgeRefresh();
             showTotpPromptIfNeeded();
+            try {
+                await loadPanelSettingsAndApply();
+            } catch (e) {
+                console.error('Panel settings:', e);
+            }
         }
 
         if (token) {

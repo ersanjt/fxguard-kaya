@@ -1670,7 +1670,7 @@
             const perms = (currentUser && currentUser.permissions) || {};
             if (!token || perms.whatsapp === false) return;
             try {
-                const res = await apiFetch('/api/gateway/status');
+                const res = await apiFetch('/api/gateway/status', { timeoutMs: 10000 });
                 if (res.ok && res.data && res.data.whatsapp) setWhatsappStatusBadge('connected');
                 else setWhatsappStatusBadge('disconnected');
             } catch (_) { setWhatsappStatusBadge('disconnected'); }
@@ -1707,7 +1707,7 @@
                 if (af) { af.style.display = 'none'; af.textContent = ''; }
             }
             let ping;
-            try { ping = await apiFetch('/api/ping', { auth: false }); } catch (e) { ping = { needLogin: true }; }
+            try { ping = await apiFetch('/api/ping', { auth: false, timeoutMs: 8000 }); } catch (e) { ping = { needLogin: true }; }
             if (!waAlive()) return;
             if (ping.needLogin || (ping.data && !ping.data.ok)) {
                 st.className = 'whatsapp-status-line empty';
@@ -1715,4 +1715,4 @@
                 setWhatsappStatusBadge('disconnected');
                 return;
             }
-            const res = await apiFetch('/api/gateway/status');
+            const res = await apiFetch('/api/gateway/status', { timeoutMs: 15000 });
