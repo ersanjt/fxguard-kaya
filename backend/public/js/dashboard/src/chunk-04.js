@@ -1943,34 +1943,34 @@
             const res = await apiFetch('/api/tickets/' + id);
             if (res.needLogin) return;
             if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); showTicketList(); return; }
-            var t = res.data;
+            const ticket = res.data;
             const numEl = document.getElementById('ticketDetailNumber');
-            if (numEl) numEl.textContent = (t.ticketNumber || '').trim() || '';
-            document.getElementById('ticketDetailTitle').textContent = t.title || '';
-            const statusLabel = t.status === 'open' ? t('status_open') : t.status === 'in_progress' ? t('status_in_progress') : t.status === 'resolved' ? t('status_resolved') : t.status === 'closed' ? t('status_closed') : t.status === 'archived' ? t('status_archived') : t.status || '';
-            const prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[t.priority] || t.priority || '';
-            const createdStr = t.createdAt ? (fmtTZ ? fmtTZ(t.createdAt, 'datetime') : t.createdAt) : '';
-            const metaParts = [(LANG === 'fa' ? 'تاریخ ثبت: ' : 'Created: ') + createdStr, t('creator_label') + ' ' + userDisplay(t.creator), t('assignee_label') + ' ' + userDisplay(t.assignee), t('th_status') + ': ' + statusLabel, t('ticket_priority') + ': ' + prioLabel];
-            if (t.department && t.department.name) metaParts.push((t('label_dept') || 'دپارتمان') + ': ' + t.department.name);
-            if (t.dueDate) metaParts.push(t('due_label') + ' ' + (fmtTZ ? fmtTZ(t.dueDate, 'date') : t.dueDate));
+            if (numEl) numEl.textContent = (ticket.ticketNumber || '').trim() || '';
+            document.getElementById('ticketDetailTitle').textContent = ticket.title || '';
+            const statusLabel = ticket.status === 'open' ? t('status_open') : ticket.status === 'in_progress' ? t('status_in_progress') : ticket.status === 'resolved' ? t('status_resolved') : ticket.status === 'closed' ? t('status_closed') : ticket.status === 'archived' ? t('status_archived') : ticket.status || '';
+            const prioLabel = { low: t('priority_low'), normal: t('priority_normal'), high: t('priority_high'), urgent: t('priority_urgent') }[ticket.priority] || ticket.priority || '';
+            const createdStr = ticket.createdAt ? (fmtTZ ? fmtTZ(ticket.createdAt, 'datetime') : ticket.createdAt) : '';
+            const metaParts = [(LANG === 'fa' ? 'تاریخ ثبت: ' : 'Created: ') + createdStr, t('creator_label') + ' ' + userDisplay(ticket.creator), t('assignee_label') + ' ' + userDisplay(ticket.assignee), t('th_status') + ': ' + statusLabel, t('ticket_priority') + ': ' + prioLabel];
+            if (ticket.department && ticket.department.name) metaParts.push((t('label_dept') || 'دپارتمان') + ': ' + ticket.department.name);
+            if (ticket.dueDate) metaParts.push(t('due_label') + ' ' + (fmtTZ ? fmtTZ(ticket.dueDate, 'date') : ticket.dueDate));
             document.getElementById('ticketDetailMeta').textContent = metaParts.join(' | ');
             const descEl = document.getElementById('ticketDetailDesc');
-            if (descEl) { descEl.textContent = (t.description || '').trim(); descEl.style.display = (t.description || '').trim() ? '' : 'none'; }
+            if (descEl) { descEl.textContent = (ticket.description || '').trim(); descEl.style.display = (ticket.description || '').trim() ? '' : 'none'; }
             const overdueEl = document.getElementById('ticketDetailOverdue');
             if (overdueEl) {
-                const due = t.dueDate;
-                const isOverdue = due && ['open','in_progress'].indexOf(t.status) >= 0 && new Date(due) < new Date();
+                const due = ticket.dueDate;
+                const isOverdue = due && ['open','in_progress'].indexOf(ticket.status) >= 0 && new Date(due) < new Date();
                 overdueEl.style.display = isOverdue ? '' : 'none';
             }
             const statusSel = document.getElementById('ticketDetailStatus');
             const assigneeSel = document.getElementById('ticketDetailAssignee');
             const prioritySel = document.getElementById('ticketDetailPriority');
             const dueInp = document.getElementById('ticketDetailDueDate');
-            if (statusSel) statusSel.value = t.status || 'open';
-            if (assigneeSel) { await loadTicketFormSelects(); assigneeSel.value = t.assignedTo || ''; }
-            if (prioritySel) prioritySel.value = t.priority || 'normal';
-            if (dueInp && t.dueDate) { const d = new Date(t.dueDate); dueInp.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); } else if (dueInp) dueInp.value = '';
-            const repliesHtml = (t.replies || []).map(function(r) {
+            if (statusSel) statusSel.value = ticket.status || 'open';
+            if (assigneeSel) { await loadTicketFormSelects(); assigneeSel.value = ticket.assignedTo || ''; }
+            if (prioritySel) prioritySel.value = ticket.priority || 'normal';
+            if (dueInp && ticket.dueDate) { const d = new Date(ticket.dueDate); dueInp.value = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); } else if (dueInp) dueInp.value = '';
+            const repliesHtml = (ticket.replies || []).map(function(r) {
                 const att = (r.attachments && r.attachments.length) ? r.attachments.map(function(a) { return '<a href="' + escapeHtml(a.url) + '" target="_blank" rel="noopener" style="color:var(--accent); margin-left:8px;">📎 ' + escapeHtml(a.name || t('file')) + '</a>'; }).join('') : '';
                 return '<div class="ticket-reply-msg ' + (String(r.userId) === String(currentUser && currentUser.id) ? 'out' : 'in') + '"><div class="ticket-reply-content">' + linkifyMessageContent(r.content || '') + '</div>' + att + '<div class="ticket-reply-meta">' + userDisplay(r.user) + ' · ' + (r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '') + '</div></div>';
             }).join('');

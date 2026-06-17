@@ -795,9 +795,12 @@
             ]);
             if (sumRes.needLogin || !sumRes.ok) return;
             const d = sumRes.data || {};
-            document.getElementById('summaryTotalCash').textContent = formatMoney(d.totalCash, 'IRR');
-            document.getElementById('summaryTotalBank').textContent = formatMoney(d.totalBank, 'IRR');
-            document.getElementById('summaryTotal').textContent = formatMoney(d.total, 'IRR');
+            const totalCashEl = document.getElementById('summaryTotalCash');
+            const totalBankEl = document.getElementById('summaryTotalBank');
+            const totalEl = document.getElementById('summaryTotal');
+            if (totalCashEl) totalCashEl.textContent = formatMoney(d.totalCash, 'IRR');
+            if (totalBankEl) totalBankEl.textContent = formatMoney(d.totalBank, 'IRR');
+            if (totalEl) totalEl.textContent = formatMoney(d.total, 'IRR');
             const cb = document.getElementById('summaryCashBoxes');
             const ba = document.getElementById('summaryBankAccounts');
             if (cb) cb.innerHTML = (d.cashBoxes || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده' : 'No cash boxes') + '</div>';

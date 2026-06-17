@@ -1475,8 +1475,8 @@
             if (!typeSel || !idSel) return;
             const res = await apiFetch('/api/announcements/targets');
             if (res.needLogin || !res.ok) return;
-            const users = res.users || [];
-            const departments = res.departments || [];
+            const users = (res.data && res.data.users) || [];
+            const departments = (res.data && res.data.departments) || [];
             const isManager = currentUser && currentUser.role === 'manager';
             if (isManager && departments.length >= 1) {
                 typeSel.value = 'department';
