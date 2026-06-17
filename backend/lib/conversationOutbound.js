@@ -41,6 +41,15 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         }
     }
 
+    // پیام معرفی کارشناس: یک‌بار قبل از اولین پیامِ هر کارشناس به مشتری اطلاع می‌دهد
+    // با کدام کارشناس/دپارتمان در حال گفتگوست (و هنگام تغییر کارشناس دوباره ارسال می‌شود).
+    if (req.userId && !isForwarded && !skipIntro) {
+        try {
+            const { maybeSendEmployeeIntro } = require('../services/autoMessages');
+            await maybeSendEmployeeIntro(conversation, req.userId, senderUser, senderDept);
+        } catch (_) {}
+    }
+
     const proto = req.get('x-forwarded-proto') || req.protocol;
     const host = req.get('host') || '';
     const baseUrl = process.env.BACKEND_PUBLIC_URL || (proto + '://' + host);

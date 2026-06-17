@@ -54,6 +54,11 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'پیام معرفی کارمند — {{name}} و {{deptName}}. خالی = پیش‌فرض'
         },
+        conversationEndedMessage: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+            comment: 'پیام پایان گفتگو — {{name}} و {{deptName}}. خالی = پیش‌فرض'
+        },
         callIntroMessage: {
             type: DataTypes.TEXT,
             allowNull: true,

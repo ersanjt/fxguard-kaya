@@ -108,6 +108,22 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
     }
 
     try {
+        const waDesc = await qi.describeTable('whatsapp_configs');
+        if (waDesc && waDesc.conversationEndedMessage === undefined) {
+            try {
+                await qi.addColumn('whatsapp_configs', 'conversationEndedMessage', { type: DataTypes.TEXT, allowNull: true });
+                logger.info('✅ whatsapp_configs: conversationEndedMessage column added (auto-migration)');
+            } catch (e) {
+                if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
+                    logger.warn('whatsapp_configs.conversationEndedMessage', e.message);
+            }
+        }
+    } catch (e) {
+        if (!String(e.message || '').includes('does not exist') && !String(e.message || '').includes('no such table'))
+            logger.warn('whatsapp_configs migration:', e.message);
+    }
+
+    try {
         const userDesc = await qi.describeTable('Users');
         if (userDesc && !userDesc.position) {
             await qi.addColumn('Users', 'position', { type: DataTypes.STRING, allowNull: true });
