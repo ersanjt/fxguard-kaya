@@ -936,7 +936,12 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
             } else {
                 sendOpts.caption = message || '';
             }
-            logger.info('📎 Sending media (data)', { to, mime, asVoice, dataLen: (media.data || '').length });
+            logger.info('📎 Sending media (data)', {
+                to,
+                mime,
+                asVoice,
+                dataLen: (media.data || '').length,
+            });
             sentMsg = await client.sendMessage(chatId, mediaObj, sendOpts);
         } else if (media?.url) {
             if (!isSafeMediaUrl(media.url)) {

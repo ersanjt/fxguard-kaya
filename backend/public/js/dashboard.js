@@ -10858,10 +10858,12 @@
                 if (escalateIn) escalateIn.value = res.data.escalateUnansweredAfterMinutes ?? 15;
                 const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
                 const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+                const endMsg = document.getElementById('whatsappConversationEndedMessage');
                 const callMsg = document.getElementById('whatsappCallIntroMessage');
                 const autoAsgCb = document.getElementById('whatsappAutoAssignmentMessagesEnabled');
                 if (deptMsg) deptMsg.value = res.data.deptAssignedMessage || '';
                 if (empMsg) empMsg.value = res.data.employeeIntroMessage || '';
+                if (endMsg) endMsg.value = res.data.conversationEndedMessage || '';
                 if (callMsg) callMsg.value = res.data.callIntroMessage || '';
                 if (autoAsgCb) autoAsgCb.checked = res.data.autoAssignmentMessagesEnabled !== false;
                 if (deptSel) {
@@ -10943,6 +10945,7 @@
         async function saveWhatsappAutoMessagesConfig() {
             const deptMsg = document.getElementById('whatsappDeptAssignedMessage');
             const empMsg = document.getElementById('whatsappEmployeeIntroMessage');
+            const endMsg = document.getElementById('whatsappConversationEndedMessage');
             const callMsg = document.getElementById('whatsappCallIntroMessage');
             const autoAsgCb = document.getElementById('whatsappAutoAssignmentMessagesEnabled');
             const btn = document.getElementById('btnSaveWhatsappAutoMessages');
@@ -10954,6 +10957,7 @@
                     body: JSON.stringify({
                         deptAssignedMessage: deptMsg.value.trim(),
                         employeeIntroMessage: empMsg.value.trim(),
+                        conversationEndedMessage: endMsg ? endMsg.value.trim() : '',
                         callIntroMessage: callMsg ? callMsg.value.trim() : '',
                         autoAssignmentMessagesEnabled: autoAsgCb ? autoAsgCb.checked : true
                     })

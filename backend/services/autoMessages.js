@@ -4,11 +4,12 @@
  */
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
-const { Message, Customer, Conversation, WhatsappConfig } = require('../models');
+const { Message, Customer, Conversation, WhatsappConfig, User, Department } = require('../models');
 const logger = require('../config/logger');
 
 const DEFAULT_DEPT_ASSIGNED = 'شما به دپارتمان {{deptName}} وصل شدید. به زودی پاسخگوی شما خواهیم بود.';
-const DEFAULT_EMPLOYEE_INTRO = 'من {{name}} از دپارتمان {{deptName}} هستم.';
+const DEFAULT_EMPLOYEE_INTRO = 'شما در حال گفتگو با کارشناس {{name}} از دپارتمان {{deptName}} هستید.';
+const DEFAULT_CONVERSATION_ENDED = 'گفتگوی شما با کارشناس {{name}} از دپارتمان {{deptName}} به پایان رسید. در صورت نیاز دوباره برای ما پیام بفرستید.';
 
 let rabbitChannel = null;
 
@@ -139,8 +140,66 @@ async function maybeSendEmployeeIntro(conversation, userId, user, department) {
     }
 }
 
+/** پیام خودکار: گفتگوی شما پایان یافت — یک‌بار هنگام بسته/حل‌شدن مکالمه */
+async function sendConversationEndedMessage(conversationId) {
+    try {
+        if (!(await isAutoAssignmentMessagesEnabled())) return;
+        const conv = await Conversation.findByPk(conversationId, {
+            include: [{ model: Department, as: 'department', required: false }],
+        });
+        if (!conv || !conv.customerId) return;
+        const meta = conv.metadata || {};
+        // جلوگیری از ارسال تکراری در همان چرخه‌ی بسته‌شدن
+        if (meta.endedNotifiedAt) return;
+
+        let handler = null;
+        if (conv.assignedTo) {
+            handler = await User.findByPk(conv.assignedTo, {
+                include: [{ model: Department, as: 'department', required: false }],
+            }).catch(() => null);
+        }
+        const name = (handler && require('../lib/outboundMessagePrefix').getUserWhatsAppSenderName(handler)) || 'کارشناس';
+        const deptName =
+            (conv.department && conv.department.name) ||
+            (handler && handler.department && handler.department.name) ||
+            'پشتیبانی';
+
+        let template = DEFAULT_CONVERSATION_ENDED;
+        try {
+            const cfg = await WhatsappConfig.findByPk('default').catch(() => null);
+            if (cfg && cfg.conversationEndedMessage && String(cfg.conversationEndedMessage).trim()) {
+                template = String(cfg.conversationEndedMessage).trim();
+            }
+        } catch (_) {}
+        const text = template.replace(/\{\{name\}\}/g, name).replace(/\{\{deptName\}\}/g, deptName);
+
+        if (await sendOutgoingAutoMessage(conv, text)) {
+            await conv.update({ metadata: { ...meta, endedNotifiedAt: new Date().toISOString() } });
+        }
+    } catch (err) {
+        logger.error('sendConversationEndedMessage error', { error: err.message });
+    }
+}
+
+/** هنگام بازشدن مجدد مکالمه، پرچم پایان را پاک کن تا دفعه بعد دوباره ارسال شود */
+async function clearConversationEndedFlag(conversationId) {
+    try {
+        const conv = await Conversation.findByPk(conversationId, { attributes: ['id', 'metadata'] });
+        if (!conv) return;
+        const meta = conv.metadata || {};
+        if (!meta.endedNotifiedAt) return;
+        const newMeta = { ...meta };
+        delete newMeta.endedNotifiedAt;
+        await conv.update({ metadata: newMeta });
+    } catch (err) {
+        logger.error('clearConversationEndedFlag error', { error: err.message });
+    }
+}
+
 module.exports = {
     setRabbitChannel,
     sendDeptAssignedMessage,
-    maybeSendEmployeeIntro
+    maybeSendEmployeeIntro,
+    sendConversationEndedMessage,
+    clearConversationEndedFlag
 };

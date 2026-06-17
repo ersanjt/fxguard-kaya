@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { sequelize, Conversation, Customer, Message, User, Branch, Department } = require('../models');
-const { sendDeptAssignedMessage } = require('../services/autoMessages');
+const { sendDeptAssignedMessage, sendConversationEndedMessage, clearConversationEndedFlag } = require('../services/autoMessages');
 const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { canAccessCustomer } = require('../lib/customerAccess');
@@ -575,6 +575,7 @@ router.patch('/:id', async (req, res, next) => {
         if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
 
         const { assignedTo, departmentId, branchId, status, priority, subject, markRead, rating, feedback, isHiddenFromStaff } = req.body;
+        const prevStatus = conversation.status;
 
         if (markRead === true || markRead === 'true') {
             await conversation.update({ unreadCount: 0 });
@@ -680,6 +681,18 @@ router.patch('/:id', async (req, res, next) => {
                 metadata: { conversationId: conversation.id, departmentId: updateData.departmentId, customerPhone: conversation.customer && conversation.customer.phone }
             });
         }
+        // اطلاع‌رسانی پایان گفتگو به مشتری هنگام بسته/حل‌شدن مکالمه (و پاک‌کردن پرچم هنگام بازشدن مجدد)
+        if (canManage && status !== undefined && updateData.status) {
+            const END_STATUSES = ['closed', 'resolved'];
+            const wasEnded = END_STATUSES.includes(prevStatus);
+            const isEnded = END_STATUSES.includes(updateData.status);
+            if (isEnded && !wasEnded) {
+                try { await sendConversationEndedMessage(conversation.id); } catch (_) {}
+            } else if (!isEnded && wasEnded && (updateData.status === 'open' || updateData.status === 'pending')) {
+                try { await clearConversationEndedFlag(conversation.id); } catch (_) {}
+            }
+        }
+
         const updated = await Conversation.findByPk(req.params.id, {
             include: [
                 { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'] },
