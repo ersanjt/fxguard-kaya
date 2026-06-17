@@ -17,11 +17,18 @@ ffmpeg.setFfmpegPath(ffmpegPath);
  */
 function convertToOggOpus(inputPath, outputPath) {
     return new Promise((resolve, reject) => {
+        // WhatsApp voice notes (PTT) must be a clean OGG/Opus stream encoded at
+        // 48kHz mono. Using a lower sample rate (e.g. 16kHz) produces a file that
+        // WhatsApp accepts on send but the recipient's phone cannot decode, so it
+        // shows "this voice was deleted" / refuses to play. The voip application
+        // profile and metadata stripping match what the WhatsApp client expects.
         ffmpeg(inputPath)
+            .noVideo()
             .audioCodec('libopus')
             .audioChannels(1)
-            .audioFrequency(16000)
-            .audioBitrate('16k')
+            .audioFrequency(48000)
+            .audioBitrate('32k')
+            .outputOptions(['-application', 'voip', '-map_metadata', '-1'])
             .format('ogg')
             .on('end', () => resolve(outputPath))
             .on('error', (err) => reject(err))
@@ -34,19 +41,25 @@ function convertToOggOpus(inputPath, outputPath) {
  * Returns { filePath, mimetype, filename } — either converted or original.
  */
 async function ensureVoiceFormat(filePath, mimetype, filename) {
-    const audioMimes = ['audio/webm', 'audio/mp4', 'audio/mpeg', 'audio/wav', 'audio/aac', 'audio/x-m4a'];
     const baseMime = (mimetype || '').split(';')[0].trim().toLowerCase();
+    const ext = path.extname(filePath).toLowerCase();
 
-    // Already ogg/opus — no conversion needed
-    if (baseMime === 'audio/ogg' || path.extname(filePath).toLowerCase() === '.ogg') {
+    // Already ogg/opus — no conversion needed.
+    if (
+        baseMime === 'audio/ogg' ||
+        baseMime === 'audio/opus' ||
+        ext === '.ogg' ||
+        ext === '.oga' ||
+        ext === '.opus'
+    ) {
         return { filePath, mimetype: 'audio/ogg', filename: filename || path.basename(filePath) };
     }
 
-    if (!audioMimes.some(m => baseMime.startsWith(m.split('/')[0] + '/') && baseMime.includes('audio'))) {
-        // Not audio at all
-        return { filePath, mimetype, filename };
-    }
-
+    // Anything else reaching here is an outbound voice message (the caller only
+    // invokes this for audio), so always transcode to the WhatsApp voice format.
+    // Relying on the exact mimetype is unreliable (browsers send
+    // "audio/webm;codecs=opus", some uploads arrive as octet-stream), so we
+    // convert by default and only fall back to the original if ffmpeg fails.
     const outPath = filePath.replace(/\.[^.]+$/, '') + '_voice.ogg';
     try {
         await convertToOggOpus(filePath, outPath);
