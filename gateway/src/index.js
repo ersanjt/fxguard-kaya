@@ -928,29 +928,37 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
         if (media?.data) {
             const mime = media.mimetype || 'application/octet-stream';
             const mediaObj = new MessageMedia(mime, media.data, media.filename || null);
-            sendOpts.caption = message || '';
-            if (media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime)) {
+            const asVoice = !!(media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime));
+            if (asVoice) {
+                // Voice notes (PTT) must not carry a caption — adding one can
+                // produce a message the recipient is unable to download.
                 sendOpts.sendAudioAsVoice = true;
+            } else {
+                sendOpts.caption = message || '';
             }
+            logger.info('📎 Sending media (data)', { to, mime, asVoice, dataLen: (media.data || '').length });
             sentMsg = await client.sendMessage(chatId, mediaObj, sendOpts);
         } else if (media?.url) {
             if (!isSafeMediaUrl(media.url)) {
                 return res.status(400).json({ error: 'Invalid or unsafe media URL' });
             }
             const mediaObj = await MessageMedia.fromUrl(media.url);
-            sendOpts.caption = message || '';
-            if (
+            const asVoice = !!(
                 media.sendAsVoice ||
                 (media.mimetype && /^audio\/(ogg|opus)/i.test(media.mimetype))
-            ) {
+            );
+            if (asVoice) {
                 sendOpts.sendAudioAsVoice = true;
+            } else {
+                sendOpts.caption = message || '';
             }
+            logger.info('📎 Sending media (url)', { to, mime: mediaObj?.mimetype, asVoice });
             sentMsg = await client.sendMessage(chatId, mediaObj, sendOpts);
         } else {
             sentMsg = await client.sendMessage(chatId, message || '', sendOpts);
         }
 
-        logger.info('✉️ Message sent', { to });
+        logger.info('✉️ Message sent', { to, messageId: sentMsg?.id?.id, hasMedia: !!media });
         return res.json({ success: true, messageId: sentMsg?.id?.id });
     } catch (error) {
         logger.error('Send message error', { error: error?.message });
@@ -1078,9 +1086,10 @@ async function sendWhatsAppMessage(data) {
     if (media?.data) {
         const mime = media.mimetype || 'application/octet-stream';
         const mediaObj = new MessageMedia(mime, media.data, media.filename || null);
-        sendOpts.caption = message || '';
         if (media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime)) {
             sendOpts.sendAudioAsVoice = true;
+        } else {
+            sendOpts.caption = message || '';
         }
         return client.sendMessage(chatId, mediaObj, sendOpts);
     }
@@ -1088,9 +1097,10 @@ async function sendWhatsAppMessage(data) {
     if (media?.url) {
         if (!isSafeMediaUrl(media.url)) throw new Error('Invalid or unsafe media URL');
         const mediaObj = await MessageMedia.fromUrl(media.url);
-        sendOpts.caption = message || '';
         if (media.sendAsVoice || (media.mimetype && /^audio\/(ogg|opus)/i.test(media.mimetype))) {
             sendOpts.sendAudioAsVoice = true;
+        } else {
+            sendOpts.caption = message || '';
         }
         return client.sendMessage(chatId, mediaObj, sendOpts);
     }
