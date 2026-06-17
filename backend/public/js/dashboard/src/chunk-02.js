@@ -405,7 +405,8 @@
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
                 document.getElementById('loginBox').style.display = 'none';
-                document.getElementById('app').classList.add('show');
+                const appElLogin = document.getElementById('app');
+                if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
                 try {
                     applyNavByRole();
                     await loadPanelSettingsAndApply();
@@ -543,7 +544,8 @@
                 currentUser = data.user || {};
                 setUserDisplay(currentUser);
                 document.getElementById('loginBox').style.display = 'none';
-                document.getElementById('app').classList.add('show');
+                const appElLogin = document.getElementById('app');
+                if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
                 try {
                     applyNavByRole();
                     await loadPanelSettingsAndApply();
