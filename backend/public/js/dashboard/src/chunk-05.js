@@ -302,14 +302,14 @@
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + '</div>'; return; }
             const data = (res.data && res.data.data) || [];
             if (data.length === 0) { list.innerHTML = '<div class="empty"><span class="empty-icon">📋</span><br>' + t('empty_process_templates') + '</div>'; return; }
-            list.innerHTML = data.map(function(t) {
-                const stages = (t.stages || []).map(function(s){ return s.name; }).join(' \u2192 ');
-                const cnt = (t.instanceCount || 0);
+            list.innerHTML = data.map(function(tpl) {
+                const stages = (tpl.stages || []).map(function(s){ return s.name; }).join(' \u2192 ');
+                const cnt = (tpl.instanceCount || 0);
                 return '<div class="list-item" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">' +
-                    '<div><span class="name">' + escapeHtml(t.name) + '</span><div class="meta">' + (stages || '—') + ' | ' + (t('process_instances_count') || 'Instances: ') + cnt + '</div></div>' +
-                    '<div style="display:flex; gap:6px;"><button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessStartInstanceModal(\'' + t.id + '\')">' + t('process_start_instance') + '</button>' +
-                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessTemplateModal(\'' + t.id + '\')">' + t('edit') + '</button>' +
-                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="deleteProcessTemplate(\'' + t.id + '\')">' + (t('btn_delete') || '\u00D7') + '</button></div></div>';
+                    '<div><span class="name">' + escapeHtml(tpl.name) + '</span><div class="meta">' + (stages || '—') + ' | ' + (t('process_instances_count') || 'Instances: ') + cnt + '</div></div>' +
+                    '<div style="display:flex; gap:6px;"><button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessStartInstanceModal(\'' + tpl.id + '\')">' + t('process_start_instance') + '</button>' +
+                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="openProcessTemplateModal(\'' + tpl.id + '\')">' + t('edit') + '</button>' +
+                    '<button type="button" class="btn-secondary" style="padding:6px 12px;" onclick="deleteProcessTemplate(\'' + tpl.id + '\')">' + (t('btn_delete') || '\u00D7') + '</button></div></div>';
             }).join('');
         }
         async function loadProcessInstances() {
@@ -976,17 +976,17 @@
             list.classList.remove('empty');
             if (data.length === 0) { list.innerHTML = '<div class="empty internal-chat-empty-state"><span class="empty-icon">\uD83D\uDCAC</span><p>' + (t('start_chat_hint') || (LANG === 'fa' ? 'گفتگویی را انتخاب کنید یا گفتگوی جدید شروع کنید.' : 'Select a conversation or start a new one.')) + '</p></div>'; return; }
             const me = (currentUser && currentUser.id) || '';
-            list.innerHTML = data.map(function(t) {
-                const participants = t.participants || [];
+            list.innerHTML = data.map(function(th) {
+                const participants = th.participants || [];
                 const names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
                 const first = participants[0];
                 const initial = (first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F';
                 const avatarUrl = resolveAvatarUrl(first && first.avatar);
                 const avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
-                const last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 45) + ((t.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';
-                const timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
-                const fromLabel = t.lastMessage && t.lastMessage.fromUser && String(t.lastMessage.fromUser.id) !== String(me) ? (t.lastMessage.fromUser.name || '') + ': ' : '';
-                return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(t.id) + '" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + avatarHtml + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
+                const last = th.lastMessage ? (th.lastMessage.content || '').slice(0, 45) + ((th.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';
+                const timeStr = th.lastMessageAt ? fmtTZ(th.lastMessageAt, 'time') : '';
+                const fromLabel = th.lastMessage && th.lastMessage.fromUser && String(th.lastMessage.fromUser.id) !== String(me) ? (th.lastMessage.fromUser.name || '') + ': ' : '';
+                return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(th.id) + '" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + avatarHtml + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
             }).join('');
         }
         function filterInternalThreads(q) {
@@ -1047,16 +1047,16 @@
                 const data = (res.data && res.data.data) || [];
                 internalThreadsCache = data;
                 const me = (currentUser && currentUser.id) || '';
-                const itemsHtml = data.map(function(t) {
-                    const participants = t.participants || [];
+                const itemsHtml = data.map(function(th) {
+                    const participants = th.participants || [];
                     const names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
                     const first = participants[0];
                     const initial = (first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F';
                     const avatarUrl = resolveAvatarUrl(first && first.avatar);
                     const avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
-                    const last = t.lastMessage ? (t.lastMessage.content || '').slice(0, 35) + ((t.lastMessage.content || '').length > 35 ? '\u2026' : '') : '\u2014';
-                    const timeStr = t.lastMessageAt ? fmtTZ(t.lastMessageAt, 'time') : '';
-                    return '<button type="button" class="internal-chat-popup-thread-item" data-id="' + escapeHtml(t.id) + '"><span class="internal-chat-popup-thread-avatar">' + avatarHtml + '</span><div class="internal-chat-popup-thread-body"><span class="internal-chat-popup-thread-name">' + escapeHtml(names || t('chat')) + '</span><div class="internal-chat-popup-thread-meta">' + escapeHtml(last) + '</div></div><span class="internal-chat-popup-thread-time">' + escapeHtml(timeStr) + '</span></button>';
+                    const last = th.lastMessage ? (th.lastMessage.content || '').slice(0, 35) + ((th.lastMessage.content || '').length > 35 ? '\u2026' : '') : '\u2014';
+                    const timeStr = th.lastMessageAt ? fmtTZ(th.lastMessageAt, 'time') : '';
+                    return '<button type="button" class="internal-chat-popup-thread-item" data-id="' + escapeHtml(th.id) + '"><span class="internal-chat-popup-thread-avatar">' + avatarHtml + '</span><div class="internal-chat-popup-thread-body"><span class="internal-chat-popup-thread-name">' + escapeHtml(names || t('chat')) + '</span><div class="internal-chat-popup-thread-meta">' + escapeHtml(last) + '</div></div><span class="internal-chat-popup-thread-time">' + escapeHtml(timeStr) + '</span></button>';
                 }).join('');
                 const newBtn = '<button type="button" class="internal-chat-popup-new-btn">' + (LANG === 'fa' ? '\u2795 گفتگوی جدید' : '+ New conversation') + '</button>';
                 listEl.innerHTML = (data.length === 0 ? '<div class="empty internal-chat-empty-state"><span class="empty-icon">\uD83D\uDCAC</span><p>' + (t('start_chat_hint') || '') + '</p></div>' : '') + itemsHtml + newBtn;
@@ -1378,16 +1378,16 @@
             currentInternalThreadOtherUserId = null;
             const pane = document.getElementById('internalChatPane');
             const wrap = document.getElementById('internalChatLayoutWrap');
-            pane.style.display = 'flex';
+            if (pane) pane.style.display = 'flex';
             if (wrap) { wrap.classList.add('internal-chat-has-chat'); if (isInternalChatMobile()) wrap.classList.add('internal-chat-mobile-chat-open'); }
             const partRes = await apiFetch('/api/internal/threads');
             if (partRes.ok && partRes.data && partRes.data.data) {
-                const t = partRes.data.data.find(function(x) { return x.id === threadId; });
+                const thread = partRes.data.data.find(function(x) { return x.id === threadId; });
                 const headerEl = document.getElementById('internalChatHeader');
-                if (headerEl) headerEl.textContent = t && t.participants ? t.participants.map(function(p) { return p.name; }).join(', ') : t('chat');
-                const others = t && t.participants ? t.participants.filter(function(p) { return String(p.id) !== String(currentUser && currentUser.id); }) : [];
+                if (headerEl) headerEl.textContent = thread && thread.participants ? thread.participants.map(function(p) { return p.name; }).join(', ') : t('chat');
+                const others = thread && thread.participants ? thread.participants.filter(function(p) { return String(p.id) !== String(currentUser && currentUser.id); }) : [];
                 currentInternalThreadOtherUserId = others.length ? others[0].id : null;
-                currentInternalThreadParticipants = t && t.participants ? t.participants : [];
+                currentInternalThreadParticipants = thread && thread.participants ? thread.participants : [];
                 const headerAvatarEl = document.getElementById('internalChatHeaderAvatar');
                 if (headerAvatarEl) {
                     const other = others[0];
