@@ -2824,28 +2824,52 @@
                     const isOwnerOrAdmin = (role === 'owner' || role === 'admin');
                     return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true);
                 };
-            if (container) container.innerHTML = '<div class="loading-skeleton loading-row"></div>';
-            if (summaryEl) summaryEl.innerHTML = '';
-            if (quickEl) quickEl.innerHTML = '';
-            if (attentionEl) { attentionEl.innerHTML = ''; attentionEl.style.display = 'none'; }
+            const n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
+            const paintCards = function(stats) {
+                stats = stats || {};
+                const cards = [
+                    { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread')) : (stats.openConversations != null ? (n(stats.openConversations) + ' ' + t('filter_open')) : null), badgeWarn: n(stats.unreadConversations) > 0 },
+                    { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: stats.totalCustomers != null ? (n(stats.totalCustomers) + ' ' + t('nav_customers').toLowerCase()) : null },
+                    { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', stat: stats.ticketsOpen != null ? (n(stats.ticketsOpen) + ' ' + t('status_open').toLowerCase()) : null },
+                    { page: 'tasks', section: 'tasks', title: t('nav_tasks'), icon: 'icon-task', stat: stats.tasksPending != null ? (n(stats.tasksPending) + ' ' + t('status_pending').toLowerCase()) : null },
+                    { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-megaphone', stat: stats.announcementsCount != null ? (n(stats.announcementsCount) + ' ' + t('nav_announcements').toLowerCase()) : null },
+                    { page: 'departments', section: 'departments', title: t('nav_departments'), icon: 'icon-building', stat: null },
+                    { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user', stat: null },
+                    { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
+                    { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-expand', stat: null },
+                    { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone', stat: null },
+                    { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart', stat: null },
+                    { page: 'services', section: 'services', title: t('nav_services'), icon: 'icon-file-plus', stat: null },
+                    { page: 'profile', section: 'profile', title: t('nav_profile'), icon: 'icon-user', stat: null },
+                    { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
+                    { page: 'supervision', section: 'supervision', title: t('nav_supervision'), icon: 'icon-chart', stat: null },
+                    { page: 'staff-activity', section: 'staff_activity', title: t('nav_staff_activity'), icon: 'icon-user-online', stat: null },
+                    { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-settings', stat: null }
+                ];
+                let html = '';
+                cards.forEach(function(c) {
+                    if (!can(c.section)) return;
+                    const badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
+                    html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
+                });
+                container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : t('no_data')) + '</div>');
+                if (cardsTitleEl) cardsTitleEl.style.display = html ? '' : 'none';
+            };
+            // Paint navigation cards immediately so the dashboard is never blank,
+            // even if the stats request is slow, fails, or is superseded.
+            if (!container.querySelector('.dashboard-card')) paintCards({});
             let res;
             try {
                 res = await apiFetch('/api/analytics/dashboard');
             } catch (e) {
-                setDashboardError(container, cardsTitleEl, LANG === 'fa' ? 'خطا در ارتباط با سرور.' : 'Network error.');
-                return;
-            }
-            if (res.needLogin) {
-                setDashboardError(container, cardsTitleEl, LANG === 'fa' ? 'لطفاً وارد شوید.' : 'Please sign in.');
-                return;
-            }
-            if (!res.ok) {
-                setDashboardError(container, cardsTitleEl, getApiError(res));
                 return;
             }
             if (seq !== _loadDashboardSeq) return;
+            if (res.needLogin || !res.ok) return;
             const stats = res.data || {};
-            const n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
+            if (attentionEl) { attentionEl.innerHTML = ''; attentionEl.style.display = 'none'; }
+            if (summaryEl) summaryEl.innerHTML = '';
+            if (quickEl) quickEl.innerHTML = '';
             if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
                 const parts = [];
                 if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unread">' + n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread') + '</a>');
@@ -2890,33 +2914,7 @@
                 }).join('');
                 quickEl.innerHTML = quickHtml || '';
             }
-            const cards = [
-                { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread')) : (n(stats.openConversations) + ' ' + t('filter_open')), badgeWarn: n(stats.unreadConversations) > 0 },
-                { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: n(stats.totalCustomers) + ' ' + t('nav_customers').toLowerCase() },
-                { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', stat: n(stats.ticketsOpen) + ' ' + t('status_open').toLowerCase() },
-                { page: 'tasks', section: 'tasks', title: t('nav_tasks'), icon: 'icon-task', stat: n(stats.tasksPending) + ' ' + t('status_pending').toLowerCase() },
-                { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-megaphone', stat: n(stats.announcementsCount) + ' ' + t('nav_announcements').toLowerCase() },
-                { page: 'departments', section: 'departments', title: t('nav_departments'), icon: 'icon-building', stat: null },
-                { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user', stat: null },
-                { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
-                { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-expand', stat: null },
-                { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone', stat: null },
-                { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart', stat: null },
-                { page: 'services', section: 'services', title: t('nav_services'), icon: 'icon-file-plus', stat: null },
-                { page: 'profile', section: 'profile', title: t('nav_profile'), icon: 'icon-user', stat: null },
-                { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
-                { page: 'supervision', section: 'supervision', title: t('nav_supervision'), icon: 'icon-chart', stat: null },
-                { page: 'staff-activity', section: 'staff_activity', title: t('nav_staff_activity'), icon: 'icon-user-online', stat: null },
-                { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-settings', stat: null }
-            ];
-            let html = '';
-            cards.forEach(function(c) {
-                if (!can(c.section)) return;
-                const badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
-                html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
-            });
-            container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : t('no_data')) + '</div>');
-            if (cardsTitleEl) cardsTitleEl.style.display = html ? '' : 'none';
+            paintCards(stats);
             updateNavBadges(stats);
         }
 
