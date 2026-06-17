@@ -1029,15 +1029,25 @@
             if (cardsTitleEl) cardsTitleEl.style.display = 'none';
         }
         let _loadDashboardSeq = 0;
-        async function loadDashboard() {
+        async function loadDashboard(_attempt) {
             const container = document.getElementById('dashboardCards');
             const summaryEl = document.getElementById('dashboardSummary');
             const quickEl = document.getElementById('dashboardQuickActions');
             const attentionEl = document.getElementById('dashboardAttention');
             const cardsTitleEl = document.getElementById('dashboardCardsTitle');
             if (!container) return;
-            if (!currentUser || !currentUser.id) return;
             const seq = ++_loadDashboardSeq;
+            // If the signed-in user isn't populated yet (a rare early-call race
+            // during bootstrap, e.g. loadDashboard fires before /api/auth/me has
+            // applied), retry shortly instead of leaving the dashboard blank.
+            // Previously this returned with nothing painted, so the dashboard
+            // stayed empty until the user manually navigated to another section.
+            if (!currentUser || !currentUser.id) {
+                if ((_attempt || 0) < 20) {
+                    setTimeout(function () { if (seq === _loadDashboardSeq) loadDashboard((_attempt || 0) + 1); }, 500);
+                }
+                return;
+            }
             const can = (typeof canAccessSection === 'function')
                 ? canAccessSection
                 : function(section) {
@@ -1082,7 +1092,7 @@
             if (!container.querySelector('.dashboard-card')) paintCards({});
             let res;
             try {
-                res = await apiFetch('/api/analytics/dashboard');
+                res = await apiFetch('/api/analytics/dashboard', { timeoutMs: 15000 });
             } catch (e) {
                 return;
             }
