@@ -20,9 +20,9 @@
                 }, 50);
             }
             const detailRawPic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-            const detailPicSrc = detailRawPic ? profilePicDisplaySrc(detailRawPic) : '';
-            const avatarClickable = !!(detailPicSrc && profilePicShowsImage(detailRawPic));
-            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailPicSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
+            const detailPicSrc = customerAvatarDisplaySrc(c);
+            const avatarClickable = customerAvatarShowsImage(c);
+            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailPicSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : initial;
             const avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
             if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailPicSrc) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             const res = await apiFetch('/api/customers/' + custId + '/conversations');
@@ -1733,7 +1733,7 @@
             }
             if (page === 'message-templates') { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); }
-            if (page === 'rates-charts') loadRatesCharts();
+            if (page === 'rates-charts') initRatesChartsPage();
             if (page === 'services') { initServicesTabs(); loadServicesPage(); }
             if (page === 'branches') { loadBranches(); }
             if (page === 'staff-activity') { 

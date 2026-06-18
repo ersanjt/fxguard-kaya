@@ -964,10 +964,32 @@
             if (looksLikeSchemelessHttpHost(u)) return ensureHttpsUrl('https://' + u);
             return '';
         }
-        function profilePicShowsImage(url) {
+        function profilePicShowsImage(url, customerId) {
+            if (customerId) return true;
             if (!url || typeof url !== 'string') return false;
             var n = normalizeProfilePicUrl(url);
-            return !!n && (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0);
+            return !!n && (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0 || n.indexOf('/api/customers/') === 0);
+        }
+        function isLocalUploadAvatarPath(url) {
+            if (!url || typeof url !== 'string') return false;
+            var u = url.trim();
+            return u.indexOf('/uploads/') === 0 || u.indexOf('uploads/') === 0;
+        }
+        /** آواتار مشتری — فایل محلی یا API سرور (واکشی از واتساپ) */
+        function customerAvatarDisplaySrc(customerOrPic, customerId) {
+            var cust = (customerOrPic && typeof customerOrPic === 'object') ? customerOrPic : null;
+            var raw = cust ? String(cust.profilePic || '').trim() : String(customerOrPic || '').trim();
+            var id = (cust && cust.id) ? cust.id : customerId;
+            if (raw && isLocalUploadAvatarPath(raw)) {
+                var localSrc = profilePicDisplaySrc(raw);
+                if (localSrc) return localSrc;
+            }
+            if (id) return '/api/customers/' + encodeURIComponent(String(id)) + '/avatar';
+            if (raw) return profilePicDisplaySrc(raw);
+            return '';
+        }
+        function customerAvatarShowsImage(customerOrPic, customerId) {
+            return !!customerAvatarDisplaySrc(customerOrPic, customerId);
         }
         /** میزبان‌های CDN پروفایل (واتساپ/متا/…) — بارگذاری از طریق پروکسی API تا مرورگر مسدود نشود */
         var PROFILE_PIC_PROXY_SUFFIXES = ['whatsapp.net', 'fbcdn.net', 'facebook.com', 'instagram.com', 'cdninstagram.com', 'googleusercontent.com'];
@@ -1018,13 +1040,27 @@
             try {
                 if (!img) return;
                 var s = String(img.currentSrc || img.src || '');
-                if (s.indexOf('/api/profile-image') === -1) return;
+                if (s.indexOf('/api/profile-image') === -1 && s.indexOf('/api/customers/') === -1) return;
                 if (img.naturalWidth <= 1 && img.naturalHeight <= 1) crmAvatarImgErr(img);
             } catch (_e) {}
         }
         window.crmAvatarImgLoaded = crmAvatarImgLoaded;
-        function resolveAvatarUrl(avatar) { return normalizeProfilePicUrl(avatar); }
-        function internalMsgAvatarHtml(fromUser, extraClass) { const u = fromUser || {}; const name = (u.name || u.username || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); const cls = 'msg-avatar' + (extraClass ? ' ' + extraClass : ''); if (pic) return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)"></span>'; return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>'; }
+        function resolveAvatarUrl(avatar) {
+            if (!avatar) return '';
+            return profilePicDisplaySrc(avatar) || normalizeProfilePicUrl(avatar);
+        }
+        function internalMsgAvatarHtml(fromUser, extraClass) {
+            const u = fromUser || {};
+            const name = (u.name || u.username || u.email || '').trim();
+            const initial = name[0] ? name[0].toUpperCase() : '?';
+            const cls = 'msg-avatar' + (extraClass ? ' ' + extraClass : '');
+            const rawAv = (u.avatar || '').trim();
+            const pic = rawAv ? resolveAvatarUrl(rawAv) : '';
+            if (pic && profilePicShowsImage(rawAv)) {
+                return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)"></span>';
+            }
+            return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>';
+        }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         function refreshDashboard() {
@@ -1983,13 +2019,7 @@
                 // چت داخلی — Enter برای ارسال پیام
                 if (active.id === 'internalChatInput' && e.key === 'Enter' && !e.shiftKey && typeof sendInternalMessage === 'function') { e.preventDefault(); sendInternalMessage(); return; }
                 if (active.id === 'internalChatPopupInput' && typeof handlePopupChatKeydown === 'function') { handlePopupChatKeydown(e); return; }
-                // مکالمات واتساپ — Enter برای ارسال (inline onkeypress با CSP حذف می‌شود)
-                if (active.id === 'msgInput' && e.key === 'Enter' && !e.shiftKey && typeof sendMsg === 'function') {
-                    if (e.isComposing || (active && active.isComposing)) return;
-                    e.preventDefault();
-                    sendMsg();
-                    return;
-                }
+                // msgInput Enter → فقط در chunk-03 روی خود input بایند شده (اینجا دوباره sendMsg نزن)
             }, true);
             document.addEventListener('input', function(e) {
                 if (e.target.id === 'internalChatSearch' && typeof filterInternalThreads === 'function') filterInternalThreads(e.target.value);

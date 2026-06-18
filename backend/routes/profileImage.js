@@ -75,8 +75,8 @@ async function getProfileImage(req, res) {
             timeout: 15000,
             maxContentLength: MAX_BYTES,
             maxBodyLength: MAX_BYTES,
-            maxRedirects: 0,
-            validateStatus: (s) => s === 200,
+            maxRedirects: 5,
+            validateStatus: (s) => s >= 200 && s < 400,
             headers: upstreamHeadersForProfilePic(u.hostname),
         });
         const ct = (response.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
@@ -96,4 +96,4 @@ async function getProfileImage(req, res) {
     }
 }
 
-module.exports = { getProfileImage };
+module.exports = { getProfileImage, sendPlaceholderPng, upstreamHeadersForProfilePic };

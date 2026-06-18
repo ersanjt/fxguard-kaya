@@ -15,6 +15,7 @@ const {
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
 const { conversationListWhere } = require('../lib/conversationAccess');
+const { getVisibleStaffUserIds, applyVisibleUserFilter } = require('../lib/staffSupervision');
 
 function conversationWhere(req) {
     return conversationListWhere(req.user, req.userId);
@@ -100,10 +101,24 @@ async function dashboard(req, res, next) {
                     return Announcement.count();
                 }
             })(),
-            User.count({
-                where: { isActive: true, status: { [Op.in]: ['online', 'away', 'busy'] } },
-            }),
-            User.count({ where: { isActive: true, lastLoginAt: { [Op.gte]: today } } }),
+            (async () => {
+                if (!req.canAccess('staff_activity')) return 0;
+                const visibleIds = await getVisibleStaffUserIds(req.user, User);
+                const where = applyVisibleUserFilter(
+                    { isActive: true, status: { [Op.in]: ['online', 'away', 'busy'] } },
+                    visibleIds
+                );
+                return User.count({ where });
+            })(),
+            (async () => {
+                if (!req.canAccess('staff_activity')) return 0;
+                const visibleIds = await getVisibleStaffUserIds(req.user, User);
+                const where = applyVisibleUserFilter(
+                    { isActive: true, lastLoginAt: { [Op.gte]: today } },
+                    visibleIds
+                );
+                return User.count({ where });
+            })(),
         ]);
 
         let avgResponseTimeMinutes = null;

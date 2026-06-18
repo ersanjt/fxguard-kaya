@@ -1040,67 +1040,247 @@
             }).join('') + '</tbody></table>';
         }
 
+        let staffActivityOnlineData = [];
+        let staffActivityLoginsData = [];
+        let staffActivityUserIndex = [];
+        let staffActivityStatusFilter = 'all';
+        let staffActivityCurrentTab = 'online';
+
+        function switchStaffActivityTab(tab) {
+            staffActivityCurrentTab = tab || 'online';
+            document.querySelectorAll('.staff-activity-tab').forEach(function(btn) {
+                const on = btn.getAttribute('data-staff-tab') === staffActivityCurrentTab;
+                btn.classList.toggle('active', on);
+                btn.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            document.querySelectorAll('.staff-activity-panel').forEach(function(panel) {
+                const on = panel.getAttribute('data-staff-panel') === staffActivityCurrentTab;
+                panel.classList.toggle('active', on);
+                panel.hidden = !on;
+            });
+        }
+        window.switchStaffActivityTab = switchStaffActivityTab;
+
+        function staffActivityHaystack(obj) {
+            if (!obj) return '';
+            return [obj.name, obj.username, obj.email, obj.firstName, obj.lastName, userDisplay(obj)].filter(Boolean).join(' ').toLowerCase();
+        }
+
+        function buildStaffOnlineRow(u) {
+            const statusClass = (u.status || 'offline').toLowerCase();
+            const statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
+            const lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '\u2014';
+            const branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
+            const deptName = (u.department && u.department.name) ? u.department.name : '\u2014';
+            const ip = u.lastLoginIp || '\u2014';
+            const country = u.lastLoginCountry || '\u2014';
+            const lbl = [t('label_name'), t('th_email'), t('th_branch'), t('th_dept'), t('th_status'), t('th_last_login'), t('th_ip'), t('th_country')];
+            return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" data-status="' + escapeHtml(statusClass) + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer">' +
+                '<td data-label="' + lbl[0] + '"><span class="staff-row-name"><span class="status-dot ' + statusClass + '"></span>' + escapeHtml(userDisplay(u)) + '</span></td>' +
+                '<td data-label="' + lbl[1] + '">' + escapeHtml(u.email || '\u2014') + '</td>' +
+                '<td data-label="' + lbl[2] + '">' + escapeHtml(branchName) + '</td>' +
+                '<td data-label="' + lbl[3] + '">' + escapeHtml(deptName) + '</td>' +
+                '<td data-label="' + lbl[4] + '"><span class="staff-status-badge ' + statusClass + '">' + escapeHtml(statusLabel) + '</span></td>' +
+                '<td data-label="' + lbl[5] + '">' + lastLogin + '</td>' +
+                '<td data-label="' + lbl[6] + '" dir="ltr">' + escapeHtml(ip) + '</td>' +
+                '<td data-label="' + lbl[7] + '">' + escapeHtml(country) + '</td></tr>';
+        }
+
+        function renderOnlineStaffList() {
+            const onlineList = document.getElementById('onlineStaffList');
+            const countEl = document.getElementById('onlineCount');
+            if (!onlineList) return;
+            const q = (document.getElementById('staffOnlineFilter') && document.getElementById('staffOnlineFilter').value || '').trim().toLowerCase();
+            let users = staffActivityOnlineData.slice();
+            if (staffActivityStatusFilter && staffActivityStatusFilter !== 'all') {
+                users = users.filter(function(u) { return (u.status || '').toLowerCase() === staffActivityStatusFilter; });
+            }
+            if (q) {
+                users = users.filter(function(u) { return staffActivityHaystack(u).indexOf(q) >= 0; });
+            }
+            if (countEl) countEl.textContent = staffActivityOnlineData.length;
+            if (users.length === 0) {
+                onlineList.innerHTML = '<div class="empty">' + (staffActivityOnlineData.length ? (t('staff_no_match') || 'موردی یافت نشد') : t('no_staff_online')) + '</div>';
+                return;
+            }
+            const hdr = [t('label_name'), t('th_email'), t('th_branch'), t('th_dept'), t('th_status'), t('th_last_login'), t('th_ip'), t('th_country')];
+            onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr>' + hdr.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + users.map(buildStaffOnlineRow).join('') + '</tbody></table>';
+        }
+
+        function buildStaffLoginRow(r) {
+            const user = r.user || {};
+            const branch = r.branch ? r.branch.name : '\u2014';
+            const time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
+            const uid = r.userId || (user && user.id) || '';
+            const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
+            const ip = r.ip || '\u2014';
+            const country = r.country || '\u2014';
+            const ll = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time'), t('th_ip'), t('th_country'), t('th_summary')];
+            return '<tr' + rowAttrs + '><td data-label="' + ll[0] + '">' + escapeHtml(userDisplay(user)) + '</td><td data-label="' + ll[1] + '">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="' + ll[2] + '">' + escapeHtml(branch) + '</td><td data-label="' + ll[3] + '">' + time + '</td><td data-label="' + ll[4] + '" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="' + ll[5] + '">' + escapeHtml(country) + '</td><td data-label="' + ll[6] + '">' + escapeHtml(r.summary || '') + '</td></tr>';
+        }
+
+        function renderLoginsList() {
+            const loginsList = document.getElementById('loginsList');
+            if (!loginsList) return;
+            const q = (document.getElementById('staffLoginsFilter') && document.getElementById('staffLoginsFilter').value || '').trim().toLowerCase();
+            let rows = staffActivityLoginsData.slice();
+            if (q) {
+                rows = rows.filter(function(r) {
+                    const user = r.user || {};
+                    const hay = staffActivityHaystack(user) + ' ' + (r.summary || '') + ' ' + (r.ip || '') + ' ' + (r.country || '');
+                    return hay.toLowerCase().indexOf(q) >= 0;
+                });
+            }
+            if (rows.length === 0) {
+                loginsList.innerHTML = '<div class="empty">' + (staffActivityLoginsData.length ? (t('staff_no_match') || 'موردی یافت نشد') : t('empty_no_logins')) + '</div>';
+                return;
+            }
+            const hdr = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time'), t('th_ip'), t('th_country'), t('th_summary')];
+            loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr>' + hdr.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(buildStaffLoginRow).join('') + '</tbody></table>';
+        }
+
+        function renderStaffActivityQuickFind(q) {
+            const box = document.getElementById('staffActivitySearchResults');
+            const clearBtn = document.getElementById('staffActivitySearchClear');
+            if (!box) return;
+            const term = (q || '').trim().toLowerCase();
+            if (clearBtn) clearBtn.hidden = !term;
+            if (!term || term.length < 2) { box.hidden = true; box.innerHTML = ''; return; }
+            const matches = staffActivityUserIndex.filter(function(u) {
+                return staffActivityHaystack(u).indexOf(term) >= 0;
+            }).slice(0, 8);
+            if (!matches.length) {
+                box.innerHTML = '<div class="staff-search-empty">' + escapeHtml(t('staff_no_match') || 'موردی یافت نشد') + '</div>';
+                box.hidden = false;
+                return;
+            }
+            box.innerHTML = matches.map(function(u) {
+                const st = (u.status || 'offline').toLowerCase();
+                return '<button type="button" class="staff-search-result-item" data-user-id="' + escapeHtml(u.id || '') + '">' +
+                    '<span class="status-dot ' + st + '"></span>' +
+                    '<span class="staff-search-result-name">' + escapeHtml(userDisplay(u)) + '</span>' +
+                    '<span class="staff-search-result-meta">' + escapeHtml(u.email || u.username || '') + '</span></button>';
+            }).join('');
+            box.hidden = false;
+            box.querySelectorAll('.staff-search-result-item').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const uid = btn.getAttribute('data-user-id');
+                    if (uid) openStaffDetailModal(uid);
+                    box.hidden = true;
+                    const inp = document.getElementById('staffActivityUserSearch');
+                    if (inp) inp.value = '';
+                    if (clearBtn) clearBtn.hidden = true;
+                });
+            });
+        }
+
+        async function loadStaffActivityUserIndex() {
+            const res = await apiFetch('/api/supervision/staff-index');
+            if (res.ok && res.data && res.data.data) {
+                staffActivityUserIndex = res.data.data.filter(function(u) { return u.isActive !== false; });
+                return;
+            }
+            if (typeof can === 'function' && can('users')) {
+                const fallback = await apiFetch('/api/users');
+                if (fallback.ok && fallback.data && fallback.data.data) {
+                    staffActivityUserIndex = fallback.data.data.filter(function(u) { return u.isActive !== false; });
+                }
+            }
+        }
+
+        function applyAttendanceDatePreset(preset) {
+            const fromInp = document.getElementById('attendanceFrom');
+            const toInp = document.getElementById('attendanceTo');
+            if (!fromInp || !toInp) return;
+            const today = new Date();
+            const toStr = fmtTZ(today, 'date');
+            let fromDate = new Date(today);
+            if (preset === 'today') {
+                fromDate = today;
+            } else if (preset === 'week') {
+                const day = today.getDay();
+                const diff = day === 0 ? 6 : day - 1;
+                fromDate.setDate(today.getDate() - diff);
+            } else if (preset === 'month') {
+                fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            }
+            fromInp.value = fmtTZ(fromDate, 'date');
+            toInp.value = toStr;
+            loadAttendanceReport();
+        }
+
+        function exportStaffLoginsCsv() {
+            if (!staffActivityLoginsData.length) return;
+            const header = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time'), t('th_ip'), t('th_country'), t('th_summary')].join(',');
+            const lines = staffActivityLoginsData.map(function(r) {
+                const user = r.user || {};
+                const cols = [
+                    userDisplay(user),
+                    user.email || '',
+                    (r.branch && r.branch.name) || '',
+                    r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '',
+                    r.ip || '',
+                    r.country || '',
+                    r.summary || ''
+                ].map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; });
+                return cols.join(',');
+            });
+            const blob = new Blob(['\uFEFF' + header + '\n' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'staff-logins.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        window.exportStaffLoginsCsv = exportStaffLoginsCsv;
+
         async function loadStaffActivity(opts) {
             const refreshAttendance = !!(opts && opts.refreshAttendance);
             const onlineList = document.getElementById('onlineStaffList');
             const loginsList = document.getElementById('loginsList');
-            const countEl = document.getElementById('onlineCount');
             const loginsTodayEl = document.getElementById('loginsTodayCount');
             const loginsTotalEl = document.getElementById('loginsTotalCount');
-            
             const updatedEl = document.getElementById('staffActivityUpdated');
             if (onlineList) onlineList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (loginsList) loginsList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            if (!staffActivityUserIndex.length) loadStaffActivityUserIndex();
             const onlineRes = await apiFetch('/api/supervision/online');
             if (onlineRes.needLogin) return;
             if (onlineRes.ok && onlineRes.data && onlineRes.data.data) {
-                const users = onlineRes.data.data;
-                if (countEl) countEl.textContent = users.length;
-                if (onlineList) {
-                    if (users.length === 0) onlineList.innerHTML = '<div class="empty">' + t('no_staff_online') + '</div>';
-                    else onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('label_name') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_status') + '</th><th>' + t('th_last_login') + '</th><th>' + t('th_ip') + '</th><th>' + t('th_country') + '</th></tr></thead><tbody>' + users.map(function(u) {
-                        const statusClass = (u.status || 'offline').toLowerCase();
-                        const statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
-                        const lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '\u2014';
-                        const branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
-                        const ip = u.lastLoginIp || '\u2014'; const country = u.lastLoginCountry || '\u2014';
-                        const lbl = [t('label_name'),t('th_email'),t('th_branch'),t('th_status'),t('th_last_login'),t('th_ip'),t('th_country')]; return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer"><td data-label="'+lbl[0]+'">' + escapeHtml(userDisplay(u)) + '</td><td data-label="'+lbl[1]+'">' + escapeHtml(u.email || '\u2014') + '</td><td data-label="'+lbl[2]+'">' + escapeHtml(branchName) + '</td><td data-label="'+lbl[3]+'"><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td data-label="'+lbl[4]+'">' + lastLogin + '</td><td data-label="'+lbl[5]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+lbl[6]+'">' + escapeHtml(country) + '</td></tr>';
-                    }).join('') + '</tbody></table>';
-                }
+                staffActivityOnlineData = onlineRes.data.data;
+                renderOnlineStaffList();
             } else {
+                staffActivityOnlineData = [];
                 const onlineErr = (onlineRes.data && onlineRes.data.error) ? String(onlineRes.data.error) : t('loading_err');
                 if (onlineList) onlineList.innerHTML = '<div class="empty">' + escapeHtml(onlineErr) + '</div>';
+                const countEl = document.getElementById('onlineCount');
                 if (countEl) countEl.textContent = '0';
             }
             const loginsRes = await apiFetch('/api/supervision/logins?limit=50');
             if (loginsRes.needLogin) return;
             if (loginsRes.ok && loginsRes.data && loginsRes.data.data) {
-                const rows = loginsRes.data.data;
+                staffActivityLoginsData = loginsRes.data.data;
                 const todayStr = fmtTZ(new Date(), 'date');
-                function isToday(d) { try { return d && fmtTZ(d, 'date') === todayStr; } catch(e) { return false; } }
-                const loginsToday = rows.filter(function(r) { return isToday(r.createdAt); }).length;
+                function isToday(d) { try { return d && fmtTZ(d, 'date') === todayStr; } catch (e) { return false; } }
+                const loginsToday = staffActivityLoginsData.filter(function(r) { return isToday(r.createdAt); }).length;
                 if (loginsTodayEl) loginsTodayEl.textContent = loginsToday;
-                const totalLogins = (typeof loginsRes.data.total === 'number') ? loginsRes.data.total : rows.length;
+                const totalLogins = (typeof loginsRes.data.total === 'number') ? loginsRes.data.total : staffActivityLoginsData.length;
                 if (loginsTotalEl) loginsTotalEl.textContent = totalLogins;
-                if (loginsList) {
-                    if (rows.length === 0) loginsList.innerHTML = '<div class="empty">' + t('empty_no_logins') + '</div>';
-                    else loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_ip') + '</th><th>' + t('th_country') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
-                        const user = r.user || {};
-                        const branch = r.branch ? r.branch.name : '\u2014';
-                        const time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
-                        const uid = r.userId || (user && user.id) || '';
-                        const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
-                        const ip = r.ip || '\u2014'; const country = r.country || '\u2014';
-                        const ll = [t('th_user'),t('th_email'),t('th_branch'),t('th_login_time'),t('th_ip'),t('th_country'),t('th_summary')]; return '<tr' + rowAttrs + '><td data-label="'+ll[0]+'">' + escapeHtml(userDisplay(user)) + '</td><td data-label="'+ll[1]+'">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="'+ll[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+ll[3]+'">' + time + '</td><td data-label="'+ll[4]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+ll[5]+'">' + escapeHtml(country) + '</td><td data-label="'+ll[6]+'">' + escapeHtml(r.summary || '') + '</td></tr>';
-                    }).join('') + '</tbody></table>';
-                }
+                renderLoginsList();
             } else {
+                staffActivityLoginsData = [];
                 const loginsErr = (loginsRes.data && loginsRes.data.error) ? String(loginsRes.data.error) : t('login_err_load');
                 if (loginsList) loginsList.innerHTML = '<div class="empty">' + escapeHtml(loginsErr) + '</div>';
                 if (loginsTodayEl) loginsTodayEl.textContent = '0';
                 if (loginsTotalEl) loginsTotalEl.textContent = '0';
             }
-            if (updatedEl) { updatedEl.style.display = 'block'; updatedEl.textContent = (LANG === 'fa' ? 'آخرین به\u200Cروزرسانی: ' : 'Last updated: ') + fmtTZ(new Date().toISOString(), 'datetime'); }
+            if (updatedEl) {
+                updatedEl.style.display = 'block';
+                updatedEl.textContent = (LANG === 'fa' ? 'آخرین به\u200Cروزرسانی: ' : 'Last updated: ') + fmtTZ(new Date().toISOString(), 'datetime');
+            }
             if (!staffActivityAttendanceInitDone) {
                 loadAttendanceReportFilters().then(function() {
                     staffActivityAttendanceInitDone = true;

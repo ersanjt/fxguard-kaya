@@ -405,12 +405,40 @@
         window.refreshRatesTicker = refreshRatesTicker;
         let ratesChartInstance = null;
         let ratesChartCurrentCurrency = 'usd';
+        let ratesChartsCurrentDays = 30;
+        let ratesChartsLastExport = null;
+        let ratesChartsCurrenciesLoaded = false;
+        const RATES_CHART_ICONS = { usd: '$', eur: '€', gbp: '£', aed: 'د.إ', try: '₺', gold: 'Au', chf: 'Fr', cad: 'C$', aud: 'A$', jpy: '¥', sar: '﷼', kwd: 'KD', rub: '₽', cny: '¥', inr: '₹' };
+        function ratesChartsCurrencyIcon(key) {
+            return RATES_CHART_ICONS[key] || (String(key || '').slice(0, 2).toUpperCase() || '¤');
+        }
+        function ratesChartsCurrencyLabel(key, fallbackLabel) {
+            const i18nKey = 'currency_' + key;
+            const fromI18n = t(i18nKey);
+            if (fromI18n && fromI18n !== i18nKey) return fromI18n;
+            return fallbackLabel || rateLabel(key);
+        }
         function setRatesChartCurrency(key) {
             ratesChartCurrentCurrency = key;
-            document.querySelectorAll('.rates-chart-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-currency') === key) b.classList.add('active'); });
+            document.querySelectorAll('.rates-chart-tab').forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-currency') === key);
+            });
+            document.querySelectorAll('.rates-charts-overview-card').forEach(function(c) {
+                c.classList.toggle('active', c.getAttribute('data-currency') === key);
+            });
             loadRatesCharts();
         }
         window.setRatesChartCurrency = setRatesChartCurrency;
+        function setRatesChartPeriod(days) {
+            ratesChartsCurrentDays = days;
+            document.querySelectorAll('.rates-chart-period-pill').forEach(function(b) {
+                b.classList.toggle('active', parseInt(b.getAttribute('data-days'), 10) === days);
+            });
+            const periodSel = document.getElementById('ratesChartPeriod');
+            if (periodSel) periodSel.value = String(days);
+            loadRatesCharts();
+        }
+        window.setRatesChartPeriod = setRatesChartPeriod;
         let ratesChartsLoadSeq = 0;
         function ratesChartsYAxisLocale() {
             if (LANG === 'fa') return 'fa-IR';
@@ -419,6 +447,10 @@
         }
         function ratesChartsShowEmpty(summaryEl, statsRow, message, withRetry) {
             if (statsRow) statsRow.innerHTML = '';
+            const tableSection = document.getElementById('ratesChartsTableSection');
+            if (tableSection) tableSection.hidden = true;
+            const exportBtn = document.getElementById('ratesChartsExportBtn');
+            if (exportBtn) exportBtn.hidden = true;
             if (!summaryEl) return;
             const retry = withRetry
                 ? '<button type="button" class="btn-secondary rates-charts-retry-btn" onclick="loadRatesCharts()">' + escapeHtml(t('rates_charts_retry')) + '</button>'
@@ -426,134 +458,268 @@
             summaryEl.innerHTML = '<div class="rates-charts-empty">' +
                 '<p class="rates-charts-empty-text">' + escapeHtml(message) + '</p>' + retry + '</div>';
         }
-        async function loadRatesCharts() {
+        function ratesChartsUpdateMeta(payload) {
+            const metaEl = document.getElementById('ratesChartsMeta');
+            if (!metaEl) return;
+            const parts = [];
+            if (payload && payload.cachedAt) {
+                parts.push('<span class="rates-charts-meta-item">' + escapeHtml(t('rates_charts_last_updated')) + ': ' + escapeHtml(fmtTZ(payload.cachedAt, 'datetime')) + '</span>');
+            }
+            if (payload && payload.source) {
+                const srcLabel = payload.source === 'ohlc' ? 'Navasan OHLC' : 'Navasan Daily';
+                parts.push('<span class="rates-charts-meta-item">' + escapeHtml(t('rates_charts_data_source')) + ': ' + escapeHtml(srcLabel) + '</span>');
+            }
+            if (parts.length) {
+                metaEl.innerHTML = parts.join('<span class="rates-charts-meta-sep">·</span>');
+                metaEl.hidden = false;
+            } else {
+                metaEl.hidden = true;
+            }
+        }
+        function ratesChartsRenderTable(points) {
+            const section = document.getElementById('ratesChartsTableSection');
+            const tbody = document.getElementById('ratesChartsTableBody');
+            const exportBtn = document.getElementById('ratesChartsExportBtn');
+            if (!section || !tbody || !points || !points.length) {
+                if (section) section.hidden = true;
+                if (exportBtn) exportBtn.hidden = true;
+                ratesChartsLastExport = null;
+                return;
+            }
+            ratesChartsLastExport = points.slice();
+            if (exportBtn) exportBtn.hidden = false;
+            const rows = points.slice().reverse();
+            let html = '';
+            rows.forEach(function(p, idx) {
+                const prev = rows[idx + 1];
+                let dayChange = '';
+                let dayClass = 'neutral';
+                if (prev && prev.value && p.value) {
+                    const ch = ((p.value - prev.value) / prev.value) * 100;
+                    dayClass = ch > 0 ? 'up' : ch < 0 ? 'down' : 'neutral';
+                    dayChange = (ch > 0 ? '+' : '') + ch.toFixed(2) + '%';
+                } else {
+                    dayChange = '—';
+                }
+                html += '<tr><td>' + escapeHtml(p.date || '') + '</td><td><strong>' + escapeHtml(formatPrice(p.value)) + '</strong></td><td class="rates-charts-day-change ' + dayClass + '">' + escapeHtml(dayChange) + '</td></tr>';
+            });
+            tbody.innerHTML = html;
+            section.hidden = false;
+        }
+        function exportRatesChartCsv() {
+            if (!ratesChartsLastExport || !ratesChartsLastExport.length) return;
+            const label = ratesChartsCurrencyLabel(ratesChartCurrentCurrency);
+            const header = [t('rates_charts_table_date'), t('rates_charts_table_rate'), label].join(',');
+            const lines = ratesChartsLastExport.map(function(p) {
+                return '"' + String(p.date || '').replace(/"/g, '""') + '",' + (p.value != null ? p.value : '');
+            });
+            const csv = '\uFEFF' + header + '\n' + lines.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rates-' + ratesChartCurrentCurrency + '-' + ratesChartsCurrentDays + 'd.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        window.exportRatesChartCsv = exportRatesChartCsv;
+        async function ratesChartsBuildCurrencyTabs() {
+            const tabsEl = document.getElementById('ratesChartsCurrencyTabs');
+            if (!tabsEl || ratesChartsCurrenciesLoaded) return;
+            const res = await apiFetch('/api/rates/ticker-config');
+            if (res.needLogin || !res.ok) return;
+            const available = res.data.availableKeys || [];
+            const visible = res.data.visibleKeys || available.map(function(a) { return a.key; });
+            if (!visible.length) return;
+            let html = '';
+            visible.forEach(function(key) {
+                const info = available.find(function(a) { return a.key === key; }) || { key: key, label: key };
+                const active = key === ratesChartCurrentCurrency ? ' active' : '';
+                html += '<button type="button" class="rates-chart-tab' + active + '" data-currency="' + escapeHtml(key) + '" onclick="setRatesChartCurrency(\'' + escapeAttr(key) + '\')" role="tab">' +
+                    '<span class="tab-icon">' + escapeHtml(ratesChartsCurrencyIcon(key)) + '</span> ' + escapeHtml(ratesChartsCurrencyLabel(key, info.label)) + '</button>';
+            });
+            tabsEl.innerHTML = html;
+            if (visible.indexOf(ratesChartCurrentCurrency) < 0) {
+                ratesChartCurrentCurrency = visible[0];
+            }
+            ratesChartsCurrenciesLoaded = true;
+        }
+        async function loadRatesChartsOverview() {
+            const grid = document.getElementById('ratesChartsOverviewGrid');
+            if (!grid) return;
+            const res = await apiFetch('/api/rates');
+            if (res.needLogin || !res.ok || !res.data || !res.data.items) {
+                grid.innerHTML = '<p class="rates-charts-overview-empty text-muted">' + escapeHtml(t('rates_charts_empty')) + '</p>';
+                return;
+            }
+            let html = '';
+            res.data.items.forEach(function(it) {
+                if (!it || !it.key) return;
+                const ch = it.change != null && !isNaN(Number(it.change)) ? Number(it.change) : null;
+                const chClass = ch == null ? 'neutral' : ch > 0 ? 'up' : ch < 0 ? 'down' : 'neutral';
+                const chStr = ch != null ? ((ch > 0 ? '+' : '') + ch.toFixed(1) + '%') : '';
+                const active = it.key === ratesChartCurrentCurrency ? ' active' : '';
+                const valStr = (it.value != null && it.value !== '' && it.value !== '—') ? formatPrice(it.value) : '—';
+                html += '<button type="button" class="rates-charts-overview-card' + active + '" data-currency="' + escapeHtml(it.key) + '" onclick="setRatesChartCurrency(\'' + escapeAttr(it.key) + '\')">' +
+                    '<span class="overview-card-icon">' + escapeHtml(ratesChartsCurrencyIcon(it.key)) + '</span>' +
+                    '<span class="overview-card-label">' + escapeHtml(it.label || ratesChartsCurrencyLabel(it.key)) + '</span>' +
+                    '<span class="overview-card-value">' + escapeHtml(valStr) + '</span>' +
+                    (chStr ? '<span class="overview-card-change ' + chClass + '">' + escapeHtml(chStr) + '</span>' : '') +
+                    '</button>';
+            });
+            grid.innerHTML = html || '<p class="rates-charts-overview-empty text-muted">' + escapeHtml(t('rates_charts_empty')) + '</p>';
+        }
+        async function initRatesChartsPage() {
+            await ratesChartsBuildCurrencyTabs();
+            loadRatesChartsOverview();
+            loadRatesCharts();
+        }
+        window.initRatesChartsPage = initRatesChartsPage;
+        async function loadRatesCharts(forceRefresh) {
             const canvas = document.getElementById('ratesChartCanvas');
             const summaryEl = document.getElementById('ratesChartsSummary');
             const statsRow = document.getElementById('ratesChartsStatsRow');
             const loadingOverlay = document.getElementById('ratesChartsLoadingOverlay');
             const refreshBtn = document.querySelector('.rates-charts-refresh-btn');
+            const canvasTitle = document.getElementById('ratesChartsCanvasTitle');
+            const adjustedBadge = document.getElementById('ratesChartsAdjustedBadge');
             if (!canvas) return;
+            if (!ratesChartsCurrenciesLoaded) await ratesChartsBuildCurrencyTabs();
             const loadId = ++ratesChartsLoadSeq;
             const periodSel = document.getElementById('ratesChartPeriod');
-            const days = periodSel ? parseInt(periodSel.value, 10) || 30 : 30;
+            const days = ratesChartsCurrentDays || (periodSel ? parseInt(periodSel.value, 10) || 30 : 30);
             if (loadingOverlay) loadingOverlay.classList.add('visible');
             if (refreshBtn) refreshBtn.classList.add('loading');
             if (statsRow) statsRow.innerHTML = '';
             if (summaryEl) summaryEl.innerHTML = '';
+            const historyUrl = '/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days + (forceRefresh ? '&refresh=1' : '');
             try {
-            const res = await apiFetch('/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days);
-            if (loadId !== ratesChartsLoadSeq) return;
-            if (loadingOverlay) loadingOverlay.classList.remove('visible');
-            if (refreshBtn) refreshBtn.classList.remove('loading');
-            if (res.needLogin) return;
-            const labels = [];
-            const values = [];
-            const payload = res.data || {};
-            if (res.ok && payload.points && payload.points.length > 0) {
-                payload.points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
-            }
-            const currencyLabels = { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
-            const label = currencyLabels[ratesChartCurrentCurrency] || rateLabel(ratesChartCurrentCurrency);
-            const unitLabel = t('currency_unit_toman') || 'تومان';
-            if (ratesChartInstance) { ratesChartInstance.destroy(); ratesChartInstance = null; }
-            if (values.length > 0) {
-                const ctx = canvas.getContext('2d');
-                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
-                gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.12)');
-                gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
-                const yLoc = ratesChartsYAxisLocale();
-                ratesChartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: label + ' (' + unitLabel + ')',
-                            data: values,
-                            borderColor: '#10b981',
-                            borderWidth: 2.5,
-                            backgroundColor: gradient,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 6,
-                            pointHoverBackgroundColor: '#10b981',
-                            pointHoverBorderColor: '#fff',
-                            pointHoverBorderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        aspectRatio: 2.2,
-                        animation: { duration: 600 },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                                titleFont: { size: 12, weight: '600' },
-                                bodyFont: { size: 13, weight: '700' },
-                                padding: { top: 10, bottom: 10, left: 14, right: 14 },
-                                cornerRadius: 10,
-                                displayColors: false,
-                                borderColor: 'rgba(16, 185, 129, 0.3)',
-                                borderWidth: 1,
-                                callbacks: {
-                                    title: function(items) { return items[0] ? items[0].label : ''; },
-                                    label: function(item) { return formatPrice(item.raw) + ' ' + unitLabel; }
+                const res = await apiFetch(historyUrl);
+                if (loadId !== ratesChartsLoadSeq) return;
+                if (loadingOverlay) loadingOverlay.classList.remove('visible');
+                if (refreshBtn) refreshBtn.classList.remove('loading');
+                if (res.needLogin) return;
+                const labels = [];
+                const values = [];
+                const payload = res.data || {};
+                const points = (res.ok && payload.points && payload.points.length) ? payload.points : [];
+                points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
+                const label = ratesChartsCurrencyLabel(ratesChartCurrentCurrency);
+                const unitLabel = t('currency_unit_toman') || 'تومان';
+                if (canvasTitle) canvasTitle.textContent = label + ' — ' + days + ' ' + (LANG === 'fa' ? 'روز' : LANG === 'tr' ? 'gün' : 'days');
+                if (adjustedBadge) adjustedBadge.hidden = !payload.adjustmentApplied;
+                ratesChartsUpdateMeta(payload);
+                if (ratesChartInstance) { ratesChartInstance.destroy(); ratesChartInstance = null; }
+                if (values.length > 0) {
+                    const ctx = canvas.getContext('2d');
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+                    gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.12)');
+                    gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
+                    const yLoc = ratesChartsYAxisLocale();
+                    const lastVal = values[values.length - 1];
+                    const firstVal = values[0];
+                    const minVal = Math.min.apply(null, values);
+                    const maxVal = Math.max.apply(null, values);
+                    const avgVal = values.reduce(function(a, b) { return a + b; }, 0) / values.length;
+                    const prevDayVal = values.length > 1 ? values[values.length - 2] : null;
+                    ratesChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: label + ' (' + unitLabel + ')',
+                                data: values,
+                                borderColor: '#10b981',
+                                borderWidth: 2.5,
+                                backgroundColor: gradient,
+                                fill: true,
+                                tension: 0.35,
+                                pointRadius: values.length <= 14 ? 3 : 0,
+                                pointHoverRadius: 6,
+                                pointHoverBackgroundColor: '#10b981',
+                                pointHoverBorderColor: '#fff',
+                                pointHoverBorderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            aspectRatio: 2.4,
+                            animation: { duration: 600 },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                    titleFont: { size: 12, weight: '600' },
+                                    bodyFont: { size: 13, weight: '700' },
+                                    padding: { top: 10, bottom: 10, left: 14, right: 14 },
+                                    cornerRadius: 10,
+                                    displayColors: false,
+                                    borderColor: 'rgba(16, 185, 129, 0.3)',
+                                    borderWidth: 1,
+                                    callbacks: {
+                                        title: function(items) { return items[0] ? items[0].label : ''; },
+                                        label: function(item) { return formatPrice(item.raw) + ' ' + unitLabel; }
+                                    }
+                                }
+                            },
+                            interaction: { intersect: false, mode: 'index' },
+                            scales: {
+                                x: {
+                                    display: true,
+                                    ticks: { maxRotation: 45, maxTicksLimit: days <= 14 ? 14 : 10, font: { size: 11 }, color: 'rgba(139, 157, 195, 0.8)' },
+                                    grid: { display: false },
+                                    border: { display: false }
+                                },
+                                y: {
+                                    display: true,
+                                    suggestedMin: minVal * 0.998,
+                                    suggestedMax: maxVal * 1.002,
+                                    ticks: {
+                                        callback: function(v) {
+                                            if (typeof v !== 'number') return v;
+                                            return v.toLocaleString(yLoc);
+                                        },
+                                        font: { size: 11 },
+                                        color: 'rgba(139, 157, 195, 0.8)',
+                                        maxTicksLimit: 8
+                                    },
+                                    grid: { color: 'rgba(45, 63, 95, 0.5)', drawTicks: false },
+                                    border: { display: false }
                                 }
                             }
-                        },
-                        interaction: { intersect: false, mode: 'index' },
-                        scales: {
-                            x: {
-                                display: true,
-                                ticks: { maxRotation: 40, maxTicksLimit: 10, font: { size: 11 }, color: 'rgba(139, 157, 195, 0.8)' },
-                                grid: { display: false },
-                                border: { display: false }
-                            },
-                            y: {
-                                display: true,
-                                ticks: {
-                                    callback: function(v) {
-                                        if (typeof v !== 'number') return v;
-                                        return v.toLocaleString(yLoc);
-                                    },
-                                    font: { size: 11 },
-                                    color: 'rgba(139, 157, 195, 0.8)',
-                                    maxTicksLimit: 8
-                                },
-                                grid: { color: 'rgba(45, 63, 95, 0.5)', drawTicks: false },
-                                border: { display: false }
-                            }
                         }
+                    });
+                    const changeNum = firstVal && lastVal ? (lastVal - firstVal) / firstVal * 100 : null;
+                    const changeStr = changeNum != null ? changeNum.toFixed(1) : null;
+                    const changeClass = changeNum > 0 ? 'up' : changeNum < 0 ? 'down' : 'neutral';
+                    const dayChangeNum = prevDayVal && lastVal ? (lastVal - prevDayVal) / prevDayVal * 100 : null;
+                    const dayChangeStr = dayChangeNum != null ? dayChangeNum.toFixed(2) : null;
+                    const dayChangeClass = dayChangeNum > 0 ? 'up' : dayChangeNum < 0 ? 'down' : 'neutral';
+                    if (statsRow) {
+                        statsRow.innerHTML =
+                            '<div class="rates-charts-stat-card stat-current"><span class="stat-label">' + t('rates_charts_stat_current') + '</span><span class="stat-value">' + formatPrice(lastVal) + ' <span class="rates-charts-unit">' + unitLabel + '</span></span></div>' +
+                            '<div class="rates-charts-stat-card stat-change ' + dayChangeClass + '"><span class="stat-label">' + t('rates_charts_stat_day_change') + '</span><span class="stat-value">' + (dayChangeStr != null ? ((dayChangeNum > 0 ? '+' : '') + dayChangeStr + '%') : '—') + '</span></div>' +
+                            '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_avg') + '</span><span class="stat-value">' + formatPrice(Math.round(avgVal)) + '</span></div>' +
+                            '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_min') + '</span><span class="stat-value">' + formatPrice(minVal) + '</span></div>' +
+                            '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_max') + '</span><span class="stat-value">' + formatPrice(maxVal) + '</span></div>' +
+                            (changeStr != null ? '<div class="rates-charts-stat-card stat-change ' + changeClass + '"><span class="stat-label">' + t('rates_charts_stat_change') + '</span><span class="stat-value">' + (changeNum > 0 ? '+' : '') + changeStr + '% ' + t('rates_charts_in_period') + '</span></div>' : '');
                     }
-                });
-                const lastVal = values[values.length - 1];
-                const firstVal = values[0];
-                const minVal = Math.min.apply(null, values);
-                const maxVal = Math.max.apply(null, values);
-                const changeNum = firstVal && lastVal ? (lastVal - firstVal) / firstVal * 100 : null;
-                const changeStr = changeNum != null ? changeNum.toFixed(1) : null;
-                const changeClass = changeNum > 0 ? 'up' : changeNum < 0 ? 'down' : 'neutral';
-                if (statsRow) {
-                    statsRow.innerHTML =
-                        '<div class="rates-charts-stat-card stat-current"><span class="stat-label">' + t('rates_charts_stat_current') + '</span><span class="stat-value">' + formatPrice(lastVal) + ' <span class="rates-charts-unit">' + unitLabel + '</span></span></div>' +
-                        '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_min') + '</span><span class="stat-value">' + formatPrice(minVal) + '</span></div>' +
-                        '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_max') + '</span><span class="stat-value">' + formatPrice(maxVal) + '</span></div>' +
-                        (changeStr != null ? '<div class="rates-charts-stat-card stat-change ' + changeClass + '"><span class="stat-label">' + t('rates_charts_stat_change') + '</span><span class="stat-value">' + (changeNum > 0 ? '+' : '') + changeStr + '% ' + t('rates_charts_in_period') + '</span></div>' : '');
-                }
-                if (summaryEl) summaryEl.innerHTML = '';
-            } else {
-                if (res.ok && payload.externalConfigured === false) {
-                    ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_api_not_configured'), false);
-                } else if (!res.ok) {
-                    const errMsg = typeof getApiError === 'function' ? getApiError(res) : (res.error || t('rates_charts_error_load'));
-                    ratesChartsShowEmpty(summaryEl, statsRow, errMsg, true);
+                    ratesChartsRenderTable(points);
+                    if (summaryEl) summaryEl.innerHTML = '';
                 } else {
-                    ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_empty'), true);
+                    if (res.ok && payload.externalConfigured === false) {
+                        ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_api_not_configured'), false);
+                    } else if (!res.ok) {
+                        const errMsg = typeof getApiError === 'function' ? getApiError(res) : (res.error || t('rates_charts_error_load'));
+                        ratesChartsShowEmpty(summaryEl, statsRow, errMsg, true);
+                    } else {
+                        ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_empty'), true);
+                    }
                 }
-            }
             } catch (err) {
                 if (loadId !== ratesChartsLoadSeq) return;
                 if (loadingOverlay) loadingOverlay.classList.remove('visible');
@@ -1671,6 +1837,40 @@
                 apiFetch('/api/auth/me/presence', { method: 'PATCH', body: JSON.stringify({ status: 'online' }) }).catch(function(){});
             }, 30000);
         }
+        var _staffPresenceToastAt = {};
+        function formatStaffPresenceToast(data) {
+            if (!data || !data.user) return '';
+            var name = userDisplay(data.user) || data.user.email || '';
+            var ev = data.event || 'status';
+            var st = data.status || 'offline';
+            if (ev === 'login') return (t('staff_presence_login') || (LANG === 'fa' ? '{name} وارد سیستم شد' : '{name} logged in')).replace('{name}', name);
+            if (ev === 'logout') return (t('staff_presence_logout') || (LANG === 'fa' ? '{name} از سیستم خارج شد' : '{name} logged out')).replace('{name}', name);
+            if (ev === 'online' || st === 'online') return (t('staff_presence_online') || (LANG === 'fa' ? '{name} آنلاین شد' : '{name} is online')).replace('{name}', name);
+            if (st === 'away') return (t('staff_presence_away') || (LANG === 'fa' ? '{name} — دور' : '{name} — away')).replace('{name}', name);
+            if (st === 'busy') return (t('staff_presence_busy') || (LANG === 'fa' ? '{name} — مشغول' : '{name} — busy')).replace('{name}', name);
+            if (st === 'offline') return (t('staff_presence_offline') || (LANG === 'fa' ? '{name} آفلاین شد' : '{name} went offline')).replace('{name}', name);
+            return (t('staff_presence_status') || (LANG === 'fa' ? 'وضعیت {name} تغییر کرد' : '{name} status changed')).replace('{name}', name);
+        }
+        function handleStaffPresence(data) {
+            if (!data || !data.userId) return;
+            if (!currentUser || data.userId === currentUser.id) return;
+            if (typeof can !== 'function' || !can('staff_activity')) return;
+            var dedupeKey = data.userId + ':' + (data.event || '') + ':' + (data.status || '');
+            var now = Date.now();
+            if (_staffPresenceToastAt[dedupeKey] && now - _staffPresenceToastAt[dedupeKey] < 4000) return;
+            _staffPresenceToastAt[dedupeKey] = now;
+            var active = document.querySelector('.nav-link.active');
+            if (active && active.getAttribute('data-page') === 'staff-activity' && typeof loadStaffActivity === 'function') {
+                loadStaffActivity();
+            }
+            if (typeof updateNavBadges === 'function') {
+                apiFetch('/api/analytics/dashboard').then(function(r) {
+                    if (r.ok && r.data) updateNavBadges(r.data);
+                }).catch(function(){});
+            }
+            var msg = formatStaffPresenceToast(data);
+            if (msg && typeof toast === 'function') toast(msg, false);
+        }
         function connectSocket() {
             if (!token) return;
             if (socket) {
@@ -1680,9 +1880,10 @@
             try {
                 if (typeof io !== 'undefined') {
                     socket = io({ auth: { token: token } });
+                    socket.on('staff_presence', handleStaffPresence);
                     socket.on('user_status', function() {
                         const active = document.querySelector('.nav-link.active');
-                        if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
+                        if (active && active.getAttribute('data-page') === 'staff-activity' && typeof loadStaffActivity === 'function') loadStaffActivity();
                     });
                     socket.on('message_status_updated', function(data) {
                         if (data.conversationId === currentConvId) {
@@ -1711,9 +1912,12 @@
                         else if (data.customer && !viewingConv) toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + (data.customer.name || data.customer.phone || ''), false);
                         if (document.hidden && data.customer && typeof showDesktopNotification === 'function') showDesktopNotification(data);
                     });
-                    socket.on('user_login', function() {
+                    socket.on('user_login', function(data) {
+                        if (data && typeof handleStaffPresence === 'function') {
+                            handleStaffPresence({ event: 'login', userId: data.userId, status: 'online', user: data.user || { id: data.userId } });
+                        }
                         const active = document.querySelector('.nav-link.active');
-                        if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
+                        if (active && active.getAttribute('data-page') === 'staff-activity' && typeof loadStaffActivity === 'function') loadStaffActivity();
                     });
                     socket.on('internal_message', function(data) {
                         playInternalChatSound();
