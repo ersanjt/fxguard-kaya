@@ -4,6 +4,7 @@
 > راهنمای تحویل به مشتری و استفاده روزمره: **[README-تحویل-مشتری.md](README-تحویل-مشتری.md)** | خلاصه راه‌اندازی: **[راه‌اندازی-سریع.md](راه‌اندازی-سریع.md)**
 
 **ساختار مخزن:** `backend/` (API + داشبورد در `public/`) · `gateway/` (واتساپ) · `docs/`  
+**نقشهٔ کد (اولین مرجع):** [docs/CODEBASE-MAP.md](docs/CODEBASE-MAP.md) · **مالک:** Ersan Jahed Tabrizi — [docs/AUTHOR.md](docs/AUTHOR.md)  
 **استاندارد توسعه:** از ریشهٔ پروژه — `npm run lint` · `npm test` · [docs/PROJECT-STANDARDS.md](docs/PROJECT-STANDARDS.md) · [docs/README.md](docs/README.md) · [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---

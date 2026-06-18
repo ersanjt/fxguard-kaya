@@ -1,12 +1,38 @@
 /**
- * Dashboard SPA — پنل اصلی CRM (ورود، ناو، مکالمات، …).
- * زبان و t() در js/modules/dashboard-i18n.js (قبل از این فایل).
- * وابستگی‌ها: CRM.Constants, CRM.Utils, CRM.Api — backend/docs/FRONTEND-ARCHITECTURE.md
+ * Kaya CRM — Dashboard SPA (chunk 01/06)
+ * @file    public/js/dashboard/src/chunk-01.js
+ * @layer   frontend/dashboard
+ * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
+ * @see     docs/CODEBASE-MAP.md
  *
- * منبع: public/js/dashboard/src/chunk-NN.js — بعد از ویرایش: npm run build:dashboard
+ * محتوا: state سراسری (token, currentUser)، نرخ ارز/تیکر، صرافی و خدمات،
+ *        پایهٔ Socket.IO، ناو badge، persistAuthToken / restoreSession helpers.
  */
         const API = '';
         let token = null;
+        function persistAuthToken(t) {
+            token = t || null;
+            try {
+                if (t) sessionStorage.setItem('crm_token', t);
+                else sessionStorage.removeItem('crm_token');
+            } catch (_) {}
+        }
+        function loadStoredAuthToken() {
+            try {
+                const t = sessionStorage.getItem('crm_token');
+                if (t) token = t;
+            } catch (_) {}
+        }
+        function redirectToLoginPage() {
+            const qs = window.location.search || '';
+            if (qs.indexOf('reset=1') >= 0 && qs.indexOf('token=') >= 0) return false;
+            const dest =
+                '/login?return=' +
+                encodeURIComponent((window.location.pathname || '/dashboard') + qs + (window.location.hash || ''));
+            window.location.replace(dest);
+            return true;
+        }
+        loadStoredAuthToken();
         let currentConvId = null;
         let currentUser = null;
         let ratesInterval = null;
@@ -105,6 +131,14 @@
             const annBadge = document.getElementById('mobileTabAnnBadge');
             if (annBadge) { const na = window.navBadgeCounts.announcements || 0; annBadge.style.display = na > 0 ? '' : 'none'; annBadge.textContent = na > 99 ? '99+' : String(na); }
         }
+        var MOBILE_MORE_PAGES = ['profile','tickets','tasks','processes','departments','users','branches','whatsapp','message-templates','rates','rates-charts','services','internal-chat','panel-settings','supervision','staff-activity'];
+        function mobileCanAccessSection(sec) {
+            if (typeof canAccessSection === 'function') return canAccessSection(sec);
+            if (sec === 'profile' || sec === 'dashboard') return true;
+            const key = sec === 'rates_charts' ? 'rates' : sec;
+            const perms = (currentUser && currentUser.permissions) || {};
+            return perms[key] === true;
+        }
         function updateMobileTabBar(page) {
             const tabBar = document.getElementById('mobileTabBar');
             const bottomBar = document.getElementById('bottomBar');
@@ -114,15 +148,17 @@
             if (!isMobile) return;
             document.querySelectorAll('.mobile-tab-bar .mobile-tab-item').forEach(function(item) {
                 const p = item.getAttribute('data-page');
-                const active = (p === page) || (p === 'more' && ['profile','tickets','tasks','processes','departments','users','branches','whatsapp','rates','services','internal-chat','panel-settings','supervision','staff-activity'].indexOf(page) >= 0);
+                const active = (p === page) || (p === 'more' && MOBILE_MORE_PAGES.indexOf(page) >= 0);
                 item.classList.toggle('active', active);
                 item.setAttribute('aria-selected', active ? 'true' : 'false');
             });
-            const perms = (currentUser && currentUser.permissions) || {};
             const hidden = HIDDEN_SECTIONS || [];
             document.querySelectorAll('.mobile-tab-bar .mobile-tab-item[data-section]').forEach(function(item) {
                 const sec = item.getAttribute('data-section');
-                const visible = (sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] === true && hidden.indexOf(sec) < 0);
+                const pageId = item.getAttribute('data-page');
+                const hiddenPage = pageId && hidden.indexOf(pageId) >= 0;
+                const hiddenSec = sec && (hidden.indexOf(sec) >= 0 || (sec === 'rates_charts' && hidden.indexOf('rates') >= 0));
+                const visible = !hiddenPage && !hiddenSec && mobileCanAccessSection(sec || 'dashboard');
                 item.style.display = visible ? '' : 'none';
             });
         }
@@ -136,14 +172,16 @@
                 getHeaders: headers,
                 getLang: function () { return LANG; },
                 on401: function () {
-                    token = null;
-                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
-                        window.LoginBootstrap.setLoggedOut();
+                    if (typeof teardownActiveSession === 'function') {
+                        teardownActiveSession(true);
                     } else {
+                        persistAuthToken(null);
                         document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
+                        const loginBox = document.getElementById('loginBox');
+                        if (loginBox) loginBox.style.display = 'flex';
+                        const appEl = document.getElementById('app');
+                        if (appEl) appEl.classList.remove('show');
                     }
-                    document.getElementById('loginBox').style.display = 'flex';
-                    document.getElementById('app').classList.remove('show');
                     const errEl = document.getElementById('loginErr');
                     if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 }
@@ -1634,7 +1672,11 @@
             }, 30000);
         }
         function connectSocket() {
-            if (!token || socket) return;
+            if (!token) return;
+            if (socket) {
+                try { socket.disconnect(); } catch (_e) {}
+                socket = null;
+            }
             try {
                 if (typeof io !== 'undefined') {
                     socket = io({ auth: { token: token } });
@@ -2028,9 +2070,30 @@
             if (!q) return;
             const active = document.querySelector('.nav-link.active');
             const page = active ? active.getAttribute('data-page') : '';
-            if (page === 'conversations') { showPage('conversations'); toast(LANG === 'en' ? 'Search in conversations is supported via API filter.' : 'جستج�� در ��Rست �&کا��&ات از ف�R�تر API پشت�Rبا� �R �&�R�Rش��د.'); }
-            else if (page === 'customers') { showPage('customers'); toast(LANG === 'en' ? 'Search in customers is supported via API filter.' : 'جستج�� در �&شتر�Rا�  از ف�R�تر API پشت�Rبا� �R �&�R�Rش��د.'); }
-            else toast(LANG === 'en' ? 'Search in this section coming soon.' : 'جستج�� در ا�R�  بخش ب�! ز��د�R.'); 
+            const canConv = typeof canAccessSection === 'function' ? canAccessSection('conversations') : false;
+            const canCust = typeof canAccessSection === 'function' ? canAccessSection('customers') : false;
+            const closeModal = typeof closeHeaderSearchPopup === 'function' ? closeHeaderSearchPopup : function() {};
+            if (page === 'customers' && canCust) {
+                const el = document.getElementById('customerSearch');
+                if (el) el.value = q;
+                showPage('customers');
+                if (typeof loadCustomers === 'function') loadCustomers();
+                closeModal();
+            } else if ((page === 'conversations' || !canCust) && canConv) {
+                const el = document.getElementById('convSearch');
+                if (el) el.value = q;
+                showPage('conversations');
+                if (typeof loadConversations === 'function') loadConversations();
+                closeModal();
+            } else if (canCust) {
+                const el = document.getElementById('customerSearch');
+                if (el) el.value = q;
+                showPage('customers');
+                if (typeof loadCustomers === 'function') loadCustomers();
+                closeModal();
+            } else {
+                toast(LANG === 'en' ? 'Search is not available for your role.' : 'جستجو برای نقش شما در دسترس نیست.', true);
+            }
         }
 
         function toast(msg, isErr) {
@@ -2054,6 +2117,28 @@
                 else html += '<div class="loading-skeleton loading-row"></div>';
             }
             list.innerHTML = html;
+        }
+
+        function teardownActiveSession(showLogin) {
+            if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
+            if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
+            if (tickerTimeInterval) { clearInterval(tickerTimeInterval); tickerTimeInterval = null; }
+            stopStaffActivityLive();
+            stopNavBadgeRefresh();
+            disconnectSocket();
+            persistAuthToken(null);
+            currentUser = null;
+            if (showLogin !== false) {
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                    window.LoginBootstrap.setLoggedOut();
+                } else {
+                    document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
+                }
+                const loginBox = document.getElementById('loginBox');
+                if (loginBox) loginBox.style.display = 'flex';
+                const appEl = document.getElementById('app');
+                if (appEl) appEl.classList.remove('show', 'app-loading', 'app-ready');
+            }
         }
 
         async function apiFetch(url, opts) {
@@ -2085,14 +2170,7 @@
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
-                token = null;
-                if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
-                    window.LoginBootstrap.setLoggedOut();
-                } else {
-                    document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
-                }
-                document.getElementById('loginBox').style.display = 'flex';
-                document.getElementById('app').classList.remove('show');
+                teardownActiveSession(true);
                 const errEl = document.getElementById('loginErr');
                 if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
@@ -2200,7 +2278,7 @@
                 return;
             }
             if (data.token) {
-                token = data.token;
+                persistAuthToken(data.token);
                 if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
                     window.LoginBootstrap.setAuthenticated();
                 } else {
@@ -2212,14 +2290,7 @@
                 const appElLogin = document.getElementById('app');
                 if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
                 try {
-                    applyNavByRole();
-                    applyHashRoute();
-                    startRatesInterval();
-                    startPresenceInterval();
-                    connectSocket();
-                    startNavBadgeRefresh();
-                    showTotpPromptIfNeeded();
-                    await loadPanelSettingsAndApply();
+                    await runAfterAuthReady();
                 } catch (e) { console.error('Post-login init:', e); }
             } else {
                 document.getElementById('loginErr').textContent = data.error || t('login_err_fail');
@@ -2339,7 +2410,7 @@
             document.getElementById('btnTotpVerify').disabled = false;
             if (data.token) {
                 window._totpTempToken = null;
-                token = data.token;
+                persistAuthToken(data.token);
                 if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
                     window.LoginBootstrap.setAuthenticated();
                 } else {
@@ -2351,14 +2422,7 @@
                 const appElLogin = document.getElementById('app');
                 if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
                 try {
-                    applyNavByRole();
-                    applyHashRoute();
-                    startRatesInterval();
-                    startPresenceInterval();
-                    connectSocket();
-                    startNavBadgeRefresh();
-                    showTotpPromptIfNeeded();
-                    await loadPanelSettingsAndApply();
+                    await runAfterAuthReady();
                 } catch (e) { console.error('Post-TOTP init:', e); }
             } else {
                 document.getElementById('totpErr').textContent = data.error || t('login_totp_bad');
@@ -2663,22 +2727,7 @@
 
         async function logout() {
             try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
-            if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
-            if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
-            if (tickerTimeInterval) { clearInterval(tickerTimeInterval); tickerTimeInterval = null; }
-            stopStaffActivityLive();
-            stopNavBadgeRefresh();
-            disconnectSocket();
-            token = null;
-            currentUser = null;
-            if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
-                window.LoginBootstrap.setLoggedOut();
-            } else {
-                document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
-            }
-            document.getElementById('loginBox').style.display = 'flex';
-            const appEl = document.getElementById('app');
-            if (appEl) { appEl.classList.remove('show', 'app-loading', 'app-ready'); }
+            teardownActiveSession(true);
         }
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -2848,10 +2897,10 @@
             const can = (typeof canAccessSection === 'function')
                 ? canAccessSection
                 : function(section) {
+                    if (section === 'profile' || section === 'dashboard') return true;
+                    const key = section === 'rates_charts' ? 'rates' : section;
                     const perms = (currentUser && currentUser.permissions) || {};
-                    const role = (currentUser && currentUser.role) || '';
-                    const isOwnerOrAdmin = (role === 'owner' || role === 'admin');
-                    return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true);
+                    return perms[key] === true;
                 };
             const n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
             const paintCards = function(stats) {
@@ -2867,7 +2916,9 @@
                     { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
                     { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-expand', stat: null },
                     { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone', stat: null },
+                    { page: 'message-templates', section: 'conversations', title: t('nav_message_templates'), icon: 'icon-file-plus', stat: null },
                     { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart', stat: null },
+                    { page: 'rates-charts', section: 'rates', title: t('nav_rates_charts'), icon: 'icon-trending-up', stat: null },
                     { page: 'services', section: 'services', title: t('nav_services'), icon: 'icon-file-plus', stat: null },
                     { page: 'profile', section: 'profile', title: t('nav_profile'), icon: 'icon-user', stat: null },
                     { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
@@ -3345,8 +3396,11 @@
         let convQuickTab = 'all';
         let convCurrentPage = 1;
 
+        /* ========== Kaya CRM chunk-02 | login، apiFetch، delegated handlers | docs/CODEBASE-MAP.md ========== */
         /* ========== Global Delegated Event Handler for Dynamic Content ========== */
         function setupGlobalDelegatedHandlers() {
+            if (window._crmDelegatedHandlersBound) return;
+            window._crmDelegatedHandlersBound = true;
             // Global document-level click handler to catch dynamically generated buttons with onclick
             document.addEventListener('click', function(e) {
                 const target = e.target;
@@ -3964,182 +4018,130 @@
             }
         }
 
+        /* ========== Kaya CRM chunk-03 | مکالمات، مشتریان، setupGlobalEventHandlers | docs/CODEBASE-MAP.md ========== */
         /* ========== Global Event Handlers Setup ========== */
         function setupGlobalEventHandlers() {
+            const bindOnce = function(el, key, handler) {
+                if (!el || typeof handler !== 'function') return;
+                if (el[key]) return;
+                el[key] = true;
+                el.addEventListener('click', handler);
+            };
+            const bindOnceKeyup = function(el, key, handler) {
+                if (!el || typeof handler !== 'function') return;
+                if (el[key]) return;
+                el[key] = true;
+                el.addEventListener('keyup', handler);
+            };
             // Header menu button
             const menuBtn = document.getElementById('headerMenuBtn');
-            if (menuBtn) {
-                menuBtn.removeEventListener('click', toggleSidebarMobile);
-                menuBtn.addEventListener('click', toggleSidebarMobile);
-            }
+            bindOnce(menuBtn, '_crmBoundMenu', toggleSidebarMobile);
             
-            // Sidebar overlay
             const sidebarOverlay = document.getElementById('sidebarOverlay');
-            if (sidebarOverlay) {
-                sidebarOverlay.removeEventListener('click', closeSidebarMobile);
-                sidebarOverlay.addEventListener('click', closeSidebarMobile);
-            }
+            bindOnce(sidebarOverlay, '_crmBoundOverlay', closeSidebarMobile);
             
             // Header announcement toggle button
             const annToggleBtn = document.getElementById('headerAnnToggleBtn');
-            if (annToggleBtn) {
-                annToggleBtn.removeEventListener('click', toggleAnnouncementMarquee);
-                annToggleBtn.addEventListener('click', toggleAnnouncementMarquee);
-            }
-            
-            // Header notify buttons — use onclick from HTML only (avoid duplicate handlers)
+            bindOnce(annToggleBtn, '_crmBoundAnnToggle', toggleAnnouncementMarquee);
             
             // Header search triggers
             const searchTrigger = document.getElementById('headerSearchTrigger');
-            if (searchTrigger) {
-                searchTrigger.removeEventListener('click', openHeaderSearchPopup);
-                searchTrigger.addEventListener('click', openHeaderSearchPopup);
-            }
+            bindOnce(searchTrigger, '_crmBoundSearchTrigger', openHeaderSearchPopup);
             
             const searchTriggerDesktop = document.getElementById('headerSearchTriggerDesktop');
-            if (searchTriggerDesktop) {
-                searchTriggerDesktop.removeEventListener('click', openHeaderSearchPopup);
-                searchTriggerDesktop.addEventListener('click', openHeaderSearchPopup);
-            }
+            bindOnce(searchTriggerDesktop, '_crmBoundSearchTriggerDesktop', openHeaderSearchPopup);
             
-            // Header search modal overlay - close on background click
             const headerSearchModal = document.getElementById('headerSearchModal');
-            if (headerSearchModal) {
-                const searchModalCloseHandler = function(e) {
+            if (headerSearchModal && !headerSearchModal._crmBoundSearchModal) {
+                headerSearchModal._crmBoundSearchModal = true;
+                headerSearchModal.addEventListener('click', function(e) {
                     if (e.target === headerSearchModal) closeHeaderSearchPopup();
-                };
-                headerSearchModal.removeEventListener('click', searchModalCloseHandler);
-                headerSearchModal.addEventListener('click', searchModalCloseHandler);
+                });
             }
             
-            // Header search modal close button
             const headerSearchClose = document.querySelector('#headerSearchModal .modal-close');
-            if (headerSearchClose) {
-                headerSearchClose.removeEventListener('click', closeHeaderSearchPopup);
-                headerSearchClose.addEventListener('click', closeHeaderSearchPopup);
-            }
+            bindOnce(headerSearchClose, '_crmBoundSearchClose', closeHeaderSearchPopup);
             
-            // Header search modal input - Enter key
             const headerSearchModalInput = document.getElementById('headerSearchModalInput');
-            if (headerSearchModalInput) {
-                const searchInputHandler = function(e) {
-                    if (e.key === 'Enter') doHeaderSearchFromModal();
-                };
-                headerSearchModalInput.removeEventListener('keyup', searchInputHandler);
-                headerSearchModalInput.addEventListener('keyup', searchInputHandler);
-            }
+            bindOnceKeyup(headerSearchModalInput, '_crmBoundSearchModalInput', function(e) {
+                if (e.key === 'Enter') doHeaderSearchFromModal();
+            });
             
-            // Header user dropdown triggers (mobile + desktop)
             const userDropdownHandler = function(e) { toggleUserDropdown(e); };
             const userDropdownMobile = document.getElementById('userDropdownTriggerMobile');
-            if (userDropdownMobile) {
-                userDropdownMobile.removeEventListener('click', userDropdownHandler);
-                userDropdownMobile.addEventListener('click', userDropdownHandler);
-            }
+            bindOnce(userDropdownMobile, '_crmBoundUserDropdown', userDropdownHandler);
             const userDropdownDesktop = document.getElementById('userDropdownTrigger');
-            if (userDropdownDesktop) {
-                userDropdownDesktop.removeEventListener('click', userDropdownHandler);
-                userDropdownDesktop.addEventListener('click', userDropdownHandler);
-            }
+            bindOnce(userDropdownDesktop, '_crmBoundUserDropdown', userDropdownHandler);
             
-            // Header logo
             const headerLogo = document.getElementById('headerLogo');
-            if (headerLogo) {
-                const logoHandler = function(e) {
-                    e.preventDefault();
-                    showPage('dashboard');
-                    closeSidebarMobile();
-                    return false;
-                };
-                headerLogo.removeEventListener('click', logoHandler);
-                headerLogo.addEventListener('click', logoHandler);
-            }
-            // Chat back button (mobile) — bind globally so it works when chat is open
+            bindOnce(headerLogo, '_crmBoundLogo', function(e) {
+                e.preventDefault();
+                showPage('dashboard');
+                closeSidebarMobile();
+            });
+            
             const chatBackBtn = document.getElementById('chatBackBtn');
             if (chatBackBtn && typeof closeChatMobile === 'function') {
-                chatBackBtn.removeEventListener('click', closeChatMobile);
-                chatBackBtn.addEventListener('click', closeChatMobile);
+                bindOnce(chatBackBtn, '_crmBoundChatBack', closeChatMobile);
             }
             
-            // Header search input - Enter key
             const headerSearch = document.getElementById('headerSearch');
-            if (headerSearch) {
-                const searchHandler = function(e) {
-                    if (e.key === 'Enter') doHeaderSearch();
-                };
-                headerSearch.removeEventListener('keyup', searchHandler);
-                headerSearch.addEventListener('keyup', searchHandler);
-            }
+            bindOnceKeyup(headerSearch, '_crmBoundHeaderSearch', function(e) {
+                if (e.key === 'Enter') doHeaderSearch();
+            });
             
-            // Header quick action buttons (Show conversations, add customer, add ticket)
-            const headerQuickBtns = document.querySelectorAll('.header-quick-btn');
-            if (headerQuickBtns) {
-                headerQuickBtns.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleQuickBtnClick(e) { handleHeaderQuickBtnClick(e, btn); });
-                    btn.addEventListener('click', function handleQuickBtnClick(e) { handleHeaderQuickBtnClick(e, btn); });
+            document.querySelectorAll('.header-quick-btn').forEach(function(btn) {
+                if (btn._crmBoundQuick) return;
+                btn._crmBoundQuick = true;
+                btn.addEventListener('click', function(e) { handleHeaderQuickBtnClick(e, btn); });
+            });
+            
+            document.querySelectorAll('.header-lang-btn').forEach(function(btn) {
+                if (btn._crmBoundLang) return;
+                btn._crmBoundLang = true;
+                btn.addEventListener('click', function() {
+                    const lang = btn.getAttribute('data-lang');
+                    if (lang) window.setLang(lang);
+                });
+            });
+            
+            document.querySelectorAll('.language-dropdown button[data-lang]').forEach(function(btn) {
+                if (btn._crmBoundLangDrop) return;
+                btn._crmBoundLangDrop = true;
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const lang = btn.getAttribute('data-lang');
+                    if (lang) window.setLang(lang);
+                });
+            });
+
+            const annSort = document.getElementById('announcementSort');
+            if (annSort && !annSort._crmBoundAnnSort) {
+                annSort._crmBoundAnnSort = true;
+                annSort.addEventListener('change', function() {
+                    if (typeof setAnnouncementsSort === 'function') setAnnouncementsSort(annSort.value);
                 });
             }
-            
-            // Header notification button (desktop) — use onclick from HTML only
-            
-            // Header language buttons
-            const headerLangBtns = document.querySelectorAll('.header-lang-btn');
-            if (headerLangBtns) {
-                headerLangBtns.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleLangClick(e) { 
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
-                    });
-                    btn.addEventListener('click', function handleLangClick(e) { 
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
-                    });
+            const ratesPeriod = document.getElementById('ratesChartPeriod');
+            if (ratesPeriod && !ratesPeriod._crmBoundRatesPeriod) {
+                ratesPeriod._crmBoundRatesPeriod = true;
+                ratesPeriod.addEventListener('change', function() {
+                    if (typeof loadRatesCharts === 'function') loadRatesCharts();
                 });
             }
-            
-            // Header language dropdown items (in languageDropdown)
-            const langDropdownItems = document.querySelectorAll('.language-dropdown button[data-lang]');
-            if (langDropdownItems) {
-                langDropdownItems.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleLangDropdownClick(e) {
-                        e.preventDefault();
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang);
-                    });
-                    btn.addEventListener('click', function handleLangDropdownClick(e) {
-                        e.preventDefault();
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang);
-                    });
+            const ticketSearch = document.getElementById('ticketSearch');
+            if (ticketSearch && !ticketSearch._crmBoundTicketSearch) {
+                ticketSearch._crmBoundTicketSearch = true;
+                ticketSearch.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && typeof loadTickets === 'function') loadTickets();
                 });
             }
-            
-            // User dropdown items
-            const userDropdownItems = document.querySelectorAll('.user-dropdown a, .user-dropdown button');
-            if (userDropdownItems) {
-                userDropdownItems.forEach(function(item) {
-                    const dataset = item.getAttribute('data-action');
-                    if (dataset === 'logout') {
-                        item.removeEventListener('click', function handleLogout(e) { 
-                            e.preventDefault(); 
-                            logout(); 
-                        });
-                        item.addEventListener('click', function handleLogout(e) { 
-                            e.preventDefault(); 
-                            logout(); 
-                        });
-                    } else if (dataset === 'profile') {
-                        item.removeEventListener('click', function handleProfile(e) { 
-                            e.preventDefault(); 
-                            showPage('profile'); 
-                        });
-                        item.addEventListener('click', function handleProfile(e) { 
-                            e.preventDefault(); 
-                            showPage('profile'); 
-                        });
-                    }
-                });
-            }
+            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            bindOnce(sidebarToggleBtn, '_crmBoundSidebarToggle', toggleSidebarDesktop);
+            const dashRefreshBtn = document.getElementById('dashboardRefreshBtn');
+            bindOnce(dashRefreshBtn, '_crmBoundDashRefresh', function() {
+                if (typeof refreshDashboard === 'function') refreshDashboard();
+            });
         }
         
         function handleHeaderQuickBtnClick(e, btn) {
@@ -4538,92 +4540,17 @@
             }
         }
         
-        // Setup Staff Activity event handlers
+        // Setup Staff Activity event handlers (staff-activity page only)
         function setupStaffActivityEventHandlers() {
-            // Refresh button
-            const refreshBtn = document.getElementById('staffActivityRefresh');
-            if (refreshBtn) {
-                const staffRefreshHandler = function() { loadStaffActivity({ refreshAttendance: true }); };
-                refreshBtn.removeEventListener('click', staffRefreshHandler);
-                refreshBtn.addEventListener('click', staffRefreshHandler);
-            }
-            
-            // Attendance apply button
-            const applyBtn = document.getElementById('attendanceApplyBtn');
-            if (applyBtn) {
-                applyBtn.removeEventListener('click', loadAttendanceReport);
-                applyBtn.addEventListener('click', loadAttendanceReport);
-            }
-            
-            // Dashboard refresh button
-            const dashRefreshBtn = document.getElementById('dashboardRefreshBtn');
-            if (dashRefreshBtn) {
-                dashRefreshBtn.removeEventListener('click', refreshDashboard);
-                dashRefreshBtn.addEventListener('click', refreshDashboard);
-            }
-            
-            // Sidebar toggle (desktop)
-            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
-            if (sidebarToggleBtn) {
-                sidebarToggleBtn.removeEventListener('click', toggleSidebarDesktop);
-                sidebarToggleBtn.addEventListener('click', toggleSidebarDesktop);
-            }
-            
-            // Language buttons - all instances
-            document.querySelectorAll('[data-lang]').forEach(function(btn) {
-                // Skip the sidebar and dropdown buttons since they have other logic
-                if (btn.classList.contains('lang-switch')) return;
-                btn.removeEventListener('click', function() {
-                    const lang = this.getAttribute('data-lang');
-                    if (lang) setLang(lang);
-                });
-                btn.addEventListener('click', function() {
-                    const lang = this.getAttribute('data-lang');
-                    if (lang) setLang(lang);
-                });
+            const bindOnceClick = function(el, key, fn) {
+                if (!el || typeof fn !== 'function' || el[key]) return;
+                el[key] = true;
+                el.addEventListener('click', fn);
+            };
+            bindOnceClick(document.getElementById('staffActivityRefresh'), '_crmStaffRefresh', function() {
+                loadStaffActivity({ refreshAttendance: true });
             });
-            
-            // Language dropdown
-            const langDropdownBtn = document.getElementById('langDropdownBtn');
-            if (langDropdownBtn) {
-                langDropdownBtn.removeEventListener('click', toggleLangDropdown);
-                langDropdownBtn.addEventListener('click', toggleLangDropdown);
-            }
-            
-            // Language dropdown menu items
-            document.querySelectorAll('.lang-dropdown-menu button').forEach(function(btn) {
-                const langHandler = function() {
-                    const lang = this.getAttribute('data-lang');
-                    if (lang) {
-                        setLang(lang);
-                        if (typeof closeLangDropdown === 'function') closeLangDropdown();
-                    }
-                };
-                btn.removeEventListener('click', langHandler);
-                btn.addEventListener('click', langHandler);
-            });
-            
-            // Mobile footer navigation
-            document.querySelectorAll('.mobile-tab-item').forEach(function(tab) {
-                tab.removeEventListener('click', function(e) {
-                    e.preventDefault();
-                    const page = this.getAttribute('data-page');
-                    if (page) {
-                        showPage(page);
-                        closeSidebarMobile();
-                    }
-                    return false;
-                });
-                tab.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const page = this.getAttribute('data-page');
-                    if (page) {
-                        showPage(page);
-                        closeSidebarMobile();
-                    }
-                    return false;
-                });
-            });
+            bindOnceClick(document.getElementById('attendanceApplyBtn'), '_crmAttendanceApply', loadAttendanceReport);
         }
         
         function handleQuickTabClick(e) {
@@ -7544,10 +7471,10 @@
             setAvatar(avatarMobile);
         }
         function canAccessSection(section) {
+            if (section === 'profile' || section === 'dashboard') return true;
+            const key = section === 'rates_charts' ? 'rates' : section;
             const perms = (currentUser && currentUser.permissions) || {};
-            const role = (currentUser && currentUser.role) || '';
-            const isOwnerOrAdmin = (role === 'owner' || role === 'admin');
-            return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true);
+            return perms[key] === true;
         }
         function applyNavByRole() {
             const can = canAccessSection;
@@ -8560,11 +8487,12 @@
         function closeSidebarMobile() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); const btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
         function toggleSidebarDesktop() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; const collapsed = s.classList.toggle('sidebar-collapsed'); try { localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0'); } catch (_) {} btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true'); btn.setAttribute('aria-label', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); btn.setAttribute('title', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); const txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = collapsed ? t('sidebar_toggle_expand') : t('sidebar_toggle_collapse'); }
         function initSidebarCollapsedState() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; let collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
+        /* ========== Kaya CRM chunk-04 | showPage، تنظیمات پنل، تسک/فرایند | docs/CODEBASE-MAP.md ========== */
         function showPage(page) {
             const perms = (currentUser && currentUser.permissions) || {};
             const pageToSection = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TO_SECTION : {};
             const section = pageToSection[page];
-            if (section && page !== 'profile' && page !== 'dashboard' && perms[section] !== true) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
+            if (section && page !== 'profile' && page !== 'dashboard' && !canAccessSection(section)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             closeSidebarMobile();
@@ -8640,7 +8568,6 @@
             if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); const popupTid = currentInternalThreadId; closeInternalChatPopup(); var wrap = document.getElementById('internalChatLayoutWrap'); if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open'); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
             if (page === 'supervision') { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
             if (page === 'panel-settings') loadPanelSettings();
-            var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (prevPage === 'internal-chat' && page !== 'internal-chat' && currentInternalThreadId) {
                 const headerEl = document.getElementById('internalChatHeader');
                 const name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');
@@ -9509,6 +9436,7 @@
             });
             renderUserList(filtered);
         }
+        /* ========== Kaya CRM chunk-05 | کاربران، تیکت، دپارتمان | docs/CODEBASE-MAP.md ========== */
         function renderUserList(users) {
             const list = document.getElementById('userList');
             if (!list) return;
@@ -10726,6 +10654,7 @@
             }
         }
 
+        /* ========== Kaya CRM chunk-06 | واتساپ، قالب پیام، runAfterAuthReady | docs/CODEBASE-MAP.md ========== */
         var _whatsappBurstT = [];
         function clearWhatsappStatusBurst() {
             _whatsappBurstT.forEach(function(id) { try { clearTimeout(id); } catch (_e) {} });
@@ -12342,8 +12271,6 @@
             window.filterInternalThreads = filterInternalThreads;
             window.toggleInternalChatFloating = toggleInternalChatFloating;
             window.selectThreadInPopup = selectThreadInPopup;
-            window.filterInternalThreads = filterInternalThreads;
-            window.toggleInternalChatFloating = toggleInternalChatFloating;
         })();
 
         /** مقداردهی بعد از تأیید /api/auth/me — ناو، تنظیمات، رویدادها، سوکت، نرخ، حضور، TOTP. قابل استخراج به ماژول auth. */
@@ -12382,27 +12309,49 @@
             }
         }
 
-        if (token) {
-            apiFetch('/api/auth/me').then(async function(res) {
-                if (res.needLogin || !res.ok) { logout(); return; }
-                const u = res.data;
-                currentUser = u;
-                if (u && u.email) {
-                    setUserDisplay(u);
-                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
-                        window.LoginBootstrap.setAuthenticated();
+        /** بازیابی نشست از کوکی httpOnly — همیشه اجرا می‌شود (نه فقط وقتی token در حافظه باشد). */
+        async function restoreSessionFromServer() {
+            document.documentElement.classList.add('auth-verifying');
+            try {
+                const res = await apiFetch('/api/auth/me');
+                if (res.needLogin || !res.ok || !res.data || !res.data.email) {
+                    persistAuthToken(null);
+                    if (redirectToLoginPage()) return;
+                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                        window.LoginBootstrap.setLoggedOut();
                     } else {
-                        document.documentElement.classList.add('auth-has-token');
+                        document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
                     }
-                    document.getElementById('loginBox').style.display = 'none';
-                    const appEl = document.getElementById('app');
-                    if (appEl) {
-                        appEl.classList.add('show', 'app-ready');
-                        appEl.classList.remove('app-loading');
-                    }
-                    try {
-                        await runAfterAuthReady();
-                    } catch (e) { console.error('Post-me init:', e); }
-                } else { logout(); }
-            }).catch(function() { logout(); });
+                    const loginBox = document.getElementById('loginBox');
+                    if (loginBox) loginBox.style.display = 'flex';
+                    return;
+                }
+                const u = res.data;
+                if (u.token) persistAuthToken(u.token);
+                currentUser = u;
+                setUserDisplay(u);
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
+                    window.LoginBootstrap.setAuthenticated();
+                } else {
+                    document.documentElement.classList.add('auth-has-token');
+                }
+                const loginBox = document.getElementById('loginBox');
+                if (loginBox) loginBox.style.display = 'none';
+                const appEl = document.getElementById('app');
+                if (appEl) {
+                    appEl.classList.add('show', 'app-ready');
+                    appEl.classList.remove('app-loading');
+                }
+                try {
+                    await runAfterAuthReady();
+                } catch (e) { console.error('Post-me init:', e); }
+            } catch (e) {
+                console.error('restoreSession:', e);
+                persistAuthToken(null);
+                if (redirectToLoginPage()) return;
+            } finally {
+                document.documentElement.classList.remove('auth-verifying');
+            }
         }
+
+        restoreSessionFromServer();

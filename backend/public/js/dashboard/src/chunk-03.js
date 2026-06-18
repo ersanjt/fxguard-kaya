@@ -48,182 +48,130 @@
             }
         }
 
+        /* ========== Kaya CRM chunk-03 | مکالمات، مشتریان، setupGlobalEventHandlers | docs/CODEBASE-MAP.md ========== */
         /* ========== Global Event Handlers Setup ========== */
         function setupGlobalEventHandlers() {
+            const bindOnce = function(el, key, handler) {
+                if (!el || typeof handler !== 'function') return;
+                if (el[key]) return;
+                el[key] = true;
+                el.addEventListener('click', handler);
+            };
+            const bindOnceKeyup = function(el, key, handler) {
+                if (!el || typeof handler !== 'function') return;
+                if (el[key]) return;
+                el[key] = true;
+                el.addEventListener('keyup', handler);
+            };
             // Header menu button
             const menuBtn = document.getElementById('headerMenuBtn');
-            if (menuBtn) {
-                menuBtn.removeEventListener('click', toggleSidebarMobile);
-                menuBtn.addEventListener('click', toggleSidebarMobile);
-            }
+            bindOnce(menuBtn, '_crmBoundMenu', toggleSidebarMobile);
             
-            // Sidebar overlay
             const sidebarOverlay = document.getElementById('sidebarOverlay');
-            if (sidebarOverlay) {
-                sidebarOverlay.removeEventListener('click', closeSidebarMobile);
-                sidebarOverlay.addEventListener('click', closeSidebarMobile);
-            }
+            bindOnce(sidebarOverlay, '_crmBoundOverlay', closeSidebarMobile);
             
             // Header announcement toggle button
             const annToggleBtn = document.getElementById('headerAnnToggleBtn');
-            if (annToggleBtn) {
-                annToggleBtn.removeEventListener('click', toggleAnnouncementMarquee);
-                annToggleBtn.addEventListener('click', toggleAnnouncementMarquee);
-            }
-            
-            // Header notify buttons — use onclick from HTML only (avoid duplicate handlers)
+            bindOnce(annToggleBtn, '_crmBoundAnnToggle', toggleAnnouncementMarquee);
             
             // Header search triggers
             const searchTrigger = document.getElementById('headerSearchTrigger');
-            if (searchTrigger) {
-                searchTrigger.removeEventListener('click', openHeaderSearchPopup);
-                searchTrigger.addEventListener('click', openHeaderSearchPopup);
-            }
+            bindOnce(searchTrigger, '_crmBoundSearchTrigger', openHeaderSearchPopup);
             
             const searchTriggerDesktop = document.getElementById('headerSearchTriggerDesktop');
-            if (searchTriggerDesktop) {
-                searchTriggerDesktop.removeEventListener('click', openHeaderSearchPopup);
-                searchTriggerDesktop.addEventListener('click', openHeaderSearchPopup);
-            }
+            bindOnce(searchTriggerDesktop, '_crmBoundSearchTriggerDesktop', openHeaderSearchPopup);
             
-            // Header search modal overlay - close on background click
             const headerSearchModal = document.getElementById('headerSearchModal');
-            if (headerSearchModal) {
-                const searchModalCloseHandler = function(e) {
+            if (headerSearchModal && !headerSearchModal._crmBoundSearchModal) {
+                headerSearchModal._crmBoundSearchModal = true;
+                headerSearchModal.addEventListener('click', function(e) {
                     if (e.target === headerSearchModal) closeHeaderSearchPopup();
-                };
-                headerSearchModal.removeEventListener('click', searchModalCloseHandler);
-                headerSearchModal.addEventListener('click', searchModalCloseHandler);
+                });
             }
             
-            // Header search modal close button
             const headerSearchClose = document.querySelector('#headerSearchModal .modal-close');
-            if (headerSearchClose) {
-                headerSearchClose.removeEventListener('click', closeHeaderSearchPopup);
-                headerSearchClose.addEventListener('click', closeHeaderSearchPopup);
-            }
+            bindOnce(headerSearchClose, '_crmBoundSearchClose', closeHeaderSearchPopup);
             
-            // Header search modal input - Enter key
             const headerSearchModalInput = document.getElementById('headerSearchModalInput');
-            if (headerSearchModalInput) {
-                const searchInputHandler = function(e) {
-                    if (e.key === 'Enter') doHeaderSearchFromModal();
-                };
-                headerSearchModalInput.removeEventListener('keyup', searchInputHandler);
-                headerSearchModalInput.addEventListener('keyup', searchInputHandler);
-            }
+            bindOnceKeyup(headerSearchModalInput, '_crmBoundSearchModalInput', function(e) {
+                if (e.key === 'Enter') doHeaderSearchFromModal();
+            });
             
-            // Header user dropdown triggers (mobile + desktop)
             const userDropdownHandler = function(e) { toggleUserDropdown(e); };
             const userDropdownMobile = document.getElementById('userDropdownTriggerMobile');
-            if (userDropdownMobile) {
-                userDropdownMobile.removeEventListener('click', userDropdownHandler);
-                userDropdownMobile.addEventListener('click', userDropdownHandler);
-            }
+            bindOnce(userDropdownMobile, '_crmBoundUserDropdown', userDropdownHandler);
             const userDropdownDesktop = document.getElementById('userDropdownTrigger');
-            if (userDropdownDesktop) {
-                userDropdownDesktop.removeEventListener('click', userDropdownHandler);
-                userDropdownDesktop.addEventListener('click', userDropdownHandler);
-            }
+            bindOnce(userDropdownDesktop, '_crmBoundUserDropdown', userDropdownHandler);
             
-            // Header logo
             const headerLogo = document.getElementById('headerLogo');
-            if (headerLogo) {
-                const logoHandler = function(e) {
-                    e.preventDefault();
-                    showPage('dashboard');
-                    closeSidebarMobile();
-                    return false;
-                };
-                headerLogo.removeEventListener('click', logoHandler);
-                headerLogo.addEventListener('click', logoHandler);
-            }
-            // Chat back button (mobile) — bind globally so it works when chat is open
+            bindOnce(headerLogo, '_crmBoundLogo', function(e) {
+                e.preventDefault();
+                showPage('dashboard');
+                closeSidebarMobile();
+            });
+            
             const chatBackBtn = document.getElementById('chatBackBtn');
             if (chatBackBtn && typeof closeChatMobile === 'function') {
-                chatBackBtn.removeEventListener('click', closeChatMobile);
-                chatBackBtn.addEventListener('click', closeChatMobile);
+                bindOnce(chatBackBtn, '_crmBoundChatBack', closeChatMobile);
             }
             
-            // Header search input - Enter key
             const headerSearch = document.getElementById('headerSearch');
-            if (headerSearch) {
-                const searchHandler = function(e) {
-                    if (e.key === 'Enter') doHeaderSearch();
-                };
-                headerSearch.removeEventListener('keyup', searchHandler);
-                headerSearch.addEventListener('keyup', searchHandler);
-            }
+            bindOnceKeyup(headerSearch, '_crmBoundHeaderSearch', function(e) {
+                if (e.key === 'Enter') doHeaderSearch();
+            });
             
-            // Header quick action buttons (Show conversations, add customer, add ticket)
-            const headerQuickBtns = document.querySelectorAll('.header-quick-btn');
-            if (headerQuickBtns) {
-                headerQuickBtns.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleQuickBtnClick(e) { handleHeaderQuickBtnClick(e, btn); });
-                    btn.addEventListener('click', function handleQuickBtnClick(e) { handleHeaderQuickBtnClick(e, btn); });
+            document.querySelectorAll('.header-quick-btn').forEach(function(btn) {
+                if (btn._crmBoundQuick) return;
+                btn._crmBoundQuick = true;
+                btn.addEventListener('click', function(e) { handleHeaderQuickBtnClick(e, btn); });
+            });
+            
+            document.querySelectorAll('.header-lang-btn').forEach(function(btn) {
+                if (btn._crmBoundLang) return;
+                btn._crmBoundLang = true;
+                btn.addEventListener('click', function() {
+                    const lang = btn.getAttribute('data-lang');
+                    if (lang) window.setLang(lang);
+                });
+            });
+            
+            document.querySelectorAll('.language-dropdown button[data-lang]').forEach(function(btn) {
+                if (btn._crmBoundLangDrop) return;
+                btn._crmBoundLangDrop = true;
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const lang = btn.getAttribute('data-lang');
+                    if (lang) window.setLang(lang);
+                });
+            });
+
+            const annSort = document.getElementById('announcementSort');
+            if (annSort && !annSort._crmBoundAnnSort) {
+                annSort._crmBoundAnnSort = true;
+                annSort.addEventListener('change', function() {
+                    if (typeof setAnnouncementsSort === 'function') setAnnouncementsSort(annSort.value);
                 });
             }
-            
-            // Header notification button (desktop) — use onclick from HTML only
-            
-            // Header language buttons
-            const headerLangBtns = document.querySelectorAll('.header-lang-btn');
-            if (headerLangBtns) {
-                headerLangBtns.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleLangClick(e) { 
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
-                    });
-                    btn.addEventListener('click', function handleLangClick(e) { 
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang); 
-                    });
+            const ratesPeriod = document.getElementById('ratesChartPeriod');
+            if (ratesPeriod && !ratesPeriod._crmBoundRatesPeriod) {
+                ratesPeriod._crmBoundRatesPeriod = true;
+                ratesPeriod.addEventListener('change', function() {
+                    if (typeof loadRatesCharts === 'function') loadRatesCharts();
                 });
             }
-            
-            // Header language dropdown items (in languageDropdown)
-            const langDropdownItems = document.querySelectorAll('.language-dropdown button[data-lang]');
-            if (langDropdownItems) {
-                langDropdownItems.forEach(function(btn) {
-                    btn.removeEventListener('click', function handleLangDropdownClick(e) {
-                        e.preventDefault();
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang);
-                    });
-                    btn.addEventListener('click', function handleLangDropdownClick(e) {
-                        e.preventDefault();
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang);
-                    });
+            const ticketSearch = document.getElementById('ticketSearch');
+            if (ticketSearch && !ticketSearch._crmBoundTicketSearch) {
+                ticketSearch._crmBoundTicketSearch = true;
+                ticketSearch.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && typeof loadTickets === 'function') loadTickets();
                 });
             }
-            
-            // User dropdown items
-            const userDropdownItems = document.querySelectorAll('.user-dropdown a, .user-dropdown button');
-            if (userDropdownItems) {
-                userDropdownItems.forEach(function(item) {
-                    const dataset = item.getAttribute('data-action');
-                    if (dataset === 'logout') {
-                        item.removeEventListener('click', function handleLogout(e) { 
-                            e.preventDefault(); 
-                            logout(); 
-                        });
-                        item.addEventListener('click', function handleLogout(e) { 
-                            e.preventDefault(); 
-                            logout(); 
-                        });
-                    } else if (dataset === 'profile') {
-                        item.removeEventListener('click', function handleProfile(e) { 
-                            e.preventDefault(); 
-                            showPage('profile'); 
-                        });
-                        item.addEventListener('click', function handleProfile(e) { 
-                            e.preventDefault(); 
-                            showPage('profile'); 
-                        });
-                    }
-                });
-            }
+            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            bindOnce(sidebarToggleBtn, '_crmBoundSidebarToggle', toggleSidebarDesktop);
+            const dashRefreshBtn = document.getElementById('dashboardRefreshBtn');
+            bindOnce(dashRefreshBtn, '_crmBoundDashRefresh', function() {
+                if (typeof refreshDashboard === 'function') refreshDashboard();
+            });
         }
         
         function handleHeaderQuickBtnClick(e, btn) {
@@ -622,92 +570,17 @@
             }
         }
         
-        // Setup Staff Activity event handlers
+        // Setup Staff Activity event handlers (staff-activity page only)
         function setupStaffActivityEventHandlers() {
-            // Refresh button
-            const refreshBtn = document.getElementById('staffActivityRefresh');
-            if (refreshBtn) {
-                const staffRefreshHandler = function() { loadStaffActivity({ refreshAttendance: true }); };
-                refreshBtn.removeEventListener('click', staffRefreshHandler);
-                refreshBtn.addEventListener('click', staffRefreshHandler);
-            }
-            
-            // Attendance apply button
-            const applyBtn = document.getElementById('attendanceApplyBtn');
-            if (applyBtn) {
-                applyBtn.removeEventListener('click', loadAttendanceReport);
-                applyBtn.addEventListener('click', loadAttendanceReport);
-            }
-            
-            // Dashboard refresh button
-            const dashRefreshBtn = document.getElementById('dashboardRefreshBtn');
-            if (dashRefreshBtn) {
-                dashRefreshBtn.removeEventListener('click', refreshDashboard);
-                dashRefreshBtn.addEventListener('click', refreshDashboard);
-            }
-            
-            // Sidebar toggle (desktop)
-            const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
-            if (sidebarToggleBtn) {
-                sidebarToggleBtn.removeEventListener('click', toggleSidebarDesktop);
-                sidebarToggleBtn.addEventListener('click', toggleSidebarDesktop);
-            }
-            
-            // Language buttons - all instances
-            document.querySelectorAll('[data-lang]').forEach(function(btn) {
-                // Skip the sidebar and dropdown buttons since they have other logic
-                if (btn.classList.contains('lang-switch')) return;
-                btn.removeEventListener('click', function() {
-                    const lang = this.getAttribute('data-lang');
-                    if (lang) setLang(lang);
-                });
-                btn.addEventListener('click', function() {
-                    const lang = this.getAttribute('data-lang');
-                    if (lang) setLang(lang);
-                });
+            const bindOnceClick = function(el, key, fn) {
+                if (!el || typeof fn !== 'function' || el[key]) return;
+                el[key] = true;
+                el.addEventListener('click', fn);
+            };
+            bindOnceClick(document.getElementById('staffActivityRefresh'), '_crmStaffRefresh', function() {
+                loadStaffActivity({ refreshAttendance: true });
             });
-            
-            // Language dropdown
-            const langDropdownBtn = document.getElementById('langDropdownBtn');
-            if (langDropdownBtn) {
-                langDropdownBtn.removeEventListener('click', toggleLangDropdown);
-                langDropdownBtn.addEventListener('click', toggleLangDropdown);
-            }
-            
-            // Language dropdown menu items
-            document.querySelectorAll('.lang-dropdown-menu button').forEach(function(btn) {
-                const langHandler = function() {
-                    const lang = this.getAttribute('data-lang');
-                    if (lang) {
-                        setLang(lang);
-                        if (typeof closeLangDropdown === 'function') closeLangDropdown();
-                    }
-                };
-                btn.removeEventListener('click', langHandler);
-                btn.addEventListener('click', langHandler);
-            });
-            
-            // Mobile footer navigation
-            document.querySelectorAll('.mobile-tab-item').forEach(function(tab) {
-                tab.removeEventListener('click', function(e) {
-                    e.preventDefault();
-                    const page = this.getAttribute('data-page');
-                    if (page) {
-                        showPage(page);
-                        closeSidebarMobile();
-                    }
-                    return false;
-                });
-                tab.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const page = this.getAttribute('data-page');
-                    if (page) {
-                        showPage(page);
-                        closeSidebarMobile();
-                    }
-                    return false;
-                });
-            });
+            bindOnceClick(document.getElementById('attendanceApplyBtn'), '_crmAttendanceApply', loadAttendanceReport);
         }
         
         function handleQuickTabClick(e) {

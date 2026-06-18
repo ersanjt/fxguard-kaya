@@ -304,11 +304,42 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
     });
     app.get('/dashboard/', (req, res) => res.redirect('/dashboard'));
     app.get('/dashboard.html', (req, res) => res.redirect('/dashboard'));
+    app.get('/crm-build.json', (req, res) => {
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.set('Pragma', 'no-cache');
+        res.set('Expires', '0');
+        res.sendFile(path.join(__dirname, '..', 'public', 'crm-build.json'));
+    });
     app.get('/contact', (req, res) => {
         res.set('Cache-Control', 'public, max-age=300');
         res.sendFile(path.join(__dirname, '..', 'public', 'contact.html'));
     });
-    app.use(express.static(path.join(__dirname, '..', 'public')));
+    const publicDir = path.join(__dirname, '..', 'public');
+    app.use(
+        express.static(publicDir, {
+            etag: true,
+            lastModified: true,
+            setHeaders: (res, filePath) => {
+                const rel = path.relative(publicDir, filePath).replace(/\\/g, '/');
+                if (rel.endsWith('.html')) {
+                    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+                    res.setHeader('Pragma', 'no-cache');
+                    return;
+                }
+                if (rel === 'crm-build.json') {
+                    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+                    return;
+                }
+                if (/\.(js|css)$/.test(rel)) {
+                    res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate');
+                    return;
+                }
+                if (/\.(png|jpg|jpeg|gif|webp|svg|ico|woff2?|ttf)$/.test(rel)) {
+                    res.setHeader('Cache-Control', 'public, max-age=86400');
+                }
+            }
+        })
+    );
     app.use(
         '/uploads',
         (req, res, next) => {

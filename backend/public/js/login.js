@@ -1,5 +1,11 @@
 /**
- * login.js — منطق احراز هویت صفحه ورود مستقل
+ * Kaya CRM — صفحه ورود مستقل (/login)
+ * @file    public/js/login.js
+ * @layer   frontend/login
+ * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
+ * @see     docs/CODEBASE-MAP.md
+ *
+ * منطق احراز هویت صفحه ورود مستقل
  * هیچ onclick/event attribute ای در HTML استفاده نشده — همه از طریق addEventListener
  */
 (function () {
@@ -264,6 +270,24 @@
         if (span && text) span.textContent = text;
     }
 
+    /* ── Post-login redirect ─────────────────────── */
+    function saveSessionToken(data) {
+        if (!data || !data.token) return;
+        try { sessionStorage.setItem('crm_token', data.token); } catch (_) {}
+    }
+    function postLoginRedirect(data) {
+        saveSessionToken(data);
+        var returnTo = '';
+        try {
+            returnTo = new URLSearchParams(window.location.search).get('return') || '';
+        } catch (_) {}
+        if (returnTo && returnTo.charAt(0) === '/' && returnTo.indexOf('//') !== 0) {
+            window.location.href = returnTo;
+        } else {
+            window.location.href = '/dashboard';
+        }
+    }
+
     /* ── Login ───────────────────────────────────── */
     function doLogin() {
         var emailEl = document.getElementById('lpEmail');
@@ -315,7 +339,7 @@
             }
 
             if (data && (data.token || data.user)) {
-                window.location.href = '/dashboard';
+                postLoginRedirect(data);
                 return;
             }
 
@@ -346,7 +370,7 @@
         }).then(function(data) {
             setBtnLoading('btnTotpVerify', false, t('totp_verify_btn'));
             if (data && (data.token || data.user)) {
-                window.location.href = '/dashboard';
+                postLoginRedirect(data);
                 return;
             }
             setMsg('totpMsg', (data && data.error) || t('totp_bad'));

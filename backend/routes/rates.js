@@ -54,6 +54,7 @@ function applyAdjustment(rawNum, adj) {
 
 // GET /api/rates/config-status — وضعیت تنظیمات (آیا API key دارد؟)
 router.get('/config-status', async (req, res, _next) => {
+    if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
     res.json({ hasApiKey: !!NAVASAN_API_KEY });
 });
 
@@ -232,6 +233,7 @@ async function fetchHistoryViaDaily(item, dayEntries, baseUrl) {
 // GET /api/rates/history — داده تاریخی برای چارت (item یا key ارز، days تعداد روز)
 router.get('/history', async (req, res, next) => {
     try {
+        if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
         const key = (req.query.key || req.query.currency || 'usd').toLowerCase();
         const days = Math.min(90, Math.max(1, parseInt(req.query.days, 10) || 30));
         const forceRefresh = req.query.refresh === '1';

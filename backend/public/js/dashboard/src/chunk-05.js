@@ -616,6 +616,7 @@
             });
             renderUserList(filtered);
         }
+        /* ========== Kaya CRM chunk-05 | کاربران، تیکت، دپارتمان | docs/CODEBASE-MAP.md ========== */
         function renderUserList(users) {
             const list = document.getElementById('userList');
             if (!list) return;

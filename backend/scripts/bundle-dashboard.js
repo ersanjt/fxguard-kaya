@@ -3,13 +3,53 @@
  * ادغام partialهای داشبورد به فایل‌های نهایی که Express سرو می‌کند.
  * - HTML: public/partials/dashboard/html-part-01.html … (به ترتیب عددی)
  * - JS:   public/js/dashboard/src/chunk-01.js … (به ترتیب عددی)
+ * - نسخهٔ کش: یک BUILD_ID واحد در همه ?v= و crm-build.json
  *
  * استفاده: از پوشه backend اجرا کنید: npm run build:dashboard
  */
 const fs = require('fs');
 const path = require('path');
+const crypto = require('crypto');
 
 const root = path.join(__dirname, '..');
+const BUILD_PLACEHOLDER = '__CRM_BUILD__';
+
+function resolveBuildId() {
+    const hash = crypto.createHash('sha256');
+    const srcDir = path.join(root, 'public/js/dashboard/src');
+    if (fs.existsSync(srcDir)) {
+        fs.readdirSync(srcDir)
+            .filter((f) => /^chunk-\d+\.js$/.test(f))
+            .sort()
+            .forEach((f) => hash.update(fs.readFileSync(path.join(srcDir, f))));
+    }
+    const partialDir = path.join(root, 'public/partials/dashboard');
+    if (fs.existsSync(partialDir)) {
+        for (let i = 1; i < 100; i++) {
+            const name = 'html-part-' + String(i).padStart(2, '0') + '.html';
+            const p = path.join(partialDir, name);
+            if (!fs.existsSync(p)) break;
+            hash.update(fs.readFileSync(p));
+        }
+    }
+    const loginPath = path.join(root, 'public/login.html');
+    if (fs.existsSync(loginPath)) hash.update(fs.readFileSync(loginPath));
+    return hash.digest('hex').slice(0, 12);
+}
+
+function stampBuildId(content, buildId) {
+    return content.split(BUILD_PLACEHOLDER).join(buildId);
+}
+
+function writeBuildManifest(buildId) {
+    const manifest = {
+        id: buildId,
+        builtAt: new Date().toISOString()
+    };
+    const outPath = path.join(root, 'public', 'crm-build.json');
+    fs.writeFileSync(outPath, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
+    console.log('[bundle-dashboard] Wrote', outPath, '(' + buildId + ')');
+}
 
 function bundleJs() {
     const srcDir = path.join(root, 'public/js/dashboard/src');
@@ -36,7 +76,7 @@ function bundleJs() {
     console.log('[bundle-dashboard] Wrote', outPath, '(' + files.length + ' chunks)');
 }
 
-function bundleHtml() {
+function bundleHtml(buildId) {
     const partialDir = path.join(root, 'public/partials/dashboard');
     if (!fs.existsSync(partialDir)) {
         console.error('Missing:', partialDir);
@@ -55,12 +95,24 @@ function bundleHtml() {
     }
     let out = '';
     for (let i = 0; i < files.length; i++) {
-        out += fs.readFileSync(files[i], 'utf8');
+        out += stampBuildId(fs.readFileSync(files[i], 'utf8'), buildId);
     }
     const outPath = path.join(root, 'public/dashboard.html');
     fs.writeFileSync(outPath, out, 'utf8');
     console.log('[bundle-dashboard] Wrote', outPath, '(' + files.length + ' partials)');
 }
 
+function stampLoginHtml(buildId) {
+    const loginPath = path.join(root, 'public/login.html');
+    if (!fs.existsSync(loginPath)) return;
+    const raw = fs.readFileSync(loginPath, 'utf8');
+    fs.writeFileSync(loginPath, stampBuildId(raw, buildId), 'utf8');
+    console.log('[bundle-dashboard] Stamped login.html');
+}
+
+const buildId = resolveBuildId();
+writeBuildManifest(buildId);
 bundleJs();
-bundleHtml();
+bundleHtml(buildId);
+stampLoginHtml(buildId);
+console.log('[bundle-dashboard] Build ID:', buildId);

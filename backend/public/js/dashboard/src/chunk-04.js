@@ -659,10 +659,10 @@
             setAvatar(avatarMobile);
         }
         function canAccessSection(section) {
+            if (section === 'profile' || section === 'dashboard') return true;
+            const key = section === 'rates_charts' ? 'rates' : section;
             const perms = (currentUser && currentUser.permissions) || {};
-            const role = (currentUser && currentUser.role) || '';
-            const isOwnerOrAdmin = (role === 'owner' || role === 'admin');
-            return isOwnerOrAdmin || section === 'profile' || section === 'dashboard' || perms[section] === true || (section === 'rates_charts' && perms.rates === true);
+            return perms[key] === true;
         }
         function applyNavByRole() {
             const can = canAccessSection;
@@ -1675,11 +1675,12 @@
         function closeSidebarMobile() { const s = document.getElementById('sidebar'); const o = document.getElementById('sidebarOverlay'); const btn = document.getElementById('headerMenuBtn'); if (s) s.classList.remove('sidebar-open'); if (o) { o.classList.remove('show'); o.style.display = 'none'; document.body.style.overflow = ''; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
         function toggleSidebarDesktop() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; const collapsed = s.classList.toggle('sidebar-collapsed'); try { localStorage.setItem('sidebar_collapsed', collapsed ? '1' : '0'); } catch (_) {} btn.setAttribute('aria-expanded', collapsed ? 'false' : 'true'); btn.setAttribute('aria-label', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); btn.setAttribute('title', collapsed ? (typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو') : (typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو')); const txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = collapsed ? t('sidebar_toggle_expand') : t('sidebar_toggle_collapse'); }
         function initSidebarCollapsedState() { const s = document.getElementById('sidebar'); const btn = document.getElementById('sidebarToggleBtn'); if (!s || !btn) return; let collapsed = false; try { collapsed = localStorage.getItem('sidebar_collapsed') === '1'; } catch (_) {} if (!window.matchMedia || !window.matchMedia('(min-width: 901px)').matches) return; if (collapsed) { s.classList.add('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'false'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_expand') : 'باز کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_expand'); } else { s.classList.remove('sidebar-collapsed'); btn.setAttribute('aria-expanded', 'true'); btn.setAttribute('aria-label', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); btn.setAttribute('title', typeof t === 'function' ? t('sidebar_toggle_collapse') : 'جمع کردن منو'); var txt = btn.querySelector('.sidebar-toggle-text'); if (txt && typeof t === 'function') txt.textContent = t('sidebar_toggle_collapse'); } }
+        /* ========== Kaya CRM chunk-04 | showPage، تنظیمات پنل، تسک/فرایند | docs/CODEBASE-MAP.md ========== */
         function showPage(page) {
             const perms = (currentUser && currentUser.permissions) || {};
             const pageToSection = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.PAGE_TO_SECTION : {};
             const section = pageToSection[page];
-            if (section && page !== 'profile' && page !== 'dashboard' && perms[section] !== true) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
+            if (section && page !== 'profile' && page !== 'dashboard' && !canAccessSection(section)) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             if (HIDDEN_SECTIONS && (HIDDEN_SECTIONS.indexOf(page) >= 0 || (page === 'rates-charts' && HIDDEN_SECTIONS.indexOf('rates') >= 0))) { page = 'dashboard'; var base = (window.location.pathname && window.location.pathname !== '/dashboard.html') ? window.location.pathname : '/'; try { window.history.replaceState(null, '', base + '#dashboard'); } catch (e) {} }
             var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             closeSidebarMobile();
@@ -1755,7 +1756,6 @@
             if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); const popupTid = currentInternalThreadId; closeInternalChatPopup(); var wrap = document.getElementById('internalChatLayoutWrap'); if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open'); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
             if (page === 'supervision') { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
             if (page === 'panel-settings') loadPanelSettings();
-            var prevPage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
             if (prevPage === 'internal-chat' && page !== 'internal-chat' && currentInternalThreadId) {
                 const headerEl = document.getElementById('internalChatHeader');
                 const name = (headerEl && headerEl.textContent) ? headerEl.textContent.trim() : (LANG === 'fa' ? 'چت' : 'Chat');

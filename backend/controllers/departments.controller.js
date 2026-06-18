@@ -59,7 +59,7 @@ async function getById(req, res, next) {
 
 async function create(req, res, next) {
     try {
-        if (!req.canAccess('departments')) {
+        if (!req.canAccess('departments') || !req.canManageUsers()) {
             return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
         }
         const body = { ...req.body };
@@ -83,7 +83,7 @@ async function update(req, res, next) {
         return res.status(400).json({ error: 'شناسه دپارتمان نامعتبر است' });
     }
     try {
-        if (!req.canAccess('departments')) {
+        if (!req.canAccess('departments') || !req.canManageUsers()) {
             return res.status(403).json({ error: 'دسترسی به بخش دپارتمان‌ها ندارید' });
         }
         const dept = await Department.findByPk(req.params.id);

@@ -17,6 +17,9 @@ async function authMiddleware(req, res, next) {
     }
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.totpStep) {
+            return res.status(401).json({ error: 'لطفاً احراز دو مرحله‌ای را تکمیل کنید' });
+        }
         const user = await User.findByPk(decoded.id, {
             include: [
                 { association: 'branch', required: false },
@@ -26,6 +29,7 @@ async function authMiddleware(req, res, next) {
         if (!user || !user.isActive) return res.status(401).json({ error: 'کاربر مسدود یا نامعتبر است' });
         req.user = user;
         req.userId = user.id;
+        req.authToken = token;
         req.isOwner = user.role === 'owner';
         req.permissions = getPermissions(user);
         req.canAccess = (section) => canAccess(user, section);
@@ -58,6 +62,11 @@ async function optionalAuthMiddleware(req, res, next) {
     }
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        if (decoded.totpStep) {
+            req.user = null;
+            req.canAccess = () => false;
+            return next();
+        }
         const user = await User.findByPk(decoded.id, {
             include: [
                 { association: 'branch', required: false },

@@ -1,5 +1,7 @@
 /**
  * API Router — aggregates all /api endpoints
+ * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
+ * @see     docs/CODEBASE-MAP.md §۴.۱
  */
 const express = require('express');
 const crypto = require('crypto');

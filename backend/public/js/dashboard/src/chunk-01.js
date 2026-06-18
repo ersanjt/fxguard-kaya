@@ -1,12 +1,38 @@
 /**
- * Dashboard SPA — پنل اصلی CRM (ورود، ناو، مکالمات، …).
- * زبان و t() در js/modules/dashboard-i18n.js (قبل از این فایل).
- * وابستگی‌ها: CRM.Constants, CRM.Utils, CRM.Api — backend/docs/FRONTEND-ARCHITECTURE.md
+ * Kaya CRM — Dashboard SPA (chunk 01/06)
+ * @file    public/js/dashboard/src/chunk-01.js
+ * @layer   frontend/dashboard
+ * @owner   Ersan Jahed Tabrizi <ersanjahedtabrizi@gmail.com>
+ * @see     docs/CODEBASE-MAP.md
  *
- * منبع: public/js/dashboard/src/chunk-NN.js — بعد از ویرایش: npm run build:dashboard
+ * محتوا: state سراسری (token, currentUser)، نرخ ارز/تیکر، صرافی و خدمات،
+ *        پایهٔ Socket.IO، ناو badge، persistAuthToken / restoreSession helpers.
  */
         const API = '';
         let token = null;
+        function persistAuthToken(t) {
+            token = t || null;
+            try {
+                if (t) sessionStorage.setItem('crm_token', t);
+                else sessionStorage.removeItem('crm_token');
+            } catch (_) {}
+        }
+        function loadStoredAuthToken() {
+            try {
+                const t = sessionStorage.getItem('crm_token');
+                if (t) token = t;
+            } catch (_) {}
+        }
+        function redirectToLoginPage() {
+            const qs = window.location.search || '';
+            if (qs.indexOf('reset=1') >= 0 && qs.indexOf('token=') >= 0) return false;
+            const dest =
+                '/login?return=' +
+                encodeURIComponent((window.location.pathname || '/dashboard') + qs + (window.location.hash || ''));
+            window.location.replace(dest);
+            return true;
+        }
+        loadStoredAuthToken();
         let currentConvId = null;
         let currentUser = null;
         let ratesInterval = null;
@@ -105,6 +131,14 @@
             const annBadge = document.getElementById('mobileTabAnnBadge');
             if (annBadge) { const na = window.navBadgeCounts.announcements || 0; annBadge.style.display = na > 0 ? '' : 'none'; annBadge.textContent = na > 99 ? '99+' : String(na); }
         }
+        var MOBILE_MORE_PAGES = ['profile','tickets','tasks','processes','departments','users','branches','whatsapp','message-templates','rates','rates-charts','services','internal-chat','panel-settings','supervision','staff-activity'];
+        function mobileCanAccessSection(sec) {
+            if (typeof canAccessSection === 'function') return canAccessSection(sec);
+            if (sec === 'profile' || sec === 'dashboard') return true;
+            const key = sec === 'rates_charts' ? 'rates' : sec;
+            const perms = (currentUser && currentUser.permissions) || {};
+            return perms[key] === true;
+        }
         function updateMobileTabBar(page) {
             const tabBar = document.getElementById('mobileTabBar');
             const bottomBar = document.getElementById('bottomBar');
@@ -114,15 +148,17 @@
             if (!isMobile) return;
             document.querySelectorAll('.mobile-tab-bar .mobile-tab-item').forEach(function(item) {
                 const p = item.getAttribute('data-page');
-                const active = (p === page) || (p === 'more' && ['profile','tickets','tasks','processes','departments','users','branches','whatsapp','rates','services','internal-chat','panel-settings','supervision','staff-activity'].indexOf(page) >= 0);
+                const active = (p === page) || (p === 'more' && MOBILE_MORE_PAGES.indexOf(page) >= 0);
                 item.classList.toggle('active', active);
                 item.setAttribute('aria-selected', active ? 'true' : 'false');
             });
-            const perms = (currentUser && currentUser.permissions) || {};
             const hidden = HIDDEN_SECTIONS || [];
             document.querySelectorAll('.mobile-tab-bar .mobile-tab-item[data-section]').forEach(function(item) {
                 const sec = item.getAttribute('data-section');
-                const visible = (sec === 'dashboard' || sec === 'profile') ? (hidden.indexOf(sec) < 0) : (perms[sec] === true && hidden.indexOf(sec) < 0);
+                const pageId = item.getAttribute('data-page');
+                const hiddenPage = pageId && hidden.indexOf(pageId) >= 0;
+                const hiddenSec = sec && (hidden.indexOf(sec) >= 0 || (sec === 'rates_charts' && hidden.indexOf('rates') >= 0));
+                const visible = !hiddenPage && !hiddenSec && mobileCanAccessSection(sec || 'dashboard');
                 item.style.display = visible ? '' : 'none';
             });
         }
@@ -136,14 +172,16 @@
                 getHeaders: headers,
                 getLang: function () { return LANG; },
                 on401: function () {
-                    token = null;
-                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
-                        window.LoginBootstrap.setLoggedOut();
+                    if (typeof teardownActiveSession === 'function') {
+                        teardownActiveSession(true);
                     } else {
+                        persistAuthToken(null);
                         document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
+                        const loginBox = document.getElementById('loginBox');
+                        if (loginBox) loginBox.style.display = 'flex';
+                        const appEl = document.getElementById('app');
+                        if (appEl) appEl.classList.remove('show');
                     }
-                    document.getElementById('loginBox').style.display = 'flex';
-                    document.getElementById('app').classList.remove('show');
                     const errEl = document.getElementById('loginErr');
                     if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 }
@@ -1634,7 +1672,11 @@
             }, 30000);
         }
         function connectSocket() {
-            if (!token || socket) return;
+            if (!token) return;
+            if (socket) {
+                try { socket.disconnect(); } catch (_e) {}
+                socket = null;
+            }
             try {
                 if (typeof io !== 'undefined') {
                     socket = io({ auth: { token: token } });

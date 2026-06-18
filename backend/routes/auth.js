@@ -399,7 +399,7 @@ router.get('/me', authMiddleware, async (req, res, next) => {
                 { association: 'department', required: false }
             ]
         });
-        if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
+        if (!user) return res.status(401).json({ error: 'کاربر مسدود یا نامعتبر است' });
         if (!user.isActive) return res.status(401).json({ error: 'کاربر مسدود است' });
         const u = user.toJSON();
         delete u.totpSecret;
@@ -407,6 +407,7 @@ router.get('/me', authMiddleware, async (req, res, next) => {
         u.canDeleteCustomer = canDeleteCustomer(user);
         u.canDeleteUser = canDeleteUser(user);
         u.canManageTickets = canManageTickets(user);
+        if (req.authToken) u.token = req.authToken;
         res.json(u);
     } catch (err) {
         next(err);
