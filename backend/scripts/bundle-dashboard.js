@@ -14,6 +14,10 @@ const crypto = require('crypto');
 const root = path.join(__dirname, '..');
 const BUILD_PLACEHOLDER = '__CRM_BUILD__';
 
+function readNormalized(filePath) {
+    return fs.readFileSync(filePath, 'utf8').replace(/\r\n/g, '\n');
+}
+
 function resolveBuildId() {
     const hash = crypto.createHash('sha256');
     const srcDir = path.join(root, 'public/js/dashboard/src');
@@ -21,7 +25,7 @@ function resolveBuildId() {
         fs.readdirSync(srcDir)
             .filter((f) => /^chunk-\d+\.js$/.test(f))
             .sort()
-            .forEach((f) => hash.update(fs.readFileSync(path.join(srcDir, f))));
+            .forEach((f) => hash.update(readNormalized(path.join(srcDir, f))));
     }
     const partialDir = path.join(root, 'public/partials/dashboard');
     if (fs.existsSync(partialDir)) {
@@ -29,11 +33,9 @@ function resolveBuildId() {
             const name = 'html-part-' + String(i).padStart(2, '0') + '.html';
             const p = path.join(partialDir, name);
             if (!fs.existsSync(p)) break;
-            hash.update(fs.readFileSync(p));
+            hash.update(readNormalized(p));
         }
     }
-    const loginPath = path.join(root, 'public/login.html');
-    if (fs.existsSync(loginPath)) hash.update(fs.readFileSync(loginPath));
     return hash.digest('hex').slice(0, 12);
 }
 
@@ -105,7 +107,9 @@ function bundleHtml(buildId) {
 function stampLoginHtml(buildId) {
     const loginPath = path.join(root, 'public/login.html');
     if (!fs.existsSync(loginPath)) return;
-    const raw = fs.readFileSync(loginPath, 'utf8');
+    let raw = readNormalized(loginPath);
+    raw = raw.replace(/\?v=[a-f0-9]+/gi, '?v=' + BUILD_PLACEHOLDER);
+    raw = raw.replace(/content="[a-f0-9]+"/, 'content="' + BUILD_PLACEHOLDER + '"');
     fs.writeFileSync(loginPath, stampBuildId(raw, buildId), 'utf8');
     console.log('[bundle-dashboard] Stamped login.html');
 }
