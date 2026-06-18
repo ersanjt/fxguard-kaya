@@ -7,6 +7,15 @@ const { sendWhatsAppMessage } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
 const { buildWhatsAppOutboundText, validateOutboundSender } = require('./outboundMessagePrefix');
 
+function resolveUploadFilePath(uploadsDir, relUnderUploads) {
+    const rel = String(relUnderUploads || '').replace(/^\/+/, '');
+    if (!rel || rel.includes('..')) return null;
+    const resolvedRoot = path.resolve(uploadsDir) + path.sep;
+    const resolvedFile = path.resolve(uploadsDir, rel);
+    if (resolvedFile !== path.resolve(uploadsDir) && !resolvedFile.startsWith(resolvedRoot)) return null;
+    return resolvedFile;
+}
+
 /**
  * ارسال پیام خروجی به مشتری (متن/مدیا) و همگام‌سازی با واتساپ.
  * @returns {{ msg, error?: string, status?: number }}
@@ -142,44 +151,68 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
             ? buildWhatsAppOutboundText(senderUser, senderDept, text)
             : text;
 
+    const isVoiceNote =
+        msgType === 'audio' || media?.sendAsVoice === true || media?.type === 'audio';
     const payload = { to: toPhone, message: waCaption };
     if (hasMedia && media && (media.url || media.filename)) {
         const relPath = media.url || ('/uploads/' + media.filename);
         const uploadsDir = path.join(__dirname, '..', 'uploads');
         const relUnderUploads = String(relPath.replace(/^\/uploads\/?/, '') || media.filename || media.name || 'file').replace(/^\/+/, '');
-        let filePath = path.join(uploadsDir, relUnderUploads);
-        const resolvedFile = path.resolve(filePath);
-        const resolvedRoot = path.resolve(uploadsDir);
-        if (!resolvedFile.startsWith(resolvedRoot)) {
-            filePath = path.join(uploadsDir, path.basename(relUnderUploads));
-        }
+        let readPath = resolveUploadFilePath(uploadsDir, relUnderUploads);
         let sendMimetype = media.mimetype || 'application/octet-stream';
         let sendFilename = media.filename || media.name || path.basename(relUnderUploads) || 'file';
-        if (!relPath.startsWith('http') && fs.existsSync(filePath)) {
+        if (!relPath.startsWith('http') && readPath && fs.existsSync(readPath)) {
             try {
-                if (msgType === 'audio') {
-                    try {
-                        const { ensureVoiceFormat } = require('../lib/audioConverter');
-                        const converted = await ensureVoiceFormat(filePath, sendMimetype, sendFilename);
-                        filePath = converted.filePath;
-                        sendMimetype = converted.mimetype;
-                        sendFilename = converted.filename;
-                    } catch (_convErr) { /* ignore */ }
+                if (isVoiceNote) {
+                    const { ensureVoiceFormat, isWhatsAppVoiceMime } = require('../lib/audioConverter');
+                    const converted = await ensureVoiceFormat(readPath, sendMimetype, sendFilename);
+                    readPath = converted.filePath;
+                    sendMimetype = converted.mimetype;
+                    sendFilename = converted.filename;
+                    if (!isWhatsAppVoiceMime(sendMimetype)) {
+                        await msg.update({ status: 'failed' });
+                        return {
+                            msg,
+                            error: 'پیام صوتی به فرمت قابل پخش در واتساپ تبدیل نشد. ffmpeg را روی سرور بررسی کنید.',
+                            status: 502,
+                        };
+                    }
                 }
-                const fileBuf = await fsPromises.readFile(filePath);
+                const fileBuf = await fsPromises.readFile(readPath);
                 const base64 = fileBuf.toString('base64');
                 payload.media = { data: base64, mimetype: sendMimetype, filename: sendFilename };
-                if (msgType === 'audio' && /^audio\/(ogg|opus)/i.test(sendMimetype || '')) payload.media.sendAsVoice = true;
-            } catch (_readErr) {
+                if (isVoiceNote) payload.media.sendAsVoice = true;
+            } catch (readErr) {
+                if (isVoiceNote) {
+                    await msg.update({ status: 'failed' });
+                    return {
+                        msg,
+                        error:
+                            'پیام صوتی آماده ارسال نشد: ' +
+                            (readErr.message || 'خطا در خواندن یا تبدیل فایل'),
+                        status: 502,
+                    };
+                }
                 if (mediaUrl) {
                     payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
-                    if (msgType === 'audio' && /^audio\/(ogg|opus)/i.test((media.mimetype || '').toLowerCase())) payload.media.sendAsVoice = true;
                 }
             }
         } else if (mediaUrl) {
+            if (isVoiceNote) {
+                await msg.update({ status: 'failed' });
+                return {
+                    msg,
+                    error: 'فایل صوتی روی سرور یافت نشد — ارسال ویس از URL پشتیبانی نمی‌شود.',
+                    status: 502,
+                };
+            }
             payload.media = { url: mediaUrl, mimetype: media.mimetype || '' };
-            if (msgType === 'audio' && /^audio\/(ogg|opus)/i.test((media.mimetype || '').toLowerCase())) payload.media.sendAsVoice = true;
+        } else if (isVoiceNote || (hasMedia && !readPath)) {
+            await msg.update({ status: 'failed' });
+            return { msg, error: 'فایل برای ارسال یافت نشد.', status: 502 };
         }
+        // PTT must not carry staff prefix as caption (would break download on recipient phones)
+        if (isVoiceNote) payload.message = '';
     }
     if (replyTo) payload.replyTo = replyTo;
 
@@ -187,6 +220,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         const gwRes = await sendWhatsAppMessage(payload, { timeout: 15000 });
         const waId = gwRes?.data?.messageId;
         if (waId) await msg.update({ whatsappId: waId, status: 'sent' });
+        else await msg.update({ status: 'sent' });
     } catch (gwErr) {
         let errMsg = gwErr?.response?.data?.error || gwErr?.message || 'خطا در ارسال به واتساپ';
         if (errMsg.includes('Invalid or unsafe media URL') || errMsg.includes('media URL')) {

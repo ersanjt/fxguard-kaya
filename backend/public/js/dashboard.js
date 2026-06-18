@@ -2393,11 +2393,14 @@
             if (btn) btn.disabled = false;
         }
         (function checkResetPasswordUrl() {
-            if (token) return;
             const params = new URLSearchParams(window.location.search);
             const reset = params.get('reset');
             const resetToken = params.get('token');
-            if (reset === '1' && resetToken && typeof showResetStep === 'function') showResetStep(resetToken);
+            if (reset === '1' && resetToken && typeof showResetStep === 'function') {
+                showResetStep(resetToken);
+                return;
+            }
+            if (token) return;
         })();
         async function verifyTotpLogin() {
             const code = (document.getElementById('totpCode') && document.getElementById('totpCode').value || '').replace(/\s/g, '');
@@ -3484,33 +3487,6 @@
                     }
                     return;
                 }
-                // Conversation quick tab buttons (همه، خوانده‌نشده، بدون پاسخ، ...)
-                const convTabBtn = target.closest('.conv-quick-tabs .conv-tab');
-                if (convTabBtn && typeof setConvQuickTab === 'function') {
-                    var tab = convTabBtn.getAttribute('data-tab');
-                    if (tab) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); setConvQuickTab(tab); }
-                    return;
-                }
-                // مکالمه جدید — دکمه جدید مکالمه
-                if (target.closest('#btnNewConv') && typeof openNewConvModal === 'function') {
-                    e.preventDefault(); e.stopPropagation(); openNewConvModal();
-                    return;
-                }
-                // فیلترهای بیشتر — نمایش/مخفی فیلترهای پیشرفته
-                if (target.closest('#convFilterToggle') && typeof toggleConvAdvancedFilters === 'function') {
-                    e.preventDefault(); e.stopPropagation(); toggleConvAdvancedFilters();
-                    return;
-                }
-                // همگام‌سازی گروه‌ها
-                if (target.closest('#btnSyncGroups') && typeof syncWhatsAppGroups === 'function') {
-                    e.preventDefault(); e.stopPropagation(); syncWhatsAppGroups();
-                    return;
-                }
-                // اعمال فیلتر — دکمه اعمال فیلترهای مکالمات
-                if (target.closest('#btnApplyConvFilters') && typeof applyConvFilters === 'function') {
-                    e.preventDefault(); e.stopPropagation(); applyConvFilters();
-                    return;
-                }
                 // دکمه مکالمه جدید در حالت خالی لیست
                 if (target.closest('#emptyConvNewBtn') && typeof openNewConvModal === 'function') {
                     e.preventDefault(); e.stopPropagation(); openNewConvModal();
@@ -3722,8 +3698,6 @@
                 if (target.closest('#closeTotpDisableModalBtn') && typeof closeTotpDisableModal === 'function') { e.preventDefault(); e.stopPropagation(); closeTotpDisableModal(); return; }
                 if (target.closest('#confirmTotpSetupBtn') && typeof confirmTotpSetup === 'function') { e.preventDefault(); e.stopPropagation(); confirmTotpSetup(); return; }
                 if (target.closest('#disableTotpSubmitBtn') && typeof disableTotpSubmit === 'function') { e.preventDefault(); e.stopPropagation(); disableTotpSubmit(); return; }
-                // دکمه تنظیمات مکالمه (chat detail toggle)
-                if (target.closest('#chatDetailToggle') && typeof toggleChatDetailBar === 'function') { e.preventDefault(); e.stopPropagation(); toggleChatDetailBar(); return; }
                 // دکمه تمپلیت پیام در چت مکالمات
                 if (target.closest('#waAttachTemplateBtn') && typeof toggleTemplateDropdown === 'function') { e.preventDefault(); e.stopPropagation(); toggleTemplateDropdown(); return; }
                 // آیتم‌های دراپ‌داون تمپلیت — کلیک برای درج در چت
@@ -4162,6 +4136,30 @@
         let convListClickHandler = null;
 
         var CONV_QUICK_TABS_COLLAPSE_LS = 'crm_conv_quick_tabs_collapsed';
+        function updateConvAdvancedFiltersBadge() {
+            var dot = document.getElementById('convFilterActiveDot');
+            var btn = document.getElementById('convFilterToggle');
+            if (!dot && !btn) return;
+            var active = false;
+            ['convFilterStatus', 'convFilterPriority', 'convFilterBranch', 'convFilterDept', 'convFilterAssignee'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && el.value) active = true;
+            });
+            if (dot) dot.hidden = !active;
+            if (btn) btn.classList.toggle('has-active-filters', active);
+        }
+        function resetConvFilters() {
+            ['convFilterStatus', 'convFilterPriority', 'convFilterBranch', 'convFilterDept', 'convFilterAssignee'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            var searchEl = document.getElementById('convSearch');
+            if (searchEl) searchEl.value = '';
+            updateConvAdvancedFiltersBadge();
+            applyConvFilters();
+        }
+        window.resetConvFilters = resetConvFilters;
+
         function updateConvQuickTabsToggleUi() {
             var bar = document.getElementById('convQuickTabsBar');
             var btn = document.getElementById('btnConvQuickTabsToggle');
@@ -4303,7 +4301,13 @@
                 applyBtn.removeEventListener('click', applyConvFilters);
                 applyBtn.addEventListener('click', applyConvFilters);
             }
+            const resetBtn = document.getElementById('btnResetConvFilters');
+            if (resetBtn) {
+                resetBtn.removeEventListener('click', resetConvFilters);
+                resetBtn.addEventListener('click', resetConvFilters);
+            }
             
+            updateConvAdvancedFiltersBadge();
             // Filter selects - change events
             ['convFilterStatus', 'convFilterPriority', 'convFilterBranch', 'convFilterDept', 'convFilterAssignee'].forEach(function(id) {
                 const select = document.getElementById(id);
@@ -4604,7 +4608,12 @@
             const btn = document.getElementById('btnSyncGroups');
             const textSpan = btn && btn.querySelector('.conv-sync-text');
             const syncText = t('conv_sync_groups') || (LANG === 'fa' ? 'همگام‌سازی گروه‌ها' : 'Sync groups');
-            if (btn) { btn.disabled = true; if (textSpan) textSpan.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); else btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); }
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('is-syncing');
+                if (textSpan) textSpan.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...');
+                else btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...');
+            }
             try {
                 const res = await apiFetch('/api/conversations/sync-groups', { method: 'POST' });
                 if (res.needLogin) return;
@@ -4620,7 +4629,12 @@
                     toast(errMsg, true);
                 }
             } finally {
-                if (btn) { btn.disabled = false; if (textSpan) textSpan.textContent = syncText; else btn.textContent = syncText; }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('is-syncing');
+                    if (textSpan) textSpan.textContent = syncText;
+                    else btn.textContent = syncText;
+                }
             }
         }
         function letterAvatarVars(seed) {
@@ -4684,6 +4698,7 @@
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
             if (!appendMode) setLoading('convList', 4);
+            if (!list) return;
             let q = '?limit=' + convPageSize + '&page=' + convCurrentPage;
             const statusEl = document.getElementById('convFilterStatus');
             const priorityEl = document.getElementById('convFilterPriority');
@@ -5037,14 +5052,17 @@
                 }
             }
         }
-        function applyConvFilters() { convCurrentPage = 1; loadConversations(); }
+        function applyConvFilters() { updateConvAdvancedFiltersBadge(); convCurrentPage = 1; loadConversations(); }
         function escapeAttr(s) {
             if (s == null || s === '') return '';
             return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
         function openNewConvModal() {
-            document.getElementById('newConvModal').style.display = 'flex';
-            document.getElementById('newConvCustomerSearch').value = '';
+            const modal = document.getElementById('newConvModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            const search = document.getElementById('newConvCustomerSearch');
+            if (search) search.value = '';
             loadNewConvCustomers();
         }
         function closeNewConvModal() { document.getElementById('newConvModal').style.display = 'none'; }
@@ -5250,17 +5268,7 @@
             const name = el.getAttribute('data-customername') || '';
             const isGrp = el.getAttribute('data-is-group') === '1';
             if (!convId) return;
-            // نمایش صفحه مکالمات
-            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
-            const convPage = document.getElementById('pageConversations');
-            if (convPage) convPage.classList.add('show');
-            const content = document.querySelector('.content');
-            if (content) content.classList.add('page-conversations');
-            // آپدیت sidebar active link
-            document.querySelectorAll('.sidebar .nav-link[data-page]').forEach(function(l) { l.classList.remove('active'); });
-            const convLink = document.querySelector('.sidebar .nav-link[data-page="conversations"]');
-            if (convLink) convLink.classList.add('active');
-            // اطلاعات مکالمه را مستقیم از API بگیر و باز کن
+            if (typeof showPage === 'function') showPage('conversations');
             apiFetch('/api/conversations/' + convId).then(function(res) {
                 if (res.needLogin) return;
                 const convData = (res.ok && res.data) ? res.data : null;
@@ -6544,7 +6552,13 @@
             const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
             const uploadData = await uploadRes.json().catch(function() { return {}; });
             if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
-            const media = { url: uploadData.url, filename: uploadData.name || 'voice' + ext, mimetype: baseMime };
+            const media = {
+                url: uploadData.url,
+                filename: uploadData.name || 'voice' + ext,
+                mimetype: baseMime,
+                type: 'audio',
+                sendAsVoice: true,
+            };
             const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
             if (res.needLogin) return;
             if (res.ok) loadMessages(currentConvId);
@@ -11893,9 +11907,13 @@
                 });
             });
         })();
-        window.addEventListener('hashchange', function() { if (document.getElementById('app').classList.contains('show')) applyHashRoute(); });
+        window.addEventListener('hashchange', function() {
+            const appEl = document.getElementById('app');
+            if (appEl && appEl.classList.contains('show')) applyHashRoute();
+        });
         window.addEventListener('resize', function() {
-            if (document.getElementById('app').classList.contains('show')) {
+            const appEl = document.getElementById('app');
+            if (appEl && appEl.classList.contains('show')) {
                 updateBottomBarVisibility();
                 const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
                 if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
@@ -12349,6 +12367,16 @@
                 console.error('restoreSession:', e);
                 persistAuthToken(null);
                 if (redirectToLoginPage()) return;
+                const loginBox = document.getElementById('loginBox');
+                if (loginBox) loginBox.style.display = '';
+                const appEl = document.getElementById('app');
+                if (appEl) {
+                    appEl.classList.remove('show', 'app-ready');
+                    appEl.classList.add('app-loading');
+                }
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                    window.LoginBootstrap.setLoggedOut();
+                }
             } finally {
                 document.documentElement.classList.remove('auth-verifying');
             }

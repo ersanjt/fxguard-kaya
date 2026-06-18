@@ -554,11 +554,14 @@
             if (btn) btn.disabled = false;
         }
         (function checkResetPasswordUrl() {
-            if (token) return;
             const params = new URLSearchParams(window.location.search);
             const reset = params.get('reset');
             const resetToken = params.get('token');
-            if (reset === '1' && resetToken && typeof showResetStep === 'function') showResetStep(resetToken);
+            if (reset === '1' && resetToken && typeof showResetStep === 'function') {
+                showResetStep(resetToken);
+                return;
+            }
+            if (token) return;
         })();
         async function verifyTotpLogin() {
             const code = (document.getElementById('totpCode') && document.getElementById('totpCode').value || '').replace(/\s/g, '');
@@ -1645,33 +1648,6 @@
                     }
                     return;
                 }
-                // Conversation quick tab buttons (همه، خوانده‌نشده، بدون پاسخ، ...)
-                const convTabBtn = target.closest('.conv-quick-tabs .conv-tab');
-                if (convTabBtn && typeof setConvQuickTab === 'function') {
-                    var tab = convTabBtn.getAttribute('data-tab');
-                    if (tab) { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); setConvQuickTab(tab); }
-                    return;
-                }
-                // مکالمه جدید — دکمه جدید مکالمه
-                if (target.closest('#btnNewConv') && typeof openNewConvModal === 'function') {
-                    e.preventDefault(); e.stopPropagation(); openNewConvModal();
-                    return;
-                }
-                // فیلترهای بیشتر — نمایش/مخفی فیلترهای پیشرفته
-                if (target.closest('#convFilterToggle') && typeof toggleConvAdvancedFilters === 'function') {
-                    e.preventDefault(); e.stopPropagation(); toggleConvAdvancedFilters();
-                    return;
-                }
-                // همگام‌سازی گروه‌ها
-                if (target.closest('#btnSyncGroups') && typeof syncWhatsAppGroups === 'function') {
-                    e.preventDefault(); e.stopPropagation(); syncWhatsAppGroups();
-                    return;
-                }
-                // اعمال فیلتر — دکمه اعمال فیلترهای مکالمات
-                if (target.closest('#btnApplyConvFilters') && typeof applyConvFilters === 'function') {
-                    e.preventDefault(); e.stopPropagation(); applyConvFilters();
-                    return;
-                }
                 // دکمه مکالمه جدید در حالت خالی لیست
                 if (target.closest('#emptyConvNewBtn') && typeof openNewConvModal === 'function') {
                     e.preventDefault(); e.stopPropagation(); openNewConvModal();
@@ -1883,8 +1859,6 @@
                 if (target.closest('#closeTotpDisableModalBtn') && typeof closeTotpDisableModal === 'function') { e.preventDefault(); e.stopPropagation(); closeTotpDisableModal(); return; }
                 if (target.closest('#confirmTotpSetupBtn') && typeof confirmTotpSetup === 'function') { e.preventDefault(); e.stopPropagation(); confirmTotpSetup(); return; }
                 if (target.closest('#disableTotpSubmitBtn') && typeof disableTotpSubmit === 'function') { e.preventDefault(); e.stopPropagation(); disableTotpSubmit(); return; }
-                // دکمه تنظیمات مکالمه (chat detail toggle)
-                if (target.closest('#chatDetailToggle') && typeof toggleChatDetailBar === 'function') { e.preventDefault(); e.stopPropagation(); toggleChatDetailBar(); return; }
                 // دکمه تمپلیت پیام در چت مکالمات
                 if (target.closest('#waAttachTemplateBtn') && typeof toggleTemplateDropdown === 'function') { e.preventDefault(); e.stopPropagation(); toggleTemplateDropdown(); return; }
                 // آیتم‌های دراپ‌داون تمپلیت — کلیک برای درج در چت

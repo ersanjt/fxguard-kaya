@@ -624,6 +624,8 @@ router.patch('/:id', async (req, res, next) => {
             updateData.isHiddenFromStaff = isHiddenFromStaff === true || isHiddenFromStaff === 'true';
         }
 
+        const prevDeptIdBeforeUpdate = conversation.departmentId ? String(conversation.departmentId) : null;
+
         await conversation.update(updateData);
 
         if (assignedTo !== undefined && updateData.assignedTo) {
@@ -661,25 +663,26 @@ router.patch('/:id', async (req, res, next) => {
             }
         }
         if (departmentId !== undefined && updateData.departmentId !== undefined) {
-            // فقط هنگام تغییر واقعی دپارتمان پیام خودکار ارسال شود (نه هر بار ذخیره فرم)
-            const prevDeptId = conversation.departmentId ? String(conversation.departmentId) : null;
             const newDeptId = updateData.departmentId ? String(updateData.departmentId) : null;
-            if (updateData.departmentId && prevDeptId !== newDeptId) {
+            const deptChanged = prevDeptIdBeforeUpdate !== newDeptId;
+            if (updateData.departmentId && deptChanged) {
                 const dept = await Department.findByPk(updateData.departmentId);
                 const convForDept = await Conversation.findByPk(req.params.id, { include: [{ model: Department, as: 'department' }] });
                 if (convForDept && dept) await sendDeptAssignedMessage(convForDept, dept);
             }
-            await logActivity({
-                userId: req.userId,
-                branchId: conversation.branchId || req.user.branchId,
-                departmentId: updateData.departmentId || req.user.departmentId,
-                action: 'conversation_department_changed',
-                entityType: 'conversation',
-                entityId: conversation.id,
-                customerId: conversation.customerId,
-                summary: `دپارتمان مکالمه تغییر کرد`,
-                metadata: { conversationId: conversation.id, departmentId: updateData.departmentId, customerPhone: conversation.customer && conversation.customer.phone }
-            });
+            if (deptChanged) {
+                await logActivity({
+                    userId: req.userId,
+                    branchId: conversation.branchId || req.user.branchId,
+                    departmentId: updateData.departmentId || req.user.departmentId,
+                    action: 'conversation_department_changed',
+                    entityType: 'conversation',
+                    entityId: conversation.id,
+                    customerId: conversation.customerId,
+                    summary: `دپارتمان مکالمه تغییر کرد`,
+                    metadata: { conversationId: conversation.id, departmentId: updateData.departmentId, customerPhone: conversation.customer && conversation.customer.phone }
+                });
+            }
         }
         // اطلاع‌رسانی پایان گفتگو به مشتری هنگام بسته/حل‌شدن مکالمه (و پاک‌کردن پرچم هنگام بازشدن مجدد)
         if (canManage && status !== undefined && updateData.status) {

@@ -49,13 +49,22 @@ async function sendWhatsAppMessage(payload, options = {}) {
     const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
     const mode = cfg.connectionMode || 'cloud_first';
 
-    if (mode === 'gateway' || (mode === 'cloud_first' && !cloudOk)) {
+    if (mode === 'gateway') {
         return gatewayPost('/api/send-message', payload, options);
     }
-    if (mode === 'cloud' || (mode === 'cloud_first' && cloudOk)) {
-        if (!cloudOk) throw new Error('WhatsApp Cloud API not configured. Enable and configure in connection settings.');
-        const res = await whatsappCloud.sendMessage(payload);
-        return { data: { messageId: res.messageId } };
+    if (mode === 'cloud_first') {
+        if (cloudOk) {
+            const res = await whatsappCloud.sendMessage(payload);
+            return { data: { messageId: res.messageId } };
+        }
+        return gatewayPost('/api/send-message', payload, options);
+    }
+    if (mode === 'cloud') {
+        if (cloudOk) {
+            const res = await whatsappCloud.sendMessage(payload);
+            return { data: { messageId: res.messageId } };
+        }
+        return gatewayPost('/api/send-message', payload, options);
     }
     return gatewayPost('/api/send-message', payload, options);
 }
