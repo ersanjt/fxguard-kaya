@@ -166,7 +166,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         if (!relPath.startsWith('http') && readPath && fs.existsSync(readPath)) {
             try {
                 if (isVoiceNote) {
-                    const { ensureVoiceFormat, isWhatsAppVoiceMime } = require('../lib/audioConverter');
+                    const { ensureVoiceFormat, isWhatsAppVoiceMime, WHATSAPP_VOICE_MIME, WHATSAPP_VOICE_FILENAME } = require('../lib/audioConverter');
                     const converted = await ensureVoiceFormat(readPath, sendMimetype, sendFilename);
                     readPath = converted.filePath;
                     sendMimetype = converted.mimetype;
@@ -183,7 +183,11 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                 const fileBuf = await fsPromises.readFile(readPath);
                 const base64 = fileBuf.toString('base64');
                 payload.media = { data: base64, mimetype: sendMimetype, filename: sendFilename };
-                if (isVoiceNote) payload.media.sendAsVoice = true;
+                if (isVoiceNote) {
+                    payload.media.sendAsVoice = true;
+                    payload.media.mimetype = WHATSAPP_VOICE_MIME;
+                    payload.media.filename = WHATSAPP_VOICE_FILENAME;
+                }
             } catch (readErr) {
                 if (isVoiceNote) {
                     await msg.update({ status: 'failed' });

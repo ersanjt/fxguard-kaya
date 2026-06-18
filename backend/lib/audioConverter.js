@@ -4,10 +4,16 @@
  */
 const ffmpeg = require('fluent-ffmpeg');
 const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path;
+const fs = require('fs');
+const fsPromises = require('fs').promises;
 const path = require('path');
 const logger = require('../config/logger');
 
 ffmpeg.setFfmpegPath(ffmpegPath);
+
+/** MIME that WhatsApp Web expects for PTT (voice note) bubbles */
+const WHATSAPP_VOICE_MIME = 'audio/ogg; codecs=opus';
+const WHATSAPP_VOICE_FILENAME = 'audio.ogg';
 
 /**
  * Convert an audio file to ogg/opus suitable for WhatsApp voice messages.
@@ -27,8 +33,15 @@ function convertToOggOpus(inputPath, outputPath) {
             .audioCodec('libopus')
             .audioChannels(1)
             .audioFrequency(48000)
-            .audioBitrate('32k')
-            .outputOptions(['-application', 'voip', '-map_metadata', '-1', '-y'])
+            .audioBitrate('64k')
+            .outputOptions([
+                '-application', 'voip',
+                '-map_metadata', '-1',
+                '-avoid_negative_ts', 'make_zero',
+                '-vbr', 'on',
+                '-compression_level', '10',
+                '-y',
+            ])
             .format('ogg')
             .on('end', () => resolve(outputPath))
             .on('error', (err) => reject(err))
@@ -41,30 +54,36 @@ function convertToOggOpus(inputPath, outputPath) {
  * Returns { filePath, mimetype, filename } — either converted or original.
  */
 async function ensureVoiceFormat(filePath, mimetype, filename) {
-    const baseMime = (mimetype || '').split(';')[0].trim().toLowerCase();
-    const ext = path.extname(filePath).toLowerCase();
+    const baseName = path.basename(filePath);
 
-    // Already ogg/opus — no conversion needed.
-    if (
-        baseMime === 'audio/ogg' ||
-        baseMime === 'audio/opus' ||
-        ext === '.ogg' ||
-        ext === '.oga' ||
-        ext === '.opus'
-    ) {
-        return { filePath, mimetype: 'audio/ogg', filename: filename || path.basename(filePath) };
+    // Output from a prior ensureVoiceFormat in the same send pipeline — skip re-encode.
+    if (baseName.includes('_voice.ogg') && fs.existsSync(filePath)) {
+        try {
+            const st = await fsPromises.stat(filePath);
+            if (st.size >= 512) {
+                return {
+                    filePath,
+                    mimetype: WHATSAPP_VOICE_MIME,
+                    filename: WHATSAPP_VOICE_FILENAME,
+                };
+            }
+        } catch (_) { /* fall through to transcode */ }
     }
 
-    // Anything else reaching here is an outbound voice message (the caller only
-    // invokes this for audio), so always transcode to the WhatsApp voice format.
+    // Browser/webm and mis-tagged ogg must be re-encoded — WhatsApp rejects wrong Opus params
+    // (bubble appears but recipient sees "this voice was deleted").
     // Relying on the exact mimetype is unreliable (browsers send
     // "audio/webm;codecs=opus", some uploads arrive as octet-stream), so we
     // convert by default and only fall back to the original if ffmpeg fails.
     const outPath = filePath.replace(/\.[^.]+$/, '') + '_voice.ogg';
     try {
         await convertToOggOpus(filePath, outPath);
-        logger.info('Audio converted to ogg/opus for WhatsApp voice', { from: filePath, to: outPath });
-        return { filePath: outPath, mimetype: 'audio/ogg', filename: (filename || 'voice').replace(/\.[^.]+$/, '') + '.ogg' };
+        const outStat = await fsPromises.stat(outPath);
+        if (outStat.size < 512) {
+            throw new Error('Converted voice file is too small');
+        }
+        logger.info('Audio converted to ogg/opus for WhatsApp voice', { from: filePath, to: outPath, bytes: outStat.size });
+        return { filePath: outPath, mimetype: WHATSAPP_VOICE_MIME, filename: WHATSAPP_VOICE_FILENAME };
     } catch (err) {
         logger.error('Audio conversion failed — WhatsApp voice requires ogg/opus', {
             error: err.message,
@@ -75,8 +94,14 @@ async function ensureVoiceFormat(filePath, mimetype, filename) {
 }
 
 function isWhatsAppVoiceMime(mimetype) {
-    const base = (mimetype || '').split(';')[0].trim().toLowerCase();
-    return base === 'audio/ogg' || base === 'audio/opus';
+    const raw = String(mimetype || '').toLowerCase();
+    return raw.includes('ogg') || raw.includes('opus');
 }
 
-module.exports = { convertToOggOpus, ensureVoiceFormat, isWhatsAppVoiceMime };
+module.exports = {
+    convertToOggOpus,
+    ensureVoiceFormat,
+    isWhatsAppVoiceMime,
+    WHATSAPP_VOICE_MIME,
+    WHATSAPP_VOICE_FILENAME,
+};

@@ -119,6 +119,70 @@ app.get('/test', (req, res) => {
 const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(__dirname, 'uploads');
 const upload = multer({ dest: path.join(UPLOADS_DIR, 'tmp') });
 
+const WHATSAPP_VOICE_MIME = 'audio/ogg; codecs=opus';
+const WHATSAPP_VOICE_FILENAME = 'audio.ogg';
+/** message IDs we sent via API — skip message_create echo to backend (avoids duplicate CRM rows) */
+const recentGatewaySentIds = new Map();
+
+function markGatewaySentMessage(waMsgId) {
+    if (!waMsgId) return;
+    recentGatewaySentIds.set(String(waMsgId), Date.now() + 180000);
+    if (recentGatewaySentIds.size > 400) {
+        const now = Date.now();
+        for (const [id, exp] of recentGatewaySentIds) {
+            if (exp <= now) recentGatewaySentIds.delete(id);
+        }
+    }
+}
+
+function isGatewaySentEcho(waMsgId) {
+    if (!waMsgId) return false;
+    const key = String(waMsgId);
+    const exp = recentGatewaySentIds.get(key);
+    if (!exp) return false;
+    if (exp <= Date.now()) {
+        recentGatewaySentIds.delete(key);
+        return false;
+    }
+    recentGatewaySentIds.delete(key);
+    return true;
+}
+
+function isVoiceMediaPayload(media) {
+    if (!media) return false;
+    const mime = String(media.mimetype || '').split(';')[0].trim().toLowerCase();
+    return !!(media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime));
+}
+
+async function buildOutboundMessageMedia(media, message) {
+    if (!media?.data) return null;
+    const mime = media.mimetype || 'application/octet-stream';
+    const asVoice = isVoiceMediaPayload(media);
+    if (asVoice) {
+        const buf = Buffer.from(media.data, 'base64');
+        if (!buf.length || buf.length < 64) {
+            throw new Error('Voice payload empty or too small');
+        }
+        const tmpDir = path.join(UPLOADS_DIR, 'tmp');
+        await ensureDir(tmpDir);
+        const tmpPath = path.join(tmpDir, `ptt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.ogg`);
+        await fs.writeFile(tmpPath, buf);
+        const mediaObj = MessageMedia.fromFilePath(tmpPath);
+        mediaObj.mimetype = WHATSAPP_VOICE_MIME;
+        mediaObj.filename = WHATSAPP_VOICE_FILENAME;
+        return { mediaObj, asVoice: true, tmpPath, mime: WHATSAPP_VOICE_MIME };
+    }
+    const mediaObj = new MessageMedia(mime, media.data, media.filename || null);
+    return { mediaObj, asVoice: false, tmpPath: null, mime };
+}
+
+async function cleanupTempMedia(tmpPath) {
+    if (!tmpPath) return;
+    try {
+        await fs.unlink(tmpPath);
+    } catch (_) {}
+}
+
 // ==================== Logger ====================
 const logger = winston.createLogger({
     level: process.env.LOG_LEVEL || 'info',
@@ -559,6 +623,10 @@ function attachClientEvents(c) {
     c.on('message_create', async (msg) => {
         try {
             if (!msg.fromMe) return; // فقط پیام‌های ارسالی خودمان
+            const waEchoId = msg?.id?.id;
+            if (isGatewaySentEcho(waEchoId)) {
+                return;
+            }
             const chat = await msg.getChat();
             if (chat?.isGroup) return; // گروه‌ها را نادیده بگیر
             const contact = await chat.getContact();
@@ -924,6 +992,7 @@ app.post('/api/logout', async (req, res) => {
 });
 
 app.post('/api/send-message', sendLimiter, async (req, res) => {
+    let tmpMediaPath = null;
     try {
         if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
 
@@ -935,23 +1004,21 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
         let sentMsg;
         const sendOpts = replyTo ? { quotedMessageId: replyTo } : {};
         if (media?.data) {
-            const mime = media.mimetype || 'application/octet-stream';
-            const mediaObj = new MessageMedia(mime, media.data, media.filename || null);
-            const asVoice = !!(media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime));
-            if (asVoice) {
-                // Voice notes (PTT) must not carry a caption — adding one can
-                // produce a message the recipient is unable to download.
+            const built = await buildOutboundMessageMedia(media, message);
+            if (!built) return res.status(400).json({ error: 'Invalid media payload' });
+            tmpMediaPath = built.tmpPath;
+            if (built.asVoice) {
                 sendOpts.sendAudioAsVoice = true;
             } else {
                 sendOpts.caption = message || '';
             }
             logger.info('📎 Sending media (data)', {
                 to,
-                mime,
-                asVoice,
+                mime: built.mime,
+                asVoice: built.asVoice,
                 dataLen: (media.data || '').length,
             });
-            sentMsg = await client.sendMessage(chatId, mediaObj, sendOpts);
+            sentMsg = await client.sendMessage(chatId, built.mediaObj, sendOpts);
         } else if (media?.url) {
             if (!isSafeMediaUrl(media.url)) {
                 return res.status(400).json({ error: 'Invalid or unsafe media URL' });
@@ -972,11 +1039,14 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
             sentMsg = await client.sendMessage(chatId, message || '', sendOpts);
         }
 
+        markGatewaySentMessage(sentMsg?.id?.id);
         logger.info('✉️ Message sent', { to, messageId: sentMsg?.id?.id, hasMedia: !!media });
         return res.json({ success: true, messageId: sentMsg?.id?.id });
     } catch (error) {
         logger.error('Send message error', { error: error?.message });
         return res.status(500).json({ error: error?.message || 'send_failed' });
+    } finally {
+        await cleanupTempMedia(tmpMediaPath);
     }
 });
 
@@ -1096,30 +1166,42 @@ async function sendWhatsAppMessage(data) {
     const chatId = to.includes('@c.us') || to.includes('@g.us') ? to : `${to}@c.us`;
 
     const sendOpts = replyTo ? { quotedMessageId: replyTo } : {};
+    let tmpMediaPath = null;
 
-    if (media?.data) {
-        const mime = media.mimetype || 'application/octet-stream';
-        const mediaObj = new MessageMedia(mime, media.data, media.filename || null);
-        if (media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime)) {
-            sendOpts.sendAudioAsVoice = true;
-        } else {
-            sendOpts.caption = message || '';
+    try {
+        if (media?.data) {
+            const built = await buildOutboundMessageMedia(media, message);
+            if (!built) throw new Error('Invalid media payload');
+            tmpMediaPath = built.tmpPath;
+            if (built.asVoice) {
+                sendOpts.sendAudioAsVoice = true;
+            } else {
+                sendOpts.caption = message || '';
+            }
+            const sent = await client.sendMessage(chatId, built.mediaObj, sendOpts);
+            markGatewaySentMessage(sent?.id?.id);
+            return sent;
         }
-        return client.sendMessage(chatId, mediaObj, sendOpts);
-    }
 
-    if (media?.url) {
-        if (!isSafeMediaUrl(media.url)) throw new Error('Invalid or unsafe media URL');
-        const mediaObj = await MessageMedia.fromUrl(media.url);
-        if (media.sendAsVoice || (media.mimetype && /^audio\/(ogg|opus)/i.test(media.mimetype))) {
-            sendOpts.sendAudioAsVoice = true;
-        } else {
-            sendOpts.caption = message || '';
+        if (media?.url) {
+            if (!isSafeMediaUrl(media.url)) throw new Error('Invalid or unsafe media URL');
+            const mediaObj = await MessageMedia.fromUrl(media.url);
+            if (isVoiceMediaPayload(media)) {
+                sendOpts.sendAudioAsVoice = true;
+            } else {
+                sendOpts.caption = message || '';
+            }
+            const sent = await client.sendMessage(chatId, mediaObj, sendOpts);
+            markGatewaySentMessage(sent?.id?.id);
+            return sent;
         }
-        return client.sendMessage(chatId, mediaObj, sendOpts);
-    }
 
-    return client.sendMessage(chatId, message || '', sendOpts);
+        const sent = await client.sendMessage(chatId, message || '', sendOpts);
+        markGatewaySentMessage(sent?.id?.id);
+        return sent;
+    } finally {
+        await cleanupTempMedia(tmpMediaPath);
+    }
 }
 
 // ==================== Startup ====================
