@@ -237,7 +237,17 @@ router.post('/forgot-password', async (req, res, next) => {
     try {
         const email = (req.body.email || '').toString().trim().toLowerCase();
         if (!email) return res.status(400).json({ error: 'Email is required' });
-        const user = await User.findOne({ where: { email, isActive: true } });
+        let user = await User.findOne({ where: { email, isActive: true } });
+        if (!user) {
+            user = await User.findOne({
+                where: {
+                    [Op.and]: [
+                        sequelize.where(sequelize.fn('LOWER', sequelize.col('email')), email),
+                        { isActive: true },
+                    ],
+                },
+            });
+        }
         if (!user) {
             return res.status(200).json({ message: FORGOT_OK_MESSAGE });
         }

@@ -28,7 +28,7 @@ function convertToOggOpus(inputPath, outputPath) {
             .audioChannels(1)
             .audioFrequency(48000)
             .audioBitrate('32k')
-            .outputOptions(['-application', 'voip', '-map_metadata', '-1'])
+            .outputOptions(['-application', 'voip', '-map_metadata', '-1', '-y'])
             .format('ogg')
             .on('end', () => resolve(outputPath))
             .on('error', (err) => reject(err))
@@ -66,9 +66,17 @@ async function ensureVoiceFormat(filePath, mimetype, filename) {
         logger.info('Audio converted to ogg/opus for WhatsApp voice', { from: filePath, to: outPath });
         return { filePath: outPath, mimetype: 'audio/ogg', filename: (filename || 'voice').replace(/\.[^.]+$/, '') + '.ogg' };
     } catch (err) {
-        logger.warn('Audio conversion failed, sending original', { error: err.message });
-        return { filePath, mimetype, filename };
+        logger.error('Audio conversion failed — WhatsApp voice requires ogg/opus', {
+            error: err.message,
+            from: filePath,
+        });
+        throw new Error('تبدیل فایل صوتی به فرمت واتساپ (ogg/opus) انجام نشد');
     }
 }
 
-module.exports = { convertToOggOpus, ensureVoiceFormat };
+function isWhatsAppVoiceMime(mimetype) {
+    const base = (mimetype || '').split(';')[0].trim().toLowerCase();
+    return base === 'audio/ogg' || base === 'audio/opus';
+}
+
+module.exports = { convertToOggOpus, ensureVoiceFormat, isWhatsAppVoiceMime };

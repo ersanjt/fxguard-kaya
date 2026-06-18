@@ -171,7 +171,8 @@ async function sendMessage(payload) {
     if (!to) throw new Error('Missing "to"');
 
     if (media && (media.url || media.data)) {
-        return sendMedia(to, media, message || '');
+        const cap = media.sendAsVoice ? '' : (message || '');
+        return sendMedia(to, media, cap);
     }
     return sendText(to, message || '');
 }

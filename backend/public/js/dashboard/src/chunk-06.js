@@ -1354,9 +1354,13 @@
                 });
             });
         })();
-        window.addEventListener('hashchange', function() { if (document.getElementById('app').classList.contains('show')) applyHashRoute(); });
+        window.addEventListener('hashchange', function() {
+            const appEl = document.getElementById('app');
+            if (appEl && appEl.classList.contains('show')) applyHashRoute();
+        });
         window.addEventListener('resize', function() {
-            if (document.getElementById('app').classList.contains('show')) {
+            const appEl = document.getElementById('app');
+            if (appEl && appEl.classList.contains('show')) {
                 updateBottomBarVisibility();
                 const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
                 if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
@@ -1810,6 +1814,16 @@
                 console.error('restoreSession:', e);
                 persistAuthToken(null);
                 if (redirectToLoginPage()) return;
+                const loginBox = document.getElementById('loginBox');
+                if (loginBox) loginBox.style.display = '';
+                const appEl = document.getElementById('app');
+                if (appEl) {
+                    appEl.classList.remove('show', 'app-ready');
+                    appEl.classList.add('app-loading');
+                }
+                if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
+                    window.LoginBootstrap.setLoggedOut();
+                }
             } finally {
                 document.documentElement.classList.remove('auth-verifying');
             }

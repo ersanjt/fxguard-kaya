@@ -192,6 +192,30 @@
         let convListClickHandler = null;
 
         var CONV_QUICK_TABS_COLLAPSE_LS = 'crm_conv_quick_tabs_collapsed';
+        function updateConvAdvancedFiltersBadge() {
+            var dot = document.getElementById('convFilterActiveDot');
+            var btn = document.getElementById('convFilterToggle');
+            if (!dot && !btn) return;
+            var active = false;
+            ['convFilterStatus', 'convFilterPriority', 'convFilterBranch', 'convFilterDept', 'convFilterAssignee'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el && el.value) active = true;
+            });
+            if (dot) dot.hidden = !active;
+            if (btn) btn.classList.toggle('has-active-filters', active);
+        }
+        function resetConvFilters() {
+            ['convFilterStatus', 'convFilterPriority', 'convFilterBranch', 'convFilterDept', 'convFilterAssignee'].forEach(function (id) {
+                var el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+            var searchEl = document.getElementById('convSearch');
+            if (searchEl) searchEl.value = '';
+            updateConvAdvancedFiltersBadge();
+            applyConvFilters();
+        }
+        window.resetConvFilters = resetConvFilters;
+
         function updateConvQuickTabsToggleUi() {
             var bar = document.getElementById('convQuickTabsBar');
             var btn = document.getElementById('btnConvQuickTabsToggle');
@@ -333,7 +357,13 @@
                 applyBtn.removeEventListener('click', applyConvFilters);
                 applyBtn.addEventListener('click', applyConvFilters);
             }
+            const resetBtn = document.getElementById('btnResetConvFilters');
+            if (resetBtn) {
+                resetBtn.removeEventListener('click', resetConvFilters);
+                resetBtn.addEventListener('click', resetConvFilters);
+            }
             
+            updateConvAdvancedFiltersBadge();
             // Filter selects - change events
             ['convFilterStatus', 'convFilterPriority', 'convFilterBranch', 'convFilterDept', 'convFilterAssignee'].forEach(function(id) {
                 const select = document.getElementById(id);
@@ -634,7 +664,12 @@
             const btn = document.getElementById('btnSyncGroups');
             const textSpan = btn && btn.querySelector('.conv-sync-text');
             const syncText = t('conv_sync_groups') || (LANG === 'fa' ? 'همگام‌سازی گروه‌ها' : 'Sync groups');
-            if (btn) { btn.disabled = true; if (textSpan) textSpan.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); else btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...'); }
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('is-syncing');
+                if (textSpan) textSpan.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...');
+                else btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...');
+            }
             try {
                 const res = await apiFetch('/api/conversations/sync-groups', { method: 'POST' });
                 if (res.needLogin) return;
@@ -650,7 +685,12 @@
                     toast(errMsg, true);
                 }
             } finally {
-                if (btn) { btn.disabled = false; if (textSpan) textSpan.textContent = syncText; else btn.textContent = syncText; }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.classList.remove('is-syncing');
+                    if (textSpan) textSpan.textContent = syncText;
+                    else btn.textContent = syncText;
+                }
             }
         }
         function letterAvatarVars(seed) {
@@ -714,6 +754,7 @@
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
             if (!appendMode) setLoading('convList', 4);
+            if (!list) return;
             let q = '?limit=' + convPageSize + '&page=' + convCurrentPage;
             const statusEl = document.getElementById('convFilterStatus');
             const priorityEl = document.getElementById('convFilterPriority');
@@ -1067,14 +1108,17 @@
                 }
             }
         }
-        function applyConvFilters() { convCurrentPage = 1; loadConversations(); }
+        function applyConvFilters() { updateConvAdvancedFiltersBadge(); convCurrentPage = 1; loadConversations(); }
         function escapeAttr(s) {
             if (s == null || s === '') return '';
             return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
         }
         function openNewConvModal() {
-            document.getElementById('newConvModal').style.display = 'flex';
-            document.getElementById('newConvCustomerSearch').value = '';
+            const modal = document.getElementById('newConvModal');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            const search = document.getElementById('newConvCustomerSearch');
+            if (search) search.value = '';
             loadNewConvCustomers();
         }
         function closeNewConvModal() { document.getElementById('newConvModal').style.display = 'none'; }
@@ -1280,17 +1324,7 @@
             const name = el.getAttribute('data-customername') || '';
             const isGrp = el.getAttribute('data-is-group') === '1';
             if (!convId) return;
-            // نمایش صفحه مکالمات
-            document.querySelectorAll('.page').forEach(function(p) { p.classList.remove('show'); p.style.removeProperty('display'); });
-            const convPage = document.getElementById('pageConversations');
-            if (convPage) convPage.classList.add('show');
-            const content = document.querySelector('.content');
-            if (content) content.classList.add('page-conversations');
-            // آپدیت sidebar active link
-            document.querySelectorAll('.sidebar .nav-link[data-page]').forEach(function(l) { l.classList.remove('active'); });
-            const convLink = document.querySelector('.sidebar .nav-link[data-page="conversations"]');
-            if (convLink) convLink.classList.add('active');
-            // اطلاعات مکالمه را مستقیم از API بگیر و باز کن
+            if (typeof showPage === 'function') showPage('conversations');
             apiFetch('/api/conversations/' + convId).then(function(res) {
                 if (res.needLogin) return;
                 const convData = (res.ok && res.data) ? res.data : null;
@@ -2574,7 +2608,13 @@
             const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
             const uploadData = await uploadRes.json().catch(function() { return {}; });
             if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
-            const media = { url: uploadData.url, filename: uploadData.name || 'voice' + ext, mimetype: baseMime };
+            const media = {
+                url: uploadData.url,
+                filename: uploadData.name || 'voice' + ext,
+                mimetype: baseMime,
+                type: 'audio',
+                sendAsVoice: true,
+            };
             const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
             if (res.needLogin) return;
             if (res.ok) loadMessages(currentConvId);
