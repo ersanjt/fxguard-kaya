@@ -4,6 +4,12 @@ const { Sequelize, Conversation, Message, User, Branch, Department, Customer, Ac
 const { Op } = require('sequelize');
 const { isMainAdmin } = require('../lib/permissions');
 const { isValidUUID, parsePagination } = require('../lib/validation');
+const {
+    canSuperviseStaff,
+    getVisibleStaffUserIds,
+    applyVisibleUserFilter,
+    applyVisibleUserIdFilter,
+} = require('../lib/staffSupervision');
 
 function ownerOnly(req, res, next) {
     if (!req.canAccess('supervision')) return res.status(403).json({ error: 'دسترسی به بخش نظارت ندارید' });
@@ -22,8 +28,10 @@ function canViewStaffActivity(req, res, next) {
 router.get('/logins', canViewStaffActivity, async (req, res, next) => {
     try {
         const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
+        const visibleIds = await getVisibleStaffUserIds(req.user, User);
+        const logWhere = applyVisibleUserIdFilter({ action: 'user_login' }, visibleIds);
         const { rows, count } = await ActivityLog.findAndCountAll({
-            where: { action: 'user_login' },
+            where: logWhere,
             include: [
                 { model: User, as: 'user', attributes: ['id', 'name', 'email', 'role'], required: false },
                 { model: Branch, as: 'branch', attributes: ['id', 'name', 'city', 'country'], required: false }
@@ -49,10 +57,18 @@ router.get('/logins', canViewStaffActivity, async (req, res, next) => {
 // لیست کارکنان آنلاین — برای مدیر و بالاتر (شامل IP و کشور آخرین ورود)
 router.get('/online', canViewStaffActivity, async (req, res, next) => {
     try {
+        const visibleIds = await getVisibleStaffUserIds(req.user, User);
+        const where = applyVisibleUserFilter(
+            { isActive: true, status: ['online', 'away', 'busy'] },
+            visibleIds
+        );
         const users = await User.findAll({
-            where: { isActive: true, status: ['online', 'away', 'busy'] },
+            where,
             attributes: ['id', 'name', 'email', 'role', 'status', 'lastLoginAt'],
-            include: [{ model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false }],
+            include: [
+                { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
+                { model: Department, as: 'department', attributes: ['id', 'name'], required: false },
+            ],
             order: [['lastLoginAt', 'DESC']]
         });
         const userIds = users.map(u => u.id);
@@ -84,16 +100,41 @@ router.get('/online', canViewStaffActivity, async (req, res, next) => {
     }
 });
 
+});
+
+// فهرست کارکنان قابل نظارت — برای جستجوی سریع در staff-activity
+router.get('/staff-index', canViewStaffActivity, async (req, res, next) => {
+    try {
+        const visibleIds = await getVisibleStaffUserIds(req.user, User);
+        const where = applyVisibleUserFilter({ isActive: true }, visibleIds);
+        const users = await User.findAll({
+            where,
+            attributes: ['id', 'name', 'email', 'username', 'role', 'status', 'departmentId', 'lastLoginAt'],
+            include: [{ model: Department, as: 'department', attributes: ['id', 'name'], required: false }],
+            order: [['name', 'ASC']],
+        });
+        res.json({ data: users });
+    } catch (err) {
+        next(err);
+    }
+});
+
 // جزئیات فعالیت کاربر — ورود/خروج، ساعات آنلاین، چت‌ها، تیکت‌ها، تسک‌ها (بدون اطلاع به کاربر)
 router.get('/user/:userId/detail', canViewStaffActivity, async (req, res, next) => {
     if (!isValidUUID(req.params.userId)) return res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
     try {
         const { userId } = req.params;
         const user = await User.findByPk(userId, {
-            attributes: ['id', 'name', 'email', 'role', 'status', 'lastLoginAt'],
-            include: [{ model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false }]
+            attributes: ['id', 'name', 'email', 'role', 'status', 'lastLoginAt', 'departmentId', 'isActive'],
+            include: [
+                { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
+                { model: Department, as: 'department', attributes: ['id', 'name'], required: false },
+            ],
         });
         if (!user) return res.status(404).json({ error: 'کاربر یافت نشد' });
+        if (!canSuperviseStaff(req.user, user)) {
+            return res.status(403).json({ error: 'دسترسی به فعالیت این کاربر ندارید' });
+        }
 
         const now = new Date();
 
@@ -500,15 +541,32 @@ router.get('/attendance-report', canViewStaffActivity, async (req, res, next) =>
         fromDate.setHours(0, 0, 0, 0);
         toDate.setHours(23, 59, 59, 999);
 
-        const whereLogin = { action: 'user_login', createdAt: { [Op.between]: [fromDate, toDate] } };
-        const whereLogout = { action: 'user_logout', createdAt: { [Op.between]: [fromDate, toDate] } };
+        const whereLogin = applyVisibleUserIdFilter(
+            { action: 'user_login', createdAt: { [Op.between]: [fromDate, toDate] } },
+            await getVisibleStaffUserIds(req.user, User)
+        );
+        const whereLogout = applyVisibleUserIdFilter(
+            { action: 'user_logout', createdAt: { [Op.between]: [fromDate, toDate] } },
+            await getVisibleStaffUserIds(req.user, User)
+        );
         if (branchId) { whereLogin.branchId = branchId; whereLogout.branchId = branchId; }
-        if (userId) { whereLogin.userId = userId; whereLogout.userId = userId; }
+        if (userId) {
+            const target = await User.findByPk(userId, { attributes: ['id', 'role', 'departmentId', 'isActive'] });
+            if (!target || !canSuperviseStaff(req.user, target)) {
+                return res.status(403).json({ error: 'دسترسی به گزارش این کاربر ندارید' });
+            }
+            whereLogin.userId = userId;
+            whereLogout.userId = userId;
+        }
 
         const [logins, logouts, users] = await Promise.all([
             ActivityLog.findAll({ where: whereLogin, include: [{ model: User, as: 'user', attributes: ['id', 'name', 'email'] }, { model: Branch, as: 'branch', attributes: ['id', 'name'] }], order: [['createdAt', 'ASC']] }),
             ActivityLog.findAll({ where: whereLogout, order: [['createdAt', 'ASC']] }),
-            User.findAll({ where: { isActive: true }, attributes: ['id', 'name', 'email'], include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'], required: false }] })
+            User.findAll({
+                where: applyVisibleUserFilter({ isActive: true }, await getVisibleStaffUserIds(req.user, User)),
+                attributes: ['id', 'name', 'email'],
+                include: [{ model: Branch, as: 'branch', attributes: ['id', 'name'], required: false }],
+            }),
         ]);
 
         const sessions = [];

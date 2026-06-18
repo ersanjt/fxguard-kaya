@@ -254,7 +254,9 @@ router.get('/history', async (req, res, next) => {
                 key,
                 item,
                 points: [],
-                externalConfigured: false
+                externalConfigured: false,
+                adjustmentApplied: false,
+                cachedAt: new Date().toISOString(),
             };
             historyCache.set(cacheKey, { ts: Date.now(), data: responseData });
             return res.json(responseData);
@@ -292,7 +294,28 @@ router.get('/history', async (req, res, next) => {
             points = await fetchHistoryViaDaily(item, dayEntries, baseUrl);
         }
 
-        const responseData = { key, item, points, source };
+        let adjustment = null;
+        try {
+            adjustment = await RateAdjustment.findOne({ where: { currencyKey: key } });
+        } catch (_) {}
+        const adjustmentApplied = !!(adjustment && adjustment.adjustmentType && adjustment.adjustmentType !== 'none');
+        if (adjustmentApplied && points.length > 0) {
+            points = points.map((p) => ({
+                ...p,
+                value: applyAdjustment(p.value, adjustment),
+                rawValue: p.value,
+            }));
+        }
+
+        const responseData = {
+            key,
+            item,
+            points,
+            source,
+            adjustmentApplied,
+            cachedAt: new Date().toISOString(),
+            externalConfigured: true,
+        };
 
         historyCache.set(cacheKey, { ts: Date.now(), data: responseData });
 

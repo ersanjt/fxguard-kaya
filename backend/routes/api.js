@@ -75,6 +75,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
 
     apiRouter.use((req, res, next) => {
         if (req.method === 'GET' && req.path === '/profile-image') return next();
+        if (req.method === 'GET' && /^\/customers\/[0-9a-f-]{36}\/avatar$/i.test(req.path)) return next();
         res.setHeader('Content-Type', 'application/json');
         next();
     });

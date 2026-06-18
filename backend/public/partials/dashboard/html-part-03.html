@@ -57,66 +57,133 @@
                     </div>
                 </div>
                 <div id="pageStaffActivity" class="page staff-activity-page">
-                    <div class="staff-activity-header">
-                        <h2 data-i18n="page_staff_activity">ورودها و وضعیت آنلاین کارکنان</h2>
-                        <p class="staff-activity-intro text-muted" data-i18n="staff_intro">مشاهده کارکنان آنلاین، آخرین ورودها و جزئیات فعالیت هر نفر — برای مدیر و بالاتر</p>
-                        <div class="staff-activity-meta">
-                            <p class="staff-activity-updated text-muted" id="staffActivityUpdated" style="display:none;"></p>
-                            <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" title="به‌روزرسانی" aria-label="به‌روزرسانی"><span class="refresh-icon">↻</span> <span data-i18n="refresh">به‌روزرسانی</span></button>
+                    <header class="staff-activity-header">
+                        <div class="staff-activity-header-main">
+                            <div class="staff-activity-header-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-user-online"/></svg></div>
+                            <div class="staff-activity-header-text">
+                                <h2 data-i18n="page_staff_activity">ورودها و وضعیت آنلاین کارکنان</h2>
+                                <p class="staff-activity-intro text-muted" data-i18n="staff_intro">مشاهده کارکنان آنلاین، آخرین ورودها و جزئیات فعالیت هر نفر — برای مدیر و بالاتر</p>
+                            </div>
+                            <div class="staff-activity-header-actions">
+                                <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" title="به‌روزرسانی" aria-label="به‌روزرسانی">
+                                    <span class="refresh-icon">↻</span> <span data-i18n="refresh">به‌روزرسانی</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                        <p class="staff-activity-updated text-muted" id="staffActivityUpdated" style="display:none;"></p>
+                        <div class="staff-activity-quick-find">
+                            <label class="staff-activity-quick-find-label" for="staffActivityUserSearch" data-i18n="staff_quick_find">جستجوی سریع کارمند</label>
+                            <div class="staff-activity-quick-find-row">
+                                <input type="search" id="staffActivityUserSearch" class="staff-activity-search-input" data-i18n-ph="staff_search_ph" placeholder="نام، ایمیل یا نام کاربری..." autocomplete="off">
+                                <button type="button" class="btn-secondary btn-sm" id="staffActivitySearchClear" hidden data-i18n="clear">پاک کردن</button>
+                            </div>
+                            <div id="staffActivitySearchResults" class="staff-activity-search-results" hidden></div>
+                        </div>
+                    </header>
                     <div class="staff-activity-stats-row">
-                        <div class="stat-card stat-card-accent staff-stat-online">
+                        <button type="button" class="stat-card stat-card-accent staff-stat-online staff-stat-card-btn" data-staff-tab="online" aria-label="کارکنان آنلاین">
                             <div class="stat-card-icon">🟢</div>
                             <div class="stat-card-content">
                                 <div class="val" id="onlineCount">0</div>
                                 <div class="label" data-i18n="staff_online">کارکنان آنلاین</div>
                             </div>
-                        </div>
-                        <div class="stat-card staff-stat-logins">
+                        </button>
+                        <button type="button" class="stat-card staff-stat-logins staff-stat-card-btn" data-staff-tab="logins" aria-label="ورود امروز">
                             <div class="stat-card-icon">📋</div>
                             <div class="stat-card-content">
                                 <div class="val" id="loginsTodayCount">0</div>
                                 <div class="label" data-i18n="staff_logins_today">ورود امروز</div>
                             </div>
-                        </div>
-                        <div class="stat-card staff-stat-total">
+                        </button>
+                        <button type="button" class="stat-card staff-stat-total staff-stat-card-btn" data-staff-tab="logins" aria-label="کل ورودها">
                             <div class="stat-card-icon">📊</div>
                             <div class="stat-card-content">
                                 <div class="val" id="loginsTotalCount">0</div>
                                 <div class="label" data-i18n="staff_logins_total_registered">کل ورودهای ثبت‌شده</div>
                             </div>
+                        </button>
+                        <button type="button" class="stat-card staff-stat-attendance staff-stat-card-btn" data-staff-tab="attendance" aria-label="گزارش حضور">
+                            <div class="stat-card-icon">⏱</div>
+                            <div class="stat-card-content">
+                                <div class="val staff-stat-attendance-val" data-i18n="staff_tab_attendance_short">حضور</div>
+                                <div class="label" data-i18n="attendance_report">گزارش حضور و غیاب</div>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="staff-activity-tabs-wrap">
+                        <div class="staff-activity-tabs" role="tablist" aria-label="بخش‌های فعالیت کارکنان">
+                            <button type="button" class="staff-activity-tab active" role="tab" aria-selected="true" data-staff-tab="online" id="staffTabOnline" data-i18n="staff_tab_online">آنلاین</button>
+                            <button type="button" class="staff-activity-tab" role="tab" aria-selected="false" data-staff-tab="logins" id="staffTabLogins" data-i18n="staff_tab_logins">ورودها</button>
+                            <button type="button" class="staff-activity-tab" role="tab" aria-selected="false" data-staff-tab="attendance" id="staffTabAttendance" data-i18n="staff_tab_attendance">حضور و غیاب</button>
                         </div>
                     </div>
-                    <div class="staff-activity-sections">
-                        <div class="staff-activity-section staff-section-online">
-                            <div class="staff-section-header">
-                                <h3 class="staff-activity-section-title" data-i18n="staff_online">کارکنان آنلاین</h3>
-                                <span class="staff-section-hint" data-i18n="staff_online_hint">کلیک برای جزئیات فعالیت</span>
+                    <div class="staff-activity-panels">
+                        <section class="staff-activity-panel active" id="staffPanelOnline" data-staff-panel="online" role="tabpanel" aria-labelledby="staffTabOnline">
+                            <div class="staff-panel-toolbar">
+                                <div class="staff-panel-toolbar-left">
+                                    <h3 class="staff-activity-section-title" data-i18n="staff_online">کارکنان آنلاین</h3>
+                                    <span class="staff-section-hint" data-i18n="staff_online_hint">کلیک برای جزئیات فعالیت</span>
+                                </div>
+                                <div class="staff-panel-filters">
+                                    <input type="search" id="staffOnlineFilter" class="staff-panel-search" data-i18n-ph="staff_filter_ph" placeholder="فیلتر در لیست..." autocomplete="off">
+                                    <div class="staff-status-chips" role="group" aria-label="وضعیت">
+                                        <button type="button" class="staff-status-chip active" data-status="all" data-i18n="all">همه</button>
+                                        <button type="button" class="staff-status-chip" data-status="online" data-i18n="status_online">آنلاین</button>
+                                        <button type="button" class="staff-status-chip" data-status="away" data-i18n="status_away">دور</button>
+                                        <button type="button" class="staff-status-chip" data-status="busy" data-i18n="status_busy">مشغول</button>
+                                    </div>
+                                </div>
                             </div>
                             <div id="onlineStaffList" class="staff-activity-list empty" data-i18n="loading">در حال بارگذاری...</div>
-                        </div>
-                        <div class="staff-activity-section staff-section-logins">
-                            <div class="staff-section-header">
-                                <h3 class="staff-activity-section-title" data-i18n="last_logins">آخرین ورودها</h3>
-                                <span class="staff-section-hint" data-i18n="staff_logins_hint">۵۰ ورود اخیر</span>
+                        </section>
+                        <section class="staff-activity-panel" id="staffPanelLogins" data-staff-panel="logins" role="tabpanel" aria-labelledby="staffTabLogins" hidden>
+                            <div class="staff-panel-toolbar">
+                                <div class="staff-panel-toolbar-left">
+                                    <h3 class="staff-activity-section-title" data-i18n="last_logins">آخرین ورودها</h3>
+                                    <span class="staff-section-hint" data-i18n="staff_logins_hint">۵۰ ورود اخیر</span>
+                                </div>
+                                <div class="staff-panel-filters">
+                                    <input type="search" id="staffLoginsFilter" class="staff-panel-search" data-i18n-ph="staff_filter_ph" placeholder="فیلتر در لیست..." autocomplete="off">
+                                    <button type="button" class="btn-secondary btn-sm" id="staffLoginsExportBtn" onclick="exportStaffLoginsCsv()" data-i18n="staff_export_logins">خروجی CSV</button>
+                                </div>
                             </div>
                             <div id="loginsList" class="staff-activity-list empty" data-i18n="loading">در حال بارگذاری...</div>
-                        </div>
-                    </div>
-                    <div class="staff-activity-section staff-section-attendance" style="grid-column:1/-1;">
-                        <div class="staff-section-header">
-                            <h3 class="staff-activity-section-title" data-i18n="attendance_report">گزارش حضور و غیاب</h3>
-                            <span class="staff-section-hint" data-i18n="attendance_report_hint">به تفکیک شعبه و بازه زمانی</span>
-                        </div>
-                        <div class="attendance-filter-row">
-                            <select id="attendanceBranch"><option value="">همه شعب</option></select>
-                            <select id="attendanceUser"><option value="">همه کاربران</option></select>
-                            <input type="date" id="attendanceFrom" title="از تاریخ">
-                            <input type="date" id="attendanceTo" title="تا تاریخ">
-                            <button type="button" class="btn-primary btn-sm" id="attendanceApplyBtn" data-i18n="apply_filter">اعمال</button>
-                        </div>
-                        <div id="attendanceReportContent" class="attendance-report-content empty" data-i18n="loading">در حال بارگذاری...</div>
+                        </section>
+                        <section class="staff-activity-panel" id="staffPanelAttendance" data-staff-panel="attendance" role="tabpanel" aria-labelledby="staffTabAttendance" hidden>
+                            <div class="staff-panel-toolbar">
+                                <div class="staff-panel-toolbar-left">
+                                    <h3 class="staff-activity-section-title" data-i18n="attendance_report">گزارش حضور و غیاب</h3>
+                                    <span class="staff-section-hint" data-i18n="attendance_report_hint">به تفکیک شعبه و بازه زمانی</span>
+                                </div>
+                            </div>
+                            <div class="attendance-filter-row staff-attendance-filters">
+                                <div class="attendance-filter-field">
+                                    <label for="attendanceBranch" data-i18n="th_branch">شعبه</label>
+                                    <select id="attendanceBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                                </div>
+                                <div class="attendance-filter-field">
+                                    <label for="attendanceUser" data-i18n="th_user">کاربر</label>
+                                    <select id="attendanceUser"><option value="" data-i18n="all_users">همه کاربران</option></select>
+                                </div>
+                                <div class="attendance-filter-field">
+                                    <label for="attendanceFrom" data-i18n="date_from">از تاریخ</label>
+                                    <input type="date" id="attendanceFrom">
+                                </div>
+                                <div class="attendance-filter-field">
+                                    <label for="attendanceTo" data-i18n="date_to">تا تاریخ</label>
+                                    <input type="date" id="attendanceTo">
+                                </div>
+                                <div class="attendance-filter-actions">
+                                    <div class="attendance-preset-btns">
+                                        <button type="button" class="btn-secondary btn-sm attendance-preset" data-preset="today" data-i18n="preset_today">امروز</button>
+                                        <button type="button" class="btn-secondary btn-sm attendance-preset" data-preset="week" data-i18n="preset_this_week">این هفته</button>
+                                        <button type="button" class="btn-secondary btn-sm attendance-preset" data-preset="month" data-i18n="preset_this_month">این ماه</button>
+                                    </div>
+                                    <button type="button" class="btn-primary btn-sm" id="attendanceApplyBtn" data-i18n="apply_filter">اعمال</button>
+                                </div>
+                            </div>
+                            <div id="attendanceReportContent" class="attendance-report-content empty" data-i18n="loading">در حال بارگذاری...</div>
+                        </section>
                     </div>
                 </div>
                 <div id="pageSupervision" class="page sup-page">
@@ -508,38 +575,55 @@
                     <header class="rates-charts-page-header">
                         <div class="rates-charts-header-content">
                             <div class="rates-charts-header-badge"><svg viewBox="0 0 24 24"><use href="#icon-trending-up"/></svg></div>
-                            <div>
+                            <div class="rates-charts-header-text">
                                 <h2 data-i18n="rates_charts_title">چارت ارزها</h2>
                                 <p class="rates-charts-intro text-muted" data-i18n="rates_charts_intro">نمودار نرخ دلار، یورو و سایر ارزها نسبت به تومان.</p>
+                                <div class="rates-charts-meta" id="ratesChartsMeta" hidden></div>
+                            </div>
+                            <div class="rates-charts-header-actions">
+                                <a href="#rates" class="btn-secondary rates-charts-link-rates" data-i18n="rates_charts_go_rates">تنظیم نرخ</a>
+                                <button type="button" class="btn-secondary rates-charts-export-btn" id="ratesChartsExportBtn" onclick="exportRatesChartCsv()" data-i18n="rates_charts_export_csv" hidden>خروجی CSV</button>
                             </div>
                         </div>
                     </header>
-                    <div class="rates-charts-stats-row" id="ratesChartsStatsRow">
-                        <!-- Populated by JS: current, min, max, change -->
-                    </div>
-                    <div class="rates-charts-controls">
-                        <div class="rates-charts-currency-tabs" role="tablist" aria-label="انتخاب ارز">
-                            <button type="button" class="rates-chart-tab active" data-currency="usd" onclick="setRatesChartCurrency('usd')" data-i18n="currency_usd"><span class="tab-icon">$</span> دلار</button>
-                            <button type="button" class="rates-chart-tab" data-currency="eur" onclick="setRatesChartCurrency('eur')" data-i18n="currency_eur"><span class="tab-icon">€</span> یورو</button>
-                            <button type="button" class="rates-chart-tab" data-currency="gbp" onclick="setRatesChartCurrency('gbp')" data-i18n="currency_gbp"><span class="tab-icon">£</span> پوند</button>
-                            <button type="button" class="rates-chart-tab" data-currency="aed" onclick="setRatesChartCurrency('aed')" data-i18n="currency_aed"><span class="tab-icon">د.إ</span> درهم</button>
-                            <button type="button" class="rates-chart-tab" data-currency="try" onclick="setRatesChartCurrency('try')" data-i18n="currency_try"><span class="tab-icon">₺</span> لیر</button>
-                            <button type="button" class="rates-chart-tab" data-currency="gold" onclick="setRatesChartCurrency('gold')" data-i18n="currency_gold"><span class="tab-icon">Au</span> طلا</button>
+                    <section class="rates-charts-overview-section" aria-labelledby="ratesChartsOverviewTitle">
+                        <div class="rates-charts-section-head">
+                            <h3 id="ratesChartsOverviewTitle" class="rates-charts-section-title" data-i18n="rates_charts_overview_title">نرخ لحظه‌ای</h3>
                         </div>
+                        <div class="rates-charts-overview-grid" id="ratesChartsOverviewGrid">
+                            <div class="rates-charts-overview-skeleton loading-skeleton"></div>
+                            <div class="rates-charts-overview-skeleton loading-skeleton"></div>
+                            <div class="rates-charts-overview-skeleton loading-skeleton"></div>
+                        </div>
+                    </section>
+                    <div class="rates-charts-stats-row" id="ratesChartsStatsRow"></div>
+                    <div class="rates-charts-controls">
+                        <div class="rates-charts-currency-tabs" id="ratesChartsCurrencyTabs" role="tablist" aria-label="انتخاب ارز"></div>
                         <div class="rates-charts-controls-right">
-                            <div class="rates-charts-period">
-                                <select id="ratesChartPeriod" onchange="loadRatesCharts()" aria-label="بازه زمانی">
-                                    <option value="7" data-i18n="chart_7days">۷ روز</option>
-                                    <option value="14" data-i18n="chart_14days">۱۴ روز</option>
-                                    <option value="30" selected data-i18n="chart_30days">۳۰ روز</option>
-                                </select>
+                            <div class="rates-charts-period-pills" role="group" aria-label="بازه زمانی">
+                                <button type="button" class="rates-chart-period-pill" data-days="7" onclick="setRatesChartPeriod(7)" data-i18n="chart_7days">۷ روز</button>
+                                <button type="button" class="rates-chart-period-pill" data-days="14" onclick="setRatesChartPeriod(14)" data-i18n="chart_14days">۱۴ روز</button>
+                                <button type="button" class="rates-chart-period-pill active" data-days="30" onclick="setRatesChartPeriod(30)" data-i18n="chart_30days">۳۰ روز</button>
+                                <button type="button" class="rates-chart-period-pill" data-days="60" onclick="setRatesChartPeriod(60)" data-i18n="chart_60days">۶۰ روز</button>
+                                <button type="button" class="rates-chart-period-pill" data-days="90" onclick="setRatesChartPeriod(90)" data-i18n="chart_90days">۹۰ روز</button>
                             </div>
-                            <button type="button" class="rates-charts-refresh-btn" onclick="loadRatesCharts()" title="بروزرسانی" aria-label="بروزرسانی نمودار">
+                            <select id="ratesChartPeriod" class="rates-charts-period-select" onchange="loadRatesCharts()" aria-label="بازه زمانی" hidden>
+                                <option value="7">7</option>
+                                <option value="14">14</option>
+                                <option value="30" selected>30</option>
+                                <option value="60">60</option>
+                                <option value="90">90</option>
+                            </select>
+                            <button type="button" class="rates-charts-refresh-btn" onclick="loadRatesCharts(true)" title="بروزرسانی" aria-label="بروزرسانی نمودار">
                                 <svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M23 4v6h-6M1 20v-6h6"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                             </button>
                         </div>
                     </div>
                     <div class="rates-charts-canvas-wrap">
+                        <div class="rates-charts-canvas-head">
+                            <span class="rates-charts-canvas-title" id="ratesChartsCanvasTitle"></span>
+                            <span class="rates-charts-adjusted-badge" id="ratesChartsAdjustedBadge" hidden data-i18n="rates_charts_adjusted_note">با تعدیل پنل</span>
+                        </div>
                         <div class="rates-charts-canvas-inner">
                             <canvas id="ratesChartCanvas" role="img" aria-label="نمودار نرخ ارز"></canvas>
                             <div class="rates-charts-loading-overlay" id="ratesChartsLoadingOverlay">
@@ -548,6 +632,23 @@
                             </div>
                         </div>
                     </div>
+                    <section class="rates-charts-table-section" id="ratesChartsTableSection" hidden>
+                        <div class="rates-charts-section-head">
+                            <h3 class="rates-charts-section-title" data-i18n="rates_charts_table_title">جدول روزانه</h3>
+                        </div>
+                        <div class="rates-charts-table-wrap">
+                            <table class="rates-charts-table" id="ratesChartsTable">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="rates_charts_table_date">تاریخ</th>
+                                        <th data-i18n="rates_charts_table_rate">نرخ (تومان)</th>
+                                        <th data-i18n="rates_charts_table_day_change">تغییر روزانه</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ratesChartsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
                     <div class="rates-charts-summary" id="ratesChartsSummary"></div>
                 </div>
                 <div id="pageServices" class="page services-page">

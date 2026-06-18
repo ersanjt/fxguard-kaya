@@ -273,10 +273,11 @@
                     const name = item.getAttribute('data-name');
                     const phone = item.getAttribute('data-phone');
                     const profilePic = item.getAttribute('data-profile-pic');
+                    const customerId = item.getAttribute('data-customer-id');
                     const isGroup = item.getAttribute('data-is-group') === '1';
                     
                     if (id) {
-                        openChat(id, name || '', phone || '', profilePic || '', isGroup);
+                        openChat(id, name || '', phone || '', profilePic || '', isGroup, customerId || '');
                     }
                 };
                 
@@ -386,6 +387,21 @@
                 detailToggle.removeEventListener('click', toggleChatDetailBar);
                 detailToggle.addEventListener('click', toggleChatDetailBar);
             }
+            const convMgmtClose = document.getElementById('convMgmtClose');
+            if (convMgmtClose) {
+                convMgmtClose.removeEventListener('click', closeConvMgmtPanel);
+                convMgmtClose.addEventListener('click', closeConvMgmtPanel);
+            }
+            const convMgmtBackdrop = document.getElementById('convMgmtBackdrop');
+            if (convMgmtBackdrop) {
+                convMgmtBackdrop.removeEventListener('click', closeConvMgmtPanel);
+                convMgmtBackdrop.addEventListener('click', closeConvMgmtPanel);
+            }
+            const chatHeaderSummary = document.getElementById('chatHeaderSummary');
+            if (chatHeaderSummary) {
+                chatHeaderSummary.removeEventListener('click', openConvMgmtPanel);
+                chatHeaderSummary.addEventListener('click', openConvMgmtPanel);
+            }
             
             // New conversation modal close button
             const newConvModalClose = document.querySelector('#newConvModal .modal-close');
@@ -479,21 +495,7 @@
             if (filePreviewRemove) {
                 filePreviewRemove.onclick = function() { clearFilePreview(); };
             }
-            const voiceDeleteBtn = document.getElementById('chatVoiceDeleteBtn');
-            if (voiceDeleteBtn) {
-                voiceDeleteBtn.removeEventListener('click', cancelVoiceRecord);
-                voiceDeleteBtn.addEventListener('click', cancelVoiceRecord);
-            }
-            const voicePauseBtn = document.getElementById('chatVoicePauseBtn');
-            if (voicePauseBtn) {
-                voicePauseBtn.removeEventListener('click', toggleVoicePause);
-                voicePauseBtn.addEventListener('click', toggleVoicePause);
-            }
-            const voiceSendBtn = document.getElementById('chatVoiceSendBtn');
-            if (voiceSendBtn) {
-                voiceSendBtn.removeEventListener('click', finalizeVoiceRecordAndSend);
-                voiceSendBtn.addEventListener('click', finalizeVoiceRecordAndSend);
-            }
+            // دکمه‌های ویس از onclick در HTML استفاده می‌کنند — addEventListener دوباره همان handler را صدا می‌زند
             const chatReplyCancelBtn = document.querySelector('.chat-reply-cancel');
             if (chatReplyCancelBtn) {
                 chatReplyCancelBtn.removeEventListener('click', cancelReply);
@@ -611,6 +613,64 @@
                 loadStaffActivity({ refreshAttendance: true });
             });
             bindOnceClick(document.getElementById('attendanceApplyBtn'), '_crmAttendanceApply', loadAttendanceReport);
+            document.querySelectorAll('.staff-activity-tab').forEach(function(btn) {
+                if (btn._crmStaffTabBound) return;
+                btn._crmStaffTabBound = true;
+                btn.addEventListener('click', function() {
+                    switchStaffActivityTab(btn.getAttribute('data-staff-tab'));
+                });
+            });
+            document.querySelectorAll('.staff-stat-card-btn').forEach(function(btn) {
+                if (btn._crmStaffStatBound) return;
+                btn._crmStaffStatBound = true;
+                btn.addEventListener('click', function() {
+                    switchStaffActivityTab(btn.getAttribute('data-staff-tab'));
+                });
+            });
+            document.querySelectorAll('.staff-status-chip').forEach(function(chip) {
+                if (chip._crmStaffStatusBound) return;
+                chip._crmStaffStatusBound = true;
+                chip.addEventListener('click', function() {
+                    staffActivityStatusFilter = chip.getAttribute('data-status') || 'all';
+                    document.querySelectorAll('.staff-status-chip').forEach(function(c) {
+                        c.classList.toggle('active', c === chip);
+                    });
+                    renderOnlineStaffList();
+                });
+            });
+            const onlineFilter = document.getElementById('staffOnlineFilter');
+            if (onlineFilter && !onlineFilter._crmStaffOnlineFilter) {
+                onlineFilter._crmStaffOnlineFilter = true;
+                onlineFilter.addEventListener('input', renderOnlineStaffList);
+            }
+            const loginsFilter = document.getElementById('staffLoginsFilter');
+            if (loginsFilter && !loginsFilter._crmStaffLoginsFilter) {
+                loginsFilter._crmStaffLoginsFilter = true;
+                loginsFilter.addEventListener('input', renderLoginsList);
+            }
+            const userSearch = document.getElementById('staffActivityUserSearch');
+            if (userSearch && !userSearch._crmStaffUserSearch) {
+                userSearch._crmStaffUserSearch = true;
+                userSearch.addEventListener('input', function() { renderStaffActivityQuickFind(userSearch.value); });
+                userSearch.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        userSearch.value = '';
+                        renderStaffActivityQuickFind('');
+                    }
+                });
+            }
+            bindOnceClick(document.getElementById('staffActivitySearchClear'), '_crmStaffSearchClear', function() {
+                const inp = document.getElementById('staffActivityUserSearch');
+                if (inp) inp.value = '';
+                renderStaffActivityQuickFind('');
+            });
+            document.querySelectorAll('.attendance-preset').forEach(function(btn) {
+                if (btn._crmAttPresetBound) return;
+                btn._crmAttPresetBound = true;
+                btn.addEventListener('click', function() {
+                    applyAttendanceDatePreset(btn.getAttribute('data-preset'));
+                });
+            });
         }
         
         function handleQuickTabClick(e) {
@@ -719,6 +779,63 @@
             var statusLabel = convStatusLabelUi(d.status);
             var prioLabel = convPriorityLabelUi(d.priority);
             badgesEl.innerHTML = '<span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_status')) + '</span>' + escapeHtml(statusLabel) + '</span><span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_priority')) + '</span>' + escapeHtml(prioLabel) + '</span><span role="listitem" class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + escapeHtml(t('conv_form_assignee')) + '</span><span class="conv-badge-assignee-wrap">' + (d.assignee ? internalMsgAvatarHtml(d.assignee, 'conv-badge-assignee-avatar') : '') + '<span class="conv-badge-assignee-name">' + escapeHtml(assigneeName) + '</span></span></span>' + (deptName ? '<span role="listitem" class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + escapeHtml(t('label_dept')) + '</span>' + escapeHtml(deptName) + '</span>' : '') + (d.isHiddenFromStaff ? '<span role="listitem" class="conv-detail-badge conv-badge-hidden"><span class="conv-badge-label">' + escapeHtml(t('conv_hidden_badge')) + '</span>' + escapeHtml(t('conv_hidden_yes')) + '</span>' : '');
+            renderChatHeaderSummary(d);
+        }
+        function renderChatHeaderSummary(d) {
+            var el = document.getElementById('chatHeaderSummary');
+            if (!el || !d) return;
+            var assigneeName = userDisplay(d.assignee) || t('no_assignee');
+            var deptName = (d.department && d.department.name) ? d.department.name : (t('no_dept') || '');
+            var statusLabel = convStatusLabelUi(d.status);
+            var prioLabel = convPriorityLabelUi(d.priority);
+            var chips = '<span class="chat-hdr-chip">' + escapeHtml(statusLabel) + '</span>';
+            if (d.priority && d.priority !== 'normal' && prioLabel) {
+                chips += '<span class="chat-hdr-chip chat-hdr-chip--prio">' + escapeHtml(prioLabel) + '</span>';
+            }
+            if (deptName) chips += '<span class="chat-hdr-chip">' + escapeHtml(deptName) + '</span>';
+            chips += '<span class="chat-hdr-chip chat-hdr-chip--assignee">' + escapeHtml(assigneeName) + '</span>';
+            el.innerHTML = chips;
+            el.removeAttribute('hidden');
+            el.classList.add('visible');
+        }
+        function isConvMgmtMobile() {
+            return window.matchMedia('(max-width: 900px)').matches;
+        }
+        function closeConvMgmtPanel() {
+            var panel = document.getElementById('convMgmtPanel');
+            var backdrop = document.getElementById('convMgmtBackdrop');
+            var btn = document.getElementById('chatDetailToggle');
+            var layout = document.querySelector('#pageConversations .conv-layout');
+            if (panel) {
+                panel.classList.remove('open');
+                panel.setAttribute('hidden', '');
+                panel.setAttribute('aria-hidden', 'true');
+            }
+            if (backdrop) {
+                backdrop.hidden = true;
+                backdrop.setAttribute('aria-hidden', 'true');
+            }
+            if (btn) btn.classList.remove('active');
+            if (layout) layout.classList.remove('mgmt-open');
+        }
+        function openConvMgmtPanel() {
+            var panel = document.getElementById('convMgmtPanel');
+            var bar = document.getElementById('convDetailBar');
+            var backdrop = document.getElementById('convMgmtBackdrop');
+            var btn = document.getElementById('chatDetailToggle');
+            var layout = document.querySelector('#pageConversations .conv-layout');
+            if (!panel || !bar) return;
+            bar.style.display = '';
+            bar.removeAttribute('hidden');
+            panel.removeAttribute('hidden');
+            panel.setAttribute('aria-hidden', 'false');
+            panel.classList.add('open');
+            if (layout) layout.classList.add('mgmt-open');
+            if (isConvMgmtMobile() && backdrop) {
+                backdrop.hidden = false;
+                backdrop.setAttribute('aria-hidden', 'false');
+            }
+            if (btn) btn.classList.add('active');
         }
         window.refreshConversationDetailBadges = function() {
             if (currentConvDetail) renderConvDetailBadges(currentConvDetail);
@@ -813,8 +930,8 @@
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
                 const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
                 let profilePic = rawPic ? normalizeProfilePicUrl(rawPic) : '';
-                const picSrc = rawPic ? profilePicDisplaySrc(rawPic) : '';
-                const canShowImg = !isGroup && rawPic && profilePicShowsImage(rawPic);
+                const picSrc = !isGroup ? customerAvatarDisplaySrc(cust) : '';
+                const canShowImg = !isGroup && customerAvatarShowsImage(cust);
                 const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg && picSrc ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '');
                 const convAvatarClass = 'conv-item-avatar' + (!isGroup && !canShowImg ? ' conv-avatar-wa-default' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
@@ -826,7 +943,7 @@
                 }
                 const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + escapeHtml(convStatusLabelUi(c.status)) + '</span>';
                 const priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
-                const unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
+                const unreadPill = (c.unreadCount > 0) ? '<span class="conv-unread-pill">' + (c.unreadCount > 99 ? '99+' : c.unreadCount) + '</span>' : '';
                 const preview = (c.lastMessagePreview || '').trim();
                 const timeStr = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'time') : '';
                 let unansweredBadge = '';
@@ -837,8 +954,9 @@
                 }
                 const hiddenBadge = c.isHiddenFromStaff ? '<span class="badge conv-hidden-badge" title="' + escapeHtml(t('conv_hidden_badge')) + '">🔒</span>' : '';
                 const activeClass = (c.id === currentConvId) ? ' active' : '';
-                // نام و شماره در data-* ذخیره می‌شن — event handler میتواند کلیک رو handle کند
-                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + (c.isHiddenFromStaff ? ' conv-is-hidden' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="' + convAvatarClass + '">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + (c.isHiddenFromStaff ? '<span class="conv-hidden-inline" title="' + escapeHtml(t('conv_hidden_badge')) + '">🔒</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + assigneeMetaSuffix + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + hiddenBadge + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+                const previewLine = preview || metaPhone || '';
+                const namePrefix = (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + (c.isHiddenFromStaff ? '<span class="conv-hidden-inline" title="' + escapeHtml(t('conv_hidden_badge')) + '">🔒</span> ' : '');
+                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + (c.isHiddenFromStaff ? ' conv-is-hidden' : '') + '" data-id="' + c.id + '" data-customer-id="' + escapeHtml(cust.id || '') + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="' + convAvatarClass + '">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + namePrefix + escapeHtml(name) + '</span><span class="conv-item-top-end"><span class="conv-item-time">' + timeStr + '</span>' + unreadPill + '</span></div>' + (previewLine ? '<div class="conv-item-preview" title="' + escapeHtml(previewLine) + '">' + escapeHtml(previewLine) + '</div>' : '') + '<div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + assigneeMetaSuffix + '</div></div><div class="conv-item-badges">' + hiddenBadge + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
             if (appendMode) {
                 // آیتم‌های جدید به انتهای لیست اضافه می‌شن
@@ -872,22 +990,12 @@
         /** تا قبل از رسیدن پاسخ GET مکالمه، برای آواتار ویس ورودی از همین دادهٔ هدر/لیست استفاده می‌شود */
         let openChatCustomerPreview = null;
         function toggleChatDetailBar() {
-            const bar = document.getElementById('convDetailBar');
-            const btn = document.getElementById('chatDetailToggle');
-            if (bar && btn) {
-                const isCollapsed = bar.classList.contains('collapsed');
-                if (isCollapsed) {
-                    bar.style.display = '';
-                    bar.removeAttribute('hidden');
-                    bar.classList.remove('collapsed');
-                    btn.classList.add('active');
-                } else {
-                    bar.classList.add('collapsed');
-                    btn.classList.remove('active');
-                }
-            }
+            var panel = document.getElementById('convMgmtPanel');
+            if (panel && panel.classList.contains('open')) closeConvMgmtPanel();
+            else openConvMgmtPanel();
         }
         function closeChatMobile() {
+            closeConvMgmtPanel();
             const chatArea = document.getElementById('chatArea');
             const layout = chatArea && chatArea.closest('.conv-layout');
             if (chatArea) chatArea.classList.remove('show');
@@ -907,12 +1015,12 @@
         }
         if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
         let currentConvIsGroup = false;
-        function openChat(id, name, phone, profilePic, isGroup) {
+        function openChat(id, name, phone, profilePic, isGroup, customerId) {
             currentConvId = id;
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
             openChatCustomerPreview = !currentConvIsGroup
-                ? { name: String(name || '').trim(), phone: String(phone || '').trim(), profilePic: String(profilePic || '').trim() }
+                ? { id: String(customerId || '').trim(), name: String(name || '').trim(), phone: String(phone || '').trim(), profilePic: String(profilePic || '').trim() }
                 : null;
             cancelReply();
             if (chatTemplatesCache.length === 0) { apiFetch('/api/message-templates').then(function(res) { if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data; }).catch(function(){}); }
@@ -926,6 +1034,12 @@
             if (headerEl) {
                 headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
             }
+            var summaryElEarly = document.getElementById('chatHeaderSummary');
+            if (summaryElEarly) {
+                summaryElEarly.innerHTML = '';
+                summaryElEarly.classList.remove('visible');
+                summaryElEarly.setAttribute('hidden', '');
+            }
             var headerSubEl = document.getElementById('chatHeaderSub');
             if (headerSubEl) {
                 if (currentConvIsGroup) {
@@ -938,9 +1052,10 @@
             }
             if (avatarEl) {
                 const rawOpenPic = (profilePic || '').trim();
-                let pic = rawOpenPic ? profilePicDisplaySrc(rawOpenPic) : '';
+                const custForAv = customerId ? { id: customerId, profilePic: rawOpenPic } : { profilePic: rawOpenPic };
+                let pic = !currentConvIsGroup ? customerAvatarDisplaySrc(custForAv) : '';
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
-                if (pic && profilePicShowsImage(rawOpenPic)) {
+                if (pic && !currentConvIsGroup && customerAvatarShowsImage(custForAv)) {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">';
                 } else {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
@@ -977,15 +1092,15 @@
                 if (!currentConvIsGroup && d.customer) {
                     var ck = d.customer;
                     openChatCustomerPreview = {
+                        id: String((ck.id || customerId || '') || '').trim(),
                         name: String((ck.name || '') || '').trim(),
                         phone: String((ck.phone || '') || '').trim(),
                         profilePic: String((ck.profilePic || '') || '').trim()
                     };
                 }
-                const custPicRaw = d.customer && d.customer.profilePic ? String(d.customer.profilePic).trim() : '';
-                if (avatarEl && custPicRaw && !currentConvIsGroup) {
-                    const picDisp = profilePicDisplaySrc(custPicRaw);
-                    if (picDisp && profilePicShowsImage(custPicRaw)) {
+                if (avatarEl && d.customer && !currentConvIsGroup) {
+                    const picDisp = customerAvatarDisplaySrc(d.customer);
+                    if (picDisp) {
                         const initialH = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
                         avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picDisp) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">';
                     }
@@ -997,7 +1112,7 @@
                 renderConvDetailBadges(d);
                 barEl.style.display = '';
                 barEl.removeAttribute('hidden');
-                barEl.classList.add('collapsed');
+                closeConvMgmtPanel();
                 const toggleBtn = document.getElementById('chatDetailToggle');
                 if (toggleBtn) { toggleBtn.style.display = 'flex'; toggleBtn.classList.remove('active'); }
                 const canManage = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager'));
@@ -1161,9 +1276,8 @@
             list.innerHTML = data.data.map(function(c) {
                 const name = c.name || c.phone || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
-                const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-                const picSrcNc = rawPicNc ? profilePicDisplaySrc(rawPicNc) : '';
-                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const picSrcNc = customerAvatarDisplaySrc(c);
+                const avatarHtml = customerAvatarShowsImage(c) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 const sameHint = (currentCustId && c.id === currentCustId) ? ' <span class="meta">(' + escapeHtml(LANG === 'fa' ? 'همین چت' : 'This chat') + ')</span>' : '';
                 return '<div class="new-conv-customer-item forward-customer-item" role="button" tabindex="0" data-forward-customer-id="' + escapeAttr(String(c.id)) + '" data-forward-customer-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + sameHint + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
@@ -1207,9 +1321,8 @@
                 const name = c.name || c.phone || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-                let profilePic = rawPicNc ? normalizeProfilePicUrl(rawPicNc) : '';
-                const picSrcNc = rawPicNc ? profilePicDisplaySrc(rawPicNc) : '';
-                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const picSrcNc = customerAvatarDisplaySrc(c);
+                const avatarHtml = customerAvatarShowsImage(c) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
@@ -1483,16 +1596,47 @@
                 }
             });
         }
+        /** منبع ارسال پیام خروجی — پنل CRM یا اپ واتساپ موبایل */
+        function msgSendSource(m) {
+            return (m && m.metadata && m.metadata.sendSource) ? String(m.metadata.sendSource) : '';
+        }
+        function isMobileWhatsappSend(m) {
+            return msgSendSource(m) === 'whatsapp_mobile';
+        }
+        function buildOutgoingSenderLabel(m) {
+            if (m.isAutoReply) {
+                return '<div class="msg-sender">' + escapeHtml(t('ai_assistant') || 'AI assistant') + '</div>';
+            }
+            if (isMobileWhatsappSend(m)) {
+                var um = m.user || {};
+                var staffName = (um.name || um.username || '').trim();
+                var mobileBadge = escapeHtml(t('msg_from_whatsapp_mobile') || (LANG === 'fa' ? 'واتساپ موبایل' : 'WhatsApp mobile'));
+                var av = staffName && typeof internalMsgAvatarHtml === 'function' ? internalMsgAvatarHtml(um) : '';
+                var namePart = staffName ? '<span class="msg-sender-staff-name">' + escapeHtml(staffName) + '</span>' : '';
+                return '<div class="msg-sender msg-sender-mobile">' + av + '<span class="msg-sender-mobile-badge">' + mobileBadge + '</span>' + namePart + '</div>';
+            }
+            if (m.user && (m.user.name || m.user.username)) {
+                var staffNamePanel = escapeHtml(m.user.name || m.user.username);
+                var panelBadge = msgSendSource(m) === 'crm_panel'
+                    ? '<span class="msg-sender-panel-badge">' + escapeHtml(t('msg_from_crm_panel') || (LANG === 'fa' ? 'پنل CRM' : 'CRM panel')) + '</span>'
+                    : '';
+                return '<div class="msg-sender msg-sender-staff">' + internalMsgAvatarHtml(m.user) + '<span class="msg-sender-staff-name">' + staffNamePanel + '</span>' + panelBadge + '</div>';
+            }
+            return '<div class="msg-sender msg-sender-mobile"><span class="msg-sender-mobile-badge">' + escapeHtml(t('msg_from_whatsapp_mobile') || (LANG === 'fa' ? 'واتساپ موبایل' : 'WhatsApp mobile')) + '</span></div>';
+        }
         /** آواتار کنار پلیر ویس — شبیه واتساپ وب (کارمند / مشتری / حرف گروه) */
         function buildVoiceWaAvatarCol(isOut, m) {
             if (isOut) {
                 var um = m.user || {};
                 var hasStaff = (um.name || um.username || um.email || '').trim();
-                // نباید از currentUser استفاده کرد — آواتار بیننده (مثلاً owner) با فرستندهٔ واقعی اشتباه می‌شود. اگر API کاربر پیام را نداد، مسئول مکالمه (assignee) بهترین حدس است.
-                if (!hasStaff && currentConvDetail && currentConvDetail.assignee) {
+                // پیام موبایل: فقط فرستندهٔ واقعی (مالک) — نه assignee مکالمه
+                if (!hasStaff && !isMobileWhatsappSend(m) && currentConvDetail && currentConvDetail.assignee) {
                     var asn = currentConvDetail.assignee;
                     um = { name: asn.name || '', username: asn.username || '', email: asn.email || '', avatar: asn.avatar };
                     hasStaff = (um.name || um.username || um.email || '').trim();
+                }
+                if (!hasStaff && isMobileWhatsappSend(m)) {
+                    return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap msg-voice-wa-avatar-wrap--mobile"><span class="avatar-fallback msg-voice-wa-mobile-icon" aria-hidden="true">📱</span><span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
                 }
                 var av = typeof internalMsgAvatarHtml === 'function' ? internalMsgAvatarHtml(um, 'msg-voice-wa-avatar') : '<span class="msg-voice-wa-avatar-fb">?</span>';
                 return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap">' + av + '<span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
@@ -1516,8 +1660,8 @@
             }
             var initial = name ? name.charAt(0).toUpperCase() : '?';
             var rawPic = cust && cust.profilePic ? String(cust.profilePic).trim() : '';
-            var picSrc = rawPic && typeof profilePicDisplaySrc === 'function' ? profilePicDisplaySrc(rawPic) : '';
-            var canImg = !!(rawPic && typeof profilePicShowsImage === 'function' && profilePicShowsImage(rawPic) && picSrc);
+            var picSrc = cust && cust.id ? customerAvatarDisplaySrc(cust) : (rawPic && typeof profilePicDisplaySrc === 'function' ? profilePicDisplaySrc(rawPic) : '');
+            var canImg = !!(cust && cust.id ? customerAvatarShowsImage(cust) : (rawPic && typeof profilePicShowsImage === 'function' && profilePicShowsImage(rawPic) && picSrc));
             var img = canImg ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '';
             var waNoPic = !canImg ? ' msg-voice-wa-no-photo' : '';
             return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap' + waNoPic + '">' + '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>' + img + '<span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
@@ -1557,11 +1701,8 @@
                 const isOut = m.direction === 'outgoing';
                 const time = m.timestamp ? fmtTZ(m.timestamp, 'time') : '';
                 let senderLabel = '';
-                if (isOut && m.isAutoReply) {
-                    senderLabel = '<div class="msg-sender">' + escapeHtml(t('ai_assistant') || 'AI assistant') + '</div>';
-                } else if (isOut && m.user && (m.user.name || m.user.username)) {
-                    const staffName = escapeHtml(m.user.name || m.user.username);
-                    senderLabel = '<div class="msg-sender msg-sender-staff">' + internalMsgAvatarHtml(m.user) + '<span class="msg-sender-staff-name">' + staffName + '</span></div>';
+                if (isOut) {
+                    senderLabel = buildOutgoingSenderLabel(m);
                 } else if (!isOut && currentConvIsGroup) {
                     const sn = (m.metadata && m.metadata.senderName) || null;
                     const sid = (m.metadata && m.metadata.senderId) || null;
@@ -2250,31 +2391,37 @@
             voiceBtn.setAttribute('aria-hidden', showSend ? 'true' : 'false');
         }
 
+        var _convSendInFlight = false;
         async function sendMsg() {
             const input = document.getElementById('msgInput');
             const fileInput = document.getElementById('msgFileInput');
             const content = (input.value || '').trim();
             const file = fileInput && fileInput.files && fileInput.files[0];
-            if ((!content && !file) || !currentConvId) return;
-            let media = null;
-            if (file) {
-                const fd = new FormData();
-                fd.append('file', file);
-                const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
-                const uploadData = await uploadRes.json().catch(function() { return {}; });
-                if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
-                media = { url: uploadData.url, filename: uploadData.name || file.name, mimetype: file.type };
-                fileInput.value = '';
-                clearFilePreview();
+            if ((!content && !file) || !currentConvId || _convSendInFlight) return;
+            _convSendInFlight = true;
+            try {
+                let media = null;
+                if (file) {
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
+                    const uploadData = await uploadRes.json().catch(function() { return {}; });
+                    if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
+                    media = { url: uploadData.url, filename: uploadData.name || file.name, mimetype: file.type };
+                    fileInput.value = '';
+                    clearFilePreview();
+                }
+                input.value = '';
+                const body = { content: content || '', media: media };
+                if (window._replyingTo && window._replyingTo.whatsappId) { body.replyTo = window._replyingTo.whatsappId; cancelReply(); }
+                const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify(body) });
+                if (res.needLogin) return;
+                if (res.ok) loadMessages(currentConvId);
+                else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+            } finally {
+                _convSendInFlight = false;
+                updateWaComposerState();
             }
-            input.value = '';
-            const body = { content: content || '', media: media };
-            if (window._replyingTo && window._replyingTo.whatsappId) { body.replyTo = window._replyingTo.whatsappId; cancelReply(); }
-            const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify(body) });
-            if (res.needLogin) return;
-            if (res.ok) loadMessages(currentConvId);
-            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
-            updateWaComposerState();
         }
 
         const voiceRecorderState = {
@@ -2597,28 +2744,36 @@
             startVoiceRecord();
         }
         async function sendVoiceMessage(blob) {
-            if (!currentConvId || !blob || blob.size === 0) return;
-            const fd = new FormData();
-            const rawType = blob.type || '';
-            const baseMime = rawType.split(';')[0].trim() || 'audio/webm';
-            const ext = baseMime.indexOf('ogg') >= 0 ? '.ogg' : (baseMime.indexOf('mp4') >= 0 || baseMime.indexOf('aac') >= 0) ? '.m4a' : '.webm';
-            // Create new blob with clean MIME type so server accepts it
-            const cleanBlob = new Blob([blob], { type: baseMime });
-            fd.append('file', cleanBlob, 'voice' + ext);
-            const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
-            const uploadData = await uploadRes.json().catch(function() { return {}; });
-            if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
-            const media = {
-                url: uploadData.url,
-                filename: uploadData.name || 'voice' + ext,
-                mimetype: baseMime,
-                type: 'audio',
-                sendAsVoice: true,
-            };
-            const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
-            if (res.needLogin) return;
-            if (res.ok) loadMessages(currentConvId);
-            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+            if (!currentConvId || !blob || blob.size === 0 || _convSendInFlight) return;
+            _convSendInFlight = true;
+            try {
+                const fd = new FormData();
+                const rawType = blob.type || '';
+                const baseMime = rawType.split(';')[0].trim() || 'audio/webm';
+                const ext = baseMime.indexOf('ogg') >= 0 ? '.ogg' : (baseMime.indexOf('mp4') >= 0 || baseMime.indexOf('aac') >= 0) ? '.m4a' : '.webm';
+                // Create new blob with clean MIME type so server accepts it
+                const cleanBlob = new Blob([blob], { type: baseMime });
+                fd.append('file', cleanBlob, 'voice' + ext);
+                const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
+                const uploadData = await uploadRes.json().catch(function() { return {}; });
+                if (!uploadRes.ok || !uploadData.url) {
+                    toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true);
+                    return;
+                }
+                const media = {
+                    url: uploadData.url,
+                    filename: uploadData.name || 'voice' + ext,
+                    mimetype: baseMime,
+                    type: 'audio',
+                    sendAsVoice: true,
+                };
+                const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
+                if (res.needLogin) return;
+                if (res.ok) loadMessages(currentConvId);
+                else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+            } finally {
+                _convSendInFlight = false;
+            }
         }
 
         function sortCustomerList(arr, sortBy) {
@@ -2670,9 +2825,8 @@
                 const name = c.name || c.phone || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
                 const rawPicCust = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-                let profilePic = rawPicCust ? normalizeProfilePicUrl(rawPicCust) : '';
-                const picSrcCust = rawPicCust ? profilePicDisplaySrc(rawPicCust) : '';
-                const hasCustPic = !!(rawPicCust && profilePicShowsImage(rawPicCust) && picSrcCust);
+                const picSrcCust = customerAvatarDisplaySrc(c);
+                const hasCustPic = customerAvatarShowsImage(c) && picSrcCust;
                 const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
                 const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
                 const avatarInner = hasCustPic

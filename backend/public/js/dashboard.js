@@ -405,12 +405,40 @@
         window.refreshRatesTicker = refreshRatesTicker;
         let ratesChartInstance = null;
         let ratesChartCurrentCurrency = 'usd';
+        let ratesChartsCurrentDays = 30;
+        let ratesChartsLastExport = null;
+        let ratesChartsCurrenciesLoaded = false;
+        const RATES_CHART_ICONS = { usd: '$', eur: '€', gbp: '£', aed: 'د.إ', try: '₺', gold: 'Au', chf: 'Fr', cad: 'C$', aud: 'A$', jpy: '¥', sar: '﷼', kwd: 'KD', rub: '₽', cny: '¥', inr: '₹' };
+        function ratesChartsCurrencyIcon(key) {
+            return RATES_CHART_ICONS[key] || (String(key || '').slice(0, 2).toUpperCase() || '¤');
+        }
+        function ratesChartsCurrencyLabel(key, fallbackLabel) {
+            const i18nKey = 'currency_' + key;
+            const fromI18n = t(i18nKey);
+            if (fromI18n && fromI18n !== i18nKey) return fromI18n;
+            return fallbackLabel || rateLabel(key);
+        }
         function setRatesChartCurrency(key) {
             ratesChartCurrentCurrency = key;
-            document.querySelectorAll('.rates-chart-tab').forEach(function(b) { b.classList.remove('active'); if (b.getAttribute('data-currency') === key) b.classList.add('active'); });
+            document.querySelectorAll('.rates-chart-tab').forEach(function(b) {
+                b.classList.toggle('active', b.getAttribute('data-currency') === key);
+            });
+            document.querySelectorAll('.rates-charts-overview-card').forEach(function(c) {
+                c.classList.toggle('active', c.getAttribute('data-currency') === key);
+            });
             loadRatesCharts();
         }
         window.setRatesChartCurrency = setRatesChartCurrency;
+        function setRatesChartPeriod(days) {
+            ratesChartsCurrentDays = days;
+            document.querySelectorAll('.rates-chart-period-pill').forEach(function(b) {
+                b.classList.toggle('active', parseInt(b.getAttribute('data-days'), 10) === days);
+            });
+            const periodSel = document.getElementById('ratesChartPeriod');
+            if (periodSel) periodSel.value = String(days);
+            loadRatesCharts();
+        }
+        window.setRatesChartPeriod = setRatesChartPeriod;
         let ratesChartsLoadSeq = 0;
         function ratesChartsYAxisLocale() {
             if (LANG === 'fa') return 'fa-IR';
@@ -419,6 +447,10 @@
         }
         function ratesChartsShowEmpty(summaryEl, statsRow, message, withRetry) {
             if (statsRow) statsRow.innerHTML = '';
+            const tableSection = document.getElementById('ratesChartsTableSection');
+            if (tableSection) tableSection.hidden = true;
+            const exportBtn = document.getElementById('ratesChartsExportBtn');
+            if (exportBtn) exportBtn.hidden = true;
             if (!summaryEl) return;
             const retry = withRetry
                 ? '<button type="button" class="btn-secondary rates-charts-retry-btn" onclick="loadRatesCharts()">' + escapeHtml(t('rates_charts_retry')) + '</button>'
@@ -426,134 +458,268 @@
             summaryEl.innerHTML = '<div class="rates-charts-empty">' +
                 '<p class="rates-charts-empty-text">' + escapeHtml(message) + '</p>' + retry + '</div>';
         }
-        async function loadRatesCharts() {
+        function ratesChartsUpdateMeta(payload) {
+            const metaEl = document.getElementById('ratesChartsMeta');
+            if (!metaEl) return;
+            const parts = [];
+            if (payload && payload.cachedAt) {
+                parts.push('<span class="rates-charts-meta-item">' + escapeHtml(t('rates_charts_last_updated')) + ': ' + escapeHtml(fmtTZ(payload.cachedAt, 'datetime')) + '</span>');
+            }
+            if (payload && payload.source) {
+                const srcLabel = payload.source === 'ohlc' ? 'Navasan OHLC' : 'Navasan Daily';
+                parts.push('<span class="rates-charts-meta-item">' + escapeHtml(t('rates_charts_data_source')) + ': ' + escapeHtml(srcLabel) + '</span>');
+            }
+            if (parts.length) {
+                metaEl.innerHTML = parts.join('<span class="rates-charts-meta-sep">·</span>');
+                metaEl.hidden = false;
+            } else {
+                metaEl.hidden = true;
+            }
+        }
+        function ratesChartsRenderTable(points) {
+            const section = document.getElementById('ratesChartsTableSection');
+            const tbody = document.getElementById('ratesChartsTableBody');
+            const exportBtn = document.getElementById('ratesChartsExportBtn');
+            if (!section || !tbody || !points || !points.length) {
+                if (section) section.hidden = true;
+                if (exportBtn) exportBtn.hidden = true;
+                ratesChartsLastExport = null;
+                return;
+            }
+            ratesChartsLastExport = points.slice();
+            if (exportBtn) exportBtn.hidden = false;
+            const rows = points.slice().reverse();
+            let html = '';
+            rows.forEach(function(p, idx) {
+                const prev = rows[idx + 1];
+                let dayChange = '';
+                let dayClass = 'neutral';
+                if (prev && prev.value && p.value) {
+                    const ch = ((p.value - prev.value) / prev.value) * 100;
+                    dayClass = ch > 0 ? 'up' : ch < 0 ? 'down' : 'neutral';
+                    dayChange = (ch > 0 ? '+' : '') + ch.toFixed(2) + '%';
+                } else {
+                    dayChange = '—';
+                }
+                html += '<tr><td>' + escapeHtml(p.date || '') + '</td><td><strong>' + escapeHtml(formatPrice(p.value)) + '</strong></td><td class="rates-charts-day-change ' + dayClass + '">' + escapeHtml(dayChange) + '</td></tr>';
+            });
+            tbody.innerHTML = html;
+            section.hidden = false;
+        }
+        function exportRatesChartCsv() {
+            if (!ratesChartsLastExport || !ratesChartsLastExport.length) return;
+            const label = ratesChartsCurrencyLabel(ratesChartCurrentCurrency);
+            const header = [t('rates_charts_table_date'), t('rates_charts_table_rate'), label].join(',');
+            const lines = ratesChartsLastExport.map(function(p) {
+                return '"' + String(p.date || '').replace(/"/g, '""') + '",' + (p.value != null ? p.value : '');
+            });
+            const csv = '\uFEFF' + header + '\n' + lines.join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'rates-' + ratesChartCurrentCurrency + '-' + ratesChartsCurrentDays + 'd.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        window.exportRatesChartCsv = exportRatesChartCsv;
+        async function ratesChartsBuildCurrencyTabs() {
+            const tabsEl = document.getElementById('ratesChartsCurrencyTabs');
+            if (!tabsEl || ratesChartsCurrenciesLoaded) return;
+            const res = await apiFetch('/api/rates/ticker-config');
+            if (res.needLogin || !res.ok) return;
+            const available = res.data.availableKeys || [];
+            const visible = res.data.visibleKeys || available.map(function(a) { return a.key; });
+            if (!visible.length) return;
+            let html = '';
+            visible.forEach(function(key) {
+                const info = available.find(function(a) { return a.key === key; }) || { key: key, label: key };
+                const active = key === ratesChartCurrentCurrency ? ' active' : '';
+                html += '<button type="button" class="rates-chart-tab' + active + '" data-currency="' + escapeHtml(key) + '" onclick="setRatesChartCurrency(\'' + escapeAttr(key) + '\')" role="tab">' +
+                    '<span class="tab-icon">' + escapeHtml(ratesChartsCurrencyIcon(key)) + '</span> ' + escapeHtml(ratesChartsCurrencyLabel(key, info.label)) + '</button>';
+            });
+            tabsEl.innerHTML = html;
+            if (visible.indexOf(ratesChartCurrentCurrency) < 0) {
+                ratesChartCurrentCurrency = visible[0];
+            }
+            ratesChartsCurrenciesLoaded = true;
+        }
+        async function loadRatesChartsOverview() {
+            const grid = document.getElementById('ratesChartsOverviewGrid');
+            if (!grid) return;
+            const res = await apiFetch('/api/rates');
+            if (res.needLogin || !res.ok || !res.data || !res.data.items) {
+                grid.innerHTML = '<p class="rates-charts-overview-empty text-muted">' + escapeHtml(t('rates_charts_empty')) + '</p>';
+                return;
+            }
+            let html = '';
+            res.data.items.forEach(function(it) {
+                if (!it || !it.key) return;
+                const ch = it.change != null && !isNaN(Number(it.change)) ? Number(it.change) : null;
+                const chClass = ch == null ? 'neutral' : ch > 0 ? 'up' : ch < 0 ? 'down' : 'neutral';
+                const chStr = ch != null ? ((ch > 0 ? '+' : '') + ch.toFixed(1) + '%') : '';
+                const active = it.key === ratesChartCurrentCurrency ? ' active' : '';
+                const valStr = (it.value != null && it.value !== '' && it.value !== '—') ? formatPrice(it.value) : '—';
+                html += '<button type="button" class="rates-charts-overview-card' + active + '" data-currency="' + escapeHtml(it.key) + '" onclick="setRatesChartCurrency(\'' + escapeAttr(it.key) + '\')">' +
+                    '<span class="overview-card-icon">' + escapeHtml(ratesChartsCurrencyIcon(it.key)) + '</span>' +
+                    '<span class="overview-card-label">' + escapeHtml(it.label || ratesChartsCurrencyLabel(it.key)) + '</span>' +
+                    '<span class="overview-card-value">' + escapeHtml(valStr) + '</span>' +
+                    (chStr ? '<span class="overview-card-change ' + chClass + '">' + escapeHtml(chStr) + '</span>' : '') +
+                    '</button>';
+            });
+            grid.innerHTML = html || '<p class="rates-charts-overview-empty text-muted">' + escapeHtml(t('rates_charts_empty')) + '</p>';
+        }
+        async function initRatesChartsPage() {
+            await ratesChartsBuildCurrencyTabs();
+            loadRatesChartsOverview();
+            loadRatesCharts();
+        }
+        window.initRatesChartsPage = initRatesChartsPage;
+        async function loadRatesCharts(forceRefresh) {
             const canvas = document.getElementById('ratesChartCanvas');
             const summaryEl = document.getElementById('ratesChartsSummary');
             const statsRow = document.getElementById('ratesChartsStatsRow');
             const loadingOverlay = document.getElementById('ratesChartsLoadingOverlay');
             const refreshBtn = document.querySelector('.rates-charts-refresh-btn');
+            const canvasTitle = document.getElementById('ratesChartsCanvasTitle');
+            const adjustedBadge = document.getElementById('ratesChartsAdjustedBadge');
             if (!canvas) return;
+            if (!ratesChartsCurrenciesLoaded) await ratesChartsBuildCurrencyTabs();
             const loadId = ++ratesChartsLoadSeq;
             const periodSel = document.getElementById('ratesChartPeriod');
-            const days = periodSel ? parseInt(periodSel.value, 10) || 30 : 30;
+            const days = ratesChartsCurrentDays || (periodSel ? parseInt(periodSel.value, 10) || 30 : 30);
             if (loadingOverlay) loadingOverlay.classList.add('visible');
             if (refreshBtn) refreshBtn.classList.add('loading');
             if (statsRow) statsRow.innerHTML = '';
             if (summaryEl) summaryEl.innerHTML = '';
+            const historyUrl = '/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days + (forceRefresh ? '&refresh=1' : '');
             try {
-            const res = await apiFetch('/api/rates/history?key=' + encodeURIComponent(ratesChartCurrentCurrency) + '&days=' + days);
-            if (loadId !== ratesChartsLoadSeq) return;
-            if (loadingOverlay) loadingOverlay.classList.remove('visible');
-            if (refreshBtn) refreshBtn.classList.remove('loading');
-            if (res.needLogin) return;
-            const labels = [];
-            const values = [];
-            const payload = res.data || {};
-            if (res.ok && payload.points && payload.points.length > 0) {
-                payload.points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
-            }
-            const currencyLabels = { usd: 'دلار', eur: 'یورو', gbp: 'پوند', aed: 'درهم', try: 'لیر', gold: 'طلا' };
-            const label = currencyLabels[ratesChartCurrentCurrency] || rateLabel(ratesChartCurrentCurrency);
-            const unitLabel = t('currency_unit_toman') || 'تومان';
-            if (ratesChartInstance) { ratesChartInstance.destroy(); ratesChartInstance = null; }
-            if (values.length > 0) {
-                const ctx = canvas.getContext('2d');
-                const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-                gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
-                gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.12)');
-                gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
-                const yLoc = ratesChartsYAxisLocale();
-                ratesChartInstance = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [{
-                            label: label + ' (' + unitLabel + ')',
-                            data: values,
-                            borderColor: '#10b981',
-                            borderWidth: 2.5,
-                            backgroundColor: gradient,
-                            fill: true,
-                            tension: 0.4,
-                            pointRadius: 0,
-                            pointHoverRadius: 6,
-                            pointHoverBackgroundColor: '#10b981',
-                            pointHoverBorderColor: '#fff',
-                            pointHoverBorderWidth: 2
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: true,
-                        aspectRatio: 2.2,
-                        animation: { duration: 600 },
-                        plugins: {
-                            legend: { display: false },
-                            tooltip: {
-                                backgroundColor: 'rgba(15, 23, 42, 0.95)',
-                                titleFont: { size: 12, weight: '600' },
-                                bodyFont: { size: 13, weight: '700' },
-                                padding: { top: 10, bottom: 10, left: 14, right: 14 },
-                                cornerRadius: 10,
-                                displayColors: false,
-                                borderColor: 'rgba(16, 185, 129, 0.3)',
-                                borderWidth: 1,
-                                callbacks: {
-                                    title: function(items) { return items[0] ? items[0].label : ''; },
-                                    label: function(item) { return formatPrice(item.raw) + ' ' + unitLabel; }
+                const res = await apiFetch(historyUrl);
+                if (loadId !== ratesChartsLoadSeq) return;
+                if (loadingOverlay) loadingOverlay.classList.remove('visible');
+                if (refreshBtn) refreshBtn.classList.remove('loading');
+                if (res.needLogin) return;
+                const labels = [];
+                const values = [];
+                const payload = res.data || {};
+                const points = (res.ok && payload.points && payload.points.length) ? payload.points : [];
+                points.forEach(function(p) { labels.push(p.date); values.push(p.value); });
+                const label = ratesChartsCurrencyLabel(ratesChartCurrentCurrency);
+                const unitLabel = t('currency_unit_toman') || 'تومان';
+                if (canvasTitle) canvasTitle.textContent = label + ' — ' + days + ' ' + (LANG === 'fa' ? 'روز' : LANG === 'tr' ? 'gün' : 'days');
+                if (adjustedBadge) adjustedBadge.hidden = !payload.adjustmentApplied;
+                ratesChartsUpdateMeta(payload);
+                if (ratesChartInstance) { ratesChartInstance.destroy(); ratesChartInstance = null; }
+                if (values.length > 0) {
+                    const ctx = canvas.getContext('2d');
+                    const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+                    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
+                    gradient.addColorStop(0.5, 'rgba(16, 185, 129, 0.12)');
+                    gradient.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
+                    const yLoc = ratesChartsYAxisLocale();
+                    const lastVal = values[values.length - 1];
+                    const firstVal = values[0];
+                    const minVal = Math.min.apply(null, values);
+                    const maxVal = Math.max.apply(null, values);
+                    const avgVal = values.reduce(function(a, b) { return a + b; }, 0) / values.length;
+                    const prevDayVal = values.length > 1 ? values[values.length - 2] : null;
+                    ratesChartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: labels,
+                            datasets: [{
+                                label: label + ' (' + unitLabel + ')',
+                                data: values,
+                                borderColor: '#10b981',
+                                borderWidth: 2.5,
+                                backgroundColor: gradient,
+                                fill: true,
+                                tension: 0.35,
+                                pointRadius: values.length <= 14 ? 3 : 0,
+                                pointHoverRadius: 6,
+                                pointHoverBackgroundColor: '#10b981',
+                                pointHoverBorderColor: '#fff',
+                                pointHoverBorderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: true,
+                            aspectRatio: 2.4,
+                            animation: { duration: 600 },
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                                    titleFont: { size: 12, weight: '600' },
+                                    bodyFont: { size: 13, weight: '700' },
+                                    padding: { top: 10, bottom: 10, left: 14, right: 14 },
+                                    cornerRadius: 10,
+                                    displayColors: false,
+                                    borderColor: 'rgba(16, 185, 129, 0.3)',
+                                    borderWidth: 1,
+                                    callbacks: {
+                                        title: function(items) { return items[0] ? items[0].label : ''; },
+                                        label: function(item) { return formatPrice(item.raw) + ' ' + unitLabel; }
+                                    }
+                                }
+                            },
+                            interaction: { intersect: false, mode: 'index' },
+                            scales: {
+                                x: {
+                                    display: true,
+                                    ticks: { maxRotation: 45, maxTicksLimit: days <= 14 ? 14 : 10, font: { size: 11 }, color: 'rgba(139, 157, 195, 0.8)' },
+                                    grid: { display: false },
+                                    border: { display: false }
+                                },
+                                y: {
+                                    display: true,
+                                    suggestedMin: minVal * 0.998,
+                                    suggestedMax: maxVal * 1.002,
+                                    ticks: {
+                                        callback: function(v) {
+                                            if (typeof v !== 'number') return v;
+                                            return v.toLocaleString(yLoc);
+                                        },
+                                        font: { size: 11 },
+                                        color: 'rgba(139, 157, 195, 0.8)',
+                                        maxTicksLimit: 8
+                                    },
+                                    grid: { color: 'rgba(45, 63, 95, 0.5)', drawTicks: false },
+                                    border: { display: false }
                                 }
                             }
-                        },
-                        interaction: { intersect: false, mode: 'index' },
-                        scales: {
-                            x: {
-                                display: true,
-                                ticks: { maxRotation: 40, maxTicksLimit: 10, font: { size: 11 }, color: 'rgba(139, 157, 195, 0.8)' },
-                                grid: { display: false },
-                                border: { display: false }
-                            },
-                            y: {
-                                display: true,
-                                ticks: {
-                                    callback: function(v) {
-                                        if (typeof v !== 'number') return v;
-                                        return v.toLocaleString(yLoc);
-                                    },
-                                    font: { size: 11 },
-                                    color: 'rgba(139, 157, 195, 0.8)',
-                                    maxTicksLimit: 8
-                                },
-                                grid: { color: 'rgba(45, 63, 95, 0.5)', drawTicks: false },
-                                border: { display: false }
-                            }
                         }
+                    });
+                    const changeNum = firstVal && lastVal ? (lastVal - firstVal) / firstVal * 100 : null;
+                    const changeStr = changeNum != null ? changeNum.toFixed(1) : null;
+                    const changeClass = changeNum > 0 ? 'up' : changeNum < 0 ? 'down' : 'neutral';
+                    const dayChangeNum = prevDayVal && lastVal ? (lastVal - prevDayVal) / prevDayVal * 100 : null;
+                    const dayChangeStr = dayChangeNum != null ? dayChangeNum.toFixed(2) : null;
+                    const dayChangeClass = dayChangeNum > 0 ? 'up' : dayChangeNum < 0 ? 'down' : 'neutral';
+                    if (statsRow) {
+                        statsRow.innerHTML =
+                            '<div class="rates-charts-stat-card stat-current"><span class="stat-label">' + t('rates_charts_stat_current') + '</span><span class="stat-value">' + formatPrice(lastVal) + ' <span class="rates-charts-unit">' + unitLabel + '</span></span></div>' +
+                            '<div class="rates-charts-stat-card stat-change ' + dayChangeClass + '"><span class="stat-label">' + t('rates_charts_stat_day_change') + '</span><span class="stat-value">' + (dayChangeStr != null ? ((dayChangeNum > 0 ? '+' : '') + dayChangeStr + '%') : '—') + '</span></div>' +
+                            '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_avg') + '</span><span class="stat-value">' + formatPrice(Math.round(avgVal)) + '</span></div>' +
+                            '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_min') + '</span><span class="stat-value">' + formatPrice(minVal) + '</span></div>' +
+                            '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_max') + '</span><span class="stat-value">' + formatPrice(maxVal) + '</span></div>' +
+                            (changeStr != null ? '<div class="rates-charts-stat-card stat-change ' + changeClass + '"><span class="stat-label">' + t('rates_charts_stat_change') + '</span><span class="stat-value">' + (changeNum > 0 ? '+' : '') + changeStr + '% ' + t('rates_charts_in_period') + '</span></div>' : '');
                     }
-                });
-                const lastVal = values[values.length - 1];
-                const firstVal = values[0];
-                const minVal = Math.min.apply(null, values);
-                const maxVal = Math.max.apply(null, values);
-                const changeNum = firstVal && lastVal ? (lastVal - firstVal) / firstVal * 100 : null;
-                const changeStr = changeNum != null ? changeNum.toFixed(1) : null;
-                const changeClass = changeNum > 0 ? 'up' : changeNum < 0 ? 'down' : 'neutral';
-                if (statsRow) {
-                    statsRow.innerHTML =
-                        '<div class="rates-charts-stat-card stat-current"><span class="stat-label">' + t('rates_charts_stat_current') + '</span><span class="stat-value">' + formatPrice(lastVal) + ' <span class="rates-charts-unit">' + unitLabel + '</span></span></div>' +
-                        '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_min') + '</span><span class="stat-value">' + formatPrice(minVal) + '</span></div>' +
-                        '<div class="rates-charts-stat-card"><span class="stat-label">' + t('rates_charts_stat_max') + '</span><span class="stat-value">' + formatPrice(maxVal) + '</span></div>' +
-                        (changeStr != null ? '<div class="rates-charts-stat-card stat-change ' + changeClass + '"><span class="stat-label">' + t('rates_charts_stat_change') + '</span><span class="stat-value">' + (changeNum > 0 ? '+' : '') + changeStr + '% ' + t('rates_charts_in_period') + '</span></div>' : '');
-                }
-                if (summaryEl) summaryEl.innerHTML = '';
-            } else {
-                if (res.ok && payload.externalConfigured === false) {
-                    ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_api_not_configured'), false);
-                } else if (!res.ok) {
-                    const errMsg = typeof getApiError === 'function' ? getApiError(res) : (res.error || t('rates_charts_error_load'));
-                    ratesChartsShowEmpty(summaryEl, statsRow, errMsg, true);
+                    ratesChartsRenderTable(points);
+                    if (summaryEl) summaryEl.innerHTML = '';
                 } else {
-                    ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_empty'), true);
+                    if (res.ok && payload.externalConfigured === false) {
+                        ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_api_not_configured'), false);
+                    } else if (!res.ok) {
+                        const errMsg = typeof getApiError === 'function' ? getApiError(res) : (res.error || t('rates_charts_error_load'));
+                        ratesChartsShowEmpty(summaryEl, statsRow, errMsg, true);
+                    } else {
+                        ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_empty'), true);
+                    }
                 }
-            }
             } catch (err) {
                 if (loadId !== ratesChartsLoadSeq) return;
                 if (loadingOverlay) loadingOverlay.classList.remove('visible');
@@ -1671,6 +1837,40 @@
                 apiFetch('/api/auth/me/presence', { method: 'PATCH', body: JSON.stringify({ status: 'online' }) }).catch(function(){});
             }, 30000);
         }
+        var _staffPresenceToastAt = {};
+        function formatStaffPresenceToast(data) {
+            if (!data || !data.user) return '';
+            var name = userDisplay(data.user) || data.user.email || '';
+            var ev = data.event || 'status';
+            var st = data.status || 'offline';
+            if (ev === 'login') return (t('staff_presence_login') || (LANG === 'fa' ? '{name} وارد سیستم شد' : '{name} logged in')).replace('{name}', name);
+            if (ev === 'logout') return (t('staff_presence_logout') || (LANG === 'fa' ? '{name} از سیستم خارج شد' : '{name} logged out')).replace('{name}', name);
+            if (ev === 'online' || st === 'online') return (t('staff_presence_online') || (LANG === 'fa' ? '{name} آنلاین شد' : '{name} is online')).replace('{name}', name);
+            if (st === 'away') return (t('staff_presence_away') || (LANG === 'fa' ? '{name} — دور' : '{name} — away')).replace('{name}', name);
+            if (st === 'busy') return (t('staff_presence_busy') || (LANG === 'fa' ? '{name} — مشغول' : '{name} — busy')).replace('{name}', name);
+            if (st === 'offline') return (t('staff_presence_offline') || (LANG === 'fa' ? '{name} آفلاین شد' : '{name} went offline')).replace('{name}', name);
+            return (t('staff_presence_status') || (LANG === 'fa' ? 'وضعیت {name} تغییر کرد' : '{name} status changed')).replace('{name}', name);
+        }
+        function handleStaffPresence(data) {
+            if (!data || !data.userId) return;
+            if (!currentUser || data.userId === currentUser.id) return;
+            if (typeof can !== 'function' || !can('staff_activity')) return;
+            var dedupeKey = data.userId + ':' + (data.event || '') + ':' + (data.status || '');
+            var now = Date.now();
+            if (_staffPresenceToastAt[dedupeKey] && now - _staffPresenceToastAt[dedupeKey] < 4000) return;
+            _staffPresenceToastAt[dedupeKey] = now;
+            var active = document.querySelector('.nav-link.active');
+            if (active && active.getAttribute('data-page') === 'staff-activity' && typeof loadStaffActivity === 'function') {
+                loadStaffActivity();
+            }
+            if (typeof updateNavBadges === 'function') {
+                apiFetch('/api/analytics/dashboard').then(function(r) {
+                    if (r.ok && r.data) updateNavBadges(r.data);
+                }).catch(function(){});
+            }
+            var msg = formatStaffPresenceToast(data);
+            if (msg && typeof toast === 'function') toast(msg, false);
+        }
         function connectSocket() {
             if (!token) return;
             if (socket) {
@@ -1680,9 +1880,10 @@
             try {
                 if (typeof io !== 'undefined') {
                     socket = io({ auth: { token: token } });
+                    socket.on('staff_presence', handleStaffPresence);
                     socket.on('user_status', function() {
                         const active = document.querySelector('.nav-link.active');
-                        if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
+                        if (active && active.getAttribute('data-page') === 'staff-activity' && typeof loadStaffActivity === 'function') loadStaffActivity();
                     });
                     socket.on('message_status_updated', function(data) {
                         if (data.conversationId === currentConvId) {
@@ -1711,9 +1912,12 @@
                         else if (data.customer && !viewingConv) toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + (data.customer.name || data.customer.phone || ''), false);
                         if (document.hidden && data.customer && typeof showDesktopNotification === 'function') showDesktopNotification(data);
                     });
-                    socket.on('user_login', function() {
+                    socket.on('user_login', function(data) {
+                        if (data && typeof handleStaffPresence === 'function') {
+                            handleStaffPresence({ event: 'login', userId: data.userId, status: 'online', user: data.user || { id: data.userId } });
+                        }
                         const active = document.querySelector('.nav-link.active');
-                        if (active && active.getAttribute('data-page') === 'staff-activity') loadStaffActivity();
+                        if (active && active.getAttribute('data-page') === 'staff-activity' && typeof loadStaffActivity === 'function') loadStaffActivity();
                     });
                     socket.on('internal_message', function(data) {
                         playInternalChatSound();
@@ -2803,10 +3007,32 @@
             if (looksLikeSchemelessHttpHost(u)) return ensureHttpsUrl('https://' + u);
             return '';
         }
-        function profilePicShowsImage(url) {
+        function profilePicShowsImage(url, customerId) {
+            if (customerId) return true;
             if (!url || typeof url !== 'string') return false;
             var n = normalizeProfilePicUrl(url);
-            return !!n && (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0);
+            return !!n && (/^https?:\/\//i.test(n) || n.indexOf('data:') === 0 || n.indexOf('/api/customers/') === 0);
+        }
+        function isLocalUploadAvatarPath(url) {
+            if (!url || typeof url !== 'string') return false;
+            var u = url.trim();
+            return u.indexOf('/uploads/') === 0 || u.indexOf('uploads/') === 0;
+        }
+        /** آواتار مشتری — فایل محلی یا API سرور (واکشی از واتساپ) */
+        function customerAvatarDisplaySrc(customerOrPic, customerId) {
+            var cust = (customerOrPic && typeof customerOrPic === 'object') ? customerOrPic : null;
+            var raw = cust ? String(cust.profilePic || '').trim() : String(customerOrPic || '').trim();
+            var id = (cust && cust.id) ? cust.id : customerId;
+            if (raw && isLocalUploadAvatarPath(raw)) {
+                var localSrc = profilePicDisplaySrc(raw);
+                if (localSrc) return localSrc;
+            }
+            if (id) return '/api/customers/' + encodeURIComponent(String(id)) + '/avatar';
+            if (raw) return profilePicDisplaySrc(raw);
+            return '';
+        }
+        function customerAvatarShowsImage(customerOrPic, customerId) {
+            return !!customerAvatarDisplaySrc(customerOrPic, customerId);
         }
         /** میزبان‌های CDN پروفایل (واتساپ/متا/…) — بارگذاری از طریق پروکسی API تا مرورگر مسدود نشود */
         var PROFILE_PIC_PROXY_SUFFIXES = ['whatsapp.net', 'fbcdn.net', 'facebook.com', 'instagram.com', 'cdninstagram.com', 'googleusercontent.com'];
@@ -2857,13 +3083,27 @@
             try {
                 if (!img) return;
                 var s = String(img.currentSrc || img.src || '');
-                if (s.indexOf('/api/profile-image') === -1) return;
+                if (s.indexOf('/api/profile-image') === -1 && s.indexOf('/api/customers/') === -1) return;
                 if (img.naturalWidth <= 1 && img.naturalHeight <= 1) crmAvatarImgErr(img);
             } catch (_e) {}
         }
         window.crmAvatarImgLoaded = crmAvatarImgLoaded;
-        function resolveAvatarUrl(avatar) { return normalizeProfilePicUrl(avatar); }
-        function internalMsgAvatarHtml(fromUser, extraClass) { const u = fromUser || {}; const name = (u.name || u.username || u.email || '').trim(); const initial = name[0] ? name[0].toUpperCase() : '?'; const pic = resolveAvatarUrl(u.avatar); const cls = 'msg-avatar' + (extraClass ? ' ' + extraClass : ''); if (pic) return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)"></span>'; return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>'; }
+        function resolveAvatarUrl(avatar) {
+            if (!avatar) return '';
+            return profilePicDisplaySrc(avatar) || normalizeProfilePicUrl(avatar);
+        }
+        function internalMsgAvatarHtml(fromUser, extraClass) {
+            const u = fromUser || {};
+            const name = (u.name || u.username || u.email || '').trim();
+            const initial = name[0] ? name[0].toUpperCase() : '?';
+            const cls = 'msg-avatar' + (extraClass ? ' ' + extraClass : '');
+            const rawAv = (u.avatar || '').trim();
+            const pic = rawAv ? resolveAvatarUrl(rawAv) : '';
+            if (pic && profilePicShowsImage(rawAv)) {
+                return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)"></span>';
+            }
+            return '<span class="' + cls + '"><span class="avatar-fallback">' + escapeHtml(initial) + '</span></span>';
+        }
         function userDisplay(u) { return (u && (u.username || u.name || u.email)) || ''; }
 
         function refreshDashboard() {
@@ -3822,13 +4062,7 @@
                 // چت داخلی — Enter برای ارسال پیام
                 if (active.id === 'internalChatInput' && e.key === 'Enter' && !e.shiftKey && typeof sendInternalMessage === 'function') { e.preventDefault(); sendInternalMessage(); return; }
                 if (active.id === 'internalChatPopupInput' && typeof handlePopupChatKeydown === 'function') { handlePopupChatKeydown(e); return; }
-                // مکالمات واتساپ — Enter برای ارسال (inline onkeypress با CSP حذف می‌شود)
-                if (active.id === 'msgInput' && e.key === 'Enter' && !e.shiftKey && typeof sendMsg === 'function') {
-                    if (e.isComposing || (active && active.isComposing)) return;
-                    e.preventDefault();
-                    sendMsg();
-                    return;
-                }
+                // msgInput Enter → فقط در chunk-03 روی خود input بایند شده (اینجا دوباره sendMsg نزن)
             }, true);
             document.addEventListener('input', function(e) {
                 if (e.target.id === 'internalChatSearch' && typeof filterInternalThreads === 'function') filterInternalThreads(e.target.value);
@@ -4217,10 +4451,11 @@
                     const name = item.getAttribute('data-name');
                     const phone = item.getAttribute('data-phone');
                     const profilePic = item.getAttribute('data-profile-pic');
+                    const customerId = item.getAttribute('data-customer-id');
                     const isGroup = item.getAttribute('data-is-group') === '1';
                     
                     if (id) {
-                        openChat(id, name || '', phone || '', profilePic || '', isGroup);
+                        openChat(id, name || '', phone || '', profilePic || '', isGroup, customerId || '');
                     }
                 };
                 
@@ -4330,6 +4565,21 @@
                 detailToggle.removeEventListener('click', toggleChatDetailBar);
                 detailToggle.addEventListener('click', toggleChatDetailBar);
             }
+            const convMgmtClose = document.getElementById('convMgmtClose');
+            if (convMgmtClose) {
+                convMgmtClose.removeEventListener('click', closeConvMgmtPanel);
+                convMgmtClose.addEventListener('click', closeConvMgmtPanel);
+            }
+            const convMgmtBackdrop = document.getElementById('convMgmtBackdrop');
+            if (convMgmtBackdrop) {
+                convMgmtBackdrop.removeEventListener('click', closeConvMgmtPanel);
+                convMgmtBackdrop.addEventListener('click', closeConvMgmtPanel);
+            }
+            const chatHeaderSummary = document.getElementById('chatHeaderSummary');
+            if (chatHeaderSummary) {
+                chatHeaderSummary.removeEventListener('click', openConvMgmtPanel);
+                chatHeaderSummary.addEventListener('click', openConvMgmtPanel);
+            }
             
             // New conversation modal close button
             const newConvModalClose = document.querySelector('#newConvModal .modal-close');
@@ -4423,21 +4673,7 @@
             if (filePreviewRemove) {
                 filePreviewRemove.onclick = function() { clearFilePreview(); };
             }
-            const voiceDeleteBtn = document.getElementById('chatVoiceDeleteBtn');
-            if (voiceDeleteBtn) {
-                voiceDeleteBtn.removeEventListener('click', cancelVoiceRecord);
-                voiceDeleteBtn.addEventListener('click', cancelVoiceRecord);
-            }
-            const voicePauseBtn = document.getElementById('chatVoicePauseBtn');
-            if (voicePauseBtn) {
-                voicePauseBtn.removeEventListener('click', toggleVoicePause);
-                voicePauseBtn.addEventListener('click', toggleVoicePause);
-            }
-            const voiceSendBtn = document.getElementById('chatVoiceSendBtn');
-            if (voiceSendBtn) {
-                voiceSendBtn.removeEventListener('click', finalizeVoiceRecordAndSend);
-                voiceSendBtn.addEventListener('click', finalizeVoiceRecordAndSend);
-            }
+            // دکمه‌های ویس از onclick در HTML استفاده می‌کنند — addEventListener دوباره همان handler را صدا می‌زند
             const chatReplyCancelBtn = document.querySelector('.chat-reply-cancel');
             if (chatReplyCancelBtn) {
                 chatReplyCancelBtn.removeEventListener('click', cancelReply);
@@ -4555,6 +4791,64 @@
                 loadStaffActivity({ refreshAttendance: true });
             });
             bindOnceClick(document.getElementById('attendanceApplyBtn'), '_crmAttendanceApply', loadAttendanceReport);
+            document.querySelectorAll('.staff-activity-tab').forEach(function(btn) {
+                if (btn._crmStaffTabBound) return;
+                btn._crmStaffTabBound = true;
+                btn.addEventListener('click', function() {
+                    switchStaffActivityTab(btn.getAttribute('data-staff-tab'));
+                });
+            });
+            document.querySelectorAll('.staff-stat-card-btn').forEach(function(btn) {
+                if (btn._crmStaffStatBound) return;
+                btn._crmStaffStatBound = true;
+                btn.addEventListener('click', function() {
+                    switchStaffActivityTab(btn.getAttribute('data-staff-tab'));
+                });
+            });
+            document.querySelectorAll('.staff-status-chip').forEach(function(chip) {
+                if (chip._crmStaffStatusBound) return;
+                chip._crmStaffStatusBound = true;
+                chip.addEventListener('click', function() {
+                    staffActivityStatusFilter = chip.getAttribute('data-status') || 'all';
+                    document.querySelectorAll('.staff-status-chip').forEach(function(c) {
+                        c.classList.toggle('active', c === chip);
+                    });
+                    renderOnlineStaffList();
+                });
+            });
+            const onlineFilter = document.getElementById('staffOnlineFilter');
+            if (onlineFilter && !onlineFilter._crmStaffOnlineFilter) {
+                onlineFilter._crmStaffOnlineFilter = true;
+                onlineFilter.addEventListener('input', renderOnlineStaffList);
+            }
+            const loginsFilter = document.getElementById('staffLoginsFilter');
+            if (loginsFilter && !loginsFilter._crmStaffLoginsFilter) {
+                loginsFilter._crmStaffLoginsFilter = true;
+                loginsFilter.addEventListener('input', renderLoginsList);
+            }
+            const userSearch = document.getElementById('staffActivityUserSearch');
+            if (userSearch && !userSearch._crmStaffUserSearch) {
+                userSearch._crmStaffUserSearch = true;
+                userSearch.addEventListener('input', function() { renderStaffActivityQuickFind(userSearch.value); });
+                userSearch.addEventListener('keydown', function(e) {
+                    if (e.key === 'Escape') {
+                        userSearch.value = '';
+                        renderStaffActivityQuickFind('');
+                    }
+                });
+            }
+            bindOnceClick(document.getElementById('staffActivitySearchClear'), '_crmStaffSearchClear', function() {
+                const inp = document.getElementById('staffActivityUserSearch');
+                if (inp) inp.value = '';
+                renderStaffActivityQuickFind('');
+            });
+            document.querySelectorAll('.attendance-preset').forEach(function(btn) {
+                if (btn._crmAttPresetBound) return;
+                btn._crmAttPresetBound = true;
+                btn.addEventListener('click', function() {
+                    applyAttendanceDatePreset(btn.getAttribute('data-preset'));
+                });
+            });
         }
         
         function handleQuickTabClick(e) {
@@ -4663,6 +4957,63 @@
             var statusLabel = convStatusLabelUi(d.status);
             var prioLabel = convPriorityLabelUi(d.priority);
             badgesEl.innerHTML = '<span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_status')) + '</span>' + escapeHtml(statusLabel) + '</span><span role="listitem" class="conv-detail-badge"><span class="conv-badge-label">' + escapeHtml(t('conv_form_priority')) + '</span>' + escapeHtml(prioLabel) + '</span><span role="listitem" class="conv-detail-badge conv-badge-assignee"><span class="conv-badge-label">' + escapeHtml(t('conv_form_assignee')) + '</span><span class="conv-badge-assignee-wrap">' + (d.assignee ? internalMsgAvatarHtml(d.assignee, 'conv-badge-assignee-avatar') : '') + '<span class="conv-badge-assignee-name">' + escapeHtml(assigneeName) + '</span></span></span>' + (deptName ? '<span role="listitem" class="conv-detail-badge conv-badge-dept"><span class="conv-badge-label">' + escapeHtml(t('label_dept')) + '</span>' + escapeHtml(deptName) + '</span>' : '') + (d.isHiddenFromStaff ? '<span role="listitem" class="conv-detail-badge conv-badge-hidden"><span class="conv-badge-label">' + escapeHtml(t('conv_hidden_badge')) + '</span>' + escapeHtml(t('conv_hidden_yes')) + '</span>' : '');
+            renderChatHeaderSummary(d);
+        }
+        function renderChatHeaderSummary(d) {
+            var el = document.getElementById('chatHeaderSummary');
+            if (!el || !d) return;
+            var assigneeName = userDisplay(d.assignee) || t('no_assignee');
+            var deptName = (d.department && d.department.name) ? d.department.name : (t('no_dept') || '');
+            var statusLabel = convStatusLabelUi(d.status);
+            var prioLabel = convPriorityLabelUi(d.priority);
+            var chips = '<span class="chat-hdr-chip">' + escapeHtml(statusLabel) + '</span>';
+            if (d.priority && d.priority !== 'normal' && prioLabel) {
+                chips += '<span class="chat-hdr-chip chat-hdr-chip--prio">' + escapeHtml(prioLabel) + '</span>';
+            }
+            if (deptName) chips += '<span class="chat-hdr-chip">' + escapeHtml(deptName) + '</span>';
+            chips += '<span class="chat-hdr-chip chat-hdr-chip--assignee">' + escapeHtml(assigneeName) + '</span>';
+            el.innerHTML = chips;
+            el.removeAttribute('hidden');
+            el.classList.add('visible');
+        }
+        function isConvMgmtMobile() {
+            return window.matchMedia('(max-width: 900px)').matches;
+        }
+        function closeConvMgmtPanel() {
+            var panel = document.getElementById('convMgmtPanel');
+            var backdrop = document.getElementById('convMgmtBackdrop');
+            var btn = document.getElementById('chatDetailToggle');
+            var layout = document.querySelector('#pageConversations .conv-layout');
+            if (panel) {
+                panel.classList.remove('open');
+                panel.setAttribute('hidden', '');
+                panel.setAttribute('aria-hidden', 'true');
+            }
+            if (backdrop) {
+                backdrop.hidden = true;
+                backdrop.setAttribute('aria-hidden', 'true');
+            }
+            if (btn) btn.classList.remove('active');
+            if (layout) layout.classList.remove('mgmt-open');
+        }
+        function openConvMgmtPanel() {
+            var panel = document.getElementById('convMgmtPanel');
+            var bar = document.getElementById('convDetailBar');
+            var backdrop = document.getElementById('convMgmtBackdrop');
+            var btn = document.getElementById('chatDetailToggle');
+            var layout = document.querySelector('#pageConversations .conv-layout');
+            if (!panel || !bar) return;
+            bar.style.display = '';
+            bar.removeAttribute('hidden');
+            panel.removeAttribute('hidden');
+            panel.setAttribute('aria-hidden', 'false');
+            panel.classList.add('open');
+            if (layout) layout.classList.add('mgmt-open');
+            if (isConvMgmtMobile() && backdrop) {
+                backdrop.hidden = false;
+                backdrop.setAttribute('aria-hidden', 'false');
+            }
+            if (btn) btn.classList.add('active');
         }
         window.refreshConversationDetailBadges = function() {
             if (currentConvDetail) renderConvDetailBadges(currentConvDetail);
@@ -4757,8 +5108,8 @@
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
                 const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
                 let profilePic = rawPic ? normalizeProfilePicUrl(rawPic) : '';
-                const picSrc = rawPic ? profilePicDisplaySrc(rawPic) : '';
-                const canShowImg = !isGroup && rawPic && profilePicShowsImage(rawPic);
+                const picSrc = !isGroup ? customerAvatarDisplaySrc(cust) : '';
+                const canShowImg = !isGroup && customerAvatarShowsImage(cust);
                 const avatarHtml = '<span class="avatar-fallback' + (isGroup ? ' conv-group-avatar' : '') + '">' + escapeHtml(initial) + '</span>' + (canShowImg && picSrc ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '');
                 const convAvatarClass = 'conv-item-avatar' + (!isGroup && !canShowImg ? ' conv-avatar-wa-default' : '');
                 const assigneeName = (c.lastOutgoingIsAutoReply) ? (t('ai_assistant') || 'AI assistant') : userDisplay(c.assignee);
@@ -4770,7 +5121,7 @@
                 }
                 const statusBadge = '<span class="badge ' + (c.status || 'open') + '">' + escapeHtml(convStatusLabelUi(c.status)) + '</span>';
                 const priorityBadge = c.priority && c.priority !== 'normal' ? '<span class="badge ' + c.priority + '">' + (t('priority_' + c.priority) || c.priority) + '</span>' : '';
-                const unreadBadge = (c.unreadCount > 0) ? '<span class="badge unread">' + c.unreadCount + '</span>' : '';
+                const unreadPill = (c.unreadCount > 0) ? '<span class="conv-unread-pill">' + (c.unreadCount > 99 ? '99+' : c.unreadCount) + '</span>' : '';
                 const preview = (c.lastMessagePreview || '').trim();
                 const timeStr = c.lastMessageAt ? fmtTZ(c.lastMessageAt, 'time') : '';
                 let unansweredBadge = '';
@@ -4781,8 +5132,9 @@
                 }
                 const hiddenBadge = c.isHiddenFromStaff ? '<span class="badge conv-hidden-badge" title="' + escapeHtml(t('conv_hidden_badge')) + '">🔒</span>' : '';
                 const activeClass = (c.id === currentConvId) ? ' active' : '';
-                // نام و شماره در data-* ذخیره می‌شن — event handler میتواند کلیک رو handle کند
-                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + (c.isHiddenFromStaff ? ' conv-is-hidden' : '') + '" data-id="' + c.id + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="' + convAvatarClass + '">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + unreadBadge + (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + (c.isHiddenFromStaff ? '<span class="conv-hidden-inline" title="' + escapeHtml(t('conv_hidden_badge')) + '">🔒</span> ' : '') + escapeHtml(name) + '</span><span class="conv-item-time">' + timeStr + '</span></div><div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + assigneeMetaSuffix + '</div>' + (preview ? '<div class="conv-item-preview" title="' + escapeHtml(preview) + '">' + escapeHtml(preview) + '</div>' : '') + '</div><div class="conv-item-badges">' + hiddenBadge + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
+                const previewLine = preview || metaPhone || '';
+                const namePrefix = (isGroup ? '<span class="conv-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + (c.isHiddenFromStaff ? '<span class="conv-hidden-inline" title="' + escapeHtml(t('conv_hidden_badge')) + '">🔒</span> ' : '');
+                return '<div class="conv-list-item' + activeClass + (isGroup ? ' conv-is-group' : '') + (c.isHiddenFromStaff ? ' conv-is-hidden' : '') + '" data-id="' + c.id + '" data-customer-id="' + escapeHtml(cust.id || '') + '" data-name="' + escapeHtml(name || '') + '" data-phone="' + escapeHtml(phone || '') + '" data-profile-pic="' + escapeHtml(profilePic || '') + '" data-is-group="' + (isGroup ? '1' : '0') + '" style="cursor:pointer;"><div class="' + convAvatarClass + '">' + avatarHtml + '</div><div class="conv-item-body"><div class="conv-item-top"><span class="name" title="' + escapeHtml(name) + '">' + namePrefix + escapeHtml(name) + '</span><span class="conv-item-top-end"><span class="conv-item-time">' + timeStr + '</span>' + unreadPill + '</span></div>' + (previewLine ? '<div class="conv-item-preview" title="' + escapeHtml(previewLine) + '">' + escapeHtml(previewLine) + '</div>' : '') + '<div class="conv-item-meta" title="' + escapeHtml(metaPhone + (assigneeName ? ' · ' + assigneeName : '')) + '">' + escapeHtml(metaPhone) + assigneeMetaSuffix + '</div></div><div class="conv-item-badges">' + hiddenBadge + unansweredBadge + priorityBadge + statusBadge + '</div></div>';
             }).join('');
             if (appendMode) {
                 // آیتم‌های جدید به انتهای لیست اضافه می‌شن
@@ -4816,22 +5168,12 @@
         /** تا قبل از رسیدن پاسخ GET مکالمه، برای آواتار ویس ورودی از همین دادهٔ هدر/لیست استفاده می‌شود */
         let openChatCustomerPreview = null;
         function toggleChatDetailBar() {
-            const bar = document.getElementById('convDetailBar');
-            const btn = document.getElementById('chatDetailToggle');
-            if (bar && btn) {
-                const isCollapsed = bar.classList.contains('collapsed');
-                if (isCollapsed) {
-                    bar.style.display = '';
-                    bar.removeAttribute('hidden');
-                    bar.classList.remove('collapsed');
-                    btn.classList.add('active');
-                } else {
-                    bar.classList.add('collapsed');
-                    btn.classList.remove('active');
-                }
-            }
+            var panel = document.getElementById('convMgmtPanel');
+            if (panel && panel.classList.contains('open')) closeConvMgmtPanel();
+            else openConvMgmtPanel();
         }
         function closeChatMobile() {
+            closeConvMgmtPanel();
             const chatArea = document.getElementById('chatArea');
             const layout = chatArea && chatArea.closest('.conv-layout');
             if (chatArea) chatArea.classList.remove('show');
@@ -4851,12 +5193,12 @@
         }
         if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
         let currentConvIsGroup = false;
-        function openChat(id, name, phone, profilePic, isGroup) {
+        function openChat(id, name, phone, profilePic, isGroup, customerId) {
             currentConvId = id;
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
             openChatCustomerPreview = !currentConvIsGroup
-                ? { name: String(name || '').trim(), phone: String(phone || '').trim(), profilePic: String(profilePic || '').trim() }
+                ? { id: String(customerId || '').trim(), name: String(name || '').trim(), phone: String(phone || '').trim(), profilePic: String(profilePic || '').trim() }
                 : null;
             cancelReply();
             if (chatTemplatesCache.length === 0) { apiFetch('/api/message-templates').then(function(res) { if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data; }).catch(function(){}); }
@@ -4870,6 +5212,12 @@
             if (headerEl) {
                 headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
             }
+            var summaryElEarly = document.getElementById('chatHeaderSummary');
+            if (summaryElEarly) {
+                summaryElEarly.innerHTML = '';
+                summaryElEarly.classList.remove('visible');
+                summaryElEarly.setAttribute('hidden', '');
+            }
             var headerSubEl = document.getElementById('chatHeaderSub');
             if (headerSubEl) {
                 if (currentConvIsGroup) {
@@ -4882,9 +5230,10 @@
             }
             if (avatarEl) {
                 const rawOpenPic = (profilePic || '').trim();
-                let pic = rawOpenPic ? profilePicDisplaySrc(rawOpenPic) : '';
+                const custForAv = customerId ? { id: customerId, profilePic: rawOpenPic } : { profilePic: rawOpenPic };
+                let pic = !currentConvIsGroup ? customerAvatarDisplaySrc(custForAv) : '';
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
-                if (pic && profilePicShowsImage(rawOpenPic)) {
+                if (pic && !currentConvIsGroup && customerAvatarShowsImage(custForAv)) {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">';
                 } else {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
@@ -4921,15 +5270,15 @@
                 if (!currentConvIsGroup && d.customer) {
                     var ck = d.customer;
                     openChatCustomerPreview = {
+                        id: String((ck.id || customerId || '') || '').trim(),
                         name: String((ck.name || '') || '').trim(),
                         phone: String((ck.phone || '') || '').trim(),
                         profilePic: String((ck.profilePic || '') || '').trim()
                     };
                 }
-                const custPicRaw = d.customer && d.customer.profilePic ? String(d.customer.profilePic).trim() : '';
-                if (avatarEl && custPicRaw && !currentConvIsGroup) {
-                    const picDisp = profilePicDisplaySrc(custPicRaw);
-                    if (picDisp && profilePicShowsImage(custPicRaw)) {
+                if (avatarEl && d.customer && !currentConvIsGroup) {
+                    const picDisp = customerAvatarDisplaySrc(d.customer);
+                    if (picDisp) {
                         const initialH = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
                         avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initialH) + '</span><img src="' + escapeHtml(picDisp) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">';
                     }
@@ -4941,7 +5290,7 @@
                 renderConvDetailBadges(d);
                 barEl.style.display = '';
                 barEl.removeAttribute('hidden');
-                barEl.classList.add('collapsed');
+                closeConvMgmtPanel();
                 const toggleBtn = document.getElementById('chatDetailToggle');
                 if (toggleBtn) { toggleBtn.style.display = 'flex'; toggleBtn.classList.remove('active'); }
                 const canManage = (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager'));
@@ -5105,9 +5454,8 @@
             list.innerHTML = data.data.map(function(c) {
                 const name = c.name || c.phone || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
-                const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-                const picSrcNc = rawPicNc ? profilePicDisplaySrc(rawPicNc) : '';
-                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const picSrcNc = customerAvatarDisplaySrc(c);
+                const avatarHtml = customerAvatarShowsImage(c) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 const sameHint = (currentCustId && c.id === currentCustId) ? ' <span class="meta">(' + escapeHtml(LANG === 'fa' ? 'همین چت' : 'This chat') + ')</span>' : '';
                 return '<div class="new-conv-customer-item forward-customer-item" role="button" tabindex="0" data-forward-customer-id="' + escapeAttr(String(c.id)) + '" data-forward-customer-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + sameHint + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
@@ -5151,9 +5499,8 @@
                 const name = c.name || c.phone || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-                let profilePic = rawPicNc ? normalizeProfilePicUrl(rawPicNc) : '';
-                const picSrcNc = rawPicNc ? profilePicDisplaySrc(rawPicNc) : '';
-                const avatarHtml = rawPicNc && profilePicShowsImage(rawPicNc) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
+                const picSrcNc = customerAvatarDisplaySrc(c);
+                const avatarHtml = customerAvatarShowsImage(c) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
             }).join('');
         }
@@ -5427,16 +5774,47 @@
                 }
             });
         }
+        /** منبع ارسال پیام خروجی — پنل CRM یا اپ واتساپ موبایل */
+        function msgSendSource(m) {
+            return (m && m.metadata && m.metadata.sendSource) ? String(m.metadata.sendSource) : '';
+        }
+        function isMobileWhatsappSend(m) {
+            return msgSendSource(m) === 'whatsapp_mobile';
+        }
+        function buildOutgoingSenderLabel(m) {
+            if (m.isAutoReply) {
+                return '<div class="msg-sender">' + escapeHtml(t('ai_assistant') || 'AI assistant') + '</div>';
+            }
+            if (isMobileWhatsappSend(m)) {
+                var um = m.user || {};
+                var staffName = (um.name || um.username || '').trim();
+                var mobileBadge = escapeHtml(t('msg_from_whatsapp_mobile') || (LANG === 'fa' ? 'واتساپ موبایل' : 'WhatsApp mobile'));
+                var av = staffName && typeof internalMsgAvatarHtml === 'function' ? internalMsgAvatarHtml(um) : '';
+                var namePart = staffName ? '<span class="msg-sender-staff-name">' + escapeHtml(staffName) + '</span>' : '';
+                return '<div class="msg-sender msg-sender-mobile">' + av + '<span class="msg-sender-mobile-badge">' + mobileBadge + '</span>' + namePart + '</div>';
+            }
+            if (m.user && (m.user.name || m.user.username)) {
+                var staffNamePanel = escapeHtml(m.user.name || m.user.username);
+                var panelBadge = msgSendSource(m) === 'crm_panel'
+                    ? '<span class="msg-sender-panel-badge">' + escapeHtml(t('msg_from_crm_panel') || (LANG === 'fa' ? 'پنل CRM' : 'CRM panel')) + '</span>'
+                    : '';
+                return '<div class="msg-sender msg-sender-staff">' + internalMsgAvatarHtml(m.user) + '<span class="msg-sender-staff-name">' + staffNamePanel + '</span>' + panelBadge + '</div>';
+            }
+            return '<div class="msg-sender msg-sender-mobile"><span class="msg-sender-mobile-badge">' + escapeHtml(t('msg_from_whatsapp_mobile') || (LANG === 'fa' ? 'واتساپ موبایل' : 'WhatsApp mobile')) + '</span></div>';
+        }
         /** آواتار کنار پلیر ویس — شبیه واتساپ وب (کارمند / مشتری / حرف گروه) */
         function buildVoiceWaAvatarCol(isOut, m) {
             if (isOut) {
                 var um = m.user || {};
                 var hasStaff = (um.name || um.username || um.email || '').trim();
-                // نباید از currentUser استفاده کرد — آواتار بیننده (مثلاً owner) با فرستندهٔ واقعی اشتباه می‌شود. اگر API کاربر پیام را نداد، مسئول مکالمه (assignee) بهترین حدس است.
-                if (!hasStaff && currentConvDetail && currentConvDetail.assignee) {
+                // پیام موبایل: فقط فرستندهٔ واقعی (مالک) — نه assignee مکالمه
+                if (!hasStaff && !isMobileWhatsappSend(m) && currentConvDetail && currentConvDetail.assignee) {
                     var asn = currentConvDetail.assignee;
                     um = { name: asn.name || '', username: asn.username || '', email: asn.email || '', avatar: asn.avatar };
                     hasStaff = (um.name || um.username || um.email || '').trim();
+                }
+                if (!hasStaff && isMobileWhatsappSend(m)) {
+                    return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap msg-voice-wa-avatar-wrap--mobile"><span class="avatar-fallback msg-voice-wa-mobile-icon" aria-hidden="true">📱</span><span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
                 }
                 var av = typeof internalMsgAvatarHtml === 'function' ? internalMsgAvatarHtml(um, 'msg-voice-wa-avatar') : '<span class="msg-voice-wa-avatar-fb">?</span>';
                 return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap">' + av + '<span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
@@ -5460,8 +5838,8 @@
             }
             var initial = name ? name.charAt(0).toUpperCase() : '?';
             var rawPic = cust && cust.profilePic ? String(cust.profilePic).trim() : '';
-            var picSrc = rawPic && typeof profilePicDisplaySrc === 'function' ? profilePicDisplaySrc(rawPic) : '';
-            var canImg = !!(rawPic && typeof profilePicShowsImage === 'function' && profilePicShowsImage(rawPic) && picSrc);
+            var picSrc = cust && cust.id ? customerAvatarDisplaySrc(cust) : (rawPic && typeof profilePicDisplaySrc === 'function' ? profilePicDisplaySrc(rawPic) : '');
+            var canImg = !!(cust && cust.id ? customerAvatarShowsImage(cust) : (rawPic && typeof profilePicShowsImage === 'function' && profilePicShowsImage(rawPic) && picSrc));
             var img = canImg ? '<img src="' + escapeHtml(picSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '';
             var waNoPic = !canImg ? ' msg-voice-wa-no-photo' : '';
             return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap' + waNoPic + '">' + '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>' + img + '<span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
@@ -5501,11 +5879,8 @@
                 const isOut = m.direction === 'outgoing';
                 const time = m.timestamp ? fmtTZ(m.timestamp, 'time') : '';
                 let senderLabel = '';
-                if (isOut && m.isAutoReply) {
-                    senderLabel = '<div class="msg-sender">' + escapeHtml(t('ai_assistant') || 'AI assistant') + '</div>';
-                } else if (isOut && m.user && (m.user.name || m.user.username)) {
-                    const staffName = escapeHtml(m.user.name || m.user.username);
-                    senderLabel = '<div class="msg-sender msg-sender-staff">' + internalMsgAvatarHtml(m.user) + '<span class="msg-sender-staff-name">' + staffName + '</span></div>';
+                if (isOut) {
+                    senderLabel = buildOutgoingSenderLabel(m);
                 } else if (!isOut && currentConvIsGroup) {
                     const sn = (m.metadata && m.metadata.senderName) || null;
                     const sid = (m.metadata && m.metadata.senderId) || null;
@@ -6194,31 +6569,37 @@
             voiceBtn.setAttribute('aria-hidden', showSend ? 'true' : 'false');
         }
 
+        var _convSendInFlight = false;
         async function sendMsg() {
             const input = document.getElementById('msgInput');
             const fileInput = document.getElementById('msgFileInput');
             const content = (input.value || '').trim();
             const file = fileInput && fileInput.files && fileInput.files[0];
-            if ((!content && !file) || !currentConvId) return;
-            let media = null;
-            if (file) {
-                const fd = new FormData();
-                fd.append('file', file);
-                const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
-                const uploadData = await uploadRes.json().catch(function() { return {}; });
-                if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
-                media = { url: uploadData.url, filename: uploadData.name || file.name, mimetype: file.type };
-                fileInput.value = '';
-                clearFilePreview();
+            if ((!content && !file) || !currentConvId || _convSendInFlight) return;
+            _convSendInFlight = true;
+            try {
+                let media = null;
+                if (file) {
+                    const fd = new FormData();
+                    fd.append('file', file);
+                    const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
+                    const uploadData = await uploadRes.json().catch(function() { return {}; });
+                    if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
+                    media = { url: uploadData.url, filename: uploadData.name || file.name, mimetype: file.type };
+                    fileInput.value = '';
+                    clearFilePreview();
+                }
+                input.value = '';
+                const body = { content: content || '', media: media };
+                if (window._replyingTo && window._replyingTo.whatsappId) { body.replyTo = window._replyingTo.whatsappId; cancelReply(); }
+                const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify(body) });
+                if (res.needLogin) return;
+                if (res.ok) loadMessages(currentConvId);
+                else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+            } finally {
+                _convSendInFlight = false;
+                updateWaComposerState();
             }
-            input.value = '';
-            const body = { content: content || '', media: media };
-            if (window._replyingTo && window._replyingTo.whatsappId) { body.replyTo = window._replyingTo.whatsappId; cancelReply(); }
-            const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify(body) });
-            if (res.needLogin) return;
-            if (res.ok) loadMessages(currentConvId);
-            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
-            updateWaComposerState();
         }
 
         const voiceRecorderState = {
@@ -6541,28 +6922,36 @@
             startVoiceRecord();
         }
         async function sendVoiceMessage(blob) {
-            if (!currentConvId || !blob || blob.size === 0) return;
-            const fd = new FormData();
-            const rawType = blob.type || '';
-            const baseMime = rawType.split(';')[0].trim() || 'audio/webm';
-            const ext = baseMime.indexOf('ogg') >= 0 ? '.ogg' : (baseMime.indexOf('mp4') >= 0 || baseMime.indexOf('aac') >= 0) ? '.m4a' : '.webm';
-            // Create new blob with clean MIME type so server accepts it
-            const cleanBlob = new Blob([blob], { type: baseMime });
-            fd.append('file', cleanBlob, 'voice' + ext);
-            const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
-            const uploadData = await uploadRes.json().catch(function() { return {}; });
-            if (!uploadRes.ok || !uploadData.url) { toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true); return; }
-            const media = {
-                url: uploadData.url,
-                filename: uploadData.name || 'voice' + ext,
-                mimetype: baseMime,
-                type: 'audio',
-                sendAsVoice: true,
-            };
-            const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
-            if (res.needLogin) return;
-            if (res.ok) loadMessages(currentConvId);
-            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+            if (!currentConvId || !blob || blob.size === 0 || _convSendInFlight) return;
+            _convSendInFlight = true;
+            try {
+                const fd = new FormData();
+                const rawType = blob.type || '';
+                const baseMime = rawType.split(';')[0].trim() || 'audio/webm';
+                const ext = baseMime.indexOf('ogg') >= 0 ? '.ogg' : (baseMime.indexOf('mp4') >= 0 || baseMime.indexOf('aac') >= 0) ? '.m4a' : '.webm';
+                // Create new blob with clean MIME type so server accepts it
+                const cleanBlob = new Blob([blob], { type: baseMime });
+                fd.append('file', cleanBlob, 'voice' + ext);
+                const uploadRes = await fetch(API + '/api/upload', { method: 'POST', credentials: 'include', body: fd });
+                const uploadData = await uploadRes.json().catch(function() { return {}; });
+                if (!uploadRes.ok || !uploadData.url) {
+                    toast((uploadData.error || (LANG === 'en' ? 'Upload failed' : 'خطا در آپلود')), true);
+                    return;
+                }
+                const media = {
+                    url: uploadData.url,
+                    filename: uploadData.name || 'voice' + ext,
+                    mimetype: baseMime,
+                    type: 'audio',
+                    sendAsVoice: true,
+                };
+                const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
+                if (res.needLogin) return;
+                if (res.ok) loadMessages(currentConvId);
+                else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+            } finally {
+                _convSendInFlight = false;
+            }
         }
 
         function sortCustomerList(arr, sortBy) {
@@ -6614,9 +7003,8 @@
                 const name = c.name || c.phone || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
                 const rawPicCust = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-                let profilePic = rawPicCust ? normalizeProfilePicUrl(rawPicCust) : '';
-                const picSrcCust = rawPicCust ? profilePicDisplaySrc(rawPicCust) : '';
-                const hasCustPic = !!(rawPicCust && profilePicShowsImage(rawPicCust) && picSrcCust);
+                const picSrcCust = customerAvatarDisplaySrc(c);
+                const hasCustPic = customerAvatarShowsImage(c) && picSrcCust;
                 const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
                 const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
                 const avatarInner = hasCustPic
@@ -6846,9 +7234,9 @@
                 }, 50);
             }
             const detailRawPic = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
-            const detailPicSrc = detailRawPic ? profilePicDisplaySrc(detailRawPic) : '';
-            const avatarClickable = !!(detailPicSrc && profilePicShowsImage(detailRawPic));
-            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailPicSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="this.style.display=\'none\';var f=this.parentNode.querySelector(\'.customer-detail-avatar-fallback\');if(f)f.style.display=\'flex\'">' : initial;
+            const detailPicSrc = customerAvatarDisplaySrc(c);
+            const avatarClickable = customerAvatarShowsImage(c);
+            const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailPicSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : initial;
             const avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
             if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailPicSrc) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
             const res = await apiFetch('/api/customers/' + custId + '/conversations');
@@ -8559,7 +8947,7 @@
             }
             if (page === 'message-templates') { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); }
-            if (page === 'rates-charts') loadRatesCharts();
+            if (page === 'rates-charts') initRatesChartsPage();
             if (page === 'services') { initServicesTabs(); loadServicesPage(); }
             if (page === 'branches') { loadBranches(); }
             if (page === 'staff-activity') { 
@@ -11593,67 +11981,247 @@
             }).join('') + '</tbody></table>';
         }
 
+        let staffActivityOnlineData = [];
+        let staffActivityLoginsData = [];
+        let staffActivityUserIndex = [];
+        let staffActivityStatusFilter = 'all';
+        let staffActivityCurrentTab = 'online';
+
+        function switchStaffActivityTab(tab) {
+            staffActivityCurrentTab = tab || 'online';
+            document.querySelectorAll('.staff-activity-tab').forEach(function(btn) {
+                const on = btn.getAttribute('data-staff-tab') === staffActivityCurrentTab;
+                btn.classList.toggle('active', on);
+                btn.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            document.querySelectorAll('.staff-activity-panel').forEach(function(panel) {
+                const on = panel.getAttribute('data-staff-panel') === staffActivityCurrentTab;
+                panel.classList.toggle('active', on);
+                panel.hidden = !on;
+            });
+        }
+        window.switchStaffActivityTab = switchStaffActivityTab;
+
+        function staffActivityHaystack(obj) {
+            if (!obj) return '';
+            return [obj.name, obj.username, obj.email, obj.firstName, obj.lastName, userDisplay(obj)].filter(Boolean).join(' ').toLowerCase();
+        }
+
+        function buildStaffOnlineRow(u) {
+            const statusClass = (u.status || 'offline').toLowerCase();
+            const statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
+            const lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '\u2014';
+            const branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
+            const deptName = (u.department && u.department.name) ? u.department.name : '\u2014';
+            const ip = u.lastLoginIp || '\u2014';
+            const country = u.lastLoginCountry || '\u2014';
+            const lbl = [t('label_name'), t('th_email'), t('th_branch'), t('th_dept'), t('th_status'), t('th_last_login'), t('th_ip'), t('th_country')];
+            return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" data-status="' + escapeHtml(statusClass) + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer">' +
+                '<td data-label="' + lbl[0] + '"><span class="staff-row-name"><span class="status-dot ' + statusClass + '"></span>' + escapeHtml(userDisplay(u)) + '</span></td>' +
+                '<td data-label="' + lbl[1] + '">' + escapeHtml(u.email || '\u2014') + '</td>' +
+                '<td data-label="' + lbl[2] + '">' + escapeHtml(branchName) + '</td>' +
+                '<td data-label="' + lbl[3] + '">' + escapeHtml(deptName) + '</td>' +
+                '<td data-label="' + lbl[4] + '"><span class="staff-status-badge ' + statusClass + '">' + escapeHtml(statusLabel) + '</span></td>' +
+                '<td data-label="' + lbl[5] + '">' + lastLogin + '</td>' +
+                '<td data-label="' + lbl[6] + '" dir="ltr">' + escapeHtml(ip) + '</td>' +
+                '<td data-label="' + lbl[7] + '">' + escapeHtml(country) + '</td></tr>';
+        }
+
+        function renderOnlineStaffList() {
+            const onlineList = document.getElementById('onlineStaffList');
+            const countEl = document.getElementById('onlineCount');
+            if (!onlineList) return;
+            const q = (document.getElementById('staffOnlineFilter') && document.getElementById('staffOnlineFilter').value || '').trim().toLowerCase();
+            let users = staffActivityOnlineData.slice();
+            if (staffActivityStatusFilter && staffActivityStatusFilter !== 'all') {
+                users = users.filter(function(u) { return (u.status || '').toLowerCase() === staffActivityStatusFilter; });
+            }
+            if (q) {
+                users = users.filter(function(u) { return staffActivityHaystack(u).indexOf(q) >= 0; });
+            }
+            if (countEl) countEl.textContent = staffActivityOnlineData.length;
+            if (users.length === 0) {
+                onlineList.innerHTML = '<div class="empty">' + (staffActivityOnlineData.length ? (t('staff_no_match') || 'موردی یافت نشد') : t('no_staff_online')) + '</div>';
+                return;
+            }
+            const hdr = [t('label_name'), t('th_email'), t('th_branch'), t('th_dept'), t('th_status'), t('th_last_login'), t('th_ip'), t('th_country')];
+            onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr>' + hdr.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + users.map(buildStaffOnlineRow).join('') + '</tbody></table>';
+        }
+
+        function buildStaffLoginRow(r) {
+            const user = r.user || {};
+            const branch = r.branch ? r.branch.name : '\u2014';
+            const time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
+            const uid = r.userId || (user && user.id) || '';
+            const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
+            const ip = r.ip || '\u2014';
+            const country = r.country || '\u2014';
+            const ll = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time'), t('th_ip'), t('th_country'), t('th_summary')];
+            return '<tr' + rowAttrs + '><td data-label="' + ll[0] + '">' + escapeHtml(userDisplay(user)) + '</td><td data-label="' + ll[1] + '">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="' + ll[2] + '">' + escapeHtml(branch) + '</td><td data-label="' + ll[3] + '">' + time + '</td><td data-label="' + ll[4] + '" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="' + ll[5] + '">' + escapeHtml(country) + '</td><td data-label="' + ll[6] + '">' + escapeHtml(r.summary || '') + '</td></tr>';
+        }
+
+        function renderLoginsList() {
+            const loginsList = document.getElementById('loginsList');
+            if (!loginsList) return;
+            const q = (document.getElementById('staffLoginsFilter') && document.getElementById('staffLoginsFilter').value || '').trim().toLowerCase();
+            let rows = staffActivityLoginsData.slice();
+            if (q) {
+                rows = rows.filter(function(r) {
+                    const user = r.user || {};
+                    const hay = staffActivityHaystack(user) + ' ' + (r.summary || '') + ' ' + (r.ip || '') + ' ' + (r.country || '');
+                    return hay.toLowerCase().indexOf(q) >= 0;
+                });
+            }
+            if (rows.length === 0) {
+                loginsList.innerHTML = '<div class="empty">' + (staffActivityLoginsData.length ? (t('staff_no_match') || 'موردی یافت نشد') : t('empty_no_logins')) + '</div>';
+                return;
+            }
+            const hdr = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time'), t('th_ip'), t('th_country'), t('th_summary')];
+            loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr>' + hdr.map(function(h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(buildStaffLoginRow).join('') + '</tbody></table>';
+        }
+
+        function renderStaffActivityQuickFind(q) {
+            const box = document.getElementById('staffActivitySearchResults');
+            const clearBtn = document.getElementById('staffActivitySearchClear');
+            if (!box) return;
+            const term = (q || '').trim().toLowerCase();
+            if (clearBtn) clearBtn.hidden = !term;
+            if (!term || term.length < 2) { box.hidden = true; box.innerHTML = ''; return; }
+            const matches = staffActivityUserIndex.filter(function(u) {
+                return staffActivityHaystack(u).indexOf(term) >= 0;
+            }).slice(0, 8);
+            if (!matches.length) {
+                box.innerHTML = '<div class="staff-search-empty">' + escapeHtml(t('staff_no_match') || 'موردی یافت نشد') + '</div>';
+                box.hidden = false;
+                return;
+            }
+            box.innerHTML = matches.map(function(u) {
+                const st = (u.status || 'offline').toLowerCase();
+                return '<button type="button" class="staff-search-result-item" data-user-id="' + escapeHtml(u.id || '') + '">' +
+                    '<span class="status-dot ' + st + '"></span>' +
+                    '<span class="staff-search-result-name">' + escapeHtml(userDisplay(u)) + '</span>' +
+                    '<span class="staff-search-result-meta">' + escapeHtml(u.email || u.username || '') + '</span></button>';
+            }).join('');
+            box.hidden = false;
+            box.querySelectorAll('.staff-search-result-item').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    const uid = btn.getAttribute('data-user-id');
+                    if (uid) openStaffDetailModal(uid);
+                    box.hidden = true;
+                    const inp = document.getElementById('staffActivityUserSearch');
+                    if (inp) inp.value = '';
+                    if (clearBtn) clearBtn.hidden = true;
+                });
+            });
+        }
+
+        async function loadStaffActivityUserIndex() {
+            const res = await apiFetch('/api/supervision/staff-index');
+            if (res.ok && res.data && res.data.data) {
+                staffActivityUserIndex = res.data.data.filter(function(u) { return u.isActive !== false; });
+                return;
+            }
+            if (typeof can === 'function' && can('users')) {
+                const fallback = await apiFetch('/api/users');
+                if (fallback.ok && fallback.data && fallback.data.data) {
+                    staffActivityUserIndex = fallback.data.data.filter(function(u) { return u.isActive !== false; });
+                }
+            }
+        }
+
+        function applyAttendanceDatePreset(preset) {
+            const fromInp = document.getElementById('attendanceFrom');
+            const toInp = document.getElementById('attendanceTo');
+            if (!fromInp || !toInp) return;
+            const today = new Date();
+            const toStr = fmtTZ(today, 'date');
+            let fromDate = new Date(today);
+            if (preset === 'today') {
+                fromDate = today;
+            } else if (preset === 'week') {
+                const day = today.getDay();
+                const diff = day === 0 ? 6 : day - 1;
+                fromDate.setDate(today.getDate() - diff);
+            } else if (preset === 'month') {
+                fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            }
+            fromInp.value = fmtTZ(fromDate, 'date');
+            toInp.value = toStr;
+            loadAttendanceReport();
+        }
+
+        function exportStaffLoginsCsv() {
+            if (!staffActivityLoginsData.length) return;
+            const header = [t('th_user'), t('th_email'), t('th_branch'), t('th_login_time'), t('th_ip'), t('th_country'), t('th_summary')].join(',');
+            const lines = staffActivityLoginsData.map(function(r) {
+                const user = r.user || {};
+                const cols = [
+                    userDisplay(user),
+                    user.email || '',
+                    (r.branch && r.branch.name) || '',
+                    r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '',
+                    r.ip || '',
+                    r.country || '',
+                    r.summary || ''
+                ].map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; });
+                return cols.join(',');
+            });
+            const blob = new Blob(['\uFEFF' + header + '\n' + lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'staff-logins.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        window.exportStaffLoginsCsv = exportStaffLoginsCsv;
+
         async function loadStaffActivity(opts) {
             const refreshAttendance = !!(opts && opts.refreshAttendance);
             const onlineList = document.getElementById('onlineStaffList');
             const loginsList = document.getElementById('loginsList');
-            const countEl = document.getElementById('onlineCount');
             const loginsTodayEl = document.getElementById('loginsTodayCount');
             const loginsTotalEl = document.getElementById('loginsTotalCount');
-            
             const updatedEl = document.getElementById('staffActivityUpdated');
             if (onlineList) onlineList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
             if (loginsList) loginsList.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            if (!staffActivityUserIndex.length) loadStaffActivityUserIndex();
             const onlineRes = await apiFetch('/api/supervision/online');
             if (onlineRes.needLogin) return;
             if (onlineRes.ok && onlineRes.data && onlineRes.data.data) {
-                const users = onlineRes.data.data;
-                if (countEl) countEl.textContent = users.length;
-                if (onlineList) {
-                    if (users.length === 0) onlineList.innerHTML = '<div class="empty">' + t('no_staff_online') + '</div>';
-                    else onlineList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('label_name') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_status') + '</th><th>' + t('th_last_login') + '</th><th>' + t('th_ip') + '</th><th>' + t('th_country') + '</th></tr></thead><tbody>' + users.map(function(u) {
-                        const statusClass = (u.status || 'offline').toLowerCase();
-                        const statusLabel = { online: t('status_online'), away: t('status_away'), busy: t('status_busy'), offline: t('status_offline') }[statusClass] || u.status;
-                        const lastLogin = u.lastLoginAt ? fmtTZ(u.lastLoginAt, 'datetime') : '\u2014';
-                        const branchName = (u.branch && u.branch.name) ? u.branch.name : '\u2014';
-                        const ip = u.lastLoginIp || '\u2014'; const country = u.lastLoginCountry || '\u2014';
-                        const lbl = [t('label_name'),t('th_email'),t('th_branch'),t('th_status'),t('th_last_login'),t('th_ip'),t('th_country')]; return '<tr class="staff-row" data-user-id="' + escapeHtml(u.id || '') + '" onclick="var uid=this.getAttribute(\'data-user-id\');if(uid&&event.target.tagName!==\'A\')openStaffDetailModal(uid)" style="cursor:pointer"><td data-label="'+lbl[0]+'">' + escapeHtml(userDisplay(u)) + '</td><td data-label="'+lbl[1]+'">' + escapeHtml(u.email || '\u2014') + '</td><td data-label="'+lbl[2]+'">' + escapeHtml(branchName) + '</td><td data-label="'+lbl[3]+'"><span class="status-dot ' + statusClass + '"></span>' + statusLabel + '</td><td data-label="'+lbl[4]+'">' + lastLogin + '</td><td data-label="'+lbl[5]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+lbl[6]+'">' + escapeHtml(country) + '</td></tr>';
-                    }).join('') + '</tbody></table>';
-                }
+                staffActivityOnlineData = onlineRes.data.data;
+                renderOnlineStaffList();
             } else {
+                staffActivityOnlineData = [];
                 const onlineErr = (onlineRes.data && onlineRes.data.error) ? String(onlineRes.data.error) : t('loading_err');
                 if (onlineList) onlineList.innerHTML = '<div class="empty">' + escapeHtml(onlineErr) + '</div>';
+                const countEl = document.getElementById('onlineCount');
                 if (countEl) countEl.textContent = '0';
             }
             const loginsRes = await apiFetch('/api/supervision/logins?limit=50');
             if (loginsRes.needLogin) return;
             if (loginsRes.ok && loginsRes.data && loginsRes.data.data) {
-                const rows = loginsRes.data.data;
+                staffActivityLoginsData = loginsRes.data.data;
                 const todayStr = fmtTZ(new Date(), 'date');
-                function isToday(d) { try { return d && fmtTZ(d, 'date') === todayStr; } catch(e) { return false; } }
-                const loginsToday = rows.filter(function(r) { return isToday(r.createdAt); }).length;
+                function isToday(d) { try { return d && fmtTZ(d, 'date') === todayStr; } catch (e) { return false; } }
+                const loginsToday = staffActivityLoginsData.filter(function(r) { return isToday(r.createdAt); }).length;
                 if (loginsTodayEl) loginsTodayEl.textContent = loginsToday;
-                const totalLogins = (typeof loginsRes.data.total === 'number') ? loginsRes.data.total : rows.length;
+                const totalLogins = (typeof loginsRes.data.total === 'number') ? loginsRes.data.total : staffActivityLoginsData.length;
                 if (loginsTotalEl) loginsTotalEl.textContent = totalLogins;
-                if (loginsList) {
-                    if (rows.length === 0) loginsList.innerHTML = '<div class="empty">' + t('empty_no_logins') + '</div>';
-                    else loginsList.innerHTML = '<table class="sup-table staff-table"><thead><tr><th>' + t('th_user') + '</th><th>' + t('th_email') + '</th><th>' + t('th_branch') + '</th><th>' + t('th_login_time') + '</th><th>' + t('th_ip') + '</th><th>' + t('th_country') + '</th><th>' + t('th_summary') + '</th></tr></thead><tbody>' + rows.map(function(r) {
-                        const user = r.user || {};
-                        const branch = r.branch ? r.branch.name : '\u2014';
-                        const time = r.createdAt ? fmtTZ(r.createdAt, 'datetime') : '';
-                        const uid = r.userId || (user && user.id) || '';
-                        const rowAttrs = uid ? ' class="staff-row" data-user-id="' + escapeHtml(uid) + '" onclick="openStaffDetailModal(this.getAttribute(\'data-user-id\'))" style="cursor:pointer"' : '';
-                        const ip = r.ip || '\u2014'; const country = r.country || '\u2014';
-                        const ll = [t('th_user'),t('th_email'),t('th_branch'),t('th_login_time'),t('th_ip'),t('th_country'),t('th_summary')]; return '<tr' + rowAttrs + '><td data-label="'+ll[0]+'">' + escapeHtml(userDisplay(user)) + '</td><td data-label="'+ll[1]+'">' + escapeHtml(user.email || '\u2014') + '</td><td data-label="'+ll[2]+'">' + escapeHtml(branch) + '</td><td data-label="'+ll[3]+'">' + time + '</td><td data-label="'+ll[4]+'" dir="ltr">' + escapeHtml(ip) + '</td><td data-label="'+ll[5]+'">' + escapeHtml(country) + '</td><td data-label="'+ll[6]+'">' + escapeHtml(r.summary || '') + '</td></tr>';
-                    }).join('') + '</tbody></table>';
-                }
+                renderLoginsList();
             } else {
+                staffActivityLoginsData = [];
                 const loginsErr = (loginsRes.data && loginsRes.data.error) ? String(loginsRes.data.error) : t('login_err_load');
                 if (loginsList) loginsList.innerHTML = '<div class="empty">' + escapeHtml(loginsErr) + '</div>';
                 if (loginsTodayEl) loginsTodayEl.textContent = '0';
                 if (loginsTotalEl) loginsTotalEl.textContent = '0';
             }
-            if (updatedEl) { updatedEl.style.display = 'block'; updatedEl.textContent = (LANG === 'fa' ? 'آخرین به\u200Cروزرسانی: ' : 'Last updated: ') + fmtTZ(new Date().toISOString(), 'datetime'); }
+            if (updatedEl) {
+                updatedEl.style.display = 'block';
+                updatedEl.textContent = (LANG === 'fa' ? 'آخرین به\u200Cروزرسانی: ' : 'Last updated: ') + fmtTZ(new Date().toISOString(), 'datetime');
+            }
             if (!staffActivityAttendanceInitDone) {
                 loadAttendanceReportFilters().then(function() {
                     staffActivityAttendanceInitDone = true;

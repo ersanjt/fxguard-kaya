@@ -10,6 +10,7 @@ const { getAccessibleCustomerIds, canAccessCustomer } = require('../lib/customer
 const { normalizePhone } = require('../lib/phoneUtils');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const { persistRemoteAvatarIfNeeded } = require('../lib/customerAvatar');
+const { getCustomerAvatar } = require('./customerAvatar');
 
 // آپلود اسناد مشتری
 const docStorage = multer.diskStorage({
@@ -102,6 +103,8 @@ router.get('/', async (req, res, next) => {
         next(err);
     }
 });
+
+router.get('/:id/avatar', getCustomerAvatar);
 
 router.get('/:id', async (req, res, next) => {
     try {

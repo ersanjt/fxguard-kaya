@@ -16,6 +16,7 @@ const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessa
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
 const { persistRemoteAvatarIfNeeded, digitsOnlyChatPhone, maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
 const { notifySystemEvent } = require('./systemEventNotifier');
+const { resolveMobileWhatsappUser } = require('../lib/resolveMobileWhatsappUser');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
@@ -533,44 +534,78 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             ? { senderId: messageData.author || null, senderName: messageData.authorName || (messageData.author && contact && (contact.name || contact.pushname)) || null }
             : {};
 
-        if (isFromMe && body) {
-            const bodyStr = String(body).trim();
+        if (isFromMe) {
+            const waMsgId = messageData.id || null;
+            if (waMsgId) {
+                const existingByWa = await Message.findOne({ where: { whatsappId: waMsgId } });
+                if (existingByWa) return;
+            }
+
+            const bodyStr = String(body || '').trim();
             const contentToMatch = bodyStr.startsWith(AI_MESSAGE_PREFIX)
                 ? bodyStr.slice(AI_MESSAGE_PREFIX.length).trim()
                 : (bodyStr.startsWith('AI KAYA: ') ? bodyStr.slice(9).trim() : bodyStr);
-            const recent = await Message.findOne({
+
+            if (bodyStr) {
+                const recentAuto = await Message.findOne({
+                    where: {
+                        conversationId: conversation.id,
+                        direction: 'outgoing',
+                        isAutoReply: true
+                    },
+                    order: [['createdAt', 'DESC']]
+                });
+                const autoAgeMs = recentAuto ? (Date.now() - new Date(recentAuto.createdAt).getTime()) : Infinity;
+                if (recentAuto && autoAgeMs < 120000) {
+                    const storedContent = String(recentAuto.content || '').trim();
+                    const match = storedContent === contentToMatch || bodyStr === storedContent
+                        || (bodyStr.startsWith(AI_MESSAGE_PREFIX) && storedContent === contentToMatch)
+                        || (bodyStr.startsWith('AI KAYA: ') && storedContent === contentToMatch);
+                    if (match) {
+                        await recentAuto.update({ whatsappId: waMsgId, status: 'sent' });
+                        return;
+                    }
+                }
+            }
+
+            const recentStaff = await Message.findAll({
                 where: {
                     conversationId: conversation.id,
                     direction: 'outgoing',
-                    isAutoReply: true
+                    userId: { [Op.ne]: null },
+                    timestamp: { [Op.gte]: new Date(Date.now() - 120000) }
                 },
-                order: [['createdAt', 'DESC']]
+                order: [['timestamp', 'DESC']],
+                limit: 8
             });
-            const ageMs = recent ? (Date.now() - new Date(recent.createdAt).getTime()) : Infinity;
-            if (recent && ageMs < 120000) {
-                const storedContent = String(recent.content || '').trim();
-                const match = storedContent === contentToMatch || bodyStr === storedContent
-                    || (bodyStr.startsWith(AI_MESSAGE_PREFIX) && storedContent === contentToMatch)
-                    || (bodyStr.startsWith('AI KAYA: ') && storedContent === contentToMatch);
-                if (match) {
-                    await recent.update({ whatsappId: messageData.id || null, status: 'sent' });
-                    return;
+            for (const cand of recentStaff) {
+                const stored = String(cand.content || '').trim();
+                if (bodyStr && stored) {
+                    const echoMatchesStored = bodyStr === stored || bodyStr.endsWith(stored)
+                        || stored === contentToMatch || bodyStr.includes(stored);
+                    if (echoMatchesStored && stored.length >= 3) {
+                        if (waMsgId && !cand.whatsappId) await cand.update({ whatsappId: waMsgId, status: 'sent' });
+                        return;
+                    }
+                }
+                if (!bodyStr && !stored && cand.hasMedia && hasMedia && (msgType === 'audio' || rawType === 'ptt')) {
+                    const ageMs = Date.now() - new Date(cand.timestamp).getTime();
+                    if (ageMs < 90000) {
+                        if (waMsgId && !cand.whatsappId) await cand.update({ whatsappId: waMsgId, status: 'sent' });
+                        return;
+                    }
                 }
             }
         }
 
-        // پیام خروجی از اپ واتساپ روی موبایل: در CRM قبلاً userId نداشت → در UI به‌اشتباه آواتار کاربرِ در حال مشاهده (مثلاً owner) دیده می‌شد. تخصیص به مسئول مکالمه یا آخرین کارمندی که از پنل پاسخ داده.
+        // پیام خروجی واقعی از اپ واتساپ روی موبایل (نه echo پنل): به مالک/صاحب خط Gateway نسبت داده می‌شود.
         let outboundUserId = null;
         if (isFromMe) {
-            outboundUserId = conversation.assignedTo || null;
-            if (!outboundUserId) {
-                const lastStaff = await Message.findOne({
-                    where: { conversationId: conversation.id, direction: 'outgoing', userId: { [Op.ne]: null } },
-                    order: [['timestamp', 'DESC']],
-                    attributes: ['userId']
-                });
-                if (lastStaff && lastStaff.userId) outboundUserId = lastStaff.userId;
-            }
+            msgMetadata.sendSource = 'whatsapp_mobile';
+            const mobileSender = await resolveMobileWhatsappUser(logger);
+            outboundUserId = mobileSender.userId || null;
+            if (mobileSender.gatewayNumber) msgMetadata.gatewayNumber = mobileSender.gatewayNumber;
+            if (mobileSender.gatewayName) msgMetadata.gatewayPushName = mobileSender.gatewayName;
         }
         const newMessage = await Message.create({
             conversationId: conversation.id,

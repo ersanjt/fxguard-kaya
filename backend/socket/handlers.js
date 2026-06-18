@@ -8,6 +8,7 @@ const { logActivity } = require('../services/activityLog');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { canAccessConversation } = require('../lib/conversationAccess');
 const { buildWhatsAppOutboundText, validateOutboundSender } = require('../lib/outboundMessagePrefix');
+const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
 
 const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
 const CALL_ROOM_TTL_MS = 2 * 60 * 60 * 1000; // 2 ساعت
@@ -46,11 +47,29 @@ function cleanupStaleCallRooms() {
 setInterval(cleanupStaleCallRooms, 30 * 60 * 1000);
 
 function setupSocketHandlers(io, getRabbitChannel, logger) {
-    io.on('connection', (socket) => {
+    io.on('connection', async (socket) => {
         logger.info(`🔌 User connected: ${socket.userId}`);
 
         if (socket.userId) socket.join('user_' + String(socket.userId));
         if (socket.departmentId) socket.join(`department_${socket.departmentId}`);
+
+        if (socket.userId) {
+            try {
+                const connectedUser = await User.findByPk(socket.userId, {
+                    attributes: ['id', 'name', 'email', 'username', 'role', 'departmentId', 'branchId', 'status'],
+                });
+                if (connectedUser && connectedUser.status === 'offline') {
+                    await connectedUser.update({ status: 'online' });
+                    await notifyStaffPresence(io, connectedUser, {
+                        event: 'online',
+                        status: 'online',
+                        previousStatus: 'offline',
+                    });
+                }
+            } catch (e) {
+                logger.warn('Socket connect presence update:', e.message);
+            }
+        }
 
         socket.on('send_message', async (data) => {
             try {
@@ -205,8 +224,17 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
             statusDebounceTimers[uid] = setTimeout(async () => {
                 delete statusDebounceTimers[uid];
                 try {
+                    const prevUser = await User.findByPk(uid, {
+                        attributes: ['id', 'status', 'name', 'email', 'username', 'role', 'departmentId', 'branchId'],
+                    });
+                    if (!prevUser || prevUser.status === status) return;
+                    const previousStatus = prevUser.status;
                     await User.update({ status }, { where: { id: uid } });
-                    io.emit('user_status', { userId: uid, status });
+                    await notifyStaffPresence(io, prevUser, {
+                        event: 'status',
+                        status,
+                        previousStatus,
+                    });
                 } catch (e) {
                     logger.warn('status_change update error:', e.message);
                 }
@@ -230,6 +258,9 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     delete statusDebounceTimers[socket.userId];
                 }
                 try {
+                    const disconnectUser = await User.findByPk(socket.userId, {
+                        attributes: ['id', 'status', 'name', 'email', 'username', 'role', 'departmentId', 'branchId'],
+                    });
                     await User.update({ status: 'offline' }, { where: { id: socket.userId } });
                     await logActivity({
                         userId: socket.userId,
@@ -241,7 +272,13 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                         summary: 'خروج از پورتال (قطع اتصال)',
                         metadata: {}
                     });
-                    io.emit('user_status', { userId: socket.userId, status: 'offline' });
+                    if (disconnectUser) {
+                        await notifyStaffPresence(io, disconnectUser, {
+                            event: 'logout',
+                            status: 'offline',
+                            previousStatus: disconnectUser.status,
+                        });
+                    }
                 } catch (e) {
                     logger.warn('Disconnect status update:', e.message);
                 }

@@ -796,6 +796,47 @@ async function runTests() {
             .send({ transferToUserId: createdUserId });
         assert.strictEqual(r.status, 400);
     });
+
+    section('Staff supervision — canSuperviseStaff');
+    const { canSuperviseStaff } = require('../lib/staffSupervision');
+    const deptA = '11111111-1111-4111-8111-111111111111';
+    const deptB = '22222222-2222-4222-8222-222222222222';
+
+    await test('owner can supervise agent in any department', async () => {
+        assert.strictEqual(canSuperviseStaff(
+            { id: '1', role: 'owner' },
+            { id: '2', role: 'agent', departmentId: deptB, isActive: true }
+        ), true);
+    });
+
+    await test('manager supervises agent in same department only', async () => {
+        assert.strictEqual(canSuperviseStaff(
+            { id: '1', role: 'manager', departmentId: deptA },
+            { id: '2', role: 'agent', departmentId: deptA, isActive: true }
+        ), true);
+        assert.strictEqual(canSuperviseStaff(
+            { id: '1', role: 'manager', departmentId: deptA },
+            { id: '2', role: 'agent', departmentId: deptB, isActive: true }
+        ), false);
+    });
+
+    await test('supervisor cannot supervise manager or peer supervisor', async () => {
+        assert.strictEqual(canSuperviseStaff(
+            { id: '1', role: 'supervisor', departmentId: deptA },
+            { id: '2', role: 'manager', departmentId: deptA, isActive: true }
+        ), false);
+        assert.strictEqual(canSuperviseStaff(
+            { id: '1', role: 'supervisor', departmentId: deptA },
+            { id: '2', role: 'agent', departmentId: deptA, isActive: true }
+        ), true);
+    });
+
+    await test('agent cannot supervise anyone', async () => {
+        assert.strictEqual(canSuperviseStaff(
+            { id: '1', role: 'agent', departmentId: deptA },
+            { id: '2', role: 'agent', departmentId: deptA, isActive: true }
+        ), false);
+    });
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────

@@ -84,6 +84,8 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         mediaData = { url: relPath, filename: media.filename || media.name, mimetype: media.mimetype };
     }
 
+    const msgMeta = metadata && typeof metadata === 'object' ? { ...metadata } : {};
+    msgMeta.sendSource = 'crm_panel';
     const msg = await Message.create({
         conversationId: conversation.id,
         customerId: conversation.customerId,
@@ -93,7 +95,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         type: msgType,
         hasMedia,
         mediaData,
-        metadata: metadata && typeof metadata === 'object' ? metadata : {},
+        metadata: msgMeta,
         timestamp: new Date(),
     });
 

@@ -409,6 +409,8 @@ function attachClientEvents(c) {
         healthCheckFailCount = 0;
         try {
             const chat = await msg.getChat();
+            // پیام خروجی چت مستقیم از message_create پردازش می‌شود — اینجا دوباره نفرست (echo دوبل در CRM)
+            if (msg.fromMe && !chat?.isGroup) return;
             // برای گروه: getContact() با author فرستنده را برمی‌گرداند؛ برای چت مستقیم: contact فرستنده است
             const contact = await msg.getContact();
             let authorId = null;

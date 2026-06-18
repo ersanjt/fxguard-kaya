@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="کایا CRM">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان صرافی کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="612e5edb07f5">
+    <meta name="crm-build" content="4008a5699632">
     <title>پورتال کارکنان کایا | صرافی کایا</title>
     <link rel="icon" id="favicon" href="/favicon-kaya.svg">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/favicon-kaya.svg">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=612e5edb07f5">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=612e5edb07f5" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=4008a5699632">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=4008a5699632" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -375,17 +375,24 @@
                     <button type="button" class="conv-fab-btn" id="convFabBtn" onclick="openNewConvModal()" aria-label="مکالمه جدید" title="مکالمه جدید">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                     </button>
-                    <div class="conv-page-header">
-                        <div>
-                            <h2 data-i18n="page_conversations">مکالمات</h2>
-                            <p class="conv-page-desc" data-i18n="conv_page_desc">مدیریت مکالمات با مشتریان، پاسخ‌دهی و تخصیص به دپارتمان‌ها.</p>
-                        </div>
-                        <div class="conv-header-actions">
-                            <button type="button" class="btn-primary" id="btnNewConv" data-i18n="conv_new">مکالمه جدید</button>
-                        </div>
-                    </div>
                     <div id="convStats" class="conv-stats" style="display:none;"></div>
+                    <div class="conv-layout">
+                    <aside class="conv-sidebar conv-list-wrap">
                     <div class="conv-filters-panel" id="convFiltersTwoCol">
+                        <header class="conv-controls-header">
+                            <div class="conv-controls-header-title">
+                                <h2 data-i18n="page_conversations">مکالمات</h2>
+                                <span class="conv-list-count" id="convListCount"></span>
+                            </div>
+                            <div class="conv-controls-header-actions">
+                                <button type="button" class="conv-sync-groups-btn" id="btnSyncGroups" data-i18n-title="conv_sync_groups" title="همگام‌سازی گروه‌های واتساپ" aria-label="همگام‌سازی گروه‌ها">
+                                    <span class="conv-sync-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg></span>
+                                    <span class="conv-sync-text" data-i18n="conv_sync_groups">همگام‌سازی گروه‌ها</span>
+                                </button>
+                                <button type="button" class="btn-primary conv-new-btn" id="btnNewConv" data-i18n="conv_new">مکالمه جدید</button>
+                            </div>
+                        </header>
+                        <div class="conv-filters-body">
                         <div class="conv-filters-top-row">
                             <div class="conv-search-bar">
                                 <span class="conv-search-icon" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg></span>
@@ -395,10 +402,6 @@
                                 <svg class="conv-more-filters-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" aria-hidden="true"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
                                 <span class="conv-more-filters-label" data-i18n="more_filters">فیلترهای بیشتر</span>
                                 <span class="conv-filter-active-dot" id="convFilterActiveDot" hidden></span>
-                            </button>
-                            <button type="button" class="conv-sync-groups-btn" id="btnSyncGroups" data-i18n-title="conv_sync_groups" title="همگام‌سازی گروه‌های واتساپ" aria-label="همگام‌سازی گروه‌ها">
-                                <span class="conv-sync-icon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg></span>
-                                <span class="conv-sync-text" data-i18n="conv_sync_groups">همگام‌سازی گروه‌ها</span>
                             </button>
                         </div>
                         <div class="conv-quick-tabs-bar" id="convQuickTabsBar">
@@ -444,15 +447,10 @@
                             </div>
                             <div class="conv-filters-backdrop" id="convFiltersBackdrop" onclick="document.getElementById('convFilterToggle').click()"></div>
                         </div>
-                    </div>
-                    <div class="conv-layout">
-                        <div class="conv-list-wrap">
-                            <div class="conv-list-header">
-                                <span class="conv-list-title" data-i18n="conv_list_title">مکالمات</span>
-                                <span class="conv-list-count" id="convListCount"></span>
-                            </div>
-                            <div id="convList" class="conv-list-pane"></div>
                         </div>
+                    </div>
+                            <div id="convList" class="conv-list-pane"></div>
+                    </aside>
                         <div id="chatArea" class="chat-area">
                         <div id="chatEmptyState" class="chat-empty-state" aria-hidden="true">
                             <div class="chat-empty-state-inner">
@@ -472,62 +470,10 @@
                                 <div class="wa-chat-header-actions">
                                     <button type="button" class="wa-chat-call-btn" id="waChatVideoBtn" onclick="waConvVideoCall()" title="Video" data-i18n-title="wa_video_call" aria-label="Video"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></button>
                                     <button type="button" class="wa-chat-call-btn" id="waChatVoiceBtn" onclick="waConvVoiceCall()" title="Voice" data-i18n-title="wa_voice_call" aria-label="Voice"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg></button>
-                                    <button type="button" class="chat-detail-toggle" id="chatDetailToggle" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                                    <button type="button" class="chat-detail-toggle" id="chatDetailToggle" aria-label="نمایش/مخفی تنظیمات" title="تنظیمات مکالمه" data-i18n-title="conv_mgmt_panel_title" style="display:none;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg></button>
                                 </div>
                             </div>
-                            <div id="convDetailBar" class="conv-detail-bar" style="display:none;" hidden>
-                                <div class="conv-detail-inner">
-                                    <section class="conv-detail-section conv-detail-section--badges" aria-labelledby="convDetailSummaryHeading">
-                                        <h3 class="conv-detail-sr-title" id="convDetailSummaryHeading" data-i18n="conv_detail_summary">خلاصه مکالمه</h3>
-                                        <div class="conv-detail-badges" id="convDetailBadges" role="list"></div>
-                                    </section>
-                                    <section id="convSupervisionPanel" class="conv-detail-section conv-supervision-panel" style="display:none;" hidden aria-labelledby="convSupervisionHeading">
-                                        <h3 class="conv-supervision-title" id="convSupervisionHeading" data-i18n="conv_supervision_title">نظارت مدیر</h3>
-                                        <div id="convSupervisionStats" class="conv-supervision-stats" role="status"></div>
-                                    </section>
-                                    <section id="convRatingSection" class="conv-detail-section conv-rating-section" style="display:none;" hidden aria-labelledby="convRatingHeading">
-                                        <label id="convRatingHeading" class="conv-rating-heading" data-i18n="conv_rating">رتبه‌دهی / نظرسنجی</label>
-                                        <div class="conv-rating-stars" id="convRatingStars" role="group" aria-labelledby="convRatingHeading">
-                                            <button type="button" class="conv-rating-star" data-rating="1" aria-label="1">★</button>
-                                            <button type="button" class="conv-rating-star" data-rating="2" aria-label="2">★</button>
-                                            <button type="button" class="conv-rating-star" data-rating="3" aria-label="3">★</button>
-                                            <button type="button" class="conv-rating-star" data-rating="4" aria-label="4">★</button>
-                                            <button type="button" class="conv-rating-star" data-rating="5" aria-label="5">★</button>
-                                        </div>
-                                        <textarea id="convFeedback" class="conv-feedback-input" rows="2" placeholder="" data-i18n-ph="conv_feedback_ph" aria-describedby="convRatingHeading"></textarea>
-                                    </section>
-                                    <section id="convDetailActions" class="conv-detail-section conv-detail-actions" style="display:none;" hidden aria-labelledby="convDetailActionsHeading">
-                                        <h3 class="conv-detail-sr-title" id="convDetailActionsHeading" data-i18n="conv_detail_actions_title">تنظیمات و اقدامات</h3>
-                                        <div class="conv-detail-actions-top">
-                                            <button type="button" id="btnAssignToMe" class="btn-secondary btn-sm conv-detail-btn-assign" data-i18n="conv_assign_me">تخصیص به من</button>
-                                        </div>
-                                        <div class="conv-detail-fields-grid">
-                                            <div class="conv-detail-field">
-                                                <label for="convDetailStatus" class="conv-detail-field-label" data-i18n="conv_form_status">وضعیت</label>
-                                                <select id="convDetailStatus" class="conv-detail-select"><option value="open" data-i18n="status_open">باز</option><option value="pending" data-i18n="status_pending">در انتظار</option><option value="closed" data-i18n="status_closed">بسته</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option></select>
-                                            </div>
-                                            <div class="conv-detail-field">
-                                                <label for="convDetailPriority" class="conv-detail-field-label" data-i18n="conv_form_priority">اولویت</label>
-                                                <select id="convDetailPriority" class="conv-detail-select"><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
-                                            </div>
-                                            <div class="conv-detail-field conv-detail-field--full">
-                                                <label for="convDetailDept" class="conv-detail-field-label" data-i18n="label_dept">دپارتمان</label>
-                                                <select id="convDetailDept" class="conv-detail-select" data-i18n-title="label_dept" title="دپارتمان"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
-                                            </div>
-                                            <div class="conv-detail-field conv-detail-field--full">
-                                                <label for="convDetailAssignee" class="conv-detail-field-label" data-i18n="conv_form_assignee">مسئول</label>
-                                                <select id="convDetailAssignee" class="conv-detail-select"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
-                                            </div>
-                                        </div>
-                                        <div class="conv-detail-actions-footer">
-                                            <button type="button" id="convDetailApplyBtn" class="btn-secondary btn-sm conv-detail-btn-apply" data-i18n="btn_apply">اعمال</button>
-                                            <button type="button" id="btnConvHide" class="btn-secondary btn-sm" data-i18n="btn_conv_hide" style="display:none;">مخفی از کارکنان</button>
-                                            <button type="button" id="btnConvArchive" class="btn-secondary btn-sm" data-i18n="btn_archive" style="display:none;">ارسال به آرشیو</button>
-                                            <button type="button" id="btnConvDelete" class="btn-danger btn-sm" data-i18n="btn_delete" style="display:none;">حذف</button>
-                                        </div>
-                                    </section>
-                                </div>
-                            </div>
+                            <div class="chat-header-summary" id="chatHeaderSummary" hidden aria-live="polite"></div>
                         </div>
                         <div class="chat-messages" id="chatMessages"></div>
                         <div id="chatReplyPreview" class="chat-reply-preview" style="display:none;">
@@ -604,6 +550,66 @@
                             </div>
                         </div>
                     </div>
+                    <div id="convMgmtBackdrop" class="conv-mgmt-backdrop" hidden aria-hidden="true"></div>
+                    <aside id="convMgmtPanel" class="conv-mgmt-panel" aria-hidden="true" hidden>
+                        <header class="conv-mgmt-header">
+                            <h3 class="conv-mgmt-title" data-i18n="conv_mgmt_panel_title">مدیریت مکالمه</h3>
+                            <button type="button" class="conv-mgmt-close" id="convMgmtClose" aria-label="بستن" data-i18n-title="close">&times;</button>
+                        </header>
+                        <div id="convDetailBar" class="conv-detail-bar" style="display:none;" hidden>
+                            <div class="conv-detail-inner">
+                                <section class="conv-detail-section conv-detail-section--badges" aria-labelledby="convDetailSummaryHeading">
+                                    <h3 class="conv-detail-sr-title" id="convDetailSummaryHeading" data-i18n="conv_detail_summary">خلاصه مکالمه</h3>
+                                    <div class="conv-detail-badges" id="convDetailBadges" role="list"></div>
+                                </section>
+                                <section id="convSupervisionPanel" class="conv-detail-section conv-supervision-panel" style="display:none;" hidden aria-labelledby="convSupervisionHeading">
+                                    <h3 class="conv-supervision-title" id="convSupervisionHeading" data-i18n="conv_supervision_title">نظارت مدیر</h3>
+                                    <div id="convSupervisionStats" class="conv-supervision-stats" role="status"></div>
+                                </section>
+                                <section id="convRatingSection" class="conv-detail-section conv-rating-section" style="display:none;" hidden aria-labelledby="convRatingHeading">
+                                    <label id="convRatingHeading" class="conv-rating-heading" data-i18n="conv_rating">رتبه‌دهی / نظرسنجی</label>
+                                    <div class="conv-rating-stars" id="convRatingStars" role="group" aria-labelledby="convRatingHeading">
+                                        <button type="button" class="conv-rating-star" data-rating="1" aria-label="1">★</button>
+                                        <button type="button" class="conv-rating-star" data-rating="2" aria-label="2">★</button>
+                                        <button type="button" class="conv-rating-star" data-rating="3" aria-label="3">★</button>
+                                        <button type="button" class="conv-rating-star" data-rating="4" aria-label="4">★</button>
+                                        <button type="button" class="conv-rating-star" data-rating="5" aria-label="5">★</button>
+                                    </div>
+                                    <textarea id="convFeedback" class="conv-feedback-input" rows="2" placeholder="" data-i18n-ph="conv_feedback_ph" aria-describedby="convRatingHeading"></textarea>
+                                </section>
+                                <section id="convDetailActions" class="conv-detail-section conv-detail-actions" style="display:none;" hidden aria-labelledby="convDetailActionsHeading">
+                                    <h3 class="conv-detail-sr-title" id="convDetailActionsHeading" data-i18n="conv_detail_actions_title">تنظیمات و اقدامات</h3>
+                                    <div class="conv-detail-actions-top">
+                                        <button type="button" id="btnAssignToMe" class="btn-secondary btn-sm conv-detail-btn-assign" data-i18n="conv_assign_me">تخصیص به من</button>
+                                    </div>
+                                    <div class="conv-detail-fields-grid">
+                                        <div class="conv-detail-field">
+                                            <label for="convDetailStatus" class="conv-detail-field-label" data-i18n="conv_form_status">وضعیت</label>
+                                            <select id="convDetailStatus" class="conv-detail-select"><option value="open" data-i18n="status_open">باز</option><option value="pending" data-i18n="status_pending">در انتظار</option><option value="closed" data-i18n="status_closed">بسته</option><option value="resolved" data-i18n="status_resolved">حل‌شده</option></select>
+                                        </div>
+                                        <div class="conv-detail-field">
+                                            <label for="convDetailPriority" class="conv-detail-field-label" data-i18n="conv_form_priority">اولویت</label>
+                                            <select id="convDetailPriority" class="conv-detail-select"><option value="low" data-i18n="priority_low">کم</option><option value="normal" data-i18n="priority_normal">عادی</option><option value="high" data-i18n="priority_high">مهم</option><option value="urgent" data-i18n="priority_urgent">فوری</option></select>
+                                        </div>
+                                        <div class="conv-detail-field conv-detail-field--full">
+                                            <label for="convDetailDept" class="conv-detail-field-label" data-i18n="label_dept">دپارتمان</label>
+                                            <select id="convDetailDept" class="conv-detail-select" data-i18n-title="label_dept" title="دپارتمان"><option value="" data-i18n="no_dept">بدون دپارتمان</option></select>
+                                        </div>
+                                        <div class="conv-detail-field conv-detail-field--full">
+                                            <label for="convDetailAssignee" class="conv-detail-field-label" data-i18n="conv_form_assignee">مسئول</label>
+                                            <select id="convDetailAssignee" class="conv-detail-select"><option value="" data-i18n="no_assignee">بدون تخصیص</option></select>
+                                        </div>
+                                    </div>
+                                    <div class="conv-detail-actions-footer">
+                                        <button type="button" id="convDetailApplyBtn" class="btn-secondary btn-sm conv-detail-btn-apply" data-i18n="btn_apply">اعمال</button>
+                                        <button type="button" id="btnConvHide" class="btn-secondary btn-sm" data-i18n="btn_conv_hide" style="display:none;">مخفی از کارکنان</button>
+                                        <button type="button" id="btnConvArchive" class="btn-secondary btn-sm" data-i18n="btn_archive" style="display:none;">ارسال به آرشیو</button>
+                                        <button type="button" id="btnConvDelete" class="btn-danger btn-sm" data-i18n="btn_delete" style="display:none;">حذف</button>
+                                    </div>
+                                </section>
+                            </div>
+                        </div>
+                    </aside>
                     </div>
                 </div>
                 <div id="pageCustomers" class="page">
@@ -1290,66 +1296,133 @@
                     </div>
                 </div>
                 <div id="pageStaffActivity" class="page staff-activity-page">
-                    <div class="staff-activity-header">
-                        <h2 data-i18n="page_staff_activity">ورودها و وضعیت آنلاین کارکنان</h2>
-                        <p class="staff-activity-intro text-muted" data-i18n="staff_intro">مشاهده کارکنان آنلاین، آخرین ورودها و جزئیات فعالیت هر نفر — برای مدیر و بالاتر</p>
-                        <div class="staff-activity-meta">
-                            <p class="staff-activity-updated text-muted" id="staffActivityUpdated" style="display:none;"></p>
-                            <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" title="به‌روزرسانی" aria-label="به‌روزرسانی"><span class="refresh-icon">↻</span> <span data-i18n="refresh">به‌روزرسانی</span></button>
+                    <header class="staff-activity-header">
+                        <div class="staff-activity-header-main">
+                            <div class="staff-activity-header-badge" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#icon-user-online"/></svg></div>
+                            <div class="staff-activity-header-text">
+                                <h2 data-i18n="page_staff_activity">ورودها و وضعیت آنلاین کارکنان</h2>
+                                <p class="staff-activity-intro text-muted" data-i18n="staff_intro">مشاهده کارکنان آنلاین، آخرین ورودها و جزئیات فعالیت هر نفر — برای مدیر و بالاتر</p>
+                            </div>
+                            <div class="staff-activity-header-actions">
+                                <button type="button" class="btn btn-sm btn-outline staff-activity-refresh" id="staffActivityRefresh" title="به‌روزرسانی" aria-label="به‌روزرسانی">
+                                    <span class="refresh-icon">↻</span> <span data-i18n="refresh">به‌روزرسانی</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                        <p class="staff-activity-updated text-muted" id="staffActivityUpdated" style="display:none;"></p>
+                        <div class="staff-activity-quick-find">
+                            <label class="staff-activity-quick-find-label" for="staffActivityUserSearch" data-i18n="staff_quick_find">جستجوی سریع کارمند</label>
+                            <div class="staff-activity-quick-find-row">
+                                <input type="search" id="staffActivityUserSearch" class="staff-activity-search-input" data-i18n-ph="staff_search_ph" placeholder="نام، ایمیل یا نام کاربری..." autocomplete="off">
+                                <button type="button" class="btn-secondary btn-sm" id="staffActivitySearchClear" hidden data-i18n="clear">پاک کردن</button>
+                            </div>
+                            <div id="staffActivitySearchResults" class="staff-activity-search-results" hidden></div>
+                        </div>
+                    </header>
                     <div class="staff-activity-stats-row">
-                        <div class="stat-card stat-card-accent staff-stat-online">
+                        <button type="button" class="stat-card stat-card-accent staff-stat-online staff-stat-card-btn" data-staff-tab="online" aria-label="کارکنان آنلاین">
                             <div class="stat-card-icon">🟢</div>
                             <div class="stat-card-content">
                                 <div class="val" id="onlineCount">0</div>
                                 <div class="label" data-i18n="staff_online">کارکنان آنلاین</div>
                             </div>
-                        </div>
-                        <div class="stat-card staff-stat-logins">
+                        </button>
+                        <button type="button" class="stat-card staff-stat-logins staff-stat-card-btn" data-staff-tab="logins" aria-label="ورود امروز">
                             <div class="stat-card-icon">📋</div>
                             <div class="stat-card-content">
                                 <div class="val" id="loginsTodayCount">0</div>
                                 <div class="label" data-i18n="staff_logins_today">ورود امروز</div>
                             </div>
-                        </div>
-                        <div class="stat-card staff-stat-total">
+                        </button>
+                        <button type="button" class="stat-card staff-stat-total staff-stat-card-btn" data-staff-tab="logins" aria-label="کل ورودها">
                             <div class="stat-card-icon">📊</div>
                             <div class="stat-card-content">
                                 <div class="val" id="loginsTotalCount">0</div>
                                 <div class="label" data-i18n="staff_logins_total_registered">کل ورودهای ثبت‌شده</div>
                             </div>
+                        </button>
+                        <button type="button" class="stat-card staff-stat-attendance staff-stat-card-btn" data-staff-tab="attendance" aria-label="گزارش حضور">
+                            <div class="stat-card-icon">⏱</div>
+                            <div class="stat-card-content">
+                                <div class="val staff-stat-attendance-val" data-i18n="staff_tab_attendance_short">حضور</div>
+                                <div class="label" data-i18n="attendance_report">گزارش حضور و غیاب</div>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="staff-activity-tabs-wrap">
+                        <div class="staff-activity-tabs" role="tablist" aria-label="بخش‌های فعالیت کارکنان">
+                            <button type="button" class="staff-activity-tab active" role="tab" aria-selected="true" data-staff-tab="online" id="staffTabOnline" data-i18n="staff_tab_online">آنلاین</button>
+                            <button type="button" class="staff-activity-tab" role="tab" aria-selected="false" data-staff-tab="logins" id="staffTabLogins" data-i18n="staff_tab_logins">ورودها</button>
+                            <button type="button" class="staff-activity-tab" role="tab" aria-selected="false" data-staff-tab="attendance" id="staffTabAttendance" data-i18n="staff_tab_attendance">حضور و غیاب</button>
                         </div>
                     </div>
-                    <div class="staff-activity-sections">
-                        <div class="staff-activity-section staff-section-online">
-                            <div class="staff-section-header">
-                                <h3 class="staff-activity-section-title" data-i18n="staff_online">کارکنان آنلاین</h3>
-                                <span class="staff-section-hint" data-i18n="staff_online_hint">کلیک برای جزئیات فعالیت</span>
+                    <div class="staff-activity-panels">
+                        <section class="staff-activity-panel active" id="staffPanelOnline" data-staff-panel="online" role="tabpanel" aria-labelledby="staffTabOnline">
+                            <div class="staff-panel-toolbar">
+                                <div class="staff-panel-toolbar-left">
+                                    <h3 class="staff-activity-section-title" data-i18n="staff_online">کارکنان آنلاین</h3>
+                                    <span class="staff-section-hint" data-i18n="staff_online_hint">کلیک برای جزئیات فعالیت</span>
+                                </div>
+                                <div class="staff-panel-filters">
+                                    <input type="search" id="staffOnlineFilter" class="staff-panel-search" data-i18n-ph="staff_filter_ph" placeholder="فیلتر در لیست..." autocomplete="off">
+                                    <div class="staff-status-chips" role="group" aria-label="وضعیت">
+                                        <button type="button" class="staff-status-chip active" data-status="all" data-i18n="all">همه</button>
+                                        <button type="button" class="staff-status-chip" data-status="online" data-i18n="status_online">آنلاین</button>
+                                        <button type="button" class="staff-status-chip" data-status="away" data-i18n="status_away">دور</button>
+                                        <button type="button" class="staff-status-chip" data-status="busy" data-i18n="status_busy">مشغول</button>
+                                    </div>
+                                </div>
                             </div>
                             <div id="onlineStaffList" class="staff-activity-list empty" data-i18n="loading">در حال بارگذاری...</div>
-                        </div>
-                        <div class="staff-activity-section staff-section-logins">
-                            <div class="staff-section-header">
-                                <h3 class="staff-activity-section-title" data-i18n="last_logins">آخرین ورودها</h3>
-                                <span class="staff-section-hint" data-i18n="staff_logins_hint">۵۰ ورود اخیر</span>
+                        </section>
+                        <section class="staff-activity-panel" id="staffPanelLogins" data-staff-panel="logins" role="tabpanel" aria-labelledby="staffTabLogins" hidden>
+                            <div class="staff-panel-toolbar">
+                                <div class="staff-panel-toolbar-left">
+                                    <h3 class="staff-activity-section-title" data-i18n="last_logins">آخرین ورودها</h3>
+                                    <span class="staff-section-hint" data-i18n="staff_logins_hint">۵۰ ورود اخیر</span>
+                                </div>
+                                <div class="staff-panel-filters">
+                                    <input type="search" id="staffLoginsFilter" class="staff-panel-search" data-i18n-ph="staff_filter_ph" placeholder="فیلتر در لیست..." autocomplete="off">
+                                    <button type="button" class="btn-secondary btn-sm" id="staffLoginsExportBtn" onclick="exportStaffLoginsCsv()" data-i18n="staff_export_logins">خروجی CSV</button>
+                                </div>
                             </div>
                             <div id="loginsList" class="staff-activity-list empty" data-i18n="loading">در حال بارگذاری...</div>
-                        </div>
-                    </div>
-                    <div class="staff-activity-section staff-section-attendance" style="grid-column:1/-1;">
-                        <div class="staff-section-header">
-                            <h3 class="staff-activity-section-title" data-i18n="attendance_report">گزارش حضور و غیاب</h3>
-                            <span class="staff-section-hint" data-i18n="attendance_report_hint">به تفکیک شعبه و بازه زمانی</span>
-                        </div>
-                        <div class="attendance-filter-row">
-                            <select id="attendanceBranch"><option value="">همه شعب</option></select>
-                            <select id="attendanceUser"><option value="">همه کاربران</option></select>
-                            <input type="date" id="attendanceFrom" title="از تاریخ">
-                            <input type="date" id="attendanceTo" title="تا تاریخ">
-                            <button type="button" class="btn-primary btn-sm" id="attendanceApplyBtn" data-i18n="apply_filter">اعمال</button>
-                        </div>
-                        <div id="attendanceReportContent" class="attendance-report-content empty" data-i18n="loading">در حال بارگذاری...</div>
+                        </section>
+                        <section class="staff-activity-panel" id="staffPanelAttendance" data-staff-panel="attendance" role="tabpanel" aria-labelledby="staffTabAttendance" hidden>
+                            <div class="staff-panel-toolbar">
+                                <div class="staff-panel-toolbar-left">
+                                    <h3 class="staff-activity-section-title" data-i18n="attendance_report">گزارش حضور و غیاب</h3>
+                                    <span class="staff-section-hint" data-i18n="attendance_report_hint">به تفکیک شعبه و بازه زمانی</span>
+                                </div>
+                            </div>
+                            <div class="attendance-filter-row staff-attendance-filters">
+                                <div class="attendance-filter-field">
+                                    <label for="attendanceBranch" data-i18n="th_branch">شعبه</label>
+                                    <select id="attendanceBranch"><option value="" data-i18n="all_branches">همه شعب</option></select>
+                                </div>
+                                <div class="attendance-filter-field">
+                                    <label for="attendanceUser" data-i18n="th_user">کاربر</label>
+                                    <select id="attendanceUser"><option value="" data-i18n="all_users">همه کاربران</option></select>
+                                </div>
+                                <div class="attendance-filter-field">
+                                    <label for="attendanceFrom" data-i18n="date_from">از تاریخ</label>
+                                    <input type="date" id="attendanceFrom">
+                                </div>
+                                <div class="attendance-filter-field">
+                                    <label for="attendanceTo" data-i18n="date_to">تا تاریخ</label>
+                                    <input type="date" id="attendanceTo">
+                                </div>
+                                <div class="attendance-filter-actions">
+                                    <div class="attendance-preset-btns">
+                                        <button type="button" class="btn-secondary btn-sm attendance-preset" data-preset="today" data-i18n="preset_today">امروز</button>
+                                        <button type="button" class="btn-secondary btn-sm attendance-preset" data-preset="week" data-i18n="preset_this_week">این هفته</button>
+                                        <button type="button" class="btn-secondary btn-sm attendance-preset" data-preset="month" data-i18n="preset_this_month">این ماه</button>
+                                    </div>
+                                    <button type="button" class="btn-primary btn-sm" id="attendanceApplyBtn" data-i18n="apply_filter">اعمال</button>
+                                </div>
+                            </div>
+                            <div id="attendanceReportContent" class="attendance-report-content empty" data-i18n="loading">در حال بارگذاری...</div>
+                        </section>
                     </div>
                 </div>
                 <div id="pageSupervision" class="page sup-page">
@@ -1741,38 +1814,55 @@
                     <header class="rates-charts-page-header">
                         <div class="rates-charts-header-content">
                             <div class="rates-charts-header-badge"><svg viewBox="0 0 24 24"><use href="#icon-trending-up"/></svg></div>
-                            <div>
+                            <div class="rates-charts-header-text">
                                 <h2 data-i18n="rates_charts_title">چارت ارزها</h2>
                                 <p class="rates-charts-intro text-muted" data-i18n="rates_charts_intro">نمودار نرخ دلار، یورو و سایر ارزها نسبت به تومان.</p>
+                                <div class="rates-charts-meta" id="ratesChartsMeta" hidden></div>
+                            </div>
+                            <div class="rates-charts-header-actions">
+                                <a href="#rates" class="btn-secondary rates-charts-link-rates" data-i18n="rates_charts_go_rates">تنظیم نرخ</a>
+                                <button type="button" class="btn-secondary rates-charts-export-btn" id="ratesChartsExportBtn" onclick="exportRatesChartCsv()" data-i18n="rates_charts_export_csv" hidden>خروجی CSV</button>
                             </div>
                         </div>
                     </header>
-                    <div class="rates-charts-stats-row" id="ratesChartsStatsRow">
-                        <!-- Populated by JS: current, min, max, change -->
-                    </div>
-                    <div class="rates-charts-controls">
-                        <div class="rates-charts-currency-tabs" role="tablist" aria-label="انتخاب ارز">
-                            <button type="button" class="rates-chart-tab active" data-currency="usd" onclick="setRatesChartCurrency('usd')" data-i18n="currency_usd"><span class="tab-icon">$</span> دلار</button>
-                            <button type="button" class="rates-chart-tab" data-currency="eur" onclick="setRatesChartCurrency('eur')" data-i18n="currency_eur"><span class="tab-icon">€</span> یورو</button>
-                            <button type="button" class="rates-chart-tab" data-currency="gbp" onclick="setRatesChartCurrency('gbp')" data-i18n="currency_gbp"><span class="tab-icon">£</span> پوند</button>
-                            <button type="button" class="rates-chart-tab" data-currency="aed" onclick="setRatesChartCurrency('aed')" data-i18n="currency_aed"><span class="tab-icon">د.إ</span> درهم</button>
-                            <button type="button" class="rates-chart-tab" data-currency="try" onclick="setRatesChartCurrency('try')" data-i18n="currency_try"><span class="tab-icon">₺</span> لیر</button>
-                            <button type="button" class="rates-chart-tab" data-currency="gold" onclick="setRatesChartCurrency('gold')" data-i18n="currency_gold"><span class="tab-icon">Au</span> طلا</button>
+                    <section class="rates-charts-overview-section" aria-labelledby="ratesChartsOverviewTitle">
+                        <div class="rates-charts-section-head">
+                            <h3 id="ratesChartsOverviewTitle" class="rates-charts-section-title" data-i18n="rates_charts_overview_title">نرخ لحظه‌ای</h3>
                         </div>
+                        <div class="rates-charts-overview-grid" id="ratesChartsOverviewGrid">
+                            <div class="rates-charts-overview-skeleton loading-skeleton"></div>
+                            <div class="rates-charts-overview-skeleton loading-skeleton"></div>
+                            <div class="rates-charts-overview-skeleton loading-skeleton"></div>
+                        </div>
+                    </section>
+                    <div class="rates-charts-stats-row" id="ratesChartsStatsRow"></div>
+                    <div class="rates-charts-controls">
+                        <div class="rates-charts-currency-tabs" id="ratesChartsCurrencyTabs" role="tablist" aria-label="انتخاب ارز"></div>
                         <div class="rates-charts-controls-right">
-                            <div class="rates-charts-period">
-                                <select id="ratesChartPeriod" onchange="loadRatesCharts()" aria-label="بازه زمانی">
-                                    <option value="7" data-i18n="chart_7days">۷ روز</option>
-                                    <option value="14" data-i18n="chart_14days">۱۴ روز</option>
-                                    <option value="30" selected data-i18n="chart_30days">۳۰ روز</option>
-                                </select>
+                            <div class="rates-charts-period-pills" role="group" aria-label="بازه زمانی">
+                                <button type="button" class="rates-chart-period-pill" data-days="7" onclick="setRatesChartPeriod(7)" data-i18n="chart_7days">۷ روز</button>
+                                <button type="button" class="rates-chart-period-pill" data-days="14" onclick="setRatesChartPeriod(14)" data-i18n="chart_14days">۱۴ روز</button>
+                                <button type="button" class="rates-chart-period-pill active" data-days="30" onclick="setRatesChartPeriod(30)" data-i18n="chart_30days">۳۰ روز</button>
+                                <button type="button" class="rates-chart-period-pill" data-days="60" onclick="setRatesChartPeriod(60)" data-i18n="chart_60days">۶۰ روز</button>
+                                <button type="button" class="rates-chart-period-pill" data-days="90" onclick="setRatesChartPeriod(90)" data-i18n="chart_90days">۹۰ روز</button>
                             </div>
-                            <button type="button" class="rates-charts-refresh-btn" onclick="loadRatesCharts()" title="بروزرسانی" aria-label="بروزرسانی نمودار">
+                            <select id="ratesChartPeriod" class="rates-charts-period-select" onchange="loadRatesCharts()" aria-label="بازه زمانی" hidden>
+                                <option value="7">7</option>
+                                <option value="14">14</option>
+                                <option value="30" selected>30</option>
+                                <option value="60">60</option>
+                                <option value="90">90</option>
+                            </select>
+                            <button type="button" class="rates-charts-refresh-btn" onclick="loadRatesCharts(true)" title="بروزرسانی" aria-label="بروزرسانی نمودار">
                                 <svg viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" d="M23 4v6h-6M1 20v-6h6"/><path fill="none" stroke="currentColor" stroke-width="2" d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
                             </button>
                         </div>
                     </div>
                     <div class="rates-charts-canvas-wrap">
+                        <div class="rates-charts-canvas-head">
+                            <span class="rates-charts-canvas-title" id="ratesChartsCanvasTitle"></span>
+                            <span class="rates-charts-adjusted-badge" id="ratesChartsAdjustedBadge" hidden data-i18n="rates_charts_adjusted_note">با تعدیل پنل</span>
+                        </div>
                         <div class="rates-charts-canvas-inner">
                             <canvas id="ratesChartCanvas" role="img" aria-label="نمودار نرخ ارز"></canvas>
                             <div class="rates-charts-loading-overlay" id="ratesChartsLoadingOverlay">
@@ -1781,6 +1871,23 @@
                             </div>
                         </div>
                     </div>
+                    <section class="rates-charts-table-section" id="ratesChartsTableSection" hidden>
+                        <div class="rates-charts-section-head">
+                            <h3 class="rates-charts-section-title" data-i18n="rates_charts_table_title">جدول روزانه</h3>
+                        </div>
+                        <div class="rates-charts-table-wrap">
+                            <table class="rates-charts-table" id="ratesChartsTable">
+                                <thead>
+                                    <tr>
+                                        <th data-i18n="rates_charts_table_date">تاریخ</th>
+                                        <th data-i18n="rates_charts_table_rate">نرخ (تومان)</th>
+                                        <th data-i18n="rates_charts_table_day_change">تغییر روزانه</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ratesChartsTableBody"></tbody>
+                            </table>
+                        </div>
+                    </section>
                     <div class="rates-charts-summary" id="ratesChartsSummary"></div>
                 </div>
                 <div id="pageServices" class="page services-page">
@@ -3532,14 +3639,14 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=612e5edb07f5" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=612e5edb07f5" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=612e5edb07f5" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=612e5edb07f5" charset="utf-8"></script>
-    <script src="/js/i18n-en.js?v=612e5edb07f5" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=612e5edb07f5" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=612e5edb07f5" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=612e5edb07f5" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=4008a5699632" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=4008a5699632" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=4008a5699632" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=4008a5699632" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=4008a5699632" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=4008a5699632" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=4008a5699632" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=4008a5699632" charset="utf-8"></script>
     <script>
     (function() {
         var meta = document.querySelector('meta[name="crm-build"]');
