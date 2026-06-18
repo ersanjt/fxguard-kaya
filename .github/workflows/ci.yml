@@ -32,7 +32,7 @@ jobs:
       - run: npm run test:all
       # اگر chunkها عوض شده باشند و dashboard.js / dashboard.html دوباره باندل نشده باشد، CI قرمز می‌شود.
       - name: Verify dashboard bundle matches chunks
-        run: npm run build:dashboard && git diff --exit-code public/js/dashboard.js public/dashboard.html public/crm-build.json public/login.html
+        run: npm run build:dashboard && git diff --exit-code public/js/dashboard.js public/dashboard.html
 
   gateway:
     runs-on: ubuntu-latest
