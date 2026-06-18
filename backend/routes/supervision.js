@@ -100,8 +100,6 @@ router.get('/online', canViewStaffActivity, async (req, res, next) => {
     }
 });
 
-});
-
 // فهرست کارکنان قابل نظارت — برای جستجوی سریع در staff-activity
 router.get('/staff-index', canViewStaffActivity, async (req, res, next) => {
     try {
