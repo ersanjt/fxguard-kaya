@@ -5,7 +5,7 @@ const { Message } = require('../models');
 const { logActivity } = require('../services/activityLog');
 const { sendWhatsAppMessage } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
-const { validateOutboundSender } = require('./outboundMessagePrefix');
+const { validateOutboundSender, applyStaffSignatureToOutboundText } = require('./outboundMessagePrefix');
 const { getWhatsappConnectionConfig } = require('./whatsappConnectionLoader');
 const {
     shouldSendViaTemplate,
@@ -100,6 +100,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
 
     const msgMeta = metadata && typeof metadata === 'object' ? { ...metadata } : {};
     msgMeta.sendSource = 'crm_panel';
+    if (waCaption && waCaption !== text) msgMeta.customerWaText = waCaption;
     const msg = await Message.create({
         conversationId: conversation.id,
         customerId: conversation.customerId,
@@ -169,7 +170,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         return { msg, error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح وارد کنید.', status: 400 };
     }
 
-    const waCaption = text;
+    const waCaption = isForwarded ? text : applyStaffSignatureToOutboundText(senderUser, text);
 
     const isVoiceNote =
         msgType === 'audio' || media?.sendAsVoice === true || media?.type === 'audio';

@@ -16,7 +16,7 @@ const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessa
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
 const { persistRemoteAvatarIfNeeded, digitsOnlyChatPhone, maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
 const { notifySystemEvent } = require('./systemEventNotifier');
-const { resolveMobileWhatsappUser, isCrmPanelOutboundMessage, loadMobileWhatsappUser, applyMobileWhatsappSenderToMessages } = require('../lib/resolveMobileWhatsappUser');
+const { resolveMobileWhatsappUser, isCrmPanelOutboundMessage, loadMobileWhatsappUser, applyMobileWhatsappSenderToMessages, parseMsgMetadata } = require('../lib/resolveMobileWhatsappUser');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
@@ -631,8 +631,15 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 // echo فقط برای پیام واقعاً ارسال‌شده از پنل CRM — نه ویس/متن موبایل که به assignee چسبیده
                 if (!isCrmPanelOutboundMessage(cand)) continue;
                 const stored = String(cand.content || '').trim();
+                const candMeta = parseMsgMetadata(cand.metadata);
+                const storedWa = candMeta.customerWaText ? String(candMeta.customerWaText).trim() : '';
                 if (bodyStr && stored) {
-                    const echoMatchesStored = bodyStr === stored || stored === contentToMatch;
+                    let echoMatchesStored = bodyStr === stored || stored === contentToMatch
+                        || (storedWa && bodyStr === storedWa);
+                    if (!echoMatchesStored && stored.length >= 3) {
+                        const sigMatch = bodyStr.match(/^[^:]+:\s+([\s\S]+)$/);
+                        if (sigMatch && sigMatch[1].trim() === stored) echoMatchesStored = true;
+                    }
                     if (echoMatchesStored && stored.length >= 3) {
                         if (waMsgId && !cand.whatsappId) await cand.update({ whatsappId: waMsgId, status: 'sent' });
                         return;

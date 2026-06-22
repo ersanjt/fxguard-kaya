@@ -7,7 +7,7 @@ const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayCli
 const { logActivity } = require('../services/activityLog');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { canAccessConversation } = require('../lib/conversationAccess');
-const { validateOutboundSender } = require('../lib/outboundMessagePrefix');
+const { validateOutboundSender, applyStaffSignatureToOutboundText } = require('../lib/outboundMessagePrefix');
 const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
 
@@ -116,7 +116,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
 
                 const dept = (user && user.department) || conversation.department || null;
                 await maybeSendEmployeeIntro(conversation, socket.userId, user, dept);
-                const waContent = trimmedContent;
+                const waContent = applyStaffSignatureToOutboundText(user, trimmedContent);
 
                 const newMessage = await Message.create({
                     conversationId: conversation.id,

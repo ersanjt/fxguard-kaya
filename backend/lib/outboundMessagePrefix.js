@@ -70,6 +70,43 @@ function buildCallIntroText(user, department, orgName, template) {
 }
 
 /**
+ * نام کوتاه برای مشتری — «E. Tabrizi» نه «Ersan Jahed Tabrizi»
+ */
+function getUserWhatsAppShortName(user) {
+    if (!user) return null;
+    const first = (user.firstName || '').trim();
+    const last = (user.lastName || '').trim();
+    if (first && last) {
+        return `${first.charAt(0)}. ${last}`;
+    }
+    const full = getUserWhatsAppSenderName(user);
+    if (!full) return null;
+    const parts = full.split(/\s+/).filter(Boolean);
+    if (parts.length <= 1) return parts[0] || null;
+    return `${parts[0].charAt(0)}. ${parts[parts.length - 1]}`;
+}
+
+function isStaffSignaturePrefixEnabled() {
+    const v = String(process.env.WHATSAPP_OUTBOUND_STAFF_PREFIX ?? '1').trim().toLowerCase();
+    return v !== '0' && v !== 'false' && v !== 'no' && v !== 'off';
+}
+
+/**
+ * متن ارسالی به مشتری — «E. Tabrizi: سلام» برای تشخیص کارشناس در چت مشترک
+ */
+function applyStaffSignatureToOutboundText(user, content) {
+    const body = (content || '').trim();
+    if (!body || !isStaffSignaturePrefixEnabled()) return body;
+    const short = getUserWhatsAppShortName(user);
+    if (!short) return body;
+    const prefix = `${short}: `;
+    if (body.startsWith(prefix)) return body;
+    const esc = short.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (new RegExp(`^${esc}\\s*:\\s*`, 'i').test(body)) return body;
+    return prefix + body;
+}
+
+/**
  * @returns {{ ok: boolean, error?: string }}
  */
 function validateOutboundSender(user) {
@@ -102,11 +139,14 @@ function buildWhatsAppOutboundText(user, department, content, options) {
 
 module.exports = {
     getUserWhatsAppSenderName,
+    getUserWhatsAppShortName,
     getDepartmentName,
     getOrganizationName,
     buildWhatsAppOutboundText,
     buildCallIntroText,
     validateOutboundSender,
+    applyStaffSignatureToOutboundText,
+    isStaffSignaturePrefixEnabled,
     DEFAULT_PREFIX,
     DEFAULT_CALL_INTRO,
 };
