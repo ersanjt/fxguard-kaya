@@ -57,7 +57,7 @@ function ticketAccessWhere(req) {
 function taskAccessWhere(req) {
     if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role || '') !== -1) return {};
     const orConditions = [{ assignedTo: req.userId }, { createdBy: req.userId }];
-    if (req.user.departmentId) orConditions.push({ departmentId: req.user.departmentId });
+    if (req.user.departmentId) orConditions.push({ assignedToDepartmentId: req.user.departmentId });
     return { [Op.or]: orConditions };
 }
 

@@ -5574,6 +5574,41 @@
                 }
             });
         }
+        function buildMessageContextBanner(m, isOut) {
+            var meta = (m && m.metadata) || {};
+            var parts = [];
+            if (meta.forwardedFrom) {
+                var fromName = String(meta.forwardedFrom.customerName || '').trim();
+                var byName = (meta.forwardedBy && meta.forwardedBy.name) ? String(meta.forwardedBy.name).trim() : '';
+                if (!byName && isOut && m.user) byName = staffDisplayName(m.user);
+                var toName = (meta.forwardedTo && meta.forwardedTo.customerName) ? String(meta.forwardedTo.customerName).trim() : '';
+                var label;
+                if (LANG === 'fa') {
+                    label = '↪️ فوروارد';
+                    if (fromName) label += ' از «' + fromName + '»';
+                    if (byName) label += ' · توسط ' + byName;
+                    if (toName) label += ' → «' + toName + '»';
+                } else if (LANG === 'tr') {
+                    label = '↪️ İletildi';
+                    if (fromName) label += ' · ' + fromName;
+                    if (byName) label += ' · ' + byName;
+                    if (toName) label += ' → ' + toName;
+                } else {
+                    label = '↪️ Forwarded';
+                    if (fromName) label += ' from ' + fromName;
+                    if (byName) label += ' · by ' + byName;
+                    if (toName) label += ' → ' + toName;
+                }
+                parts.push('<div class="msg-context-banner msg-context-forward">' + escapeHtml(label) + '</div>');
+            }
+            if (isOut && meta.staffVoiceIntro && !meta.forwardedFrom) {
+                var vi = String(meta.staffVoiceIntro).trim();
+                if (vi) {
+                    parts.push('<div class="msg-context-banner msg-context-voice-intro">' + escapeHtml(vi) + '</div>');
+                }
+            }
+            return parts.join('');
+        }
         /** منبع ارسال پیام خروجی — پنل CRM یا اپ واتساپ موبایل */
         function msgSendSource(m) {
             return (m && m.metadata && m.metadata.sendSource) ? String(m.metadata.sendSource) : '';
@@ -5897,7 +5932,8 @@
                 const voiceTgHideFooterTime = (resolvedMediaType === 'audio' && !displayContent);
                 const statusHtml = (!voiceTgHideFooterTime && isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + waMsgStatusTicks(m.status) + '</span>' : '';
                 const msgWaExtra = voiceTgHideFooterTime ? ' msg-voice-footer-hide-time msg-voice-wa-msg' : '';
-                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + mediaHtml + contentHtml + '<div class="msg-footer">' + forwardBtn + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
+                var contextBanner = buildMessageContextBanner(m, isOut);
+                return '<div class="msg ' + (isOut ? 'out' : 'in') + msgWaExtra + '" data-msg-id="' + (m.id || '') + '" data-whatsapp-id="' + (m.whatsappId || '') + '">' + senderLabel + contextBanner + mediaHtml + contentHtml + '<div class="msg-footer">' + forwardBtn + replyBtn + '<span class="time">' + time + '</span>' + statusHtml + '</div></div>';
             }).join('');
             if (loadOlder) {
                 // اضافه کردن پیام‌های قدیمی‌تر به ابتدای لیست با حفظ scroll position

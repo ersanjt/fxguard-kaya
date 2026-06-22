@@ -106,6 +106,49 @@ function applyStaffSignatureToOutboundText(user, content) {
     return prefix + body;
 }
 
+const MEDIA_KIND_ICONS = {
+    image: '📷',
+    video: '🎬',
+    audio: '🎤',
+    document: '📎',
+};
+
+/**
+ * کپشن واتساپ برای مدیا بدون متن — «E. Tabrizi: 📷»
+ */
+function buildStaffMediaCaption(user, msgType, content) {
+    const body = (content || '').trim();
+    if (body) return applyStaffSignatureToOutboundText(user, body);
+    if (!isStaffSignaturePrefixEnabled()) return '';
+    const short = getUserWhatsAppShortName(user);
+    if (!short) return '';
+    const kind = String(msgType || 'document').toLowerCase();
+    const icon = MEDIA_KIND_ICONS[kind] || MEDIA_KIND_ICONS.document;
+    return `${short}: ${icon}`;
+}
+
+/**
+ * متن فوروارد برای مشتری — «E. Tabrizi: ↪️ از علی\nمتن اصلی»
+ */
+function buildForwardOutboundText(user, content, forwardedFrom) {
+    const body = (content || '').trim();
+    const fromName =
+        (forwardedFrom && (forwardedFrom.customerName || forwardedFrom.fromCustomerName || '')).trim() || '';
+    const fwdTag = fromName ? `↪️ از ${fromName}` : '↪️ فوروارد';
+    const combined = body ? `${fwdTag}\n${body}` : fwdTag;
+    return applyStaffSignatureToOutboundText(user, combined);
+}
+
+/**
+ * خط کوتاه قبل از PTT — روی caption ویس نمی‌رود تا دانلود خراب نشود
+ */
+function buildStaffVoiceIntroText(user, forwardedFrom) {
+    if (forwardedFrom) {
+        return buildForwardOutboundText(user, '🎤', forwardedFrom);
+    }
+    return applyStaffSignatureToOutboundText(user, '🎤');
+}
+
 /**
  * @returns {{ ok: boolean, error?: string }}
  */
@@ -151,6 +194,9 @@ module.exports = {
     buildCallIntroText,
     validateOutboundSender,
     applyStaffSignatureToOutboundText,
+    buildStaffMediaCaption,
+    buildForwardOutboundText,
+    buildStaffVoiceIntroText,
     isStaffSignaturePrefixEnabled,
     DEFAULT_PREFIX,
     DEFAULT_CALL_INTRO,

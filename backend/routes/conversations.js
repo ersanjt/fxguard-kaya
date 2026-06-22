@@ -11,6 +11,7 @@ const { isValidUUID, parsePagination, safeString } = require('../lib/validation'
 const logger = require('../config/logger');
 const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
 const { deliverOutboundConversationMessage } = require('../lib/conversationOutbound');
+const { getUserWhatsAppSenderName } = require('../lib/outboundMessagePrefix');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
 function canArchiveOrDeleteConversation(req) {
@@ -347,12 +348,28 @@ router.post('/forward', async (req, res, next) => {
         if (!content && !media) return res.status(400).json({ error: 'این پیام محتوای قابل فوروارد ندارد' });
 
         const sourceCustomer = sourceMsg.conversation.customer;
+        const targetCustomerName = customer.name || customer.phone || '';
+        const forwardedByName =
+            getUserWhatsAppSenderName(req.user)
+            || [req.user.firstName, req.user.lastName].filter(Boolean).join(' ').trim()
+            || req.user.name
+            || req.user.username
+            || '';
         const metadata = {
             forwardedFrom: {
                 messageId: sourceMsg.id,
                 conversationId: sourceMsg.conversationId,
                 customerId: sourceMsg.customerId,
                 customerName: sourceCustomer ? (sourceCustomer.name || sourceCustomer.phone || '') : '',
+            },
+            forwardedTo: {
+                customerId,
+                customerName: targetCustomerName,
+                conversationId: targetConv.id,
+            },
+            forwardedBy: {
+                userId: req.userId,
+                name: forwardedByName,
             },
         };
 

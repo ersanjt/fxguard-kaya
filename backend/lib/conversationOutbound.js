@@ -5,7 +5,7 @@ const { Message } = require('../models');
 const { logActivity } = require('../services/activityLog');
 const { sendWhatsAppMessage } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
-const { validateOutboundSender, applyStaffSignatureToOutboundText } = require('./outboundMessagePrefix');
+const { validateOutboundSender, applyStaffSignatureToOutboundText, buildStaffMediaCaption, buildForwardOutboundText, buildStaffVoiceIntroText } = require('./outboundMessagePrefix');
 const { getWhatsappConnectionConfig } = require('./whatsappConnectionLoader');
 const {
     shouldSendViaTemplate,
@@ -56,11 +56,9 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         });
         // دپارتمان و نام همان کاربری که الان پیام می‌فرستد (نه لزوماً دپارتمان مکالمه)
         senderDept = (senderUser && senderUser.department) || conversation.department || null;
-        if (!isForwarded) {
-            const senderCheck = validateOutboundSender(senderUser);
-            if (!senderCheck.ok) {
-                return { msg: null, error: senderCheck.error, status: 400 };
-            }
+        const senderCheck = validateOutboundSender(senderUser);
+        if (!senderCheck.ok) {
+            return { msg: null, error: senderCheck.error, status: 400 };
         }
     }
 
@@ -98,11 +96,27 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         mediaData = { url: relPath, filename: media.filename || media.name, mimetype: media.mimetype };
     }
 
-    const waCaption = isForwarded ? text : applyStaffSignatureToOutboundText(senderUser, text);
+    const isVoiceNoteEarly =
+        (media?.type === 'audio' || media?.sendAsVoice === true)
+        || (media?.mimetype || '').startsWith('audio/');
+
+    let waCaption;
+    if (isForwarded) {
+        waCaption = buildForwardOutboundText(senderUser, text, metadata.forwardedFrom);
+    } else if (hasMedia && !text.trim() && !isVoiceNoteEarly) {
+        waCaption = buildStaffMediaCaption(senderUser, msgType, text);
+    } else {
+        waCaption = applyStaffSignatureToOutboundText(senderUser, text);
+    }
+    const voiceIntroLine =
+        hasMedia && isVoiceNoteEarly && senderUser
+            ? buildStaffVoiceIntroText(senderUser, isForwarded ? metadata.forwardedFrom : null)
+            : null;
 
     const msgMeta = metadata && typeof metadata === 'object' ? { ...metadata } : {};
     msgMeta.sendSource = 'crm_panel';
     if (waCaption && waCaption !== text) msgMeta.customerWaText = waCaption;
+    if (voiceIntroLine) msgMeta.staffVoiceIntro = voiceIntroLine;
     const msg = await Message.create({
         conversationId: conversation.id,
         customerId: conversation.customerId,
@@ -275,6 +289,11 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
     }
 
     try {
+        if (voiceIntroLine) {
+            try {
+                await sendWhatsAppMessage({ to: toPhone, message: voiceIntroLine }, { timeout: 10000 });
+            } catch (_) {}
+        }
         const gwRes = await sendWhatsAppMessage(payload, { timeout: 15000 });
         const waId = gwRes?.data?.messageId;
         const updateFields = { status: 'sent' };
@@ -305,7 +324,14 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         entityId: msg.id,
         customerId: conversation.customerId,
         summary: `پیام به مشتری ${conversation.customer.phone || conversation.customerId}`,
-        metadata: { conversationId: conversation.id, contentLength: (text || '').length, hasMedia: !!hasMedia, forwarded: !!(metadata && metadata.forwardedFrom) },
+        metadata: {
+            conversationId: conversation.id,
+            contentLength: (text || '').length,
+            hasMedia: !!hasMedia,
+            forwarded: !!(metadata && metadata.forwardedFrom),
+            forwardedTo: metadata && metadata.forwardedTo ? metadata.forwardedTo : undefined,
+            mediaType: hasMedia ? msgType : undefined,
+        },
     });
 
     return { msg };
