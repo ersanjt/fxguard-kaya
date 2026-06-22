@@ -58,8 +58,9 @@ router.get('/config-status', async (req, res, _next) => {
     res.json({ hasApiKey: !!NAVASAN_API_KEY });
 });
 
-// GET /api/rates — نرخ‌ها از API + اعمال تعدیلات؛ برای همه کاربران لاگین‌شده
+// GET /api/rates — نرخ‌ها از API + اعمال تعدیلات
 router.get('/', async (req, res, _next) => {
+    if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
     try {
         const RATES_KEYS = await getRatesKeys();
         let raw = null;

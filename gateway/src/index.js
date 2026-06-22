@@ -23,6 +23,7 @@ const cron = require('node-cron');
 const fs = require('fs').promises;
 const path = require('path');
 const { startOutgoingCall } = require('./waCalls');
+const { createSendRateLimiter } = require('./sendRateLimiter');
 require('dotenv').config();
 
 // ==================== Config ====================
@@ -102,13 +103,17 @@ const apiLimiter = rateLimit({
 });
 app.use('/api/', apiLimiter);
 
-const sendLimiter = rateLimit({
-    windowMs: CONFIG.sendLimitWindowMs,
-    max: CONFIG.sendLimitMax,
-    message: { error: 'Rate limit exceeded' },
-    standardHeaders: true,
-    legacyHeaders: false,
-});
+/** Shared with RabbitMQ outgoing consumer — HTTP and queue share one send budget */
+const outboundSendLimiter = createSendRateLimiter(CONFIG.sendLimitWindowMs, CONFIG.sendLimitMax);
+
+async function sendRateLimitMiddleware(req, res, next) {
+    try {
+        await outboundSendLimiter.acquire();
+        next();
+    } catch (e) {
+        res.status(429).json({ error: 'Rate limit exceeded' });
+    }
+}
 
 // ✅ TEST ROUTE (must always work) — health check
 app.get('/test', (req, res) => {
@@ -132,6 +137,18 @@ function markGatewaySentMessage(waMsgId) {
         for (const [id, exp] of recentGatewaySentIds) {
             if (exp <= now) recentGatewaySentIds.delete(id);
         }
+    }
+}
+
+/** Skip duplicate inbound events (message + message_create) before queue/webhook */
+async function isDuplicateIncomingGatewayMessage(msgId) {
+    if (!msgId || !redisClient?.isReady) return false;
+    try {
+        const key = `gateway:incoming:${String(msgId)}`;
+        const ok = await redisClient.set(key, '1', { NX: true, EX: 172800 });
+        return !ok;
+    } catch (_) {
+        return false;
     }
 }
 
@@ -229,6 +246,25 @@ function requireGatewaySecret(req, res, next) {
     next();
 }
 
+// Socket.IO: همان secret HTTP — بدون auth در production اتصال رد می‌شود
+io.use((socket, next) => {
+    if (!CONFIG.gatewayApiSecret) {
+        if (process.env.NODE_ENV === 'production') {
+            return next(new Error('Unauthorized'));
+        }
+        return next();
+    }
+    const secret =
+        socket.handshake.auth?.secret ||
+        socket.handshake.auth?.token ||
+        socket.handshake.headers['x-gateway-secret'];
+    if (secret && timingSafeEqual(secret, CONFIG.gatewayApiSecret)) {
+        return next();
+    }
+    logger.warn('Gateway Socket: unauthorized connection', { ip: socket.handshake.address });
+    next(new Error('Unauthorized'));
+});
+
 // ==================== Redis ====================
 const redisClient = redis.createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379',
@@ -264,6 +300,7 @@ async function connectRabbitMQ() {
                 (msg.properties.headers && msg.properties.headers['x-retry-count']) || 0;
             const MAX_RETRIES = 3;
             try {
+                await outboundSendLimiter.acquire();
                 const data = JSON.parse(msg.content.toString());
                 await sendWhatsAppMessage(data);
                 rabbitChannel.ack(msg);
@@ -472,6 +509,8 @@ function attachClientEvents(c) {
     c.on('message', async (msg) => {
         healthCheckFailCount = 0;
         try {
+            const waIncomingId = msg?.id?.id;
+            if (await isDuplicateIncomingGatewayMessage(waIncomingId)) return;
             const chat = await msg.getChat();
             // پیام خروجی چت مستقیم از message_create پردازش می‌شود — اینجا دوباره نفرست (echo دوبل در CRM)
             if (msg.fromMe && !chat?.isGroup) return;
@@ -627,6 +666,7 @@ function attachClientEvents(c) {
             if (isGatewaySentEcho(waEchoId)) {
                 return;
             }
+            if (await isDuplicateIncomingGatewayMessage(waEchoId)) return;
             const chat = await msg.getChat();
             if (chat?.isGroup) return; // گروه‌ها را نادیده بگیر
             const contact = await chat.getContact();
@@ -991,7 +1031,7 @@ app.post('/api/logout', async (req, res) => {
     }
 });
 
-app.post('/api/send-message', sendLimiter, async (req, res) => {
+app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
     let tmpMediaPath = null;
     try {
         if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
@@ -1051,7 +1091,7 @@ app.post('/api/send-message', sendLimiter, async (req, res) => {
 });
 
 // تماس صوتی/تصویری — از طریق UI واتساپ وب یا ارسال لینک تماس
-app.post('/api/calls/start', sendLimiter, async (req, res) => {
+app.post('/api/calls/start', sendRateLimitMiddleware, async (req, res) => {
     try {
         if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
 

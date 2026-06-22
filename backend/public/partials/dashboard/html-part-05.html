@@ -66,7 +66,7 @@
                                                 <span data-i18n="panel_client_error_reporting">گزارش خطاهای فرانت/بک‌اند فعال باشد</span>
                                             </label>
                                         </div>
-                                        <hr style="border-color:var(--border-color);opacity:.5;margin:12px 0;">
+                                        <hr class="panel-settings-divider">
                                         <div class="form-group form-group-checkbox">
                                             <label class="checkbox-label">
                                                 <input type="checkbox" id="panelSettingTelegramNotifyAllEvents" value="1" onchange="markPanelSettingsChanged();">
@@ -131,9 +131,11 @@
                             </div>
                         </div>
 
-                        <div class="panel-settings-footer">
+                        <footer class="panel-settings-footer panel-settings-footer-sticky">
                             <span id="panelSettingsSaveStatus" class="panel-settings-save-status" style="display:none;"></span>
                             <button type="button" id="panelSettingsSaveBtnFooter" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
+                        </footer>
+                        </div>
                         </div>
                     </div>
                 </div>

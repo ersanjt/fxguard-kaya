@@ -23,6 +23,8 @@ async function getWhatsappConnectionConfig() {
         cloudAccessToken: (process.env.WHATSAPP_CLOUD_ACCESS_TOKEN || '').trim(),
         cloudPhoneNumberId: (process.env.WHATSAPP_CLOUD_PHONE_NUMBER_ID || '').trim(),
         cloudVerifyToken: (process.env.WHATSAPP_CLOUD_VERIFY_TOKEN || '').trim(),
+        cloudBulkTemplateName: (process.env.WHATSAPP_CLOUD_BULK_TEMPLATE_NAME || '').trim(),
+        cloudBulkTemplateLanguage: (process.env.WHATSAPP_CLOUD_BULK_TEMPLATE_LANGUAGE || 'fa').trim(),
         gatewayUrl: (process.env.GATEWAY_URL || 'http://localhost:3001').replace(/\/$/, ''),
         gatewayApiSecret: (typeof process.env.GATEWAY_API_SECRET === 'string'
             ? process.env.GATEWAY_API_SECRET.trim().replace(/^["']|["']$/g, '')
@@ -39,6 +41,8 @@ async function getWhatsappConnectionConfig() {
         cloudAccessToken: (row?.cloudAccessToken || '').trim() || env.cloudAccessToken,
         cloudPhoneNumberId: (row?.cloudPhoneNumberId || '').trim() || env.cloudPhoneNumberId,
         cloudVerifyToken: (row?.cloudVerifyToken || '').trim() || env.cloudVerifyToken,
+        cloudBulkTemplateName: (row?.cloudBulkTemplateName || '').trim() || env.cloudBulkTemplateName,
+        cloudBulkTemplateLanguage: (row?.cloudBulkTemplateLanguage || '').trim() || env.cloudBulkTemplateLanguage || 'fa',
         gatewayEnabled,
         gatewayUrl: (row?.gatewayUrl || '').trim() || env.gatewayUrl,
         gatewayApiSecret: (row?.gatewayApiSecret || '').trim() || env.gatewayApiSecret,

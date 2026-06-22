@@ -124,6 +124,46 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
     }
 
     try {
+        const connDesc = await qi.describeTable('whatsapp_connections');
+        if (connDesc) {
+            const connCols = [
+                ['cloudBulkTemplateName', { type: DataTypes.STRING(128), allowNull: true }],
+                ['cloudBulkTemplateLanguage', { type: DataTypes.STRING(16), allowNull: true, defaultValue: 'fa' }],
+            ];
+            for (const [name, def] of connCols) {
+                if (connDesc[name] !== undefined) continue;
+                try {
+                    await qi.addColumn('whatsapp_connections', name, def);
+                    logger.info('✅ whatsapp_connections: ' + name + ' column added (auto-migration)');
+                } catch (e) {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
+                        logger.warn('whatsapp_connections.' + name, e.message);
+                }
+            }
+        }
+    } catch (e) {
+        if (!String(e.message || '').includes('does not exist') && !String(e.message || '').includes('no such table'))
+            logger.warn('whatsapp_connections migration:', e.message);
+    }
+
+    try {
+        const dialect = sequelize.getDialect();
+        if (dialect === 'postgres') {
+            await sequelize.query(
+                'CREATE UNIQUE INDEX IF NOT EXISTS messages_whatsapp_id_unique ON "Messages" ("whatsappId") WHERE "whatsappId" IS NOT NULL AND "whatsappId" <> \'\''
+            );
+            logger.info('✅ Messages: partial unique index on whatsappId ensured');
+        } else if (dialect === 'sqlite') {
+            await sequelize.query(
+                'CREATE UNIQUE INDEX IF NOT EXISTS messages_whatsapp_id_unique ON Messages (whatsappId) WHERE whatsappId IS NOT NULL AND whatsappId <> \'\''
+            );
+            logger.info('✅ Messages: partial unique index on whatsappId ensured');
+        }
+    } catch (e) {
+        logger.warn('Messages whatsappId unique index:', e.message);
+    }
+
+    try {
         const userDesc = await qi.describeTable('Users');
         if (userDesc && !userDesc.position) {
             await qi.addColumn('Users', 'position', { type: DataTypes.STRING, allowNull: true });

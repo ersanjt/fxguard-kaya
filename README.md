@@ -3,8 +3,9 @@
 > **شروع سریع (بدون Docker):** فقط Node.js لازم است. از پوشه پروژه اجرا کنید: `.\start-all.ps1` (ویندوز) یا `./start-all.sh` (لینوکس/مک). سپس در مرورگر باز کنید: **http://localhost:3002/** — ورود: `admin@kaya.fxguard.io` / `Admin@123`.  
 > راهنمای تحویل به مشتری و استفاده روزمره: **[README-تحویل-مشتری.md](README-تحویل-مشتری.md)** | خلاصه راه‌اندازی: **[راه‌اندازی-سریع.md](راه‌اندازی-سریع.md)**
 
-**ساختار مخزن:** `backend/` (API + داشبورد در `public/`) · `gateway/` (واتساپ) · `docs/`  
-**نقشهٔ کد (اولین مرجع):** [docs/CODEBASE-MAP.md](docs/CODEBASE-MAP.md) · **مالک:** Ersan Jahed Tabrizi — [docs/AUTHOR.md](docs/AUTHOR.md)  
+**ساختار مخزن:** `backend/` (API + داشبورد) · `gateway/` (واتساپ) · `docs/`  
+**فروش و معرفی محصول:** [docs/PRODUCT-MARKETING-FA.md](docs/PRODUCT-MARKETING-FA.md) · **نقشه پوشه‌ها:** [docs/FOLDER-MAP-FA.md](docs/FOLDER-MAP-FA.md)  
+**نقشهٔ کد (اولین مرجع):** [docs/CODEBASE-MAP.md](docs/CODEBASE-MAP.md)  
 **استاندارد توسعه:** از ریشهٔ پروژه — `npm run lint` · `npm test` · [docs/PROJECT-STANDARDS.md](docs/PROJECT-STANDARDS.md) · [docs/README.md](docs/README.md) · [CONTRIBUTING.md](CONTRIBUTING.md)
 
 ---

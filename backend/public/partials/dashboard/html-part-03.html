@@ -283,6 +283,57 @@
                             <a href="#conversations" class="whatsapp-stat-link" data-stat="unanswered" data-i18n="whatsapp_view">مشاهده</a>
                         </article>
                     </section>
+                    <section id="whatsappSystemOverview" class="whatsapp-system-overview" aria-labelledby="whatsappOverviewTitle">
+                        <div class="whatsapp-overview-head">
+                            <div>
+                                <h3 id="whatsappOverviewTitle" class="whatsapp-overview-title" data-i18n="whatsapp_overview_title">مرکز کنترل واتساپ</h3>
+                                <p class="whatsapp-overview-sub text-muted" data-i18n="whatsapp_overview_sub">وضعیت کانال‌های ارسال/دریافت، مسیر فعال پیام‌ها و چک‌لیست راه‌اندازی Meta</p>
+                            </div>
+                            <div class="whatsapp-overview-active-wrap">
+                                <span class="whatsapp-overview-active-label" data-i18n="whatsapp_active_channel">کانال فعال</span>
+                                <span id="whatsappActiveChannelBadge" class="whatsapp-active-channel-badge whatsapp-active-channel--none" aria-live="polite">—</span>
+                            </div>
+                        </div>
+                        <div id="whatsappOverviewWarnings" class="whatsapp-overview-warnings" role="status" aria-live="polite"></div>
+                        <div class="whatsapp-channel-grid">
+                            <article id="whatsappCloudChannelCard" class="whatsapp-channel-card whatsapp-channel-card--cloud">
+                                <header class="whatsapp-channel-card-head">
+                                    <span class="whatsapp-channel-card-icon" aria-hidden="true">☁</span>
+                                    <div>
+                                        <h4 data-i18n="whatsapp_channel_cloud">Cloud API (Meta رسمی)</h4>
+                                        <p class="text-muted" data-i18n="whatsapp_channel_cloud_hint">امن‌ترین مسیر — بدون QR</p>
+                                    </div>
+                                    <span id="whatsappCloudChannelStatus" class="whatsapp-channel-status">—</span>
+                                </header>
+                                <ul id="whatsappCloudChecks" class="whatsapp-check-list" aria-label="Cloud API checklist"></ul>
+                                <div class="whatsapp-webhook-row">
+                                    <label for="whatsappWebhookUrl" data-i18n="whatsapp_webhook_url">Webhook Meta</label>
+                                    <div class="whatsapp-copy-row">
+                                        <input type="text" id="whatsappWebhookUrl" class="whatsapp-input whatsapp-input-readonly" readonly dir="ltr">
+                                        <button type="button" class="btn-secondary btn-sm" id="btnCopyWhatsappWebhook" data-i18n="whatsapp_copy">کپی</button>
+                                    </div>
+                                    <p class="text-muted whatsapp-hint" data-i18n="whatsapp_webhook_hint">در Meta for Developers → WhatsApp → Configuration ثبت کنید. فیلد messages را فعال کنید.</p>
+                                </div>
+                                <a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank" rel="noopener" class="whatsapp-meta-link" data-i18n="whatsapp_meta_docs">راهنمای Meta Cloud API ↗</a>
+                            </article>
+                            <article id="whatsappGatewayChannelCard" class="whatsapp-channel-card whatsapp-channel-card--gateway">
+                                <header class="whatsapp-channel-card-head">
+                                    <span class="whatsapp-channel-card-icon" aria-hidden="true">📱</span>
+                                    <div>
+                                        <h4 data-i18n="whatsapp_channel_gateway">Gateway (QR)</h4>
+                                        <p class="text-muted" data-i18n="whatsapp_channel_gateway_hint">اتصال WhatsApp Web — با احتیاط برای شماره</p>
+                                    </div>
+                                    <span id="whatsappGatewayChannelStatus" class="whatsapp-channel-status">—</span>
+                                </header>
+                                <ul id="whatsappGatewayChecks" class="whatsapp-check-list" aria-label="Gateway checklist"></ul>
+                                <p id="whatsappGatewayNumber" class="whatsapp-gateway-number text-muted" style="display:none;"></p>
+                            </article>
+                        </div>
+                        <div class="whatsapp-flow-summary">
+                            <h4 class="whatsapp-flow-title" data-i18n="whatsapp_flow_title">جریان پیام</h4>
+                            <p id="whatsappFlowSummary" class="whatsapp-flow-text text-muted" data-i18n="whatsapp_flow_loading">در حال بارگذاری...</p>
+                        </div>
+                    </section>
                     <nav class="whatsapp-pro-nav" role="tablist" aria-label="WhatsApp sections">
                         <button type="button" class="whatsapp-pro-tab active" role="tab" aria-selected="true" data-wa-tab="channels" id="waTabChannels" data-i18n="whatsapp_tab_channels">اتصال و کانال‌ها</button>
                         <button type="button" class="whatsapp-pro-tab" role="tab" aria-selected="false" data-wa-tab="automation" id="waTabAutomation" data-i18n="whatsapp_tab_automation">پیام‌رسانی و هوش مصنوعی</button>
@@ -352,6 +403,21 @@
                                     <div class="whatsapp-form-row"><label for="whatsappCloudAccessToken" data-i18n="whatsapp_cloud_access_token">Access Token</label><input type="password" id="whatsappCloudAccessToken" class="whatsapp-input" placeholder="EAAxxx..." autocomplete="off"></div>
                                     <div class="whatsapp-form-row"><label for="whatsappCloudPhoneNumberId" data-i18n="whatsapp_cloud_phone_id">Phone Number ID</label><input type="text" id="whatsappCloudPhoneNumberId" class="whatsapp-input" placeholder="1007665702430638"></div>
                                     <div class="whatsapp-form-row"><label for="whatsappCloudVerifyToken" data-i18n="whatsapp_cloud_verify_token">Verify Token (وب‌هوک Meta)</label><input type="text" id="whatsappCloudVerifyToken" class="whatsapp-input" placeholder="کد تأیید دلخواه"></div>
+                                    <p class="text-muted whatsapp-hint" data-i18n="whatsapp_cloud_app_secret_hint">App Secret را در <code dir="ltr">backend/.env</code> با نام <code dir="ltr">WHATSAPP_CLOUD_APP_SECRET</code> تنظیم کنید (از Meta App → Settings → Basic).</p>
+                                    <div class="whatsapp-form-row"><label for="whatsappCloudBulkTemplateName" data-i18n="whatsapp_cloud_bulk_template">قالب Meta (ارسال انبوه)</label><input type="text" id="whatsappCloudBulkTemplateName" class="whatsapp-input" placeholder="hello_world"></div>
+                                    <div class="whatsapp-form-row"><label for="whatsappCloudBulkTemplateLanguage" data-i18n="whatsapp_cloud_bulk_template_lang">زبان قالب</label><input type="text" id="whatsappCloudBulkTemplateLanguage" class="whatsapp-input" placeholder="fa" dir="ltr"></div>
+                                    <div class="whatsapp-form-actions-inline">
+                                        <button type="button" class="btn-secondary btn-sm" id="btnVerifyWhatsappCloud" data-i18n="whatsapp_cloud_verify_btn">تست اتصال Meta</button>
+                                        <span id="whatsappCloudVerifyResult" class="text-muted whatsapp-verify-result"></span>
+                                    </div>
+                                    <div class="whatsapp-cloud-test-send whatsapp-form-row-group">
+                                        <p class="text-muted whatsapp-hint" data-i18n="whatsapp_cloud_test_send_hint">ارسال پیام تست به شماره خودتان (ادمین)</p>
+                                        <div class="whatsapp-form-row"><label for="whatsappCloudTestPhone" data-i18n="whatsapp_cloud_test_phone">شماره تست</label><input type="text" id="whatsappCloudTestPhone" class="whatsapp-input" placeholder="989121234567" dir="ltr"></div>
+                                        <div class="whatsapp-form-row"><label for="whatsappCloudTestMessage" data-i18n="whatsapp_cloud_test_message">متن تست</label><input type="text" id="whatsappCloudTestMessage" class="whatsapp-input" data-i18n-ph="whatsapp_cloud_test_message_ph" placeholder="سلام، تست Kaya CRM"></div>
+                                        <label class="whatsapp-check-label"><input type="checkbox" id="whatsappCloudTestUseTemplate"> <span data-i18n="bulk_use_cloud_template">ارسال با قالب Meta</span></label>
+                                        <button type="button" class="btn-secondary btn-sm" id="btnWhatsappCloudTestSend" data-i18n="whatsapp_cloud_test_send_btn">ارسال تست</button>
+                                        <span id="whatsappCloudTestSendResult" class="text-muted whatsapp-verify-result"></span>
+                                    </div>
                                 </div>
                                 <div id="whatsappGatewaySettings" class="whatsapp-conn-panel" style="display:none;">
                                     <label class="whatsapp-check-label"><input type="checkbox" id="whatsappGatewayEnabled" checked> <span data-i18n="whatsapp_gateway_enabled">فعال</span></label>

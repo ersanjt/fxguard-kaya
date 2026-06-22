@@ -1,157 +1,102 @@
-# نمای کلی پروژه — پنل CRM واتساپ
+# نمای کلی پروژه — Kaya CRM
 
-این سند مرجع سریع برای شناخت ساختار، بخش‌ها و فایل‌های پروژه است.
+مرجع سریع ساختار، بخش‌ها و فایل‌ها. **جزئیات کامل:** [docs/FOLDER-MAP-FA.md](docs/FOLDER-MAP-FA.md) · **فروش:** [docs/PRODUCT-MARKETING-FA.md](docs/PRODUCT-MARKETING-FA.md)
 
 ---
 
-## ۱. ساختار داشبورد
+## معماری (۲۰۲۶)
 
-### بخش‌های صفحهٔ داشبورد (۵ بخش اصلی)
+```
+/login  +  login.js/css     ← تنها ورود staff
+/dashboard + dashboard.js   ← SPA (۶ chunk + ۶ partial HTML)
+        ↕ REST + Socket.IO (backend)
+Gateway (3001) + Meta Cloud ← WhatsApp
+```
 
-| # | بخش | توضیح |
-|---|-----|-------|
-| 1 | **هدر** | عنوان «داشبورد» + دکمه به‌روزرسانی |
-| 2 | **بخش توجه** | پیام‌های مهم و هشدارها |
-| 3 | **خلاصه آمار** | نمایش خلاصهٔ آمار |
-| 4 | **دسترسی سریع** | دکمه‌های سریع (مکالمه جدید، مشتری جدید، تیکت جدید) |
-| 5 | **بخش‌های پنل** | کارت‌های دسترسی به بخش‌های مختلف |
+| لایه | پوشه |
+|------|------|
+| API + CRM | `backend/` |
+| WhatsApp Web | `gateway/` |
+| مستندات | `docs/` |
+| Vite (آینده) | `frontend/` |
 
-### کارت‌های داشبورد (۱۷ بخش)
+---
+
+## بخش‌های پنل (۲۰+ ماژول)
 
 | گروه | بخش‌ها |
 |------|--------|
-| **ارتباطات** | مکالمات، مشتریان، تیکت‌های داخلی |
-| **سازمان** | وظایف و تسک‌ها، فرایندهای کسب‌وکار، دپارتمان‌ها، کاربران، شعب، نظارت (مالک)، ورودها و وضعیت آنلاین |
-| **تنظیمات** | پروفایل من، چت داخلی، اعلان‌ها، اتصال واتساپ، نرخ ارزها، خدمات صرافی، ظاهر پنل |
+| **ارتباطات** | مکالمات واتساپ، مشتریان، تیکت، تمپلیت پیام |
+| **سازمان** | وظایف، فرایندها، دپارتمان، کاربران، شعب |
+| **نظارت** | supervision (مالک)، staff activity |
+| **عملیات** | نرخ ارز، چارت، خدمات صرافی، ticker |
+| **سیستم** | واتساپ (Cloud/Gateway)، ظاهر پنل، اعلان، چت داخلی، پروفایل |
 
 ---
 
-## ۲. منوی سایدبار (۴ گروه)
+## فایل‌های کلیدی فرانت
 
-| گروه | آیتم‌ها |
-|------|---------|
-| **داشبورد** | داشبورد |
-| **ارتباطات** | مکالمات، مشتریان، تیکت‌های داخلی |
-| **سازمان** | وظایف، فرایندها، دپارتمان‌ها، کاربران، شعب، نظارت، ورودها |
-| **تنظیمات** | پروفایل، چت داخلی، اعلان‌ها، واتساپ، نرخ ارز، خدمات، ظاهر پنل |
+| منبع (ویرایش) | خروجی (build) |
+|---------------|---------------|
+| `partials/dashboard/html-part-*.html` | `public/dashboard.html` |
+| `js/dashboard/src/chunk-*.js` | `public/js/dashboard.js` |
+| `public/css/dashboard.css` | — |
+| `login.html` + `login.css` + `login.js` | — |
 
-> **نکته:** آیتم‌های «نظارت» و «ورودها و وضعیت آنلاین» به‌صورت پیش‌فرض مخفی هستند و فقط برای مالک نمایش داده می‌شوند.
-
----
-
-## ۳. ساختار فایل‌ها
-
-### فرانت‌اند (همه در `backend/public/`)
-
-| فایل | خطوط تقریبی | محتوا |
-|------|-------------|-------|
-| **dashboard.html** | ~۲٬۰۰۰ | کل ساختار: ورود، سایدبار، همه صفحات، مودال‌ها |
-| **js/dashboard.js** | ~۶٬۷۰۰ | کل منطق: API، auth، i18n، منطق همه صفحات |
-| **css/dashboard.css** | ~۲٬۲۵۰ | استایل‌های کل پنل |
-| **js/i18n-fa.js** | — | ترجمهٔ فارسی |
-| **js/i18n-tr.js** | — | ترجمهٔ ترکی |
-
-### صفحات (همه داخل `dashboard.html`)
-
-```
-<div id="pageDashboard">      ← داشبورد
-<div id="pageConversations">  ← مکالمات
-<div id="pageCustomers">      ← مشتریان
-<div id="pageTickets">        ← تیکت‌ها
-<div id="pageTasks">          ← وظایف
-<div id="pageProcesses">      ← فرایندها
-<div id="pageDepartments">    ← دپارتمان‌ها
-<div id="pageUsers">          ← کاربران
-<div id="pageBranches">       ← شعب
-<div id="pageProfile">        ← پروفایل
-<div id="pageAnnouncements">  ← اعلان‌ها
-<div id="pageInternalChat">   ← چت داخلی
-<div id="pageSupervision">    ← نظارت
-<div id="pageStaffActivity">  ← ورودها
-<div id="pageWhatsapp">       ← واتساپ
-<div id="pageRates">          ← نرخ ارز
-<div id="pageServices">       ← خدمات
-<div id="pagePanelSettings">  ← ظاهر پنل
-<div id="pageCustomerDetail"> ← جزئیات مشتری
+```bash
+cd backend && npm run build:dashboard
 ```
 
-### بک‌اند — مسیرها (`backend/routes/`)
+---
 
-| فایل | مسئولیت |
-|------|---------|
-| conversations.js | مکالمات |
-| customers.js | مشتریان |
-| tickets.js | تیکت‌ها |
-| tasks.js | وظایف |
-| processes.js | فرایندها |
-| departments.js | دپارتمان‌ها |
-| users.js | کاربران |
-| branches.js | شعب |
-| announcements.js | اعلان‌ها |
-| internal.js | چت داخلی |
-| rates.js | نرخ ارز |
-| services.js | خدمات |
-| panelSettings.js | تنظیمات پنل |
-| whatsapp.js | اتصال واتساپ |
-| auth.js | احراز هویت |
-| analytics.js | آمار و تحلیل |
+## chunkهای JS
+
+| Chunk | مسئولیت |
+|-------|---------|
+| 01 | state، token، rates، socket |
+| 02 | apiFetch، session teardown |
+| 03 | **مکالمات**، voice، customers UI |
+| 04 | routing، panel settings |
+| 05 | users، tickets، departments |
+| 06 | whatsapp، init، auth restore |
 
 ---
 
-## ۴. توابع اصلی در `dashboard.js`
+## بک‌اند — routes مهم
 
-| تابع | صفحه/بخش |
-|------|-----------|
-| loadDashboard() | داشبورد |
-| loadConversations() | مکالمات |
-| loadCustomers() | مشتریان |
-| loadTickets() | تیکت‌ها |
-| loadTasks() | وظایف |
-| loadProcessInstances() | فرایندها |
-| loadUsers() | کاربران |
-| loadAnnouncements() | اعلان‌ها |
-| loadInternalThreads() | چت داخلی |
-| loadRatesAdjustments() | نرخ ارز |
-| loadServices() | خدمات |
-| loadPanelSettings() | تنظیمات پنل |
-| showPage(page) | تعویض صفحه |
+`auth` · `conversations` · `customers` · `whatsapp` · `bulk` · `rates` · `panelSettings` · `supervision`
+
+**سرویس‌های هسته:** `incomingMessage.js` · `autoMessages.js` · `aiResponseService.js` · `conversationOutbound.js`
 
 ---
 
-## ۵. ویژگی‌های ساختار فعلی
-
-### مزایا
-
-- **سادگی:** بدون build، بدون Webpack/Vite
-- **دیپلوی راحت:** کپی فایل‌ها و اجرا
-- **درخواست کم:** یک HTML، یک CSS، یک JS
-- **همه‌چیز در یک جا:** جستجو آسان
-
-### معایب
-
-- **dashboard.js خیلی بزرگ** (~۶٬۷۰۰ خط) — نگهداری سخت
-- **بدون code splitting** — کاربر کل منطق را دانلود می‌کند
-- **HTML سنگین** — همه صفحات در یک فایل
-- **مقیاس‌پذیری محدود** — با رشد پروژه سخت‌تر می‌شود
-
----
-
-## ۶. پیشنهاد برای بهبود (آینده)
-
-1. **تفکیک JS به ماژول‌ها:** مثلاً `js/pages/conversations.js`, `js/pages/tickets.js`
-2. **تفکیک HTML به partialها:** هر صفحه یک فایل جدا، لود با `fetch()`
-3. **استفاده از build tool (مثل Vite):** برای code splitting و minify
-
----
-
-## ۷. فایل‌های مرتبط
+## URLها
 
 | مسیر | توضیح |
-|------|-------|
-| backend/public/STRUCTURE.md | ساختار تفکیک HTML/CSS/JS |
-| backend/lib/permissions.js | سیستم دسترسی‌ها |
-| backend/services/panelSettingsLoader.js | بارگذاری تنظیمات پنل |
+|------|--------|
+| `/` ، `/login` | صفحه ورود |
+| `/dashboard` | پنل (نیاز به session) |
+| `/api/*` | REST API |
 
 ---
 
-*آخرین به‌روزرسانی: فوریه ۲۰۲۵*
+## موبایل
+
+- PWA از `/login`
+- UI responsive (breakpoint 900px)
+- APK از panel-settings
+- Native Android: [android-app/README.md](android-app/README.md)
+
+---
+
+## دستورات
+
+```bash
+npm run quality          # lint + test + build
+npm run build:dashboard  # از backend
+./start-all.ps1          # Windows
+```
+
+---
+
+*آخرین به‌روزرسانی: ژوئن ۲۰۲۶*

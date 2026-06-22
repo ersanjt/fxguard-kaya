@@ -45,6 +45,7 @@ body {
     padding: 20px;
     padding-left: max(20px, env(safe-area-inset-left));
     padding-right: max(20px, env(safe-area-inset-right));
+    padding-top: max(20px, env(safe-area-inset-top));
     padding-bottom: max(20px, env(safe-area-inset-bottom));
     overflow-x: hidden;
     position: relative;
@@ -226,7 +227,7 @@ html[dir="rtl"] .lp-step { animation-name: stepInRtl; }
     border: 1px solid var(--lp-input-bdr);
     border-radius: var(--lp-radius-sm);
     color: var(--lp-text);
-    font-family: inherit; font-size: 0.95rem;
+    font-family: inherit; font-size: 16px;
     transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
     outline: none; -webkit-appearance: none; appearance: none;
 }

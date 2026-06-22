@@ -5,7 +5,21 @@ const { Message } = require('../models');
 const { logActivity } = require('../services/activityLog');
 const { sendWhatsAppMessage } = require('../lib/gatewayClient');
 const { getSendTarget } = require('../lib/phoneUtils');
-const { buildWhatsAppOutboundText, validateOutboundSender } = require('./outboundMessagePrefix');
+const { validateOutboundSender } = require('./outboundMessagePrefix');
+const { getWhatsappConnectionConfig } = require('./whatsappConnectionLoader');
+const {
+    shouldSendViaTemplate,
+    buildTemplatePayload,
+    outsideSessionErrorMessage,
+    isWithinCloudSessionWindow,
+    getOutboundTemplateName,
+} = require('./whatsappOutboundPolicy');
+const {
+    ensureVoiceFormat,
+    isWhatsAppVoiceMime,
+    WHATSAPP_VOICE_MIME,
+    WHATSAPP_VOICE_FILENAME,
+} = require('../lib/audioConverter');
 
 function resolveUploadFilePath(uploadsDir, relUnderUploads) {
     const rel = String(relUnderUploads || '').replace(/^\/+/, '');
@@ -113,6 +127,13 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
     };
     if (!conversation.firstReplyAt) updateData.firstReplyAt = now;
     if (!conversation.branchId && req.user && req.user.branchId) updateData.branchId = req.user.branchId;
+    if (req.userId) {
+        const meta = conversation.metadata && typeof conversation.metadata === 'object'
+            ? { ...conversation.metadata }
+            : {};
+        meta.lastActiveOutgoingUserId = String(req.userId);
+        updateData.metadata = meta;
+    }
     await conversation.update(updateData);
 
     if (hasMedia && mediaData && conversation.customerId) {
@@ -148,10 +169,7 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         return { msg, error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح وارد کنید.', status: 400 };
     }
 
-    const waCaption =
-        req.userId && !isForwarded
-            ? buildWhatsAppOutboundText(senderUser, senderDept, text)
-            : text;
+    const waCaption = text;
 
     const isVoiceNote =
         msgType === 'audio' || media?.sendAsVoice === true || media?.type === 'audio';
@@ -166,7 +184,6 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         if (!relPath.startsWith('http') && readPath && fs.existsSync(readPath)) {
             try {
                 if (isVoiceNote) {
-                    const { ensureVoiceFormat, isWhatsAppVoiceMime, WHATSAPP_VOICE_MIME, WHATSAPP_VOICE_FILENAME } = require('../lib/audioConverter');
                     const converted = await ensureVoiceFormat(readPath, sendMimetype, sendFilename);
                     readPath = converted.filePath;
                     sendMimetype = converted.mimetype;
@@ -179,6 +196,16 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                             status: 502,
                         };
                     }
+                    const playbackRel = '/uploads/' + path.basename(readPath);
+                    const playbackMedia = {
+                        url: playbackRel,
+                        filename: converted.filename,
+                        mimetype: 'audio/ogg',
+                    };
+                    await msg.update({ mediaData: playbackMedia, type: 'audio', hasMedia: true });
+                    mediaData = playbackMedia;
+                    const root = (process.env.BACKEND_PUBLIC_URL && process.env.BACKEND_PUBLIC_URL.replace(/\/$/, '')) || baseUrl.replace(/\/$/, '');
+                    mediaUrl = root + playbackRel;
                 }
                 const fileBuf = await fsPromises.readFile(readPath);
                 const base64 = fileBuf.toString('base64');
@@ -222,11 +249,42 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
     }
     if (replyTo) payload.replyTo = replyTo;
 
+    const connCfg = await getWhatsappConnectionConfig();
+    const cloudActive = connCfg.cloudEnabled !== false
+        && connCfg.cloudAccessToken
+        && connCfg.cloudPhoneNumberId
+        && connCfg.connectionMode !== 'gateway';
+
+    if (cloudActive && !hasMedia && !payload.templateName) {
+        if (shouldSendViaTemplate(conversation, connCfg, { hasMedia })) {
+            const tplPayload = buildTemplatePayload(payload, waCaption || text, connCfg);
+            if (tplPayload) {
+                Object.assign(payload, tplPayload);
+                const meta = { ...(msg.metadata || {}), sentViaTemplate: true, templateName: tplPayload.templateName };
+                await msg.update({ metadata: meta });
+            }
+        } else if (!isWithinCloudSessionWindow(conversation)) {
+            const blockMsg = outsideSessionErrorMessage(connCfg);
+            if (blockMsg) {
+                await msg.update({ status: 'failed' });
+                return { msg, error: blockMsg, status: 400 };
+            }
+        }
+    }
+
     try {
         const gwRes = await sendWhatsAppMessage(payload, { timeout: 15000 });
         const waId = gwRes?.data?.messageId;
-        if (waId) await msg.update({ whatsappId: waId, status: 'sent' });
-        else await msg.update({ status: 'sent' });
+        const updateFields = { status: 'sent' };
+        if (waId) updateFields.whatsappId = waId;
+        if (gwRes?.data?.viaTemplate) {
+            updateFields.metadata = {
+                ...(msg.metadata || {}),
+                sentViaTemplate: true,
+                templateName: payload.templateName || getOutboundTemplateName(connCfg),
+            };
+        }
+        await msg.update(updateFields);
     } catch (gwErr) {
         let errMsg = gwErr?.response?.data?.error || gwErr?.message || 'خطا در ارسال به واتساپ';
         if (errMsg.includes('Invalid or unsafe media URL') || errMsg.includes('media URL')) {

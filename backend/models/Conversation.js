@@ -211,7 +211,8 @@ const MessageModel = (sequelize) => {
             { fields: ['conversationId'] },
             { fields: ['customerId'] },
             { fields: ['userId'] },
-            { fields: ['timestamp'] }
+            { fields: ['timestamp'] },
+            { fields: ['whatsappId'] },
         ]
     });
 

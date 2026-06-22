@@ -85,12 +85,17 @@ function validateOutboundSender(user) {
 }
 
 /**
- * متن ارسالی به واتساپ — با پیشوند معرفی کارمند
+ * متن ارسالی به واتساپ — بدون پیشوند تکراری (معرفی کارشناس جداگانه یک‌بار ارسال می‌شود).
+ * @param {object} [options]
+ * @param {boolean} [options.includePrefix=false] — فقط برای سازگاری قدیمی
  */
-function buildWhatsAppOutboundText(user, department, content, template) {
-    const prefix = buildPrefixLine(user, department, template);
-    if (!prefix) return content || '';
+function buildWhatsAppOutboundText(user, department, content, options) {
+    const opts =
+        typeof options === 'string' ? { template: options, includePrefix: false } : options || {};
     const body = (content || '').trim();
+    if (!opts.includePrefix) return body;
+    const prefix = buildPrefixLine(user, department, opts.template);
+    if (!prefix) return body;
     if (!body) return prefix;
     return `${prefix}\n\n${body}`;
 }

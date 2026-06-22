@@ -3,6 +3,8 @@
 | سند | موضوع |
 |-----|--------|
 | **[CODEBASE-MAP.md](CODEBASE-MAP.md)** | **نقشهٔ ناوبری کد — اولین مرجع برای تغییر هر بخش** |
+| **[FOLDER-MAP-FA.md](FOLDER-MAP-FA.md)** | **نقشهٔ کامل پوشه‌ها و فایل‌ها (فارسی)** |
+| **[PRODUCT-MARKETING-FA.md](PRODUCT-MARKETING-FA.md)** | **بروشور فروش و بازاریابی محصول** |
 | [AUTHOR.md](AUTHOR.md) | مالکیت و امضای کد (Ersan Jahed Tabrizi) |
 | [../AGENTS.md](../AGENTS.md) | راهنمای کوتاه برای مشارکت‌کنندگان و ابزارهای AI (Cursor) |
 | [PROJECT-STANDARDS.md](PROJECT-STANDARDS.md) | ساختار مخزن، استانداردهای مهندسی، دستورات lint/test/build، CI |
@@ -13,6 +15,8 @@
 | [DEPLOY-GITHUB-SECRETS.md](DEPLOY-GITHUB-SECRETS.md) | Secrets دیپلوی (اجباری بعد از به‌روزرسانی workflow) |
 | [PRODUCTION-PUSH-CHECKLIST.md](PRODUCTION-PUSH-CHECKLIST.md) | قبل از push به master |
 | [WHATSAPP-GATEWAY.md](WHATSAPP-GATEWAY.md) | عیب‌یابی Gateway واتساپ (QR) |
+| [WHATSAPP-META-CHECKLIST-KAYA.md](WHATSAPP-META-CHECKLIST-KAYA.md) | چک‌لیست Meta Cloud (production) |
+| [WHATSAPP-CLOUD-API-SETUP.md](WHATSAPP-CLOUD-API-SETUP.md) | راه‌اندازی Cloud API |
 | [IRAN_ACCESS.md](IRAN_ACCESS.md) | دسترسی از ایران |
 | [SERVER-STATUS-COMMANDS.md](SERVER-STATUS-COMMANDS.md) | دستورات وضعیت سرور |
 | [CONSOLE-FIXES.md](CONSOLE-FIXES.md) | رفع خطاهای کنسول |

@@ -1648,6 +1648,7 @@
             var b = document.getElementById('btnRefreshStatus');
             if (b) { b.classList.add('is-refreshing'); b.setAttribute('aria-busy', 'true'); }
             loadWhatsappStatus(true).finally(function () {
+                if (typeof loadWhatsappOverview === 'function') loadWhatsappOverview();
                 setTimeout(function () {
                     _whatsappRefreshBusyUntil = Math.max(_whatsappRefreshBusyUntil, Date.now() + 400);
                     if (b) { b.classList.remove('is-refreshing'); b.removeAttribute('aria-busy'); }

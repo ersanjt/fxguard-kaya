@@ -57,70 +57,6 @@
             <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
         </defs>
     </svg>
-    <div id="loginBox" class="login-wrap">
-        <div class="login-box" id="loginStep1">
-            <div class="login-logo" id="loginLogo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <div class="lang-switch login-lang">
-                <button type="button" id="langFa" data-lang="fa" onclick="setLang('fa')" class="active">فارسی</button>
-                <button type="button" id="langEn" data-lang="en" onclick="setLang('en')">English</button>
-                <button type="button" id="langTr" data-lang="tr" onclick="setLang('tr')" data-i18n="lang_tr">Türkçe</button>
-            </div>
-            <h1 id="loginTitle" data-i18n="login_title">پورتال کارکنان کایا</h1>
-            <p class="sub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
-            <input type="text" id="email" data-i18n-ph="login_email_or_username" placeholder="ایمیل یا نام کاربری" autocomplete="username">
-            <div class="password-wrap">
-                <input type="password" id="pass" data-i18n-ph="login_password" placeholder="رمز عبور" autocomplete="current-password">
-                <button type="button" id="loginTogglePass" class="toggle-password" title="نمایش رمز" aria-label="نمایش رمز عبور" aria-pressed="false">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-eye"/></svg>
-                </button>
-            </div>
-            <button type="button" id="btnLogin" onclick="login()" data-i18n="login_btn">ورود</button>
-            <p class="login-forgot-wrap"><a href="#" id="linkForgotPassword" onclick="showForgotStep(); return false;" data-i18n="login_forgot_password">فراموشی رمز عبور</a></p>
-            <div id="loginErr" class="login-err"></div>
-            <p class="login-support" id="loginSupportWrap">
-                <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
-                <a href="#" id="loginSupportLink" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
-            </p>
-        </div>
-        <div class="login-box" id="loginStepTotp" style="display:none;">
-            <div class="login-logo" id="loginLogoTotp"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <div class="lang-switch login-lang">
-                <button type="button" data-lang="fa" onclick="setLang('fa')" data-i18n="lang_fa">فارسی</button>
-                <button type="button" data-lang="en" onclick="setLang('en')" data-i18n="lang_en">English</button>
-                <button type="button" data-lang="tr" onclick="setLang('tr')" data-i18n="lang_tr">Türkçe</button>
-            </div>
-            <h1 data-i18n="login_totp_title">احراز هویت دو مرحله‌ای</h1>
-            <p class="sub" id="totpStepEmail">کد شش‌رقمی اپلیکیشن Google Authenticator را وارد کنید.</p>
-            <input type="text" id="totpCode" data-i18n-ph="login_totp_code_ph" placeholder="کد ۶ رقمی" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code">
-            <button type="button" id="btnTotpVerify" onclick="verifyTotpLogin()" data-i18n="login_totp_verify">تأیید و ورود</button>
-            <button type="button" id="btnBackToLoginStep1" class="btn-secondary" onclick="backToLoginStep1()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
-            <div id="totpErr" class="login-err"></div>
-            <p class="login-support" id="loginSupportWrapTotp">
-                <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
-                <a href="#" id="loginSupportLinkTotp" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
-            </p>
-        </div>
-        <div class="login-box" id="loginStepForgot" style="display:none;">
-            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <h1 data-i18n="forgot_title">بازیابی رمز عبور</h1>
-            <p class="sub" data-i18n="forgot_sub">ایمیل حساب خود را وارد کنید؛ در صورت وجود حساب، لینک بازیابی ارسال می‌شود.</p>
-            <input type="email" id="forgotEmail" data-i18n-ph="login_email" placeholder="ایمیل" autocomplete="email">
-            <button type="button" id="btnForgotSubmit" onclick="submitForgotPassword()" data-i18n="forgot_send">ارسال لینک بازیابی</button>
-            <button type="button" id="btnBackToLoginFromForgot" class="btn-secondary" onclick="backToLoginFromForgot()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
-            <div id="forgotErr" class="login-err"></div>
-            <div id="forgotSuccess" class="login-success" style="display:none;"></div>
-        </div>
-        <div class="login-box" id="loginStepReset" style="display:none;">
-            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <h1 data-i18n="reset_title">تعیین رمز عبور جدید</h1>
-            <p class="sub" data-i18n="reset_sub">رمز عبور جدید و تکرار آن را وارد کنید.</p>
-            <input type="password" id="resetNewPass" data-i18n-ph="reset_new_password" placeholder="رمز عبور جدید" autocomplete="new-password">
-            <input type="password" id="resetConfirmPass" data-i18n-ph="reset_confirm_password" placeholder="تکرار رمز عبور" autocomplete="new-password">
-            <button type="button" id="btnResetSubmit" onclick="submitResetPassword()" data-i18n="reset_btn">تغییر رمز و ورود</button>
-            <a href="#" id="btnBackToLoginFromReset" class="btn-secondary" style="display:inline-block;margin-top:8px;text-align:center;" onclick="backToLoginFromReset(); return false;" data-i18n="login_back">بازگشت به ورود</a>
-            <div id="resetErr" class="login-err"></div>
-        </div>
-    </div>
     <div id="app" class="app"><script>(function(){if(document.documentElement.classList.contains('auth-has-token')){document.getElementById('app').classList.add('app-loading');}})();</script>
         <a href="#mainContent" class="skip-link" id="skipLink" data-i18n="skip_to_content" onclick="var m=document.getElementById('mainContent');if(m){m.focus();}">پرش به محتوا</a>
         <div class="header-sticky-wrap" id="headerStickyWrap">
@@ -350,7 +286,7 @@
                 </div>
                 </div>
                 <div class="sidebar-footer sidebar-desktop-only">
-                    <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebarDesktop()" aria-label="جمع کردن منو" aria-expanded="true" aria-controls="sidebar" title="جمع کردن منو" data-i18n-title="sidebar_toggle_collapse"><span class="sidebar-toggle-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></span><span class="sidebar-toggle-text" data-i18n="sidebar_toggle_collapse">جمع کردن منو</span></button>
+                    <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="جمع کردن منو" aria-expanded="true" aria-controls="sidebar" title="جمع کردن منو" data-i18n-title="sidebar_toggle_collapse"><span class="sidebar-toggle-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></span><span class="sidebar-toggle-text" data-i18n="sidebar_toggle_collapse">جمع کردن منو</span></button>
                 </div>
             </nav>
             <div class="content">
@@ -363,7 +299,14 @@
                         <button type="button" class="dashboard-refresh-btn" id="dashboardRefreshBtn" onclick="refreshDashboard()" title="به‌روزرسانی" aria-label="به‌روزرسانی داشبورد"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="dashboard_refresh">به‌روزرسانی</span></button>
                     </div>
                     <div id="dashboardAttention" class="dashboard-attention" aria-live="polite" style="display:none;"></div>
-                    <div id="dashboardSummary" class="dashboard-summary" aria-label="خلاصه آمار"></div>
+                    <div class="dashboard-summary-wrap">
+                        <div class="dashboard-summary-head">
+                            <h3 class="dashboard-summary-title" data-i18n="dashboard_kpi_title">آمار کلیدی</h3>
+                            <span id="dashboardLastUpdated" class="dashboard-last-updated text-muted" aria-live="polite"></span>
+                        </div>
+                        <div id="dashboardKpiPrimary" class="dashboard-kpi-primary" aria-label="آمار مکالمات"></div>
+                        <div id="dashboardSummary" class="dashboard-summary" aria-label="سایر آمار"></div>
+                    </div>
                     <div id="dashboardQuickActions" class="dashboard-quick-actions" aria-label="دسترسی سریع"></div>
                     <div id="dashboardCardsWrap" class="dashboard-cards-wrap">
                         <h3 class="dashboard-cards-title" id="dashboardCardsTitle" data-i18n="dashboard_sections">بخش‌های پنل</h3>
@@ -520,21 +463,21 @@
                                 </div>
                             </div>
                             <div class="chat-compose-row wa-compose-row">
-                                <div class="wa-compose-attach-slot chat-template-wrap" role="group" aria-label="پیوست">
-                                    <button type="button" class="chat-tool-btn wa-attach-plus-btn" id="waAttachMenuBtn" onclick="toggleWaAttachMenu(event)" title="پیوست" data-i18n-title="attach_file" aria-label="پیوست" aria-expanded="false" aria-haspopup="true">
+                                <div class="wa-compose-attach-slot chat-template-wrap" role="group" data-i18n-aria-label="attach_file" aria-label="پیوست">
+                                    <button type="button" class="chat-tool-btn wa-attach-plus-btn" id="waAttachMenuBtn" onclick="toggleWaAttachMenu(event)" title="پیوست" data-i18n-title="attach_file" data-i18n-aria-label="attach_file" aria-label="پیوست" aria-expanded="false" aria-haspopup="menu">
                                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                                     </button>
-                                    <div id="waAttachMenu" class="wa-attach-menu" hidden role="menu">
-                                        <button type="button" class="wa-attach-menu-item" id="waAttachFileBtn" onclick="waAttachPickFile(event)" role="menuitem">
+                                    <div id="waAttachMenu" class="wa-attach-menu" hidden role="menu" aria-labelledby="waAttachMenuBtn">
+                                        <button type="button" class="wa-attach-menu-item" id="waAttachFileBtn" onclick="waAttachPickFile(event)" role="menuitem" data-i18n-aria-label="wa_attach_document">
                                             <span class="wa-attach-menu-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-paperclip"/></svg></span>
-                                            <span data-i18n="attach_file">سند / فایل</span>
+                                            <span class="wa-attach-menu-label" data-i18n="wa_attach_document">سند / فایل</span>
                                         </button>
-                                        <button type="button" class="wa-attach-menu-item" id="waAttachTemplateBtn" onclick="waOpenTemplatesFromAttachMenu(event)" role="menuitem">
-                                            <span class="wa-attach-menu-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24"><use href="#icon-file-text"/></svg></span>
-                                            <span data-i18n="msg_template">تمپلیت پیام</span>
+                                        <button type="button" class="wa-attach-menu-item" id="waAttachTemplateBtn" onclick="waOpenTemplatesFromAttachMenu(event)" role="menuitem" data-i18n-aria-label="msg_template" aria-haspopup="listbox" aria-expanded="false">
+                                            <span class="wa-attach-menu-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-file-text"/></svg></span>
+                                            <span class="wa-attach-menu-label" data-i18n="msg_template">تمپلیت پیام</span>
                                         </button>
                                     </div>
-                                    <div id="chatTemplateDropdown" class="chat-template-dropdown" style="display:none;"></div>
+                                    <div id="chatTemplateDropdown" class="chat-template-dropdown wa-chat-template-dropdown" hidden role="listbox" aria-labelledby="waAttachTemplateBtn"></div>
                                 </div>
                                 <div class="chat-compose-field wa-compose-pill-wrap wa-compose-pill-shell">
                                     <button type="button" class="chat-tool-btn wa-emoji-btn" id="waEmojiBtn" onclick="toggleWaEmojiPanel(event)" title="Emoji" data-i18n-title="wa_emoji" aria-label="Emoji" aria-expanded="false" aria-haspopup="true">😊</button>

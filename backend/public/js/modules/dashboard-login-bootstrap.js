@@ -199,9 +199,8 @@
         applyLangEarly(lang);
         global.SUPPORTED_LANGUAGES = langPack.supported;
         if (cache.branding) applyBrandingEarly(cache.branding);
-        // On dashboard always verify session via cookie before showing login UI.
+        // Dashboard always verifies session via cookie before showing the app.
         if (isDashboardPage() || hasAuthToken()) document.documentElement.classList.add('auth-verifying');
-        else document.documentElement.classList.add('login-boot-pending');
     }
 
     function onDomReady() {

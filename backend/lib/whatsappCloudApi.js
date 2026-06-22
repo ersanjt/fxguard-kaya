@@ -30,12 +30,6 @@ async function _getConfig() {
     return c;
 }
 
-/**
- * ارسال پیام متنی
- * @param {string} to - شماره بدون + (مثلاً 989121234567)
- * @param {string} text - متن پیام
- * @returns {Promise<{messageId: string}>}
- */
 async function sendText(to, text) {
     const cfg = await _getConfig();
     if (!cfg) throw new Error('WhatsApp Cloud API not configured');
@@ -63,6 +57,105 @@ async function sendText(to, text) {
     const msgId = res.data?.messages?.[0]?.id || null;
     if (!msgId) throw new Error('No message ID in response');
     return { messageId: msgId };
+}
+
+function normalizeCloudPhone(to) {
+    const phone = String(to).replace(/\D/g, '').replace(/^0/, '');
+    if (!phone) throw new Error('Invalid phone number');
+    return phone;
+}
+
+/**
+ * ارسال پیام قالب (Template) — برای ارسال انبوه و پیام‌های خارج از پنجره ۲۴ ساعته
+ * @param {string} to
+ * @param {string} templateName - نام قالب تأییدشده در Meta
+ * @param {string} languageCode - مثلاً fa, en_US
+ * @param {Array<{type:string, parameters:Array}>|null} components
+ */
+async function sendTemplate(to, templateName, languageCode = 'fa', components = null) {
+    const cfg = await _getConfig();
+    if (!cfg) throw new Error('WhatsApp Cloud API not configured');
+    const name = String(templateName || '').trim();
+    if (!name) throw new Error('Template name is required');
+    const phone = normalizeCloudPhone(to);
+    const lang = String(languageCode || 'fa').trim() || 'fa';
+
+    const template = { name, language: { code: lang } };
+    if (Array.isArray(components) && components.length) template.components = components;
+
+    const res = await axios.post(
+        `${API_BASE}/${cfg.cloudPhoneNumberId}/messages`,
+        {
+            messaging_product: 'whatsapp',
+            recipient_type: 'individual',
+            to: phone,
+            type: 'template',
+            template,
+        },
+        {
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${cfg.cloudAccessToken}`,
+            },
+            timeout: 20000,
+        }
+    );
+
+    const msgId = res.data?.messages?.[0]?.id || null;
+    if (!msgId) throw new Error('No message ID in response');
+    return { messageId: msgId };
+}
+
+/** ساخت components.body از آرایه پارامترها */
+function buildBodyTemplateComponents(bodyParams) {
+    const params = (bodyParams || [])
+        .map((p) => String(p ?? '').trim())
+        .filter((p) => p.length > 0)
+        .map((text) => ({ type: 'text', text }));
+    if (!params.length) return null;
+    return [{ type: 'body', parameters: params }];
+}
+
+/**
+ * اعتبارسنجی Token و Phone Number ID با Meta Graph API
+ */
+async function verifyCredentials() {
+    const cfg = await _getConfig();
+    if (!cfg) {
+        return { ok: false, error: 'not_configured', checks: { token: false, phoneId: false } };
+    }
+    try {
+        const res = await axios.get(`${API_BASE}/${cfg.cloudPhoneNumberId}`, {
+            headers: { Authorization: `Bearer ${cfg.cloudAccessToken}` },
+            params: { fields: 'verified_name,display_phone_number,quality_rating' },
+            timeout: 12000,
+            validateStatus: () => true,
+        });
+        if (res.status >= 200 && res.status < 300) {
+            return {
+                ok: true,
+                displayPhone: res.data?.display_phone_number || null,
+                verifiedName: res.data?.verified_name || null,
+                qualityRating: res.data?.quality_rating?.score || null,
+                checks: { token: true, phoneId: true },
+            };
+        }
+        const errMsg = res.data?.error?.message || `HTTP ${res.status}`;
+        return { ok: false, error: errMsg, checks: { token: false, phoneId: false } };
+    } catch (e) {
+        return {
+            ok: false,
+            error: e.response?.data?.error?.message || e.message || 'verify_failed',
+            checks: { token: false, phoneId: false },
+        };
+    }
+}
+
+function normalizeCloudMediaMime(mimetype) {
+    const base = String(mimetype || '').split(';')[0].trim().toLowerCase();
+    if (!base) return 'application/octet-stream';
+    if (base === 'audio/ogg' || base.includes('opus')) return 'audio/ogg';
+    return base;
 }
 
 /**
@@ -113,7 +206,7 @@ async function sendMedia(to, media, caption = '') {
                 const buf = await fs.readFile(localPath);
                 mediaId = await uploadBufferToCloud(buf, {
                     filename: media.filename || path.basename(localPath) || 'file',
-                    mimetype: (media.mimetype || '').split(';')[0].trim() || 'application/octet-stream',
+                    mimetype: normalizeCloudMediaMime(media.mimetype),
                 });
             } else {
                 mediaUrl = baseUrl + media.url;
@@ -122,23 +215,25 @@ async function sendMedia(to, media, caption = '') {
             mediaUrl = baseUrl + media.url;
         }
     } else if (media?.data) {
-        const mime = (media.mimetype || 'application/octet-stream').split(';')[0].trim().toLowerCase();
         const buf = Buffer.from(media.data, 'base64');
         mediaId = await uploadBufferToCloud(buf, {
             filename: media.filename || 'file',
-            mimetype: mime || 'application/octet-stream',
+            mimetype: normalizeCloudMediaMime(media.mimetype),
         });
     }
     if (!mediaId && !mediaUrl) throw new Error('Media must have url or data');
 
-    const mime = (media?.mimetype || '').toLowerCase();
+    const normMime = normalizeCloudMediaMime(media?.mimetype);
     let type = 'document';
-    if (mime.startsWith('image/')) type = 'image';
-    else if (mime.startsWith('audio/') || mime.includes('ogg') || mime.includes('opus')) type = 'audio';
-    else if (mime.startsWith('video/')) type = 'video';
+    if (normMime.startsWith('image/')) type = 'image';
+    else if (normMime.startsWith('audio/') || media?.sendAsVoice) type = 'audio';
+    else if (normMime.startsWith('video/')) type = 'video';
 
     const mediaPayload = mediaId ? { id: mediaId } : { link: mediaUrl };
-    if (media?.filename) mediaPayload.filename = media.filename;
+    if (type === 'document' && media?.filename) mediaPayload.filename = media.filename;
+
+    const cap = caption && String(caption).trim();
+    if (cap && type !== 'audio') mediaPayload.caption = cap;
 
     const body = {
         messaging_product: 'whatsapp',
@@ -147,7 +242,6 @@ async function sendMedia(to, media, caption = '') {
         type,
         [type]: mediaPayload,
     };
-    if (caption && String(caption).trim()) body.caption = String(caption).trim();
 
     const res = await axios.post(`${API_BASE}/${cfg.cloudPhoneNumberId}/messages`, body, {
         headers: {
@@ -167,8 +261,15 @@ async function sendMedia(to, media, caption = '') {
  * @param {object} payload - { to, message, media }
  */
 async function sendMessage(payload) {
-    const { to, message, media } = payload || {};
+    const { to, message, media, templateName, templateLanguage, templateBodyParams, templateComponents } = payload || {};
     if (!to) throw new Error('Missing "to"');
+
+    if (templateName) {
+        const components = templateComponents || buildBodyTemplateComponents(
+            templateBodyParams || (message ? [message] : [])
+        );
+        return sendTemplate(to, templateName, templateLanguage || 'fa', components);
+    }
 
     if (media && (media.url || media.data)) {
         const cap = media.sendAsVoice ? '' : (message || '');
@@ -276,10 +377,13 @@ module.exports = {
     isConfigured,
     isConfiguredSync,
     sendText,
+    sendTemplate,
     sendMedia,
     sendMessage,
     downloadMedia,
     transformCloudWebhookToInternal,
     getPhoneNumberId,
+    verifyCredentials,
+    buildBodyTemplateComponents,
     API_BASE,
 };

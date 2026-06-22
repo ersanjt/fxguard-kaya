@@ -209,9 +209,15 @@
                                 <img id="panelSettingsHeaderFavicon" class="panel-settings-header-favicon" src="" alt="" style="display:none" onerror="this.style.display='none';">
                                 <svg id="panelSettingsHeaderIconFallback" class="panel-settings-header-icon-fallback" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                             </div>
-                            <div>
+                            <div class="panel-settings-header-text">
                                 <h2 class="panel-settings-page-title" data-i18n="page_panel_settings">ظاهر پنل</h2>
-                                <p class="panel-settings-intro" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
+                                <p class="panel-settings-intro" data-i18n="panel_settings_intro">برندینگ، ایمیل، تلگرام و نمایش بخش‌های پنل را از اینجا مدیریت کنید.</p>
+                                <div class="panel-settings-header-chips" aria-hidden="true">
+                                    <span class="panel-settings-chip" data-i18n="panel_tab_branding">برندینگ</span>
+                                    <span class="panel-settings-chip" data-i18n="panel_tab_email">ایمیل</span>
+                                    <span class="panel-settings-chip" data-i18n="panel_tab_telegram">تلگرام</span>
+                                    <span class="panel-settings-chip" data-i18n="panel_tab_sections">بخش‌ها</span>
+                                </div>
                             </div>
                         </div>
                         <div class="panel-settings-header-actions">
@@ -224,6 +230,8 @@
                         <span data-i18n="loading">در حال بارگذاری...</span>
                     </div>
                     <div id="panelSettingsContent" class="panel-settings-content" style="display:none;">
+                        <div class="panel-settings-shell">
+                        <aside class="panel-settings-nav" aria-label="تب‌های تنظیمات">
                         <nav class="panel-settings-tabs" role="tablist">
                             <button type="button" class="panel-settings-tab active" data-tab="branding" role="tab" aria-selected="true">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
@@ -242,7 +250,9 @@
                                 <span data-i18n="panel_tab_sections">بخش‌ها و نمایش</span>
                             </button>
                         </nav>
+                        </aside>
 
+                        <div class="panel-settings-main">
                         <div class="panel-settings-tab-panels">
                             <div id="panelTabBranding" class="panel-settings-tab-panel active" role="tabpanel">
                                 <div class="panel-settings-panel-layout">
@@ -363,8 +373,8 @@
                                                     </div>
                                                 </div>
                                             </section>
-                                            <section class="panel-settings-section panel-settings-section-collapsible">
-                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                            <section class="panel-settings-section panel-settings-section-collapsible panel-settings-section-collapsed-default">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="false">
                                                     <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/></svg></span><span data-i18n="panel_section_titles">عنوان‌ها</span></h3>
                                                     <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                                 </button>
@@ -379,8 +389,8 @@
                                                     </div>
                                                 </div>
                                             </section>
-                                            <section class="panel-settings-section panel-settings-section-collapsible">
-                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                            <section class="panel-settings-section panel-settings-section-collapsible panel-settings-section-collapsed-default">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="false">
                                                     <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="4"/><path d="M4 4h16"/></svg></span><span data-i18n="panel_section_footer">فوتر</span></h3>
                                                     <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                                 </button>
@@ -420,8 +430,8 @@
                                                     <span class="form-hint" data-i18n="panel_mobile_direct_hint">برای نصب مستقیم APK را آپلود کنید یا لینک HTTPS بگذارید؛ بعداً می‌توانید لینک استور را جایگزین کنید.</span>
                                                 </div>
                                             </section>
-                                            <section class="panel-settings-section panel-settings-section-languages panel-settings-section-collapsible">
-                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                            <section class="panel-settings-section panel-settings-section-languages panel-settings-section-collapsible panel-settings-section-collapsed-default">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="false">
                                                     <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span data-i18n="panel_section_languages">زبان‌های سایت</span></h3>
                                                     <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                                 </button>
@@ -496,7 +506,13 @@
                                     <section class="panel-settings-section">
                                         <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span><span data-i18n="panel_section_email">تنظیمات ایمیل (SMTP)</span></h3>
                                         <p class="panel-settings-section-desc" data-i18n="panel_email_desc">ارسال ایمیل خوش‌آمدگویی، بازیابی رمز و اعلان ورود. در صورت خالی بودن از متغیرهای محیط سرور استفاده می‌شود.</p>
-                                        <p class="panel-settings-hint" style="margin-bottom:0.75rem;font-size:0.85em;color:var(--text-muted);">Host: <code>mail.kaya.fxguard.io</code> یا <code>smtpout.secureserver.net</code> یا <code>143.182.205.92.host.secureserver.net</code> — پورت ۴۶۵ با SSL ✓، پورت ۵۸۷ بدون SSL</p>
+                                        <div class="panel-settings-info-box" role="note">
+                                            <svg class="panel-settings-info-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                            <div class="panel-settings-info-body">
+                                                <strong data-i18n="panel_smtp_hosts_title">سرورهای پیشنهادی SMTP</strong>
+                                                <p data-i18n="panel_smtp_hosts_hint">Host: mail.kaya.fxguard.io یا smtpout.secureserver.net — پورت ۴۶۵ با SSL، پورت ۵۸۷ بدون SSL.</p>
+                                            </div>
+                                        </div>
                                         <div class="form-row-2">
                                             <div class="form-group">
                                                 <label for="panelSettingSmtpHost" data-i18n="panel_smtp_host">آدرس سرور (Host)</label>

@@ -19,6 +19,7 @@ const { createApiRouter } = require('../routes/api');
 const { setupSocketHandlers } = require('../socket/handlers');
 const socketAuth = require('../middleware/socketAuth');
 const errorHandler = require('../middleware/errorHandler');
+const { protectSensitiveUploads } = require('../middleware/protectedUploads');
 const { assertWebhookSecretBeforeBody } = require('../middleware/webhookAuth');
 const { onApiResponseFinished, deliverIncidentTelegram } = require('../services/incidentTelegramPolicy');
 
@@ -170,6 +171,14 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
         legacyHeaders: false,
         store: buildRedisStore('rl:pwreset:')
     });
+    const clientErrorLimiter = rateLimit({
+        windowMs: 60 * 1000,
+        max: 12,
+        message: { error: 'تعداد گزارش خطا زیاد است. کمی صبر کنید.' },
+        standardHeaders: true,
+        legacyHeaders: false,
+        store: buildRedisStore('rl:clienterr:')
+    });
     app.use('/api/', (req, res, next) => {
         if (process.env.DISABLE_RATE_LIMIT === 'true') return next();
         const p = req.path || '';
@@ -177,6 +186,9 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
         if (p.endsWith('/auth/login') || p.endsWith('/auth/totp/verify-login')) return loginLimiter(req, res, next);
         if (p.endsWith('/auth/forgot-password') || p.endsWith('/auth/reset-password')) {
             return passwordResetLimiter(req, res, next);
+        }
+        if (p.endsWith('/client-errors') && req.method === 'POST') {
+            return clientErrorLimiter(req, res, next);
         }
         return limiter(req, res, next);
     });
@@ -260,6 +272,14 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
     app.get('/login', serveLogin);
     app.get('/login/', (req, res) => res.redirect('/login'));
 
+    app.use((req, res, next) => {
+        const p = String(req.path || '').toLowerCase();
+        if ((p === '/dashboard' || p === '/dashboard/') && req.query.reset === '1' && req.query.token) {
+            return res.redirect(302, '/login?reset=1&token=' + encodeURIComponent(String(req.query.token)));
+        }
+        next();
+    });
+
     app.get('/dashboard', (req, res) => {
         res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
         res.set('Pragma', 'no-cache');
@@ -316,6 +336,35 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
     });
     const publicDir = path.join(__dirname, '..', 'public');
     app.use(
+        '/uploads',
+        protectSensitiveUploads,
+        (req, res, next) => {
+            const ext = path.extname(req.path).toLowerCase();
+            const inlineExts = [
+                '.jpg',
+                '.jpeg',
+                '.png',
+                '.gif',
+                '.webp',
+                '.mp4',
+                '.webm',
+                '.ogg',
+                '.oga',
+                '.opus',
+                '.mp3',
+                '.wav',
+                '.aac',
+                '.m4a',
+                '.pdf'
+            ];
+            const isInline = inlineExts.includes(ext);
+            res.setHeader('Content-Disposition', isInline ? 'inline' : 'attachment');
+            res.setHeader('X-Content-Type-Options', 'nosniff');
+            next();
+        },
+        express.static(path.join(__dirname, '..', 'uploads'))
+    );
+    app.use(
         express.static(publicDir, {
             etag: true,
             lastModified: true,
@@ -339,35 +388,6 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
                 }
             }
         })
-    );
-    app.use(
-        '/uploads',
-        (req, res, next) => {
-            const ext = path.extname(req.path).toLowerCase();
-            const inlineExts = [
-                '.jpg',
-                '.jpeg',
-                '.png',
-                '.gif',
-                '.webp',
-                '.svg',
-                '.mp4',
-                '.webm',
-                '.ogg',
-                '.oga',
-                '.opus',
-                '.mp3',
-                '.wav',
-                '.aac',
-                '.m4a',
-                '.pdf'
-            ];
-            const isInline = inlineExts.includes(ext);
-            res.setHeader('Content-Disposition', isInline ? 'inline' : 'attachment');
-            res.setHeader('X-Content-Type-Options', 'nosniff');
-            next();
-        },
-        express.static(path.join(__dirname, '..', 'uploads'))
     );
 
     app.use(errorHandler);

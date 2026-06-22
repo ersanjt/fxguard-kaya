@@ -5,6 +5,10 @@
 const axios = require('axios');
 const whatsappCloud = require('./whatsappCloudApi');
 const { getWhatsappConnectionConfig } = require('./whatsappConnectionLoader');
+const {
+    buildTemplatePayload,
+    isMetaReengagementError,
+} = require('./whatsappOutboundPolicy');
 
 /** برای سازگاری — مقدار پیش‌فرض env */
 function getDefaultGatewayUrl() {
@@ -38,6 +42,32 @@ async function gatewayPost(path, data, options = {}) {
     });
 }
 
+async function sendCloudMessage(payload) {
+    try {
+        const res = await whatsappCloud.sendMessage(payload);
+        return { data: { messageId: res.messageId, viaTemplate: !!payload.templateName } };
+    } catch (err) {
+        if (!payload.templateName && !payload.media && isMetaReengagementError(err)) {
+            const cfg = await getWhatsappConnectionConfig();
+            const tplPayload = buildTemplatePayload(payload, payload.message, cfg);
+            if (tplPayload) {
+                const res = await whatsappCloud.sendMessage(tplPayload);
+                return { data: { messageId: res.messageId, viaTemplate: true, retriedAsTemplate: true } };
+            }
+        }
+        throw err;
+    }
+}
+
+/** PTT voice notes need Gateway (sendAudioAsVoice); Cloud API only sends plain audio files. */
+function isVoiceOutboundPayload(payload) {
+    const media = payload?.media;
+    if (!media) return false;
+    if (media.sendAsVoice) return true;
+    const mime = String(media.mimetype || media.type || '').toLowerCase();
+    return mime.startsWith('audio/') && (mime.includes('ogg') || mime.includes('opus') || media.type === 'audio');
+}
+
 /**
  * ارسال پیام واتساپ — بر اساس connectionMode و تنظیمات
  * cloud_only: فقط Cloud API | gateway_only: فقط Gateway | cloud_first: اول Cloud، وگرنه Gateway
@@ -48,23 +78,49 @@ async function sendWhatsAppMessage(payload, options = {}) {
     const cfg = await getWhatsappConnectionConfig();
     const cloudOk = cfg.cloudEnabled && cfg.cloudAccessToken && cfg.cloudPhoneNumberId;
     const mode = cfg.connectionMode || 'cloud_first';
+    const wantsTemplate = !!(payload?.templateName);
+    const gwOk = cfg.gatewayEnabled !== false;
+    const isVoice = isVoiceOutboundPayload(payload);
+
+    if (wantsTemplate) {
+        if (!cloudOk) throw new Error('Cloud API template send requires Meta Cloud configuration');
+        return sendCloudMessage(payload);
+    }
+
+    // Voice notes must use Gateway PTT when available — Cloud cannot send WhatsApp voice bubbles.
+    if (isVoice && gwOk && mode !== 'cloud') {
+        return gatewayPost('/api/send-message', payload, options);
+    }
 
     if (mode === 'gateway') {
         return gatewayPost('/api/send-message', payload, options);
     }
     if (mode === 'cloud_first') {
         if (cloudOk) {
-            const res = await whatsappCloud.sendMessage(payload);
-            return { data: { messageId: res.messageId } };
+            try {
+                return await sendCloudMessage(payload);
+            } catch (cloudErr) {
+                if (gwOk && payload?.media) {
+                    return gatewayPost('/api/send-message', payload, options);
+                }
+                throw cloudErr;
+            }
         }
         return gatewayPost('/api/send-message', payload, options);
     }
     if (mode === 'cloud') {
         if (cloudOk) {
-            const res = await whatsappCloud.sendMessage(payload);
-            return { data: { messageId: res.messageId } };
+            try {
+                return await sendCloudMessage(payload);
+            } catch (cloudErr) {
+                if (gwOk && isVoice) {
+                    return gatewayPost('/api/send-message', payload, options);
+                }
+                throw cloudErr;
+            }
         }
-        return gatewayPost('/api/send-message', payload, options);
+        if (gwOk) return gatewayPost('/api/send-message', payload, options);
+        throw new Error('WhatsApp Cloud API not configured');
     }
     return gatewayPost('/api/send-message', payload, options);
 }

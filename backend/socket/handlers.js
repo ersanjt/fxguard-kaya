@@ -7,7 +7,8 @@ const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayCli
 const { logActivity } = require('../services/activityLog');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
 const { canAccessConversation } = require('../lib/conversationAccess');
-const { buildWhatsAppOutboundText, validateOutboundSender } = require('../lib/outboundMessagePrefix');
+const { validateOutboundSender } = require('../lib/outboundMessagePrefix');
+const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
 
 const VALID_STATUSES = ['online', 'away', 'busy', 'offline'];
@@ -114,7 +115,8 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 }
 
                 const dept = (user && user.department) || conversation.department || null;
-                const waContent = buildWhatsAppOutboundText(user, dept, trimmedContent);
+                await maybeSendEmployeeIntro(conversation, socket.userId, user, dept);
+                const waContent = trimmedContent;
 
                 const newMessage = await Message.create({
                     conversationId: conversation.id,
@@ -123,6 +125,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                     direction: 'outgoing',
                     content: trimmedContent,
                     type: type || 'text',
+                    metadata: { sendSource: 'crm_panel' },
                     timestamp: new Date()
                 });
 
@@ -137,7 +140,19 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 }
 
                 const now = new Date();
-                const upd = { lastMessageAt: now, lastOutgoingMessageAt: now, lastOutgoingIsAutoReply: false, unreadCount: 0, unansweredAlertSentAt: null, escalatedAt: null };
+                const meta = conversation.metadata && typeof conversation.metadata === 'object'
+                    ? { ...conversation.metadata }
+                    : {};
+                meta.lastActiveOutgoingUserId = String(socket.userId);
+                const upd = {
+                    lastMessageAt: now,
+                    lastOutgoingMessageAt: now,
+                    lastOutgoingIsAutoReply: false,
+                    unreadCount: 0,
+                    unansweredAlertSentAt: null,
+                    escalatedAt: null,
+                    metadata: meta,
+                };
                 if (!conversation.firstReplyAt) upd.firstReplyAt = now;
                 await conversation.update(upd);
 

@@ -8,7 +8,7 @@ const { Message, Customer, Conversation, WhatsappConfig, User, Department } = re
 const logger = require('../config/logger');
 
 const DEFAULT_DEPT_ASSIGNED = 'شما به دپارتمان {{deptName}} وصل شدید. به زودی پاسخگوی شما خواهیم بود.';
-const DEFAULT_EMPLOYEE_INTRO = 'شما در حال گفتگو با کارشناس {{name}} از دپارتمان {{deptName}} هستید.';
+const DEFAULT_EMPLOYEE_INTRO = '{{name}} از دپارتمان {{deptName}} الان به شما وصل شده و پاسخ می‌دهد.';
 const DEFAULT_CONVERSATION_ENDED = 'گفتگوی شما با کارشناس {{name}} از دپارتمان {{deptName}} به پایان رسید. در صورت نیاز دوباره برای ما پیام بفرستید.';
 
 let rabbitChannel = null;
@@ -105,17 +105,23 @@ async function sendDeptAssignedMessage(conversation, department) {
     }
 }
 
-/** پیام خودکار: من [نام] از دپارتمان X هستم — فقط قبل از اولین پاسخ کارمند */
+/** پیام خودکار: معرفی کارشناس — یک‌بار هنگام شروع یا تعویض کارشناس فعال */
 async function maybeSendEmployeeIntro(conversation, userId, user, department) {
     try {
         if (!(await isAutoAssignmentMessagesEnabled())) return;
         if (!userId) return;
-        const prevCount = await Message.count({
-            where: { conversationId: conversation.id, userId, direction: 'outgoing' }
+        const conv = await Conversation.findByPk(conversation.id, {
+            attributes: ['id', 'customerId', 'metadata', 'firstReplyAt'],
         });
-        if (prevCount > 0) return;
+        if (!conv) return;
+        const meta = conv.metadata || {};
+        const lastActive =
+            meta.lastActiveOutgoingUserId != null ? String(meta.lastActiveOutgoingUserId) : null;
+        const currentId = String(userId);
+        if (lastActive === currentId) return;
+
         const name = require('../lib/outboundMessagePrefix').getUserWhatsAppSenderName(user) || 'کارشناس';
-        const deptName = (department && department.name) ? department.name : 'پشتیبانی';
+        const deptName = department && department.name ? department.name : 'پشتیبانی';
         let template = DEFAULT_EMPLOYEE_INTRO;
         try {
             const cfg = await WhatsappConfig.findByPk('default').catch(() => null);
@@ -124,17 +130,21 @@ async function maybeSendEmployeeIntro(conversation, userId, user, department) {
             }
         } catch (_) {}
         const text = template.replace(/\{\{name\}\}/g, name).replace(/\{\{deptName\}\}/g, deptName);
-        // جلوگیری از ارسال تکراری: اگر همین پیام قبلاً ارسال شده، ارسال نکن
         const existing = await Message.findOne({
             where: {
-                conversationId: conversation.id,
+                conversationId: conv.id,
                 direction: 'outgoing',
                 isAutoReply: true,
-                content: text
-            }
+                content: text,
+            },
         });
-        if (existing) return;
-        await sendOutgoingAutoMessage(conversation, text);
+        if (existing) {
+            await conv.update({ metadata: { ...meta, lastActiveOutgoingUserId: currentId } });
+            return;
+        }
+        if (await sendOutgoingAutoMessage(conv, text)) {
+            await conv.update({ metadata: { ...meta, lastActiveOutgoingUserId: currentId } });
+        }
     } catch (err) {
         logger.error('maybeSendEmployeeIntro error', { error: err.message });
     }

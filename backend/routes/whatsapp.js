@@ -4,6 +4,7 @@ const { WhatsappConfig, WhatsappConnection } = require('../models');
 const { invalidateCache } = require('../lib/whatsappConnectionLoader');
 const { isValidUUID } = require('../lib/validation');
 const { clearOpenAIApiKeyCache } = require('../lib/getOpenAIApiKey');
+const { buildWhatsappOverview } = require('../lib/whatsappOverview');
 
 router.get('/config', async (req, res, next) => {
     try {
@@ -120,6 +121,17 @@ router.put('/config', async (req, res, next) => {
     }
 });
 
+/** مرکز کنترل — وضعیت کانال‌ها، کانال فعال، چک‌لیست Meta/Gateway */
+router.get('/overview', async (req, res, next) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        const overview = await buildWhatsappOverview(req);
+        res.json(overview);
+    } catch (err) {
+        next(err);
+    }
+});
+
 // تنظیمات اتصال واتساپ (Cloud API و Gateway)
 router.get('/connection', async (req, res, next) => {
     try {
@@ -134,6 +146,9 @@ router.get('/connection', async (req, res, next) => {
             cloudAccessTokenSet: !!(row.cloudAccessToken && String(row.cloudAccessToken).trim().length > 10),
             cloudPhoneNumberId: row.cloudPhoneNumberId || '',
             cloudVerifyTokenSet: !!(row.cloudVerifyToken && String(row.cloudVerifyToken).trim().length > 0),
+            cloudBulkTemplateName: row.cloudBulkTemplateName || '',
+            cloudBulkTemplateLanguage: row.cloudBulkTemplateLanguage || 'fa',
+            cloudAppSecretSet: !!String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim(),
             gatewayEnabled: row.gatewayEnabled !== false,
             gatewayUrl: row.gatewayUrl || '',
             gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
@@ -176,6 +191,13 @@ router.put('/connection', async (req, res, next) => {
         }
         if (body.cloudPhoneNumberId !== undefined) row.cloudPhoneNumberId = String(body.cloudPhoneNumberId || '').trim() || null;
         if (body.cloudVerifyToken !== undefined) row.cloudVerifyToken = String(body.cloudVerifyToken || '').trim() || null;
+        if (body.cloudBulkTemplateName !== undefined) {
+            row.cloudBulkTemplateName = String(body.cloudBulkTemplateName || '').trim() || null;
+        }
+        if (body.cloudBulkTemplateLanguage !== undefined) {
+            const lang = String(body.cloudBulkTemplateLanguage || '').trim();
+            row.cloudBulkTemplateLanguage = lang || 'fa';
+        }
         if (typeof body.gatewayEnabled === 'boolean') row.gatewayEnabled = body.gatewayEnabled;
         if (body.gatewayUrl !== undefined) row.gatewayUrl = String(body.gatewayUrl || '').trim() || null;
         if (body.gatewayApiSecret !== undefined) {
@@ -189,7 +211,9 @@ router.put('/connection', async (req, res, next) => {
             cloudEnabled: row.cloudEnabled,
             cloudAccessTokenSet: !!(row.cloudAccessToken && String(row.cloudAccessToken).trim().length > 10),
             cloudPhoneNumberId: row.cloudPhoneNumberId || '',
-            cloudVerifyToken: row.cloudVerifyToken || '',
+            cloudVerifyTokenSet: !!(row.cloudVerifyToken && String(row.cloudVerifyToken).trim().length > 0),
+            cloudBulkTemplateName: row.cloudBulkTemplateName || '',
+            cloudBulkTemplateLanguage: row.cloudBulkTemplateLanguage || 'fa',
             gatewayEnabled: row.gatewayEnabled,
             gatewayUrl: row.gatewayUrl || '',
             gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
@@ -197,6 +221,123 @@ router.put('/connection', async (req, res, next) => {
     } catch (err) {
         if (/no such table|relation .* does not exist/i.test(err.message)) {
             return res.status(500).json({ error: 'لطفاً ابتدا اسکریپت add-whatsapp-connection-table را اجرا کنید: node scripts/add-whatsapp-connection-table.js' });
+        }
+        next(err);
+    }
+});
+
+/** اعتبارسنجی Token و Phone ID با Meta */
+router.post('/cloud/verify', async (req, res, next) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+            return res.status(403).json({ error: 'فقط ادمین یا مالک می‌تواند اتصال Cloud را تست کند' });
+        }
+        const whatsappCloud = require('../lib/whatsappCloudApi');
+        const result = await whatsappCloud.verifyCredentials();
+        res.json(result);
+    } catch (err) {
+        next(err);
+    }
+});
+
+/** تشخیص وضعیت Cloud + راهنمای webhook verify */
+router.get('/cloud/diagnostics', async (req, res, next) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        const { getWhatsappConnectionConfig } = require('../lib/whatsappConnectionLoader');
+        const whatsappCloud = require('../lib/whatsappCloudApi');
+        const { getOutboundTemplateName } = require('../lib/whatsappOutboundPolicy');
+        const cfg = await getWhatsappConnectionConfig();
+        const env = String(process.env.BACKEND_PUBLIC_URL || '').trim().replace(/\/$/, '');
+        const proto = req.get('x-forwarded-proto') || req.protocol || 'https';
+        const host = req.get('x-forwarded-host') || req.get('host') || '';
+        const publicUrl = env || (host ? `${proto}://${host}` : '');
+        const webhookUrl = publicUrl ? `${publicUrl}/api/webhook/whatsapp-cloud` : '';
+        const verifyTokenSet = !!String(cfg.cloudVerifyToken || '').trim();
+        const appSecretSet = !!String(process.env.WHATSAPP_CLOUD_APP_SECRET || '').trim();
+        const meta = await whatsappCloud.verifyCredentials();
+
+        res.json({
+            webhookUrl,
+            checks: {
+                accessToken: !!(cfg.cloudAccessToken && String(cfg.cloudAccessToken).length > 10),
+                phoneNumberId: !!String(cfg.cloudPhoneNumberId || '').trim(),
+                verifyToken: verifyTokenSet,
+                appSecret: appSecretSet,
+                publicUrl: !!publicUrl,
+                bulkTemplate: !!getOutboundTemplateName(cfg),
+                metaApi: meta.ok === true,
+            },
+            meta,
+            webhook: {
+                callbackUrl: webhookUrl,
+                verifyTokenConfigured: verifyTokenSet,
+                appSecretConfigured: appSecretSet,
+                verifyHint: webhookUrl
+                    ? `${webhookUrl}?hub.mode=subscribe&hub.verify_token=YOUR_TOKEN&hub.challenge=12345`
+                    : null,
+            },
+            sessionWindowHours: parseInt(process.env.WHATSAPP_CLOUD_SESSION_HOURS || '24', 10) || 24,
+        });
+    } catch (err) {
+        next(err);
+    }
+});
+
+/** ارسال تست به یک شماره (متن آزاد یا قالب Meta) */
+router.post('/cloud/test-send', async (req, res, next) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+            return res.status(403).json({ error: 'فقط ادمین یا مالک می‌تواند پیام تست بفرستد' });
+        }
+        const { to, message, useTemplate, templateName, templateLanguage } = req.body || {};
+        const phone = String(to || '').replace(/\D/g, '');
+        if (!phone || phone.length < 10) return res.status(400).json({ error: 'شماره معتبر وارد کنید (مثلاً 989121234567)' });
+
+        const whatsappCloud = require('../lib/whatsappCloudApi');
+        const { getWhatsappConnectionConfig } = require('../lib/whatsappConnectionLoader');
+        const { getOutboundTemplateName, getOutboundTemplateLanguage } = require('../lib/whatsappOutboundPolicy');
+        const cfg = await getWhatsappConnectionConfig();
+        const configured = await whatsappCloud.isConfigured();
+        if (!configured) return res.status(400).json({ error: 'Cloud API تنظیم نشده است' });
+
+        const text = String(message || '').trim() || 'Kaya CRM test';
+        let payload;
+        if (useTemplate === true) {
+            const tplName = String(templateName || getOutboundTemplateName(cfg) || '').trim();
+            if (!tplName) return res.status(400).json({ error: 'نام قالب Meta الزامی است' });
+            payload = {
+                to: phone,
+                templateName: tplName,
+                templateLanguage: String(templateLanguage || getOutboundTemplateLanguage(cfg) || 'fa').trim(),
+                templateBodyParams: text ? [text] : [],
+                message: text,
+            };
+        } else {
+            payload = { to: phone, message: text };
+        }
+
+        const { sendWhatsAppMessage } = require('../lib/gatewayClient');
+        const result = await sendWhatsAppMessage(payload, { timeout: 20000 });
+        res.json({
+            ok: true,
+            messageId: result?.data?.messageId || null,
+            viaTemplate: !!(result?.data?.viaTemplate || payload.templateName),
+            to: phone,
+        });
+    } catch (err) {
+        const metaErr = err?.response?.data?.error;
+        if (metaErr) {
+            return res.status(502).json({
+                ok: false,
+                error: metaErr.message || 'Meta API error',
+                code: metaErr.code,
+                hint: Number(metaErr.code) === 131047
+                    ? 'خارج از پنجره ۲۴h — useTemplate:true یا قالب در پنل تنظیم کنید'
+                    : undefined,
+            });
         }
         next(err);
     }

@@ -35,6 +35,17 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'Verify Token برای Webhook Meta',
         },
+        cloudBulkTemplateName: {
+            type: DataTypes.STRING(128),
+            allowNull: true,
+            comment: 'نام قالب Meta برای ارسال انبوه (Cloud API)',
+        },
+        cloudBulkTemplateLanguage: {
+            type: DataTypes.STRING(16),
+            allowNull: true,
+            defaultValue: 'fa',
+            comment: 'کد زبان قالب Meta (مثلاً fa, en_US)',
+        },
         gatewayEnabled: {
             type: DataTypes.BOOLEAN,
             allowNull: true,

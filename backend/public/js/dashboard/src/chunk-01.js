@@ -25,13 +25,25 @@
         }
         function redirectToLoginPage() {
             const qs = window.location.search || '';
-            if (qs.indexOf('reset=1') >= 0 && qs.indexOf('token=') >= 0) return false;
+            const hash = window.location.hash || '';
+            const path = window.location.pathname || '/dashboard';
             const dest =
                 '/login?return=' +
-                encodeURIComponent((window.location.pathname || '/dashboard') + qs + (window.location.hash || ''));
+                encodeURIComponent(path + qs + hash);
             window.location.replace(dest);
             return true;
         }
+        (function redirectDashboardPasswordResetToLogin() {
+            try {
+                var p = String(window.location.pathname || '').toLowerCase();
+                if (p !== '/dashboard' && p !== '/dashboard/' && !p.endsWith('/dashboard.html')) return;
+                var params = new URLSearchParams(window.location.search || '');
+                var resetToken = params.get('token');
+                if (params.get('reset') === '1' && resetToken) {
+                    window.location.replace('/login?reset=1&token=' + encodeURIComponent(resetToken));
+                }
+            } catch (_e) {}
+        })();
         loadStoredAuthToken();
         let currentConvId = null;
         let currentUser = null;
@@ -176,14 +188,8 @@
                         teardownActiveSession(true);
                     } else {
                         persistAuthToken(null);
-                        document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
-                        const loginBox = document.getElementById('loginBox');
-                        if (loginBox) loginBox.style.display = 'flex';
-                        const appEl = document.getElementById('app');
-                        if (appEl) appEl.classList.remove('show');
+                        redirectToLoginPage();
                     }
-                    const errEl = document.getElementById('loginErr');
-                    if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 }
             });
         }
@@ -876,17 +882,23 @@
             if (!header) return;
             const existingAlert = document.getElementById('ratesApiKeyAlert');
             if (existingAlert) existingAlert.remove();
+            const existingOk = document.getElementById('ratesApiKeyOk');
+            if (existingOk) existingOk.remove();
             const res = await apiFetch('/api/rates/config-status');
             if (res.needLogin || !res.ok) return;
             if (res.data && res.data.hasApiKey === false) {
                 const alert = document.createElement('div');
                 alert.id = 'ratesApiKeyAlert';
                 alert.className = 'rates-apikey-alert';
-                alert.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
-                    + ' <span>کلید API ناواسان (<code>NAVASAN_API_KEY</code>) در فایل <code>.env</code> سرور تنظیم نشده. نرخ‌های لحظه‌ای دریافت نمی‌شوند.'
-                    + ' برای دریافت کلید رایگان به <a href="https://navasan.tech" target="_blank" rel="noopener">navasan.tech</a> مراجعه کنید.'
-                    + ' تا آن زمان می‌توانید نرخ <strong>ثابت (fixed)</strong> دستی برای هر ارز تنظیم کنید.</span>';
+                const msg = typeof t === 'function' ? t('rates_apikey_alert_html') : '';
+                alert.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>' + (msg || 'کلید API نوسان (NAVASAN_API_KEY) در .env سرور تنظیم نشده.') + '</span>';
                 header.appendChild(alert);
+            } else if (res.data && res.data.hasApiKey === true) {
+                const ok = document.createElement('div');
+                ok.id = 'ratesApiKeyOk';
+                ok.className = 'rates-apikey-ok';
+                ok.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg><span>' + (typeof t === 'function' ? t('rates_apikey_ok') : 'اتصال API نوسان فعال است.') + '</span>';
+                header.appendChild(ok);
             }
         }
 

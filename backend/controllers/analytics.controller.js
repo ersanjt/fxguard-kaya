@@ -11,6 +11,7 @@ const {
     Announcement,
     AnnouncementRead,
     User,
+    sequelize,
 } = require('../models');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
@@ -20,6 +21,31 @@ const { getVisibleStaffUserIds, applyVisibleUserFilter } = require('../lib/staff
 function conversationWhere(req) {
     return conversationListWhere(req.user, req.userId);
 }
+
+/** ترکیب فیلتر دسترسی با شرط اضافی برای count */
+function mergeConvWhere(convWhere, extra) {
+    const parts = [];
+    if (convWhere && Object.keys(convWhere).length) parts.push(convWhere);
+    if (extra && Object.keys(extra).length) parts.push(extra);
+    if (parts.length === 0) return {};
+    if (parts.length === 1) return parts[0];
+    return { [Op.and]: parts };
+}
+
+const UNANSWERED_EXTRA = {
+    status: { [Op.in]: ['open', 'pending'] },
+    lastIncomingMessageAt: { [Op.ne]: null },
+    [Op.or]: [
+        { lastOutgoingMessageAt: null },
+        sequelize.where(sequelize.col('lastIncomingMessageAt'), Op.gt, sequelize.col('lastOutgoingMessageAt')),
+    ],
+};
+
+const UNASSIGNED_EXTRA = {
+    status: 'open',
+    assignedTo: null,
+    departmentId: null,
+};
 
 function ticketAccessWhere(req) {
     if (isMainAdmin(req.user) || ['owner', 'admin', 'manager'].indexOf(req.user.role || '') !== -1) return {};
@@ -49,6 +75,8 @@ async function dashboard(req, res, next) {
             totalConversations,
             openConversations,
             unreadConversations,
+            unassignedConversations,
+            unansweredConversations,
             todayMessages,
             customerCount,
             ticketsOpen,
@@ -61,6 +89,8 @@ async function dashboard(req, res, next) {
             Conversation.count({ where: convWhere }),
             Conversation.count({ where: { ...convWhere, status: 'open' } }),
             Conversation.count({ where: { ...convWhere, unreadCount: { [Op.gt]: 0 } } }),
+            Conversation.count({ where: mergeConvWhere(convWhere, UNASSIGNED_EXTRA) }),
+            Conversation.count({ where: mergeConvWhere(convWhere, UNANSWERED_EXTRA) }),
             hasConvFilter
                 ? Message.count({
                       where: { timestamp: { [Op.gte]: today } },
@@ -177,6 +207,8 @@ async function dashboard(req, res, next) {
             totalConversations,
             openConversations,
             unreadConversations,
+            unassignedConversations,
+            unansweredConversations,
             todayMessages,
             totalCustomers: customerCount,
             ticketsOpen,

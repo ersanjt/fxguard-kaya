@@ -479,6 +479,13 @@
                     <button type="button" class="btn-secondary btn-sm" onclick="bulkClearSelection()" data-i18n="bulk_clear">پاک کردن انتخاب</button>
                 </div>
                 <span class="bulk-selected-count" id="bulkSelectedCount">۰ مشتری انتخاب شده</span>
+                <label class="bulk-check-label"><input type="checkbox" id="bulkUseCloudTemplate" checked> <span data-i18n="bulk_use_cloud_template">ارسال با قالب Meta (Cloud API — امن‌تر)</span></label>
+                <div id="bulkTemplateFields" class="bulk-template-fields">
+                    <label data-i18n="whatsapp_cloud_bulk_template">نام قالب Meta</label>
+                    <input type="text" id="bulkTemplateName" class="whatsapp-input" placeholder="hello_world" dir="ltr">
+                    <label data-i18n="whatsapp_cloud_bulk_template_lang">زبان قالب</label>
+                    <input type="text" id="bulkTemplateLanguage" class="whatsapp-input" value="fa" dir="ltr" style="width:120px;">
+                </div>
                 <label data-i18n="bulk_message">متن پیام</label>
                 <textarea id="bulkMessageContent" rows="5" data-i18n-ph="bulk_message_ph" placeholder="سلام {name} عزیز، ..."></textarea>
                 <label data-i18n="bulk_delay">تأخیر بین پیام‌ها (ثانیه)</label>

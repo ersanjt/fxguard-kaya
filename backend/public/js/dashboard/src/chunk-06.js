@@ -189,6 +189,8 @@
             var cloudToken = document.getElementById('whatsappCloudAccessToken');
             var cloudPhone = document.getElementById('whatsappCloudPhoneNumberId');
             var cloudVerify = document.getElementById('whatsappCloudVerifyToken');
+            var cloudTplName = document.getElementById('whatsappCloudBulkTemplateName');
+            var cloudTplLang = document.getElementById('whatsappCloudBulkTemplateLanguage');
             var gwEn = document.getElementById('whatsappGatewayEnabled');
             var gwUrl = document.getElementById('whatsappGatewayUrl');
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
@@ -197,6 +199,8 @@
             if (cloudToken) { cloudToken.value = ''; cloudToken.placeholder = d.cloudAccessTokenSet ? (LANG === 'fa' ? 'کلید ذخیره شده ✓ — برای تغییر وارد کنید' : 'Saved ✓ — Enter to change') : 'EAAxxx...'; }
             if (cloudPhone) cloudPhone.value = d.cloudPhoneNumberId || '';
             if (cloudVerify) cloudVerify.value = d.cloudVerifyToken || '';
+            if (cloudTplName) cloudTplName.value = d.cloudBulkTemplateName || '';
+            if (cloudTplLang) cloudTplLang.value = d.cloudBulkTemplateLanguage || 'fa';
             if (gwEn) gwEn.checked = d.gatewayEnabled !== false;
             if (gwUrl) gwUrl.value = d.gatewayUrl || '';
             if (gwSecret) { gwSecret.value = ''; gwSecret.placeholder = d.gatewayApiSecretSet ? (LANG === 'fa' ? 'ذخیره شده ✓' : 'Saved ✓') : (LANG === 'fa' ? 'اختیاری' : 'Optional'); }
@@ -207,6 +211,8 @@
             var cloudToken = document.getElementById('whatsappCloudAccessToken');
             var cloudPhone = document.getElementById('whatsappCloudPhoneNumberId');
             var cloudVerify = document.getElementById('whatsappCloudVerifyToken');
+            var cloudTplName = document.getElementById('whatsappCloudBulkTemplateName');
+            var cloudTplLang = document.getElementById('whatsappCloudBulkTemplateLanguage');
             var gwUrl = document.getElementById('whatsappGatewayUrl');
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
             var body = {
@@ -214,6 +220,8 @@
                 cloudEnabled: (document.getElementById('whatsappCloudEnabled') || {}).checked !== false,
                 cloudPhoneNumberId: (cloudPhone && cloudPhone.value) ? cloudPhone.value.trim() : undefined,
                 cloudVerifyToken: (cloudVerify && cloudVerify.value) ? cloudVerify.value.trim() : undefined,
+                cloudBulkTemplateName: (cloudTplName && cloudTplName.value) ? cloudTplName.value.trim() : undefined,
+                cloudBulkTemplateLanguage: (cloudTplLang && cloudTplLang.value) ? cloudTplLang.value.trim() : undefined,
                 gatewayEnabled: (document.getElementById('whatsappGatewayEnabled') || {}).checked !== false,
                 gatewayUrl: (gwUrl && gwUrl.value) ? gwUrl.value.trim() : undefined
             };
@@ -222,10 +230,72 @@
             try {
                 var res = await apiFetch('/api/whatsapp/connection', { method: 'PUT', body: JSON.stringify(body) });
                 if (res.needLogin) return;
-                if (res.ok) { toast(t('done_msg')); loadWhatsappConnectionSettings(); loadWhatsappStatus(); }
+                if (res.ok) { toast(t('done_msg')); loadWhatsappConnectionSettings(); loadWhatsappStatus(); loadWhatsappOverview(); }
                 else toast((res.data && res.data.error) || t('err_generic'), true);
             } finally { waBtnLoading(saveBtn, false); }
         }
+        async function verifyWhatsappCloudConnection() {
+            var btn = document.getElementById('btnVerifyWhatsappCloud');
+            var out = document.getElementById('whatsappCloudVerifyResult');
+            waBtnLoading(btn, true);
+            if (out) out.textContent = '';
+            try {
+                var res = await apiFetch('/api/whatsapp/cloud/verify', { method: 'POST' });
+                if (res.needLogin) return;
+                if (res.ok && res.data && res.data.ok) {
+                    var msg = (res.data.verifiedName || '') + (res.data.displayPhone ? ' · ' + res.data.displayPhone : '');
+                    if (out) out.textContent = msg || t('whatsapp_cloud_verify_ok');
+                    toast(t('whatsapp_cloud_verify_ok'));
+                } else {
+                    var err = (res.data && res.data.error) || t('err_generic');
+                    if (out) out.textContent = err;
+                    toast(err, true);
+                }
+            } finally { waBtnLoading(btn, false); }
+        }
+        (function bindWhatsappCloudVerify() {
+            var btn = document.getElementById('btnVerifyWhatsappCloud');
+            if (btn && !btn._bound) {
+                btn._bound = true;
+                btn.addEventListener('click', verifyWhatsappCloudConnection);
+            }
+        })();
+        async function sendWhatsappCloudTestMessage() {
+            var btn = document.getElementById('btnWhatsappCloudTestSend');
+            var out = document.getElementById('whatsappCloudTestSendResult');
+            var phoneEl = document.getElementById('whatsappCloudTestPhone');
+            var msgEl = document.getElementById('whatsappCloudTestMessage');
+            var useTpl = document.getElementById('whatsappCloudTestUseTemplate');
+            var to = (phoneEl && phoneEl.value || '').trim();
+            if (!to) { toast(LANG === 'fa' ? 'شماره تست را وارد کنید' : 'Enter test phone', true); return; }
+            waBtnLoading(btn, true);
+            if (out) out.textContent = '';
+            try {
+                var body = {
+                    to: to,
+                    message: (msgEl && msgEl.value) ? msgEl.value.trim() : '',
+                    useTemplate: !!(useTpl && useTpl.checked)
+                };
+                var res = await apiFetch('/api/whatsapp/cloud/test-send', { method: 'POST', body: JSON.stringify(body) });
+                if (res.needLogin) return;
+                if (res.ok && res.data && res.data.ok) {
+                    var okMsg = (res.data.viaTemplate ? (LANG === 'fa' ? 'قالب ارسال شد' : 'Template sent') : (LANG === 'fa' ? 'پیام ارسال شد' : 'Message sent')) + (res.data.messageId ? ' · ID: ' + res.data.messageId : '');
+                    if (out) out.textContent = okMsg;
+                    toast(LANG === 'fa' ? 'پیام تست ارسال شد' : 'Test message sent');
+                } else {
+                    var err = (res.data && (res.data.error || res.data.hint)) || t('err_generic');
+                    if (out) out.textContent = err;
+                    toast(err, true);
+                }
+            } finally { waBtnLoading(btn, false); }
+        }
+        (function bindWhatsappCloudTestSend() {
+            var btn = document.getElementById('btnWhatsappCloudTestSend');
+            if (btn && !btn._bound) {
+                btn._bound = true;
+                btn.addEventListener('click', sendWhatsappCloudTestMessage);
+            }
+        })();
         async function loadWhatsappWelcomeConfig() {
             const ta = document.getElementById('whatsappWelcomeMessage');
             const cb = document.getElementById('whatsappWelcomeEnabled');
@@ -356,6 +426,121 @@
                 if (res.ok) toast(t('done_msg'));
                 else toast((res.data && res.data.error) || t('err_generic'), true);
             } finally { waBtnLoading(btn, false); }
+        }
+        async function loadWhatsappOverview() {
+            var box = document.getElementById('whatsappSystemOverview');
+            if (!box) return;
+            var badge = document.getElementById('whatsappActiveChannelBadge');
+            var warnEl = document.getElementById('whatsappOverviewWarnings');
+            var cloudChecks = document.getElementById('whatsappCloudChecks');
+            var gwChecks = document.getElementById('whatsappGatewayChecks');
+            var cloudStatus = document.getElementById('whatsappCloudChannelStatus');
+            var gwStatus = document.getElementById('whatsappGatewayChannelStatus');
+            var webhookInput = document.getElementById('whatsappWebhookUrl');
+            var flowEl = document.getElementById('whatsappFlowSummary');
+            var cloudCard = document.getElementById('whatsappCloudChannelCard');
+            var gwCard = document.getElementById('whatsappGatewayChannelCard');
+            var gwNumber = document.getElementById('whatsappGatewayNumber');
+            var checkLabels = {
+                token: t('whatsapp_check_token'),
+                phoneId: t('whatsapp_check_phone_id'),
+                verifyToken: t('whatsapp_check_verify'),
+                appSecret: t('whatsapp_check_app_secret'),
+                publicUrl: t('whatsapp_check_public_url'),
+                bulkTemplate: t('whatsapp_check_bulk_template'),
+                enabled: t('whatsapp_check_gw_enabled'),
+                reachable: t('whatsapp_check_gw_reachable'),
+                connected: t('whatsapp_check_gw_connected'),
+                secret: t('whatsapp_check_gw_secret')
+            };
+            var warnKeys = {
+                cloud_fallback: t('whatsapp_warn_cloud_fallback'),
+                using_gateway: t('whatsapp_warn_using_gateway'),
+                number_risk: t('whatsapp_warn_number_risk'),
+                no_app_secret: t('whatsapp_warn_no_app_secret'),
+                dual_connected: t('whatsapp_warn_dual_connected'),
+                no_channel: t('whatsapp_warn_no_channel')
+            };
+            function renderChecks(listEl, checks) {
+                if (!listEl || !checks) return;
+                listEl.innerHTML = checks.map(function(c) {
+                    var optional = c.optional && !c.ok;
+                    var cls = c.ok ? 'is-ok' : (optional ? '' : 'is-miss');
+                    var ico = c.ok ? '✓' : (optional ? '○' : '✗');
+                    var label = checkLabels[c.id] || c.id;
+                    if (c.envOnly && !c.ok) label += ' (' + (LANG === 'fa' ? 'فقط .env' : '.env only') + ')';
+                    if (optional && !c.ok) label += ' (' + (LANG === 'fa' ? 'اختیاری' : 'optional') + ')';
+                    return '<li class="whatsapp-check-item ' + cls + '"><span class="whatsapp-check-ico" aria-hidden="true">' + ico + '</span><span>' + escapeHtml(label) + '</span></li>';
+                }).join('');
+            }
+            function channelStatusLabel(ready, enabled, configured) {
+                if (!enabled) return { text: t('whatsapp_channel_disabled'), cls: 'whatsapp-channel-status--off' };
+                if (ready) return { text: t('whatsapp_channel_ready'), cls: 'whatsapp-channel-status--ready' };
+                if (configured) return { text: t('whatsapp_channel_partial'), cls: 'whatsapp-channel-status--partial' };
+                return { text: t('whatsapp_channel_not_setup'), cls: 'whatsapp-channel-status--off' };
+            }
+            var res = await apiFetch('/api/whatsapp/overview', { timeoutMs: 15000 });
+            if (res.needLogin) return;
+            if (!res.ok || !res.data) {
+                if (flowEl) flowEl.textContent = t('err_generic');
+                return;
+            }
+            var d = res.data;
+            var active = d.activeChannel || 'none';
+            if (badge) {
+                badge.className = 'whatsapp-active-channel-badge whatsapp-active-channel--' + active;
+                badge.textContent = active === 'cloud' ? t('whatsapp_active_cloud') : (active === 'gateway' ? t('whatsapp_active_gateway') : t('whatsapp_active_none'));
+            }
+            if (cloudCard) cloudCard.classList.toggle('is-active', active === 'cloud');
+            if (gwCard) gwCard.classList.toggle('is-active', active === 'gateway');
+            var cloud = d.channels && d.channels.cloud ? d.channels.cloud : {};
+            var gw = d.channels && d.channels.gateway ? d.channels.gateway : {};
+            var cs = channelStatusLabel(cloud.ready, cloud.enabled, cloud.configured);
+            var gs = channelStatusLabel(gw.ready, gw.enabled, gw.reachable || gw.configured);
+            if (cloudStatus) { cloudStatus.textContent = cs.text; cloudStatus.className = 'whatsapp-channel-status ' + cs.cls; }
+            if (gwStatus) { gwStatus.textContent = gs.text; gwStatus.className = 'whatsapp-channel-status ' + gs.cls; }
+            renderChecks(cloudChecks, cloud.checks);
+            renderChecks(gwChecks, gw.checks);
+            if (webhookInput) webhookInput.value = cloud.webhookUrl || '';
+            var bulkTplInput = document.getElementById('bulkTemplateName');
+            var bulkTplLangInput = document.getElementById('bulkTemplateLanguage');
+            if (bulkTplInput && cloud.bulkTemplateName && !bulkTplInput.value) bulkTplInput.value = cloud.bulkTemplateName;
+            if (bulkTplLangInput && cloud.bulkTemplateLanguage) bulkTplLangInput.value = cloud.bulkTemplateLanguage;
+            if (gwNumber) {
+                if (gw.number) { gwNumber.style.display = 'block'; gwNumber.textContent = (LANG === 'fa' ? 'شماره متصل: ' : 'Connected: ') + gw.number; }
+                else gwNumber.style.display = 'none';
+            }
+            if (warnEl) {
+                var warns = d.warnings || [];
+                warnEl.innerHTML = warns.map(function(w) {
+                    var level = w.level || 'info';
+                    var msg = warnKeys[w.id] || w.id;
+                    return '<p class="whatsapp-overview-warn whatsapp-overview-warn--' + level + '">' + escapeHtml(msg) + '</p>';
+                }).join('');
+            }
+            if (flowEl) {
+                var mode = d.connectionMode || 'cloud_first';
+                var modeLabel = mode === 'cloud' ? t('whatsapp_mode_cloud_only') : (mode === 'gateway' ? t('whatsapp_mode_gateway_only') : t('whatsapp_mode_cloud_first'));
+                if (active === 'cloud') {
+                    flowEl.textContent = t('whatsapp_flow_cloud').replace('{mode}', modeLabel);
+                } else if (active === 'gateway') {
+                    flowEl.textContent = t('whatsapp_flow_gateway').replace('{mode}', modeLabel);
+                } else {
+                    flowEl.textContent = t('whatsapp_flow_none').replace('{mode}', modeLabel);
+                }
+            }
+        }
+        function copyWhatsappWebhookUrl() {
+            var input = document.getElementById('whatsappWebhookUrl');
+            if (!input || !input.value) { toast(t('whatsapp_webhook_empty'), true); return; }
+            var text = input.value;
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(function() { toast(t('whatsapp_copied')); }).catch(function() {
+                    input.select(); document.execCommand('copy'); toast(t('whatsapp_copied'));
+                });
+            } else {
+                input.select(); document.execCommand('copy'); toast(t('whatsapp_copied'));
+            }
         }
         async function loadWhatsappStats() {
             const perms = (currentUser && currentUser.permissions) || {};
@@ -776,16 +961,24 @@
             if (!str) return '';
             return String(str).replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
         }
+        function isChatTemplateDropdownOpen(dd) {
+            if (!dd) return false;
+            if (dd.hidden) return false;
+            return dd.style.display !== 'none';
+        }
         async function toggleTemplateDropdown() {
             const dd = document.getElementById('chatTemplateDropdown');
             const btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn');
             if (!dd) return;
-            if (dd.style.display === 'block') {
+            if (isChatTemplateDropdownOpen(dd)) {
+                dd.hidden = true;
                 dd.style.display = 'none';
                 if (btn) btn.setAttribute('aria-expanded', 'false');
                 return;
             }
-            dd.innerHTML = '<div class="chat-template-dropdown-loading">' + (LANG === 'fa' ? 'در حال بارگذاری...' : 'Loading...') + '</div>';
+            if (typeof closeWaAttachMenu === 'function') closeWaAttachMenu();
+            dd.innerHTML = '<div class="chat-template-dropdown-loading">' + escapeHtml(t('loading') || '…') + '</div>';
+            dd.hidden = false;
             dd.style.display = 'block';
             if (btn) btn.setAttribute('aria-expanded', 'true');
             if (chatTemplatesCache.length === 0) {
@@ -797,7 +990,7 @@
             const activeTpl = chatTemplatesCache.filter(function(t) { return t.isActive !== false; });
             let html = '';
             if (activeTpl.length > 0) {
-                html += '<div class="chat-tpl-dd-section-title">' + (LANG === 'fa' ? 'تمپلیت‌های متنی' : 'Text Templates') + '</div>';
+                html += '<div class="chat-tpl-dd-section-title">' + escapeHtml(t('text_templates') || 'Text templates') + '</div>';
                 html += activeTpl.map(function(t) {
                     let preview = (t.content || '').slice(0, 55);
                     if ((t.content || '').length > 55) preview += '…';
@@ -806,7 +999,7 @@
                 }).join('');
             }
             if (activeFileTpl.length > 0) {
-                html += '<div class="chat-tpl-dd-section-title">' + (LANG === 'fa' ? 'فایل‌های پرکاربرد' : 'File Templates') + '</div>';
+                html += '<div class="chat-tpl-dd-section-title">' + escapeHtml(t('file_templates') || 'File templates') + '</div>';
                 html += activeFileTpl.map(function(f) {
                     const ext = (f.filename || '').split('.').pop().toLowerCase();
                     const icon = f.mimetype && f.mimetype.indexOf('image') !== -1 ? '🖼' : f.mimetype && f.mimetype.indexOf('pdf') !== -1 ? '📄' : f.mimetype && f.mimetype.indexOf('audio') !== -1 ? '🎵' : f.mimetype && f.mimetype.indexOf('video') !== -1 ? '🎬' : '📎';
@@ -815,13 +1008,16 @@
                     return '<div class="chat-template-dropdown-item chat-file-tpl-item" data-file-id="' + escapeHtml(f.id) + '" data-file-name="' + escapeHtml(f.name || f.filename || '') + '" data-file-url="' + escapeHtml(fUrl) + '" data-mimetype="' + escapeHtml(f.mimetype || '') + '" data-filename="' + escapeHtml(f.filename || '') + '" role="button" tabindex="0"><div class="tpl-name">' + icon + ' ' + escapeHtml(f.name || f.filename || '') + '</div>' + (size ? '<div class="tpl-preview">' + size + (f.category ? ' · ' + escapeHtml(f.category) : '') + '</div>' : '') + '</div>';
                 }).join('');
             }
-            if (!html) html = '<div class="chat-template-dropdown-empty">' + (LANG === 'fa' ? 'تمپلیتی وجود ندارد. از بخش تمپلیت‌های پیام اضافه کنید.' : 'No templates. Add from Message Templates.') + '</div>';
+            if (!html) html = '<div class="chat-template-dropdown-empty">' + escapeHtml(t('chat_tpl_dd_empty') || 'No templates.') + '</div>';
             dd.innerHTML = html;
             document.addEventListener('click', function closeTemplateDd(e) {
                 var menuBtn = document.getElementById('waAttachMenuBtn');
+                var attachMenu = document.getElementById('waAttachMenu');
                 var insideTplAnchor = btn && (e.target === btn || btn.contains(e.target));
                 var insideAttachTrigger = menuBtn && (e.target === menuBtn || menuBtn.contains(e.target));
-                if (!dd.contains(e.target) && !insideTplAnchor && !insideAttachTrigger) {
+                var insideAttachMenu = attachMenu && !attachMenu.hidden && attachMenu.contains(e.target);
+                if (!dd.contains(e.target) && !insideTplAnchor && !insideAttachTrigger && !insideAttachMenu) {
+                    dd.hidden = true;
                     dd.style.display = 'none';
                     if (btn) btn.setAttribute('aria-expanded', 'false');
                     document.removeEventListener('click', closeTemplateDd);
@@ -1542,6 +1738,7 @@
             const appEl = document.getElementById('app');
             if (appEl && appEl.classList.contains('show')) {
                 updateBottomBarVisibility();
+                if (typeof initSidebarCollapsedState === 'function') initSidebarCollapsedState();
                 const activePage = (document.querySelector('.nav-link.active') || {}).getAttribute('data-page');
                 if (activePage && typeof updateMobileTabBar === 'function') updateMobileTabBar(activePage);
             }
@@ -1594,7 +1791,6 @@
         })();
 
         (function exposeOnclickHandlers() {
-            window.login = login;
             window.logout = logout;
             window.showPage = showPage;
             window.savePanelSettings = savePanelSettings;
@@ -1619,8 +1815,6 @@
             window.confirmDeleteUser = confirmDeleteUser;
             window.openStaffDetailModal = openStaffDetailModal;
             window.closeStaffDetailModal = closeStaffDetailModal;
-            window.verifyTotpLogin = verifyTotpLogin;
-            window.backToLoginStep1 = backToLoginStep1;
             window.closeSidebarMobile = closeSidebarMobile;
             window.toggleSidebarMobile = toggleSidebarMobile;
             window.toggleSidebarDesktop = toggleSidebarDesktop;
@@ -1961,14 +2155,7 @@
                 const res = await apiFetch('/api/auth/me');
                 if (res.needLogin || !res.ok || !res.data || !res.data.email) {
                     persistAuthToken(null);
-                    if (redirectToLoginPage()) return;
-                    if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
-                        window.LoginBootstrap.setLoggedOut();
-                    } else {
-                        document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
-                    }
-                    const loginBox = document.getElementById('loginBox');
-                    if (loginBox) loginBox.style.display = 'flex';
+                    redirectToLoginPage();
                     return;
                 }
                 const u = res.data;
@@ -1980,8 +2167,6 @@
                 } else {
                     document.documentElement.classList.add('auth-has-token');
                 }
-                const loginBox = document.getElementById('loginBox');
-                if (loginBox) loginBox.style.display = 'none';
                 const appEl = document.getElementById('app');
                 if (appEl) {
                     appEl.classList.add('show', 'app-ready');
@@ -1993,17 +2178,7 @@
             } catch (e) {
                 console.error('restoreSession:', e);
                 persistAuthToken(null);
-                if (redirectToLoginPage()) return;
-                const loginBox = document.getElementById('loginBox');
-                if (loginBox) loginBox.style.display = '';
-                const appEl = document.getElementById('app');
-                if (appEl) {
-                    appEl.classList.remove('show', 'app-ready');
-                    appEl.classList.add('app-loading');
-                }
-                if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
-                    window.LoginBootstrap.setLoggedOut();
-                }
+                redirectToLoginPage();
             } finally {
                 document.documentElement.classList.remove('auth-verifying');
             }
