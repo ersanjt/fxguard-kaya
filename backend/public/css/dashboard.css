@@ -7119,13 +7119,48 @@
             background: transparent;
         }
         @media (max-width: 720px) {
-            #pageConversations.wa-conversations-theme .wa-chat-call-btn {
-                display: none;
-            }
             #pageConversations.wa-conversations-theme .conv-list-wrap {
                 min-width: 0;
             }
         }
+        #pageConversations.wa-conversations-theme .wa-chat-call-btn.is-disabled,
+        #pageConversations.wa-conversations-theme .wa-attach-menu-item--call.is-disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .msg-wa-call-card {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(0, 0, 0, 0.14);
+            border-inline-start: 3px solid rgba(37, 211, 102, 0.75);
+            max-width: 100%;
+        }
+        .msg.in .msg-wa-call-card {
+            background: rgba(0, 0, 0, 0.06);
+            border-inline-start-color: var(--accent);
+        }
+        .msg-wa-call-title {
+            font-weight: 700;
+            font-size: 0.88rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .msg-wa-call-meta {
+            font-size: 0.75rem;
+            opacity: 0.88;
+            line-height: 1.35;
+        }
+        .msg-wa-call-intro {
+            font-size: 0.78rem;
+            opacity: 0.82;
+            font-style: italic;
+            line-height: 1.35;
+        }
+        .wa-attach-menu-item--call .wa-attach-menu-ic { color: #25d366; }
         @media (max-width: 520px) {
             #pageConversations.wa-conversations-theme .wa-emoji-grid {
                 grid-template-columns: repeat(6, 1fr);

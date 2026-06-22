@@ -217,6 +217,7 @@ window.__I18N_TR = {
     wa_call_group_link_sent: 'Grup arama bağlantısı sohbete gönderildi (en fazla 10 kişi).',
     wa_calls_not_in_panel: 'Müşteri sesli araması bu panelden yapılmaz — telefonunuzdaki WhatsApp\'ı kullanın.',
     wa_calls_not_in_panel_video: 'Görüntülü arama bu panelden yapılmaz — telefonunuzdaki WhatsApp\'ı kullanın.',
+    wa_calls_gateway_required: 'WhatsApp aramaları için Gateway bağlantısı gerekir.',
     wa_emoji: 'Emoji',
     wa_stickers: 'Çıkartmalar',
     wa_gif: 'GIF',

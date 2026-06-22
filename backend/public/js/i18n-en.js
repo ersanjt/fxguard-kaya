@@ -224,6 +224,7 @@ window.__I18N_EN = {
     wa_call_group_link_sent: 'Group call link sent to the chat. Call window opened (up to 10 people).',
     wa_calls_not_in_panel: 'Voice calls to customers are not placed from this panel — use WhatsApp on your phone.',
     wa_calls_not_in_panel_video: 'Video calls are not placed from this panel — use WhatsApp on your phone.',
+    wa_calls_gateway_required: 'WhatsApp calls require an active Gateway connection (WhatsApp connection settings).',
     wa_emoji: 'Emoji',
     wa_stickers: 'Stickers',
     wa_gif: 'GIF',

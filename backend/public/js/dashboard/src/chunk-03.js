@@ -1027,6 +1027,7 @@
                 barEl.setAttribute('hidden', '');
             }
             apiFetch('/api/conversations/' + id + '/read', { method: 'POST' }).then(function() { loadConversations(); apiFetch('/api/analytics/dashboard').then(function(r) { if (r.ok && r.data && typeof updateNavBadges === 'function') updateNavBadges(r.data); }).catch(function(){}); });
+            updateWaCallButtonsState();
             loadMessages(id);
             const canViewSupervision = currentUser && ['owner', 'admin', 'manager', 'supervisor'].indexOf(currentUser.role) !== -1;
             if (canViewSupervision && supPanel && supStats) {
@@ -1649,6 +1650,31 @@
             }
             return parts.join('');
         }
+        function buildWaCallMessageHtml(m, isOut, time) {
+            var meta = (m && m.metadata) || {};
+            var isVideo = meta.callType === 'video';
+            var title = isVideo
+                ? ((typeof t === 'function' && t('video_call')) || (LANG === 'fa' ? 'تماس تصویری' : 'Video call'))
+                : ((typeof t === 'function' && t('voice_call')) || (LANG === 'fa' ? 'تماس صوتی' : 'Voice call'));
+            var staff = String(meta.staffName || (m.user && staffDisplayName(m.user)) || '').trim();
+            var dept = String(meta.departmentName || '').trim();
+            var methodLabel = meta.method === 'link'
+                ? (LANG === 'fa' ? 'ارسال لینک تماس' : LANG === 'tr' ? 'Arama bağlantısı' : 'Call link sent')
+                : (LANG === 'fa' ? 'برقراری از Gateway' : LANG === 'tr' ? 'Gateway araması' : 'Placed via Gateway');
+            var metaLine = methodLabel;
+            if (staff) metaLine += (LANG === 'fa' ? ' · توسط ' : ' · by ') + staff;
+            if (dept) metaLine += ' (' + dept + ')';
+            var intro = String(meta.introText || '').trim();
+            var introHtml = intro
+                ? '<div class="msg-wa-call-intro">' + escapeHtml(intro.length > 160 ? intro.slice(0, 160) + '…' : intro) + '</div>'
+                : '';
+            return '<div class="msg-wa-call-card" role="group" aria-label="' + escapeAttr(title) + '">' +
+                '<div class="msg-wa-call-title"><span aria-hidden="true">📞</span><span>' + escapeHtml(title) + '</span></div>' +
+                '<div class="msg-wa-call-meta">' + escapeHtml(metaLine) + '</div>' +
+                introHtml +
+                '<div class="msg-wa-call-meta"><span class="time">' + escapeHtml(time) + '</span></div>' +
+                '</div>';
+        }
         /** منبع ارسال پیام خروجی — پنل CRM یا اپ واتساپ موبایل */
         function msgSendSource(m) {
             return (m && m.metadata && m.metadata.sendSource) ? String(m.metadata.sendSource) : '';
@@ -1942,6 +1968,10 @@
                 }
                 var resolvedMediaType = (mediaUrl && m.hasMedia && m.mediaData) ? inferMediaType(m) : '';
                 let contentHtml = '';
+                var isWaCallMsg = !!(m.metadata && m.metadata.waCall);
+                if (isWaCallMsg && isOut) {
+                    contentHtml = buildWaCallMessageHtml(m, isOut, time);
+                }
                 let displayContent = (m.content || '').trim();
                 if (isOut && (displayContent.indexOf('🤖 ') === 0)) displayContent = displayContent.slice(2).trim();
                 else if (isOut && displayContent.indexOf('AI KAYA: ') === 0) displayContent = displayContent.slice(9).trim();
@@ -1954,7 +1984,7 @@
                     else if (displayContent === 'file' || displayContent === '📎 فایل') displayContent = '';
                 }
                 if (m.hasMedia && m.mediaData && m.mediaData.url && m.content && displayContent) contentHtml = '<div class="msg-caption">' + linkifyMessageContent(displayContent) + '</div>';
-                else if (displayContent && !(m.hasMedia && !(m.mediaData && m.mediaData.url))) contentHtml = '<div>' + linkifyMessageContent(displayContent) + '</div>';
+                else if (displayContent && !(m.hasMedia && !(m.mediaData && m.mediaData.url)) && !isWaCallMsg) contentHtml = '<div>' + linkifyMessageContent(displayContent) + '</div>';
                 let preview = (m.content || '').slice(0, 50) || (m.hasMedia ? '📎' : '');
                 if ((m.content || '').length > 50) preview += '…';
                 // اضافه کردن اسم فرستنده به preview برای گروه
@@ -2336,6 +2366,49 @@
         }
         function waConvVideoCall() {
             waConvStartCall('video');
+        }
+        function waAttachStartCall(ev, callType) {
+            if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+            var menu = document.getElementById('waAttachMenu');
+            if (menu) menu.hidden = true;
+            var btn = document.getElementById('waAttachMenuBtn');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+            waConvStartCall(callType);
+        }
+        var _waCallsGatewayEnabled = null;
+        function updateWaCallButtonsState() {
+            var voiceBtn = document.getElementById('waChatVoiceBtn');
+            var videoBtn = document.getElementById('waChatVideoBtn');
+            var attachVoice = document.getElementById('waAttachVoiceCallBtn');
+            var attachVideo = document.getElementById('waAttachVideoCallBtn');
+            var btns = [voiceBtn, videoBtn, attachVoice, attachVideo].filter(Boolean);
+            if (!btns.length) return;
+            function apply(enabled, titleOff) {
+                btns.forEach(function(b) {
+                    b.disabled = !enabled;
+                    b.classList.toggle('is-disabled', !enabled);
+                    if (!enabled && titleOff) b.setAttribute('title', titleOff);
+                });
+            }
+            if (_waCallsGatewayEnabled === false) {
+                var offTitle = typeof t === 'function' ? t('wa_calls_gateway_required') : '';
+                if (!offTitle || offTitle === 'wa_calls_gateway_required') {
+                    offTitle = LANG === 'fa'
+                        ? 'تماس واتساپ فقط با Gateway فعال است'
+                        : 'WhatsApp calls require Gateway connection';
+                }
+                apply(false, offTitle);
+                return;
+            }
+            apply(true);
+            apiFetch('/api/whatsapp/connection').then(function(res) {
+                if (!res.ok || !res.data) return;
+                _waCallsGatewayEnabled = res.data.gatewayEnabled !== false;
+                var mode = res.data.connectionMode || 'cloud_first';
+                var gwOk = _waCallsGatewayEnabled && mode !== 'cloud';
+                if (!gwOk) _waCallsGatewayEnabled = false;
+                updateWaCallButtonsState();
+            }).catch(function() {});
         }
         async function waConvStartCall(callType) {
             if (!currentConvId) return;

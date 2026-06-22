@@ -79,6 +79,7 @@
         window.waConvGifAttach = waConvGifAttach;
         window.waConvVoiceCall = waConvVoiceCall;
         window.waConvVideoCall = waConvVideoCall;
+        window.waAttachStartCall = waAttachStartCall;
         document.addEventListener('click', function(ev) {
             if (!ev || !ev.target) return;
             var el = ev.target;
