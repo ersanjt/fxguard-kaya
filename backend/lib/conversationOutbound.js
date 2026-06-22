@@ -98,6 +98,8 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         mediaData = { url: relPath, filename: media.filename || media.name, mimetype: media.mimetype };
     }
 
+    const waCaption = isForwarded ? text : applyStaffSignatureToOutboundText(senderUser, text);
+
     const msgMeta = metadata && typeof metadata === 'object' ? { ...metadata } : {};
     msgMeta.sendSource = 'crm_panel';
     if (waCaption && waCaption !== text) msgMeta.customerWaText = waCaption;
@@ -169,8 +171,6 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         await msg.update({ status: 'failed' });
         return { msg, error: 'شماره تلفن مشتری معتبر نیست. لطفاً در پروفایل مشتری شماره را با فرمت صحیح وارد کنید.', status: 400 };
     }
-
-    const waCaption = isForwarded ? text : applyStaffSignatureToOutboundText(senderUser, text);
 
     const isVoiceNote =
         msgType === 'audio' || media?.sendAsVoice === true || media?.type === 'audio';
