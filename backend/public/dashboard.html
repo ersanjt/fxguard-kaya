@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="کایا CRM">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان صرافی کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="4008a5699632">
+    <meta name="crm-build" content="d509e5a11029">
     <title>پورتال کارکنان کایا | صرافی کایا</title>
     <link rel="icon" id="favicon" href="/favicon-kaya.svg">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/favicon-kaya.svg">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=4008a5699632">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=4008a5699632" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=d509e5a11029">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=d509e5a11029" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -57,70 +57,6 @@
             <symbol id="icon-settings" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></symbol>
         </defs>
     </svg>
-    <div id="loginBox" class="login-wrap">
-        <div class="login-box" id="loginStep1">
-            <div class="login-logo" id="loginLogo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <div class="lang-switch login-lang">
-                <button type="button" id="langFa" data-lang="fa" onclick="setLang('fa')" class="active">فارسی</button>
-                <button type="button" id="langEn" data-lang="en" onclick="setLang('en')">English</button>
-                <button type="button" id="langTr" data-lang="tr" onclick="setLang('tr')" data-i18n="lang_tr">Türkçe</button>
-            </div>
-            <h1 id="loginTitle" data-i18n="login_title">پورتال کارکنان کایا</h1>
-            <p class="sub" data-i18n="login_sub">ورود به پورتال از سراسر دنیا</p>
-            <input type="text" id="email" data-i18n-ph="login_email_or_username" placeholder="ایمیل یا نام کاربری" autocomplete="username">
-            <div class="password-wrap">
-                <input type="password" id="pass" data-i18n-ph="login_password" placeholder="رمز عبور" autocomplete="current-password">
-                <button type="button" id="loginTogglePass" class="toggle-password" title="نمایش رمز" aria-label="نمایش رمز عبور" aria-pressed="false">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#icon-eye"/></svg>
-                </button>
-            </div>
-            <button type="button" id="btnLogin" onclick="login()" data-i18n="login_btn">ورود</button>
-            <p class="login-forgot-wrap"><a href="#" id="linkForgotPassword" onclick="showForgotStep(); return false;" data-i18n="login_forgot_password">فراموشی رمز عبور</a></p>
-            <div id="loginErr" class="login-err"></div>
-            <p class="login-support" id="loginSupportWrap">
-                <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
-                <a href="#" id="loginSupportLink" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
-            </p>
-        </div>
-        <div class="login-box" id="loginStepTotp" style="display:none;">
-            <div class="login-logo" id="loginLogoTotp"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <div class="lang-switch login-lang">
-                <button type="button" data-lang="fa" onclick="setLang('fa')" data-i18n="lang_fa">فارسی</button>
-                <button type="button" data-lang="en" onclick="setLang('en')" data-i18n="lang_en">English</button>
-                <button type="button" data-lang="tr" onclick="setLang('tr')" data-i18n="lang_tr">Türkçe</button>
-            </div>
-            <h1 data-i18n="login_totp_title">احراز هویت دو مرحله‌ای</h1>
-            <p class="sub" id="totpStepEmail">کد شش‌رقمی اپلیکیشن Google Authenticator را وارد کنید.</p>
-            <input type="text" id="totpCode" data-i18n-ph="login_totp_code_ph" placeholder="کد ۶ رقمی" maxlength="6" pattern="[0-9]*" inputmode="numeric" autocomplete="one-time-code">
-            <button type="button" id="btnTotpVerify" onclick="verifyTotpLogin()" data-i18n="login_totp_verify">تأیید و ورود</button>
-            <button type="button" id="btnBackToLoginStep1" class="btn-secondary" onclick="backToLoginStep1()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
-            <div id="totpErr" class="login-err"></div>
-            <p class="login-support" id="loginSupportWrapTotp">
-                <span data-i18n="login_cant_signin">نمی‌توانید وارد شوید؟</span>
-                <a href="#" id="loginSupportLinkTotp" data-i18n="login_contact_support">با پشتیبانی تماس بگیرید</a>
-            </p>
-        </div>
-        <div class="login-box" id="loginStepForgot" style="display:none;">
-            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <h1 data-i18n="forgot_title">بازیابی رمز عبور</h1>
-            <p class="sub" data-i18n="forgot_sub">ایمیل حساب خود را وارد کنید؛ در صورت وجود حساب، لینک بازیابی ارسال می‌شود.</p>
-            <input type="email" id="forgotEmail" data-i18n-ph="login_email" placeholder="ایمیل" autocomplete="email">
-            <button type="button" id="btnForgotSubmit" onclick="submitForgotPassword()" data-i18n="forgot_send">ارسال لینک بازیابی</button>
-            <button type="button" id="btnBackToLoginFromForgot" class="btn-secondary" onclick="backToLoginFromForgot()" style="margin-top:8px;" data-i18n="login_back">بازگشت</button>
-            <div id="forgotErr" class="login-err"></div>
-            <div id="forgotSuccess" class="login-success" style="display:none;"></div>
-        </div>
-        <div class="login-box" id="loginStepReset" style="display:none;">
-            <div class="login-logo"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-logo"/></svg></div>
-            <h1 data-i18n="reset_title">تعیین رمز عبور جدید</h1>
-            <p class="sub" data-i18n="reset_sub">رمز عبور جدید و تکرار آن را وارد کنید.</p>
-            <input type="password" id="resetNewPass" data-i18n-ph="reset_new_password" placeholder="رمز عبور جدید" autocomplete="new-password">
-            <input type="password" id="resetConfirmPass" data-i18n-ph="reset_confirm_password" placeholder="تکرار رمز عبور" autocomplete="new-password">
-            <button type="button" id="btnResetSubmit" onclick="submitResetPassword()" data-i18n="reset_btn">تغییر رمز و ورود</button>
-            <a href="#" id="btnBackToLoginFromReset" class="btn-secondary" style="display:inline-block;margin-top:8px;text-align:center;" onclick="backToLoginFromReset(); return false;" data-i18n="login_back">بازگشت به ورود</a>
-            <div id="resetErr" class="login-err"></div>
-        </div>
-    </div>
     <div id="app" class="app"><script>(function(){if(document.documentElement.classList.contains('auth-has-token')){document.getElementById('app').classList.add('app-loading');}})();</script>
         <a href="#mainContent" class="skip-link" id="skipLink" data-i18n="skip_to_content" onclick="var m=document.getElementById('mainContent');if(m){m.focus();}">پرش به محتوا</a>
         <div class="header-sticky-wrap" id="headerStickyWrap">
@@ -350,7 +286,7 @@
                 </div>
                 </div>
                 <div class="sidebar-footer sidebar-desktop-only">
-                    <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" onclick="toggleSidebarDesktop()" aria-label="جمع کردن منو" aria-expanded="true" aria-controls="sidebar" title="جمع کردن منو" data-i18n-title="sidebar_toggle_collapse"><span class="sidebar-toggle-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></span><span class="sidebar-toggle-text" data-i18n="sidebar_toggle_collapse">جمع کردن منو</span></button>
+                    <button type="button" class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="جمع کردن منو" aria-expanded="true" aria-controls="sidebar" title="جمع کردن منو" data-i18n-title="sidebar_toggle_collapse"><span class="sidebar-toggle-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg></span><span class="sidebar-toggle-text" data-i18n="sidebar_toggle_collapse">جمع کردن منو</span></button>
                 </div>
             </nav>
             <div class="content">
@@ -363,7 +299,14 @@
                         <button type="button" class="dashboard-refresh-btn" id="dashboardRefreshBtn" onclick="refreshDashboard()" title="به‌روزرسانی" aria-label="به‌روزرسانی داشبورد"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 4v6h-6"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg><span data-i18n="dashboard_refresh">به‌روزرسانی</span></button>
                     </div>
                     <div id="dashboardAttention" class="dashboard-attention" aria-live="polite" style="display:none;"></div>
-                    <div id="dashboardSummary" class="dashboard-summary" aria-label="خلاصه آمار"></div>
+                    <div class="dashboard-summary-wrap">
+                        <div class="dashboard-summary-head">
+                            <h3 class="dashboard-summary-title" data-i18n="dashboard_kpi_title">آمار کلیدی</h3>
+                            <span id="dashboardLastUpdated" class="dashboard-last-updated text-muted" aria-live="polite"></span>
+                        </div>
+                        <div id="dashboardKpiPrimary" class="dashboard-kpi-primary" aria-label="آمار مکالمات"></div>
+                        <div id="dashboardSummary" class="dashboard-summary" aria-label="سایر آمار"></div>
+                    </div>
                     <div id="dashboardQuickActions" class="dashboard-quick-actions" aria-label="دسترسی سریع"></div>
                     <div id="dashboardCardsWrap" class="dashboard-cards-wrap">
                         <h3 class="dashboard-cards-title" id="dashboardCardsTitle" data-i18n="dashboard_sections">بخش‌های پنل</h3>
@@ -520,21 +463,21 @@
                                 </div>
                             </div>
                             <div class="chat-compose-row wa-compose-row">
-                                <div class="wa-compose-attach-slot chat-template-wrap" role="group" aria-label="پیوست">
-                                    <button type="button" class="chat-tool-btn wa-attach-plus-btn" id="waAttachMenuBtn" onclick="toggleWaAttachMenu(event)" title="پیوست" data-i18n-title="attach_file" aria-label="پیوست" aria-expanded="false" aria-haspopup="true">
+                                <div class="wa-compose-attach-slot chat-template-wrap" role="group" data-i18n-aria-label="attach_file" aria-label="پیوست">
+                                    <button type="button" class="chat-tool-btn wa-attach-plus-btn" id="waAttachMenuBtn" onclick="toggleWaAttachMenu(event)" title="پیوست" data-i18n-title="attach_file" data-i18n-aria-label="attach_file" aria-label="پیوست" aria-expanded="false" aria-haspopup="menu">
                                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                                     </button>
-                                    <div id="waAttachMenu" class="wa-attach-menu" hidden role="menu">
-                                        <button type="button" class="wa-attach-menu-item" id="waAttachFileBtn" onclick="waAttachPickFile(event)" role="menuitem">
+                                    <div id="waAttachMenu" class="wa-attach-menu" hidden role="menu" aria-labelledby="waAttachMenuBtn">
+                                        <button type="button" class="wa-attach-menu-item" id="waAttachFileBtn" onclick="waAttachPickFile(event)" role="menuitem" data-i18n-aria-label="wa_attach_document">
                                             <span class="wa-attach-menu-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-paperclip"/></svg></span>
-                                            <span data-i18n="attach_file">سند / فایل</span>
+                                            <span class="wa-attach-menu-label" data-i18n="wa_attach_document">سند / فایل</span>
                                         </button>
-                                        <button type="button" class="wa-attach-menu-item" id="waAttachTemplateBtn" onclick="waOpenTemplatesFromAttachMenu(event)" role="menuitem">
-                                            <span class="wa-attach-menu-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24"><use href="#icon-file-text"/></svg></span>
-                                            <span data-i18n="msg_template">تمپلیت پیام</span>
+                                        <button type="button" class="wa-attach-menu-item" id="waAttachTemplateBtn" onclick="waOpenTemplatesFromAttachMenu(event)" role="menuitem" data-i18n-aria-label="msg_template" aria-haspopup="listbox" aria-expanded="false">
+                                            <span class="wa-attach-menu-ic" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><use href="#icon-file-text"/></svg></span>
+                                            <span class="wa-attach-menu-label" data-i18n="msg_template">تمپلیت پیام</span>
                                         </button>
                                     </div>
-                                    <div id="chatTemplateDropdown" class="chat-template-dropdown" style="display:none;"></div>
+                                    <div id="chatTemplateDropdown" class="chat-template-dropdown wa-chat-template-dropdown" hidden role="listbox" aria-labelledby="waAttachTemplateBtn"></div>
                                 </div>
                                 <div class="chat-compose-field wa-compose-pill-wrap wa-compose-pill-shell">
                                     <button type="button" class="chat-tool-btn wa-emoji-btn" id="waEmojiBtn" onclick="toggleWaEmojiPanel(event)" title="Emoji" data-i18n-title="wa_emoji" aria-label="Emoji" aria-expanded="false" aria-haspopup="true">😊</button>
@@ -1522,6 +1465,57 @@
                             <a href="#conversations" class="whatsapp-stat-link" data-stat="unanswered" data-i18n="whatsapp_view">مشاهده</a>
                         </article>
                     </section>
+                    <section id="whatsappSystemOverview" class="whatsapp-system-overview" aria-labelledby="whatsappOverviewTitle">
+                        <div class="whatsapp-overview-head">
+                            <div>
+                                <h3 id="whatsappOverviewTitle" class="whatsapp-overview-title" data-i18n="whatsapp_overview_title">مرکز کنترل واتساپ</h3>
+                                <p class="whatsapp-overview-sub text-muted" data-i18n="whatsapp_overview_sub">وضعیت کانال‌های ارسال/دریافت، مسیر فعال پیام‌ها و چک‌لیست راه‌اندازی Meta</p>
+                            </div>
+                            <div class="whatsapp-overview-active-wrap">
+                                <span class="whatsapp-overview-active-label" data-i18n="whatsapp_active_channel">کانال فعال</span>
+                                <span id="whatsappActiveChannelBadge" class="whatsapp-active-channel-badge whatsapp-active-channel--none" aria-live="polite">—</span>
+                            </div>
+                        </div>
+                        <div id="whatsappOverviewWarnings" class="whatsapp-overview-warnings" role="status" aria-live="polite"></div>
+                        <div class="whatsapp-channel-grid">
+                            <article id="whatsappCloudChannelCard" class="whatsapp-channel-card whatsapp-channel-card--cloud">
+                                <header class="whatsapp-channel-card-head">
+                                    <span class="whatsapp-channel-card-icon" aria-hidden="true">☁</span>
+                                    <div>
+                                        <h4 data-i18n="whatsapp_channel_cloud">Cloud API (Meta رسمی)</h4>
+                                        <p class="text-muted" data-i18n="whatsapp_channel_cloud_hint">امن‌ترین مسیر — بدون QR</p>
+                                    </div>
+                                    <span id="whatsappCloudChannelStatus" class="whatsapp-channel-status">—</span>
+                                </header>
+                                <ul id="whatsappCloudChecks" class="whatsapp-check-list" aria-label="Cloud API checklist"></ul>
+                                <div class="whatsapp-webhook-row">
+                                    <label for="whatsappWebhookUrl" data-i18n="whatsapp_webhook_url">Webhook Meta</label>
+                                    <div class="whatsapp-copy-row">
+                                        <input type="text" id="whatsappWebhookUrl" class="whatsapp-input whatsapp-input-readonly" readonly dir="ltr">
+                                        <button type="button" class="btn-secondary btn-sm" id="btnCopyWhatsappWebhook" data-i18n="whatsapp_copy">کپی</button>
+                                    </div>
+                                    <p class="text-muted whatsapp-hint" data-i18n="whatsapp_webhook_hint">در Meta for Developers → WhatsApp → Configuration ثبت کنید. فیلد messages را فعال کنید.</p>
+                                </div>
+                                <a href="https://developers.facebook.com/docs/whatsapp/cloud-api/get-started" target="_blank" rel="noopener" class="whatsapp-meta-link" data-i18n="whatsapp_meta_docs">راهنمای Meta Cloud API ↗</a>
+                            </article>
+                            <article id="whatsappGatewayChannelCard" class="whatsapp-channel-card whatsapp-channel-card--gateway">
+                                <header class="whatsapp-channel-card-head">
+                                    <span class="whatsapp-channel-card-icon" aria-hidden="true">📱</span>
+                                    <div>
+                                        <h4 data-i18n="whatsapp_channel_gateway">Gateway (QR)</h4>
+                                        <p class="text-muted" data-i18n="whatsapp_channel_gateway_hint">اتصال WhatsApp Web — با احتیاط برای شماره</p>
+                                    </div>
+                                    <span id="whatsappGatewayChannelStatus" class="whatsapp-channel-status">—</span>
+                                </header>
+                                <ul id="whatsappGatewayChecks" class="whatsapp-check-list" aria-label="Gateway checklist"></ul>
+                                <p id="whatsappGatewayNumber" class="whatsapp-gateway-number text-muted" style="display:none;"></p>
+                            </article>
+                        </div>
+                        <div class="whatsapp-flow-summary">
+                            <h4 class="whatsapp-flow-title" data-i18n="whatsapp_flow_title">جریان پیام</h4>
+                            <p id="whatsappFlowSummary" class="whatsapp-flow-text text-muted" data-i18n="whatsapp_flow_loading">در حال بارگذاری...</p>
+                        </div>
+                    </section>
                     <nav class="whatsapp-pro-nav" role="tablist" aria-label="WhatsApp sections">
                         <button type="button" class="whatsapp-pro-tab active" role="tab" aria-selected="true" data-wa-tab="channels" id="waTabChannels" data-i18n="whatsapp_tab_channels">اتصال و کانال‌ها</button>
                         <button type="button" class="whatsapp-pro-tab" role="tab" aria-selected="false" data-wa-tab="automation" id="waTabAutomation" data-i18n="whatsapp_tab_automation">پیام‌رسانی و هوش مصنوعی</button>
@@ -1591,6 +1585,21 @@
                                     <div class="whatsapp-form-row"><label for="whatsappCloudAccessToken" data-i18n="whatsapp_cloud_access_token">Access Token</label><input type="password" id="whatsappCloudAccessToken" class="whatsapp-input" placeholder="EAAxxx..." autocomplete="off"></div>
                                     <div class="whatsapp-form-row"><label for="whatsappCloudPhoneNumberId" data-i18n="whatsapp_cloud_phone_id">Phone Number ID</label><input type="text" id="whatsappCloudPhoneNumberId" class="whatsapp-input" placeholder="1007665702430638"></div>
                                     <div class="whatsapp-form-row"><label for="whatsappCloudVerifyToken" data-i18n="whatsapp_cloud_verify_token">Verify Token (وب‌هوک Meta)</label><input type="text" id="whatsappCloudVerifyToken" class="whatsapp-input" placeholder="کد تأیید دلخواه"></div>
+                                    <p class="text-muted whatsapp-hint" data-i18n="whatsapp_cloud_app_secret_hint">App Secret را در <code dir="ltr">backend/.env</code> با نام <code dir="ltr">WHATSAPP_CLOUD_APP_SECRET</code> تنظیم کنید (از Meta App → Settings → Basic).</p>
+                                    <div class="whatsapp-form-row"><label for="whatsappCloudBulkTemplateName" data-i18n="whatsapp_cloud_bulk_template">قالب Meta (ارسال انبوه)</label><input type="text" id="whatsappCloudBulkTemplateName" class="whatsapp-input" placeholder="hello_world"></div>
+                                    <div class="whatsapp-form-row"><label for="whatsappCloudBulkTemplateLanguage" data-i18n="whatsapp_cloud_bulk_template_lang">زبان قالب</label><input type="text" id="whatsappCloudBulkTemplateLanguage" class="whatsapp-input" placeholder="fa" dir="ltr"></div>
+                                    <div class="whatsapp-form-actions-inline">
+                                        <button type="button" class="btn-secondary btn-sm" id="btnVerifyWhatsappCloud" data-i18n="whatsapp_cloud_verify_btn">تست اتصال Meta</button>
+                                        <span id="whatsappCloudVerifyResult" class="text-muted whatsapp-verify-result"></span>
+                                    </div>
+                                    <div class="whatsapp-cloud-test-send whatsapp-form-row-group">
+                                        <p class="text-muted whatsapp-hint" data-i18n="whatsapp_cloud_test_send_hint">ارسال پیام تست به شماره خودتان (ادمین)</p>
+                                        <div class="whatsapp-form-row"><label for="whatsappCloudTestPhone" data-i18n="whatsapp_cloud_test_phone">شماره تست</label><input type="text" id="whatsappCloudTestPhone" class="whatsapp-input" placeholder="989121234567" dir="ltr"></div>
+                                        <div class="whatsapp-form-row"><label for="whatsappCloudTestMessage" data-i18n="whatsapp_cloud_test_message">متن تست</label><input type="text" id="whatsappCloudTestMessage" class="whatsapp-input" data-i18n-ph="whatsapp_cloud_test_message_ph" placeholder="سلام، تست Kaya CRM"></div>
+                                        <label class="whatsapp-check-label"><input type="checkbox" id="whatsappCloudTestUseTemplate"> <span data-i18n="bulk_use_cloud_template">ارسال با قالب Meta</span></label>
+                                        <button type="button" class="btn-secondary btn-sm" id="btnWhatsappCloudTestSend" data-i18n="whatsapp_cloud_test_send_btn">ارسال تست</button>
+                                        <span id="whatsappCloudTestSendResult" class="text-muted whatsapp-verify-result"></span>
+                                    </div>
                                 </div>
                                 <div id="whatsappGatewaySettings" class="whatsapp-conn-panel" style="display:none;">
                                     <label class="whatsapp-check-label"><input type="checkbox" id="whatsappGatewayEnabled" checked> <span data-i18n="whatsapp_gateway_enabled">فعال</span></label>
@@ -2102,9 +2111,15 @@
                                 <img id="panelSettingsHeaderFavicon" class="panel-settings-header-favicon" src="" alt="" style="display:none" onerror="this.style.display='none';">
                                 <svg id="panelSettingsHeaderIconFallback" class="panel-settings-header-icon-fallback" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                             </div>
-                            <div>
+                            <div class="panel-settings-header-text">
                                 <h2 class="panel-settings-page-title" data-i18n="page_panel_settings">ظاهر پنل</h2>
-                                <p class="panel-settings-intro" data-i18n="panel_settings_intro">نام سایت، لوگو، فاویکون و متن فوتر را تنظیم کنید. فقط برای مدیران قابل مشاهده است.</p>
+                                <p class="panel-settings-intro" data-i18n="panel_settings_intro">برندینگ، ایمیل، تلگرام و نمایش بخش‌های پنل را از اینجا مدیریت کنید.</p>
+                                <div class="panel-settings-header-chips" aria-hidden="true">
+                                    <span class="panel-settings-chip" data-i18n="panel_tab_branding">برندینگ</span>
+                                    <span class="panel-settings-chip" data-i18n="panel_tab_email">ایمیل</span>
+                                    <span class="panel-settings-chip" data-i18n="panel_tab_telegram">تلگرام</span>
+                                    <span class="panel-settings-chip" data-i18n="panel_tab_sections">بخش‌ها</span>
+                                </div>
                             </div>
                         </div>
                         <div class="panel-settings-header-actions">
@@ -2117,6 +2132,8 @@
                         <span data-i18n="loading">در حال بارگذاری...</span>
                     </div>
                     <div id="panelSettingsContent" class="panel-settings-content" style="display:none;">
+                        <div class="panel-settings-shell">
+                        <aside class="panel-settings-nav" aria-label="تب‌های تنظیمات">
                         <nav class="panel-settings-tabs" role="tablist">
                             <button type="button" class="panel-settings-tab active" data-tab="branding" role="tab" aria-selected="true">
                                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
@@ -2135,7 +2152,9 @@
                                 <span data-i18n="panel_tab_sections">بخش‌ها و نمایش</span>
                             </button>
                         </nav>
+                        </aside>
 
+                        <div class="panel-settings-main">
                         <div class="panel-settings-tab-panels">
                             <div id="panelTabBranding" class="panel-settings-tab-panel active" role="tabpanel">
                                 <div class="panel-settings-panel-layout">
@@ -2256,8 +2275,8 @@
                                                     </div>
                                                 </div>
                                             </section>
-                                            <section class="panel-settings-section panel-settings-section-collapsible">
-                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                            <section class="panel-settings-section panel-settings-section-collapsible panel-settings-section-collapsed-default">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="false">
                                                     <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/></svg></span><span data-i18n="panel_section_titles">عنوان‌ها</span></h3>
                                                     <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                                 </button>
@@ -2272,8 +2291,8 @@
                                                     </div>
                                                 </div>
                                             </section>
-                                            <section class="panel-settings-section panel-settings-section-collapsible">
-                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                            <section class="panel-settings-section panel-settings-section-collapsible panel-settings-section-collapsed-default">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="false">
                                                     <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="4"/><path d="M4 4h16"/></svg></span><span data-i18n="panel_section_footer">فوتر</span></h3>
                                                     <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                                 </button>
@@ -2313,8 +2332,8 @@
                                                     <span class="form-hint" data-i18n="panel_mobile_direct_hint">برای نصب مستقیم APK را آپلود کنید یا لینک HTTPS بگذارید؛ بعداً می‌توانید لینک استور را جایگزین کنید.</span>
                                                 </div>
                                             </section>
-                                            <section class="panel-settings-section panel-settings-section-languages panel-settings-section-collapsible">
-                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="true">
+                                            <section class="panel-settings-section panel-settings-section-languages panel-settings-section-collapsible panel-settings-section-collapsed-default">
+                                                <button type="button" class="panel-settings-section-toggle" aria-expanded="false">
                                                     <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span data-i18n="panel_section_languages">زبان‌های سایت</span></h3>
                                                     <svg class="section-chevron" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                                                 </button>
@@ -2389,7 +2408,13 @@
                                     <section class="panel-settings-section">
                                         <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg></span><span data-i18n="panel_section_email">تنظیمات ایمیل (SMTP)</span></h3>
                                         <p class="panel-settings-section-desc" data-i18n="panel_email_desc">ارسال ایمیل خوش‌آمدگویی، بازیابی رمز و اعلان ورود. در صورت خالی بودن از متغیرهای محیط سرور استفاده می‌شود.</p>
-                                        <p class="panel-settings-hint" style="margin-bottom:0.75rem;font-size:0.85em;color:var(--text-muted);">Host: <code>mail.kaya.fxguard.io</code> یا <code>smtpout.secureserver.net</code> یا <code>143.182.205.92.host.secureserver.net</code> — پورت ۴۶۵ با SSL ✓، پورت ۵۸۷ بدون SSL</p>
+                                        <div class="panel-settings-info-box" role="note">
+                                            <svg class="panel-settings-info-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                            <div class="panel-settings-info-body">
+                                                <strong data-i18n="panel_smtp_hosts_title">سرورهای پیشنهادی SMTP</strong>
+                                                <p data-i18n="panel_smtp_hosts_hint">Host: mail.kaya.fxguard.io یا smtpout.secureserver.net — پورت ۴۶۵ با SSL، پورت ۵۸۷ بدون SSL.</p>
+                                            </div>
+                                        </div>
                                         <div class="form-row-2">
                                             <div class="form-group">
                                                 <label for="panelSettingSmtpHost" data-i18n="panel_smtp_host">آدرس سرور (Host)</label>
@@ -2552,7 +2577,7 @@
                                                 <span data-i18n="panel_client_error_reporting">گزارش خطاهای فرانت/بک‌اند فعال باشد</span>
                                             </label>
                                         </div>
-                                        <hr style="border-color:var(--border-color);opacity:.5;margin:12px 0;">
+                                        <hr class="panel-settings-divider">
                                         <div class="form-group form-group-checkbox">
                                             <label class="checkbox-label">
                                                 <input type="checkbox" id="panelSettingTelegramNotifyAllEvents" value="1" onchange="markPanelSettingsChanged();">
@@ -2617,9 +2642,11 @@
                             </div>
                         </div>
 
-                        <div class="panel-settings-footer">
+                        <footer class="panel-settings-footer panel-settings-footer-sticky">
                             <span id="panelSettingsSaveStatus" class="panel-settings-save-status" style="display:none;"></span>
                             <button type="button" id="panelSettingsSaveBtnFooter" class="btn-primary panel-settings-save-btn" onclick="savePanelSettings()" data-i18n="btn_save">ذخیره</button>
+                        </footer>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -3609,6 +3636,13 @@
                     <button type="button" class="btn-secondary btn-sm" onclick="bulkClearSelection()" data-i18n="bulk_clear">پاک کردن انتخاب</button>
                 </div>
                 <span class="bulk-selected-count" id="bulkSelectedCount">۰ مشتری انتخاب شده</span>
+                <label class="bulk-check-label"><input type="checkbox" id="bulkUseCloudTemplate" checked> <span data-i18n="bulk_use_cloud_template">ارسال با قالب Meta (Cloud API — امن‌تر)</span></label>
+                <div id="bulkTemplateFields" class="bulk-template-fields">
+                    <label data-i18n="whatsapp_cloud_bulk_template">نام قالب Meta</label>
+                    <input type="text" id="bulkTemplateName" class="whatsapp-input" placeholder="hello_world" dir="ltr">
+                    <label data-i18n="whatsapp_cloud_bulk_template_lang">زبان قالب</label>
+                    <input type="text" id="bulkTemplateLanguage" class="whatsapp-input" value="fa" dir="ltr" style="width:120px;">
+                </div>
                 <label data-i18n="bulk_message">متن پیام</label>
                 <textarea id="bulkMessageContent" rows="5" data-i18n-ph="bulk_message_ph" placeholder="سلام {name} عزیز، ..."></textarea>
                 <label data-i18n="bulk_delay">تأخیر بین پیام‌ها (ثانیه)</label>
@@ -3639,14 +3673,14 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=4008a5699632" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=4008a5699632" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=4008a5699632" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=4008a5699632" charset="utf-8"></script>
-    <script src="/js/i18n-en.js?v=4008a5699632" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=4008a5699632" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=4008a5699632" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=4008a5699632" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=d509e5a11029" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=d509e5a11029" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=d509e5a11029" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=d509e5a11029" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=d509e5a11029" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=d509e5a11029" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=d509e5a11029" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=d509e5a11029" charset="utf-8"></script>
     <script>
     (function() {
         var meta = document.querySelector('meta[name="crm-build"]');

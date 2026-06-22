@@ -74,6 +74,7 @@ async function startWaConversationCall(req, conversation, callType) {
         timestamp: now,
         metadata: {
             waCall: true,
+            sendSource: 'crm_panel',
             callType: isVideo ? 'video' : 'voice',
             introText,
             method: gwRes.data?.method || null,

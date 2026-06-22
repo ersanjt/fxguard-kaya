@@ -16,10 +16,43 @@ const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessa
 const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmentRouter');
 const { persistRemoteAvatarIfNeeded, digitsOnlyChatPhone, maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
 const { notifySystemEvent } = require('./systemEventNotifier');
-const { resolveMobileWhatsappUser } = require('../lib/resolveMobileWhatsappUser');
+const { resolveMobileWhatsappUser, isCrmPanelOutboundMessage, loadMobileWhatsappUser, applyMobileWhatsappSenderToMessages } = require('../lib/resolveMobileWhatsappUser');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
+
+function buildSafeUploadName(suggestedName, ext) {
+    let stem = String(suggestedName || 'file').replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
+    const normalizedExt = ext && ext.startsWith('.') ? ext : ext ? '.' + ext : '';
+    if (normalizedExt && !stem.toLowerCase().endsWith(normalizedExt.toLowerCase())) {
+        stem += normalizedExt;
+    } else if (!normalizedExt && !path.extname(stem)) {
+        stem += '.bin';
+    }
+    return Date.now() + '-' + stem;
+}
+
+async function normalizeVoiceUploadForPlayback(filePath, mimetype, filename, logger) {
+    try {
+        const { ensureVoiceFormat } = require('../lib/audioConverter');
+        const converted = await ensureVoiceFormat(filePath, mimetype, filename);
+        return {
+            url: '/uploads/' + path.basename(converted.filePath),
+            filename: converted.filename,
+            mimetype: 'audio/ogg',
+        };
+    } catch (err) {
+        if (logger) logger.warn('Voice normalize for CRM playback failed', { error: err.message, file: path.basename(filePath) });
+        return null;
+    }
+}
+
+function isVoiceLikeMedia(media, isPtt) {
+    if (isPtt) return true;
+    const mime = String(media?.mimetype || '').split(';')[0].trim().toLowerCase();
+    const name = String(media?.filename || media?.caption || '').toLowerCase();
+    return mime.startsWith('audio/') || /\.(ogg|opus|oga|webm|m4a|mp3|wav|aac)$/i.test(name);
+}
 
 const AUTO_RESPONSE_CACHE_KEY = 'cache:autoresponse:active';
 const AUTO_RESPONSE_CACHE_TTL = 60;
@@ -97,7 +130,7 @@ async function resolveIncomingMedia(media, logger) {
             else ext = '.bin';
         }
         if (!ext) ext = '.bin';
-        const safeName = (Date.now() + '-' + suggestedName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)) + (ext.startsWith('.') ? ext : '.' + ext);
+        const safeName = buildSafeUploadName(suggestedName, ext);
         const filePath = path.resolve(uploadsDir, safeName);
         const normalizedUploadsDir = path.resolve(uploadsDir);
         if (!filePath.startsWith(normalizedUploadsDir + path.sep) && filePath !== normalizedUploadsDir) {
@@ -111,7 +144,7 @@ async function resolveIncomingMedia(media, logger) {
     }
 }
 
-async function resolveIncomingMediaFromBase64(media, logger) {
+async function resolveIncomingMediaFromBase64(media, logger, options = {}) {
     if (!media || !media.data) return media;
     try {
         const buf = Buffer.from(media.data, 'base64');
@@ -130,13 +163,17 @@ async function resolveIncomingMediaFromBase64(media, logger) {
             else ext = '.bin';
         }
         if (!ext) ext = '.bin';
-        const safeName = (Date.now() + '-' + suggestedName.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100)) + (ext.startsWith('.') ? ext : '.' + ext);
+        const safeName = buildSafeUploadName(suggestedName, ext);
         const filePath = path.resolve(uploadsDir, safeName);
         const normalizedUploadsDir = path.resolve(uploadsDir);
         if (!filePath.startsWith(normalizedUploadsDir + path.sep) && filePath !== normalizedUploadsDir) {
             throw new Error('Path traversal detected in media filename');
         }
         await fsPromises.writeFile(filePath, buf);
+        if (isVoiceLikeMedia(media, options.isPtt)) {
+            const normalized = await normalizeVoiceUploadForPlayback(filePath, media.mimetype || ct, suggestedName, logger);
+            if (normalized) return normalized;
+        }
         return { url: '/uploads/' + safeName, filename: media.filename || suggestedName, mimetype: media.mimetype || ct || null };
     } catch (err) {
         logger.warn('resolveIncomingMediaFromBase64 failed', { error: err.message });
@@ -416,6 +453,22 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         const hasUsableMedia = hasMedia && media && (media.url || (media.filename && String(media.filename).trim()) || (media.caption && String(media.caption).trim()) || media.data);
         if (!hasText && !hasUsableMedia) return;
 
+        const waMsgId = messageData.id ? String(messageData.id).trim() : null;
+        if (waMsgId) {
+            if (redisClient && !redisClient.isStub) {
+                try {
+                    const dedupeKey = `wa:incoming:${waMsgId}`;
+                    const acquired = await redisClient.set(dedupeKey, '1', { NX: true, EX: 172800 });
+                    if (!acquired) {
+                        logger.debug('Duplicate whatsapp message (redis)', { waMsgId });
+                        return;
+                    }
+                } catch (_) {}
+            }
+            const existingEarly = await Message.findOne({ where: { whatsappId: waMsgId }, attributes: ['id'] });
+            if (existingEarly) return;
+        }
+
         let resolvedMedia = media || null;
         let msgType = (messageData.type || 'text').toLowerCase();
         if (msgType === 'ptt') msgType = 'audio';
@@ -423,7 +476,9 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             if (media.url && (String(media.url).trim().startsWith('http://') || String(media.url).trim().startsWith('https://'))) {
                 resolvedMedia = await resolveIncomingMedia(media, logger);
             } else if (media.data) {
-                resolvedMedia = await resolveIncomingMediaFromBase64(media, logger);
+                resolvedMedia = await resolveIncomingMediaFromBase64(media, logger, {
+                    isPtt: (messageData.type || '').toLowerCase() === 'ptt',
+                });
             }
             if (resolvedMedia && (resolvedMedia.url || resolvedMedia.filename || resolvedMedia.data)) msgType = inferMessageTypeFromMedia(resolvedMedia);
         }
@@ -535,12 +590,6 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             : {};
 
         if (isFromMe) {
-            const waMsgId = messageData.id || null;
-            if (waMsgId) {
-                const existingByWa = await Message.findOne({ where: { whatsappId: waMsgId } });
-                if (existingByWa) return;
-            }
-
             const bodyStr = String(body || '').trim();
             const contentToMatch = bodyStr.startsWith(AI_MESSAGE_PREFIX)
                 ? bodyStr.slice(AI_MESSAGE_PREFIX.length).trim()
@@ -579,10 +628,11 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                 limit: 8
             });
             for (const cand of recentStaff) {
+                // echo فقط برای پیام واقعاً ارسال‌شده از پنل CRM — نه ویس/متن موبایل که به assignee چسبیده
+                if (!isCrmPanelOutboundMessage(cand)) continue;
                 const stored = String(cand.content || '').trim();
                 if (bodyStr && stored) {
-                    const echoMatchesStored = bodyStr === stored || bodyStr.endsWith(stored)
-                        || stored === contentToMatch || bodyStr.includes(stored);
+                    const echoMatchesStored = bodyStr === stored || stored === contentToMatch;
                     if (echoMatchesStored && stored.length >= 3) {
                         if (waMsgId && !cand.whatsappId) await cand.update({ whatsappId: waMsgId, status: 'sent' });
                         return;
@@ -607,19 +657,41 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             if (mobileSender.gatewayNumber) msgMetadata.gatewayNumber = mobileSender.gatewayNumber;
             if (mobileSender.gatewayName) msgMetadata.gatewayPushName = mobileSender.gatewayName;
         }
-        const newMessage = await Message.create({
-            conversationId: conversation.id,
-            customerId: customer.id,
-            userId: isFromMe ? outboundUserId : null,
-            whatsappId: messageData.id || null,
-            direction: isFromMe ? 'outgoing' : 'incoming',
-            content: body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '',
-            type: msgType,
-            hasMedia: !!(hasMedia && resolvedMedia),
-            mediaData: resolvedMedia || null,
-            timestamp: ts,
-            metadata: Object.keys(msgMetadata).length ? msgMetadata : {}
-        });
+        let newMessage;
+        try {
+            newMessage = await Message.create({
+                conversationId: conversation.id,
+                customerId: customer.id,
+                userId: isFromMe ? outboundUserId : null,
+                whatsappId: messageData.id || null,
+                direction: isFromMe ? 'outgoing' : 'incoming',
+                content: body || (resolvedMedia && (resolvedMedia.filename || resolvedMedia.caption)) || '',
+                type: msgType,
+                hasMedia: !!(hasMedia && resolvedMedia),
+                mediaData: resolvedMedia || null,
+                timestamp: ts,
+                metadata: Object.keys(msgMetadata).length ? msgMetadata : {}
+            });
+        } catch (createErr) {
+            if (createErr.name === 'SequelizeUniqueConstraintError' && waMsgId) return;
+            throw createErr;
+        }
+
+        if (isFromMe && outboundUserId) {
+            const activeMeta = { ...(conversation.metadata || {}), lastActiveOutgoingUserId: String(outboundUserId) };
+            await conversation.update({ metadata: activeMeta }).catch(() => {});
+            conversation.metadata = activeMeta;
+            if (newMessage.userId !== outboundUserId) {
+                await newMessage.update({ userId: outboundUserId }).catch(() => {});
+            }
+            try {
+                const { User } = require('../models');
+                const mobileUser = await User.findByPk(outboundUserId, {
+                    attributes: ['id', 'name', 'username', 'avatar', 'firstName', 'lastName', 'whatsappSenderName'],
+                });
+                if (mobileUser) newMessage.dataValues.user = mobileUser;
+            } catch (_) {}
+        }
 
         // ذخیره خودکار فایل دریافتی در آرشیو مشتری
         if (hasMedia && resolvedMedia && customer.id) {
@@ -755,6 +827,11 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             } catch (_av) {}
         }
         await customer.reload({ attributes: ['id', 'name', 'phone', 'profilePic', 'source'] }).catch(() => {});
+
+        if (isFromMe) {
+            const mobileOwner = await loadMobileWhatsappUser(logger);
+            applyMobileWhatsappSenderToMessages([newMessage], mobileOwner);
+        }
 
         io.emit('new_message', {
             conversationId: conversation.id,

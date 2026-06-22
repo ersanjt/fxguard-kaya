@@ -280,7 +280,7 @@
             list.innerHTML = html;
         }
 
-        function teardownActiveSession(showLogin) {
+        function teardownActiveSession(redirectLogin) {
             if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
             if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
             if (tickerTimeInterval) { clearInterval(tickerTimeInterval); tickerTimeInterval = null; }
@@ -289,16 +289,15 @@
             disconnectSocket();
             persistAuthToken(null);
             currentUser = null;
-            if (showLogin !== false) {
+            if (redirectLogin !== false) {
                 if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
                     window.LoginBootstrap.setLoggedOut();
                 } else {
                     document.documentElement.classList.remove('auth-has-token', 'auth-verifying');
                 }
-                const loginBox = document.getElementById('loginBox');
-                if (loginBox) loginBox.style.display = 'flex';
                 const appEl = document.getElementById('app');
                 if (appEl) appEl.classList.remove('show', 'app-loading', 'app-ready');
+                redirectToLoginPage();
             }
         }
 
@@ -332,8 +331,6 @@
             }
             if (r.status === 401) {
                 teardownActiveSession(true);
-                const errEl = document.getElementById('loginErr');
-                if (errEl) errEl.textContent = (LANG === 'fa' ? 'نشست منقضی شده. لطفاً دوباره وارد شوید.' : 'Session expired. Please sign in again.');
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
             }
             if (r.status === 429) {
@@ -353,255 +350,6 @@
             return LANG === 'fa' ? 'خطا در ارتباط با سرور' : 'Server error';
         }
 
-        (function initLoginTogglePass() {
-            const wrap = document.querySelector('.login-box .password-wrap');
-            if (!wrap) return;
-            const input = wrap.querySelector('input');
-            const btn = document.getElementById('loginTogglePass');
-            if (!input || !btn) return;
-            btn.addEventListener('click', function() {
-                const show = input.type === 'password';
-                input.type = show ? 'text' : 'password';
-                const title = show ? (LANG === 'fa' ? 'مخفی کردن رمز' : 'Hide password') : (LANG === 'fa' ? 'نمایش رمز' : 'Show password');
-                btn.setAttribute('title', title);
-                btn.setAttribute('aria-label', title);
-                btn.setAttribute('aria-pressed', show ? 'true' : 'false');
-                btn.classList.toggle('active', show);
-                const use = btn.querySelector('use');
-                if (use) use.setAttribute('href', show ? '#icon-eye-off' : '#icon-eye');
-            });
-        })();
-
-        (function setupLoginEnterKey() {
-            function onLoginKeydown(e) {
-                if (e.key !== 'Enter') return;
-                e.preventDefault();
-                const totpStep = document.getElementById('loginStepTotp');
-                const isTotpVisible = totpStep && totpStep.style.display !== 'none';
-                if (isTotpVisible) {
-                    if (typeof verifyTotpLogin === 'function') verifyTotpLogin();
-                } else {
-                    if (typeof login === 'function') login();
-                }
-            }
-            const emailEl = document.getElementById('email');
-            const passEl = document.getElementById('pass');
-            const totpEl = document.getElementById('totpCode');
-            if (emailEl) emailEl.addEventListener('keydown', onLoginKeydown);
-            if (passEl) passEl.addEventListener('keydown', onLoginKeydown);
-            if (totpEl) totpEl.addEventListener('keydown', onLoginKeydown);
-        })();
-
-        async function login() {
-            const email = document.getElementById('email').value.trim();
-            const pass = document.getElementById('pass').value;
-            document.getElementById('loginErr').textContent = '';
-            const btn = document.getElementById('btnLogin');
-            btn.disabled = true;
-            btn.textContent = t('login_loading');
-            let r, text;
-            try {
-                r = await fetch(API + '/api/auth/login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, password: pass }) });
-                text = await r.text();
-            } catch (e) {
-                btn.disabled = false;
-                btn.textContent = t('login_btn');
-                document.getElementById('loginErr').textContent = t('login_err_connect');
-                return;
-            }
-            btn.disabled = false;
-            btn.textContent = t('login_btn');
-            if ((text || '').trim().startsWith('<')) {
-                document.getElementById('loginErr').textContent = t('login_err_server_html');
-                return;
-            }
-            let data;
-            try { data = JSON.parse(text); } catch (_) {
-                let hint;
-                if (r.status === 0) hint = t('login_err_connect');
-                else if (r.status === 429) hint = t('login_err_429');
-                else hint = t('login_err_invalid') + ' (HTTP ' + r.status + ')';
-                document.getElementById('loginErr').textContent = hint;
-                return;
-            }
-            if (r.status === 429) {
-                document.getElementById('loginErr').textContent = (data && data.error) ? data.error : t('login_err_429');
-                return;
-            }
-            if (data.needTotp && data.tempToken) {
-                window._totpTempToken = data.tempToken;
-                document.getElementById('totpStepEmail').textContent = t('login_totp_for') + ' ' + (data.email || '') + ' ' + t('login_totp_enter');
-                document.getElementById('loginStep1').style.display = 'none';
-                document.getElementById('loginStepTotp').style.display = 'block';
-                document.getElementById('totpCode').value = '';
-                document.getElementById('totpErr').textContent = '';
-                document.getElementById('totpCode').focus();
-                return;
-            }
-            if (data.token) {
-                persistAuthToken(data.token);
-                if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
-                    window.LoginBootstrap.setAuthenticated();
-                } else {
-                    document.documentElement.classList.add('auth-has-token');
-                }
-                currentUser = data.user || {};
-                setUserDisplay(currentUser);
-                document.getElementById('loginBox').style.display = 'none';
-                const appElLogin = document.getElementById('app');
-                if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
-                try {
-                    await runAfterAuthReady();
-                } catch (e) { console.error('Post-login init:', e); }
-            } else {
-                document.getElementById('loginErr').textContent = data.error || t('login_err_fail');
-            }
-        }
-        function backToLoginStep1() {
-            document.getElementById('loginStepTotp').style.display = 'none';
-            document.getElementById('loginStep1').style.display = 'block';
-            document.getElementById('loginStepForgot').style.display = 'none';
-            document.getElementById('loginStepReset').style.display = 'none';
-            window._totpTempToken = null;
-        }
-        function showForgotStep() {
-            document.getElementById('loginStep1').style.display = 'none';
-            document.getElementById('loginStepTotp').style.display = 'none';
-            document.getElementById('loginStepReset').style.display = 'none';
-            const el = document.getElementById('loginStepForgot');
-            if (el) { el.style.display = 'block'; document.getElementById('forgotEmail').value = ''; document.getElementById('forgotErr').textContent = ''; document.getElementById('forgotSuccess').style.display = 'none'; }
-        }
-        function backToLoginFromForgot() {
-            document.getElementById('loginStepForgot').style.display = 'none';
-            document.getElementById('loginStep1').style.display = 'block';
-        }
-        async function submitForgotPassword() {
-            const email = (document.getElementById('forgotEmail') && document.getElementById('forgotEmail').value || '').trim();
-            const errEl = document.getElementById('forgotErr');
-            const successEl = document.getElementById('forgotSuccess');
-            const btn = document.getElementById('btnForgotSubmit');
-            if (!email) { if (errEl) errEl.textContent = (LANG === 'fa' ? 'ایمیل را وارد کنید.' : 'Please enter your email.'); return; }
-            if (errEl) errEl.textContent = '';
-            if (successEl) successEl.style.display = 'none';
-            if (btn) btn.disabled = true;
-            const ac = new AbortController();
-            const tid = setTimeout(function() { ac.abort(); }, 32000);
-            try {
-                const r = await fetch(API + '/api/auth/forgot-password', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email: email }),
-                    signal: ac.signal
-                });
-                const data = await r.json().catch(function() { return {}; });
-                if (!r.ok) {
-                    if (successEl) successEl.style.display = 'none';
-                    if (errEl) errEl.textContent = data.error || t('forgot_send_fail');
-                    return;
-                }
-                if (successEl) { successEl.textContent = (data.message || t('forgot_success_msg')); successEl.style.display = 'block'; }
-            } catch (e) {
-                if (errEl) errEl.textContent = (e && e.name === 'AbortError') ? t('forgot_send_fail') : t('login_err_connect');
-            } finally {
-                clearTimeout(tid);
-                if (btn) btn.disabled = false;
-            }
-        }
-        function showResetStep(resetToken) {
-            window._resetToken = resetToken;
-            document.getElementById('loginStep1').style.display = 'none';
-            document.getElementById('loginStepTotp').style.display = 'none';
-            document.getElementById('loginStepForgot').style.display = 'none';
-            const el = document.getElementById('loginStepReset');
-            if (el) { el.style.display = 'block'; document.getElementById('resetNewPass').value = ''; document.getElementById('resetConfirmPass').value = ''; document.getElementById('resetErr').textContent = ''; }
-        }
-        function backToLoginFromReset() {
-            window._resetToken = null;
-            document.getElementById('loginStepReset').style.display = 'none';
-            document.getElementById('loginStep1').style.display = 'block';
-            try { const u = window.location.pathname + window.location.hash; window.history.replaceState(null, '', u.replace(/\?.*$/, '')); } catch (_) {}
-        }
-        async function submitResetPassword() {
-            const newPass = document.getElementById('resetNewPass') && document.getElementById('resetNewPass').value || '';
-            const confirmPass = document.getElementById('resetConfirmPass') && document.getElementById('resetConfirmPass').value || '';
-            const errEl = document.getElementById('resetErr');
-            const btn = document.getElementById('btnResetSubmit');
-            if (newPass !== confirmPass) { if (errEl) errEl.textContent = t('reset_err_match'); return; }
-            if (newPass.length < 8) { if (errEl) errEl.textContent = t('reset_err_length'); return; }
-            if (!/[a-zA-Z]/.test(newPass)) { if (errEl) errEl.textContent = t('reset_err_letter'); return; }
-            if (!/[0-9]/.test(newPass)) { if (errEl) errEl.textContent = t('reset_err_digit'); return; }
-            if (!window._resetToken) { if (errEl) errEl.textContent = t('reset_link_expired'); return; }
-            if (errEl) errEl.textContent = '';
-            if (btn) btn.disabled = true;
-            try {
-                const r = await fetch(API + '/api/auth/reset-password', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: window._resetToken, newPassword: newPass }) });
-                const data = await r.json().catch(function() { return {}; });
-                if (r.ok && data.message) {
-                    window._resetToken = null;
-                    if (errEl) errEl.textContent = '';
-                    try { window.history.replaceState(null, '', window.location.pathname + window.location.hash); } catch (_) {}
-                    document.getElementById('loginStepReset').style.display = 'none';
-                    document.getElementById('loginStep1').style.display = 'block';
-                    document.getElementById('email').value = '';
-                    document.getElementById('pass').value = '';
-                    document.getElementById('loginErr').textContent = data.message;
-                    document.getElementById('loginErr').style.color = 'var(--success, #059669)';
-                    if (btn) btn.disabled = false;
-                    return;
-                }
-                if (errEl) errEl.textContent = (data.error || (LANG === 'fa' ? 'خطا در تغییر رمز.' : 'Failed to reset password.'));
-            } catch (e) { if (errEl) errEl.textContent = t('login_err_connect'); }
-            if (btn) btn.disabled = false;
-        }
-        (function checkResetPasswordUrl() {
-            const params = new URLSearchParams(window.location.search);
-            const reset = params.get('reset');
-            const resetToken = params.get('token');
-            if (reset === '1' && resetToken && typeof showResetStep === 'function') {
-                showResetStep(resetToken);
-                return;
-            }
-            if (token) return;
-        })();
-        async function verifyTotpLogin() {
-            const code = (document.getElementById('totpCode') && document.getElementById('totpCode').value || '').replace(/\s/g, '');
-            if (!code || code.length !== 6) { document.getElementById('totpErr').textContent = t('login_totp_code_required'); return; }
-            if (!window._totpTempToken) { document.getElementById('totpErr').textContent = t('login_totp_retry'); return; }
-            document.getElementById('totpErr').textContent = '';
-            document.getElementById('btnTotpVerify').disabled = true;
-            const r = await fetch(API + '/api/auth/totp/verify-login', { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ tempToken: window._totpTempToken, code: code }) });
-            const data = await r.json().catch(function() { return {}; });
-            document.getElementById('btnTotpVerify').disabled = false;
-            if (data.token) {
-                window._totpTempToken = null;
-                persistAuthToken(data.token);
-                if (window.LoginBootstrap && typeof window.LoginBootstrap.setAuthenticated === 'function') {
-                    window.LoginBootstrap.setAuthenticated();
-                } else {
-                    document.documentElement.classList.add('auth-has-token');
-                }
-                currentUser = data.user || {};
-                setUserDisplay(currentUser);
-                document.getElementById('loginBox').style.display = 'none';
-                const appElLogin = document.getElementById('app');
-                if (appElLogin) { appElLogin.classList.add('show', 'app-ready'); appElLogin.classList.remove('app-loading'); }
-                try {
-                    await runAfterAuthReady();
-                } catch (e) { console.error('Post-TOTP init:', e); }
-            } else {
-                document.getElementById('totpErr').textContent = data.error || t('login_totp_bad');
-            }
-        }
-        if (typeof window !== 'undefined') {
-            window.login = login;
-            window.verifyTotpLogin = verifyTotpLogin;
-            window.backToLoginStep1 = backToLoginStep1;
-            window.showForgotStep = showForgotStep;
-            window.backToLoginFromForgot = backToLoginFromForgot;
-            window.submitForgotPassword = submitForgotPassword;
-            window.submitResetPassword = submitResetPassword;
-            window.backToLoginFromReset = backToLoginFromReset;
-        }
         function showTotpPromptIfNeeded() {
             if (!currentUser) return;
             if (currentUser.totpEnabled) return;
@@ -1051,7 +799,9 @@
         }
         function internalMsgAvatarHtml(fromUser, extraClass) {
             const u = fromUser || {};
-            const name = (u.name || u.username || u.email || '').trim();
+            var dedicated = (u.whatsappSenderName || '').trim();
+            var parts = [u.firstName, u.lastName].filter(Boolean).join(' ').trim();
+            const name = dedicated || parts || (u.name || u.username || u.email || '').trim();
             const initial = name[0] ? name[0].toUpperCase() : '?';
             const cls = 'msg-avatar' + (extraClass ? ' ' + extraClass : '');
             const rawAv = (u.avatar || '').trim();
@@ -1074,20 +824,33 @@
             if (container) container.innerHTML = '<div class="dashboard-load-error empty">' + (message || t('loading_err')) + '</div>';
             if (cardsTitleEl) cardsTitleEl.style.display = 'none';
         }
+        function dashFormatNum(v) {
+            var num = (v != null && typeof v === 'number') ? v : 0;
+            if (typeof formatPrice === 'function') return formatPrice(num);
+            return String(num);
+        }
+        function dashboardSummarySkeleton(count) {
+            var n = count || 4;
+            var html = '';
+            for (var i = 0; i < n; i++) html += '<div class="dashboard-stat-box dashboard-stat-skeleton loading-skeleton" aria-hidden="true"></div>';
+            return html;
+        }
+        function renderDashboardStatBox(item, primary) {
+            var cls = 'dashboard-stat-box' + (item.warn ? ' warn' : '') + (primary ? ' dashboard-stat-box--primary' : '');
+            var convTab = item.convTab ? (' data-conv-tab="' + escapeHtml(item.convTab) + '"') : '';
+            return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" data-dashboard-page="' + escapeHtml(item.page) + '"' + convTab + '><span class="stat-number">' + escapeHtml(String(item.num)) + '</span><span class="stat-label">' + escapeHtml(item.label) + '</span></a>';
+        }
         let _loadDashboardSeq = 0;
         async function loadDashboard(_attempt) {
             const container = document.getElementById('dashboardCards');
             const summaryEl = document.getElementById('dashboardSummary');
+            const kpiPrimaryEl = document.getElementById('dashboardKpiPrimary');
             const quickEl = document.getElementById('dashboardQuickActions');
             const attentionEl = document.getElementById('dashboardAttention');
             const cardsTitleEl = document.getElementById('dashboardCardsTitle');
+            const lastUpdatedEl = document.getElementById('dashboardLastUpdated');
             if (!container) return;
             const seq = ++_loadDashboardSeq;
-            // If the signed-in user isn't populated yet (a rare early-call race
-            // during bootstrap, e.g. loadDashboard fires before /api/auth/me has
-            // applied), retry shortly instead of leaving the dashboard blank.
-            // Previously this returned with nothing painted, so the dashboard
-            // stayed empty until the user manually navigated to another section.
             if (!currentUser || !currentUser.id) {
                 if ((_attempt || 0) < 20) {
                     setTimeout(function () { if (seq === _loadDashboardSeq) loadDashboard((_attempt || 0) + 1); }, 500);
@@ -1103,86 +866,136 @@
                     return perms[key] === true;
                 };
             const n = function(v) { return (v != null && typeof v === 'number') ? v : 0; };
+            const CARD_DEFS = [
+                { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', statKey: 'unreadConversations', statAltKey: 'openConversations', statSuffix: t('dashboard_stat_unread'), statAltSuffix: t('filter_open'), badgeWarn: true },
+                { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', statKey: 'totalCustomers', statSuffix: t('nav_customers').toLowerCase() },
+                { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', statKey: 'ticketsOpen', statSuffix: t('status_open').toLowerCase() },
+                { page: 'tasks', section: 'tasks', title: t('nav_tasks'), icon: 'icon-task', statKey: 'tasksPending', statSuffix: t('status_pending').toLowerCase() },
+                { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-megaphone', statKey: 'announcementsCount', statSuffix: t('nav_announcements').toLowerCase() },
+                { page: 'departments', section: 'departments', title: t('nav_departments'), icon: 'icon-building' },
+                { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user' },
+                { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2' },
+                { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-expand' },
+                { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone' },
+                { page: 'message-templates', section: 'conversations', title: t('nav_message_templates'), icon: 'icon-file-plus' },
+                { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart' },
+                { page: 'rates-charts', section: 'rates', title: t('nav_rates_charts'), icon: 'icon-trending-up' },
+                { page: 'services', section: 'services', title: t('nav_services'), icon: 'icon-file-plus' },
+                { page: 'profile', section: 'profile', title: t('nav_profile'), icon: 'icon-user' },
+                { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat' },
+                { page: 'supervision', section: 'supervision', title: t('nav_supervision'), icon: 'icon-chart' },
+                { page: 'staff-activity', section: 'staff_activity', title: t('nav_staff_activity'), icon: 'icon-user-online' },
+                { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-settings' }
+            ];
+            const CARD_GROUPS = [
+                { key: 'communications', titleKey: 'dashboard_group_communications', pages: ['conversations', 'customers', 'tickets', 'internal-chat', 'whatsapp', 'message-templates'] },
+                { key: 'organization', titleKey: 'dashboard_group_organization', pages: ['tasks', 'processes', 'users', 'departments', 'branches'] },
+                { key: 'finance', titleKey: 'dashboard_group_finance', pages: ['rates', 'rates-charts', 'services'] },
+                { key: 'monitoring', titleKey: 'dashboard_group_monitoring', pages: ['supervision', 'staff-activity', 'announcements'] },
+                { key: 'account', titleKey: 'dashboard_group_account', pages: ['profile', 'panel-settings'] }
+            ];
+            function cardStatText(c, stats) {
+                stats = stats || {};
+                if (!c.statKey) return null;
+                if (c.statKey === 'unreadConversations' && n(stats.unreadConversations) > 0) {
+                    return dashFormatNum(stats.unreadConversations) + ' ' + c.statSuffix;
+                }
+                if (c.statAltKey && stats[c.statAltKey] != null) {
+                    return dashFormatNum(stats[c.statAltKey]) + ' ' + (c.statAltSuffix || '');
+                }
+                if (stats[c.statKey] != null) {
+                    return dashFormatNum(stats[c.statKey]) + ' ' + (c.statSuffix || '');
+                }
+                return null;
+            }
             const paintCards = function(stats) {
                 stats = stats || {};
-                const cards = [
-                    { page: 'conversations', section: 'conversations', title: t('nav_conversations'), icon: 'icon-chat', stat: n(stats.unreadConversations) > 0 ? (n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread')) : (stats.openConversations != null ? (n(stats.openConversations) + ' ' + t('filter_open')) : null), badgeWarn: n(stats.unreadConversations) > 0 },
-                    { page: 'customers', section: 'customers', title: t('nav_customers'), icon: 'icon-users', stat: stats.totalCustomers != null ? (n(stats.totalCustomers) + ' ' + t('nav_customers').toLowerCase()) : null },
-                    { page: 'tickets', section: 'tickets', title: t('nav_tickets'), icon: 'icon-ticket', stat: stats.ticketsOpen != null ? (n(stats.ticketsOpen) + ' ' + t('status_open').toLowerCase()) : null },
-                    { page: 'tasks', section: 'tasks', title: t('nav_tasks'), icon: 'icon-task', stat: stats.tasksPending != null ? (n(stats.tasksPending) + ' ' + t('status_pending').toLowerCase()) : null },
-                    { page: 'announcements', section: 'announcements', title: t('nav_announcements'), icon: 'icon-megaphone', stat: stats.announcementsCount != null ? (n(stats.announcementsCount) + ' ' + t('nav_announcements').toLowerCase()) : null },
-                    { page: 'departments', section: 'departments', title: t('nav_departments'), icon: 'icon-building', stat: null },
-                    { page: 'users', section: 'users', title: t('nav_users'), icon: 'icon-user', stat: null },
-                    { page: 'branches', section: 'branches', title: t('nav_branches'), icon: 'icon-building-2', stat: null },
-                    { page: 'processes', section: 'processes', title: t('nav_processes'), icon: 'icon-expand', stat: null },
-                    { page: 'whatsapp', section: 'whatsapp', title: t('nav_whatsapp'), icon: 'icon-phone', stat: null },
-                    { page: 'message-templates', section: 'conversations', title: t('nav_message_templates'), icon: 'icon-file-plus', stat: null },
-                    { page: 'rates', section: 'rates', title: t('nav_rates'), icon: 'icon-chart', stat: null },
-                    { page: 'rates-charts', section: 'rates', title: t('nav_rates_charts'), icon: 'icon-trending-up', stat: null },
-                    { page: 'services', section: 'services', title: t('nav_services'), icon: 'icon-file-plus', stat: null },
-                    { page: 'profile', section: 'profile', title: t('nav_profile'), icon: 'icon-user', stat: null },
-                    { page: 'internal-chat', section: 'internal_chat', title: t('nav_internal_chat'), icon: 'icon-chat', stat: null },
-                    { page: 'supervision', section: 'supervision', title: t('nav_supervision'), icon: 'icon-chart', stat: null },
-                    { page: 'staff-activity', section: 'staff_activity', title: t('nav_staff_activity'), icon: 'icon-user-online', stat: null },
-                    { page: 'panel-settings', section: 'panel_settings', title: t('nav_panel_settings'), icon: 'icon-settings', stat: null }
-                ];
+                const defByPage = {};
+                CARD_DEFS.forEach(function(c) { defByPage[c.page] = c; });
                 let html = '';
-                cards.forEach(function(c) {
-                    if (!can(c.section)) return;
-                    const badge = c.stat ? ('<span class="card-badge' + (c.badgeWarn ? ' warn' : '') + '">' + escapeHtml(c.stat) + '</span>') : '';
-                    html += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (c.stat ? '<p class="card-meta">' + escapeHtml(c.stat) + '</p>' : '') + badge + '</a>';
+                CARD_GROUPS.forEach(function(grp) {
+                    let groupHtml = '';
+                    grp.pages.forEach(function(page) {
+                        const c = defByPage[page];
+                        if (!c || !can(c.section)) return;
+                        const stat = cardStatText(c, stats);
+                        const badgeWarn = c.badgeWarn && c.statKey === 'unreadConversations' && n(stats.unreadConversations) > 0;
+                        const badge = stat ? ('<span class="card-badge' + (badgeWarn ? ' warn' : '') + '">' + escapeHtml(stat) + '</span>') : '';
+                        groupHtml += '<a href="#' + escapeHtml(c.page) + '" class="dashboard-card" data-page="' + escapeHtml(c.page) + '"><div class="card-icon"><svg viewBox="0 0 24 24"><use href="#' + c.icon + '"/></svg></div><div class="card-title">' + escapeHtml(c.title) + '</div>' + (stat ? '<p class="card-meta">' + escapeHtml(stat) + '</p>' : '') + badge + '</a>';
+                    });
+                    if (groupHtml) {
+                        html += '<section class="dashboard-card-group"><h4 class="dashboard-group-title" data-i18n="' + grp.titleKey + '">' + t(grp.titleKey) + '</h4><div class="dashboard-cards-in-group">' + groupHtml + '</div></section>';
+                    }
                 });
                 container.innerHTML = html || ('<div class="empty">' + (LANG === 'fa' ? 'دسترسی به بخشی وجود ندارد.' : t('no_data')) + '</div>');
                 if (cardsTitleEl) cardsTitleEl.style.display = html ? '' : 'none';
             };
-            // Paint navigation cards immediately so the dashboard is never blank,
-            // even if the stats request is slow, fails, or is superseded.
+            if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = can('conversations') ? dashboardSummarySkeleton(4) : '';
+            if (summaryEl) summaryEl.innerHTML = dashboardSummarySkeleton(6);
             if (!container.querySelector('.dashboard-card')) paintCards({});
             let res;
             try {
                 res = await apiFetch('/api/analytics/dashboard', { timeoutMs: 15000 });
             } catch (e) {
+                if (seq !== _loadDashboardSeq) return;
+                if (summaryEl) summaryEl.innerHTML = '<div class="dashboard-load-error empty">' + t('loading_err') + '</div>';
+                if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = '';
+                setDashboardError(container, cardsTitleEl, t('loading_err'));
                 return;
             }
             if (seq !== _loadDashboardSeq) return;
-            if (res.needLogin || !res.ok) return;
+            if (res.needLogin) return;
+            if (!res.ok) {
+                var errMsg = (res.data && res.data.error) ? res.data.error : t('loading_err');
+                if (summaryEl) summaryEl.innerHTML = '<div class="dashboard-load-error empty">' + escapeHtml(errMsg) + '</div>';
+                if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = '';
+                setDashboardError(container, cardsTitleEl, errMsg);
+                return;
+            }
             const stats = res.data || {};
+            if (lastUpdatedEl) {
+                var now = new Date();
+                var timeStr = typeof fmtTZ === 'function' ? fmtTZ(now, 'time') : now.toLocaleTimeString();
+                lastUpdatedEl.textContent = (t('dashboard_updated_at') || '') + ' ' + timeStr;
+            }
             if (attentionEl) { attentionEl.innerHTML = ''; attentionEl.style.display = 'none'; }
-            if (summaryEl) summaryEl.innerHTML = '';
             if (quickEl) quickEl.innerHTML = '';
-            if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
+            if (attentionEl && (n(stats.unreadConversations) > 0 || n(stats.unansweredConversations) > 0 || n(stats.unassignedConversations) > 0 || n(stats.tasksPending) > 0 || n(stats.unreadAnnouncements) > 0)) {
                 const parts = [];
-                if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unread">' + n(stats.unreadConversations) + ' ' + t('dashboard_stat_unread') + '</a>');
-                if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" class="dashboard-attention-link" data-dashboard-page="tasks">' + n(stats.tasksPending) + ' ' + t('dashboard_stat_tasks') + '</a>');
-                if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" class="dashboard-attention-link" data-dashboard-page="announcements">' + n(stats.unreadAnnouncements) + ' ' + t('dashboard_stat_announcements') + '</a>');
+                if (can('conversations') && n(stats.unreadConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unread">' + dashFormatNum(stats.unreadConversations) + ' ' + t('dashboard_stat_unread') + '</a>');
+                if (can('conversations') && n(stats.unansweredConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unanswered">' + dashFormatNum(stats.unansweredConversations) + ' ' + t('dashboard_stat_unanswered') + '</a>');
+                if (can('conversations') && n(stats.unassignedConversations) > 0) parts.push('<a href="#conversations" class="dashboard-attention-link" data-dashboard-page="conversations" data-conv-tab="unassigned">' + dashFormatNum(stats.unassignedConversations) + ' ' + t('dashboard_stat_unassigned') + '</a>');
+                if (can('tasks') && n(stats.tasksPending) > 0) parts.push('<a href="#tasks" class="dashboard-attention-link" data-dashboard-page="tasks">' + dashFormatNum(stats.tasksPending) + ' ' + t('dashboard_stat_tasks') + '</a>');
+                if (can('announcements') && n(stats.unreadAnnouncements) > 0) parts.push('<a href="#announcements" class="dashboard-attention-link" data-dashboard-page="announcements">' + dashFormatNum(stats.unreadAnnouncements) + ' ' + t('dashboard_stat_announcements') + '</a>');
                 if (parts.length) {
                     const needsLabel = (t('dashboard_needs_attention') || (LANG === 'fa' ? 'نیاز به توجه: ' : 'Needs attention: ')) + ' ';
                     attentionEl.innerHTML = needsLabel + parts.join(' · ');
                     attentionEl.style.display = 'block';
                 }
             }
+            if (kpiPrimaryEl && can('conversations')) {
+                const primaryItems = [
+                    { page: 'conversations', num: dashFormatNum(n(stats.openConversations)), label: t('dashboard_stat_conversations'), warn: n(stats.unreadConversations) > 0, convTab: 'open' },
+                    { page: 'conversations', num: dashFormatNum(n(stats.unreadConversations)), label: t('dashboard_stat_unread'), warn: n(stats.unreadConversations) > 0, convTab: 'unread' },
+                    { page: 'conversations', num: dashFormatNum(n(stats.unansweredConversations)), label: t('dashboard_stat_unanswered'), warn: n(stats.unansweredConversations) > 0, convTab: 'unanswered' },
+                    { page: 'conversations', num: dashFormatNum(n(stats.unassignedConversations)), label: t('dashboard_stat_unassigned'), warn: n(stats.unassignedConversations) > 0, convTab: 'unassigned' }
+                ];
+                kpiPrimaryEl.innerHTML = primaryItems.map(function(item) { return renderDashboardStatBox(item, true); }).join('');
+            } else if (kpiPrimaryEl) kpiPrimaryEl.innerHTML = '';
             if (summaryEl) {
                 const summaryItems = [];
-                if (can('staff_activity') || can('users')) {
-                    summaryItems.push({ page: 'staff-activity', num: n(stats.staffOnline), label: t('dashboard_stat_online') });
-                    summaryItems.push({ page: 'staff-activity', num: n(stats.loginsToday), label: t('dashboard_stat_logins_today') });
+                if (can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(n(stats.todayMessages)), label: t('dashboard_stat_messages_today'), convTab: 'all' });
+                if (can('tickets')) summaryItems.push({ page: 'tickets', num: dashFormatNum(n(stats.ticketsOpen)), label: t('dashboard_stat_tickets') });
+                if (can('tasks')) summaryItems.push({ page: 'tasks', num: dashFormatNum(n(stats.tasksPending)), label: t('dashboard_stat_tasks'), warn: n(stats.tasksPending) > 0 });
+                if (can('customers')) summaryItems.push({ page: 'customers', num: dashFormatNum(n(stats.totalCustomers)), label: t('dashboard_stat_customers') });
+                if (can('staff_activity')) {
+                    summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.staffOnline)), label: t('dashboard_stat_online') });
+                    summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.loginsToday)), label: t('dashboard_stat_logins_today') });
                 }
-                if (can('conversations')) {
-                    summaryItems.push({ page: 'conversations', num: n(stats.openConversations), label: t('dashboard_stat_conversations'), warn: n(stats.unreadConversations) > 0 });
-                    if (n(stats.unreadConversations) > 0) summaryItems.push({ page: 'conversations', num: n(stats.unreadConversations), label: t('dashboard_stat_unread'), warn: true });
-                }
-                if (can('tickets')) summaryItems.push({ page: 'tickets', num: n(stats.ticketsOpen), label: t('dashboard_stat_tickets') });
-                if (can('customers')) summaryItems.push({ page: 'customers', num: n(stats.totalCustomers), label: t('dashboard_stat_customers') });
-                if (can('tasks')) summaryItems.push({ page: 'tasks', num: n(stats.tasksPending), label: t('dashboard_stat_tasks') });
-                if (can('conversations')) summaryItems.push({ page: 'conversations', num: n(stats.todayMessages), label: t('dashboard_stat_messages_today') });
-                if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min'), label: (LANG === 'fa' ? 'میانگین زمان پاسخ' : 'Avg response time') });
-                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgRating + '/5', label: (LANG === 'fa' ? 'نرخ رضایت' : 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + stats.ratedConversationsCount + ')' : '') });
-                if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: n(stats.unreadAnnouncements), label: t('dashboard_stat_announcements'), warn: true });
-                const summaryHtml = summaryItems.map(function(item) {
-                    const cls = 'dashboard-stat-box' + (item.warn ? ' warn' : '');
-                    return '<a href="#' + escapeHtml(item.page) + '" class="' + cls + '" data-dashboard-page="' + escapeHtml(item.page) + '"><span class="stat-number">' + escapeHtml(String(item.num)) + '</span><span class="stat-label">' + escapeHtml(item.label) + '</span></a>';
-                }).join('');
-                summaryEl.innerHTML = summaryHtml || '';
+                if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min'), label: (LANG === 'fa' ? 'میانگین زمان پاسخ' : 'Avg response time'), convTab: 'all' });
+                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgRating + '/5', label: (LANG === 'fa' ? 'نرخ رضایت' : 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + stats.ratedConversationsCount + ')' : ''), convTab: 'all' });
+                if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: dashFormatNum(n(stats.unreadAnnouncements)), label: t('dashboard_stat_announcements'), warn: true });
+                summaryEl.innerHTML = summaryItems.map(function(item) { return renderDashboardStatBox(item, false); }).join('') || '<div class="dashboard-summary-empty text-muted">' + (LANG === 'fa' ? 'آمار دیگری برای نمایش نیست.' : 'No additional stats.') + '</div>';
             }
             if (quickEl) {
                 const quickBtns = [];
@@ -1639,7 +1452,12 @@
                 if (dashStat && typeof showPage === 'function') {
                     e.preventDefault();
                     e.stopPropagation();
-                    showPage(dashStat.getAttribute('data-dashboard-page') || '');
+                    var _statPage = dashStat.getAttribute('data-dashboard-page') || '';
+                    var _statConvTab = dashStat.getAttribute('data-conv-tab');
+                    showPage(_statPage);
+                    if (_statConvTab && _statPage === 'conversations' && typeof setConvQuickTab === 'function') {
+                        setTimeout(function() { setConvQuickTab(_statConvTab); }, 0);
+                    }
                     return;
                 }
                 const dashAtt = targetEl && targetEl.closest && targetEl.closest('.dashboard-attention-link[data-dashboard-page]');
@@ -1815,6 +1633,7 @@
                 if (target.closest('#btnSaveWhatsappAutoMessages') && typeof saveWhatsappAutoMessagesConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappAutoMessagesConfig(); return; }
                 if (target.closest('#btnSaveWhatsappUnanswered') && typeof saveWhatsappUnansweredConfig === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappUnansweredConfig(); return; }
                 if (target.closest('#btnSaveWhatsappConnection') && typeof saveWhatsappConnectionSettings === 'function') { e.preventDefault(); e.stopPropagation(); saveWhatsappConnectionSettings(); return; }
+                if (target.closest('#btnCopyWhatsappWebhook') && typeof copyWhatsappWebhookUrl === 'function') { e.preventDefault(); e.stopPropagation(); copyWhatsappWebhookUrl(); return; }
                 if (target.closest('.whatsapp-conn-tab') && typeof switchWhatsappConnectionTab === 'function') { e.preventDefault(); var tb = target.closest('.whatsapp-conn-tab'); if (tb) switchWhatsappConnectionTab(tb.getAttribute('data-tab')); return; }
                 // ویرایش و حذف فایل تمپلیت
                 if (target.closest('.btn-ft-edit') && typeof editFileTemplate === 'function') {
@@ -1908,7 +1727,7 @@
                     if (fid && typeof sendMsg === 'function') {
                         e.preventDefault(); e.stopPropagation();
                         var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn');
-                        if (dd) dd.style.display = 'none'; if (btn) btn.setAttribute('aria-expanded', 'false');
+                        if (dd) { dd.hidden = true; dd.style.display = 'none'; } if (btn) btn.setAttribute('aria-expanded', 'false');
                         apiFetch('/api/file-templates/' + fid + '/use', { method: 'POST' }).catch(function(){});
                         apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: { url: furl, filename: fname, mimetype: fmime } }) }).then(function(r) { if (!r.ok) toast((r.data && r.data.error) || t('err_generic'), true); });
                     }
@@ -1918,7 +1737,7 @@
                 if (tplItem && tplItem.hasAttribute('data-content')) {
                     var tid = tplItem.getAttribute('data-id');
                     const c = typeof unescapeFromDataAttr === 'function' ? unescapeFromDataAttr(tplItem.getAttribute('data-content') || '') : (tplItem.getAttribute('data-content') || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-                    if (typeof insertTemplateIntoChat === 'function') { e.preventDefault(); e.stopPropagation(); insertTemplateIntoChat(c, tid); var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn'); if (dd) dd.style.display = 'none'; if (btn) btn.setAttribute('aria-expanded', 'false'); }
+                    if (typeof insertTemplateIntoChat === 'function') { e.preventDefault(); e.stopPropagation(); insertTemplateIntoChat(c, tid); var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn'); if (dd) { dd.hidden = true; dd.style.display = 'none'; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
                     return;
                 }
                 // کلیک روی آیتم تاریخچه مکالمات یا تاریخچه کامل در کارت مشتری — باز کردن مکالمه
@@ -2072,64 +1891,15 @@
             window._crmInlineMutObs = mo;
         }
 
-        /* ========== Login Page Event Handlers Setup ========== */
+        /* Auth UI lives on /login only — dashboard binds accessibility helpers only */
         function setupLoginEventHandlers() {
-            const bindTapSafe = function(el, handler) {
-                if (!el || typeof handler !== 'function') return;
-                if (el._tapSafeHandler) {
-                    el.removeEventListener('click', el._tapSafeHandler);
-                    el.removeEventListener('touchend', el._tapSafeHandler);
-                }
-                let touched = false;
-                const wrapped = function(e) {
-                    if (e.type === 'touchend') {
-                        touched = true;
-                        if (e.cancelable) e.preventDefault();
-                    } else if (e.type === 'click' && touched) {
-                        touched = false;
-                        return;
-                    }
-                    handler(e);
-                };
-                el._tapSafeHandler = wrapped;
-                el.addEventListener('touchend', wrapped, { passive: false });
-                el.addEventListener('click', wrapped);
-            };
-            // Language buttons on login page
-            const loginLangButtons = document.querySelectorAll('.login-lang button[data-lang]');
-            if (loginLangButtons) {
-                loginLangButtons.forEach(function(btn) {
-                    bindTapSafe(btn, function() {
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang);
-                    });
+            const skipLink = document.getElementById('skipLink');
+            if (skipLink && !skipLink._crmSkipBound) {
+                skipLink._crmSkipBound = true;
+                skipLink.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const m = document.getElementById('mainContent');
+                    if (m) m.focus();
                 });
             }
-            
-            // Login button
-            const btnLogin = document.getElementById('btnLogin');
-            if (btnLogin) {
-                bindTapSafe(btnLogin, window.login);
-            }
-            
-            // Forgot password link
-            const linkForgot = document.getElementById('linkForgotPassword');
-            if (linkForgot) {
-                bindTapSafe(linkForgot, function(e) { if (e && e.preventDefault) e.preventDefault(); window.showForgotStep(); });
-            }
-            
-            // TOTP verify button
-            const btnTotpVerify = document.getElementById('btnTotpVerify');
-            if (btnTotpVerify) {
-                bindTapSafe(btnTotpVerify, window.verifyTotpLogin);
-            }
-            
-            // Back to login button (from TOTP)
-            const btnBackToLogin1 = document.getElementById('btnBackToLoginStep1');
-            if (btnBackToLogin1) {
-                bindTapSafe(btnBackToLogin1, window.backToLoginStep1);
-            }
-            
-            // Forgot password submit button
-            const btnForgotSubmit = document.getElementById('btnForgotSubmit');
-            if (btnForgotSubmit) {
+        }

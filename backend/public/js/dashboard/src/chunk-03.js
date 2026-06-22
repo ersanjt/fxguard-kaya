@@ -1,53 +1,3 @@
-                btnForgotSubmit.removeEventListener('click', window.submitForgotPassword);
-                btnForgotSubmit.addEventListener('click', window.submitForgotPassword);
-            }
-            
-            // Back to login from forgot
-            const btnBackFromForgot = document.getElementById('btnBackToLoginFromForgot');
-            if (btnBackFromForgot) {
-                bindTapSafe(btnBackFromForgot, window.backToLoginFromForgot);
-            }
-            
-            // Reset password submit button
-            const btnResetSubmit = document.getElementById('btnResetSubmit');
-            if (btnResetSubmit) {
-                btnResetSubmit.removeEventListener('click', window.submitResetPassword);
-                btnResetSubmit.addEventListener('click', window.submitResetPassword);
-            }
-            
-            // Back to login from reset
-            const btnBackFromReset = document.getElementById('btnBackToLoginFromReset');
-            if (btnBackFromReset) {
-                bindTapSafe(btnBackFromReset, function(e) { if (e && e.preventDefault) e.preventDefault(); window.backToLoginFromReset(); });
-            }
-            
-            // Language buttons in forgot/reset modal
-            const forgotLangButtons = document.querySelectorAll('.login-lang button[data-lang]');
-            if (forgotLangButtons) {
-                forgotLangButtons.forEach(function(btn) {
-                    bindTapSafe(btn, function() {
-                        const lang = btn.getAttribute('data-lang');
-                        if (lang) window.setLang(lang);
-                    });
-                });
-            }
-            
-            // Skip to content link
-            const skipLink = document.getElementById('skipLink');
-            if (skipLink) {
-                skipLink.removeEventListener('click', function(e) { 
-                    e.preventDefault(); 
-                    const m = document.getElementById('mainContent');
-                    if (m) m.focus(); 
-                });
-                skipLink.addEventListener('click', function(e) { 
-                    e.preventDefault(); 
-                    const m = document.getElementById('mainContent');
-                    if (m) m.focus(); 
-                });
-            }
-        }
-
         /* ========== Kaya CRM chunk-03 | مکالمات، مشتریان، setupGlobalEventHandlers | docs/CODEBASE-MAP.md ========== */
         /* ========== Global Event Handlers Setup ========== */
         function setupGlobalEventHandlers() {
@@ -167,6 +117,7 @@
                 });
             }
             const sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+            if (sidebarToggleBtn) sidebarToggleBtn.removeAttribute('onclick');
             bindOnce(sidebarToggleBtn, '_crmBoundSidebarToggle', toggleSidebarDesktop);
             const dashRefreshBtn = document.getElementById('dashboardRefreshBtn');
             bindOnce(dashRefreshBtn, '_crmBoundDashRefresh', function() {
@@ -870,6 +821,7 @@
         async function loadConversations(appendMode) {
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
+            ensureMobileWaSender(false);
             if (!appendMode) setLoading('convList', 4);
             if (!list) return;
             let q = '?limit=' + convPageSize + '&page=' + convCurrentPage;
@@ -1472,6 +1424,27 @@
         let _loadMessagesController = null;
         let _currentMsgConvId = null;
         let _currentMsgOldestId = null;
+        /** مالک خط واتساپ موبایل — همهٔ پیام‌های غیر CRM به این کاربر نسبت داده می‌شوند */
+        var _mobileWaSender = null;
+        async function ensureMobileWaSender(force) {
+            if (_mobileWaSender && !force) return _mobileWaSender;
+            try {
+                var res = await apiFetch('/api/conversations/mobile-wa-sender');
+                if (res.ok && res.data && res.data.user) {
+                    _mobileWaSender = res.data.user;
+                }
+            } catch (_) {}
+            return _mobileWaSender;
+        }
+        /** کاربر نمایشی برای پیام خروجی — پنل CRM = فرستنده واقعی؛ موبایل = مالک خط */
+        function outgoingMsgStaffUser(m) {
+            if (!m || m.direction !== 'outgoing' || m.isAutoReply) return null;
+            if (isCrmPanelSend(m)) return m.user || null;
+            if (isMobileWhatsappSend(m) || isExternalWhatsappOutgoing(m)) {
+                return _mobileWaSender || m.user || null;
+            }
+            return m.user || null;
+        }
         var _crmActiveChatVoiceAudio = null;
         function formatMsgVoiceTime(sec) {
             if (!isFinite(sec) || sec < 0) return '0:00';
@@ -1479,6 +1452,51 @@
             var s = Math.floor(sec % 60);
             return m + ':' + String(s).padStart(2, '0');
         }
+        function voicePlaybackAltUrl(src) {
+            if (!src || typeof src !== 'string') return null;
+            var q = src.indexOf('?') >= 0 ? src.slice(src.indexOf('?')) : '';
+            var bare = src.split('?')[0];
+            if (/_voice\.ogg$/i.test(bare)) return null;
+            var m = bare.match(/^(.*\/uploads\/\d+-[^/]+?)(\.(webm|ogg|oga|opus|m4a|mp3|wav|aac))?$/i);
+            if (!m) return null;
+            return m[1] + '_voice.ogg' + q;
+        }
+        function preferVoicePlaybackUrl(url, isOut) {
+            if (!isOut || !url) return url;
+            return voicePlaybackAltUrl(url) || url;
+        }
+        function crmVoiceAudioErr(audioEl) {
+            var wrap = audioEl && audioEl.closest ? audioEl.closest('.msg-media') : null;
+            if (wrap) wrap.classList.add('msg-media-error');
+            try {
+                if (audioEl && !audioEl.dataset.retryVoiceAlt) {
+                    audioEl.dataset.retryVoiceAlt = '1';
+                    var alt = voicePlaybackAltUrl(audioEl.src || audioEl.getAttribute('src') || '');
+                    if (alt && alt !== audioEl.src) {
+                        audioEl.src = alt;
+                        audioEl.load();
+                        return;
+                    }
+                }
+                if (audioEl && !audioEl.dataset.retryBlob) {
+                    audioEl.dataset.retryBlob = '1';
+                    var el = audioEl;
+                    fetch(el.src, { credentials: 'include' }).then(function(r) {
+                        if (!r.ok) throw new Error('http ' + r.status);
+                        return r.blob();
+                    }).then(function(b) {
+                        if (!b || !b.size) throw new Error('empty');
+                        var mime = (b.type || '').split(';')[0].trim() || 'audio/ogg';
+                        var bu = URL.createObjectURL(b.type ? b : new Blob([b], { type: mime }));
+                        el.src = bu;
+                        el.load();
+                        var ww = el.closest('.msg-media');
+                        if (ww) ww.classList.remove('msg-media-error');
+                    }).catch(function() {});
+                }
+            } catch (_e) {}
+        }
+        window.crmVoiceAudioErr = crmVoiceAudioErr;
         function initChatMessageVoicePlayers(root) {
             if (!root || !root.querySelectorAll) return;
             root.querySelectorAll('.msg-voice-player').forEach(function(wrap) {
@@ -1603,20 +1621,36 @@
         function isMobileWhatsappSend(m) {
             return msgSendSource(m) === 'whatsapp_mobile';
         }
+        function isCrmPanelSend(m) {
+            return msgSendSource(m) === 'crm_panel';
+        }
+        /** پیام خروجی غیر پنل = واتساپ موبایل (یا رکورد قدیمی بدون sendSource) */
+        function isExternalWhatsappOutgoing(m) {
+            return !!(m && m.direction === 'outgoing' && !m.isAutoReply && !isCrmPanelSend(m));
+        }
+        /** نام نمایشی کارمند در چت (همان اولویت پیام واتساپ) */
+        function staffDisplayName(um) {
+            if (!um) return '';
+            var dedicated = (um.whatsappSenderName || '').trim();
+            if (dedicated) return dedicated;
+            var parts = [um.firstName, um.lastName].filter(Boolean).join(' ').trim();
+            if (parts) return parts;
+            return (um.name || um.username || '').trim();
+        }
         function buildOutgoingSenderLabel(m) {
             if (m.isAutoReply) {
                 return '<div class="msg-sender">' + escapeHtml(t('ai_assistant') || 'AI assistant') + '</div>';
             }
-            if (isMobileWhatsappSend(m)) {
-                var um = m.user || {};
-                var staffName = (um.name || um.username || '').trim();
+            if (isMobileWhatsappSend(m) || isExternalWhatsappOutgoing(m)) {
+                var um = outgoingMsgStaffUser(m) || {};
+                var staffName = staffDisplayName(um);
                 var mobileBadge = escapeHtml(t('msg_from_whatsapp_mobile') || (LANG === 'fa' ? 'واتساپ موبایل' : 'WhatsApp mobile'));
                 var av = staffName && typeof internalMsgAvatarHtml === 'function' ? internalMsgAvatarHtml(um) : '';
                 var namePart = staffName ? '<span class="msg-sender-staff-name">' + escapeHtml(staffName) + '</span>' : '';
                 return '<div class="msg-sender msg-sender-mobile">' + av + '<span class="msg-sender-mobile-badge">' + mobileBadge + '</span>' + namePart + '</div>';
             }
-            if (m.user && (m.user.name || m.user.username)) {
-                var staffNamePanel = escapeHtml(m.user.name || m.user.username);
+            if (m.user && staffDisplayName(m.user)) {
+                var staffNamePanel = escapeHtml(staffDisplayName(m.user));
                 var panelBadge = msgSendSource(m) === 'crm_panel'
                     ? '<span class="msg-sender-panel-badge">' + escapeHtml(t('msg_from_crm_panel') || (LANG === 'fa' ? 'پنل CRM' : 'CRM panel')) + '</span>'
                     : '';
@@ -1627,15 +1661,16 @@
         /** آواتار کنار پلیر ویس — شبیه واتساپ وب (کارمند / مشتری / حرف گروه) */
         function buildVoiceWaAvatarCol(isOut, m) {
             if (isOut) {
-                var um = m.user || {};
-                var hasStaff = (um.name || um.username || um.email || '').trim();
-                // پیام موبایل: فقط فرستندهٔ واقعی (مالک) — نه assignee مکالمه
-                if (!hasStaff && !isMobileWhatsappSend(m) && currentConvDetail && currentConvDetail.assignee) {
+                var externalMobile = isMobileWhatsappSend(m) || isExternalWhatsappOutgoing(m);
+                var um = externalMobile ? (outgoingMsgStaffUser(m) || {}) : (m.user || {});
+                var hasStaff = staffDisplayName(um);
+                // assignee فقط برای پیام واقعاً ارسال‌شده از پنل CRM
+                if (!hasStaff && !externalMobile && isCrmPanelSend(m) && currentConvDetail && currentConvDetail.assignee) {
                     var asn = currentConvDetail.assignee;
-                    um = { name: asn.name || '', username: asn.username || '', email: asn.email || '', avatar: asn.avatar };
-                    hasStaff = (um.name || um.username || um.email || '').trim();
+                    um = { name: asn.name || '', username: asn.username || '', email: asn.email || '', avatar: asn.avatar, firstName: asn.firstName, lastName: asn.lastName, whatsappSenderName: asn.whatsappSenderName };
+                    hasStaff = staffDisplayName(um);
                 }
-                if (!hasStaff && isMobileWhatsappSend(m)) {
+                if (!hasStaff && externalMobile) {
                     return '<div class="msg-voice-wa-avatar-col"><div class="msg-voice-wa-avatar-wrap msg-voice-wa-avatar-wrap--mobile"><span class="avatar-fallback msg-voice-wa-mobile-icon" aria-hidden="true">📱</span><span class="msg-voice-wa-mic-badge" aria-hidden="true"></span></div></div>';
                 }
                 var av = typeof internalMsgAvatarHtml === 'function' ? internalMsgAvatarHtml(um, 'msg-voice-wa-avatar') : '<span class="msg-voice-wa-avatar-fb">?</span>';
@@ -1689,6 +1724,8 @@
             if (res.needLogin) return;
             if (!res.ok) { el.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data;
+            if (data.mobileWhatsappSender) _mobileWaSender = data.mobileWhatsappSender;
+            else await ensureMobileWaSender(false);
             if (!data.data || data.data.length === 0) { if (!loadOlder) el.innerHTML = '<div class="empty"><span class="empty-icon">\uD83D\uDCAC</span><br>' + t('empty_internal_msgs') + '</div>'; return; }
             // ذخیره قدیمی‌ترین id برای load older
             if (data.oldestId) _currentMsgOldestId = data.oldestId;
@@ -1810,6 +1847,7 @@
                         else if (/^voice\.(webm|ogg|m4a|mp3|wav)$/i.test(dcVoice)) dcVoice = '';
                         else if (dcVoice === 'file' || dcVoice === '📎 فایل') dcVoice = '';
                         var voiceBubbleCompact = !dcVoice;
+                        if (isPtt && isOut) mediaUrl = preferVoicePlaybackUrl(mediaUrl, true);
                         var voiceWaStatus = '';
                         if (voiceBubbleCompact && isOut && m.status && m.status !== 'pending') {
                             var voiceStsTit = (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '');
@@ -1838,7 +1876,7 @@
                             '<span class="msg-voice-tg-time"><span class="msg-voice-curr">0:00</span><span class="msg-voice-dur"></span></span>' +
                             voiceMetaSent +
                             '</div>' +
-                            '<audio class="msg-audio-el" src="' + escapeHtml(mediaUrl) + '" preload="metadata" playsinline onerror="var w=this.closest(\'.msg-media\');if(w){w.classList.add(\'msg-media-error\');}try{if(!this.dataset.retryBlob){this.dataset.retryBlob=\'1\';var el=this;fetch(el.src,{credentials:\'include\'}).then(function(r){if(!r.ok)throw new Error(\'http \'+r.status);return r.blob();}).then(function(b){if(!b||!b.size)throw new Error(\'empty\');var bu=URL.createObjectURL(b);el.src=bu;el.load();var ww=el.closest(\'.msg-media\');if(ww){ww.classList.remove(\'msg-media-error\');}}).catch(function(){});}}catch(_e){}"></audio>' +
+                            '<audio class="msg-audio-el" src="' + escapeHtml(mediaUrl) + '" preload="metadata" playsinline onerror="crmVoiceAudioErr(this)"></audio>' +
                             '</div>';
                         var voiceTail = '<p class="msg-media-audio-err" role="alert">' + escapeHtml(errHint) + '</p>' +
                             '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-dl msg-voice-dl-subtle" data-open="1">' + (LANG === 'fa' ? 'دانلود فایل صوتی' : 'Download audio') + '</a>';
@@ -1983,6 +2021,15 @@
         var _waPickerOpen = null;
         var _waPickerDocBound = false;
         var _waAttachMenuDocListener = null;
+        function closeWaTemplateDropdown() {
+            var dd = document.getElementById('chatTemplateDropdown');
+            var tplBtn = document.getElementById('waAttachTemplateBtn');
+            if (dd) {
+                dd.hidden = true;
+                dd.style.display = 'none';
+            }
+            if (tplBtn) tplBtn.setAttribute('aria-expanded', 'false');
+        }
         function closeWaAttachMenu() {
             var m = document.getElementById('waAttachMenu');
             var b = document.getElementById('waAttachMenuBtn');
@@ -2002,6 +2049,7 @@
                 closeWaAttachMenu();
                 return;
             }
+            closeWaTemplateDropdown();
             closeWaPickers();
             m.hidden = false;
             b.setAttribute('aria-expanded', 'true');
@@ -2936,18 +2984,36 @@
             document.getElementById('modalBulkSend').style.display = 'flex';
             document.getElementById('bulkMessageContent').value = '';
             document.getElementById('bulkDelaySec').value = 5;
+            var useTpl = document.getElementById('bulkUseCloudTemplate');
+            if (useTpl) useTpl.checked = true;
             updateBulkSelectedCount();
+            apiFetch('/api/whatsapp/connection').then(function(res) {
+                if (!res.ok || !res.data) return;
+                var tplName = document.getElementById('bulkTemplateName');
+                var tplLang = document.getElementById('bulkTemplateLanguage');
+                if (tplName && res.data.cloudBulkTemplateName) tplName.value = res.data.cloudBulkTemplateName;
+                if (tplLang && res.data.cloudBulkTemplateLanguage) tplLang.value = res.data.cloudBulkTemplateLanguage;
+            });
             if ((window._bulkSelectedIds || []).length === 0) toast(LANG === 'fa' ? 'ابتدا مشتریان را از لیست انتخاب کنید' : 'Select customers from the list first', false);
         }
         function closeBulkSendModal() { document.getElementById('modalBulkSend').style.display = 'none'; }
         async function submitBulkSend() {
             const ids = window._bulkSelectedIds || [];
             if (ids.length === 0) { toast(LANG === 'fa' ? 'حداقل یک مشتری انتخاب کنید' : 'Select at least one customer', true); return; }
+            const useCloudTemplate = !!(document.getElementById('bulkUseCloudTemplate') && document.getElementById('bulkUseCloudTemplate').checked);
+            const templateName = (document.getElementById('bulkTemplateName') && document.getElementById('bulkTemplateName').value || '').trim();
+            const templateLanguage = (document.getElementById('bulkTemplateLanguage') && document.getElementById('bulkTemplateLanguage').value || 'fa').trim();
             const content = (document.getElementById('bulkMessageContent') && document.getElementById('bulkMessageContent').value || '').trim();
-            if (!content) { toast(LANG === 'fa' ? 'متن پیام الزامی است' : 'Message text required', true); return; }
+            if (useCloudTemplate && !templateName) { toast(LANG === 'fa' ? 'نام قالب Meta الزامی است' : 'Meta template name required', true); return; }
+            if (!useCloudTemplate && !content) { toast(LANG === 'fa' ? 'متن پیام الزامی است' : 'Message text required', true); return; }
             const delaySec = parseInt(document.getElementById('bulkDelaySec').value, 10) || 5;
             const delayMs = Math.min(60, Math.max(2, delaySec)) * 1000;
-            const res = await apiFetch('/api/bulk/send', { method: 'POST', body: JSON.stringify({ customerIds: ids, message: content, delayMs: delayMs }) });
+            const body = { customerIds: ids, message: content, delayMs: delayMs, useCloudTemplate: useCloudTemplate };
+            if (useCloudTemplate) {
+                body.templateName = templateName;
+                body.templateLanguage = templateLanguage;
+            }
+            const res = await apiFetch('/api/bulk/send', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
             if (res.ok) { toast((LANG === 'fa' ? 'ارسال شروع شد. ' : 'Sending started. ') + (res.data && res.data.message ? res.data.message : '')); closeBulkSendModal(); bulkClearSelection(); loadCustomers(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }

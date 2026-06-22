@@ -364,6 +364,18 @@ router.post('/forward', async (req, res, next) => {
     }
 });
 
+// ——— مالک خط واتساپ موبایل (برای نمایش فرستندهٔ پیام‌های غیر CRM)
+router.get('/mobile-wa-sender', async (req, res, next) => {
+    try {
+        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        const { loadMobileWhatsappUser, serializeMobileWhatsappUser } = require('../lib/resolveMobileWhatsappUser');
+        const user = await loadMobileWhatsappUser(req.app.get('logger') || logger);
+        res.json({ user: serializeMobileWhatsappUser(user) });
+    } catch (err) {
+        next(err);
+    }
+});
+
 // ——— جزئیات یک مکالمه
 router.get('/:id', async (req, res, next) => {
     try {
@@ -434,7 +446,7 @@ router.get('/:id/messages', async (req, res, next) => {
         const total = await Message.count({ where: { conversationId: req.params.id } });
         const messages = await Message.findAll({
             where: msgWhere,
-            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username', 'avatar'], required: false }],
+            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username', 'avatar', 'firstName', 'lastName', 'whatsappSenderName'], required: false }],
             order: [['timestamp', 'DESC']],
             limit: pageLimit
         });
@@ -467,8 +479,18 @@ router.get('/:id/messages', async (req, res, next) => {
                 }
             }
         }
+        const { loadMobileWhatsappUser, applyMobileWhatsappSenderToMessages, serializeMobileWhatsappUser } = require('../lib/resolveMobileWhatsappUser');
+        const mobileOwner = await loadMobileWhatsappUser(req.app.get('logger') || logger);
+        applyMobileWhatsappSenderToMessages(messages, mobileOwner);
+
         const oldestId = messages.length > 0 ? messages[0].id : null;
-        res.json({ data: messages, total, hasMore: messages.length === pageLimit, oldestId });
+        res.json({
+            data: messages,
+            total,
+            hasMore: messages.length === pageLimit,
+            oldestId,
+            mobileWhatsappSender: serializeMobileWhatsappUser(mobileOwner),
+        });
     } catch (err) {
         next(err);
     }
@@ -509,7 +531,7 @@ router.get('/:id/stats', async (req, res, next) => {
             Message.findAll({
                 where: { conversationId: convId, direction: 'outgoing', userId: { [Op.ne]: null } },
                 attributes: ['userId', [sequelize.fn('MIN', sequelize.col('timestamp')), 'firstAt']],
-                include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username', 'avatar'], required: false }],
+                include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username', 'avatar', 'firstName', 'lastName', 'whatsappSenderName'], required: false }],
                 group: ['userId', 'user.id', 'user.name', 'user.username', 'user.avatar'],
                 order: [[sequelize.fn('MIN', sequelize.col('timestamp')), 'ASC']],
                 raw: false

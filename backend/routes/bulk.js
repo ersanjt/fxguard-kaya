@@ -5,7 +5,8 @@
 const express = require('express');
 const router = express.Router();
 const { Customer, Conversation, Message } = require('../models');
-const { sendWhatsAppMessage } = require('../lib/gatewayClient');
+const { sendWhatsAppMessage, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
+const { isCloudApiConfigured } = require('../lib/whatsappConnectionLoader');
 const { normalizePhone } = require('../lib/phoneUtils');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { logActivity } = require('../services/activityLog');
@@ -58,7 +59,17 @@ router.post('/send', async (req, res, next) => {
         const enableBulk = process.env.ENABLE_BULK_MESSAGING !== 'false';
         if (!enableBulk) return res.status(403).json({ error: 'ارسال انبوه غیرفعال است. ENABLE_BULK_MESSAGING را در .env فعال کنید.' });
 
-        const { customerIds, message, templateId, delayMs = BULK_SEND_DELAY_MS, media } = req.body;
+        const {
+            customerIds,
+            message,
+            templateId,
+            delayMs = BULK_SEND_DELAY_MS,
+            media,
+            useCloudTemplate,
+            templateName,
+            templateLanguage,
+            templateBodyParams,
+        } = req.body;
         if (!customerIds || !Array.isArray(customerIds) || customerIds.length === 0) {
             return res.status(400).json({ error: 'لیست مشتریان (customerIds) الزامی است' });
         }
@@ -67,8 +78,20 @@ router.post('/send', async (req, res, next) => {
         }
 
         const content = (message || '').trim();
-        if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
-        if (content.length > 4096) return res.status(400).json({ error: 'متن پیام بیش از ۴۰۹۶ کاراکتر مجاز نیست' });
+        const connCfg = await getWhatsappConnectionConfig();
+        const cloudReady = await isCloudApiConfigured();
+        const effectiveTemplate = String(templateName || connCfg.cloudBulkTemplateName || process.env.WHATSAPP_CLOUD_BULK_TEMPLATE_NAME || '').trim();
+        const effectiveLang = String(templateLanguage || connCfg.cloudBulkTemplateLanguage || process.env.WHATSAPP_CLOUD_BULK_TEMPLATE_LANGUAGE || 'fa').trim() || 'fa';
+        const sendAsTemplate = cloudReady && effectiveTemplate && useCloudTemplate !== false;
+
+        if (!sendAsTemplate && !content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
+        if (sendAsTemplate && !cloudReady) {
+            return res.status(400).json({ error: 'ارسال با قالب Meta فقط با Cloud API فعال ممکن است' });
+        }
+        if (!sendAsTemplate && content.length > 4096) return res.status(400).json({ error: 'متن پیام بیش از ۴۰۹۶ کاراکتر مجاز نیست' });
+        if (sendAsTemplate && media) {
+            return res.status(400).json({ error: 'ارسال رسانه در حالت قالب Meta پشتیبانی نمی‌شود' });
+        }
 
         const accessibleIds = await getAccessibleCustomerIds(req);
         const customers = await Customer.findAll({
@@ -82,7 +105,10 @@ router.post('/send', async (req, res, next) => {
             const phone = normalizePhone(c.phone) || c.phone;
             if (!phone) continue;
             const finalContent = replaceTemplateVariables(content, c);
-            toSend.push({ customer: c, phone, content: finalContent });
+            const bodyParams = Array.isArray(templateBodyParams) && templateBodyParams.length
+                ? templateBodyParams.map((p) => replaceTemplateVariables(String(p), c))
+                : (finalContent ? [finalContent] : []);
+            toSend.push({ customer: c, phone, content: finalContent, bodyParams });
         }
 
         if (toSend.length === 0) return res.status(400).json({ error: 'هیچ مشتری معتبری برای ارسال یافت نشد' });
@@ -102,6 +128,8 @@ router.post('/send', async (req, res, next) => {
             startedAt: new Date().toISOString(),
             finishedAt: null,
             userId: req.userId,
+            channel: sendAsTemplate ? 'cloud_template' : 'free_text',
+            templateName: sendAsTemplate ? effectiveTemplate : null,
         };
         bulkJobs.set(jobId, jobState);
 
@@ -114,9 +142,13 @@ router.post('/send', async (req, res, next) => {
 
         res.json({
             ok: true,
-            message: `ارسال به ${toSend.length} مشتری شروع شد. تأخیر بین هر پیام: ${delay / 1000} ثانیه`,
+            message: sendAsTemplate
+                ? `ارسال قالب «${effectiveTemplate}» به ${toSend.length} مشتری شروع شد. تأخیر بین هر پیام: ${delay / 1000} ثانیه`
+                : `ارسال به ${toSend.length} مشتری شروع شد. تأخیر بین هر پیام: ${delay / 1000} ثانیه`,
             jobId,
             total: toSend.length,
+            channel: jobState.channel,
+            templateName: jobState.templateName,
             statusUrl: `/api/bulk/status/${jobId}`
         });
 
@@ -124,7 +156,7 @@ router.post('/send', async (req, res, next) => {
         (async () => {
             const { Template } = require('../models');
             for (let i = 0; i < toSend.length; i++) {
-                const { customer, phone, content: finalContent } = toSend[i];
+                const { customer, phone, content: finalContent, bodyParams } = toSend[i];
                 jobState.current = i + 1;
                 try {
                     let conversation = await Conversation.findOne({
@@ -145,20 +177,36 @@ router.post('/send', async (req, res, next) => {
                         customerId: customer.id,
                         userId: req.userId,
                         direction: 'outgoing',
-                        content: finalContent,
+                        content: sendAsTemplate
+                            ? `[Template: ${effectiveTemplate}] ${finalContent || bodyParams.join(' | ')}`
+                            : finalContent,
                         type: media ? 'document' : 'text',
                         hasMedia: !!media,
                         mediaData: media || null,
                         status: 'pending',
                         isAutoReply: false,
-                        timestamp: new Date()
+                        timestamp: new Date(),
+                        metadata: sendAsTemplate
+                            ? { bulkTemplate: effectiveTemplate, bulkTemplateLanguage: effectiveLang, sendSource: 'crm_panel' }
+                            : { sendSource: 'crm_panel' },
                     });
 
-                    const payload = { to: phone, message: finalContent };
-                    if (media && media.url) payload.media = { url: media.url, mimetype: media.mimetype || '' };
+                    let payload;
+                    if (sendAsTemplate) {
+                        payload = {
+                            to: phone,
+                            templateName: effectiveTemplate,
+                            templateLanguage: effectiveLang,
+                            templateBodyParams: bodyParams,
+                        };
+                    } else {
+                        payload = { to: phone, message: finalContent };
+                        if (media && media.url) payload.media = { url: media.url, mimetype: media.mimetype || '' };
+                    }
 
-                    await sendWhatsAppMessage(payload, { timeout: 15000 });
-                    await msg.update({ status: 'sent' });
+                    const sendRes = await sendWhatsAppMessage(payload, { timeout: 15000 });
+                    const waId = sendRes?.data?.messageId || null;
+                    await msg.update({ status: 'sent', ...(waId ? { whatsappId: waId } : {}) });
                     jobState.sent++;
 
                     if (templateId) {

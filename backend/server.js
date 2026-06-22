@@ -64,6 +64,14 @@ async function startServer() {
         const { ensureDefaultDepartments } = require('./services/defaultDepartments');
         await ensureDefaultDepartments();
         await ensureAdminUser(MAIN_ADMIN_EMAIL, MAIN_ADMIN_PASSWORD, logger);
+
+        if (!String(process.env.WHATSAPP_MOBILE_USER_ID || '').trim()
+            && !String(process.env.WHATSAPP_MOBILE_USER_EMAIL || '').trim()) {
+            logger.warn(
+                'WHATSAPP_MOBILE_USER_EMAIL is not set — mobile WhatsApp messages may be attributed to the wrong user (e.g. technical admin instead of business owner).'
+            );
+        }
+
         await connectRabbitMQ({ io, redisClient, logger });
 
         unansweredInterval = setInterval(() => checkUnansweredConversations(io, logger), 60000);
