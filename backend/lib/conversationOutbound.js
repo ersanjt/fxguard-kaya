@@ -266,7 +266,8 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
             }
         } else if (!isWithinCloudSessionWindow(conversation)) {
             const blockMsg = outsideSessionErrorMessage(connCfg);
-            if (blockMsg) {
+            const gatewayCanSend = connCfg.gatewayEnabled !== false && connCfg.connectionMode !== 'cloud';
+            if (blockMsg && !gatewayCanSend) {
                 await msg.update({ status: 'failed' });
                 return { msg, error: blockMsg, status: 400 };
             }

@@ -110,15 +110,20 @@ function applyStaffSignatureToOutboundText(user, content) {
  * @returns {{ ok: boolean, error?: string }}
  */
 function validateOutboundSender(user) {
-    const name = getUserWhatsAppSenderName(user);
-    if (!name) {
-        return {
-            ok: false,
-            error:
-                'نام شما برای پیام‌های واتساپ ثبت نشده است. از مدیر سیستم بخواهید در حساب کاربری شما «نام در پیام واتساپ» را تکمیل کند.',
-        };
+    if (!user) {
+        return { ok: false, error: 'کاربر ارسال‌کننده یافت نشد.' };
     }
-    return { ok: true };
+    const name = getUserWhatsAppSenderName(user);
+    if (name) return { ok: true };
+    const short = getUserWhatsAppShortName(user);
+    if (short) return { ok: true };
+    const fallback = String(user.username || user.email || user.name || '').trim();
+    if (fallback) return { ok: true };
+    return {
+        ok: false,
+        error:
+            'نام شما برای پیام‌های واتساپ ثبت نشده است. از مدیر سیستم بخواهید نام/نام‌خانوادگی یا «نام در پیام واتساپ» را در حساب کاربری شما تکمیل کند.',
+    };
 }
 
 /**

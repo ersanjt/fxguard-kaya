@@ -100,7 +100,7 @@ async function sendWhatsAppMessage(payload, options = {}) {
             try {
                 return await sendCloudMessage(payload);
             } catch (cloudErr) {
-                if (gwOk && payload?.media) {
+                if (gwOk) {
                     return gatewayPost('/api/send-message', payload, options);
                 }
                 throw cloudErr;
@@ -113,7 +113,7 @@ async function sendWhatsAppMessage(payload, options = {}) {
             try {
                 return await sendCloudMessage(payload);
             } catch (cloudErr) {
-                if (gwOk && isVoice) {
+                if (gwOk) {
                     return gatewayPost('/api/send-message', payload, options);
                 }
                 throw cloudErr;
