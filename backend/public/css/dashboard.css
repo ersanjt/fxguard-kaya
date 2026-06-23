@@ -863,6 +863,8 @@
         .content:has(#pageInternalChat.show) #pageInternalChat { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
         .content:has(#pageProfile.show) { overflow-y: auto; display: flex; flex-direction: column; -webkit-overflow-scrolling: touch; }
         .content:has(#pageProfile.show) #pageProfile { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: visible; }
+        .content:has(#pagePanelSettings.show) { overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+        .content:has(#pagePanelSettings.show) #pagePanelSettings { overflow: visible; }
         .internal-chat-page { display: flex; flex-direction: column; overflow: hidden; }
         .internal-chat-page > h2 { flex-shrink: 0; }
         .internal-chat-box { flex: 1; min-height: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-card); overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
@@ -1698,8 +1700,8 @@
         .add-to-call-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid var(--border); background: var(--bg-card); border-radius: 0 0 var(--radius) var(--radius); }
         .add-to-call-invite-btn { min-width: 140px; }
         /* ========== ظاهر پنل (Panel settings) — طراحی کاربرپسند ========== */
-        .page-panel-settings { max-width: 1360px; width: 100%; margin-inline: auto; padding-bottom: 96px; min-height: 60vh; }
-        .panel-settings-page-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 28px; padding: 26px 30px; background: linear-gradient(135deg, var(--bg-card) 0%, var(--accent-soft) 100%); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
+        .page-panel-settings { max-width: none; width: 100%; margin-inline: 0; padding-bottom: 32px; min-height: 60vh; box-sizing: border-box; }
+        .panel-settings-page-header { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 20px; padding: 22px 26px; background: linear-gradient(135deg, var(--bg-card) 0%, var(--accent-soft) 100%); border-radius: 16px; border: 1px solid var(--border); box-shadow: 0 4px 24px rgba(0,0,0,0.06); }
         .panel-settings-header-content { display: flex; align-items: flex-start; gap: 20px; flex: 1; min-width: 0; }
         .panel-settings-header-text { min-width: 0; flex: 1; }
         .panel-settings-header-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
@@ -1712,7 +1714,7 @@
         .panel-settings-info-box p { margin: 0; }
         .panel-settings-info-icon { flex-shrink: 0; color: var(--accent); margin-top: 2px; }
         .panel-settings-divider { border: none; border-top: 1px solid var(--border); margin: 16px 0; opacity: 0.7; }
-        .panel-settings-footer-sticky { position: sticky; bottom: 0; z-index: 20; margin-top: 24px; padding: 16px 20px; background: color-mix(in srgb, var(--bg-card) 92%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 -4px 24px rgba(0,0,0,0.15); }
+        .panel-settings-footer-sticky { position: static; z-index: 1; margin-top: 28px; padding: 16px 0 0; background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none; border: none; border-top: 1px solid var(--border); border-radius: 0; box-shadow: none; }
         .panel-settings-header-badge { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, var(--accent-soft) 0%, var(--bg-secondary) 100%); color: var(--accent); display: flex; align-items: center; justify-content: center; flex-shrink: 0; position: relative; overflow: hidden; }
         .panel-settings-header-branding .panel-settings-header-logo { width: 40px; height: 40px; object-fit: contain; border-radius: 8px; }
         .panel-settings-header-branding .panel-settings-header-favicon { width: 24px; height: 24px; object-fit: contain; border-radius: 6px; position: absolute; bottom: 4px; inset-inline-end: 4px; background: var(--bg-card); padding: 2px; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
@@ -1724,19 +1726,15 @@
         .panel-settings-unsaved-badge { font-size: 0.85rem; color: var(--warning); padding: 8px 14px; background: rgba(245,158,11,0.12); border-radius: 10px; font-weight: 500; }
         .panel-settings-loading { display: flex; align-items: center; gap: 12px; padding: 40px; color: var(--text-muted); background: var(--bg-card); border-radius: 14px; border: 1px solid var(--border); }
         .panel-settings-loading .loading-spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
-        .panel-settings-content { display: flex; flex-direction: column; gap: 0; width: 100%; max-width: 100%; }
+        .panel-settings-content { display: flex; flex-direction: column; gap: 0; width: 100%; max-width: 100%; min-width: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: 16px; padding: 20px; box-sizing: border-box; overflow: visible; }
         .panel-settings-tabs { display: flex; gap: 8px; margin-bottom: 0; padding: 6px; background: var(--bg-secondary); border-radius: 14px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: thin; }
         .panel-settings-tab { display: flex; align-items: center; gap: 10px; padding: 14px 22px; border: none; border-radius: 10px; background: transparent; color: var(--text-secondary); font-family: var(--font); font-size: 0.95rem; font-weight: 500; cursor: pointer; transition: all 0.25s; white-space: nowrap; flex-shrink: 0; }
         .panel-settings-tab:hover { color: var(--text-primary); background: var(--bg-hover); }
         .panel-settings-tab.active { background: var(--accent); color: #fff; box-shadow: 0 2px 12px color-mix(in srgb, var(--accent) 35%, transparent); }
-        .panel-settings-tab-panels { flex: 1; min-width: 0; overflow-y: auto; }
-        .panel-settings-tab-panels::-webkit-scrollbar { width: 10px; }
-        .panel-settings-tab-panels::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 5px; }
-        .panel-settings-tab-panels::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
-        .panel-settings-tab-panels::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        .panel-settings-tab-panels { flex: 1; min-width: 0; overflow: visible; }
         .panel-settings-tab-panel { display: none; }
         .panel-settings-tab-panel.active { display: block; }
-        .panel-settings-panel-layout { display: flex; flex-direction: column; gap: 32px; width: 100%; }
+        .panel-settings-panel-layout { display: flex; flex-direction: column; gap: 24px; width: 100%; min-width: 0; }
         .panel-settings-section-collapsible .panel-settings-section-body { overflow: hidden; transition: max-height 0.3s ease; }
         .panel-settings-section-collapsible.collapsed .panel-settings-section-body { max-height: 0 !important; padding-top: 0; padding-bottom: 0; margin: 0; opacity: 0; }
         .panel-settings-section-collapsible .panel-settings-section-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0; margin: 0 0 16px; border: none; background: none; color: inherit; font: inherit; cursor: pointer; text-align: inherit; }
@@ -1762,17 +1760,9 @@
         .panel-settings-preview-body { border-radius: 0 0 var(--radius) var(--radius); overflow: hidden; }
         .panel-preview-footer { padding: 12px 20px; background: linear-gradient(180deg, var(--accent-soft) 0%, transparent 100%); border-top: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border)); font-size: 0.85rem; color: var(--text-secondary); text-align: center; }
         .panel-preview-footer.hidden { display: none; }
-        .panel-settings-footer { display: flex; align-items: center; justify-content: flex-end; gap: 16px; padding: 24px 0 0; margin-top: 24px; border-top: 1px solid var(--border); }
-        .panel-settings-form-col { display: flex; flex-direction: column; gap: 0; min-width: 0; }
-        .panel-settings-preview-col { min-width: 0; }
-        .panel-settings-preview-col::-webkit-scrollbar { width: 10px; }
-        .panel-settings-preview-col::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 5px; }
-        .panel-settings-preview-col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
-        .panel-settings-preview-col::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-        .panel-settings-form-col::-webkit-scrollbar { width: 10px; }
-        .panel-settings-form-col::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 5px; }
-        .panel-settings-form-col::-webkit-scrollbar-thumb { background: var(--border); border-radius: 5px; }
-        .panel-settings-form-col::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+        .panel-settings-footer { display: flex; align-items: center; justify-content: flex-start; gap: 16px; flex-wrap: wrap; padding: 16px 0 0; margin-top: 0; border-top: none; }
+        .panel-settings-form-col { display: flex; flex-direction: column; gap: 0; min-width: 0; overflow: visible; }
+        .panel-settings-preview-col { min-width: 0; overflow: visible; }
         .panel-settings-preview-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06); }
         .panel-settings-preview-label { display: flex; align-items: center; gap: 10px; padding: 12px 18px; background: linear-gradient(180deg, #1a2332 0%, #151c28 100%); border-bottom: 1px solid var(--border); font-size: 0.85rem; font-weight: 600; color: var(--text-muted); }
         .panel-settings-preview-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); }
@@ -1858,18 +1848,29 @@
         .panel-settings-save-status.saved { color: #22c55e; font-weight: 500; }
         .panel-settings-save-status.error { color: #ef4444; }
         @media (min-width: 900px) {
-            .panel-settings-panel-layout { display: grid; grid-template-columns: 1fr minmax(320px, 420px); gap: 40px; align-items: start; }
-            .panel-settings-preview-col { position: sticky; top: 24px; }
-            #panelSettingsSaveBtn { display: none; }
+            .panel-settings-panel-layout {
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+                grid-template-areas: "form preview";
+                gap: 28px;
+                align-items: start;
+            }
+            .panel-settings-form-col { grid-area: form; }
+            .panel-settings-preview-col { grid-area: preview; position: sticky; top: 16px; align-self: start; }
+            .panel-settings-content { padding: 24px 28px; }
+            #panelSettingsSaveBtnFooter { display: none; }
         }
         @media (max-width: 899px) {
+            .panel-settings-content { padding: 16px; }
             .panel-settings-footer-sticky { display: none; }
-            .page-panel-settings { padding-bottom: 48px; }
+            .page-panel-settings { padding-bottom: 24px; }
+            .panel-branding-url-row { flex-wrap: wrap; }
         }
         @media (min-width: 1024px) {
-            .panel-settings-shell { flex-direction: row; align-items: flex-start; gap: 28px; }
-            .panel-settings-nav { flex: 0 0 240px; position: sticky; top: 16px; }
-            .panel-settings-tabs { flex-direction: column; overflow-x: visible; padding: 8px; gap: 4px; }
+            .panel-settings-shell { flex-direction: row; align-items: flex-start; gap: 24px; }
+            .panel-settings-nav { flex: 0 0 220px; max-width: 220px; position: sticky; top: 16px; align-self: flex-start; }
+            .panel-settings-main { flex: 1; min-width: 0; }
+            .panel-settings-tabs { flex-direction: column; overflow-x: visible; padding: 8px; gap: 4px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 14px; }
             .panel-settings-tab { width: 100%; justify-content: flex-start; padding: 14px 16px; border-radius: 12px; }
             .panel-settings-tab svg { flex-shrink: 0; opacity: 0.85; }
             .panel-settings-tab.active svg { opacity: 1; }
