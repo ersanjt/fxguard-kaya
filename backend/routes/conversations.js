@@ -28,6 +28,31 @@ function canManageConversation(req) {
     return isMainAdmin(req.user) || req.user.role === 'owner' || req.user.role === 'admin' || req.user.role === 'manager';
 }
 
+async function emitConversationNewMessage(req, conversation, msg) {
+    const io = req.app && req.app.get('io');
+    if (!io || !msg || !conversation) return;
+    let messagePayload = msg;
+    try {
+        const full = await Message.findByPk(msg.id, {
+            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username', 'avatar', 'firstName', 'lastName', 'whatsappSenderName'], required: false }],
+        });
+        if (full) messagePayload = full;
+    } catch (_) { /* ignore */ }
+    const customer = conversation.customer;
+    io.emit('new_message', {
+        conversationId: conversation.id,
+        customerId: conversation.customerId,
+        message: messagePayload,
+        isHiddenFromStaff: !!conversation.isHiddenFromStaff,
+        customer: customer ? {
+            id: customer.id,
+            name: customer.name,
+            phone: customer.phone,
+            profilePic: customer.profilePic,
+        } : undefined,
+    });
+}
+
 // ——— ایجاد مکالمه جدید (با مشتری)
 router.post('/', async (req, res, next) => {
     try {
@@ -375,6 +400,7 @@ router.post('/forward', async (req, res, next) => {
 
         const result = await deliverOutboundConversationMessage(req, targetConv, { content, media, metadata });
         if (result.error) return res.status(result.status || 500).json({ error: result.error, message: result.msg });
+        await emitConversationNewMessage(req, targetConv, result.msg);
         res.json({ ok: true, message: result.msg, conversation: { id: targetConv.id, customerId: targetConv.customerId } });
     } catch (err) {
         next(err);
@@ -794,6 +820,7 @@ router.post('/:id/send', async (req, res, next) => {
         if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
         const result = await deliverOutboundConversationMessage(req, conversation, { content, media, replyTo });
         if (result.error) return res.status(result.status || 500).json({ error: result.error, message: result.msg });
+        await emitConversationNewMessage(req, conversation, result.msg);
         res.json(result.msg);
     } catch (err) {
         next(err);

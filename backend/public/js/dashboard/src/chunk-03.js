@@ -141,6 +141,20 @@
         
         /* ========== Conversation Event Handlers Setup ========== */
         let convListClickHandler = null;
+        function handleConvLoadMoreClick() {
+            convCurrentPage++;
+            loadConversations(true);
+        }
+        function updateConvRating(convId, newRating) {
+            if (!convId || !newRating) return;
+            document.querySelectorAll('#convRatingStars .conv-rating-star').forEach(function(s) {
+                var v = parseInt(s.getAttribute('data-rating'), 10);
+                s.classList.toggle('active', v <= newRating);
+            });
+            apiFetch('/api/conversations/' + convId, { method: 'PATCH', body: JSON.stringify({ rating: newRating }) }).then(function(res) {
+                if (res.ok && currentConvDetail) currentConvDetail.rating = newRating;
+            });
+        }
 
         var CONV_QUICK_TABS_COLLAPSE_LS = 'crm_conv_quick_tabs_collapsed';
         function updateConvAdvancedFiltersBadge() {
@@ -325,13 +339,6 @@
                 }
             });
             
-            // Chat back button
-            const backBtn = document.getElementById('chatBackBtn');
-            if (backBtn) {
-                backBtn.removeEventListener('click', closeChatMobile);
-                backBtn.addEventListener('click', closeChatMobile);
-            }
-            
             // Chat detail toggle
             const detailToggle = document.getElementById('chatDetailToggle');
             if (detailToggle) {
@@ -409,13 +416,6 @@
                 updateConvBtn.removeEventListener('click', updateConvFromDetail);
                 updateConvBtn.addEventListener('click', updateConvFromDetail);
             }
-            ['convDetailStatus', 'convDetailPriority', 'convDetailAssignee', 'convDetailDept'].forEach(function(id) {
-                const select = document.getElementById(id);
-                if (select) {
-                    select.removeEventListener('change', function() {});
-                    select.addEventListener('change', function() {});
-                }
-            });
             const msgFileInput = document.getElementById('msgFileInput');
             if (msgFileInput) {
                 const _prevFileHandler = msgFileInput._previewHandler;
@@ -452,11 +452,10 @@
                 chatReplyCancelBtn.removeEventListener('click', cancelReply);
                 chatReplyCancelBtn.addEventListener('click', cancelReply);
             }
-            document.querySelectorAll('.conv-rating-star').forEach(function(star) {
+            document.querySelectorAll('#convRatingStars .conv-rating-star').forEach(function(star) {
                 if (star._crmRatingClick) star.removeEventListener('click', star._crmRatingClick);
                 star._crmRatingClick = function() {
-                    const newRating = parseInt(this.getAttribute('data-rating'), 10);
-                    updateConvRating(currentConvId, newRating);
+                    updateConvRating(currentConvId, parseInt(this.getAttribute('data-rating'), 10));
                 };
                 star.addEventListener('click', star._crmRatingClick);
             });
@@ -929,8 +928,8 @@
                 setTimeout(function() {
                     const loadBtn = document.getElementById('convLoadMoreBtnInner');
                     if (loadBtn) {
-                        loadBtn.removeEventListener('click', function() { convCurrentPage++; loadConversations(true); });
-                        loadBtn.addEventListener('click', function() { convCurrentPage++; loadConversations(true); });
+                        loadBtn.removeEventListener('click', handleConvLoadMoreClick);
+                        loadBtn.addEventListener('click', handleConvLoadMoreClick);
                     }
                 }, 50);
                 list.appendChild(lmBtn);
@@ -1138,11 +1137,6 @@
                     stars.forEach(function(s) {
                         const v = parseInt(s.getAttribute('data-rating'), 10);
                         s.classList.toggle('active', v <= r);
-                        s.onclick = function() {
-                            const newR = parseInt(this.getAttribute('data-rating'), 10);
-                            stars.forEach(function(x) { x.classList.toggle('active', parseInt(x.getAttribute('data-rating'), 10) <= newR); });
-                            apiFetch('/api/conversations/' + id, { method: 'PATCH', body: JSON.stringify({ rating: newR }) }).then(function(res) { if (res.ok && currentConvDetail) currentConvDetail.rating = newR; });
-                        };
                     });
                     const feedbackEl = document.getElementById('convFeedback');
                     if (feedbackEl) {
