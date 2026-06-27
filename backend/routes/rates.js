@@ -4,9 +4,7 @@ const axios = require('axios');
 const { RateAdjustment, RateCurrency, TickerConfig } = require('../models');
 const defaultRateCurrencies = require('../lib/defaultRateCurrencies');
 const logger = require('../config/logger');
-
-const NAVASAN_API_KEY = process.env.NAVASAN_API_KEY || '';
-const NAVASAN_LATEST = NAVASAN_API_KEY ? `https://api.navasan.tech/latest/?api_key=${NAVASAN_API_KEY}` : null;
+const { getNavasanApiKey, navasanLatestUrl } = require('../lib/navasanApiKey');
 
 let lastRatesCache = null;
 
@@ -55,7 +53,8 @@ function applyAdjustment(rawNum, adj) {
 // GET /api/rates/config-status — وضعیت تنظیمات (آیا API key دارد؟)
 router.get('/config-status', async (req, res, _next) => {
     if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
-    res.json({ hasApiKey: !!NAVASAN_API_KEY });
+    const apiKey = await getNavasanApiKey();
+    res.json({ hasApiKey: !!apiKey, source: apiKey ? 'configured' : 'none' });
 });
 
 // GET /api/rates — نرخ‌ها از API + اعمال تعدیلات
@@ -64,13 +63,15 @@ router.get('/', async (req, res, _next) => {
     try {
         const RATES_KEYS = await getRatesKeys();
         let raw = null;
-        if (NAVASAN_LATEST) {
-            raw = await axios.get(NAVASAN_LATEST, { timeout: 12000 }).then(r => r.data || {}).catch((e) => {
+        const apiKey = await getNavasanApiKey();
+        const latestUrl = navasanLatestUrl(apiKey);
+        if (latestUrl) {
+            raw = await axios.get(latestUrl, { timeout: 12000 }).then(r => r.data || {}).catch((e) => {
                 logger.warn('Navasan API error', { error: e.message || e.code });
                 return null;
             });
         } else {
-            logger.warn('NAVASAN_API_KEY not set — using cached rates only');
+            logger.warn('Navasan API key not set — using cached rates only');
         }
         if (!raw || Object.keys(raw).length === 0) {
             raw = lastRatesCache || {};
@@ -250,7 +251,8 @@ router.get('/history', async (req, res, next) => {
 
         const item = CURRENCY_TO_NAVASAN_ITEM[key] || (key === 'usd' ? 'usd_sell' : key + '_sell');
 
-        if (!NAVASAN_API_KEY) {
+        const apiKey = await getNavasanApiKey();
+        if (!apiKey) {
             const responseData = {
                 key,
                 item,
@@ -278,7 +280,7 @@ router.get('/history', async (req, res, next) => {
         let source = 'ohlc';
 
         try {
-            const ohlcUrl = `https://api.navasan.tech/ohlcSearch/?api_key=${NAVASAN_API_KEY}&item=${encodeURIComponent(item)}&start=${encodeURIComponent(startJ)}&end=${encodeURIComponent(endJ)}`;
+            const ohlcUrl = `https://api.navasan.tech/ohlcSearch/?api_key=${encodeURIComponent(apiKey)}&item=${encodeURIComponent(item)}&start=${encodeURIComponent(startJ)}&end=${encodeURIComponent(endJ)}`;
             const ohlcRes = await axios.get(ohlcUrl, { timeout: 20000 });
             const rows = normalizeNavasanRows(ohlcRes.data);
             if (rows.length === 0 && ohlcRes.data && typeof ohlcRes.data === 'object' && ohlcRes.data.message) {
@@ -291,7 +293,7 @@ router.get('/history', async (req, res, next) => {
 
         if (points.length === 0) {
             source = 'daily';
-            const baseUrl = `https://api.navasan.tech/dailyCurrency/?api_key=${NAVASAN_API_KEY}&item=${encodeURIComponent(item)}`;
+            const baseUrl = `https://api.navasan.tech/dailyCurrency/?api_key=${encodeURIComponent(apiKey)}&item=${encodeURIComponent(item)}`;
             points = await fetchHistoryViaDaily(item, dayEntries, baseUrl);
         }
 
@@ -328,9 +330,11 @@ router.get('/history', async (req, res, next) => {
 
 // GET /api/rates/health — تست دسترسی به API خارجی (نیاز به auth دارد)
 router.get('/health', async (req, res, _next) => {
-    if (!NAVASAN_LATEST) return res.json({ ok: false, external: false, error: 'API key not configured' });
+    const apiKey = await getNavasanApiKey();
+    const latestUrl = navasanLatestUrl(apiKey);
+    if (!latestUrl) return res.json({ ok: false, external: false, error: 'API key not configured' });
     try {
-        const r = await axios.get(NAVASAN_LATEST, { timeout: 8000 });
+        const r = await axios.get(latestUrl, { timeout: 8000 });
         const hasData = r.data && typeof r.data === 'object' && Object.keys(r.data).length > 0;
         res.json({ ok: true, external: hasData });
     } catch (e) {

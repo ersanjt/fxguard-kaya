@@ -119,6 +119,25 @@
                                 </div>
                             </div>
 
+                            <div id="panelTabRates" class="panel-settings-tab-panel" role="tabpanel" hidden>
+                                <div class="panel-settings-sections">
+                                    <section class="panel-settings-section">
+                                        <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 5 5-9"/></svg></span><span data-i18n="panel_section_navasan">API نوسان (Navasan)</span></h3>
+                                        <p class="panel-settings-section-desc" data-i18n="panel_navasan_intro">کلید API برای دریافت نرخ لحظه‌ای، چارت ارزها و نوار قیمت. کلید رایگان از <a href="https://navasan.tech" target="_blank" rel="noopener">navasan.tech</a> دریافت کنید. اگر اینجا خالی بماند، از متغیر <code>NAVASAN_API_KEY</code> در env سرور استفاده می‌شود.</p>
+                                        <div class="form-group">
+                                            <label for="panelSettingNavasanApiKey" data-i18n="panel_navasan_api_key">کلید API نوسان</label>
+                                            <input type="password" id="panelSettingNavasanApiKey" data-i18n-ph="panel_navasan_api_key_ph" placeholder="your-navasan-api-key" dir="ltr" spellcheck="false" autocomplete="new-password" oninput="markPanelSettingsChanged();">
+                                            <span id="panelNavasanKeyHint" class="form-hint"></span>
+                                        </div>
+                                        <div class="panel-test-email-row">
+                                            <button type="button" id="panelTestNavasanBtn" class="btn-secondary panel-test-email-btn" onclick="typeof sendPanelTestNavasan==='function'&&sendPanelTestNavasan()" data-i18n="panel_test_navasan_btn">تست اتصال API</button>
+                                            <button type="button" id="panelClearNavasanKeyBtn" class="btn-secondary btn-sm" onclick="typeof clearPanelNavasanApiKey==='function'&&clearPanelNavasanApiKey()" data-i18n="panel_navasan_clear_key">پاک کردن کلید ذخیره‌شده</button>
+                                            <span id="panelTestNavasanStatus" class="panel-test-email-status" style="display:none;"></span>
+                                        </div>
+                                    </section>
+                                </div>
+                            </div>
+
                             <div id="panelTabVisibility" class="panel-settings-tab-panel" role="tabpanel" hidden>
                                 <section class="panel-settings-section panel-settings-section-visibility">
                                     <h3 class="panel-settings-section-title"><span class="section-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span><span data-i18n="panel_section_visibility">نمایش بخش‌ها در سایت</span></h3>

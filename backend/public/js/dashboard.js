@@ -451,7 +451,7 @@
             if (LANG === 'tr') return 'tr-TR';
             return 'en-US';
         }
-        function ratesChartsShowEmpty(summaryEl, statsRow, message, withRetry) {
+        function ratesChartsShowEmpty(summaryEl, statsRow, message, withRetry, allowHtml) {
             if (statsRow) statsRow.innerHTML = '';
             const tableSection = document.getElementById('ratesChartsTableSection');
             if (tableSection) tableSection.hidden = true;
@@ -461,8 +461,9 @@
             const retry = withRetry
                 ? '<button type="button" class="btn-secondary rates-charts-retry-btn" onclick="loadRatesCharts()">' + escapeHtml(t('rates_charts_retry')) + '</button>'
                 : '';
+            const msgHtml = allowHtml ? message : escapeHtml(message);
             summaryEl.innerHTML = '<div class="rates-charts-empty">' +
-                '<p class="rates-charts-empty-text">' + escapeHtml(message) + '</p>' + retry + '</div>';
+                '<p class="rates-charts-empty-text">' + msgHtml + '</p>' + retry + '</div>';
         }
         function ratesChartsUpdateMeta(payload) {
             const metaEl = document.getElementById('ratesChartsMeta');
@@ -718,7 +719,7 @@
                     if (summaryEl) summaryEl.innerHTML = '';
                 } else {
                     if (res.ok && payload.externalConfigured === false) {
-                        ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_api_not_configured'), false);
+                        ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_api_not_configured'), false, true);
                     } else if (!res.ok) {
                         const errMsg = typeof getApiError === 'function' ? getApiError(res) : (res.error || t('rates_charts_error_load'));
                         ratesChartsShowEmpty(summaryEl, statsRow, errMsg, true);
@@ -8196,6 +8197,18 @@
             if (tgTokenHint) {
                 tgTokenHint.textContent = d.telegramBotTokenSet ? t('panel_telegram_token_saved_hint') : t('panel_telegram_token_none_hint');
             }
+            const navasanKeyEl = document.getElementById('panelSettingNavasanApiKey');
+            if (navasanKeyEl) navasanKeyEl.value = '';
+            const navasanHint = document.getElementById('panelNavasanKeyHint');
+            if (navasanHint) {
+                if (d.navasanApiKeySet) {
+                    navasanHint.textContent = t('panel_navasan_key_saved_hint');
+                } else if (d.navasanApiKeyFromEnv) {
+                    navasanHint.textContent = t('panel_navasan_key_env_hint');
+                } else {
+                    navasanHint.textContent = t('panel_navasan_key_none_hint');
+                }
+            }
             const hidden = Array.isArray(d.hiddenSections) ? d.hiddenSections : [];
             const container = document.getElementById('panelVisibilityToggles');
             if (container) {
@@ -8729,6 +8742,8 @@
             payload.androidAppUrl = get('panelSettingAndroidAppUrl');
             const tgNewToken = get('panelSettingTelegramBotToken');
             if (tgNewToken) payload.telegramBotToken = tgNewToken;
+            const navasanNewKey = get('panelSettingNavasanApiKey');
+            if (navasanNewKey) payload.navasanApiKey = navasanNewKey;
             let res;
             try {
                 res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify(payload) });
@@ -8755,6 +8770,14 @@
                 }
                 toast(t('saved'));
                 clearPanelSettingsChanged();
+                const navasanKeyElSaved = document.getElementById('panelSettingNavasanApiKey');
+                if (navasanKeyElSaved) navasanKeyElSaved.value = '';
+                const navasanHintSaved = document.getElementById('panelNavasanKeyHint');
+                if (navasanHintSaved && res.data) {
+                    if (res.data.navasanApiKeySet) navasanHintSaved.textContent = t('panel_navasan_key_saved_hint');
+                    else if (res.data.navasanApiKeyFromEnv) navasanHintSaved.textContent = t('panel_navasan_key_env_hint');
+                    else navasanHintSaved.textContent = t('panel_navasan_key_none_hint');
+                }
                 if (statusEl) { statusEl.textContent = (LANG === 'fa' ? 'ذخیره شد' : LANG === 'tr' ? 'Kaydedildi' : 'Saved'); statusEl.className = 'panel-settings-save-status saved'; statusEl.style.display = 'inline'; setTimeout(function() { statusEl.style.display = 'none'; }, 3000); }
             } else {
                 toast((res.data && res.data.error) || t('err_generic'), true);
@@ -8836,6 +8859,42 @@
             }
             if (btn) btn.disabled = false;
             if (btn) btn.textContent = t('panel_test_telegram_btn');
+        }
+        async function clearPanelNavasanApiKey() {
+            if (!confirm(t('panel_navasan_clear_confirm'))) return;
+            const res = await apiFetch('/api/panel-settings', { method: 'PUT', body: JSON.stringify({ navasanApiKeyClear: true }) });
+            if (res.ok) {
+                toast(t('saved'));
+                loadPanelSettings();
+            } else {
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
+        }
+        async function sendPanelTestNavasan() {
+            const btn = document.getElementById('panelTestNavasanBtn');
+            const statusEl = document.getElementById('panelTestNavasanStatus');
+            const get = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+            const payload = { navasanApiKey: get('panelSettingNavasanApiKey') };
+            if (btn) { btn.disabled = true; }
+            if (statusEl) statusEl.style.display = 'none';
+            const res = await apiFetch('/api/panel-settings/test-navasan', { method: 'POST', body: JSON.stringify(payload) });
+            if (res.ok && res.data && res.data.ok) {
+                toast(res.data.message || t('panel_test_navasan_ok'));
+                if (statusEl) {
+                    statusEl.textContent = t('panel_test_navasan_ok');
+                    statusEl.className = 'panel-test-email-status success';
+                    statusEl.style.display = 'inline';
+                }
+            } else {
+                const err = (res.data && res.data.error) || res.error || t('panel_test_navasan_fail');
+                toast(err, true);
+                if (statusEl) {
+                    statusEl.textContent = err;
+                    statusEl.className = 'panel-test-email-status error';
+                    statusEl.style.display = 'inline';
+                }
+            }
+            if (btn) btn.disabled = false;
         }
         const VALID_PAGES = (window.CRM && window.CRM.Constants) ? window.CRM.Constants.VALID_PAGES : ['dashboard','conversations','customers','departments','users','tickets','tasks','processes','whatsapp','message-templates','branches','supervision','staff-activity','profile','announcements','internal-chat','rates','rates-charts','services','panel-settings'];
         function applyHashRoute() {
@@ -12698,6 +12757,9 @@
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
             window.sendPanelTestEmail = sendPanelTestEmail;
+            window.sendPanelTestTelegram = sendPanelTestTelegram;
+            window.sendPanelTestNavasan = sendPanelTestNavasan;
+            window.clearPanelNavasanApiKey = clearPanelNavasanApiKey;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
@@ -12998,6 +13060,9 @@
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
             window.sendPanelTestEmail = sendPanelTestEmail;
+            window.sendPanelTestTelegram = sendPanelTestTelegram;
+            window.sendPanelTestNavasan = sendPanelTestNavasan;
+            window.clearPanelNavasanApiKey = clearPanelNavasanApiKey;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;

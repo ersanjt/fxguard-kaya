@@ -86,7 +86,8 @@ module.exports = (sequelize) => {
         uiTheme: { type: DataTypes.STRING(32), allowNull: true, defaultValue: 'default', comment: 'قالب ظاهری: default | minimal | dark | light | ocean | warm' },
         sidebarOrder: { type: DataTypes.TEXT, allowNull: true, comment: 'ترتیب منو (JSON array از data-section)' },
         iosAppUrl: { type: DataTypes.TEXT, allowNull: true, comment: 'لینک دانلود اپ iOS (App Store/TestFlight/itms-services)' },
-        androidAppUrl: { type: DataTypes.TEXT, allowNull: true, comment: 'لینک دانلود اپ Android (Play Store یا APK)' }
+        androidAppUrl: { type: DataTypes.TEXT, allowNull: true, comment: 'لینک دانلود اپ Android (Play Store یا APK)' },
+        navasanApiKey: { type: DataTypes.TEXT, allowNull: true, comment: 'کلید API نوسان (navasan.tech) — جایگزین NAVASAN_API_KEY در env' }
     }, {
         timestamps: true,
         tableName: 'panel_settings'

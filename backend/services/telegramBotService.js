@@ -215,16 +215,15 @@ async function getUpdates(offset = 0) {
 
 async function getRatesText() {
     try {
-        const NAVASAN_API_KEY = process.env.NAVASAN_API_KEY || '';
-        if (!NAVASAN_API_KEY) return null;
+        const { getNavasanApiKey, navasanLatestUrl } = require('../lib/navasanApiKey');
+        const apiKey = await getNavasanApiKey();
+        const latestUrl = navasanLatestUrl(apiKey);
+        if (!latestUrl) return null;
 
         const { RateAdjustment, RateCurrency, TickerConfig } = _appModels || require('../models');
         const defaultRateCurrencies = require('../lib/defaultRateCurrencies');
 
-        const raw = await axios.get(
-            `https://api.navasan.tech/latest/?api_key=${NAVASAN_API_KEY}`,
-            { timeout: 12000 }
-        ).then(r => r.data || {}).catch(() => ({}));
+        const raw = await axios.get(latestUrl, { timeout: 12000 }).then(r => r.data || {}).catch(() => ({}));
 
         const rows = await RateCurrency.findAll({ order: [['sortOrder', 'ASC'], ['key', 'ASC']] });
         const RATES_KEYS = rows.length > 0

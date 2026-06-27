@@ -45,6 +45,7 @@ const DEFAULT = {
     sidebarOrder: null,
     iosAppUrl: null,
     androidAppUrl: null,
+    navasanApiKey: null,
 };
 
 const MODE_TO_LANGUAGES = {
@@ -138,6 +139,7 @@ async function getPanelSettings() {
         sidebarOrder: parseSidebarOrder(row.sidebarOrder),
         iosAppUrl: row.iosAppUrl || null,
         androidAppUrl: row.androidAppUrl || null,
+        navasanApiKey: row.navasanApiKey || null,
     };
 }
 

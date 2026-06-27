@@ -91,6 +91,7 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
             ['iosAppUrl', { type: DataTypes.TEXT, allowNull: true }],
             ['androidAppUrl', { type: DataTypes.TEXT, allowNull: true }],
             ['loginLogoUrl', { type: DataTypes.TEXT, allowNull: true }],
+            ['navasanApiKey', { type: DataTypes.TEXT, allowNull: true }],
         ];
         for (const [name, def] of newThemeCols) {
             if (desc && desc[name] === undefined) {

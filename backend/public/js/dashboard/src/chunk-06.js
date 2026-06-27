@@ -1796,6 +1796,9 @@
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
             window.sendPanelTestEmail = sendPanelTestEmail;
+            window.sendPanelTestTelegram = sendPanelTestTelegram;
+            window.sendPanelTestNavasan = sendPanelTestNavasan;
+            window.clearPanelNavasanApiKey = clearPanelNavasanApiKey;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
@@ -2096,6 +2099,9 @@
             window.savePanelSettings = savePanelSettings;
             window.loadPanelSettings = loadPanelSettings;
             window.sendPanelTestEmail = sendPanelTestEmail;
+            window.sendPanelTestTelegram = sendPanelTestTelegram;
+            window.sendPanelTestNavasan = sendPanelTestNavasan;
+            window.clearPanelNavasanApiKey = clearPanelNavasanApiKey;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;

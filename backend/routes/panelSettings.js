@@ -80,7 +80,10 @@ router.get('/', authMiddleware, async (req, res, next) => {
         const out = { ...s };
         delete out.smtpPass;
         delete out.telegramBotToken;
+        delete out.navasanApiKey;
         out.telegramBotTokenSet = !!(s && s.telegramBotToken);
+        out.navasanApiKeySet = !!(s && s.navasanApiKey && String(s.navasanApiKey).trim());
+        out.navasanApiKeyFromEnv = !!(process.env.NAVASAN_API_KEY && String(process.env.NAVASAN_API_KEY).trim());
         out.supportedLanguages = getSupportedLanguages(out);
         if (out.supportedLanguages && out.supportedLanguages.indexOf(out.defaultLanguage) < 0) {
             out.defaultLanguage = out.supportedLanguages[0] || 'fa';
@@ -134,7 +137,9 @@ router.put('/', authMiddleware, async (req, res, next) => {
             fontSize,
             fontWeight,
             uiTheme,
-            sidebarOrder
+            sidebarOrder,
+            navasanApiKey,
+            navasanApiKeyClear
         } = body;
 
         if (logoUrl !== undefined) logoUrl = normalizePanelMediaUrl(logoUrl);
@@ -270,6 +275,11 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (sidebarOrder !== undefined) row.sidebarOrder = Array.isArray(sidebarOrder) ? JSON.stringify(sidebarOrder) : (sidebarOrder === '' ? null : row.sidebarOrder);
         if (iosAppUrl !== undefined) row.iosAppUrl = iosAppUrl === '' ? null : String(iosAppUrl).trim();
         if (androidAppUrl !== undefined) row.androidAppUrl = androidAppUrl === '' ? null : String(androidAppUrl).trim();
+        if (navasanApiKeyClear === true) {
+            row.navasanApiKey = null;
+        } else if (navasanApiKey !== undefined && String(navasanApiKey).trim() !== '') {
+            row.navasanApiKey = String(navasanApiKey).trim();
+        }
         await row.save();
         const telegramTokenAfterSave =
             row.telegramBotToken && String(row.telegramBotToken).trim()
@@ -307,7 +317,10 @@ router.put('/', authMiddleware, async (req, res, next) => {
         s.supportedLanguages = getSupportedLanguages(s);
         delete s.smtpPass;
         delete s.telegramBotToken;
+        delete s.navasanApiKey;
         s.telegramBotTokenSet = !!(row.telegramBotToken && String(row.telegramBotToken).trim());
+        s.navasanApiKeySet = !!(row.navasanApiKey && String(row.navasanApiKey).trim());
+        s.navasanApiKeyFromEnv = !!(process.env.NAVASAN_API_KEY && String(process.env.NAVASAN_API_KEY).trim());
         res.json(s);
     } catch (err) {
         next(err);
@@ -450,6 +463,47 @@ router.post('/test-telegram', authMiddleware, async (req, res, next) => {
         return res.status(500).json({ error: result.error || 'ارسال پیام تلگرام ناموفق بود.' });
     } catch (err) {
         next(err);
+    }
+});
+
+const testNavasanCooldown = new Map();
+const TEST_NAVASAN_COOLDOWN_MS = 30000;
+
+router.post('/test-navasan', authMiddleware, async (req, res, next) => {
+    try {
+        if (!req.canAccess || !req.canAccess('panel_settings')) {
+            return res.status(403).json({ error: 'دسترسی به تنظیمات پنل ندارید.' });
+        }
+        const userId = req.user && req.user.id;
+        if (userId) {
+            const last = testNavasanCooldown.get(userId) || 0;
+            if (Date.now() - last < TEST_NAVASAN_COOLDOWN_MS) {
+                const waitSec = Math.ceil((TEST_NAVASAN_COOLDOWN_MS - (Date.now() - last)) / 1000);
+                return res.status(429).json({ error: `برای جلوگیری از اسپم، ${waitSec} ثانیه صبر کنید و دوباره امتحان کنید.` });
+            }
+        }
+        const axios = require('axios');
+        const { getNavasanApiKey, navasanLatestUrl } = require('../lib/navasanApiKey');
+        const keyInput = (req.body.navasanApiKey || '').toString().trim();
+        const settings = await getPanelSettings();
+        const apiKey = keyInput || settings.navasanApiKey || process.env.NAVASAN_API_KEY || '';
+        if (!apiKey) {
+            return res.status(400).json({ error: 'کلید API نوسان تنظیم نشده است.' });
+        }
+        const url = navasanLatestUrl(apiKey);
+        const r = await axios.get(url, { timeout: 12000 });
+        const hasData = r.data && typeof r.data === 'object' && Object.keys(r.data).length > 0;
+        if (!hasData) {
+            return res.status(502).json({ error: 'پاسخ API نوسان خالی بود یا کلید نامعتبر است.' });
+        }
+        if (userId) testNavasanCooldown.set(userId, Date.now());
+        return res.json({ ok: true, message: 'اتصال به API نوسان برقرار است.' });
+    } catch (err) {
+        const status = err.response && err.response.status;
+        if (status === 401 || status === 403) {
+            return res.status(400).json({ error: 'کلید API نوسان نامعتبر است (401).' });
+        }
+        return res.status(502).json({ error: err.message || 'اتصال به API نوسان ناموفق بود.' });
     }
 });
 

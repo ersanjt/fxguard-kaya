@@ -451,7 +451,7 @@
             if (LANG === 'tr') return 'tr-TR';
             return 'en-US';
         }
-        function ratesChartsShowEmpty(summaryEl, statsRow, message, withRetry) {
+        function ratesChartsShowEmpty(summaryEl, statsRow, message, withRetry, allowHtml) {
             if (statsRow) statsRow.innerHTML = '';
             const tableSection = document.getElementById('ratesChartsTableSection');
             if (tableSection) tableSection.hidden = true;
@@ -461,8 +461,9 @@
             const retry = withRetry
                 ? '<button type="button" class="btn-secondary rates-charts-retry-btn" onclick="loadRatesCharts()">' + escapeHtml(t('rates_charts_retry')) + '</button>'
                 : '';
+            const msgHtml = allowHtml ? message : escapeHtml(message);
             summaryEl.innerHTML = '<div class="rates-charts-empty">' +
-                '<p class="rates-charts-empty-text">' + escapeHtml(message) + '</p>' + retry + '</div>';
+                '<p class="rates-charts-empty-text">' + msgHtml + '</p>' + retry + '</div>';
         }
         function ratesChartsUpdateMeta(payload) {
             const metaEl = document.getElementById('ratesChartsMeta');
@@ -718,7 +719,7 @@
                     if (summaryEl) summaryEl.innerHTML = '';
                 } else {
                     if (res.ok && payload.externalConfigured === false) {
-                        ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_api_not_configured'), false);
+                        ratesChartsShowEmpty(summaryEl, statsRow, t('rates_charts_api_not_configured'), false, true);
                     } else if (!res.ok) {
                         const errMsg = typeof getApiError === 'function' ? getApiError(res) : (res.error || t('rates_charts_error_load'));
                         ratesChartsShowEmpty(summaryEl, statsRow, errMsg, true);
