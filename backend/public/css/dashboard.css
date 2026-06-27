@@ -1806,6 +1806,9 @@
         .panel-settings-section .form-hint-language { min-height: 1.2em; }
         .panel-settings-section-languages .panel-default-language-wrap { margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--border); }
         .panel-test-email-row { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+        .panel-password-row { display: flex; gap: 8px; align-items: center; }
+        .panel-password-row input { flex: 1; min-width: 0; }
+        .panel-password-toggle { flex-shrink: 0; white-space: nowrap; }
         .panel-test-email-inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 6px; }
         .panel-test-email-inline .panel-test-email-input { flex: 1; min-width: 180px; }
         .panel-test-email-status { font-size: 0.85rem; margin-top: 6px; display: inline-block; }

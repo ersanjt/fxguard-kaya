@@ -278,7 +278,8 @@ router.put('/', authMiddleware, async (req, res, next) => {
         if (navasanApiKeyClear === true) {
             row.navasanApiKey = null;
         } else if (navasanApiKey !== undefined && String(navasanApiKey).trim() !== '') {
-            row.navasanApiKey = String(navasanApiKey).trim();
+            const { normalizeNavasanApiKey } = require('../lib/navasanApiKey');
+            row.navasanApiKey = normalizeNavasanApiKey(navasanApiKey);
         }
         await row.save();
         const telegramTokenAfterSave =
@@ -470,6 +471,13 @@ const testNavasanCooldown = new Map();
 const TEST_NAVASAN_COOLDOWN_MS = 30000;
 
 router.post('/test-navasan', authMiddleware, async (req, res, next) => {
+    const axios = require('axios');
+    const {
+        normalizeNavasanApiKey,
+        navasanLatestUrl,
+        navasanUsageUrl,
+        navasanApiErrorMessage
+    } = require('../lib/navasanApiKey');
     try {
         if (!req.canAccess || !req.canAccess('panel_settings')) {
             return res.status(403).json({ error: 'دسترسی به تنظیمات پنل ندارید.' });
@@ -482,26 +490,47 @@ router.post('/test-navasan', authMiddleware, async (req, res, next) => {
                 return res.status(429).json({ error: `برای جلوگیری از اسپم، ${waitSec} ثانیه صبر کنید و دوباره امتحان کنید.` });
             }
         }
-        const axios = require('axios');
-        const { getNavasanApiKey, navasanLatestUrl } = require('../lib/navasanApiKey');
-        const keyInput = (req.body.navasanApiKey || '').toString().trim();
+        const hasKeyField = req.body && Object.prototype.hasOwnProperty.call(req.body, 'navasanApiKey');
+        const keyInput = hasKeyField
+            ? normalizeNavasanApiKey(req.body.navasanApiKey)
+            : '';
         const settings = await getPanelSettings();
-        const apiKey = keyInput || settings.navasanApiKey || process.env.NAVASAN_API_KEY || '';
+        const apiKey = hasKeyField
+            ? keyInput
+            : (normalizeNavasanApiKey(settings.navasanApiKey) || normalizeNavasanApiKey(process.env.NAVASAN_API_KEY));
         if (!apiKey) {
             return res.status(400).json({ error: 'کلید API نوسان تنظیم نشده است.' });
         }
         const url = navasanLatestUrl(apiKey);
-        const r = await axios.get(url, { timeout: 12000 });
+        const r = await axios.get(url, { timeout: 12000, validateStatus: () => true });
+        if (r.status !== 200) {
+            return res.status(r.status === 429 ? 429 : 400).json({
+                error: navasanApiErrorMessage(r.status, r.data)
+            });
+        }
         const hasData = r.data && typeof r.data === 'object' && Object.keys(r.data).length > 0;
         if (!hasData) {
-            return res.status(502).json({ error: 'پاسخ API نوسان خالی بود یا کلید نامعتبر است.' });
+            return res.status(502).json({ error: 'پاسخ API نوسان خالی بود.' });
+        }
+        let usageNote = '';
+        const usageUrl = navasanUsageUrl(apiKey);
+        if (usageUrl) {
+            try {
+                const u = await axios.get(usageUrl, { timeout: 8000, validateStatus: () => true });
+                if (u.status === 200 && u.data && u.data.monthly_usage != null) {
+                    usageNote = ` مصرف ماه جاری: ${u.data.monthly_usage} درخواست.`;
+                }
+            } catch (_) { /* optional */ }
         }
         if (userId) testNavasanCooldown.set(userId, Date.now());
-        return res.json({ ok: true, message: 'اتصال به API نوسان برقرار است.' });
+        return res.json({ ok: true, message: `اتصال به API نوسان برقرار است.${usageNote}` });
     } catch (err) {
         const status = err.response && err.response.status;
-        if (status === 401 || status === 403) {
-            return res.status(400).json({ error: 'کلید API نوسان نامعتبر است (401).' });
+        const body = err.response && err.response.data;
+        if (status) {
+            return res.status(status === 429 ? 429 : 400).json({
+                error: navasanApiErrorMessage(status, body)
+            });
         }
         return res.status(502).json({ error: err.message || 'اتصال به API نوسان ناموفق بود.' });
     }

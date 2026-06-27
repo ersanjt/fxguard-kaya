@@ -1704,11 +1704,19 @@
                 toast((res.data && res.data.error) || t('err_generic'), true);
             }
         }
+        function togglePanelNavasanKeyVisibility() {
+            const el = document.getElementById('panelSettingNavasanApiKey');
+            const btn = document.querySelector('.panel-password-toggle');
+            if (!el) return;
+            const show = el.type === 'password';
+            el.type = show ? 'text' : 'password';
+            if (btn) btn.textContent = t(show ? 'panel_navasan_hide_key' : 'panel_navasan_show_key');
+        }
         async function sendPanelTestNavasan() {
             const btn = document.getElementById('panelTestNavasanBtn');
             const statusEl = document.getElementById('panelTestNavasanStatus');
-            const get = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-            const payload = { navasanApiKey: get('panelSettingNavasanApiKey') };
+            const keyEl = document.getElementById('panelSettingNavasanApiKey');
+            const payload = { navasanApiKey: keyEl ? keyEl.value : '' };
             if (btn) { btn.disabled = true; }
             if (statusEl) statusEl.style.display = 'none';
             const res = await apiFetch('/api/panel-settings/test-navasan', { method: 'POST', body: JSON.stringify(payload) });

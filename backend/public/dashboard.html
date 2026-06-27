@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="کایا CRM">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان صرافی کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="b2f1f9c89252">
+    <meta name="crm-build" content="beb623a948ba">
     <title>پورتال کارکنان کایا | صرافی کایا</title>
     <link rel="icon" id="favicon" href="/favicon-kaya.svg">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/favicon-kaya.svg">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=b2f1f9c89252">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=b2f1f9c89252" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=beb623a948ba">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=beb623a948ba" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -2650,8 +2650,12 @@
                                         <p class="panel-settings-section-desc" data-i18n="panel_navasan_intro">کلید API برای دریافت نرخ لحظه‌ای، چارت ارزها و نوار قیمت. کلید رایگان از <a href="https://navasan.tech" target="_blank" rel="noopener">navasan.tech</a> دریافت کنید. اگر اینجا خالی بماند، از متغیر <code>NAVASAN_API_KEY</code> در env سرور استفاده می‌شود.</p>
                                         <div class="form-group">
                                             <label for="panelSettingNavasanApiKey" data-i18n="panel_navasan_api_key">کلید API نوسان</label>
-                                            <input type="password" id="panelSettingNavasanApiKey" data-i18n-ph="panel_navasan_api_key_ph" placeholder="your-navasan-api-key" dir="ltr" spellcheck="false" autocomplete="new-password" oninput="markPanelSettingsChanged();">
+                                            <div class="panel-password-row">
+                                                <input type="password" id="panelSettingNavasanApiKey" data-i18n-ph="panel_navasan_api_key_ph" placeholder="your-navasan-api-key" dir="ltr" spellcheck="false" autocomplete="off" oninput="markPanelSettingsChanged();">
+                                                <button type="button" class="btn-secondary btn-sm panel-password-toggle" onclick="typeof togglePanelNavasanKeyVisibility==='function'&&togglePanelNavasanKeyVisibility()" data-i18n="panel_navasan_show_key">نمایش</button>
+                                            </div>
                                             <span id="panelNavasanKeyHint" class="form-hint"></span>
+                                            <p class="form-hint"><span data-i18n="panel_navasan_bot_hint">دریافت کلید رایگان از ربات تلگرام</span> <a href="https://t.me/navasan_contact_bot" target="_blank" rel="noopener">@navasan_contact_bot</a></p>
                                         </div>
                                         <div class="panel-test-email-row">
                                             <button type="button" id="panelTestNavasanBtn" class="btn-secondary panel-test-email-btn" onclick="typeof sendPanelTestNavasan==='function'&&sendPanelTestNavasan()" data-i18n="panel_test_navasan_btn">تست اتصال API</button>
@@ -3705,14 +3709,14 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=b2f1f9c89252" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=b2f1f9c89252" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=b2f1f9c89252" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=b2f1f9c89252" charset="utf-8"></script>
-    <script src="/js/i18n-en.js?v=b2f1f9c89252" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=b2f1f9c89252" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=b2f1f9c89252" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=b2f1f9c89252" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=beb623a948ba" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=beb623a948ba" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=beb623a948ba" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=beb623a948ba" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=beb623a948ba" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=beb623a948ba" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=beb623a948ba" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=beb623a948ba" charset="utf-8"></script>
     <script>
     (function() {
         var meta = document.querySelector('meta[name="crm-build"]');

@@ -1799,6 +1799,7 @@
             window.sendPanelTestTelegram = sendPanelTestTelegram;
             window.sendPanelTestNavasan = sendPanelTestNavasan;
             window.clearPanelNavasanApiKey = clearPanelNavasanApiKey;
+            window.togglePanelNavasanKeyVisibility = togglePanelNavasanKeyVisibility;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
@@ -2102,6 +2103,7 @@
             window.sendPanelTestTelegram = sendPanelTestTelegram;
             window.sendPanelTestNavasan = sendPanelTestNavasan;
             window.clearPanelNavasanApiKey = clearPanelNavasanApiKey;
+            window.togglePanelNavasanKeyVisibility = togglePanelNavasanKeyVisibility;
             window.syncSmtpPortWithSecure = syncSmtpPortWithSecure;
             window.syncSmtpSecureWithPort = syncSmtpSecureWithPort;
             window.previewPanelLogo = previewPanelLogo;
