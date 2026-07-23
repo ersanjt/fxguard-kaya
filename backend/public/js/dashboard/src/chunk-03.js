@@ -13,11 +13,13 @@
                 el[key] = true;
                 el.addEventListener('keyup', handler);
             };
-            // Header menu button
+            // Header menu button — remove inline onclick to avoid double-toggle (open then immediate close)
             const menuBtn = document.getElementById('headerMenuBtn');
+            if (menuBtn) menuBtn.removeAttribute('onclick');
             bindOnce(menuBtn, '_crmBoundMenu', toggleSidebarMobile);
             
             const sidebarOverlay = document.getElementById('sidebarOverlay');
+            if (sidebarOverlay) sidebarOverlay.removeAttribute('onclick');
             bindOnce(sidebarOverlay, '_crmBoundOverlay', closeSidebarMobile);
             
             // Header announcement toggle button
