@@ -256,7 +256,10 @@
         if (!el) return;
         el.textContent = text || '';
         el.className = 'lp-msg ' + (type || 'error');
-        if (text) el.classList.add('has-text');
+        if (text) {
+            el.classList.add('has-text');
+            try { el.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); } catch (_) {}
+        }
     }
     function clearMsg(id) { setMsg(id, '', 'error'); }
 
@@ -635,7 +638,13 @@
     /* ── Check existing auth cookie ──────────────── */
     function checkExistingToken() {
         fetch('/api/auth/me', {
-            credentials: 'include'
+            credentials: 'include',
+            headers: (function () {
+                try {
+                    var t = sessionStorage.getItem('crm_token');
+                    return t ? { Authorization: 'Bearer ' + t } : {};
+                } catch (_) { return {}; }
+            })()
         }).then(function(r) {
             return r.json().then(function(d) {
                 return { ok: r.ok, d: d };
@@ -644,7 +653,15 @@
             });
         }).then(function(res) {
             if (res.ok && res.d && res.d.email && !res.d.error) {
-                window.location.href = '/dashboard';
+                var returnTo = '';
+                try {
+                    returnTo = new URLSearchParams(window.location.search).get('return') || '';
+                } catch (_) {}
+                if (returnTo && returnTo.charAt(0) === '/' && returnTo.indexOf('//') !== 0) {
+                    window.location.href = returnTo;
+                } else {
+                    window.location.href = '/dashboard';
+                }
             }
         }).catch(function() {});
     }

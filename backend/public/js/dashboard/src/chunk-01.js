@@ -176,7 +176,13 @@
         }
 
         function headers() {
-            return { 'Content-Type': 'application/json' };
+            const h = { 'Content-Type': 'application/json' };
+            // Cookie is primary; Bearer from sessionStorage covers cases where Set-Cookie is dropped
+            try {
+                const t = token || sessionStorage.getItem('crm_token');
+                if (t) h.Authorization = 'Bearer ' + t;
+            } catch (_) {}
+            return h;
         }
         if (window.CRM && window.CRM.Api) {
             window.CRM_API_BASE = API || '';

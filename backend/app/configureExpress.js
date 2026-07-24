@@ -185,7 +185,7 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
     });
     const loginLimiter = rateLimit({
         windowMs: 15 * 60 * 1000,
-        max: 10,
+        max: 30,
         message: { error: 'تعداد تلاش‌های ورود زیاد است. ۱۵ دقیقه صبر کنید.' },
         standardHeaders: true,
         legacyHeaders: false,
