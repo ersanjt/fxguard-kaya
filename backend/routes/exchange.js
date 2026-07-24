@@ -713,11 +713,17 @@ router.get('/currency-position', requireServices, async (req, res) => {
             }
         });
 
+        const totalCash = cashBoxes.reduce((s, b) => s.plus(safeDecimal(b.balance)), new Decimal(0)).toNumber();
+        const totalBank = bankAccounts.reduce((s, b) => s.plus(safeDecimal(b.balance)), new Decimal(0)).toNumber();
+
         res.json({
             currencyPosition: currencyTotals,
             pendingInward,
             pendingOutward,
             outstandingBalance,
+            totalCash,
+            totalBank,
+            total: new Decimal(totalCash).plus(totalBank).toNumber(),
             cashBoxes: cashBoxes.map(cb => ({
                 id: cb.id, name: cb.name, currency: cb.currency, balance: parseFloat(cb.balance || 0),
                 branch: cb.branch ? cb.branch.name : null

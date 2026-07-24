@@ -11,6 +11,7 @@ const { normalizePhone } = require('../lib/phoneUtils');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const { persistRemoteAvatarIfNeeded } = require('../lib/customerAvatar');
 const { getCustomerAvatar } = require('./customerAvatar');
+const { redactCustomerPhone } = require('../lib/customerPhoneVisibility');
 
 // آپلود اسناد مشتری
 const docStorage = multer.diskStorage({
@@ -93,10 +94,11 @@ router.get('/', async (req, res, next) => {
             const plain = c.get ? c.get({ plain: true }) : c;
             const cid = plain.id;
             const lc = latestConvs[cid];
-            return {
+            const row = {
                 ...plain,
                 lastOpenConv: lc ? { id: lc.id, assignee: lc.assignee ? lc.assignee.get ? lc.assignee.get({ plain: true }) : lc.assignee : null, department: lc.department ? (lc.department.get ? lc.department.get({ plain: true }) : lc.department) : null, status: lc.status } : null
             };
+            return redactCustomerPhone(row, req.user);
         });
         res.json({ data: enriched, total: count, page: p, stats: stats || null });
     } catch (err) {
@@ -116,7 +118,7 @@ router.get('/:id', async (req, res, next) => {
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
         const allowed = await canAccessCustomer(req, customer.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
-        res.json(customer);
+        res.json(redactCustomerPhone(customer, req.user));
     } catch (err) {
         next(err);
     }
@@ -282,7 +284,7 @@ router.post('/', async (req, res, next) => {
         const created = await Customer.findByPk(customer.id, {
             include: [{ model: Tag, as: 'tags', attributes: ['id', 'name', 'color'], through: { attributes: [] } }]
         });
-        res.status(201).json(created || customer);
+        res.status(201).json(redactCustomerPhone(created || customer, req.user));
     } catch (err) {
         next(err);
     }
@@ -299,7 +301,13 @@ router.put('/:id', async (req, res, next) => {
         const { name, phone, email, status, notes, customFields } = req.body;
         const updateData = {};
         if (name !== undefined) updateData.name = name;
-        if (phone !== undefined) updateData.phone = normalizePhone(phone) || phone;
+        if (phone !== undefined) {
+            if (!req.canViewCustomerPhone || !req.canViewCustomerPhone()) {
+                // بدون دسترسی مشاهده شماره، اجازهٔ تغییر تلفن نیست
+            } else {
+                updateData.phone = normalizePhone(phone) || phone;
+            }
+        }
         if (email !== undefined) updateData.email = email;
         if (notes !== undefined) updateData.notes = notes;
         if (customFields !== undefined) updateData.customFields = customFields;
@@ -317,7 +325,7 @@ router.put('/:id', async (req, res, next) => {
         const canEditStatus = ['owner', 'admin', 'manager'].indexOf(role) !== -1 || (req.user.permissions && req.user.permissions.manage_users);
         if (status !== undefined && canEditStatus) updateData.status = status;
         await customer.update(updateData);
-        res.json(customer);
+        res.json(redactCustomerPhone(customer, req.user));
     } catch (err) {
         next(err);
     }

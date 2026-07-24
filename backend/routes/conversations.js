@@ -12,6 +12,7 @@ const logger = require('../config/logger');
 const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
 const { deliverOutboundConversationMessage } = require('../lib/conversationOutbound');
 const { getUserWhatsAppSenderName } = require('../lib/outboundMessagePrefix');
+const { redactConversationPhones, redactConversationList, publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
 function canArchiveOrDeleteConversation(req) {
@@ -44,12 +45,7 @@ async function emitConversationNewMessage(req, conversation, msg) {
         customerId: conversation.customerId,
         message: messagePayload,
         isHiddenFromStaff: !!conversation.isHiddenFromStaff,
-        customer: customer ? {
-            id: customer.id,
-            name: customer.name,
-            phone: customer.phone,
-            profilePic: customer.profilePic,
-        } : undefined,
+        customer: publicCustomerSocketPayload(customer),
     });
 }
 
@@ -91,7 +87,7 @@ router.post('/', async (req, res, next) => {
                 ]
             });
         }
-        res.status(201).json(conversation);
+        res.status(201).json(redactConversationPhones(conversation, req.user));
     } catch (err) {
         next(err);
     }
@@ -288,7 +284,7 @@ router.get('/', async (req, res, next) => {
             })
         ]);
         res.json({
-            data: rows,
+            data: redactConversationList(rows, req.user),
             total: count,
             page: p,
             openCount: Number(openCount) || 0,
@@ -442,7 +438,7 @@ router.get('/:id', async (req, res, next) => {
             }
         }
         await conversation.reload({ include: conversationDetailInclude });
-        res.json(conversation);
+        res.json(redactConversationPhones(conversation, req.user));
     } catch (err) {
         next(err);
     }
@@ -644,7 +640,7 @@ router.patch('/:id', async (req, res, next) => {
 
         if (markRead === true || markRead === 'true') {
             await conversation.update({ unreadCount: 0 });
-            return res.json(conversation);
+            return res.json(redactConversationPhones(conversation, req.user));
         }
 
         const updateData = {};
@@ -769,7 +765,7 @@ router.patch('/:id', async (req, res, next) => {
                 { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
             ]
         });
-        res.json(updated);
+        res.json(redactConversationPhones(updated, req.user));
     } catch (err) {
         next(err);
     }

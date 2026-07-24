@@ -229,7 +229,8 @@
             if (val == null || val === '' || val === '\u2014' || (typeof val === 'string' && val.trim() === '')) return '\u2014';
             const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
             if (isNaN(num)) return '\u2014';
-            if (LANG !== 'fa') {
+            const lang = (typeof window !== 'undefined' && window.LANG) || LANG;
+            if (lang !== 'fa') {
                 return Math.round(num).toLocaleString('en-US');
             }
             const n = String(Math.round(num)).replace(/[^\d]/g, '');
@@ -366,8 +367,9 @@
                     const chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
                     const chText = tickerDisplay === 'fx_cross' ? '' : formatChange(ch);
                     const valStr = tickerDisplay === 'fx_cross' ? formatFxCrossTickerValue(it.value) : formatPrice(it.value);
-                    const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="تغییر">(' + escapeHtml(chText) + ')</span>' : '';
-                    return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
+                    const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="change">(' + escapeHtml(chText) + ')</span>' : '';
+                    const curLabel = rateLabel(it.key) || it.label || it.key;
+                    return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(curLabel) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
                 }).join('');
                 innerEl.innerHTML = itemsHtml;
                 delete innerEl.dataset.marqueeDuplicated;
@@ -757,7 +759,15 @@
             fetchRates();
             ratesInterval = setInterval(fetchRates, 10 * 60 * 1000);
         }
-        function rateLabel(key) { return t(key) || key; }
+        function rateLabel(key) {
+            var k = String(key || '').toLowerCase();
+            if (!k) return '';
+            var direct = t(k);
+            if (direct && direct !== k) return direct;
+            var withPrefix = t('currency_' + k);
+            if (withPrefix && withPrefix !== ('currency_' + k)) return withPrefix;
+            return key;
+        }
         async function loadRatesAdjustments() {
             const el = document.getElementById('ratesAdjustmentsTable');
             if (!el) return;
@@ -959,41 +969,19 @@
             if (res.ok) { toast(t('toast_rates_saved') || 'ذخیره شد'); loadCurrencies(); loadRatesAdjustments(); loadTickerConfig(); fetchRates(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
-        function initServicesTabs() {
+        const SERVICES_TAB_MAP = { summary: 'Summary', statement: 'Statement', services: 'Services', cashboxes: 'Cashboxes', bankaccounts: 'Bankaccounts', transactions: 'Transactions', reports: 'Reports' };
+        function switchServicesTab(tabName) {
+            const t = tabName || 'summary';
             const tabs = document.querySelectorAll('.services-tab');
             const panels = document.querySelectorAll('.services-panel');
-            const tabMap = { summary: 'Summary', statement: 'Statement', services: 'Services', cashboxes: 'Cashboxes', bankaccounts: 'Bankaccounts', transactions: 'Transactions', reports: 'Reports' };
-            tabs.forEach(function(tab) {
-                tab.onclick = function() {
-                    const t = tab.getAttribute('data-tab');
-                    tabs.forEach(function(x) { x.classList.remove('active'); x.setAttribute('aria-selected', 'false'); });
-                    panels.forEach(function(p) { p.classList.remove('show'); });
-                    tab.classList.add('active');
-                    tab.setAttribute('aria-selected', 'true');
-                    const panel = document.getElementById('services' + (tabMap[t] || 'Summary') + 'Panel');
-                    if (panel) { panel.classList.add('show'); }
-                    if (t === 'summary') loadServicesSummary();
-                    else if (t === 'statement') loadStatement();
-                    else if (t === 'services') loadServices();
-                    else if (t === 'cashboxes') loadCashBoxes();
-                    else if (t === 'bankaccounts') loadBankAccounts();
-                    else if (t === 'transactions') { loadCustomerFilterForTransactions(); loadTransactions(); }
-                    else if (t === 'reports') { loadCurrentReport(); }
-                };
+            tabs.forEach(function(x) {
+                const on = x.getAttribute('data-tab') === t;
+                x.classList.toggle('active', on);
+                x.setAttribute('aria-selected', on ? 'true' : 'false');
             });
-        }
-        async function loadCustomerFilterForTransactions() {
-            const sel = document.getElementById('txCustomerFilter');
-            if (!sel) return;
-            const res = await apiFetch('/api/customers?limit=500');
-            const list = (res.data && res.data.data) || [];
-            const curVal = sel.value;
-            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه مشتریان' : 'All customers') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name || c.phone || '') + '</option>'; }).join('');
-            if (curVal) sel.value = curVal;
-        }
-        function loadServicesPage() {
-            const active = document.querySelector('.services-tab.active');
-            const t = active ? active.getAttribute('data-tab') : 'summary';
+            panels.forEach(function(p) { p.classList.remove('show'); });
+            const panel = document.getElementById('services' + (SERVICES_TAB_MAP[t] || 'Summary') + 'Panel');
+            if (panel) panel.classList.add('show');
             if (t === 'summary') loadServicesSummary();
             else if (t === 'statement') loadStatement();
             else if (t === 'services') loadServices();
@@ -1002,61 +990,147 @@
             else if (t === 'transactions') { loadCustomerFilterForTransactions(); loadTransactions(); }
             else if (t === 'reports') { loadCurrentReport(); }
         }
-        const currencySymbols = { USD: '$', EUR: '€', GBP: '£', DHS: 'د.إ', TRY: '₺', RUB: '₽', USDT: '₮', IRR: 'تومان', TMN: 'تومان' };
-        function formatMoney(n, curr) { const x = parseFloat(n) || 0; const sym = currencySymbols[curr] || curr || 'تومان'; return x.toLocaleString('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym; }
-        function formatMoneyEn(n) { const x = parseFloat(n) || 0; return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function initServicesTabs() {
+            document.querySelectorAll('.services-tab').forEach(function(tab) {
+                tab.onclick = function() { switchServicesTab(tab.getAttribute('data-tab')); };
+            });
+        }
+        async function loadCustomerFilterForTransactions() {
+            const sel = document.getElementById('txCustomerFilter');
+            if (!sel) return;
+            const res = await apiFetch('/api/customers?limit=500');
+            const list = (res.data && res.data.data) || [];
+            const curVal = sel.value;
+            sel.innerHTML = '<option value="">' + escapeHtml(uiLang() === 'fa' ? 'همه مشتریان' : (uiLang() === 'tr' ? 'Tüm müşteriler' : 'All customers')) + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name || c.phone || '') + '</option>'; }).join('');
+            if (curVal) sel.value = curVal;
+        }
+        function loadServicesPage() {
+            const active = document.querySelector('.services-tab.active');
+            switchServicesTab(active ? active.getAttribute('data-tab') : 'summary');
+        }
+        function uiLang() {
+            return (typeof window !== 'undefined' && window.LANG) || (typeof LANG !== 'undefined' ? LANG : 'fa');
+        }
+        function numberLocale() {
+            const lang = uiLang();
+            if (lang === 'fa') return 'fa-IR';
+            if (lang === 'tr') return 'tr-TR';
+            return 'en-US';
+        }
+        function currencyLabel(curr) {
+            const c = String(curr || 'IRR').toUpperCase();
+            if (c === 'IRR' || c === 'TMN') return t('currency_unit_toman') || (uiLang() === 'fa' ? 'تومان' : 'Toman');
+            const lang = uiLang();
+            const symbols = {
+                USD: '$', EUR: '€', GBP: '£', TRY: '₺', RUB: '₽', USDT: 'USDT',
+                CHF: 'CHF', CAD: 'CAD', AUD: 'AUD',
+                DHS: lang === 'fa' ? 'د.إ' : 'AED',
+                AED: lang === 'fa' ? 'د.إ' : 'AED'
+            };
+            return symbols[c] || c;
+        }
+        function formatMoneyAmount(n) {
+            const x = parseFloat(n) || 0;
+            return x.toLocaleString(numberLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function formatMoney(n, curr) {
+            return formatMoneyAmount(n) + ' ' + currencyLabel(curr);
+        }
+        function formatMoneyEn(n) {
+            return formatMoneyAmount(n);
+        }
+        function summaryBranchLabel(b) {
+            if (!b || b.branch == null || b.branch === '') return '';
+            if (typeof b.branch === 'string') return b.branch;
+            return b.branch.name || '';
+        }
+        function summaryEmptyHtml(messageKey, fallback, ctaTab, ctaKey) {
+            var msg = escapeHtml(t(messageKey) || fallback);
+            var cta = '';
+            if (ctaTab && ctaKey) {
+                cta = '<button type="button" class="btn-secondary btn-sm" onclick="switchServicesTab(\'' + ctaTab + '\')">' + escapeHtml(t(ctaKey)) + '</button>';
+            }
+            return '<div class="empty exchange-summary-empty"><p>' + msg + '</p>' + cta + '</div>';
+        }
+        let _servicesSummarySeq = 0;
         async function loadServicesSummary() {
-            const [sumRes, cpRes] = await Promise.all([
-                apiFetch('/api/exchange/summary'),
-                apiFetch('/api/exchange/currency-position')
-            ]);
-            if (sumRes.needLogin || !sumRes.ok) return;
-            const d = sumRes.data || {};
+            const seq = ++_servicesSummarySeq;
+            const cards = document.querySelectorAll('.exchange-summary-card');
+            cards.forEach(function(c) { c.classList.add('is-loading'); });
             const totalCashEl = document.getElementById('summaryTotalCash');
             const totalBankEl = document.getElementById('summaryTotalBank');
             const totalEl = document.getElementById('summaryTotal');
-            if (totalCashEl) totalCashEl.textContent = formatMoney(d.totalCash, 'IRR');
-            if (totalBankEl) totalBankEl.textContent = formatMoney(d.totalBank, 'IRR');
-            if (totalEl) totalEl.textContent = formatMoney(d.total, 'IRR');
+            if (totalCashEl) totalCashEl.textContent = '…';
+            if (totalBankEl) totalBankEl.textContent = '…';
+            if (totalEl) totalEl.textContent = '…';
+
+            // Single endpoint: currency-position already includes cash/bank rows + totals
+            const cpRes = await apiFetch('/api/exchange/currency-position');
+            if (seq !== _servicesSummarySeq) return;
+            cards.forEach(function(c) { c.classList.remove('is-loading'); });
+            if (cpRes.needLogin || !cpRes.ok) {
+                if (totalCashEl) totalCashEl.textContent = '—';
+                if (totalBankEl) totalBankEl.textContent = '—';
+                if (totalEl) totalEl.textContent = '—';
+                return;
+            }
+            const cp = cpRes.data || {};
+            const cashBoxes = cp.cashBoxes || [];
+            const bankAccounts = cp.bankAccounts || [];
+            const totalCash = cp.totalCash != null ? cp.totalCash : cashBoxes.reduce(function(s, b) { return s + (parseFloat(b.balance) || 0); }, 0);
+            const totalBank = cp.totalBank != null ? cp.totalBank : bankAccounts.reduce(function(s, b) { return s + (parseFloat(b.balance) || 0); }, 0);
+            const total = cp.total != null ? cp.total : (totalCash + totalBank);
+
+            if (totalCashEl) totalCashEl.textContent = formatMoney(totalCash, 'IRR');
+            if (totalBankEl) totalBankEl.textContent = formatMoney(totalBank, 'IRR');
+            if (totalEl) totalEl.textContent = formatMoney(total, 'IRR');
+
             const cb = document.getElementById('summaryCashBoxes');
             const ba = document.getElementById('summaryBankAccounts');
-            if (cb) cb.innerHTML = (d.cashBoxes || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده' : 'No cash boxes') + '</div>';
-            if (ba) ba.innerHTML = (d.bankAccounts || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'حساب بانکی تعریف نشده' : 'No bank accounts') + '</div>';
-
-            if (cpRes.ok && cpRes.data) {
-                const cp = cpRes.data;
-                const cpEl = document.getElementById('summaryCurrencyPosition');
-                if (cpEl) {
-                    const posEntries = Object.entries(cp.currencyPosition || {});
-                    cpEl.innerHTML = posEntries.length ? posEntries.map(function(e) {
-                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance">' + formatMoneyEn(e[1].total) + '</span></div>';
-                    }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</div>';
-                }
-                const obEl = document.getElementById('summaryOutstandingBalance');
-                if (obEl) {
-                    const obs = cp.outstandingBalance || [];
-                    const totalOB = obs.reduce(function(s, o) { return s + o.balance; }, 0);
-                    obEl.innerHTML = obs.length ? obs.map(function(o) {
-                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(o.account) + ' <small style="color:var(--text-muted)">' + escapeHtml(o.currency) + '</small></span><span class="balance">' + formatMoneyEn(o.balance) + '</span></div>';
-                    }).join('') + '<div class="exchange-summary-item" style="border-color:var(--accent);"><span class="name" style="font-weight:700;">' + (LANG === 'fa' ? 'مجموع' : 'Total') + '</span><span class="balance" style="font-weight:700;">' + formatMoneyEn(totalOB) + '</span></div>' : '<div class="empty">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</div>';
-                }
-                const piEl = document.getElementById('summaryPendingInward');
-                if (piEl) {
-                    const piEntries = Object.entries(cp.pendingInward || {});
-                    piEl.innerHTML = piEntries.length ? piEntries.map(function(e) {
-                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--accent);">' + formatMoneyEn(e[1]) + '</span></div>';
-                    }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'دریافتی در انتظار نیست' : 'No pending inward') + '</div>';
-                }
-                const poEl = document.getElementById('summaryPendingOutward');
-                if (poEl) {
-                    const poEntries = Object.entries(cp.pendingOutward || {});
-                    poEl.innerHTML = poEntries.length ? poEntries.map(function(e) {
-                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--danger);">' + formatMoneyEn(e[1]) + '</span></div>';
-                    }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'پرداختی در انتظار نیست' : 'No pending outward') + '</div>';
-                }
-                renderCommitmentTable(cp);
-                renderBankPositionTable(cp);
+            if (cb) {
+                cb.innerHTML = cashBoxes.length ? cashBoxes.map(function(b) {
+                    const br = summaryBranchLabel(b);
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (br ? ' (' + escapeHtml(br) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>';
+                }).join('') : summaryEmptyHtml('services_no_cashboxes', 'No cash boxes', 'cashboxes', 'cashbox_add');
             }
+            if (ba) {
+                ba.innerHTML = bankAccounts.length ? bankAccounts.map(function(b) {
+                    const br = summaryBranchLabel(b);
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (br ? ' (' + escapeHtml(br) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>';
+                }).join('') : summaryEmptyHtml('services_no_bankaccounts', 'No bank accounts', 'bankaccounts', 'bankaccount_add');
+            }
+
+            const cpEl = document.getElementById('summaryCurrencyPosition');
+            if (cpEl) {
+                const posEntries = Object.entries(cp.currencyPosition || {});
+                cpEl.innerHTML = posEntries.length ? posEntries.map(function(e) {
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance">' + formatMoney(e[1].total, e[0]) + '</span></div>';
+                }).join('') : '<div class="empty">' + escapeHtml(t('no_data') || 'No data') + '</div>';
+            }
+            const obEl = document.getElementById('summaryOutstandingBalance');
+            if (obEl) {
+                const obs = cp.outstandingBalance || [];
+                const totalOB = obs.reduce(function(s, o) { return s + o.balance; }, 0);
+                obEl.innerHTML = obs.length ? obs.map(function(o) {
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(o.account) + ' <small style="color:var(--text-muted)">' + escapeHtml(o.currency) + '</small></span><span class="balance">' + formatMoney(o.balance, o.currency) + '</span></div>';
+                }).join('') + '<div class="exchange-summary-item exchange-summary-item--total"><span class="name">' + escapeHtml(t('col_total') || 'Total') + '</span><span class="balance">' + formatMoneyAmount(totalOB) + '</span></div>' : '<div class="empty">' + escapeHtml(t('no_data') || 'No data') + '</div>';
+            }
+            const piEl = document.getElementById('summaryPendingInward');
+            if (piEl) {
+                const piEntries = Object.entries(cp.pendingInward || {});
+                piEl.innerHTML = piEntries.length ? piEntries.map(function(e) {
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--accent);">' + formatMoney(e[1], e[0]) + '</span></div>';
+                }).join('') : '<div class="empty">' + escapeHtml(t('services_no_pending_in') || 'No pending inward') + '</div>';
+            }
+            const poEl = document.getElementById('summaryPendingOutward');
+            if (poEl) {
+                const poEntries = Object.entries(cp.pendingOutward || {});
+                poEl.innerHTML = poEntries.length ? poEntries.map(function(e) {
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--danger);">' + formatMoney(e[1], e[0]) + '</span></div>';
+                }).join('') : '<div class="empty">' + escapeHtml(t('services_no_pending_out') || 'No pending outward') + '</div>';
+            }
+            renderCommitmentTable(cp);
+            renderBankPositionTable(cp);
         }
         async function loadCashBoxes() {
             const list = document.getElementById('cashBoxList');
@@ -1065,10 +1139,13 @@
             const res = await apiFetch('/api/exchange/cash-boxes');
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = res.data || [];
-            if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده. افزودن صندوق کنید.' : 'No cash boxes. Add one.') + '</div>'; return; }
+            if (data.length === 0) {
+                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_cashboxes') || 'No cash boxes') + '</p><button type="button" class="btn-primary btn-sm" onclick="openCashBoxModal()">' + escapeHtml(t('cashbox_add')) + '</button></div>';
+                return;
+            }
             list.innerHTML = data.map(function(b) {
-                const badge = b.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.branch ? escapeHtml(b.branch.name) : '') + ' · ' + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openCashBoxModal(\'' + b.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteCashBox(\'' + b.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+                const badge = b.isActive ? '<span class="badge active">' + escapeHtml(t('active') || 'Active') + '</span>' : '<span class="badge inactive">' + escapeHtml(t('inactive') || 'Inactive') + '</span>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.branch ? escapeHtml(b.branch.name) : '') + ' · ' + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openCashBoxModal(\'' + b.id + '\')">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteCashBox(\'' + b.id + '\')">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function loadBankAccounts() {
@@ -1078,10 +1155,13 @@
             const res = await apiFetch('/api/exchange/bank-accounts');
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = res.data || [];
-            if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'حساب بانکی تعریف نشده. افزودن حساب کنید.' : 'No bank accounts. Add one.') + '</div>'; return; }
+            if (data.length === 0) {
+                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_bankaccounts') || 'No bank accounts') + '</p><button type="button" class="btn-primary btn-sm" onclick="openBankAccountModal()">' + escapeHtml(t('bankaccount_add')) + '</button></div>';
+                return;
+            }
             list.innerHTML = data.map(function(b) {
-                const badge = b.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.bankName ? escapeHtml(b.bankName) + ' · ' : '') + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openBankAccountModal(\'' + b.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteBankAccount(\'' + b.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+                const badge = b.isActive ? '<span class="badge active">' + escapeHtml(t('active') || 'Active') + '</span>' : '<span class="badge inactive">' + escapeHtml(t('inactive') || 'Inactive') + '</span>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.bankName ? escapeHtml(b.bankName) + ' · ' : '') + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openBankAccountModal(\'' + b.id + '\')">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteBankAccount(\'' + b.id + '\')">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function loadTransactions() {
@@ -1626,7 +1706,7 @@
             if (!body || !cpData) return;
             const cp = cpData.currencyPosition || {};
             const entries = Object.entries(cp);
-            if (entries.length === 0) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px;">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</td></tr>'; return; }
+            if (entries.length === 0) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px;">' + escapeHtml(t('no_data') || 'No data') + '</td></tr>'; return; }
             body.innerHTML = entries.map(function(e) {
                 const curr = e[0], d = e[1];
                 const diff = d.total;
@@ -1641,7 +1721,7 @@
             const body = document.getElementById('bankPositionBody');
             if (!body || !cpData) return;
             const banks = cpData.bankAccounts || [];
-            if (banks.length === 0) { body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px;">' + (LANG === 'fa' ? 'حساب بانکی ندارید' : 'No bank accounts') + '</td></tr>'; return; }
+            if (banks.length === 0) { body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px;">' + escapeHtml(t('services_no_bankaccounts') || 'No bank accounts') + '</td></tr>'; return; }
             body.innerHTML = banks.map(function(b) {
                 return '<tr><td>' + escapeHtml(b.name) + (b.bankName ? ' <small style="color:var(--text-muted);">(' + escapeHtml(b.bankName) + ')</small>' : '') + '</td>' +
                     '<td>' + escapeHtml(b.currency) + '</td>' +
@@ -1920,7 +2000,7 @@
                         const onConv = active && active.getAttribute('data-page') === 'conversations';
                         const convId = data.conversationId || (data.conversation && data.conversation.id);
                         const viewingConv = onConv && currentConvId === convId;
-                        if (onConv) { debouncedLoadConversations(400); updateNavBadges(); }
+                        if (onConv) { debouncedLoadConversations(800); updateNavBadges(); }
                         if (viewingConv && convId) loadMessages(convId);
                         else if (data.customer && !viewingConv) toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + (data.customer.name || data.customer.phone || ''), false);
                         if (document.hidden && data.customer && typeof showDesktopNotification === 'function') showDesktopNotification(data);
@@ -2390,7 +2470,7 @@
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
             }
             if (r.status === 429) {
-                return { ok: false, needLogin: false, error: (data && data.error) || (LANG === 'fa' ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.' : 'Too many requests. Please wait a moment.') };
+                return { ok: false, needLogin: false, status: 429, data: data, error: (data && data.error) || (LANG === 'fa' ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.' : 'Too many requests. Please wait a moment.') };
             }
             if (!r.ok && data && (data.error || data.message)) {
                 return { ok: false, needLogin: r.status === 401, status: r.status, data: data, error: data.error || data.message };
@@ -2881,10 +2961,30 @@
             if (cardsTitleEl) cardsTitleEl.style.display = 'none';
         }
         function dashFormatNum(v) {
-            var num = (v != null && typeof v === 'number') ? v : 0;
+            var num = (v != null && typeof v === 'number') ? v : parseFloat(v);
+            if (isNaN(num)) num = 0;
+            var lang = (typeof window !== 'undefined' && window.LANG) || (typeof LANG !== 'undefined' ? LANG : 'fa');
+            if (lang !== 'fa') {
+                return Math.round(num) === num ? Math.round(num).toLocaleString('en-US') : Number(num).toLocaleString('en-US', { maximumFractionDigits: 1 });
+            }
             if (typeof formatPrice === 'function') return formatPrice(num);
-            return String(num);
+            return String(num).replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
         }
+        function refreshDashboardUiAfterLang() {
+            try {
+                if (typeof loadDashboard === 'function') loadDashboard();
+                if (typeof fetchRates === 'function') fetchRates();
+                if (typeof loadCustomers === 'function') {
+                    var custPage = document.getElementById('pageCustomers');
+                    if (custPage && custPage.classList.contains('show')) loadCustomers();
+                }
+                if (typeof loadServicesPage === 'function') {
+                    var svcPage = document.getElementById('pageServices');
+                    if (svcPage && svcPage.classList.contains('show')) loadServicesPage();
+                }
+            } catch (_e) { /* ignore */ }
+        }
+        window.refreshDashboardUiAfterLang = refreshDashboardUiAfterLang;
         function dashboardSummarySkeleton(count) {
             var n = count || 4;
             var html = '';
@@ -3048,8 +3148,8 @@
                     summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.staffOnline)), label: t('dashboard_stat_online') });
                     summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.loginsToday)), label: t('dashboard_stat_logins_today') });
                 }
-                if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min'), label: (LANG === 'fa' ? 'میانگین زمان پاسخ' : 'Avg response time'), convTab: 'all' });
-                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgRating + '/5', label: (LANG === 'fa' ? 'نرخ رضایت' : 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + stats.ratedConversationsCount + ')' : ''), convTab: 'all' });
+                if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgResponseTimeMinutes) + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min'), label: (LANG === 'fa' ? 'میانگین زمان پاسخ' : 'Avg response time'), convTab: 'all' });
+                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgRating) + '/5', label: (LANG === 'fa' ? 'نرخ رضایت' : 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + dashFormatNum(stats.ratedConversationsCount) + ')' : ''), convTab: 'all' });
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: dashFormatNum(n(stats.unreadAnnouncements)), label: t('dashboard_stat_announcements'), warn: true });
                 summaryEl.innerHTML = summaryItems.map(function(item) { return renderDashboardStatBox(item, false); }).join('') || '<div class="dashboard-summary-empty text-muted">' + (LANG === 'fa' ? 'آمار دیگری برای نمایش نیست.' : 'No additional stats.') + '</div>';
             }
@@ -4780,12 +4880,26 @@
             } catch (e) { /* ignore */ }
         };
 
+        let _loadConversationsInFlight = false;
+        let _convListRateLimitedUntil = 0;
         async function loadConversations(appendMode) {
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
             ensureMobileWaSender(false);
-            if (!appendMode) setLoading('convList', 4);
             if (!list) return;
+            if (!appendMode && _loadConversationsInFlight) return;
+            if (Date.now() < _convListRateLimitedUntil) {
+                if (!appendMode) {
+                    list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + escapeHtml(t('loading_err') || '') + ' ' + escapeHtml(LANG === 'fa' ? 'تعداد درخواست‌ها زیاد است. کمی صبر کنید.' : 'Too many requests. Please wait.') + '<br><button type="button" class="btn-primary" id="convListRetryBtn" style="margin-top:12px;">' + escapeHtml(LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>';
+                    setTimeout(function() {
+                        var btn = document.getElementById('convListRetryBtn');
+                        if (btn) btn.onclick = function() { _convListRateLimitedUntil = 0; loadConversations(); };
+                    }, 0);
+                }
+                return;
+            }
+            if (!appendMode) setLoading('convList', 4);
+            _loadConversationsInFlight = true;
             let q = '?limit=' + convPageSize + '&page=' + convCurrentPage;
             const statusEl = document.getElementById('convFilterStatus');
             const priorityEl = document.getElementById('convFilterPriority');
@@ -4806,9 +4920,29 @@
             if (deptEl && deptEl.value) q += '&departmentId=' + encodeURIComponent(deptEl.value);
             if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open' || convQuickTab === 'archived' || convQuickTab === 'groups') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
-            const res = await apiFetch('/api/conversations' + q);
+            let res;
+            try {
+                res = await apiFetch('/api/conversations' + q);
+            } finally {
+                _loadConversationsInFlight = false;
+            }
             if (res.needLogin) return;
-            if (!res.ok) { const ce = document.getElementById('convListCount'); if (ce) ce.textContent = ''; list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + escapeHtml(res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
+            if (!res.ok) {
+                const ce = document.getElementById('convListCount');
+                if (ce) ce.textContent = '';
+                const is429 = res.status === 429 || (res.error && String(res.error).indexOf('تعداد درخواست') !== -1) || (res.data && res.data.error && String(res.data.error).indexOf('تعداد درخواست') !== -1);
+                if (is429) _convListRateLimitedUntil = Date.now() + 45000;
+                const errText = escapeHtml(res.data && res.data.error ? res.data.error : res.error || '');
+                list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + errText + (is429 ? '<br><button type="button" class="btn-primary" id="convListRetryBtn" style="margin-top:12px;">' + escapeHtml(LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button>' : '') + '</div>';
+                if (is429) {
+                    setTimeout(function() {
+                        var btn = document.getElementById('convListRetryBtn');
+                        if (btn) btn.onclick = function() { _convListRateLimitedUntil = 0; loadConversations(); };
+                    }, 0);
+                }
+                return;
+            }
+            _convListRateLimitedUntil = 0;
             const data = res.data;
             const totalCount = data.total != null ? data.total : (data.data || []).length;
             // آمار از total واقعی سرور گرفته می‌شه نه فقط صفحه جاری
@@ -4838,8 +4972,10 @@
             const newItems = data.data.map(function(c) {
                 const cust = c.customer || {};
                 const isGroup = !!(c.metadata && c.metadata.isGroup);
-                const name = (isGroup && (c.metadata && (c.metadata.groupName || c.metadata.name))) || cust.name || cust.phone || (isGroup ? (LANG === 'fa' ? 'گروه' : 'Group') : t('customer'));
-                const phone = cust.phone || '';
+                const canSeePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
+                const rawPhone = cust.phone || '';
+                const phone = canSeePhone ? rawPhone : '';
+                const name = (isGroup && (c.metadata && (c.metadata.groupName || c.metadata.name))) || cust.name || (canSeePhone ? rawPhone : '') || (isGroup ? (LANG === 'fa' ? 'گروه' : 'Group') : t('customer'));
                 const metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
                 const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
@@ -4929,12 +5065,19 @@
         }
         if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
         let currentConvIsGroup = false;
+        function canViewCustomerPhoneUi() {
+            if (!currentUser) return false;
+            if (currentUser.canViewCustomerPhone) return true;
+            if (currentUser.role === 'owner') return true;
+            return !!(currentUser.permissions && currentUser.permissions.view_customer_phone);
+        }
         function openChat(id, name, phone, profilePic, isGroup, customerId) {
             currentConvId = id;
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
+            var visiblePhone = canViewCustomerPhoneUi() ? String(phone || '').trim() : '';
             openChatCustomerPreview = !currentConvIsGroup
-                ? { id: String(customerId || '').trim(), name: String(name || '').trim(), phone: String(phone || '').trim(), profilePic: String(profilePic || '').trim() }
+                ? { id: String(customerId || '').trim(), name: String(name || '').trim(), phone: visiblePhone, profilePic: String(profilePic || '').trim() }
                 : null;
             cancelReply();
             if (chatTemplatesCache.length === 0) { apiFetch('/api/message-templates').then(function(res) { if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data; }).catch(function(){}); }
@@ -4946,7 +5089,7 @@
             const supPanel = document.getElementById('convSupervisionPanel');
             const supStats = document.getElementById('convSupervisionStats');
             if (headerEl) {
-                headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
+                headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || visiblePhone || t('customer'));
             }
             var summaryElEarly = document.getElementById('chatHeaderSummary');
             if (summaryElEarly) {
@@ -4958,8 +5101,8 @@
             if (headerSubEl) {
                 if (currentConvIsGroup) {
                     headerSubEl.textContent = (LANG === 'fa' ? 'گروه · واتساپ' : LANG === 'tr' ? 'Grup · WhatsApp' : 'Group · WhatsApp');
-                } else if (phone) {
-                    headerSubEl.textContent = phone;
+                } else if (visiblePhone) {
+                    headerSubEl.textContent = visiblePhone;
                 } else {
                     headerSubEl.textContent = typeof t === 'function' ? (t('wa_subtitle') || 'WhatsApp') : 'WhatsApp';
                 }
@@ -4968,7 +5111,7 @@
                 const rawOpenPic = (profilePic || '').trim();
                 const custForAv = customerId ? { id: customerId, profilePic: rawOpenPic } : { profilePic: rawOpenPic };
                 let pic = !currentConvIsGroup ? customerAvatarDisplaySrc(custForAv) : '';
-                const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
+                const initial = (name && name[0]) ? name[0].toUpperCase() : (visiblePhone && visiblePhone[0]) ? visiblePhone[0] : '?';
                 if (pic && !currentConvIsGroup && customerAvatarShowsImage(custForAv)) {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">';
                 } else {
@@ -4983,7 +5126,8 @@
             const backBtn = document.querySelector('.chat-back-btn');
             if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
             const pm = document.getElementById('headerMobileTitle');
-            if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = name || phone || t('customer');
+            if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = name || visiblePhone || t('customer');
+            phone = visiblePhone;
             if (barEl) {
                 barEl.style.display = 'none';
                 barEl.setAttribute('hidden', '');
@@ -5006,12 +5150,16 @@
                 const d = res.data;
                 if (!currentConvIsGroup && d.customer) {
                     var ck = d.customer;
+                    var detailPhone = canViewCustomerPhoneUi() ? String((ck.phone || '') || '').trim() : '';
                     openChatCustomerPreview = {
                         id: String((ck.id || customerId || '') || '').trim(),
                         name: String((ck.name || '') || '').trim(),
-                        phone: String((ck.phone || '') || '').trim(),
+                        phone: detailPhone,
                         profilePic: String((ck.profilePic || '') || '').trim()
                     };
+                    if (headerSubEl && !currentConvIsGroup) {
+                        headerSubEl.textContent = detailPhone || (typeof t === 'function' ? (t('wa_subtitle') || 'WhatsApp') : 'WhatsApp');
+                    }
                 }
                 if (avatarEl && d.customer && !currentConvIsGroup) {
                     const picDisp = customerAvatarDisplaySrc(d.customer);
@@ -5184,12 +5332,13 @@
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
             const currentCustId = currentConvDetail && currentConvDetail.customerId;
             list.innerHTML = data.data.map(function(c) {
-                const name = c.name || c.phone || t('customer');
+                const seePhone = canViewCustomerPhoneUi();
+                const name = c.name || (seePhone ? c.phone : '') || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const picSrcNc = customerAvatarDisplaySrc(c);
                 const avatarHtml = customerAvatarShowsImage(c) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 const sameHint = (currentCustId && c.id === currentCustId) ? ' <span class="meta">(' + escapeHtml(LANG === 'fa' ? 'همین چت' : 'This chat') + ')</span>' : '';
-                return '<div class="new-conv-customer-item forward-customer-item" role="button" tabindex="0" data-forward-customer-id="' + escapeAttr(String(c.id)) + '" data-forward-customer-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + sameHint + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
+                return '<div class="new-conv-customer-item forward-customer-item" role="button" tabindex="0" data-forward-customer-id="' + escapeAttr(String(c.id)) + '" data-forward-customer-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + sameHint + '</span><span class="meta">' + escapeHtml(seePhone ? (c.phone || '') : '') + '</span></div>';
             }).join('');
         }
         async function forwardMessageToCustomer(customerId, customerName) {
@@ -5228,12 +5377,13 @@
             const data = res.data;
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
             list.innerHTML = data.data.map(function(c) {
-                const name = c.name || c.phone || t('customer');
+                const seePhone = canViewCustomerPhoneUi();
+                const name = c.name || (seePhone ? c.phone : '') || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 const picSrcNc = customerAvatarDisplaySrc(c);
                 const avatarHtml = customerAvatarShowsImage(c) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
-                return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
+                return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(seePhone ? (c.phone || '') : '') + '</span></div>';
             }).join('');
         }
         async function startNewConversation(customerId, name) {
@@ -6936,12 +7086,13 @@
             window._currentCustomerListData = sorted;
             const bulkIds = window._bulkSelectedIds || [];
             list.innerHTML = sorted.map(function(c) {
-                const name = c.name || c.phone || t('customer');
-                const initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+                const seePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
+                const name = c.name || (seePhone ? c.phone : '') || t('customer');
+                const initial = (name && name[0]) ? name[0].toUpperCase() : (seePhone && c.phone && c.phone[0]) ? c.phone[0] : '?';
                 const rawPicCust = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 const picSrcCust = customerAvatarDisplaySrc(c);
                 const hasCustPic = customerAvatarShowsImage(c) && picSrcCust;
-                const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
+                const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (seePhone ? (c.phone || '') : '')) + '"');
                 const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
                 const avatarInner = hasCustPic
                     ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(picSrcCust) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">'
@@ -6952,9 +7103,10 @@
                 const lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
                 const loc = c.lastOpenConv;
                 const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
-                const safeName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                const safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
-                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main">' + avatarHtml + '<div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" data-i18n="btn_send">ارسال</button></div>';
+                const phoneShown = seePhone ? (c.phone || '') : '';
+                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(name) + '" data-customer-phone="' + escapeHtml(phoneShown) + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main">' + avatarHtml + '<div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(name) + '</span><div class="customer-card-meta">' + escapeHtml(phoneShown) + (c.email ? (phoneShown ? ' · ' : '') + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(name) + '" data-customer-phone="' + escapeHtml(phoneShown) + '">' + escapeHtml(t('btn_send') || 'Send') + '</button></div>';
             }).join('');
             updateBulkSelectedCount();
         }
@@ -7192,8 +7344,14 @@
             const avatarClickable = customerAvatarShowsImage(c);
             const detailAvatarHtml = avatarClickable ? '<span class="customer-detail-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-detail-avatar-img" src="' + escapeHtml(detailPicSrc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : initial;
             const avatarWrapperClass = 'customer-avatar' + (avatarClickable ? ' customer-avatar-clickable' : '');
-            if (cardEl) cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailPicSrc) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(c.name || c.phone) + '</h3><div class="customer-meta">' + (LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—') + '</div>' + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
-            const res = await apiFetch('/api/customers/' + custId + '/conversations');
+            if (cardEl) {
+                const seePhoneDetail = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
+                const detailName = c.name || (seePhoneDetail ? c.phone : '') || t('customer');
+                const detailPhoneLine = seePhoneDetail
+                    ? ((LANG === 'fa' ? 'تلفن: ' : 'Phone: ') + escapeHtml(c.phone || '—'))
+                    : '';
+                cardEl.innerHTML = '<div class="' + avatarWrapperClass + '"' + (avatarClickable ? ' data-profile-pic="' + escapeHtml(detailPicSrc) + '" role="button" tabindex="0" title="' + (LANG === 'fa' ? 'کلیک برای بزرگنمایی' : 'Click to enlarge') + '"' : '') + '>' + detailAvatarHtml + '</div><div class="customer-info"><h3>' + escapeHtml(detailName) + '</h3>' + (detailPhoneLine ? '<div class="customer-meta">' + detailPhoneLine + '</div>' : '') + (c.email ? '<div class="customer-meta">' + (LANG === 'fa' ? 'ایمیل: ' : 'Email: ') + escapeHtml(c.email) + '</div>' : '') + '<div class="customer-meta">' + (LANG === 'fa' ? 'وضعیت: ' : 'Status: ') + '<span class="badge ' + (c.status || 'active') + '">' + statusLabel + '</span> · ' + (LANG === 'fa' ? 'اولین تماس: ' : 'First: ') + firstContact + ' · ' + (LANG === 'fa' ? 'آخرین تماس: ' : 'Last: ') + lastContact + '</div><div class="customer-meta">' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + ' · ' + (c.totalMessages || 0) + ' ' + (LANG === 'fa' ? 'پیام' : 'msgs') + '</div>' + (c.notes ? '<div class="customer-notes">' + escapeHtml(c.notes) + '</div>' : '') + '</div>';
+            }            const res = await apiFetch('/api/customers/' + custId + '/conversations');
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('err_generic') + ': ' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data;
@@ -7560,6 +7718,16 @@
             document.getElementById('customerModalProfilePic').value = '';
             customerModalSelectedTags = [];
             updateCustomerModalAvatarPreview('');
+            const phoneInput = document.getElementById('customerModalPhone');
+            const seePhoneModal = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
+            if (phoneInput) {
+                // برای مشتری جدید همیشه تلفن لازم است؛ برای ویرایش فقط با دسترسی نمایش
+                const allowPhone = !customerId || seePhoneModal;
+                phoneInput.disabled = !allowPhone;
+                phoneInput.style.display = allowPhone ? '' : 'none';
+                const phoneLabelEl = document.querySelector('label[for="customerModalPhone"]');
+                if (phoneLabelEl) phoneLabelEl.style.display = allowPhone ? '' : 'none';
+            }
             // پاک کردن فیلدهای جدید
             const _newFields = ['customerModalBirthDate','customerModalNationalId','customerModalNationality','customerModalGender','customerModalOccupation','customerModalCompanyName','customerModalAddress','customerModalCity','customerModalCountry','customerModalPostalCode','customerModalInstagram','customerModalTelegram','customerModalWebsite'];
             _newFields.forEach(function(fid) { const el = document.getElementById(fid); if (el) el.value = ''; });
@@ -7569,7 +7737,7 @@
                     if (res.ok && res.data) {
                         const c = res.data;
                         document.getElementById('customerModalName').value = c.name || '';
-                        document.getElementById('customerModalPhone').value = c.phone || '';
+                        if (seePhoneModal) document.getElementById('customerModalPhone').value = c.phone || '';
                         document.getElementById('customerModalEmail').value = c.email || '';
                         document.getElementById('customerModalStatus').value = c.status || 'active';
                         document.getElementById('customerModalNotes').value = c.notes || '';
@@ -7777,8 +7945,10 @@
             };
             if (!name) { toast(LANG === 'fa' ? 'نام الزامی است' : 'Name required', true); return; }
             if (!id && !phone) { toast(LANG === 'fa' ? 'تلفن برای مشتری جدید الزامی است' : 'Phone required', true); return; }
+            const seePhoneSave = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
             if (id) {
-                const body = Object.assign({ name: name || undefined, phone: phone || undefined, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }, extraFields);
+                const body = Object.assign({ name: name || undefined, email: email || undefined, status: status, notes: notes || undefined, customFields: customFields, profilePic: profilePic || undefined }, extraFields);
+                if (seePhoneSave) body.phone = phone || undefined;
                 var res = await apiFetch('/api/customers/' + id, { method: 'PUT', body: JSON.stringify(body) });
                 if (res.needLogin) return;
                 if (res.ok) {
@@ -9935,9 +10105,9 @@
             filterAndRenderUsers();
         }
         let currentEditUserId = null;
-        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets' };
+        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets', view_customer_phone: 'section_view_customer_phone' };
         const permGroups = [
-            { key: 'communications', title: 'user_perms_group_communications', keys: ['conversations', 'customers', 'tickets', 'internal_chat', 'whatsapp', 'announcements'] },
+            { key: 'communications', title: 'user_perms_group_communications', keys: ['conversations', 'customers', 'tickets', 'internal_chat', 'whatsapp', 'announcements', 'view_customer_phone'] },
             { key: 'organization', title: 'user_perms_group_organization', keys: ['dashboard', 'departments', 'users', 'branches', 'tasks', 'processes', 'staff_activity', 'supervision'] },
             { key: 'settings', title: 'user_perms_group_settings', keys: ['rates', 'services', 'panel_settings'] },
             { key: 'special', title: 'user_perms_group_special', keys: ['manage_users', 'manage_tickets'] }
@@ -12793,6 +12963,7 @@
             window.closeSidebarMobile = closeSidebarMobile;
             window.toggleSidebarMobile = toggleSidebarMobile;
             window.toggleSidebarDesktop = toggleSidebarDesktop;
+            window.canViewCustomerPhoneUi = canViewCustomerPhoneUi;
             window.doHeaderSearch = doHeaderSearch;
             let headerSearchModalEscHandler = null;
             window.openHeaderSearchPopup = function() {

@@ -1822,6 +1822,7 @@
             window.closeSidebarMobile = closeSidebarMobile;
             window.toggleSidebarMobile = toggleSidebarMobile;
             window.toggleSidebarDesktop = toggleSidebarDesktop;
+            window.canViewCustomerPhoneUi = canViewCustomerPhoneUi;
             window.doHeaderSearch = doHeaderSearch;
             let headerSearchModalEscHandler = null;
             window.openHeaderSearchPopup = function() {

@@ -17,6 +17,7 @@ const { selectBestDepartment, selectBestUser } = require('./intelligentDepartmen
 const { persistRemoteAvatarIfNeeded, digitsOnlyChatPhone, maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
 const { notifySystemEvent } = require('./systemEventNotifier');
 const { resolveMobileWhatsappUser, isCrmPanelOutboundMessage, loadMobileWhatsappUser, applyMobileWhatsappSenderToMessages, parseMsgMetadata } = require('../lib/resolveMobileWhatsappUser');
+const { publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
 
 const uploadsDir = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(uploadsDir)) try { fs.mkdirSync(uploadsDir, { recursive: true }); } catch (_) {}
@@ -817,7 +818,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
                             customerId: customer.id,
                             message: autoMsg,
                             isHiddenFromStaff: !!conversation.isHiddenFromStaff,
-                            customer: { id: customer.id, name: customer.name, phone: customer.phone, profilePic: customer.profilePic }
+                            customer: publicCustomerSocketPayload(customer)
                         });
                     }
                     logger.info(`🤖 AI reply sent to ${customer.phone}`);
@@ -845,7 +846,7 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             customerId: customer.id,
             message: newMessage,
             isHiddenFromStaff: !!conversation.isHiddenFromStaff,
-            customer: { id: customer.id, name: customer.name, phone: customer.phone, profilePic: customer.profilePic }
+            customer: publicCustomerSocketPayload(customer)
         });
 
         if (conversation.assignedTo) {

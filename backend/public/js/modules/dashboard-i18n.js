@@ -107,6 +107,7 @@ window.applyTranslations = function () {
     });
     if (typeof initSidebarCollapsedState === 'function') initSidebarCollapsedState();
     if (typeof window.refreshConversationUiAfterLang === 'function') window.refreshConversationUiAfterLang();
+    if (typeof window.refreshDashboardUiAfterLang === 'function') window.refreshDashboardUiAfterLang();
 };
 
 window.SUPPORTED_LANGUAGES = isFxguardPublicHost() ? ['en', 'tr'] : window.SUPPORTED_LANGUAGES || ['fa', 'en', 'tr'];

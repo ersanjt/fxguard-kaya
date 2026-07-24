@@ -13,7 +13,7 @@ const emailService = require('../services/emailService');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
 const telegramBotService = require('../services/telegramBotService');
 const { sendAdminSecurityAlert } = require('../services/adminAlertService');
-const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
+const { getPermissions, canDeleteCustomer, canDeleteUser, canManageTickets, canViewCustomerPhone } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { setAuthCookie, clearAuthCookie } = require('../lib/authCookie');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
@@ -221,7 +221,8 @@ router.post('/login', async (req, res, _next) => {
                 totpEnabled: false,
                 canDeleteCustomer: canDeleteCustomer(user),
                 canDeleteUser: canDeleteUser(user),
-                canManageTickets: canManageTickets(user)
+                canManageTickets: canManageTickets(user),
+                canViewCustomerPhone: canViewCustomerPhone(user)
             }
         });
     } catch (err) {
@@ -396,7 +397,8 @@ router.post('/totp/verify-login', async (req, res, next) => {
                 totpEnabled: true,
                 canDeleteCustomer: canDeleteCustomer(user),
                 canDeleteUser: canDeleteUser(user),
-                canManageTickets: canManageTickets(user)
+                canManageTickets: canManageTickets(user),
+                canViewCustomerPhone: canViewCustomerPhone(user)
             }
         });
     } catch (err) {
@@ -424,6 +426,7 @@ router.get('/me', authMiddleware, async (req, res, next) => {
         u.canDeleteCustomer = canDeleteCustomer(user);
         u.canDeleteUser = canDeleteUser(user);
         u.canManageTickets = canManageTickets(user);
+        u.canViewCustomerPhone = canViewCustomerPhone(user);
         if (req.authToken) u.token = req.authToken;
         res.json(u);
     } catch (err) {

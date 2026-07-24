@@ -14,18 +14,30 @@
                         </div>
                     </div>
                     <div id="servicesSummaryPanel" class="services-panel show" role="tabpanel">
+                        <div class="exchange-summary-toolbar">
+                            <button type="button" class="btn-secondary btn-sm" onclick="loadServicesSummary()" data-i18n="btn_refresh">بروزرسانی</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="openCashBoxModal()" data-i18n="cashbox_add">افزودن صندوق</button>
+                            <button type="button" class="btn-secondary btn-sm" onclick="openBankAccountModal()" data-i18n="bankaccount_add">افزودن حساب بانکی</button>
+                            <button type="button" class="btn-primary btn-sm" onclick="openTransactionModal()" data-i18n="transaction_add">ثبت تراکنش</button>
+                        </div>
                         <div class="exchange-summary-cards">
-                            <div class="exchange-summary-card"><div class="label" data-i18n="total_cash">مجموع صندوق‌ها</div><div class="value" id="summaryTotalCash">۰</div></div>
-                            <div class="exchange-summary-card"><div class="label" data-i18n="total_bank">مجموع حساب‌های بانکی</div><div class="value" id="summaryTotalBank">۰</div></div>
-                            <div class="exchange-summary-card accent"><div class="label" data-i18n="total_balance">مجموع کل</div><div class="value" id="summaryTotal">۰</div></div>
+                            <div class="exchange-summary-card"><div class="label" data-i18n="total_cash">مجموع صندوق‌ها</div><div class="value" id="summaryTotalCash">0.00</div></div>
+                            <div class="exchange-summary-card"><div class="label" data-i18n="total_bank">مجموع حساب‌های بانکی</div><div class="value" id="summaryTotalBank">0.00</div></div>
+                            <div class="exchange-summary-card accent"><div class="label" data-i18n="total_balance">مجموع کل</div><div class="value" id="summaryTotal">0.00</div></div>
                         </div>
                         <div class="exchange-summary-grid">
                             <div class="exchange-summary-section">
-                                <h4 data-i18n="tab_cashboxes">صندوق‌ها</h4>
+                                <div class="exchange-summary-section-head">
+                                    <h4 data-i18n="tab_cashboxes">صندوق‌ها</h4>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="switchServicesTab('cashboxes')" data-i18n="cashbox_add">افزودن صندوق</button>
+                                </div>
                                 <div id="summaryCashBoxes" class="exchange-summary-list"></div>
                             </div>
                             <div class="exchange-summary-section">
-                                <h4 data-i18n="tab_bankaccounts">حساب‌های بانکی</h4>
+                                <div class="exchange-summary-section-head">
+                                    <h4 data-i18n="tab_bankaccounts">حساب‌های بانکی</h4>
+                                    <button type="button" class="btn-secondary btn-sm" onclick="switchServicesTab('bankaccounts')" data-i18n="bankaccount_add">افزودن حساب بانکی</button>
+                                </div>
                                 <div id="summaryBankAccounts" class="exchange-summary-list"></div>
                             </div>
                         </div>
@@ -50,7 +62,7 @@
                             </div>
                         </div>
                         <div class="commitment-summary-wrap" style="margin-top:24px;">
-                            <h4 data-i18n="commitment_summary">خلاصه تعهدات <button type="button" class="btn-icon-sm" onclick="loadServicesSummary()" title="بروزرسانی">&#8635;</button></h4>
+                            <h4 data-i18n="commitment_summary">خلاصه تعهدات <button type="button" class="btn-icon-sm" onclick="loadServicesSummary()" data-i18n-title="btn_refresh" title="بروزرسانی">&#8635;</button></h4>
                             <div class="commitment-table-wrap">
                                 <table class="commitment-table" id="commitmentTable">
                                     <thead>

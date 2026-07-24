@@ -26,6 +26,7 @@ const SECTION_KEYS = [
 
 const MANAGE_USERS_KEY = 'manage_users'; // owner، admin، manager یا دارنده این دسترسی می‌توانند کاربران و دپارتمان‌ها را ویرایش/مدیریت کنند
 const MANAGE_TICKETS_KEY = 'manage_tickets'; // حذف و آرشیو تیکت
+const VIEW_CUSTOMER_PHONE_KEY = 'view_customer_phone'; // نمایش شماره تلفن مخاطب در مکالمات/مشتریان
 
 /** ادمین‌های اصلی پنل — این ایمیل‌ها (از env) دسترسی کامل دارند. خالی بودن = هیچ‌کس ادمین اصلی نیست. با کاما جدا کنید. */
 const MAIN_ADMIN_EMAIL = (process.env.MAIN_ADMIN_EMAIL || '').trim();
@@ -42,31 +43,31 @@ const DEFAULT_BY_ROLE = {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: true,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, panel_settings: true,
-        [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true,
+        [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true,
     },
     admin: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: true, rates: true, services: true, processes: true, panel_settings: true,
-        [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true,
+        [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true,
     },
     manager: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: true, users: true, branches: true, supervision: false,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
-        [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true,
+        [MANAGE_USERS_KEY]: true, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: true,
     },
     supervisor: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: true, branches: false, supervision: false,
         staff_activity: true, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
-        [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: true,
+        [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: true, [VIEW_CUSTOMER_PHONE_KEY]: false,
     },
     agent: {
         dashboard: true, conversations: true, customers: true, tickets: true, tasks: true,
         departments: false, users: false, branches: false, supervision: false,
         staff_activity: false, profile: true, announcements: true, internal_chat: true, whatsapp: false, rates: false, services: true, processes: true, panel_settings: false,
-        [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: false,
+        [MANAGE_USERS_KEY]: false, [MANAGE_TICKETS_KEY]: false, [VIEW_CUSTOMER_PHONE_KEY]: false,
     },
 };
 
@@ -76,6 +77,7 @@ function getDefaults(role) {
     SECTION_KEYS.forEach(k => { out[k] = !!d[k]; });
     out[MANAGE_USERS_KEY] = !!d[MANAGE_USERS_KEY];
     out[MANAGE_TICKETS_KEY] = !!d[MANAGE_TICKETS_KEY];
+    out[VIEW_CUSTOMER_PHONE_KEY] = !!d[VIEW_CUSTOMER_PHONE_KEY];
     return out;
 }
 
@@ -99,6 +101,9 @@ function getPermissions(user) {
     }
     if (overrides[MANAGE_TICKETS_KEY] !== undefined) {
         resolved[MANAGE_TICKETS_KEY] = !!overrides[MANAGE_TICKETS_KEY];
+    }
+    if (overrides[VIEW_CUSTOMER_PHONE_KEY] !== undefined) {
+        resolved[VIEW_CUSTOMER_PHONE_KEY] = !!overrides[VIEW_CUSTOMER_PHONE_KEY];
     }
     return resolved;
 }
@@ -161,6 +166,15 @@ function canManageTickets(user) {
     return !!p[MANAGE_TICKETS_KEY];
 }
 
+/** آیا کاربر می‌تواند شماره تلفن مخاطب را ببیند؟ */
+function canViewCustomerPhone(user) {
+    if (!user) return false;
+    if (isMainAdmin(user)) return true;
+    if (user.role === 'owner') return true;
+    const p = getPermissions(user);
+    return !!p[VIEW_CUSTOMER_PHONE_KEY];
+}
+
 function getSectionKeys() {
     return [...SECTION_KEYS];
 }
@@ -174,6 +188,7 @@ module.exports = {
     canAccess,
     canManageUsers,
     canManageTickets,
+    canViewCustomerPhone,
     canDeleteCustomer,
     canDeleteUser,
     canManageConversations,
@@ -185,6 +200,7 @@ module.exports = {
     SECTION_KEYS,
     MANAGE_USERS_KEY,
     MANAGE_TICKETS_KEY,
+    VIEW_CUSTOMER_PHONE_KEY,
     MAIN_ADMIN_EMAIL,
     MAIN_ADMIN_EMAILS,
 };

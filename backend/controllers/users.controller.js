@@ -22,7 +22,7 @@ const {
     PasswordResetToken,
     sequelize,
 } = require('../models');
-const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser, canManageTickets } = require('../lib/permissions');
+const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser, canManageTickets, canViewCustomerPhone } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { isValidUUID } = require('../lib/validation');
 const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
@@ -85,6 +85,7 @@ function me(req, res) {
         canDeleteCustomer: canDeleteCustomer(u),
         canDeleteUser: canDeleteUser(u),
         canManageTickets: canManageTickets(u),
+        canViewCustomerPhone: canViewCustomerPhone(u),
         isProtectedAdmin: isMainAdmin(u),
     };
     res.json(out);

@@ -10,7 +10,7 @@
                                 </select>
                             </div>
                             <div class="customer-filters-actions">
-                                <button type="button" class="btn-secondary btn-sm customer-filters-reset" onclick="resetCustomerFilters && resetCustomerFilters()">پاک کردن</button>
+                                <button type="button" class="btn-secondary btn-sm customer-filters-reset" onclick="resetCustomerFilters && resetCustomerFilters()" data-i18n="reset_filter">پاک کردن</button>
                                 <button type="button" class="btn-primary customer-filters-apply" onclick="applyCustomerFilters(); document.getElementById('customerFilterToggle').click()" data-i18n="apply_filter">اعمال فیلتر</button>
                             </div>
                         </div>
@@ -18,9 +18,9 @@
                     </div>
                     <!-- هدر لیست: شمارنده + refresh — فقط desktop -->
                     <div class="customer-list-header">
-                        <span class="customer-list-title" data-i18n="conv_list_title">مشتریان</span>
+                        <span class="customer-list-title" data-i18n="nav_customers">مشتریان</span>
                         <div class="customer-list-header-right">
-                            <button type="button" class="btn-icon-text" id="customerRefreshBtn" onclick="loadCustomers()" title="تازه‌سازی" aria-label="تازه‌سازی">&#8635;</button>
+                            <button type="button" class="btn-icon-text" id="customerRefreshBtn" onclick="loadCustomers()" data-i18n-title="dashboard_refresh" title="تازه‌سازی" aria-label="تازه‌سازی">&#8635;</button>
                             <span class="customer-list-count" id="customerListCount"></span>
                         </div>
                     </div>

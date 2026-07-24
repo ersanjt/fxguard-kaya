@@ -22,6 +22,32 @@ const errorHandler = require('../middleware/errorHandler');
 const { protectSensitiveUploads } = require('../middleware/protectedUploads');
 const { assertWebhookSecretBeforeBody } = require('../middleware/webhookAuth');
 const { onApiResponseFinished, deliverIncidentTelegram } = require('../services/incidentTelegramPolicy');
+const jwt = require('jsonwebtoken');
+const { COOKIE_NAME } = require('../lib/authCookie');
+
+function extractApiBearerOrCookie(req) {
+    const authHeader = req.headers && req.headers.authorization;
+    if (authHeader && String(authHeader).startsWith('Bearer ')) {
+        return String(authHeader).slice(7).trim() || null;
+    }
+    if (req.cookies && req.cookies[COOKIE_NAME]) {
+        return String(req.cookies[COOKIE_NAME]);
+    }
+    return null;
+}
+
+/** Per authenticated user when possible — office NAT shared IPs no longer exhaust one bucket. */
+function apiRateLimitKey(req) {
+    const token = extractApiBearerOrCookie(req);
+    const secret = process.env.JWT_SECRET;
+    if (token && secret) {
+        try {
+            const decoded = jwt.verify(token, secret);
+            if (decoded && decoded.id && !decoded.totpStep) return 'u:' + String(decoded.id);
+        } catch (_) { /* fall through to IP */ }
+    }
+    return 'ip:' + String(req.ip || req.socket && req.socket.remoteAddress || 'unknown');
+}
 
 function normalizedRequestPath(req) {
     try {
@@ -146,12 +172,15 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
         }
     }
 
+    const apiRateMax = Math.max(100, parseInt(process.env.API_RATE_LIMIT_MAX || '3000', 10) || 3000);
     const limiter = rateLimit({
         windowMs: 15 * 60 * 1000,
-        max: 1500,
+        max: apiRateMax,
         message: { error: 'تعداد درخواست‌ها زیاد است. چند دقیقه صبر کنید.' },
         standardHeaders: true,
         legacyHeaders: false,
+        keyGenerator: apiRateLimitKey,
+        validate: false,
         store: buildRedisStore('rl:api:')
     });
     const loginLimiter = rateLimit({
@@ -182,7 +211,11 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
     app.use('/api/', (req, res, next) => {
         if (process.env.DISABLE_RATE_LIMIT === 'true') return next();
         const p = req.path || '';
+        // Gateway / Meta webhooks have their own auth; do not share the staff API bucket
+        if (p.includes('/webhook/')) return next();
         if (p.endsWith('/ping')) return next();
+        // Presence heartbeat is high-frequency and low-cost
+        if (p.endsWith('/auth/me/presence')) return next();
         if (p.endsWith('/auth/login') || p.endsWith('/auth/totp/verify-login')) return loginLimiter(req, res, next);
         if (p.endsWith('/auth/forgot-password') || p.endsWith('/auth/reset-password')) {
             return passwordResetLimiter(req, res, next);

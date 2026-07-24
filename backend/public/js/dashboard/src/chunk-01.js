@@ -229,7 +229,8 @@
             if (val == null || val === '' || val === '\u2014' || (typeof val === 'string' && val.trim() === '')) return '\u2014';
             const num = typeof val === 'number' ? val : parseFloat(String(val).replace(/[^\d.-]/g, ''));
             if (isNaN(num)) return '\u2014';
-            if (LANG !== 'fa') {
+            const lang = (typeof window !== 'undefined' && window.LANG) || LANG;
+            if (lang !== 'fa') {
                 return Math.round(num).toLocaleString('en-US');
             }
             const n = String(Math.round(num)).replace(/[^\d]/g, '');
@@ -366,8 +367,9 @@
                     const chClass = ch > 0 ? ' up' : ch < 0 ? ' down' : ' neutral';
                     const chText = tickerDisplay === 'fx_cross' ? '' : formatChange(ch);
                     const valStr = tickerDisplay === 'fx_cross' ? formatFxCrossTickerValue(it.value) : formatPrice(it.value);
-                    const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="تغییر">(' + escapeHtml(chText) + ')</span>' : '';
-                    return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(it.label || rateLabel(it.key)) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
+                    const changePart = chText ? ' <span class="ticker-change' + chClass + '" aria-label="change">(' + escapeHtml(chText) + ')</span>' : '';
+                    const curLabel = rateLabel(it.key) || it.label || it.key;
+                    return '<span class="ticker-item"><span class="ticker-label">' + escapeHtml(curLabel) + '</span><span class="ticker-value">' + escapeHtml(valStr) + '</span>' + changePart + '</span>';
                 }).join('');
                 innerEl.innerHTML = itemsHtml;
                 delete innerEl.dataset.marqueeDuplicated;
@@ -757,7 +759,15 @@
             fetchRates();
             ratesInterval = setInterval(fetchRates, 10 * 60 * 1000);
         }
-        function rateLabel(key) { return t(key) || key; }
+        function rateLabel(key) {
+            var k = String(key || '').toLowerCase();
+            if (!k) return '';
+            var direct = t(k);
+            if (direct && direct !== k) return direct;
+            var withPrefix = t('currency_' + k);
+            if (withPrefix && withPrefix !== ('currency_' + k)) return withPrefix;
+            return key;
+        }
         async function loadRatesAdjustments() {
             const el = document.getElementById('ratesAdjustmentsTable');
             if (!el) return;
@@ -959,41 +969,19 @@
             if (res.ok) { toast(t('toast_rates_saved') || 'ذخیره شد'); loadCurrencies(); loadRatesAdjustments(); loadTickerConfig(); fetchRates(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 
-        function initServicesTabs() {
+        const SERVICES_TAB_MAP = { summary: 'Summary', statement: 'Statement', services: 'Services', cashboxes: 'Cashboxes', bankaccounts: 'Bankaccounts', transactions: 'Transactions', reports: 'Reports' };
+        function switchServicesTab(tabName) {
+            const t = tabName || 'summary';
             const tabs = document.querySelectorAll('.services-tab');
             const panels = document.querySelectorAll('.services-panel');
-            const tabMap = { summary: 'Summary', statement: 'Statement', services: 'Services', cashboxes: 'Cashboxes', bankaccounts: 'Bankaccounts', transactions: 'Transactions', reports: 'Reports' };
-            tabs.forEach(function(tab) {
-                tab.onclick = function() {
-                    const t = tab.getAttribute('data-tab');
-                    tabs.forEach(function(x) { x.classList.remove('active'); x.setAttribute('aria-selected', 'false'); });
-                    panels.forEach(function(p) { p.classList.remove('show'); });
-                    tab.classList.add('active');
-                    tab.setAttribute('aria-selected', 'true');
-                    const panel = document.getElementById('services' + (tabMap[t] || 'Summary') + 'Panel');
-                    if (panel) { panel.classList.add('show'); }
-                    if (t === 'summary') loadServicesSummary();
-                    else if (t === 'statement') loadStatement();
-                    else if (t === 'services') loadServices();
-                    else if (t === 'cashboxes') loadCashBoxes();
-                    else if (t === 'bankaccounts') loadBankAccounts();
-                    else if (t === 'transactions') { loadCustomerFilterForTransactions(); loadTransactions(); }
-                    else if (t === 'reports') { loadCurrentReport(); }
-                };
+            tabs.forEach(function(x) {
+                const on = x.getAttribute('data-tab') === t;
+                x.classList.toggle('active', on);
+                x.setAttribute('aria-selected', on ? 'true' : 'false');
             });
-        }
-        async function loadCustomerFilterForTransactions() {
-            const sel = document.getElementById('txCustomerFilter');
-            if (!sel) return;
-            const res = await apiFetch('/api/customers?limit=500');
-            const list = (res.data && res.data.data) || [];
-            const curVal = sel.value;
-            sel.innerHTML = '<option value="">' + (LANG === 'fa' ? 'همه مشتریان' : 'All customers') + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name || c.phone || '') + '</option>'; }).join('');
-            if (curVal) sel.value = curVal;
-        }
-        function loadServicesPage() {
-            const active = document.querySelector('.services-tab.active');
-            const t = active ? active.getAttribute('data-tab') : 'summary';
+            panels.forEach(function(p) { p.classList.remove('show'); });
+            const panel = document.getElementById('services' + (SERVICES_TAB_MAP[t] || 'Summary') + 'Panel');
+            if (panel) panel.classList.add('show');
             if (t === 'summary') loadServicesSummary();
             else if (t === 'statement') loadStatement();
             else if (t === 'services') loadServices();
@@ -1002,61 +990,147 @@
             else if (t === 'transactions') { loadCustomerFilterForTransactions(); loadTransactions(); }
             else if (t === 'reports') { loadCurrentReport(); }
         }
-        const currencySymbols = { USD: '$', EUR: '€', GBP: '£', DHS: 'د.إ', TRY: '₺', RUB: '₽', USDT: '₮', IRR: 'تومان', TMN: 'تومان' };
-        function formatMoney(n, curr) { const x = parseFloat(n) || 0; const sym = currencySymbols[curr] || curr || 'تومان'; return x.toLocaleString('fa-IR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + sym; }
-        function formatMoneyEn(n) { const x = parseFloat(n) || 0; return x.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function initServicesTabs() {
+            document.querySelectorAll('.services-tab').forEach(function(tab) {
+                tab.onclick = function() { switchServicesTab(tab.getAttribute('data-tab')); };
+            });
+        }
+        async function loadCustomerFilterForTransactions() {
+            const sel = document.getElementById('txCustomerFilter');
+            if (!sel) return;
+            const res = await apiFetch('/api/customers?limit=500');
+            const list = (res.data && res.data.data) || [];
+            const curVal = sel.value;
+            sel.innerHTML = '<option value="">' + escapeHtml(uiLang() === 'fa' ? 'همه مشتریان' : (uiLang() === 'tr' ? 'Tüm müşteriler' : 'All customers')) + '</option>' + list.map(function(c) { return '<option value="' + c.id + '">' + escapeHtml(c.name || c.phone || '') + '</option>'; }).join('');
+            if (curVal) sel.value = curVal;
+        }
+        function loadServicesPage() {
+            const active = document.querySelector('.services-tab.active');
+            switchServicesTab(active ? active.getAttribute('data-tab') : 'summary');
+        }
+        function uiLang() {
+            return (typeof window !== 'undefined' && window.LANG) || (typeof LANG !== 'undefined' ? LANG : 'fa');
+        }
+        function numberLocale() {
+            const lang = uiLang();
+            if (lang === 'fa') return 'fa-IR';
+            if (lang === 'tr') return 'tr-TR';
+            return 'en-US';
+        }
+        function currencyLabel(curr) {
+            const c = String(curr || 'IRR').toUpperCase();
+            if (c === 'IRR' || c === 'TMN') return t('currency_unit_toman') || (uiLang() === 'fa' ? 'تومان' : 'Toman');
+            const lang = uiLang();
+            const symbols = {
+                USD: '$', EUR: '€', GBP: '£', TRY: '₺', RUB: '₽', USDT: 'USDT',
+                CHF: 'CHF', CAD: 'CAD', AUD: 'AUD',
+                DHS: lang === 'fa' ? 'د.إ' : 'AED',
+                AED: lang === 'fa' ? 'د.إ' : 'AED'
+            };
+            return symbols[c] || c;
+        }
+        function formatMoneyAmount(n) {
+            const x = parseFloat(n) || 0;
+            return x.toLocaleString(numberLocale(), { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function formatMoney(n, curr) {
+            return formatMoneyAmount(n) + ' ' + currencyLabel(curr);
+        }
+        function formatMoneyEn(n) {
+            return formatMoneyAmount(n);
+        }
+        function summaryBranchLabel(b) {
+            if (!b || b.branch == null || b.branch === '') return '';
+            if (typeof b.branch === 'string') return b.branch;
+            return b.branch.name || '';
+        }
+        function summaryEmptyHtml(messageKey, fallback, ctaTab, ctaKey) {
+            var msg = escapeHtml(t(messageKey) || fallback);
+            var cta = '';
+            if (ctaTab && ctaKey) {
+                cta = '<button type="button" class="btn-secondary btn-sm" onclick="switchServicesTab(\'' + ctaTab + '\')">' + escapeHtml(t(ctaKey)) + '</button>';
+            }
+            return '<div class="empty exchange-summary-empty"><p>' + msg + '</p>' + cta + '</div>';
+        }
+        let _servicesSummarySeq = 0;
         async function loadServicesSummary() {
-            const [sumRes, cpRes] = await Promise.all([
-                apiFetch('/api/exchange/summary'),
-                apiFetch('/api/exchange/currency-position')
-            ]);
-            if (sumRes.needLogin || !sumRes.ok) return;
-            const d = sumRes.data || {};
+            const seq = ++_servicesSummarySeq;
+            const cards = document.querySelectorAll('.exchange-summary-card');
+            cards.forEach(function(c) { c.classList.add('is-loading'); });
             const totalCashEl = document.getElementById('summaryTotalCash');
             const totalBankEl = document.getElementById('summaryTotalBank');
             const totalEl = document.getElementById('summaryTotal');
-            if (totalCashEl) totalCashEl.textContent = formatMoney(d.totalCash, 'IRR');
-            if (totalBankEl) totalBankEl.textContent = formatMoney(d.totalBank, 'IRR');
-            if (totalEl) totalEl.textContent = formatMoney(d.total, 'IRR');
+            if (totalCashEl) totalCashEl.textContent = '…';
+            if (totalBankEl) totalBankEl.textContent = '…';
+            if (totalEl) totalEl.textContent = '…';
+
+            // Single endpoint: currency-position already includes cash/bank rows + totals
+            const cpRes = await apiFetch('/api/exchange/currency-position');
+            if (seq !== _servicesSummarySeq) return;
+            cards.forEach(function(c) { c.classList.remove('is-loading'); });
+            if (cpRes.needLogin || !cpRes.ok) {
+                if (totalCashEl) totalCashEl.textContent = '—';
+                if (totalBankEl) totalBankEl.textContent = '—';
+                if (totalEl) totalEl.textContent = '—';
+                return;
+            }
+            const cp = cpRes.data || {};
+            const cashBoxes = cp.cashBoxes || [];
+            const bankAccounts = cp.bankAccounts || [];
+            const totalCash = cp.totalCash != null ? cp.totalCash : cashBoxes.reduce(function(s, b) { return s + (parseFloat(b.balance) || 0); }, 0);
+            const totalBank = cp.totalBank != null ? cp.totalBank : bankAccounts.reduce(function(s, b) { return s + (parseFloat(b.balance) || 0); }, 0);
+            const total = cp.total != null ? cp.total : (totalCash + totalBank);
+
+            if (totalCashEl) totalCashEl.textContent = formatMoney(totalCash, 'IRR');
+            if (totalBankEl) totalBankEl.textContent = formatMoney(totalBank, 'IRR');
+            if (totalEl) totalEl.textContent = formatMoney(total, 'IRR');
+
             const cb = document.getElementById('summaryCashBoxes');
             const ba = document.getElementById('summaryBankAccounts');
-            if (cb) cb.innerHTML = (d.cashBoxes || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده' : 'No cash boxes') + '</div>';
-            if (ba) ba.innerHTML = (d.bankAccounts || []).map(function(b) { return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (b.branch && b.branch.name ? ' (' + escapeHtml(b.branch.name) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>'; }).join('') || '<div class="empty">' + (LANG === 'fa' ? 'حساب بانکی تعریف نشده' : 'No bank accounts') + '</div>';
-
-            if (cpRes.ok && cpRes.data) {
-                const cp = cpRes.data;
-                const cpEl = document.getElementById('summaryCurrencyPosition');
-                if (cpEl) {
-                    const posEntries = Object.entries(cp.currencyPosition || {});
-                    cpEl.innerHTML = posEntries.length ? posEntries.map(function(e) {
-                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance">' + formatMoneyEn(e[1].total) + '</span></div>';
-                    }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</div>';
-                }
-                const obEl = document.getElementById('summaryOutstandingBalance');
-                if (obEl) {
-                    const obs = cp.outstandingBalance || [];
-                    const totalOB = obs.reduce(function(s, o) { return s + o.balance; }, 0);
-                    obEl.innerHTML = obs.length ? obs.map(function(o) {
-                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(o.account) + ' <small style="color:var(--text-muted)">' + escapeHtml(o.currency) + '</small></span><span class="balance">' + formatMoneyEn(o.balance) + '</span></div>';
-                    }).join('') + '<div class="exchange-summary-item" style="border-color:var(--accent);"><span class="name" style="font-weight:700;">' + (LANG === 'fa' ? 'مجموع' : 'Total') + '</span><span class="balance" style="font-weight:700;">' + formatMoneyEn(totalOB) + '</span></div>' : '<div class="empty">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</div>';
-                }
-                const piEl = document.getElementById('summaryPendingInward');
-                if (piEl) {
-                    const piEntries = Object.entries(cp.pendingInward || {});
-                    piEl.innerHTML = piEntries.length ? piEntries.map(function(e) {
-                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--accent);">' + formatMoneyEn(e[1]) + '</span></div>';
-                    }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'دریافتی در انتظار نیست' : 'No pending inward') + '</div>';
-                }
-                const poEl = document.getElementById('summaryPendingOutward');
-                if (poEl) {
-                    const poEntries = Object.entries(cp.pendingOutward || {});
-                    poEl.innerHTML = poEntries.length ? poEntries.map(function(e) {
-                        return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--danger);">' + formatMoneyEn(e[1]) + '</span></div>';
-                    }).join('') : '<div class="empty">' + (LANG === 'fa' ? 'پرداختی در انتظار نیست' : 'No pending outward') + '</div>';
-                }
-                renderCommitmentTable(cp);
-                renderBankPositionTable(cp);
+            if (cb) {
+                cb.innerHTML = cashBoxes.length ? cashBoxes.map(function(b) {
+                    const br = summaryBranchLabel(b);
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (br ? ' (' + escapeHtml(br) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>';
+                }).join('') : summaryEmptyHtml('services_no_cashboxes', 'No cash boxes', 'cashboxes', 'cashbox_add');
             }
+            if (ba) {
+                ba.innerHTML = bankAccounts.length ? bankAccounts.map(function(b) {
+                    const br = summaryBranchLabel(b);
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(b.name) + (br ? ' (' + escapeHtml(br) + ')' : '') + '</span><span class="balance">' + formatMoney(b.balance, b.currency) + '</span></div>';
+                }).join('') : summaryEmptyHtml('services_no_bankaccounts', 'No bank accounts', 'bankaccounts', 'bankaccount_add');
+            }
+
+            const cpEl = document.getElementById('summaryCurrencyPosition');
+            if (cpEl) {
+                const posEntries = Object.entries(cp.currencyPosition || {});
+                cpEl.innerHTML = posEntries.length ? posEntries.map(function(e) {
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance">' + formatMoney(e[1].total, e[0]) + '</span></div>';
+                }).join('') : '<div class="empty">' + escapeHtml(t('no_data') || 'No data') + '</div>';
+            }
+            const obEl = document.getElementById('summaryOutstandingBalance');
+            if (obEl) {
+                const obs = cp.outstandingBalance || [];
+                const totalOB = obs.reduce(function(s, o) { return s + o.balance; }, 0);
+                obEl.innerHTML = obs.length ? obs.map(function(o) {
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(o.account) + ' <small style="color:var(--text-muted)">' + escapeHtml(o.currency) + '</small></span><span class="balance">' + formatMoney(o.balance, o.currency) + '</span></div>';
+                }).join('') + '<div class="exchange-summary-item exchange-summary-item--total"><span class="name">' + escapeHtml(t('col_total') || 'Total') + '</span><span class="balance">' + formatMoneyAmount(totalOB) + '</span></div>' : '<div class="empty">' + escapeHtml(t('no_data') || 'No data') + '</div>';
+            }
+            const piEl = document.getElementById('summaryPendingInward');
+            if (piEl) {
+                const piEntries = Object.entries(cp.pendingInward || {});
+                piEl.innerHTML = piEntries.length ? piEntries.map(function(e) {
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--accent);">' + formatMoney(e[1], e[0]) + '</span></div>';
+                }).join('') : '<div class="empty">' + escapeHtml(t('services_no_pending_in') || 'No pending inward') + '</div>';
+            }
+            const poEl = document.getElementById('summaryPendingOutward');
+            if (poEl) {
+                const poEntries = Object.entries(cp.pendingOutward || {});
+                poEl.innerHTML = poEntries.length ? poEntries.map(function(e) {
+                    return '<div class="exchange-summary-item"><span class="name">' + escapeHtml(e[0]) + '</span><span class="balance" style="color:var(--danger);">' + formatMoney(e[1], e[0]) + '</span></div>';
+                }).join('') : '<div class="empty">' + escapeHtml(t('services_no_pending_out') || 'No pending outward') + '</div>';
+            }
+            renderCommitmentTable(cp);
+            renderBankPositionTable(cp);
         }
         async function loadCashBoxes() {
             const list = document.getElementById('cashBoxList');
@@ -1065,10 +1139,13 @@
             const res = await apiFetch('/api/exchange/cash-boxes');
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = res.data || [];
-            if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'صندوقی تعریف نشده. افزودن صندوق کنید.' : 'No cash boxes. Add one.') + '</div>'; return; }
+            if (data.length === 0) {
+                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_cashboxes') || 'No cash boxes') + '</p><button type="button" class="btn-primary btn-sm" onclick="openCashBoxModal()">' + escapeHtml(t('cashbox_add')) + '</button></div>';
+                return;
+            }
             list.innerHTML = data.map(function(b) {
-                const badge = b.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.branch ? escapeHtml(b.branch.name) : '') + ' · ' + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openCashBoxModal(\'' + b.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteCashBox(\'' + b.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+                const badge = b.isActive ? '<span class="badge active">' + escapeHtml(t('active') || 'Active') + '</span>' : '<span class="badge inactive">' + escapeHtml(t('inactive') || 'Inactive') + '</span>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.branch ? escapeHtml(b.branch.name) : '') + ' · ' + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openCashBoxModal(\'' + b.id + '\')">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteCashBox(\'' + b.id + '\')">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function loadBankAccounts() {
@@ -1078,10 +1155,13 @@
             const res = await apiFetch('/api/exchange/bank-accounts');
             if (res.needLogin || !res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error || t('err_generic')) + '</div>'; return; }
             const data = res.data || [];
-            if (data.length === 0) { list.innerHTML = '<div class="empty">' + (LANG === 'fa' ? 'حساب بانکی تعریف نشده. افزودن حساب کنید.' : 'No bank accounts. Add one.') + '</div>'; return; }
+            if (data.length === 0) {
+                list.innerHTML = '<div class="empty exchange-summary-empty"><p>' + escapeHtml(t('services_no_bankaccounts') || 'No bank accounts') + '</p><button type="button" class="btn-primary btn-sm" onclick="openBankAccountModal()">' + escapeHtml(t('bankaccount_add')) + '</button></div>';
+                return;
+            }
             list.innerHTML = data.map(function(b) {
-                const badge = b.isActive ? '<span class="badge active">' + (LANG === 'fa' ? 'فعال' : 'Active') + '</span>' : '<span class="badge inactive">' + (LANG === 'fa' ? 'غیرفعال' : 'Inactive') + '</span>';
-                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.bankName ? escapeHtml(b.bankName) + ' · ' : '') + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openBankAccountModal(\'' + b.id + '\')">' + (LANG === 'fa' ? 'ویرایش' : 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteBankAccount(\'' + b.id + '\')">' + (LANG === 'fa' ? 'حذف' : 'Delete') + '</button></div></div>';
+                const badge = b.isActive ? '<span class="badge active">' + escapeHtml(t('active') || 'Active') + '</span>' : '<span class="badge inactive">' + escapeHtml(t('inactive') || 'Inactive') + '</span>';
+                return '<div class="list-item"><div><span class="name">' + escapeHtml(b.name) + '</span><div class="meta">' + (b.bankName ? escapeHtml(b.bankName) + ' · ' : '') + formatMoney(b.balance, b.currency) + '</div></div>' + badge + '<div><button type="button" class="btn-secondary btn-sm" onclick="openBankAccountModal(\'' + b.id + '\')">' + escapeHtml(t('btn_edit') || 'Edit') + '</button> <button type="button" class="btn-secondary btn-sm" onclick="deleteBankAccount(\'' + b.id + '\')">' + escapeHtml(t('btn_delete') || 'Delete') + '</button></div></div>';
             }).join('');
         }
         async function loadTransactions() {
@@ -1626,7 +1706,7 @@
             if (!body || !cpData) return;
             const cp = cpData.currencyPosition || {};
             const entries = Object.entries(cp);
-            if (entries.length === 0) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px;">' + (LANG === 'fa' ? 'داده‌ای نیست' : 'No data') + '</td></tr>'; return; }
+            if (entries.length === 0) { body.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--text-muted);padding:16px;">' + escapeHtml(t('no_data') || 'No data') + '</td></tr>'; return; }
             body.innerHTML = entries.map(function(e) {
                 const curr = e[0], d = e[1];
                 const diff = d.total;
@@ -1641,7 +1721,7 @@
             const body = document.getElementById('bankPositionBody');
             if (!body || !cpData) return;
             const banks = cpData.bankAccounts || [];
-            if (banks.length === 0) { body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px;">' + (LANG === 'fa' ? 'حساب بانکی ندارید' : 'No bank accounts') + '</td></tr>'; return; }
+            if (banks.length === 0) { body.innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-muted);padding:16px;">' + escapeHtml(t('services_no_bankaccounts') || 'No bank accounts') + '</td></tr>'; return; }
             body.innerHTML = banks.map(function(b) {
                 return '<tr><td>' + escapeHtml(b.name) + (b.bankName ? ' <small style="color:var(--text-muted);">(' + escapeHtml(b.bankName) + ')</small>' : '') + '</td>' +
                     '<td>' + escapeHtml(b.currency) + '</td>' +
@@ -1920,7 +2000,7 @@
                         const onConv = active && active.getAttribute('data-page') === 'conversations';
                         const convId = data.conversationId || (data.conversation && data.conversation.id);
                         const viewingConv = onConv && currentConvId === convId;
-                        if (onConv) { debouncedLoadConversations(400); updateNavBadges(); }
+                        if (onConv) { debouncedLoadConversations(800); updateNavBadges(); }
                         if (viewingConv && convId) loadMessages(convId);
                         else if (data.customer && !viewingConv) toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + (data.customer.name || data.customer.phone || ''), false);
                         if (document.hidden && data.customer && typeof showDesktopNotification === 'function') showDesktopNotification(data);

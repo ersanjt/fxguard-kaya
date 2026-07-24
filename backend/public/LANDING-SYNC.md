@@ -25,3 +25,8 @@
 - `contact.html` ← از `cpanel-landing/contact.html`
 - `css/style.css` ← از `cpanel-landing/css/style.css`
 - `js/landing.js` ← از `cpanel-landing/js/landing.js`
+
+## نگهداشت
+
+- این کپی را **بدون تأیید جدا حذف نکنید**؛ برای همگام‌سازی با cPanel و سرو استاتیک Express (`/landing.html`) لازم است.
+- مسیر ورود CRM همچنان `/` → `login.html` است؛ لندینگ مارکتینگ معمولاً روی `public_html` از `cpanel-landing/` سرو می‌شود.

@@ -819,12 +819,26 @@
             } catch (e) { /* ignore */ }
         };
 
+        let _loadConversationsInFlight = false;
+        let _convListRateLimitedUntil = 0;
         async function loadConversations(appendMode) {
             const list = document.getElementById('convList');
             const statsEl = document.getElementById('convStats');
             ensureMobileWaSender(false);
-            if (!appendMode) setLoading('convList', 4);
             if (!list) return;
+            if (!appendMode && _loadConversationsInFlight) return;
+            if (Date.now() < _convListRateLimitedUntil) {
+                if (!appendMode) {
+                    list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + escapeHtml(t('loading_err') || '') + ' ' + escapeHtml(LANG === 'fa' ? 'تعداد درخواست‌ها زیاد است. کمی صبر کنید.' : 'Too many requests. Please wait.') + '<br><button type="button" class="btn-primary" id="convListRetryBtn" style="margin-top:12px;">' + escapeHtml(LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>';
+                    setTimeout(function() {
+                        var btn = document.getElementById('convListRetryBtn');
+                        if (btn) btn.onclick = function() { _convListRateLimitedUntil = 0; loadConversations(); };
+                    }, 0);
+                }
+                return;
+            }
+            if (!appendMode) setLoading('convList', 4);
+            _loadConversationsInFlight = true;
             let q = '?limit=' + convPageSize + '&page=' + convCurrentPage;
             const statusEl = document.getElementById('convFilterStatus');
             const priorityEl = document.getElementById('convFilterPriority');
@@ -845,9 +859,29 @@
             if (deptEl && deptEl.value) q += '&departmentId=' + encodeURIComponent(deptEl.value);
             if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open' || convQuickTab === 'archived' || convQuickTab === 'groups') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
-            const res = await apiFetch('/api/conversations' + q);
+            let res;
+            try {
+                res = await apiFetch('/api/conversations' + q);
+            } finally {
+                _loadConversationsInFlight = false;
+            }
             if (res.needLogin) return;
-            if (!res.ok) { const ce = document.getElementById('convListCount'); if (ce) ce.textContent = ''; list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + escapeHtml(res.data && res.data.error ? res.data.error : res.error || '') + '</div>'; return; }
+            if (!res.ok) {
+                const ce = document.getElementById('convListCount');
+                if (ce) ce.textContent = '';
+                const is429 = res.status === 429 || (res.error && String(res.error).indexOf('تعداد درخواست') !== -1) || (res.data && res.data.error && String(res.data.error).indexOf('تعداد درخواست') !== -1);
+                if (is429) _convListRateLimitedUntil = Date.now() + 45000;
+                const errText = escapeHtml(res.data && res.data.error ? res.data.error : res.error || '');
+                list.innerHTML = '<div class="empty"><span class="empty-icon">💬</span><br>' + t('loading_err') + ' ' + errText + (is429 ? '<br><button type="button" class="btn-primary" id="convListRetryBtn" style="margin-top:12px;">' + escapeHtml(LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button>' : '') + '</div>';
+                if (is429) {
+                    setTimeout(function() {
+                        var btn = document.getElementById('convListRetryBtn');
+                        if (btn) btn.onclick = function() { _convListRateLimitedUntil = 0; loadConversations(); };
+                    }, 0);
+                }
+                return;
+            }
+            _convListRateLimitedUntil = 0;
             const data = res.data;
             const totalCount = data.total != null ? data.total : (data.data || []).length;
             // آمار از total واقعی سرور گرفته می‌شه نه فقط صفحه جاری
@@ -877,8 +911,10 @@
             const newItems = data.data.map(function(c) {
                 const cust = c.customer || {};
                 const isGroup = !!(c.metadata && c.metadata.isGroup);
-                const name = (isGroup && (c.metadata && (c.metadata.groupName || c.metadata.name))) || cust.name || cust.phone || (isGroup ? (LANG === 'fa' ? 'گروه' : 'Group') : t('customer'));
-                const phone = cust.phone || '';
+                const canSeePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
+                const rawPhone = cust.phone || '';
+                const phone = canSeePhone ? rawPhone : '';
+                const name = (isGroup && (c.metadata && (c.metadata.groupName || c.metadata.name))) || cust.name || (canSeePhone ? rawPhone : '') || (isGroup ? (LANG === 'fa' ? 'گروه' : 'Group') : t('customer'));
                 const metaPhone = isGroup ? (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp Group') : phone;
                 const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?');
                 const rawPic = (cust.profilePic && String(cust.profilePic).trim()) ? cust.profilePic : '';
@@ -968,12 +1004,19 @@
         }
         if (typeof window !== 'undefined') window.addEventListener('resize', updateChatBackBtn);
         let currentConvIsGroup = false;
+        function canViewCustomerPhoneUi() {
+            if (!currentUser) return false;
+            if (currentUser.canViewCustomerPhone) return true;
+            if (currentUser.role === 'owner') return true;
+            return !!(currentUser.permissions && currentUser.permissions.view_customer_phone);
+        }
         function openChat(id, name, phone, profilePic, isGroup, customerId) {
             currentConvId = id;
             currentConvDetail = null;
             currentConvIsGroup = !!isGroup;
+            var visiblePhone = canViewCustomerPhoneUi() ? String(phone || '').trim() : '';
             openChatCustomerPreview = !currentConvIsGroup
-                ? { id: String(customerId || '').trim(), name: String(name || '').trim(), phone: String(phone || '').trim(), profilePic: String(profilePic || '').trim() }
+                ? { id: String(customerId || '').trim(), name: String(name || '').trim(), phone: visiblePhone, profilePic: String(profilePic || '').trim() }
                 : null;
             cancelReply();
             if (chatTemplatesCache.length === 0) { apiFetch('/api/message-templates').then(function(res) { if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data; }).catch(function(){}); }
@@ -985,7 +1028,7 @@
             const supPanel = document.getElementById('convSupervisionPanel');
             const supStats = document.getElementById('convSupervisionStats');
             if (headerEl) {
-                headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || phone || t('customer'));
+                headerEl.innerHTML = (currentConvIsGroup ? '<span class="chat-header-group-badge" title="' + (LANG === 'fa' ? 'گروه' : 'Group') + '">👥</span> ' : '') + escapeHtml(name || visiblePhone || t('customer'));
             }
             var summaryElEarly = document.getElementById('chatHeaderSummary');
             if (summaryElEarly) {
@@ -997,8 +1040,8 @@
             if (headerSubEl) {
                 if (currentConvIsGroup) {
                     headerSubEl.textContent = (LANG === 'fa' ? 'گروه · واتساپ' : LANG === 'tr' ? 'Grup · WhatsApp' : 'Group · WhatsApp');
-                } else if (phone) {
-                    headerSubEl.textContent = phone;
+                } else if (visiblePhone) {
+                    headerSubEl.textContent = visiblePhone;
                 } else {
                     headerSubEl.textContent = typeof t === 'function' ? (t('wa_subtitle') || 'WhatsApp') : 'WhatsApp';
                 }
@@ -1007,7 +1050,7 @@
                 const rawOpenPic = (profilePic || '').trim();
                 const custForAv = customerId ? { id: customerId, profilePic: rawOpenPic } : { profilePic: rawOpenPic };
                 let pic = !currentConvIsGroup ? customerAvatarDisplaySrc(custForAv) : '';
-                const initial = (name && name[0]) ? name[0].toUpperCase() : (phone && phone[0]) ? phone[0] : '?';
+                const initial = (name && name[0]) ? name[0].toUpperCase() : (visiblePhone && visiblePhone[0]) ? visiblePhone[0] : '?';
                 if (pic && !currentConvIsGroup && customerAvatarShowsImage(custForAv)) {
                     avatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">';
                 } else {
@@ -1022,7 +1065,8 @@
             const backBtn = document.querySelector('.chat-back-btn');
             if (backBtn) backBtn.style.display = window.matchMedia('(max-width: 900px)').matches ? 'flex' : 'none';
             const pm = document.getElementById('headerMobileTitle');
-            if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = name || phone || t('customer');
+            if (pm && window.matchMedia('(max-width: 900px)').matches) pm.textContent = name || visiblePhone || t('customer');
+            phone = visiblePhone;
             if (barEl) {
                 barEl.style.display = 'none';
                 barEl.setAttribute('hidden', '');
@@ -1045,12 +1089,16 @@
                 const d = res.data;
                 if (!currentConvIsGroup && d.customer) {
                     var ck = d.customer;
+                    var detailPhone = canViewCustomerPhoneUi() ? String((ck.phone || '') || '').trim() : '';
                     openChatCustomerPreview = {
                         id: String((ck.id || customerId || '') || '').trim(),
                         name: String((ck.name || '') || '').trim(),
-                        phone: String((ck.phone || '') || '').trim(),
+                        phone: detailPhone,
                         profilePic: String((ck.profilePic || '') || '').trim()
                     };
+                    if (headerSubEl && !currentConvIsGroup) {
+                        headerSubEl.textContent = detailPhone || (typeof t === 'function' ? (t('wa_subtitle') || 'WhatsApp') : 'WhatsApp');
+                    }
                 }
                 if (avatarEl && d.customer && !currentConvIsGroup) {
                     const picDisp = customerAvatarDisplaySrc(d.customer);
@@ -1223,12 +1271,13 @@
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
             const currentCustId = currentConvDetail && currentConvDetail.customerId;
             list.innerHTML = data.data.map(function(c) {
-                const name = c.name || c.phone || t('customer');
+                const seePhone = canViewCustomerPhoneUi();
+                const name = c.name || (seePhone ? c.phone : '') || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const picSrcNc = customerAvatarDisplaySrc(c);
                 const avatarHtml = customerAvatarShowsImage(c) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
                 const sameHint = (currentCustId && c.id === currentCustId) ? ' <span class="meta">(' + escapeHtml(LANG === 'fa' ? 'همین چت' : 'This chat') + ')</span>' : '';
-                return '<div class="new-conv-customer-item forward-customer-item" role="button" tabindex="0" data-forward-customer-id="' + escapeAttr(String(c.id)) + '" data-forward-customer-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + sameHint + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
+                return '<div class="new-conv-customer-item forward-customer-item" role="button" tabindex="0" data-forward-customer-id="' + escapeAttr(String(c.id)) + '" data-forward-customer-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + sameHint + '</span><span class="meta">' + escapeHtml(seePhone ? (c.phone || '') : '') + '</span></div>';
             }).join('');
         }
         async function forwardMessageToCustomer(customerId, customerName) {
@@ -1267,12 +1316,13 @@
             const data = res.data;
             if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
             list.innerHTML = data.data.map(function(c) {
-                const name = c.name || c.phone || t('customer');
+                const seePhone = canViewCustomerPhoneUi();
+                const name = c.name || (seePhone ? c.phone : '') || t('customer');
                 const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
                 const rawPicNc = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 const picSrcNc = customerAvatarDisplaySrc(c);
                 const avatarHtml = customerAvatarShowsImage(c) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
-                return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(c.phone || '') + '</span></div>';
+                return '<div class="new-conv-customer-item" role="button" tabindex="0" data-start-conv-id="' + escapeAttr(String(c.id)) + '" data-start-conv-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + '</span><span class="meta">' + escapeHtml(seePhone ? (c.phone || '') : '') + '</span></div>';
             }).join('');
         }
         async function startNewConversation(customerId, name) {
@@ -2975,12 +3025,13 @@
             window._currentCustomerListData = sorted;
             const bulkIds = window._bulkSelectedIds || [];
             list.innerHTML = sorted.map(function(c) {
-                const name = c.name || c.phone || t('customer');
-                const initial = (name && name[0]) ? name[0].toUpperCase() : (c.phone && c.phone[0]) ? c.phone[0] : '?';
+                const seePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);
+                const name = c.name || (seePhone ? c.phone : '') || t('customer');
+                const initial = (name && name[0]) ? name[0].toUpperCase() : (seePhone && c.phone && c.phone[0]) ? c.phone[0] : '?';
                 const rawPicCust = (c.profilePic && String(c.profilePic).trim()) ? c.profilePic : '';
                 const picSrcCust = customerAvatarDisplaySrc(c);
                 const hasCustPic = customerAvatarShowsImage(c) && picSrcCust;
-                const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (c.phone || '')) + '"');
+                const avStyle = hasCustPic ? '' : (' style="' + letterAvatarVars(name + '|' + (seePhone ? (c.phone || '') : '')) + '"');
                 const avClass = 'customer-card-avatar' + (hasCustPic ? '' : ' customer-card-avatar--letter');
                 const avatarInner = hasCustPic
                     ? '<span class="customer-card-avatar-fallback">' + escapeHtml(initial) + '</span><img class="customer-card-avatar-img" src="' + escapeHtml(picSrcCust) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">'
@@ -2991,9 +3042,10 @@
                 const lastContact = c.lastContactAt ? timeAgo(c.lastContactAt) : '—';
                 const loc = c.lastOpenConv;
                 const assigneeDept = loc && (loc.assignee || (loc.department && loc.department.name)) ? [loc.assignee && loc.assignee.name, loc.department && loc.department.name].filter(Boolean).join(' · ') : '';
-                const safeName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
+                const safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
-                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main">' + avatarHtml + '<div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(c.name || c.phone) + '</span><div class="customer-card-meta">' + escapeHtml(c.phone || '') + (c.email ? ' · ' + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(c.name || c.phone) + '" data-customer-phone="' + escapeHtml(c.phone || '') + '" data-i18n="btn_send">ارسال</button></div>';
+                const phoneShown = seePhone ? (c.phone || '') : '';
+                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(name) + '" data-customer-phone="' + escapeHtml(phoneShown) + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main">' + avatarHtml + '<div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(name) + '</span><div class="customer-card-meta">' + escapeHtml(phoneShown) + (c.email ? (phoneShown ? ' · ' : '') + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(name) + '" data-customer-phone="' + escapeHtml(phoneShown) + '">' + escapeHtml(t('btn_send') || 'Send') + '</button></div>';
             }).join('');
             updateBulkSelectedCount();
         }

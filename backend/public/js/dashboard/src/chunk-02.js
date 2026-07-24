@@ -334,7 +334,7 @@
                 return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
             }
             if (r.status === 429) {
-                return { ok: false, needLogin: false, error: (data && data.error) || (LANG === 'fa' ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.' : 'Too many requests. Please wait a moment.') };
+                return { ok: false, needLogin: false, status: 429, data: data, error: (data && data.error) || (LANG === 'fa' ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.' : 'Too many requests. Please wait a moment.') };
             }
             if (!r.ok && data && (data.error || data.message)) {
                 return { ok: false, needLogin: r.status === 401, status: r.status, data: data, error: data.error || data.message };
@@ -825,10 +825,30 @@
             if (cardsTitleEl) cardsTitleEl.style.display = 'none';
         }
         function dashFormatNum(v) {
-            var num = (v != null && typeof v === 'number') ? v : 0;
+            var num = (v != null && typeof v === 'number') ? v : parseFloat(v);
+            if (isNaN(num)) num = 0;
+            var lang = (typeof window !== 'undefined' && window.LANG) || (typeof LANG !== 'undefined' ? LANG : 'fa');
+            if (lang !== 'fa') {
+                return Math.round(num) === num ? Math.round(num).toLocaleString('en-US') : Number(num).toLocaleString('en-US', { maximumFractionDigits: 1 });
+            }
             if (typeof formatPrice === 'function') return formatPrice(num);
-            return String(num);
+            return String(num).replace(/\d/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'[d]; });
         }
+        function refreshDashboardUiAfterLang() {
+            try {
+                if (typeof loadDashboard === 'function') loadDashboard();
+                if (typeof fetchRates === 'function') fetchRates();
+                if (typeof loadCustomers === 'function') {
+                    var custPage = document.getElementById('pageCustomers');
+                    if (custPage && custPage.classList.contains('show')) loadCustomers();
+                }
+                if (typeof loadServicesPage === 'function') {
+                    var svcPage = document.getElementById('pageServices');
+                    if (svcPage && svcPage.classList.contains('show')) loadServicesPage();
+                }
+            } catch (_e) { /* ignore */ }
+        }
+        window.refreshDashboardUiAfterLang = refreshDashboardUiAfterLang;
         function dashboardSummarySkeleton(count) {
             var n = count || 4;
             var html = '';
@@ -992,8 +1012,8 @@
                     summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.staffOnline)), label: t('dashboard_stat_online') });
                     summaryItems.push({ page: 'staff-activity', num: dashFormatNum(n(stats.loginsToday)), label: t('dashboard_stat_logins_today') });
                 }
-                if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgResponseTimeMinutes + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min'), label: (LANG === 'fa' ? 'میانگین زمان پاسخ' : 'Avg response time'), convTab: 'all' });
-                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: stats.avgRating + '/5', label: (LANG === 'fa' ? 'نرخ رضایت' : 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + stats.ratedConversationsCount + ')' : ''), convTab: 'all' });
+                if (stats.avgResponseTimeMinutes != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgResponseTimeMinutes) + ' ' + (LANG === 'fa' ? 'دقیقه' : 'min'), label: (LANG === 'fa' ? 'میانگین زمان پاسخ' : 'Avg response time'), convTab: 'all' });
+                if (stats.avgRating != null && can('conversations')) summaryItems.push({ page: 'conversations', num: dashFormatNum(stats.avgRating) + '/5', label: (LANG === 'fa' ? 'نرخ رضایت' : 'Satisfaction') + (stats.ratedConversationsCount ? ' (' + dashFormatNum(stats.ratedConversationsCount) + ')' : ''), convTab: 'all' });
                 if (can('announcements') && n(stats.unreadAnnouncements) > 0) summaryItems.push({ page: 'announcements', num: dashFormatNum(n(stats.unreadAnnouncements)), label: t('dashboard_stat_announcements'), warn: true });
                 summaryEl.innerHTML = summaryItems.map(function(item) { return renderDashboardStatBox(item, false); }).join('') || '<div class="dashboard-summary-empty text-muted">' + (LANG === 'fa' ? 'آمار دیگری برای نمایش نیست.' : 'No additional stats.') + '</div>';
             }

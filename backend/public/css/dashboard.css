@@ -5405,6 +5405,15 @@
         .services-list .empty { padding: 32px 20px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); }
         .services-list .list-item > div:last-child { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
         .exchange-summary-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 24px; }
+        .exchange-summary-toolbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 16px; }
+        .exchange-summary-section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 12px; }
+        .exchange-summary-section-head h4 { margin: 0; }
+        .exchange-summary-empty { text-align: center; padding: 20px 16px; }
+        .exchange-summary-empty p { margin: 0 0 12px; color: var(--text-muted); }
+        .exchange-summary-item--total { border-color: rgba(16,185,129,0.35); }
+        .exchange-summary-item--total .name,
+        .exchange-summary-item--total .balance { font-weight: 700; }
+        .exchange-summary-card.is-loading .value { opacity: 0.45; }
         .exchange-summary-card { background: var(--bg-card); padding: 20px; border-radius: var(--radius); border: 1px solid var(--border); min-width: 0; }
         .exchange-summary-card .label { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; }
         .exchange-summary-card .value { font-size: 1.4rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums; word-break: break-all; }
@@ -5452,6 +5461,9 @@
             .services-tabs { flex-wrap: nowrap; min-width: min-content; gap: 6px; padding-bottom: 8px; }
             .services-tab { padding: 10px 14px; font-size: 0.85rem; min-height: 44px; flex-shrink: 0; }
             .exchange-summary-cards { grid-template-columns: 1fr; gap: 10px; margin-bottom: 20px; }
+            .exchange-summary-toolbar { flex-direction: column; align-items: stretch; }
+            .exchange-summary-toolbar .btn-sm { width: 100%; }
+            .exchange-summary-section-head { flex-direction: column; align-items: stretch; }
             .exchange-summary-card { padding: 16px; }
             .exchange-summary-card .value { font-size: 1.25rem; }
             .exchange-summary-grid { gap: 16px; }

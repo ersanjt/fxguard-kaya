@@ -113,6 +113,8 @@
         return {
             ok: false,
             needLogin: false,
+            status: 429,
+            data: data,
             error:
                 (data && data.error) ||
                 (lang5 === 'tr'
