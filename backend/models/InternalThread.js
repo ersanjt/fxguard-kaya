@@ -29,8 +29,7 @@ module.exports = (sequelize) => {
         timestamps: true,
         tableName: 'InternalThreads',
         indexes: [
-            { fields: ['lastMessageAt'] },
-            { fields: ['type'] }
+            { fields: ['lastMessageAt'] }
         ]
     });
 

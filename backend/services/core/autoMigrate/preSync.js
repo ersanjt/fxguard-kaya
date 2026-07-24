@@ -191,6 +191,53 @@ async function runPreSync(sequelize, logger) {
     } catch (e) {
         logger.warn('Users telegram columns migration:', e.message);
     }
+
+    // ستون‌های چت داخلی باید قبل از sync باشند تا Sequelize روی ستون ناموجود ایندکس نسازد
+    try {
+        let thDesc;
+        try {
+            thDesc = await qi.describeTable('InternalThreads');
+        } catch (_) {
+            thDesc = null;
+        }
+        if (thDesc) {
+            if (!thDesc.name) {
+                await qi.addColumn('InternalThreads', 'name', { type: DataTypes.STRING(120), allowNull: true });
+                logger.info('✅ InternalThreads: name column added (pre-sync)');
+            }
+            if (!thDesc.type) {
+                await qi.addColumn('InternalThreads', 'type', {
+                    type: DataTypes.STRING(16),
+                    allowNull: false,
+                    defaultValue: 'dm'
+                });
+                logger.info('✅ InternalThreads: type column added (pre-sync)');
+            }
+            if (!thDesc.createdById) {
+                await qi.addColumn('InternalThreads', 'createdById', { type: DataTypes.UUID, allowNull: true });
+                logger.info('✅ InternalThreads: createdById column added (pre-sync)');
+            }
+        }
+    } catch (e) {
+        if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
+            logger.warn('InternalThreads pre-sync migration:', e.message);
+    }
+
+    try {
+        let tpDesc;
+        try {
+            tpDesc = await qi.describeTable('InternalThreadParticipants');
+        } catch (_) {
+            tpDesc = null;
+        }
+        if (tpDesc && !tpDesc.lastReadAt) {
+            await qi.addColumn('InternalThreadParticipants', 'lastReadAt', { type: DataTypes.DATE, allowNull: true });
+            logger.info('✅ InternalThreadParticipants: lastReadAt column added (pre-sync)');
+        }
+    } catch (e) {
+        if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
+            logger.warn('InternalThreadParticipants pre-sync migration:', e.message);
+    }
 }
 
 module.exports = { runPreSync };
