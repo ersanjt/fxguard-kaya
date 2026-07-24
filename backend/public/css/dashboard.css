@@ -1623,6 +1623,10 @@
         .internal-chat-header-title { font-weight: 600; font-size: 0.95rem; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .internal-chat-header-status { font-size: 0.75rem; color: var(--text-muted); }
         .internal-chat-call-btns { display: flex; gap: 6px; flex-shrink: 0; }
+        .internal-thread-manage-box .internal-thread-members-list { display: flex; flex-direction: column; gap: 8px; max-height: 220px; overflow: auto; margin-top: 6px; }
+        .internal-thread-member-row { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-secondary); }
+        .internal-thread-member-name { flex: 1; min-width: 0; font-weight: 600; font-size: 0.9rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .internal-thread-member-status { font-size: 0.75rem; color: var(--text-muted); flex-shrink: 0; }
         .internal-call-btn { width: 40px; height: 40px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg-secondary); color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s, color 0.2s, border-color 0.2s; }
         .internal-call-btn:hover { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
         .internal-call-btn-sm { width: 36px; height: 36px; min-width: 36px; min-height: 36px; padding: 0; border: none; border-radius: 50%; background: transparent; color: var(--text-secondary); }

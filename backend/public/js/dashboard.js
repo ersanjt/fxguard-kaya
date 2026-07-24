@@ -3866,6 +3866,12 @@
                 if (target.closest('.internal-chat-popup-new-btn')) { e.preventDefault(); e.stopPropagation(); if (typeof closeInternalChatPopup === 'function') closeInternalChatPopup(); if (typeof showPage === 'function') showPage('internal-chat'); return; }
                 if (target.closest('#btnInternalStartChat') && typeof startInternalChat === 'function') { e.preventDefault(); e.stopPropagation(); startInternalChat(); return; }
                 if (target.closest('#btnInternalCancelChat') && typeof hideNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); hideNewChatForm(); return; }
+                if (target.closest('#internalChatManageBtn') && typeof showInternalThreadManageModal === 'function') { e.preventDefault(); e.stopPropagation(); showInternalThreadManageModal(); return; }
+                if (target.closest('#btnInternalRenameThread') && typeof renameInternalThread === 'function') { e.preventDefault(); e.stopPropagation(); renameInternalThread(); return; }
+                if (target.closest('#btnInternalAddMembers') && typeof addInternalThreadMembers === 'function') { e.preventDefault(); e.stopPropagation(); addInternalThreadMembers(); return; }
+                if (target.closest('#btnInternalLeaveThread') && typeof leaveInternalThread === 'function') { e.preventDefault(); e.stopPropagation(); leaveInternalThread(); return; }
+                const removeMemberBtn = target.closest('.internal-thread-remove-member[data-user-id]');
+                if (removeMemberBtn && typeof removeInternalThreadMember === 'function') { e.preventDefault(); e.stopPropagation(); removeInternalThreadMember(removeMemberBtn.getAttribute('data-user-id')); return; }
                 if (target.closest('.internal-call-btn[data-call-type="voice"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('voice'); return; }
                 if (target.closest('.internal-call-btn[data-call-type="video"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('video'); return; }
                 // Handle internal chat popup header click (minimize)
@@ -10940,10 +10946,114 @@
                 }
             }
             const callBtns = document.getElementById('internalChatCallBtns');
-            if (callBtns) callBtns.style.display = others.length ? 'flex' : 'none';
+            if (callBtns) callBtns.style.display = thread ? 'flex' : 'none';
+            callBtns && callBtns.querySelectorAll('[data-call-type]').forEach(function(btn) {
+                btn.style.display = others.length ? '' : 'none';
+            });
             apiFetch('/api/internal/threads/' + threadId + '/read', { method: 'POST' }).catch(function(){});
             loadInternalMessages(threadId);
             loadInternalThreads();
+        }
+        function closeInternalThreadManageModal() {
+            const modal = document.getElementById('internalThreadManageModal');
+            if (modal) modal.style.display = 'none';
+        }
+        async function showInternalThreadManageModal() {
+            if (!currentInternalThreadId) { toast(t('select_conversation_first'), true); return; }
+            const thread = (internalThreadsCache || []).find(function(x) { return x.id === currentInternalThreadId; });
+            const modal = document.getElementById('internalThreadManageModal');
+            if (!modal) return;
+            const renameWrap = document.getElementById('internalThreadRenameGroup');
+            const renameInput = document.getElementById('internalThreadRenameInput');
+            if (renameWrap) renameWrap.style.display = 'block';
+            if (renameInput) renameInput.value = (thread && thread.name) || '';
+            renderInternalThreadMembers(thread);
+            await loadInternalThreadAddMembersSelect(thread);
+            modal.style.display = 'flex';
+        }
+        function renderInternalThreadMembers(thread) {
+            const list = document.getElementById('internalThreadMembersList');
+            if (!list) return;
+            const me = currentUser || {};
+            const others = (thread && thread.participants) || currentInternalThreadParticipants || [];
+            const isCreator = thread && String(thread.createdById) === String(me.id);
+            const rows = [{ id: me.id, name: (me.name || me.email || '') + ' (' + (t('you') || (LANG === 'fa' ? 'شما' : 'You')) + ')', status: me.status || 'online', isMe: true }]
+                .concat(others.map(function(p) { return { id: p.id, name: p.name || p.email || '', status: p.status, isMe: false }; }));
+            list.innerHTML = rows.map(function(p) {
+                const canRemove = !p.isMe && isCreator;
+                const removeBtn = canRemove
+                    ? '<button type="button" class="btn-secondary btn-sm internal-thread-remove-member" data-user-id="' + escapeHtml(String(p.id)) + '">' + escapeHtml(t('remove') || (LANG === 'fa' ? 'حذف' : 'Remove')) + '</button>'
+                    : '';
+                return '<div class="internal-thread-member-row"><span class="internal-thread-member-name">' + escapeHtml(p.name || '') + '</span><span class="internal-thread-member-status">' + escapeHtml(formatPresenceLabel(p)) + '</span>' + removeBtn + '</div>';
+            }).join('');
+        }
+        async function loadInternalThreadAddMembersSelect(thread) {
+            const sel = document.getElementById('internalThreadAddMembers');
+            if (!sel) return;
+            const existing = new Set(((thread && thread.participants) || []).map(function(p) { return String(p.id); }));
+            if (currentUser && currentUser.id) existing.add(String(currentUser.id));
+            const res = await apiFetch('/api/internal/users');
+            if (!res.ok) { sel.innerHTML = ''; return; }
+            const users = (res.data && res.data.data) || res.data || [];
+            const available = (Array.isArray(users) ? users : []).filter(function(u) { return !existing.has(String(u.id)); });
+            sel.innerHTML = available.length
+                ? available.map(function(u) {
+                    return '<option value="' + escapeHtml(String(u.id)) + '">' + escapeHtml(u.name || u.email || '') + '</option>';
+                }).join('')
+                : '<option value="" disabled>' + escapeHtml(t('no_users') || (LANG === 'fa' ? 'کاربری برای افزودن نیست' : 'No users to add')) + '</option>';
+        }
+        async function renameInternalThread() {
+            if (!currentInternalThreadId) return;
+            const input = document.getElementById('internalThreadRenameInput');
+            const name = input ? String(input.value || '').trim() : '';
+            if (!name) { toast(t('group_name_required') || (LANG === 'fa' ? 'نام گروه را وارد کنید' : 'Enter a group name'), true); return; }
+            const res = await apiFetch('/api/internal/threads/' + currentInternalThreadId, { method: 'PATCH', body: JSON.stringify({ name: name }) });
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            toast(t('saved') || (LANG === 'fa' ? 'ذخیره شد' : 'Saved'));
+            await loadInternalThreads();
+            openInternalThread(currentInternalThreadId);
+            showInternalThreadManageModal();
+        }
+        async function addInternalThreadMembers() {
+            if (!currentInternalThreadId) return;
+            const sel = document.getElementById('internalThreadAddMembers');
+            const opts = sel ? Array.from(sel.selectedOptions || []) : [];
+            const userIds = opts.map(function(o) { return o.value; }).filter(Boolean);
+            if (!userIds.length) { toast(t('select_user_first'), true); return; }
+            const res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/participants', {
+                method: 'POST',
+                body: JSON.stringify({ userIds: userIds })
+            });
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            toast(t('members_added') || (LANG === 'fa' ? 'اعضا اضافه شدند' : 'Members added'));
+            await loadInternalThreads();
+            openInternalThread(currentInternalThreadId);
+            showInternalThreadManageModal();
+        }
+        async function removeInternalThreadMember(userId) {
+            if (!currentInternalThreadId || !userId) return;
+            if (!confirm(t('confirm_remove_member') || (LANG === 'fa' ? 'این عضو از گروه حذف شود؟' : 'Remove this member from the group?'))) return;
+            const res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/participants/' + userId, { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            toast(t('member_removed') || (LANG === 'fa' ? 'عضو حذف شد' : 'Member removed'));
+            await loadInternalThreads();
+            openInternalThread(currentInternalThreadId);
+            showInternalThreadManageModal();
+        }
+        async function leaveInternalThread() {
+            if (!currentInternalThreadId || !currentUser || !currentUser.id) return;
+            if (!confirm(t('confirm_leave_chat') || (LANG === 'fa' ? 'از این گفتگو خارج می‌شوید؟' : 'Leave this conversation?'))) return;
+            const res = await apiFetch('/api/internal/threads/' + currentInternalThreadId + '/participants/' + currentUser.id, { method: 'DELETE' });
+            if (res.needLogin) return;
+            if (!res.ok) { toast((res.data && res.data.error) || t('err_generic'), true); return; }
+            closeInternalThreadManageModal();
+            currentInternalThreadId = null;
+            backToInternalChatList();
+            loadInternalThreads();
+            toast(t('left_chat') || (LANG === 'fa' ? 'از گفتگو خارج شدید' : 'You left the chat'));
         }
         function insertInternalChatQuickReply(text) {
             const inp = document.getElementById('internalChatInput');

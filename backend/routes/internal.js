@@ -175,6 +175,20 @@ function createInternalRouter(io) {
             const withParticipants = await InternalThread.findByPk(req.params.id, {
                 include: [{ model: User, as: 'participants', attributes: USER_PUBLIC_ATTRS, through: { attributes: [] } }]
             });
+            if (io) {
+                const parts = await InternalThreadParticipant.findAll({
+                    where: { threadId: req.params.id },
+                    attributes: ['userId']
+                });
+                parts.forEach((p) => {
+                    if (String(p.userId) === String(req.userId)) return;
+                    io.to(`user_${p.userId}`).emit('internal_thread_updated', {
+                        threadId: req.params.id,
+                        action: 'renamed',
+                        name
+                    });
+                });
+            }
             res.json(serializeThread(withParticipants, req.userId, 0));
         } catch (err) {
             next(err);

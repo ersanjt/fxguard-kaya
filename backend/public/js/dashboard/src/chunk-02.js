@@ -1713,6 +1713,12 @@
                 if (target.closest('.internal-chat-popup-new-btn')) { e.preventDefault(); e.stopPropagation(); if (typeof closeInternalChatPopup === 'function') closeInternalChatPopup(); if (typeof showPage === 'function') showPage('internal-chat'); return; }
                 if (target.closest('#btnInternalStartChat') && typeof startInternalChat === 'function') { e.preventDefault(); e.stopPropagation(); startInternalChat(); return; }
                 if (target.closest('#btnInternalCancelChat') && typeof hideNewChatForm === 'function') { e.preventDefault(); e.stopPropagation(); hideNewChatForm(); return; }
+                if (target.closest('#internalChatManageBtn') && typeof showInternalThreadManageModal === 'function') { e.preventDefault(); e.stopPropagation(); showInternalThreadManageModal(); return; }
+                if (target.closest('#btnInternalRenameThread') && typeof renameInternalThread === 'function') { e.preventDefault(); e.stopPropagation(); renameInternalThread(); return; }
+                if (target.closest('#btnInternalAddMembers') && typeof addInternalThreadMembers === 'function') { e.preventDefault(); e.stopPropagation(); addInternalThreadMembers(); return; }
+                if (target.closest('#btnInternalLeaveThread') && typeof leaveInternalThread === 'function') { e.preventDefault(); e.stopPropagation(); leaveInternalThread(); return; }
+                const removeMemberBtn = target.closest('.internal-thread-remove-member[data-user-id]');
+                if (removeMemberBtn && typeof removeInternalThreadMember === 'function') { e.preventDefault(); e.stopPropagation(); removeInternalThreadMember(removeMemberBtn.getAttribute('data-user-id')); return; }
                 if (target.closest('.internal-call-btn[data-call-type="voice"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('voice'); return; }
                 if (target.closest('.internal-call-btn[data-call-type="video"]') && typeof startInternalCall === 'function') { e.preventDefault(); e.stopPropagation(); startInternalCall('video'); return; }
                 // Handle internal chat popup header click (minimize)
