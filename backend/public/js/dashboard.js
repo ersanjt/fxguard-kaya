@@ -2036,15 +2036,26 @@
                             appendInternalMessageToPopup(data.message);
                             loadInternalThreads();
                         } else if (!onInternalPage) {
-                            window.hasNewInternalChat = true; updateNavBadges();
+                            window.hasNewInternalChat = true;
+                            window.navBadgeCounts = window.navBadgeCounts || {};
+                            window.navBadgeCounts['internal-chat'] = (window.navBadgeCounts['internal-chat'] || 0) + 1;
+                            updateNavBadges();
                             loadInternalThreads();
                             toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + fromName + (preview ? ': ' + preview : ''), false);
                             showInternalChatPopup(data.threadId, fromName);
                         } else if (!viewingThread) {
-                            openInternalThread(data.threadId);
+                            window.hasNewInternalChat = true;
+                            window.navBadgeCounts = window.navBadgeCounts || {};
+                            window.navBadgeCounts['internal-chat'] = (window.navBadgeCounts['internal-chat'] || 0) + 1;
+                            updateNavBadges();
+                            loadInternalThreads();
+                            toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + fromName + (preview ? ': ' + preview : ''), false);
                         } else {
                             loadInternalThreads();
                         }
+                    });
+                    socket.on('internal_thread_updated', function() {
+                        if (typeof loadInternalThreads === 'function') loadInternalThreads();
                     });
                     socket.on('ticket_reply', function(data) {
                         playInternalChatSound();
@@ -10322,6 +10333,69 @@
         let internalCallDurationInterval = null;
         // STUN: non-Google first so WebRTC can work when Google is unreachable (e.g. from Iran without VPN)
         var INTERNAL_CALL_ICE_SERVERS = [{ urls: 'stun:stun.stunprotocol.org:3478' }, { urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }, { urls: 'stun:stun2.l.google.com:19302' }];
+        (function loadWebrtcIceFromConfig() {
+            try {
+                fetch((typeof API !== 'undefined' ? API : '') + '/api/config')
+                    .then(function (r) { return r.json(); })
+                    .then(function (c) {
+                        if (c && Array.isArray(c.webrtcIceServers) && c.webrtcIceServers.length) {
+                            INTERNAL_CALL_ICE_SERVERS = c.webrtcIceServers.concat(INTERNAL_CALL_ICE_SERVERS);
+                        }
+                    })
+                    .catch(function () {});
+            } catch (_e) {}
+        })();
+        function mediaErrorMessage(err) {
+            var name = (err && err.name) || '';
+            if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
+                return LANG === 'fa' ? 'دسترسی میکروفون/دوربین رد شد. در تنظیمات مرورگر اجازه دهید.' : 'Microphone/camera permission denied. Allow access in browser settings.';
+            }
+            if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+                return LANG === 'fa' ? 'میکروفون یا دوربین پیدا نشد.' : 'No microphone or camera found.';
+            }
+            if (name === 'NotReadableError' || name === 'TrackStartError') {
+                return LANG === 'fa' ? 'دستگاه در حال استفاده توسط برنامهٔ دیگری است.' : 'Device is busy in another application.';
+            }
+            return (name || 'Error') + ': ' + ((err && err.message) || '');
+        }
+        function getInternalCallTargets() {
+            var me = String((currentUser && currentUser.id) || '');
+            var parts = (currentInternalThreadParticipants || []).filter(function (p) {
+                return String(p.id) !== me;
+            });
+            if (parts.length) return parts.map(function (p) { return String(p.id); });
+            if (currentInternalThreadOtherUserId) return [String(currentInternalThreadOtherUserId)];
+            return [];
+        }
+        function formatPresenceLabel(user) {
+            if (!user) return t('last_seen') || (LANG === 'fa' ? 'آخرین بازدید' : 'Last seen');
+            var st = user.status || 'offline';
+            if (st === 'online') return t('status_online') || (LANG === 'fa' ? 'آنلاین' : 'Online');
+            if (st === 'busy') return t('status_busy') || (LANG === 'fa' ? 'مشغول' : 'Busy');
+            if (st === 'away') return t('status_away') || (LANG === 'fa' ? 'دور' : 'Away');
+            if (user.lastLoginAt && typeof fmtTZ === 'function') {
+                return (t('last_seen') || (LANG === 'fa' ? 'آخرین بازدید' : 'Last seen')) + ': ' + fmtTZ(user.lastLoginAt, 'datetime');
+            }
+            return t('status_offline') || (LANG === 'fa' ? 'آفلاین' : 'Offline');
+        }
+        function updateInternalChatHeaderPresence(thread) {
+            var statusEl = document.getElementById('internalChatHeaderStatus');
+            if (!statusEl) return;
+            var others = (thread && thread.participants) || currentInternalThreadParticipants || [];
+            if (thread && thread.isGroup) {
+                var online = others.filter(function (p) { return p.status === 'online'; }).length;
+                statusEl.textContent = (others.length + ' ' + (t('members') || (LANG === 'fa' ? 'عضو' : 'members')))
+                    + (online ? (' · ' + online + ' ' + (t('status_online') || 'online')) : '');
+                return;
+            }
+            statusEl.textContent = formatPresenceLabel(others[0]);
+        }
+        function threadDisplayName(th) {
+            if (!th) return t('chat') || 'Chat';
+            if (th.displayName) return th.displayName;
+            if (th.name) return th.name;
+            return (th.participants || []).map(function (p) { return p.name || p.email || ''; }).filter(Boolean).join(', ') || (t('chat') || 'Chat');
+        }
         function getSocket() { return socket; }
         function getInternalCallOtherDisplay() {
             const id = currentInternalThreadOtherUserId || (internalCallPendingInvite && internalCallPendingInvite.fromUserId) || (internalCallPendingOffer && internalCallPendingOffer.fromUserId);
@@ -10395,6 +10469,12 @@
             if (!res.ok) { list.innerHTML = '<div class="empty">' + t('loading_err') + '</div>'; return; }
             const data = (res.data && res.data.data) || [];
             internalThreadsCache = data;
+            if (res.data && typeof res.data.totalUnread === 'number') {
+                window.navBadgeCounts = window.navBadgeCounts || {};
+                window.navBadgeCounts['internal-chat'] = res.data.totalUnread || 0;
+                window.hasNewInternalChat = res.data.totalUnread > 0;
+                if (typeof updateNavBadges === 'function') updateNavBadges();
+            }
             renderInternalThreadList(data);
             updateInternalChatFloatingBtn();
         }
@@ -10406,22 +10486,24 @@
             const me = (currentUser && currentUser.id) || '';
             list.innerHTML = data.map(function(th) {
                 const participants = th.participants || [];
-                const names = participants.map(function(p) { return p.name || p.email || ''; }).join(', ');
+                const title = threadDisplayName(th);
                 const first = participants[0];
-                const initial = (first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F';
-                const avatarUrl = resolveAvatarUrl(first && first.avatar);
+                const initial = th.isGroup ? '\uD83D\uDC65' : ((first && (first.name || first.email || '').trim()[0]) ? (first.name || first.email || '').trim()[0].toUpperCase() : '\u003F');
+                const avatarUrl = !th.isGroup ? resolveAvatarUrl(first && first.avatar) : '';
                 const avatarHtml = avatarUrl ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(avatarUrl) + '" alt="" onerror="this.style.display=\'none\'">' : escapeHtml(initial);
                 const last = th.lastMessage ? (th.lastMessage.content || '').slice(0, 45) + ((th.lastMessage.content || '').length > 45 ? '\u2026' : '') : '\u2014';
                 const timeStr = th.lastMessageAt ? fmtTZ(th.lastMessageAt, 'time') : '';
                 const fromLabel = th.lastMessage && th.lastMessage.fromUser && String(th.lastMessage.fromUser.id) !== String(me) ? (th.lastMessage.fromUser.name || '') + ': ' : '';
-                return '<div class="list-item internal-chat-thread-item" data-id="' + escapeHtml(th.id) + '" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + avatarHtml + '</div><div class="list-item-body"><span class="name">' + escapeHtml(names || t('chat')) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span></div>';
+                const unread = th.unreadCount > 0 ? '<span class="internal-chat-unread-pill">' + (th.unreadCount > 99 ? '99+' : th.unreadCount) + '</span>' : '';
+                const groupBadge = th.isGroup ? '<span class="internal-chat-group-badge">' + escapeHtml(t('group_chat') || (LANG === 'fa' ? 'گروه' : 'Group')) + '</span>' : '';
+                return '<div class="list-item internal-chat-thread-item' + (th.unreadCount > 0 ? ' has-unread' : '') + '" data-id="' + escapeHtml(th.id) + '" style="cursor:pointer;"><div class="list-item-avatar internal-chat-thread-avatar">' + avatarHtml + '</div><div class="list-item-body"><span class="name">' + groupBadge + escapeHtml(title) + '</span><div class="meta">' + escapeHtml(fromLabel + last) + '</div></div><span class="internal-chat-thread-meta-end"><span class="internal-chat-thread-time">' + escapeHtml(timeStr) + '</span>' + unread + '</span></div>';
             }).join('');
         }
         function filterInternalThreads(q) {
             q = (q || '').trim().toLowerCase();
             if (!q) { renderInternalThreadList(internalThreadsCache); return; }
             const filtered = internalThreadsCache.filter(function(th) {
-                const names = (th.participants || []).map(function(p) { return (p.name || '') + ' ' + (p.email || ''); }).join(' ').toLowerCase();
+                const names = threadDisplayName(th).toLowerCase() + ' ' + (th.participants || []).map(function(p) { return (p.name || '') + ' ' + (p.email || ''); }).join(' ').toLowerCase();
                 const last = (th.lastMessage && th.lastMessage.content) ? th.lastMessage.content.toLowerCase() : '';
                 return names.indexOf(q) >= 0 || last.indexOf(q) >= 0;
             });
@@ -10436,7 +10518,11 @@
             if (!hasAccess) { btn.style.display = 'none'; return; }
             btn.style.display = 'flex';
             const badge = document.getElementById('internalChatFloatingBadge');
-            if (badge) { badge.style.display = window.hasNewInternalChat ? 'flex' : 'none'; badge.textContent = window.navBadgeCounts && window.navBadgeCounts['internal-chat'] ? window.navBadgeCounts['internal-chat'] : '1'; }
+            if (badge) {
+                var n = (window.navBadgeCounts && window.navBadgeCounts['internal-chat']) || 0;
+                badge.style.display = n > 0 || window.hasNewInternalChat ? 'flex' : 'none';
+                badge.textContent = n > 99 ? '99+' : String(n || (window.hasNewInternalChat ? 1 : 0));
+            }
         }
         function toggleInternalChatFloating() {
             const popup = document.getElementById('internalChatPopup');
@@ -10587,22 +10673,29 @@
             if (cameraBtn) { cameraBtn.classList.toggle('off', internalCallCameraOff); cameraBtn.title = internalCallCameraOff ? (t('call_camera_on') || 'روشن کردن دوربین') : (t('call_camera_off') || 'خاموش کردن دوربین'); }
         }
         async function startInternalCall(type) {
-            if (!currentInternalThreadId || !currentInternalThreadOtherUserId) { toast(t('select_conversation_first'), true); return; }
+            const targets = getInternalCallTargets();
+            if (!currentInternalThreadId || !targets.length) { toast(t('select_conversation_first'), true); return; }
             const s = getSocket();
             if (!s || !s.connected) { toast(t('user_offline') || 'کاربر آفلاین است', true); return; }
             try {
                 internalCallType = type;
                 internalCallLocalStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: type === 'video' });
-                const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
-                const toId = currentInternalThreadOtherUserId;
-                internalCallPeers[toId] = pc;
-                attachPeerConnectionStateHandlers(pc, toId);
-                internalCallLocalStream.getTracks().forEach(function(t){ pc.addTrack(t, internalCallLocalStream); });
-                pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: toId, threadId: currentInternalThreadId, candidate: e.candidate }); };
-                pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(toId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
-                const offer = await pc.createOffer();
-                await pc.setLocalDescription(offer);
-                s.emit('call_offer', { toUserId: toId, threadId: currentInternalThreadId, type: type, sdp: offer });
+                currentInternalThreadOtherUserId = targets[0];
+                for (var i = 0; i < targets.length; i++) {
+                    (function (toId) {
+                        const pc = new RTCPeerConnection({ iceServers: INTERNAL_CALL_ICE_SERVERS });
+                        internalCallPeers[toId] = pc;
+                        attachPeerConnectionStateHandlers(pc, toId);
+                        internalCallLocalStream.getTracks().forEach(function(tr){ pc.addTrack(tr, internalCallLocalStream); });
+                        pc.onicecandidate = function(e) { if (e.candidate && s) s.emit('call_ice', { toUserId: toId, threadId: currentInternalThreadId, candidate: e.candidate }); };
+                        pc.ontrack = function(e) { const rv = getOrCreateRemoteVideoEl(toId); if (rv && e.streams && e.streams[0]) { rv.srcObject = e.streams[0]; rv.play().catch(function(){}); } };
+                        pc.createOffer().then(function(offer) {
+                            return pc.setLocalDescription(offer).then(function() {
+                                s.emit('call_offer', { toUserId: toId, threadId: currentInternalThreadId, type: type, sdp: offer });
+                            });
+                        }).catch(function(err) { console.warn('call offer failed', toId, err); });
+                    })(targets[i]);
+                }
                 showInternalCallModal(type === 'video' ? t('calling_video') : t('calling_voice'), false);
                 const localV = document.getElementById('internalCallLocalVideo');
                 if (localV) { localV.srcObject = internalCallLocalStream; localV.style.display = type === 'video' ? 'block' : 'none'; }
@@ -10612,7 +10705,7 @@
                 if (micBtn) { micBtn.style.display = 'flex'; micBtn.classList.toggle('muted', internalCallMicMuted); }
                 const cameraBtn = document.getElementById('internalCallCameraBtn');
                 if (cameraBtn) { cameraBtn.style.display = type === 'video' ? 'flex' : 'none'; cameraBtn.classList.toggle('off', internalCallCameraOff); }
-            } catch (e) { toast((e.name || 'Error') + ': ' + (e.message || ''), true); hideInternalCallModal(); }
+            } catch (e) { toast(mediaErrorMessage(e), true); hideInternalCallModal(); }
         }
         async function acceptInternalCall() {
             if (!internalCallPendingOffer) return;
@@ -10648,7 +10741,7 @@
                 internalCallPendingOffer = null;
                 internalCallIsIncoming = false;
                 playCallConnected();
-            } catch (e) { toast((e.name || 'Error') + ': ' + (e.message || ''), true); rejectInternalCall(); }
+            } catch (e) { toast(mediaErrorMessage(e), true); rejectInternalCall(); }
         }
         function rejectInternalCall() {
             const s = getSocket();
@@ -10706,7 +10799,7 @@
                 internalCallPendingInvite = null;
                 playCallConnected();
                 setTimeout(function() { internalCallIsJoining = false; }, 5000);
-            } catch (e) { toast((e.name || 'Error') + ': ' + (e.message || ''), true); rejectInternalCallInvite(); }
+            } catch (e) { toast(mediaErrorMessage(e), true); rejectInternalCallInvite(); }
         }
         function rejectInternalCallInvite() {
             stopCallRingtone();
@@ -10790,9 +10883,21 @@
             const opts = sel ? Array.from(sel.selectedOptions || []) : [];
             const userIds = opts.map(function(o) { return o.value; }).filter(function(v) { return v; });
             if (!userIds.length) { toast(t('select_user_first'), true); return; }
-            const res = await apiFetch('/api/internal/threads', { method: 'POST', body: JSON.stringify({ userIds: userIds }) });
+            const nameEl = document.getElementById('internalNewChatName');
+            const groupName = nameEl ? String(nameEl.value || '').trim() : '';
+            const body = { userIds: userIds };
+            if (groupName || userIds.length > 1) {
+                body.type = 'group';
+                if (groupName) body.name = groupName;
+            }
+            const res = await apiFetch('/api/internal/threads', { method: 'POST', body: JSON.stringify(body) });
             if (res.needLogin) return;
-            if (res.ok) { hideNewChatForm(); openInternalThread(res.data.id); loadInternalThreads(); } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) {
+                hideNewChatForm();
+                if (nameEl) nameEl.value = '';
+                openInternalThread(res.data.id);
+                loadInternalThreads();
+            } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         function backToInternalChatList() {
             const wrap = document.getElementById('internalChatLayoutWrap');
@@ -10808,26 +10913,37 @@
             const wrap = document.getElementById('internalChatLayoutWrap');
             if (pane) pane.style.display = 'flex';
             if (wrap) { wrap.classList.add('internal-chat-has-chat'); if (isInternalChatMobile()) wrap.classList.add('internal-chat-mobile-chat-open'); }
-            const partRes = await apiFetch('/api/internal/threads');
-            if (partRes.ok && partRes.data && partRes.data.data) {
-                const thread = partRes.data.data.find(function(x) { return x.id === threadId; });
-                const headerEl = document.getElementById('internalChatHeader');
-                if (headerEl) headerEl.textContent = thread && thread.participants ? thread.participants.map(function(p) { return p.name; }).join(', ') : t('chat');
-                const others = thread && thread.participants ? thread.participants.filter(function(p) { return String(p.id) !== String(currentUser && currentUser.id); }) : [];
-                currentInternalThreadOtherUserId = others.length ? others[0].id : null;
-                currentInternalThreadParticipants = thread && thread.participants ? thread.participants : [];
-                const headerAvatarEl = document.getElementById('internalChatHeaderAvatar');
-                if (headerAvatarEl) {
+            let thread = (internalThreadsCache || []).find(function(x) { return x.id === threadId; });
+            if (!thread) {
+                const partRes = await apiFetch('/api/internal/threads');
+                if (partRes.ok && partRes.data && partRes.data.data) {
+                    internalThreadsCache = partRes.data.data;
+                    thread = internalThreadsCache.find(function(x) { return x.id === threadId; });
+                }
+            }
+            const headerEl = document.getElementById('internalChatHeader');
+            if (headerEl) headerEl.textContent = threadDisplayName(thread);
+            const others = thread && thread.participants ? thread.participants.filter(function(p) { return String(p.id) !== String(currentUser && currentUser.id); }) : [];
+            currentInternalThreadOtherUserId = others.length ? others[0].id : null;
+            currentInternalThreadParticipants = others;
+            updateInternalChatHeaderPresence(thread);
+            const headerAvatarEl = document.getElementById('internalChatHeaderAvatar');
+            if (headerAvatarEl) {
+                if (thread && thread.isGroup) {
+                    headerAvatarEl.innerHTML = '<span class="avatar-fallback">👥</span>';
+                } else {
                     const other = others[0];
                     const initial = (other && (other.name || other.email || '').trim()[0]) ? (other.name || other.email || '').trim()[0].toUpperCase() : '\u003F';
                     const pic = resolveAvatarUrl(other && other.avatar);
                     if (pic) headerAvatarEl.innerHTML = '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(pic) + '" alt="" onerror="this.style.display=\'none\'">';
                     else { headerAvatarEl.innerHTML = ''; headerAvatarEl.textContent = initial; }
                 }
-                const callBtns = document.getElementById('internalChatCallBtns');
-                if (callBtns) callBtns.style.display = currentInternalThreadOtherUserId ? 'flex' : 'none';
             }
+            const callBtns = document.getElementById('internalChatCallBtns');
+            if (callBtns) callBtns.style.display = others.length ? 'flex' : 'none';
+            apiFetch('/api/internal/threads/' + threadId + '/read', { method: 'POST' }).catch(function(){});
             loadInternalMessages(threadId);
+            loadInternalThreads();
         }
         function insertInternalChatQuickReply(text) {
             const inp = document.getElementById('internalChatInput');

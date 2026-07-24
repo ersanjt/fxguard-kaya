@@ -2036,15 +2036,26 @@
                             appendInternalMessageToPopup(data.message);
                             loadInternalThreads();
                         } else if (!onInternalPage) {
-                            window.hasNewInternalChat = true; updateNavBadges();
+                            window.hasNewInternalChat = true;
+                            window.navBadgeCounts = window.navBadgeCounts || {};
+                            window.navBadgeCounts['internal-chat'] = (window.navBadgeCounts['internal-chat'] || 0) + 1;
+                            updateNavBadges();
                             loadInternalThreads();
                             toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + fromName + (preview ? ': ' + preview : ''), false);
                             showInternalChatPopup(data.threadId, fromName);
                         } else if (!viewingThread) {
-                            openInternalThread(data.threadId);
+                            window.hasNewInternalChat = true;
+                            window.navBadgeCounts = window.navBadgeCounts || {};
+                            window.navBadgeCounts['internal-chat'] = (window.navBadgeCounts['internal-chat'] || 0) + 1;
+                            updateNavBadges();
+                            loadInternalThreads();
+                            toast((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + fromName + (preview ? ': ' + preview : ''), false);
                         } else {
                             loadInternalThreads();
                         }
+                    });
+                    socket.on('internal_thread_updated', function() {
+                        if (typeof loadInternalThreads === 'function') loadInternalThreads();
                     });
                     socket.on('ticket_reply', function(data) {
                         playInternalChatSound();

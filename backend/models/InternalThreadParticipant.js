@@ -14,6 +14,11 @@ module.exports = (sequelize) => {
         userId: {
             type: DataTypes.UUID,
             allowNull: false
+        },
+        lastReadAt: {
+            type: DataTypes.DATE,
+            allowNull: true,
+            comment: 'آخرین باری که کاربر این ترد را خوانده'
         }
     }, {
         timestamps: false,

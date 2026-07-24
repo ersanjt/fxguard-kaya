@@ -21,8 +21,12 @@
                         <label data-i18n="start_chat_with">شروع گفتگو با</label>
                         <select id="internalNewChatUser" multiple style="min-height:80px;"><option value="" data-i18n="select_user">انتخاب کاربر</option></select>
                         <small class="text-muted" style="display:block; margin-top:4px;" data-i18n="select_multiple_hint">برای گفتگوی گروهی، چند نفر را انتخاب کنید</small>
-                        <button type="button" id="btnInternalStartChat" data-i18n="start_chat">شروع چت</button>
-                        <button type="button" class="btn-secondary" id="btnInternalCancelChat" data-i18n="cancel">انصراف</button>
+                        <label for="internalNewChatName" style="margin-top:12px;display:block;" data-i18n="group_name_optional">نام گروه (اختیاری)</label>
+                        <input type="text" id="internalNewChatName" class="internal-chat-group-name-input" maxlength="120" data-i18n-ph="group_name_ph" placeholder="مثال: تیم پشتیبانی تهران">
+                        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="button" id="btnInternalStartChat" class="btn-primary" data-i18n="start_chat">شروع چت</button>
+                            <button type="button" class="btn-secondary" id="btnInternalCancelChat" data-i18n="cancel">انصراف</button>
+                        </div>
                     </div>
                 </div>
                 <div id="pageBranches" class="page branch-page">

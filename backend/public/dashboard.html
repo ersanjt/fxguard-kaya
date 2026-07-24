@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="کایا CRM">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان صرافی کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="2fa315c193e1">
+    <meta name="crm-build" content="888f277868fc">
     <title>پورتال کارکنان کایا | صرافی کایا</title>
     <link rel="icon" id="favicon" href="/favicon-kaya.svg">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/favicon-kaya.svg">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=2fa315c193e1">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=2fa315c193e1" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=888f277868fc">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=888f277868fc" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -1211,8 +1211,12 @@
                         <label data-i18n="start_chat_with">شروع گفتگو با</label>
                         <select id="internalNewChatUser" multiple style="min-height:80px;"><option value="" data-i18n="select_user">انتخاب کاربر</option></select>
                         <small class="text-muted" style="display:block; margin-top:4px;" data-i18n="select_multiple_hint">برای گفتگوی گروهی، چند نفر را انتخاب کنید</small>
-                        <button type="button" id="btnInternalStartChat" data-i18n="start_chat">شروع چت</button>
-                        <button type="button" class="btn-secondary" id="btnInternalCancelChat" data-i18n="cancel">انصراف</button>
+                        <label for="internalNewChatName" style="margin-top:12px;display:block;" data-i18n="group_name_optional">نام گروه (اختیاری)</label>
+                        <input type="text" id="internalNewChatName" class="internal-chat-group-name-input" maxlength="120" data-i18n-ph="group_name_ph" placeholder="مثال: تیم پشتیبانی تهران">
+                        <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;">
+                            <button type="button" id="btnInternalStartChat" class="btn-primary" data-i18n="start_chat">شروع چت</button>
+                            <button type="button" class="btn-secondary" id="btnInternalCancelChat" data-i18n="cancel">انصراف</button>
+                        </div>
                     </div>
                 </div>
                 <div id="pageBranches" class="page branch-page">
@@ -3721,14 +3725,14 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=2fa315c193e1" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=2fa315c193e1" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=2fa315c193e1" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=2fa315c193e1" charset="utf-8"></script>
-    <script src="/js/i18n-en.js?v=2fa315c193e1" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=2fa315c193e1" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=2fa315c193e1" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=2fa315c193e1" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=888f277868fc" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=888f277868fc" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=888f277868fc" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=888f277868fc" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=888f277868fc" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=888f277868fc" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=888f277868fc" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=888f277868fc" charset="utf-8"></script>
     <script>
     (function() {
         var meta = document.querySelector('meta[name="crm-build"]');

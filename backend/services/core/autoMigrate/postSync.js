@@ -175,6 +175,40 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
             logger.warn('Users position migration:', e.message);
     }
 
+    try {
+        const thDesc = await qi.describeTable('InternalThreads');
+        if (thDesc && !thDesc.name) {
+            await qi.addColumn('InternalThreads', 'name', { type: DataTypes.STRING(120), allowNull: true });
+            logger.info('✅ InternalThreads: name column added');
+        }
+        if (thDesc && !thDesc.type) {
+            await qi.addColumn('InternalThreads', 'type', {
+                type: DataTypes.STRING(16),
+                allowNull: false,
+                defaultValue: 'dm'
+            });
+            logger.info('✅ InternalThreads: type column added');
+        }
+        if (thDesc && !thDesc.createdById) {
+            await qi.addColumn('InternalThreads', 'createdById', { type: DataTypes.UUID, allowNull: true });
+            logger.info('✅ InternalThreads: createdById column added');
+        }
+    } catch (e) {
+        if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
+            logger.warn('InternalThreads migration:', e.message);
+    }
+
+    try {
+        const tpDesc = await qi.describeTable('InternalThreadParticipants');
+        if (tpDesc && !tpDesc.lastReadAt) {
+            await qi.addColumn('InternalThreadParticipants', 'lastReadAt', { type: DataTypes.DATE, allowNull: true });
+            logger.info('✅ InternalThreadParticipants: lastReadAt column added');
+        }
+    } catch (e) {
+        if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
+            logger.warn('InternalThreadParticipants migration:', e.message);
+    }
+
     const defaultRateCurrencies = require('../../../lib/defaultRateCurrencies');
     const rateCurrencyCount = await RateCurrency.count();
     if (rateCurrencyCount === 0 && defaultRateCurrencies.length > 0) {
