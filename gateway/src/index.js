@@ -1331,39 +1331,82 @@ async function listWhatsAppGroupsFromStore() {
     if (!client?.pupPage) throw new Error('pupPage_unavailable');
     return client.pupPage.evaluate(() => {
         const store = window.Store;
-        if (!store || !store.Chat) return [];
-        let models = [];
-        try {
-            if (typeof store.Chat.getModelsArray === 'function') {
-                models = store.Chat.getModelsArray();
-            } else if (Array.isArray(store.Chat.models)) {
-                models = store.Chat.models;
-            } else if (store.Chat._models) {
-                models = Object.values(store.Chat._models);
-            }
-        } catch (_) {
-            models = [];
+        if (!store) return [];
+
+        function collectModels(collection) {
+            if (!collection) return [];
+            try {
+                if (typeof collection.getModelsArray === 'function') {
+                    return collection.getModelsArray() || [];
+                }
+            } catch (_) {}
+            try {
+                if (Array.isArray(collection.models)) return collection.models;
+            } catch (_) {}
+            try {
+                if (collection._models) return Object.values(collection._models);
+            } catch (_) {}
+            try {
+                if (typeof collection.map === 'function') {
+                    const arr = [];
+                    collection.map(function (m) {
+                        arr.push(m);
+                    });
+                    return arr;
+                }
+            } catch (_) {}
+            return [];
         }
-        const out = [];
+
+        function jidOf(model) {
+            if (!model) return null;
+            const id = model.id;
+            if (!id) return null;
+            if (id._serialized) return String(id._serialized);
+            if (id.user && id.server) return String(id.user) + '@' + String(id.server);
+            return null;
+        }
+
         const seen = Object.create(null);
-        for (let i = 0; i < models.length; i++) {
-            const c = models[i];
-            if (!c) continue;
-            const id = c.id;
-            const ser =
-                (id && id._serialized) ||
-                (id && id.user && id.server ? String(id.user) + '@' + String(id.server) : null);
-            if (!ser || !String(ser).endsWith('@g.us')) continue;
-            if (seen[ser]) continue;
-            seen[ser] = 1;
-            const name =
-                c.name ||
-                c.formattedTitle ||
-                c.verifiedName ||
-                (c.contact && (c.contact.name || c.contact.pushname)) ||
-                null;
-            out.push({ id: String(ser), name: name ? String(name) : null });
+        const out = [];
+
+        function pushGroup(ser, name) {
+            if (!ser || !String(ser).endsWith('@g.us')) return;
+            if (seen[ser]) {
+                if (name && !seen[ser].name) seen[ser].name = String(name);
+                return;
+            }
+            const row = { id: String(ser), name: name ? String(name) : null };
+            seen[ser] = row;
+            out.push(row);
         }
+
+        // ۱) همهٔ گروه‌هایی که حساب عضو آن‌هاست (حتی بدون پیام اخیر در Chat list)
+        const metas = collectModels(store.GroupMetadata);
+        for (let i = 0; i < metas.length; i++) {
+            const m = metas[i];
+            const ser = jidOf(m);
+            const name = (m && (m.subject || m.name || m.formattedTitle)) || null;
+            pushGroup(ser, name);
+        }
+
+        // ۲) گروه‌های حاضر در لیست چت (نام ممکن است بهتر باشد)
+        const chats = collectModels(store.Chat);
+        for (let i = 0; i < chats.length; i++) {
+            const c = chats[i];
+            const ser = jidOf(c);
+            if (!ser || !String(ser).endsWith('@g.us')) continue;
+            const name =
+                (c &&
+                    (c.name ||
+                        c.formattedTitle ||
+                        c.verifiedName ||
+                        (c.contact && (c.contact.name || c.contact.pushname)) ||
+                        (c.groupMetadata && c.groupMetadata.subject))) ||
+                null;
+            pushGroup(ser, name);
+        }
+
         return out;
     });
 }
@@ -1385,6 +1428,7 @@ async function listWhatsAppGroups() {
         ]);
         if (Array.isArray(fromStore) && fromStore.length > 0) {
             lastGroupsCache = { at: Date.now(), groups: fromStore };
+            logger.info('WhatsApp groups listed from Store', { count: fromStore.length });
             return fromStore;
         }
         if (Array.isArray(fromStore) && fromStore.length === 0) {

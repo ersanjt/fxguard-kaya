@@ -170,7 +170,11 @@ router.post('/sync-groups', async (req, res, next) => {
                 if (groupName && String(customer.name || '').trim() !== groupName) {
                     await customer.update({ name: groupName }, { transaction: t });
                 }
-                // مکالمهٔ فعال (غیرآرشیو) را ترجیح بده؛ آرشیو قفل‌شده را دوباره باز نکن
+                // گروه فعال از شمارهٔ فعلی: محدودیت قفل قدیمی را بردار
+                if (customer.isRestrictedFromStaff) {
+                    await customer.update({ isRestrictedFromStaff: false }, { transaction: t });
+                }
+                // مکالمهٔ فعال (غیرآرشیو) را ترجیح بده؛ آرشیو قفل‌شده را دوباره باز کن
                 let conv = await Conversation.findOne({
                     where: {
                         customerId: customer.id,
@@ -179,22 +183,49 @@ router.post('/sync-groups', async (req, res, next) => {
                     transaction: t,
                 });
                 if (!conv) {
-                    await Conversation.create(
-                        {
-                            customerId: customer.id,
-                            status: 'open',
-                            priority: 'normal',
-                            source: 'whatsapp',
-                            metadata: { isGroup: true, groupName: groupName || null },
-                        },
-                        { transaction: t }
-                    );
+                    const archived = await Conversation.findOne({
+                        where: { customerId: customer.id, status: 'archived' },
+                        order: [['updatedAt', 'DESC']],
+                        transaction: t,
+                    });
+                    if (archived) {
+                        const meta = archived.metadata || {};
+                        await archived.update(
+                            {
+                                status: 'open',
+                                isHiddenFromStaff: false,
+                                metadata: {
+                                    ...meta,
+                                    isGroup: true,
+                                    groupName: groupName || meta.groupName || null,
+                                },
+                            },
+                            { transaction: t }
+                        );
+                        conv = archived;
+                    } else {
+                        await Conversation.create(
+                            {
+                                customerId: customer.id,
+                                status: 'open',
+                                priority: 'normal',
+                                source: 'whatsapp',
+                                isHiddenFromStaff: false,
+                                metadata: { isGroup: true, groupName: groupName || null },
+                            },
+                            { transaction: t }
+                        );
+                    }
                 } else {
                     const meta = conv.metadata || {};
-                    const needsUpdate = !meta.isGroup || (groupName && meta.groupName !== groupName);
+                    const needsUpdate =
+                        !meta.isGroup ||
+                        (groupName && meta.groupName !== groupName) ||
+                        conv.isHiddenFromStaff;
                     if (needsUpdate) {
                         await conv.update(
                             {
+                                isHiddenFromStaff: false,
                                 metadata: {
                                     ...meta,
                                     isGroup: true,
