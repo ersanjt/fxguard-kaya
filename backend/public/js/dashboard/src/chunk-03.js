@@ -2543,7 +2543,7 @@
             const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
             if (res.needLogin) return;
             if (res.ok) loadMessages(currentConvId);
-            else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+            else toast((typeof getApiError === 'function' ? getApiError(res) : null) || (res.data && res.data.error) || res.error || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
         }
         function toggleWaEmojiPanel(ev) {
             if (ev) ev.stopPropagation();
@@ -2770,7 +2770,7 @@
                 const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify(body) });
                 if (res.needLogin) return;
                 if (res.ok) loadMessages(currentConvId);
-                else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+                else toast((typeof getApiError === 'function' ? getApiError(res) : null) || (res.data && res.data.error) || res.error || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
             } finally {
                 _convSendInFlight = false;
                 updateWaComposerState();
@@ -3123,7 +3123,7 @@
                 const res = await apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: media }) });
                 if (res.needLogin) return;
                 if (res.ok) loadMessages(currentConvId);
-                else toast((res.data && res.data.error) || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
+                else toast((typeof getApiError === 'function' ? getApiError(res) : null) || (res.data && res.data.error) || res.error || (LANG === 'en' ? 'Send failed' : 'خطا در ارسال'), true);
             } finally {
                 _convSendInFlight = false;
             }

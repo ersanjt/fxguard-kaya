@@ -9,7 +9,7 @@ const mongoose = require('mongoose');
 const models = require('../models');
 const { sequelize, Customer, Conversation, Message, User, Department, AutoResponse, WhatsappConfig } = models;
 const { Op } = require('sequelize');
-const { normalizePhone, getSendTarget } = require('../lib/phoneUtils');
+const { normalizePhone, getSendTarget, isLikelyWhatsAppLid, extractDigits } = require('../lib/phoneUtils');
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { gatewayGet } = require('../lib/gatewayClient');
 const { sendDeptAssignedMessage, maybeSendEmployeeIntro } = require('./autoMessages');
@@ -441,12 +441,30 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         // برای پیام‌های ارسالی از موبایل: شماره مشتری در to است نه from
         let rawPhone;
         if (isFromMe) {
-            rawPhone = (contact && contact.number != null) ? contact.number : to;
+            rawPhone = (contact && contact.number != null && String(contact.number).trim() !== '')
+                ? contact.number
+                : to;
         } else {
-            rawPhone = isGroup ? (chat?.id || from) : ((contact && contact.number != null) ? contact.number : from);
+            rawPhone = isGroup
+                ? (chat?.id || from)
+                : ((contact && contact.number != null && String(contact.number).trim() !== '')
+                    ? contact.number
+                    : from);
+        }
+        // اگر فقط LID داریم، همان را نگه دار (ارسال بعدی با @lid انجام می‌شود)
+        if (!isGroup && !rawPhone && contact && contact.lid) {
+            rawPhone = contact.lid;
         }
         if (rawPhone == null || rawPhone === '') return;
-        const phone = isGroup ? String(rawPhone).trim() : (normalizePhone(rawPhone) || normalizePhone(isFromMe ? to : from));
+        let phone;
+        if (isGroup) {
+            phone = String(rawPhone).trim();
+        } else if (isLikelyWhatsAppLid(rawPhone) || /@lid$/i.test(String(rawPhone))) {
+            const lidDigits = extractDigits(rawPhone);
+            phone = lidDigits || String(rawPhone).trim();
+        } else {
+            phone = normalizePhone(rawPhone) || normalizePhone(isFromMe ? to : from);
+        }
         if (!phone) return;
         const rawType = (messageData.type || '').toLowerCase();
         if (rawType === 'reaction' || rawType === 'read_receipt' || rawType === 'delivery' || rawType === 'update') return;

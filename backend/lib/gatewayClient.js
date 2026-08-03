@@ -9,6 +9,7 @@ const {
     buildTemplatePayload,
     isMetaReengagementError,
 } = require('./whatsappOutboundPolicy');
+const { isLikelyWhatsAppLid, isGroupJid } = require('./phoneUtils');
 
 /** برای سازگاری — مقدار پیش‌فرض env */
 function getDefaultGatewayUrl() {
@@ -81,6 +82,9 @@ async function sendWhatsAppMessage(payload, options = {}) {
     const wantsTemplate = !!(payload?.templateName);
     const gwOk = cfg.gatewayEnabled !== false;
     const isVoice = isVoiceOutboundPayload(payload);
+    const toStr = String(payload?.to || '');
+    // LID و گروه فقط از Gateway قابل ارسال‌اند (Cloud API شمارهٔ E.164 می‌خواهد)
+    const forceGateway = isGroupJid(toStr) || isLikelyWhatsAppLid(toStr) || /@lid\b/i.test(toStr);
 
     if (wantsTemplate) {
         if (!cloudOk) throw new Error('Cloud API template send requires Meta Cloud configuration');
@@ -88,8 +92,14 @@ async function sendWhatsAppMessage(payload, options = {}) {
     }
 
     // Voice notes must use Gateway PTT when available — Cloud cannot send WhatsApp voice bubbles.
-    if (isVoice && gwOk && mode !== 'cloud') {
+    if ((isVoice || forceGateway) && gwOk && mode !== 'cloud') {
         return gatewayPost('/api/send-message', payload, options);
+    }
+    if (forceGateway && gwOk) {
+        return gatewayPost('/api/send-message', payload, options);
+    }
+    if (forceGateway && !gwOk) {
+        throw new Error('این مخاطب شناسهٔ واتساپ (LID/گروه) دارد و فقط از طریق Gateway قابل ارسال است');
     }
 
     if (mode === 'gateway') {

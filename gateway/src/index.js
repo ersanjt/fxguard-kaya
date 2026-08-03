@@ -567,6 +567,18 @@ function attachClientEvents(c) {
                 }
             }
 
+            let contactNumber = contact?.number || null;
+            let contactLid = null;
+            try {
+                const ser = contact?.id?._serialized || contact?.id || '';
+                if (typeof ser === 'string' && /@lid$/i.test(ser)) {
+                    contactLid = ser;
+                    if (!contactNumber) contactNumber = null;
+                } else if (!contactNumber && typeof ser === 'string' && /@(c\.us|s\.whatsapp\.net)$/i.test(ser)) {
+                    contactNumber = String(ser).replace(/@(c\.us|s\.whatsapp\.net)$/i, '');
+                }
+            } catch (_) {}
+
             const messageData = {
                 id: msg?.id?.id,
                 from: msg.from,
@@ -580,7 +592,8 @@ function attachClientEvents(c) {
                 isStarred: msg.isStarred,
                 fromMe: msg.fromMe,
                 contact: {
-                    number: contact?.number,
+                    number: contactNumber,
+                    lid: contactLid,
                     name: contact?.name || contact?.pushname || null,
                     isMyContact: contact?.isMyContact,
                     profilePicUrl: await contact.getProfilePicUrl().catch(() => null),
@@ -842,10 +855,40 @@ function normalizePhoneToChatId(phoneOrJid) {
     if (!phoneOrJid || typeof phoneOrJid !== 'string') return null;
     const v = phoneOrJid.trim();
     if (!v) return null;
-    if (v.includes('@c.us') || v.includes('@g.us') || v.includes('@s.whatsapp.net')) return v;
+    if (v.includes('@c.us') || v.includes('@g.us') || v.includes('@s.whatsapp.net') || v.includes('@lid')) {
+        return v;
+    }
     const digits = v.replace(/\D/g, '');
     if (!digits) return null;
-    return `${digits}@c.us`;
+
+    // پیش‌شماره‌های رایج → شماره واقعی؛ در غیر این صورت LID واتساپ
+    const phoneLike =
+        /^989\d{9}$/.test(digits) ||
+        /^90\d{10}$/.test(digits) ||
+        /^971\d{8,9}$/.test(digits) ||
+        /^(1|7|20|27|30|31|32|33|34|39|44|45|46|47|48|49|61|62|63|65|66|81|82|84|86|91|92|93|94|966|964|994)\d{8,12}$/.test(
+            digits
+        );
+    return phoneLike ? `${digits}@c.us` : `${digits}@lid`;
+}
+
+/**
+ * Resolve outbound chat id; try getNumberId for phone-like targets.
+ */
+async function resolveOutboundChatId(to) {
+    const base = normalizePhoneToChatId(String(to || ''));
+    if (!base) return null;
+    if (base.includes('@g.us') || base.includes('@lid')) return base;
+    if (!client || !isClientReady) return base;
+    const digits = base.replace(/@c\.us$/i, '').replace(/\D/g, '');
+    if (!digits) return base;
+    try {
+        const numberId = await client.getNumberId(digits);
+        if (numberId && (numberId._serialized || numberId.user)) {
+            return numberId._serialized || `${numberId.user}@c.us`;
+        }
+    } catch (_) {}
+    return base;
 }
 
 // SSRF protection + optional whitelist
@@ -1048,52 +1091,81 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
         const { to, message, media, replyTo } = req.body || {};
         if (!to || (!message && !media)) return res.status(400).json({ error: 'Invalid payload' });
 
-        const chatId = to.includes('@c.us') || to.includes('@g.us') ? to : `${to}@c.us`;
+        let chatId = await resolveOutboundChatId(to);
+        if (!chatId) return res.status(400).json({ error: 'Invalid recipient' });
 
         let sentMsg;
         const sendOpts = replyTo ? { quotedMessageId: replyTo } : {};
-        if (media?.data) {
-            const built = await buildOutboundMessageMedia(media, message);
-            if (!built) return res.status(400).json({ error: 'Invalid media payload' });
-            tmpMediaPath = built.tmpPath;
-            if (built.asVoice) {
-                sendOpts.sendAudioAsVoice = true;
+        async function doSend(targetChatId) {
+            if (media?.data) {
+                const built = await buildOutboundMessageMedia(media, message);
+                if (!built) {
+                    const err = new Error('Invalid media payload');
+                    err.statusCode = 400;
+                    throw err;
+                }
+                tmpMediaPath = built.tmpPath;
+                if (built.asVoice) {
+                    sendOpts.sendAudioAsVoice = true;
+                } else {
+                    sendOpts.caption = message || '';
+                }
+                logger.info('📎 Sending media (data)', {
+                    to: targetChatId,
+                    mime: built.mime,
+                    asVoice: built.asVoice,
+                    dataLen: (media.data || '').length,
+                });
+                return client.sendMessage(targetChatId, built.mediaObj, sendOpts);
+            }
+            if (media?.url) {
+                if (!isSafeMediaUrl(media.url)) {
+                    const err = new Error('Invalid or unsafe media URL');
+                    err.statusCode = 400;
+                    throw err;
+                }
+                const mediaObj = await MessageMedia.fromUrl(media.url);
+                const asVoice = !!(
+                    media.sendAsVoice ||
+                    (media.mimetype && /^audio\/(ogg|opus)/i.test(media.mimetype))
+                );
+                if (asVoice) {
+                    sendOpts.sendAudioAsVoice = true;
+                } else {
+                    sendOpts.caption = message || '';
+                }
+                logger.info('📎 Sending media (url)', { to: targetChatId, mime: mediaObj?.mimetype, asVoice });
+                return client.sendMessage(targetChatId, mediaObj, sendOpts);
+            }
+            return client.sendMessage(targetChatId, message || '', sendOpts);
+        }
+
+        try {
+            sentMsg = await doSend(chatId);
+        } catch (firstErr) {
+            // اگر @c.us شکست خورد، یک‌بار با @lid امتحان کن (چت‌های Privacy/LID)
+            const digits = String(to).replace(/\D/g, '');
+            const lidId = digits && !String(chatId).includes('@lid') ? `${digits}@lid` : null;
+            if (lidId && lidId !== chatId) {
+                logger.warn('Send via phone JID failed — retrying as LID', {
+                    chatId,
+                    lidId,
+                    error: firstErr?.message,
+                });
+                chatId = lidId;
+                sentMsg = await doSend(chatId);
             } else {
-                sendOpts.caption = message || '';
+                throw firstErr;
             }
-            logger.info('📎 Sending media (data)', {
-                to,
-                mime: built.mime,
-                asVoice: built.asVoice,
-                dataLen: (media.data || '').length,
-            });
-            sentMsg = await client.sendMessage(chatId, built.mediaObj, sendOpts);
-        } else if (media?.url) {
-            if (!isSafeMediaUrl(media.url)) {
-                return res.status(400).json({ error: 'Invalid or unsafe media URL' });
-            }
-            const mediaObj = await MessageMedia.fromUrl(media.url);
-            const asVoice = !!(
-                media.sendAsVoice ||
-                (media.mimetype && /^audio\/(ogg|opus)/i.test(media.mimetype))
-            );
-            if (asVoice) {
-                sendOpts.sendAudioAsVoice = true;
-            } else {
-                sendOpts.caption = message || '';
-            }
-            logger.info('📎 Sending media (url)', { to, mime: mediaObj?.mimetype, asVoice });
-            sentMsg = await client.sendMessage(chatId, mediaObj, sendOpts);
-        } else {
-            sentMsg = await client.sendMessage(chatId, message || '', sendOpts);
         }
 
         markGatewaySentMessage(sentMsg?.id?.id);
-        logger.info('✉️ Message sent', { to, messageId: sentMsg?.id?.id, hasMedia: !!media });
-        return res.json({ success: true, messageId: sentMsg?.id?.id });
+        logger.info('✉️ Message sent', { to: chatId, messageId: sentMsg?.id?.id, hasMedia: !!media });
+        return res.json({ success: true, messageId: sentMsg?.id?.id, chatId });
     } catch (error) {
-        logger.error('Send message error', { error: error?.message });
-        return res.status(500).json({ error: error?.message || 'send_failed' });
+        const status = error?.statusCode || 500;
+        logger.error('Send message error', { error: error?.message, status });
+        return res.status(status).json({ error: error?.message || 'send_failed' });
     } finally {
         await cleanupTempMedia(tmpMediaPath);
     }
