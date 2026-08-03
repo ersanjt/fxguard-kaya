@@ -100,7 +100,9 @@ router.post('/sync-groups', async (req, res, next) => {
         const { gatewayGet, GATEWAY_URL } = require('../lib/gatewayClient');
         let gwRes;
         try {
-            gwRes = await gatewayGet('/api/chats/groups', { timeout: 45000 });
+            // Keep under typical nginx/Cloudflare proxy timeouts so the edge
+            // returns our JSON 503 instead of an HTML 502/504 page.
+            gwRes = await gatewayGet('/api/chats/groups', { timeout: 22000 });
         } catch (gwErr) {
             const status = gwErr?.response?.status;
             const gwBody = gwErr?.response?.data;

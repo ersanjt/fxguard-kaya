@@ -41,7 +41,12 @@
             r = await fetch(apiBase + url, {
                 ...opt,
                 credentials: 'include',
-                headers: { ...h, ...(opt.headers || {}) },
+                cache: opt.cache || 'no-store',
+                headers: {
+                    Accept: 'application/json',
+                    ...h,
+                    ...(opt.headers || {}),
+                },
                 body: opt.body,
                 signal: _ac ? _ac.signal : opt.signal,
             });
@@ -65,15 +70,44 @@
     }
     if ((text || '').trim().startsWith('<')) {
         const lang2 = config.getLang ? config.getLang() : 'fa';
+        const status = r && r.status ? r.status : 0;
+        const sample = String(text || '').slice(0, 280).toLowerCase();
+        const isCf =
+            sample.indexOf('cloudflare') !== -1 ||
+            sample.indexOf('cf-ray') !== -1 ||
+            sample.indexOf('just a moment') !== -1;
+        const isProxyTimeout = status === 502 || status === 504 || status === 524;
+        let htmlErr;
+        if (lang2 === 'fa') {
+            if (isCf) htmlErr = 'پاسخ HTML از Cloudflare آمد (چالش یا خطای لبه). صفحه را رفرش کنید.';
+            else if (isProxyTimeout)
+                htmlErr = 'تایم‌اوت پراکسی (HTML ' + status + '). درخواست طولانی بود؛ دوباره تلاش کنید.';
+            else
+                htmlErr =
+                    'پاسخ HTML به‌جای JSON' +
+                    (status ? ' (HTTP ' + status + ')' : '') +
+                    '. یک‌بار Ctrl+Shift+R بزنید؛ اگر ادامه داشت کش/Service Worker را پاک کنید.';
+        } else if (lang2 === 'tr') {
+            htmlErr = isCf
+                ? 'Cloudflare HTML döndürdü. Sayfayı yenileyin.'
+                : 'Sunucu JSON yerine HTML döndürdü' + (status ? ' (HTTP ' + status + ')' : '') + '.';
+        } else {
+            htmlErr = isCf
+                ? 'Cloudflare returned HTML (challenge/edge). Refresh the page.'
+                : 'Server returned HTML instead of JSON' +
+                  (status ? ' (HTTP ' + status + ')' : '') +
+                  '. Hard-refresh (Ctrl+Shift+R).';
+        }
+        try {
+            if (typeof console !== 'undefined' && console.warn) {
+                console.warn('[apiFetch] non-JSON HTML', { url: apiBase + url, status: status, preview: String(text || '').slice(0, 120) });
+            }
+        } catch (_e) {}
         return {
             ok: false,
             needLogin: false,
-            error:
-                lang2 === 'tr'
-                    ? 'Sunucu JSON yerine HTML döndürdü. Backend çalışıyor mu?'
-                    : lang2 === 'fa'
-                      ? 'سرور به جای JSON پاسخ داد. مطمئن شوید backend در حال اجراست.'
-                      : 'Server returned non-JSON. Ensure backend is running.',
+            status: status || undefined,
+            error: htmlErr,
         };
     }
     let data;

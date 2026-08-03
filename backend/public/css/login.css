@@ -151,8 +151,22 @@ body {
     color: var(--lp-accent);
     box-shadow: 0 0 24px rgba(16,185,129,0.2), 0 4px 12px rgba(0,0,0,0.3);
 }
+.lp-logo-wrap.has-img {
+    width: 120px; height: 120px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 20px;
+    overflow: hidden;
+}
 .lp-logo-wrap svg { width: 32px; height: 32px; }
 .lp-logo-wrap img { width: 40px; height: 40px; object-fit: contain; }
+.lp-logo-wrap.has-img img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+}
 
 .lp-brand {
     font-size: 1.6rem; font-weight: 800; letter-spacing: 0.04em;
@@ -370,6 +384,7 @@ body.ltr .lp-step { animation-name: stepIn !important; }
     .lp-card { padding: 28px 20px 24px; }
     .lp-brand { font-size: 1.4rem; }
     .lp-logo-wrap { width: 54px; height: 54px; border-radius: 14px; }
+    .lp-logo-wrap.has-img { width: 96px; height: 96px; border-radius: 16px; }
     .lp-logo-wrap svg { width: 26px; height: 26px; }
 }
 

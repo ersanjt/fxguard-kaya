@@ -753,29 +753,29 @@
         }
         /** فاویکون تب: تنظیمات وبسایت — اول faviconUrl سپس logoUrl سپس پیش‌فرض */
         function resolvePanelFaviconHref(b) {
-            if (!b) return '/favicon-kaya.svg';
+            if (!b) return '/brand/kaya-favicon-32.png';
             const fav = b.faviconUrl && String(b.faviconUrl).trim();
             if (fav) return fav;
             const logo = b.logoUrl && String(b.logoUrl).trim();
             if (logo) return logo;
-            return '/favicon-kaya.svg';
+            return '/brand/kaya-favicon-32.png';
         }
         /** آیکن هدر: لوگوی پنل، در نبود لوگو از favicon تنظیمات */
         function resolvePanelHeaderLogoSrc(b) {
-            if (!b) return '';
+            if (!b) return '/brand/kaya-logo.png';
             const logo = b.logoUrl && String(b.logoUrl).trim();
             if (logo) return logo;
             const fav = b.faviconUrl && String(b.faviconUrl).trim();
-            return fav || '';
+            return fav || '/brand/kaya-logo.png';
         }
         /** لوگوی کارت ورود داخل داشبورد: ورود اختصاصی → لوگو پنل → فاویکون */
         function resolvePanelLoginLogoSrc(b) {
-            if (!b) return '';
+            if (!b) return '/brand/kaya-logo.png';
             const login = b.loginLogoUrl && String(b.loginLogoUrl).trim();
             if (login) return login;
             const logo = b.logoUrl && String(b.logoUrl).trim();
             if (logo) return logo;
-            return (b.faviconUrl && String(b.faviconUrl).trim()) || '';
+            return (b.faviconUrl && String(b.faviconUrl).trim()) || '/brand/kaya-logo.png';
         }
         var PANEL_BRANDING_STATE = {};
         function applyBranding(s, brandingOpts) {

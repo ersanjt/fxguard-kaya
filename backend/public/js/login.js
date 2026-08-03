@@ -538,46 +538,65 @@
     }
 
     /* ── Load Branding (اولویت از تنظیمات وبسایت پنل) ───────────────── */
+    var LP_DEFAULT_LOGO = '/brand/kaya-logo.png';
+    var LP_DEFAULT_FAVICON = '/brand/kaya-favicon-32.png';
+    var LP_DEFAULT_APPLE = '/brand/kaya-apple-touch.png';
+
     function lpResolveFaviconHref(d) {
-        if (!d) return '/favicon-kaya.svg';
+        if (!d) return LP_DEFAULT_FAVICON;
         var fav = d.faviconUrl && String(d.faviconUrl).trim();
         if (fav) return fav;
         var logo = d.logoUrl && String(d.logoUrl).trim();
         if (logo) return logo;
-        return '/favicon-kaya.svg';
+        return LP_DEFAULT_FAVICON;
     }
     function lpResolveLoginLogoSrc(d) {
-        if (!d) return '';
+        if (!d) return LP_DEFAULT_LOGO;
         var a = d.loginLogoUrl && String(d.loginLogoUrl).trim();
         if (a) return a;
         var logo = d.logoUrl && String(d.logoUrl).trim();
         if (logo) return logo;
-        return (d.faviconUrl && String(d.faviconUrl).trim()) || '';
+        return (d.faviconUrl && String(d.faviconUrl).trim()) || LP_DEFAULT_LOGO;
+    }
+    function lpApplyLoginLogo(src, siteName) {
+        var logoWrap = document.getElementById('lpLogoWrap');
+        if (!logoWrap || !src) return;
+        var img = document.createElement('img');
+        img.src = src;
+        img.alt = siteName || 'KAYA';
+        img.width = 112;
+        img.height = 112;
+        img.decoding = 'async';
+        img.onerror = function () {
+            if (img.src.indexOf(LP_DEFAULT_LOGO) === -1) img.src = LP_DEFAULT_LOGO;
+        };
+        logoWrap.classList.add('has-img');
+        logoWrap.innerHTML = '';
+        logoWrap.appendChild(img);
+        // لوگوی کامل شامل نام برند است — عنوان متنی تکراری را مخفی کن
+        var nameEl = document.getElementById('lpBrandName');
+        if (nameEl) {
+            if (siteName) nameEl.textContent = siteName;
+            nameEl.hidden = true;
+        }
     }
     function loadBranding() {
-        fetch('/api/panel-settings/public/branding')
-            .then(function(r) { return r.json().catch(function() { return {}; }); })
+        fetch('/api/panel-settings/public/branding', { cache: 'no-store', credentials: 'same-origin' })
+            .then(function(r) {
+                return r.text().then(function(text) {
+                    if ((text || '').trim().startsWith('<')) return {};
+                    try { return JSON.parse(text); } catch (_) { return {}; }
+                });
+            })
             .then(function(d) {
-                if (!d) return;
-                var nameEl = document.getElementById('lpBrandName');
-                if (nameEl && d.siteName) nameEl.textContent = d.siteName;
-
-                var logoWrap = document.getElementById('lpLogoWrap');
-                var loginLogoSrc = lpResolveLoginLogoSrc(d);
-                if (logoWrap && loginLogoSrc) {
-                    var img = document.createElement('img');
-                    img.src = loginLogoSrc;
-                    img.alt = '';
-                    img.decoding = 'async';
-                    logoWrap.innerHTML = '';
-                    logoWrap.appendChild(img);
-                }
+                d = d || {};
+                lpApplyLoginLogo(lpResolveLoginLogoSrc(d), d.siteName || 'KAYA');
 
                 var favHref = lpResolveFaviconHref(d);
                 var fav = document.getElementById('lpFavicon');
                 if (fav) fav.href = favHref;
                 var lpApple = document.getElementById('lpAppleTouch');
-                if (lpApple) lpApple.href = favHref;
+                if (lpApple) lpApple.href = favHref || LP_DEFAULT_APPLE;
 
                 var pt = d.pageTitle && String(d.pageTitle).trim();
                 var lt = d.loginTitle && String(d.loginTitle).trim();
@@ -607,7 +626,9 @@
                 var supportLink = document.getElementById('lpSupportLink');
                 if (supportLink && d.supportUrl) supportLink.href = d.supportUrl;
             })
-            .catch(function() {});
+            .catch(function() {
+                lpApplyLoginLogo(LP_DEFAULT_LOGO, 'KAYA');
+            });
     }
     function loadPublicConfigAndBranding() {
         fetch('/api/config')

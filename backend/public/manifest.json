@@ -1,7 +1,7 @@
 {
-  "name": "کایا CRM",
-  "short_name": "کایا CRM",
-  "description": "کایا CRM — مدیریت مکالمات واتساپ و نظارت",
+  "name": "KAYA CRM",
+  "short_name": "KAYA",
+  "description": "KAYA CRM — مدیریت مکالمات واتساپ و نظارت",
   "start_url": "/login",
   "scope": "/",
   "display": "standalone",
@@ -12,16 +12,22 @@
   "dir": "rtl",
   "icons": [
     {
-      "src": "/favicon-kaya.svg",
-      "sizes": "32x32",
-      "type": "image/svg+xml",
+      "src": "/brand/kaya-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/favicon-kaya.svg",
-      "sizes": "192x192",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/brand/kaya-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/brand/kaya-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

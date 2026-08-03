@@ -727,9 +727,14 @@
                     setConvQuickTab('groups');
                     loadConversations();
                 } else {
-                    let errMsg = (res.data && res.data.error) || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed');
-                    if (errMsg.indexOf('503') !== -1 || errMsg.indexOf('not ready') !== -1) {
-                        errMsg = LANG === 'fa' ? 'واتساپ متصل نیست. ابتدا اتصال را برقرار کنید.' : 'WhatsApp not connected. Connect first.';
+                    let errMsg = (typeof getApiError === 'function' ? getApiError(res) : null)
+                        || (res.data && res.data.error)
+                        || res.error
+                        || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed');
+                    if (res.status === 503 || /503|not ready|واتساپ Gateway|متصل نیست/i.test(String(errMsg))) {
+                        errMsg = LANG === 'fa'
+                            ? 'واتساپ/Gateway آماده نیست یا همگام‌سازی طول کشید. چند ثانیه بعد دوباره بزنید.'
+                            : 'WhatsApp/Gateway not ready or sync timed out. Try again shortly.';
                     }
                     toast(errMsg, true);
                 }

@@ -2213,11 +2213,33 @@
         }
 
         /** بازیابی نشست از کوکی httpOnly — همیشه اجرا می‌شود (نه فقط وقتی token در حافظه باشد). */
-        async function restoreSessionFromServer() {
+        async function restoreSessionFromServer(attempt) {
+            const tryN = attempt || 0;
             document.documentElement.classList.add('auth-verifying');
             try {
                 const res = await apiFetch('/api/auth/me');
-                if (res.needLogin || !res.ok || !res.data || !res.data.email) {
+                // فقط 401 واقعی = خروج. HTML/شبکه/۵xx نباید نشست را پاک کند (باعث حلقهٔ «ورود → بیرون»).
+                if (res.needLogin || res.status === 401) {
+                    persistAuthToken(null);
+                    redirectToLoginPage();
+                    return;
+                }
+                if (!res.ok || !res.data || !res.data.email) {
+                    const transient = !res.status || res.status >= 500 || /HTML|JSON|اتصال|Cloudflare|proxy/i.test(String(res.error || ''));
+                    if (transient && tryN < 2) {
+                        setTimeout(function () { restoreSessionFromServer(tryN + 1); }, 700 * (tryN + 1));
+                        return;
+                    }
+                    if (transient) {
+                        console.warn('restoreSession: transient auth failure', res.status, res.error);
+                        if (typeof toast === 'function') {
+                            toast(LANG === 'fa'
+                                ? 'ارتباط با سرور برقرار نشد. صفحه را رفرش کنید.'
+                                : 'Could not verify session. Refresh the page.', true);
+                        }
+                        document.documentElement.classList.remove('auth-verifying');
+                        return;
+                    }
                     persistAuthToken(null);
                     redirectToLoginPage();
                     return;
@@ -2241,8 +2263,15 @@
                 } catch (e) { console.error('Post-me init:', e); }
             } catch (e) {
                 console.error('restoreSession:', e);
-                persistAuthToken(null);
-                redirectToLoginPage();
+                if (tryN < 2) {
+                    setTimeout(function () { restoreSessionFromServer(tryN + 1); }, 700 * (tryN + 1));
+                    return;
+                }
+                if (typeof toast === 'function') {
+                    toast(LANG === 'fa'
+                        ? 'ارتباط با سرور برقرار نشد. صفحه را رفرش کنید.'
+                        : 'Could not verify session. Refresh the page.', true);
+                }
             } finally {
                 document.documentElement.classList.remove('auth-verifying');
             }

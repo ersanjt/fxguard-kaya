@@ -1251,7 +1251,7 @@ app.get('/api/chats/groups', async (req, res) => {
         const chats = await Promise.race([
             client.getChats(),
             new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('getChats_timeout')), 40000)
+                setTimeout(() => reject(new Error('getChats_timeout')), 18000)
             ),
         ]);
         const list = Array.isArray(chats) ? chats : [];

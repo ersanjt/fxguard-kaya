@@ -272,9 +272,18 @@
         showA2hsBanner();
     }
 
+    /* Service Worker لندینگ قبلاً /api را با HTML جواب می‌داد و پنل CRM را خراب می‌کرد.
+       دیگر ثبت نمی‌شود؛ SW فعلی روی سرور خودش unregister می‌شود. */
     if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/service-worker.js').catch(function() {});
-        });
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (r) { r.unregister(); });
+        }).catch(function () {});
+        if (window.caches && caches.keys) {
+            caches.keys().then(function (keys) {
+                keys.forEach(function (k) {
+                    if (String(k).indexOf('kaya-landing') === 0) caches.delete(k);
+                });
+            }).catch(function () {});
+        }
     }
 })();

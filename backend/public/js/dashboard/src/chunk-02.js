@@ -315,7 +315,14 @@
                 _to = setTimeout(function () { try { _ac.abort(); } catch (_e) {} }, opt.timeoutMs);
             }
             try {
-                r = await fetch(API + url, { ...opt, credentials: 'include', headers: { ...h, ...opt.headers }, body: opt.body, signal: _ac ? _ac.signal : opt.signal });
+                r = await fetch(API + url, {
+                    ...opt,
+                    credentials: 'include',
+                    cache: opt.cache || 'no-store',
+                    headers: { Accept: 'application/json', ...h, ...opt.headers },
+                    body: opt.body,
+                    signal: _ac ? _ac.signal : opt.signal
+                });
                 text = await r.text();
             } catch (e) {
                 return { ok: false, needLogin: false, timeout: !!(_ac && _ac.signal && _ac.signal.aborted), error: (LANG === 'fa' ? 'اتصال به سرور برقرار نشد. شبکه یا آدرس سرور را بررسی کنید.' : 'Could not connect to server. Check network or server address.') };
@@ -323,7 +330,21 @@
                 if (_to) clearTimeout(_to);
             }
             if ((text || '').trim().startsWith('<')) {
-                return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'سرور به جای JSON پاسخ داد. مطمئن شوید backend در حال اجراست.' : 'Server returned non-JSON. Ensure backend is running.') };
+                var _st = r && r.status ? r.status : 0;
+                var _sample = String(text || '').slice(0, 280).toLowerCase();
+                var _isCf = _sample.indexOf('cloudflare') !== -1 || _sample.indexOf('just a moment') !== -1;
+                var _msg;
+                if (LANG === 'fa') {
+                    _msg = _isCf
+                        ? 'پاسخ HTML از Cloudflare آمد. صفحه را رفرش کنید.'
+                        : ('پاسخ HTML به‌جای JSON' + (_st ? ' (HTTP ' + _st + ')' : '') + '. Ctrl+Shift+R بزنید.');
+                } else {
+                    _msg = _isCf
+                        ? 'Cloudflare returned HTML. Refresh the page.'
+                        : ('Server returned HTML instead of JSON' + (_st ? ' (HTTP ' + _st + ')' : '') + '. Hard-refresh.');
+                }
+                try { console.warn('[apiFetch] non-JSON HTML', { url: API + url, status: _st }); } catch (_e) {}
+                return { ok: false, needLogin: false, status: _st || undefined, error: _msg };
             }
             let data;
             try { data = JSON.parse(text); } catch (_) {

@@ -363,6 +363,11 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
         res.set('Expires', '0');
         res.sendFile(path.join(__dirname, '..', 'public', 'crm-build.json'));
     });
+    app.get('/manifest.json', (req, res) => {
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+        res.type('application/manifest+json');
+        res.sendFile(path.join(__dirname, '..', 'public', 'manifest.json'));
+    });
     app.get('/contact', (req, res) => {
         res.set('Cache-Control', 'public, max-age=300');
         res.sendFile(path.join(__dirname, '..', 'public', 'contact.html'));
