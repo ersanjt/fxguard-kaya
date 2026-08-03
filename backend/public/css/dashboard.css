@@ -6489,10 +6489,12 @@
             gap: 0;
             box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.22);
             isolation: isolate;
+            overflow: visible;
         }
         #pageConversations.wa-conversations-theme .chat-send-main {
             gap: clamp(6px, 2vw, 10px);
             min-width: 0;
+            overflow: visible;
         }
         #pageConversations.wa-conversations-theme .wa-compose-row {
             flex-wrap: nowrap;
@@ -6500,27 +6502,52 @@
             width: 100%;
             min-width: 0;
             gap: clamp(4px, 1.2vw, 10px);
+            overflow: visible;
         }
         #pageConversations.wa-conversations-theme .wa-compose-attach-slot {
             position: relative;
             flex-shrink: 0;
+            overflow: visible;
+            z-index: 5;
         }
+        /* منو به سمت داخل چت باز شود (نه بیرون از لبهٔ راست/چپ) */
         #pageConversations.wa-conversations-theme .wa-attach-menu {
             position: absolute;
             bottom: calc(100% + 8px);
             inset-inline-start: 0;
+            inset-inline-end: auto;
+            left: auto;
+            right: auto;
             min-width: 220px;
+            width: max-content;
             max-width: min(92vw, 280px);
             padding: 6px;
             background: #233239;
             border: 1px solid rgba(134, 150, 160, 0.22);
             border-radius: 12px;
             box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
-            z-index: 1002;
+            z-index: 1200;
+            box-sizing: border-box;
         }
+        /* RTL: دکمه پیوست سمت راست است — لبهٔ راست منو را به دکمه بچسبان تا به چپ (داخل) باز شود */
         [dir="rtl"] #pageConversations.wa-conversations-theme .wa-attach-menu {
-            inset-inline-start: auto;
-            inset-inline-end: 0;
+            inset-inline-start: 0;
+            inset-inline-end: auto;
+            right: 0;
+            left: auto;
+        }
+        [dir="ltr"] #pageConversations.wa-conversations-theme .wa-attach-menu {
+            inset-inline-start: 0;
+            inset-inline-end: auto;
+            left: 0;
+            right: auto;
+        }
+        #pageConversations.wa-conversations-theme .chat-area.wa-attach-menu-open {
+            overflow: visible;
+        }
+        #pageConversations.wa-conversations-theme .chat-area.wa-attach-menu-open .chat-messages {
+            /* keep messages scrollable while compose menus paint above */
+            z-index: 0;
         }
         #pageConversations.wa-conversations-theme .wa-attach-menu-item {
             display: flex;

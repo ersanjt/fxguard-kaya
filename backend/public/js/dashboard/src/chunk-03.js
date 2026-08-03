@@ -2373,8 +2373,10 @@
         function closeWaAttachMenu() {
             var m = document.getElementById('waAttachMenu');
             var b = document.getElementById('waAttachMenuBtn');
+            var area = document.getElementById('chatArea') || document.querySelector('.chat-area');
             if (m) m.hidden = true;
             if (b) b.setAttribute('aria-expanded', 'false');
+            if (area) area.classList.remove('wa-attach-menu-open');
             if (_waAttachMenuDocListener) {
                 document.removeEventListener('click', _waAttachMenuDocListener, true);
                 _waAttachMenuDocListener = null;
@@ -2384,6 +2386,7 @@
             if (ev) ev.stopPropagation();
             var m = document.getElementById('waAttachMenu');
             var b = document.getElementById('waAttachMenuBtn');
+            var area = document.getElementById('chatArea') || document.querySelector('.chat-area');
             if (!m || !b) return;
             if (!m.hidden) {
                 closeWaAttachMenu();
@@ -2393,6 +2396,7 @@
             closeWaPickers();
             m.hidden = false;
             b.setAttribute('aria-expanded', 'true');
+            if (area) area.classList.add('wa-attach-menu-open');
             _waAttachMenuDocListener = function(e) {
                 var t = e.target;
                 if (t && t.closest && (t.closest('#waAttachMenu') || t.closest('#waAttachMenuBtn'))) return;
