@@ -2559,7 +2559,10 @@
                 return { ok: false, needLogin: r.status === 401, status: r.status, data: data, error: typeof errVal === 'string' ? errVal : (errVal && errVal.message) || null };
             }
             if (!r.ok) {
-                return { ok: false, needLogin: r.status === 401, status: r.status, data: data, error: (LANG === 'tr' ? 'Sunucu hatası (HTTP ' + (r.status || '?') + ')' : LANG === 'fa' ? 'خطای سرور (HTTP ' + (r.status || '?') + ')' : 'Server error (HTTP ' + (r.status || '?') + ')') };
+                var failMsg = (r.status === 502 || r.status === 503)
+                    ? (LANG === 'tr' ? 'WhatsApp Gateway hazır değil veya mesaj iletilemedi.' : (LANG === 'fa' ? 'واتساپ/Gateway آماده نیست یا پیام به واتساپ نرسید.' : 'WhatsApp Gateway not ready.'))
+                    : (LANG === 'tr' ? 'Sunucu hatası (HTTP ' + (r.status || '?') + ')' : LANG === 'fa' ? 'خطای سرور (HTTP ' + (r.status || '?') + ')' : 'Server error (HTTP ' + (r.status || '?') + ')');
+                return { ok: false, needLogin: r.status === 401, status: r.status, data: data, error: failMsg };
             }
             return { ok: r.ok, status: r.status, data: data };
         }

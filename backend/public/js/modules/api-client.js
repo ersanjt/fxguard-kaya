@@ -173,17 +173,28 @@
     }
     if (!r.ok) {
         const langFail = config.getLang ? config.getLang() : 'fa';
+        let failMsg;
+        if (r.status === 502 || r.status === 503) {
+            failMsg =
+                langFail === 'tr'
+                    ? 'WhatsApp Gateway hazır değil veya mesaj iletilemedi. WhatsApp bağlantısını kontrol edin.'
+                    : langFail === 'fa'
+                      ? 'واتساپ/Gateway آماده نیست یا پیام به واتساپ نرسید. اتصال واتساپ را در تنظیمات بررسی کنید.'
+                      : 'WhatsApp Gateway is not ready or the message was not delivered.';
+        } else {
+            failMsg =
+                langFail === 'tr'
+                    ? 'Sunucu hatası (HTTP ' + (r.status || '?') + ')'
+                    : langFail === 'fa'
+                      ? 'خطای سرور (HTTP ' + (r.status || '?') + ')'
+                      : 'Server error (HTTP ' + (r.status || '?') + ')';
+        }
         return {
             ok: false,
             needLogin: r.status === 401,
             status: r.status,
             data: data,
-            error:
-                langFail === 'tr'
-                    ? 'Sunucu hatası (HTTP ' + (r.status || '?') + ')'
-                    : langFail === 'fa'
-                      ? 'خطای سرور (HTTP ' + (r.status || '?') + ')'
-                      : 'Server error (HTTP ' + (r.status || '?') + ')',
+            error: failMsg,
         };
     }
     return { ok: r.ok, status: r.status, data: data };

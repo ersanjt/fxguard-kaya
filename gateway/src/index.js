@@ -1191,19 +1191,37 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
         }
 
         try {
-            sentMsg = await doSend(chatId);
+            sentMsg = await Promise.race([
+                doSend(chatId),
+                new Promise((_, reject) =>
+                    setTimeout(() => {
+                        const err = new Error('send_timeout');
+                        err.statusCode = 503;
+                        reject(err);
+                    }, 20000)
+                ),
+            ]);
         } catch (firstErr) {
             // اگر @c.us شکست خورد، یک‌بار با @lid امتحان کن (چت‌های Privacy/LID)
             const digits = String(to).replace(/\D/g, '');
             const lidId = digits && !String(chatId).includes('@lid') ? `${digits}@lid` : null;
-            if (lidId && lidId !== chatId) {
+            if (lidId && lidId !== chatId && firstErr?.message !== 'send_timeout') {
                 logger.warn('Send via phone JID failed — retrying as LID', {
                     chatId,
                     lidId,
                     error: firstErr?.message,
                 });
                 chatId = lidId;
-                sentMsg = await doSend(chatId);
+                sentMsg = await Promise.race([
+                    doSend(chatId),
+                    new Promise((_, reject) =>
+                        setTimeout(() => {
+                            const err = new Error('send_timeout');
+                            err.statusCode = 503;
+                            reject(err);
+                        }, 20000)
+                    ),
+                ]);
             } else {
                 throw firstErr;
             }

@@ -294,7 +294,49 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                 await sendWhatsAppMessage({ to: toPhone, message: voiceIntroLine }, { timeout: 10000 });
             } catch (_) {}
         }
-        const gwRes = await sendWhatsAppMessage(payload, { timeout: 15000 });
+        // فقط وقتی مسیر ارسال واقعاً Gateway است، ready را از قبل چک کن
+        const toStr = String(toPhone || '');
+        const { isLikelyWhatsAppLid, isGroupJid } = require('../lib/phoneUtils');
+        const forceGateway =
+            isGroupJid(toStr) || isLikelyWhatsAppLid(toStr) || /@lid\b/i.test(toStr);
+        const cloudOk =
+            connCfg.cloudEnabled !== false &&
+            connCfg.cloudAccessToken &&
+            connCfg.cloudPhoneNumberId &&
+            connCfg.connectionMode !== 'gateway';
+        const willUseGateway =
+            connCfg.gatewayEnabled !== false &&
+            (forceGateway || connCfg.connectionMode === 'gateway' || !cloudOk);
+
+        if (willUseGateway) {
+            const { gatewayGet } = require('../lib/gatewayClient');
+            try {
+                const st = await gatewayGet('/api/status', { timeout: 4000 });
+                const ready = !!(st?.data?.whatsapp || st?.data?.status === 'ready');
+                if (!ready) {
+                    await msg.update({ status: 'failed' });
+                    return {
+                        msg,
+                        error:
+                            'واتساپ Gateway آماده نیست (وضعیت: ' +
+                            String(st?.data?.status || 'disconnected') +
+                            '). از تنظیمات واتساپ اتصال/QR را برقرار کنید.',
+                        status: 503,
+                    };
+                }
+            } catch (stErr) {
+                await msg.update({ status: 'failed' });
+                return {
+                    msg,
+                    error:
+                        'به Gateway واتساپ وصل نشد (' +
+                        (stErr?.code || stErr?.message || 'unreachable') +
+                        '). سرویس crm-gateway-kaya و GATEWAY_URL را بررسی کنید.',
+                    status: 503,
+                };
+            }
+        }
+        const gwRes = await sendWhatsAppMessage(payload, { timeout: 12000 });
         const waId = gwRes?.data?.messageId;
         const updateFields = { status: 'sent' };
         if (waId) updateFields.whatsappId = waId;
