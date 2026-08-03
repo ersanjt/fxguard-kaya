@@ -135,10 +135,10 @@
         if (b.pageTitle) document.title = b.pageTitle;
         else if (b.loginTitle) document.title = b.loginTitle;
         var fav = document.getElementById('favicon');
-        var favHref = (b.faviconUrl && String(b.faviconUrl).trim()) || (b.logoUrl && String(b.logoUrl).trim()) || '/brand/kaya-favicon-32.png';
+        var favHref = (b.faviconUrl && String(b.faviconUrl).trim()) || (b.logoUrl && String(b.logoUrl).trim()) || '/brand/kaya-favicon-32.png?v=2';
         if (fav) fav.href = favHref;
         var ath = document.getElementById('appleTouchIcon');
-        if (ath) ath.href = (b.faviconUrl || b.loginLogoUrl || b.logoUrl || '/brand/kaya-apple-touch.png');
+        if (ath) ath.href = (b.faviconUrl || b.loginLogoUrl || b.logoUrl || '/brand/kaya-apple-touch.png?v=2');
         var amTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
         if (amTitle && b.siteName) amTitle.setAttribute('content', b.siteName);
         if (b.uiTheme && b.uiTheme !== 'default' && document.body) {
