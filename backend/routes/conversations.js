@@ -95,19 +95,18 @@ router.post('/', async (req, res, next) => {
 
 // ——— همگام‌سازی گروه‌های واتساپ — همه گروه‌ها را در CRM نمایش می‌دهد
 router.post('/sync-groups', async (req, res, next) => {
+    const logger = require('../config/logger');
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const { gatewayGet, GATEWAY_URL } = require('../lib/gatewayClient');
         let gwRes;
         try {
-            // Keep under typical nginx/Cloudflare proxy timeouts so the edge
-            // returns our JSON 503 instead of an HTML 502/504 page.
-            gwRes = await gatewayGet('/api/chats/groups', { timeout: 22000 });
+            // Store path معمولاً <15s؛ کل درخواست زیر زیر proxy (~60s) بماند
+            gwRes = await gatewayGet('/api/chats/groups', { timeout: 35000 });
         } catch (gwErr) {
             const status = gwErr?.response?.status;
             const gwBody = gwErr?.response?.data;
             const gwMsg = (gwBody && (gwBody.error || gwBody.message)) || gwErr?.message || '';
-            const logger = require('../config/logger');
             logger.warn('sync-groups: gateway request failed', {
                 status,
                 error: gwMsg,
@@ -131,13 +130,13 @@ router.post('/sync-groups', async (req, res, next) => {
             if (
                 status === 500 ||
                 status >= 502 ||
-                /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNABORTED|timeout/i.test(String(gwMsg))
+                /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNABORTED|timeout|getChats|getGroups/i.test(String(gwMsg))
             ) {
                 return res.status(503).json({
                     error:
                         'Gateway موقتاً گروه‌ها را برنگرداند' +
                         (gwMsg ? ` (${String(gwMsg).slice(0, 120)})` : '') +
-                        '. وضعیت واتساپ و لاگ crm-gateway-kaya را بررسی کنید.',
+                        '. چند ثانیه بعد دوباره بزنید؛ اگر ادامه داشت Gateway را ری‌استارت کنید.',
                 });
             }
             return res.status(503).json({
@@ -215,7 +214,16 @@ router.post('/sync-groups', async (req, res, next) => {
                 logger.warn('sync-groups: failed for group', { groupId, error: loopErr.message });
             }
         }
-        res.json({ ok: true, groupsCount: groups.length, synced, message: `${synced} گروه همگام شد` });
+        res.json({
+            ok: true,
+            groupsCount: groups.length,
+            synced,
+            stale: !!gwRes?.data?.stale,
+            message:
+                groups.length === 0
+                    ? 'هیچ گروهی از واتساپ دریافت نشد'
+                    : `${synced} گروه همگام شد` + (gwRes?.data?.stale ? ' (از کش Gateway)' : ''),
+        });
     } catch (err) {
         next(err);
     }

@@ -4893,7 +4893,11 @@
                         || (res.data && res.data.error)
                         || res.error
                         || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed');
-                    if (res.status === 503 || /503|not ready|واتساپ Gateway|متصل نیست/i.test(String(errMsg))) {
+                    // فقط وقتی پیام عمومی/خالی است، متن پیش‌فرض 503 را بگذار
+                    const generic =
+                        !errMsg ||
+                        /sunucu hatas[iı]|server error|خطای سرور|html\b/i.test(String(errMsg));
+                    if (generic && (res.status === 503 || res.status === 502)) {
                         errMsg = LANG === 'fa'
                             ? 'واتساپ/Gateway آماده نیست یا همگام‌سازی طول کشید. چند ثانیه بعد دوباره بزنید.'
                             : 'WhatsApp/Gateway not ready or sync timed out. Try again shortly.';
