@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kaya-landing-v1';
+const CACHE_NAME = 'kaya-landing-v2';
 const CORE_ASSETS = [
     '/',
     '/landing.html',
@@ -7,6 +7,38 @@ const CORE_ASSETS = [
     '/js/landing.js',
     '/manifest.json'
 ];
+
+function isLandingAsset(url) {
+    try {
+        const u = new URL(url);
+        const p = u.pathname || '/';
+        if (p === '/' || p === '/landing.html') return true;
+        if (p.indexOf('/css/') === 0) return true;
+        if (p.indexOf('/js/landing') === 0) return true;
+        if (p === '/manifest.json') return true;
+        return false;
+    } catch (_) {
+        return false;
+    }
+}
+
+function shouldBypass(request) {
+    if (request.method !== 'GET') return true;
+    try {
+        const u = new URL(request.url);
+        const p = u.pathname || '';
+        // هرگز API / WebSocket / پنل / آپلود را کش یا fallback نکن
+        if (p.indexOf('/api/') === 0) return true;
+        if (p.indexOf('/socket.io') === 0) return true;
+        if (p.indexOf('/uploads/') === 0) return true;
+        if (p.indexOf('/dashboard') === 0) return true;
+        if (p.indexOf('/login') === 0) return true;
+        if (p.indexOf('/health') === 0) return true;
+        return false;
+    } catch (_) {
+        return true;
+    }
+}
 
 self.addEventListener('install', function(event) {
     event.waitUntil(
@@ -32,13 +64,17 @@ self.addEventListener('activate', function(event) {
 });
 
 self.addEventListener('fetch', function(event) {
-    if (event.request.method !== 'GET') return;
+    if (shouldBypass(event.request)) return;
+
     event.respondWith(
         caches.match(event.request).then(function(cached) {
             if (cached) return cached;
             return fetch(event.request)
                 .then(function(response) {
                     if (!response || response.status !== 200 || response.type !== 'basic') {
+                        return response;
+                    }
+                    if (!isLandingAsset(event.request.url)) {
                         return response;
                     }
                     const cloned = response.clone();
@@ -48,7 +84,11 @@ self.addEventListener('fetch', function(event) {
                     return response;
                 })
                 .catch(function() {
-                    return caches.match('/landing.html');
+                    // فقط برای صفحات لندینگ؛ نه برای API
+                    if (isLandingAsset(event.request.url)) {
+                        return caches.match('/landing.html');
+                    }
+                    return Response.error();
                 });
         })
     );

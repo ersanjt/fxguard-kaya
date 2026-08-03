@@ -9,6 +9,22 @@
  *        پایهٔ Socket.IO، ناو badge، persistAuthToken / restoreSession helpers.
  */
         const API = '';
+        /* Service Worker لندینگ گاهی /api را با HTML پاسخ می‌دهد — در پنل حذفش کن */
+        (function clearLandingServiceWorker() {
+            try {
+                if (!('serviceWorker' in navigator)) return;
+                navigator.serviceWorker.getRegistrations().then(function (regs) {
+                    regs.forEach(function (r) { r.unregister(); });
+                }).catch(function () {});
+                if (window.caches && caches.keys) {
+                    caches.keys().then(function (keys) {
+                        keys.forEach(function (k) {
+                            if (String(k).indexOf('kaya-landing') === 0) caches.delete(k);
+                        });
+                    }).catch(function () {});
+                }
+            } catch (_) {}
+        })();
         let token = null;
         function persistAuthToken(t) {
             token = t || null;

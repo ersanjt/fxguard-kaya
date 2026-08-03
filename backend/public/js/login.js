@@ -722,6 +722,20 @@
         /* Apply stored language */
         applyLang(lang);
 
+        /* SW لندینگ نباید /api را HTML برگرداند — از پنل/لاگین unregister کن */
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function (regs) {
+                regs.forEach(function (r) { r.unregister(); });
+            }).catch(function () {});
+            if (window.caches && caches.keys) {
+                caches.keys().then(function (keys) {
+                    keys.forEach(function (k) {
+                        if (String(k).indexOf('kaya-landing') === 0) caches.delete(k);
+                    });
+                }).catch(function () {});
+            }
+        }
+
         /* Config + panel branding */
         loadPublicConfigAndBranding();
 
