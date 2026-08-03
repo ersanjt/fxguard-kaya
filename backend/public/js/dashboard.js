@@ -9,18 +9,17 @@
  *        پایهٔ Socket.IO، ناو badge، persistAuthToken / restoreSession helpers.
  */
         const API = '';
-        /* Service Worker لندینگ گاهی /api را با HTML پاسخ می‌دهد — در پنل حذفش کن */
+        /* Service Worker لندینگ گاهی /api را با HTML پاسخ می‌دهد — در پنل کامل حذفش کن */
         (function clearLandingServiceWorker() {
             try {
-                if (!('serviceWorker' in navigator)) return;
-                navigator.serviceWorker.getRegistrations().then(function (regs) {
-                    regs.forEach(function (r) { r.unregister(); });
-                }).catch(function () {});
+                if ('serviceWorker' in navigator) {
+                    navigator.serviceWorker.getRegistrations().then(function (regs) {
+                        regs.forEach(function (r) { r.unregister(); });
+                    }).catch(function () {});
+                }
                 if (window.caches && caches.keys) {
                     caches.keys().then(function (keys) {
-                        keys.forEach(function (k) {
-                            if (String(k).indexOf('kaya-landing') === 0) caches.delete(k);
-                        });
+                        keys.forEach(function (k) { caches.delete(k); });
                     }).catch(function () {});
                 }
             } catch (_) {}
@@ -4787,8 +4786,13 @@
                 tabRestricted.style.display = show ? 'inline-flex' : 'none';
                 tabRestricted.textContent = t('filter_restricted') || (LANG === 'fa' ? 'محدود / قفل‌شده' : 'Restricted');
             }
-            // اگر تب‌ها جمع شده‌اند، برای پیدا شدن آرشیو پنل فیلتر سریع را باز کن
             if (show) {
+                const bar = document.getElementById('convQuickTabsBar');
+                if (bar && bar.classList.contains('is-collapsed')) {
+                    bar.classList.remove('is-collapsed');
+                    try { localStorage.setItem(CONV_QUICK_TABS_COLLAPSE_LS, '0'); } catch (_e) { /* ignore */ }
+                    if (typeof updateConvQuickTabsToggleUi === 'function') updateConvQuickTabsToggleUi();
+                }
                 const panel = document.getElementById('convQuickTabsPanel');
                 const toggle = document.getElementById('btnConvQuickTabsToggle');
                 if (panel && panel.hidden) {

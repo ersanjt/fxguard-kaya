@@ -5932,6 +5932,8 @@
             #pageConversations.wa-conversations-theme .conv-quick-tabs {
                 gap: 6px;
                 padding-bottom: 2px;
+                flex-wrap: wrap;
+                overflow-x: visible;
             }
             #pageConversations.wa-conversations-theme .conv-tab {
                 padding: 5px 11px;

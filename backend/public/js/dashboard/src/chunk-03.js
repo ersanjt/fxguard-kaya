@@ -676,8 +676,13 @@
                 tabRestricted.style.display = show ? 'inline-flex' : 'none';
                 tabRestricted.textContent = t('filter_restricted') || (LANG === 'fa' ? 'محدود / قفل‌شده' : 'Restricted');
             }
-            // اگر تب‌ها جمع شده‌اند، برای پیدا شدن آرشیو پنل فیلتر سریع را باز کن
             if (show) {
+                const bar = document.getElementById('convQuickTabsBar');
+                if (bar && bar.classList.contains('is-collapsed')) {
+                    bar.classList.remove('is-collapsed');
+                    try { localStorage.setItem(CONV_QUICK_TABS_COLLAPSE_LS, '0'); } catch (_e) { /* ignore */ }
+                    if (typeof updateConvQuickTabsToggleUi === 'function') updateConvQuickTabsToggleUi();
+                }
                 const panel = document.getElementById('convQuickTabsPanel');
                 const toggle = document.getElementById('btnConvQuickTabsToggle');
                 if (panel && panel.hidden) {
