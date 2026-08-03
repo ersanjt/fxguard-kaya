@@ -1802,11 +1802,13 @@
             if (content) { content.classList.toggle('page-conversations', page === 'conversations'); }
             if (page === 'dashboard') loadDashboard();
             if (page === 'conversations') { 
-                loadConvFiltersInit(); 
+                loadConvFiltersInit();
+                if (typeof refreshConvAdminTabs === 'function') refreshConvAdminTabs();
                 loadConversations(); 
                 setTimeout(function() { 
                     removeAllInlineHandlers(); 
-                    setupConversationEventHandlers(); 
+                    setupConversationEventHandlers();
+                    if (typeof refreshConvAdminTabs === 'function') refreshConvAdminTabs();
                 }, 250);
             }
             if (page === 'customers') { initCustomerFilters(); loadCustomers(); }

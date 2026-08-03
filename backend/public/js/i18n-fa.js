@@ -257,7 +257,7 @@ window.__I18N_FA = {
     filter_status_label: 'وضعیت',
     filter_priority_label: 'اولویت',
     filter_assignee_label: 'مسئول',
-    filter_archived: 'آرشیو',
+    filter_archived: 'آرشیو (شماره قبلی)',
     filter_restricted: 'محدود / قفل‌شده',
     status_active: 'فعال',
     status_inactive: 'غیرفعال',

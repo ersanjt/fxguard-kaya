@@ -248,7 +248,7 @@ window.__I18N_TR = {
     filter_unread: 'Okunmamış',
     conv_quick_tabs_hide: 'Hızlı filtreleri gizle',
     conv_quick_tabs_show: 'Hızlı filtreleri göster',
-    filter_archived: 'Arşiv',
+    filter_archived: 'Arşiv (önceki numara)',
     filter_restricted: 'Kısıtlı / kilitli',
     status_active: 'Aktif',
     status_inactive: 'Pasif',

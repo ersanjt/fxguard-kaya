@@ -656,8 +656,36 @@
             if (el && btn) { el.classList.toggle('show'); btn.setAttribute('aria-expanded', el.classList.contains('show')); }
         }
         function canViewArchivedConversations() { const r = (currentUser && currentUser.role) || ''; return ['owner','admin','manager'].indexOf(r) >= 0; }
-        function canViewHiddenConversations() { const r = (currentUser && currentUser.role) || ''; return r === 'owner' || r === 'admin'; }
+        function canViewHiddenConversations() {
+            const r = (currentUser && currentUser.role) || '';
+            if (r === 'owner' || r === 'admin') return true;
+            if (currentUser && currentUser.isMainAdmin) return true;
+            return false;
+        }
         function canManageConversations() { const r = (currentUser && currentUser.role) || ''; return r === 'owner'; }
+        /** نمایش تب آرشیو / محدود — فقط ادمین سطح بالا؛ از صفحه مکالمات صدا زده می‌شود */
+        function refreshConvAdminTabs() {
+            const show = canViewHiddenConversations();
+            const tabArchived = document.getElementById('convTabArchived');
+            const tabRestricted = document.getElementById('convTabRestricted');
+            if (tabArchived) {
+                tabArchived.style.display = show ? 'inline-flex' : 'none';
+                tabArchived.textContent = t('filter_archived') || (LANG === 'fa' ? 'آرشیو (شماره قبلی)' : 'Archive');
+            }
+            if (tabRestricted) {
+                tabRestricted.style.display = show ? 'inline-flex' : 'none';
+                tabRestricted.textContent = t('filter_restricted') || (LANG === 'fa' ? 'محدود / قفل‌شده' : 'Restricted');
+            }
+            // اگر تب‌ها جمع شده‌اند، برای پیدا شدن آرشیو پنل فیلتر سریع را باز کن
+            if (show) {
+                const panel = document.getElementById('convQuickTabsPanel');
+                const toggle = document.getElementById('btnConvQuickTabsToggle');
+                if (panel && panel.hidden) {
+                    panel.hidden = false;
+                    if (toggle) toggle.setAttribute('aria-expanded', 'true');
+                }
+            }
+        }
         async function loadConvFiltersInit() {
             await loadConvAssignees();
             loadBranchesForSelect(['convFilterBranch']);
@@ -669,13 +697,9 @@
                     sel.innerHTML = opt;
                 }
             }
-            const tabArchived = document.getElementById('convTabArchived');
-            // آرشیو شمارهٔ قبلی / مکالمات قفل‌شده: فقط ادمین سطح بالا
-            if (tabArchived) tabArchived.style.display = canViewHiddenConversations() ? '' : 'none';
-            const tabRestricted = document.getElementById('convTabRestricted');
-            if (tabRestricted) tabRestricted.style.display = canViewHiddenConversations() ? '' : 'none';
+            refreshConvAdminTabs();
             const statusFilter = document.getElementById('convFilterStatus');
-            if (statusFilter && canViewArchivedConversations()) {
+            if (statusFilter && canViewHiddenConversations()) {
                 const hasArchived = Array.from(statusFilter.options).some(function(o){ return o.value === 'archived'; });
                 if (!hasArchived) { var opt = document.createElement('option'); opt.value = 'archived'; opt.setAttribute('data-i18n', 'status_archived'); opt.textContent = t('filter_archived') || t('status_archived') || 'Archived'; statusFilter.appendChild(opt); }
             }
