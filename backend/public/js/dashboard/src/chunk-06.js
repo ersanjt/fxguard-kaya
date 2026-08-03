@@ -2150,8 +2150,9 @@
             card.style.display = 'block';
             const res = await apiFetch('/api/access-grants/stats');
             if (res.ok && res.data && statsEl) {
-                const tpl = t('whatsapp_legacy_lockdown_stats') || '{hidden} hidden · {restricted}/{total} restricted';
+                const tpl = t('whatsapp_legacy_lockdown_stats') || '{archived} archived · {hidden} hidden · {restricted}/{total} restricted';
                 statsEl.textContent = tpl
+                    .replace('{archived}', String(res.data.archivedHidden || 0))
                     .replace('{hidden}', String(res.data.hiddenConversations || 0))
                     .replace('{restricted}', String(res.data.restrictedCustomers || 0))
                     .replace('{total}', String(res.data.totalCustomers || 0));

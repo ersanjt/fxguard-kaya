@@ -670,7 +670,8 @@
                 }
             }
             const tabArchived = document.getElementById('convTabArchived');
-            if (tabArchived) tabArchived.style.display = canViewArchivedConversations() ? '' : 'none';
+            // آرشیو شمارهٔ قبلی / مکالمات قفل‌شده: فقط ادمین سطح بالا
+            if (tabArchived) tabArchived.style.display = canViewHiddenConversations() ? '' : 'none';
             const tabRestricted = document.getElementById('convTabRestricted');
             if (tabRestricted) tabRestricted.style.display = canViewHiddenConversations() ? '' : 'none';
             const statusFilter = document.getElementById('convFilterStatus');
@@ -917,7 +918,8 @@
                 return;
             }
             const visibleRows = (data.data || []).filter(function(c) {
-                if (c.isHiddenFromStaff && convQuickTab !== 'restricted') return false;
+                // قفل‌شده فقط در تب آرشیو یا «محدود» — لیست عادی هیچ‌وقت نشان ندهد
+                if (c.isHiddenFromStaff && convQuickTab !== 'restricted' && convQuickTab !== 'archived') return false;
                 return true;
             });
             if (visibleRows.length === 0) {

@@ -181,14 +181,20 @@ router.get('/', async (req, res, next) => {
         const where = {};
 
         const canViewArchived = req.canViewArchivedConversations && req.canViewArchivedConversations();
+        const canViewHidden = req.canViewHiddenConversations && req.canViewHiddenConversations();
         if (status === 'archived' || archived === '1' || archived === 'true') {
-            if (!canViewArchived) return res.status(403).json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
+            // آرشیو (از جمله مکالمات قفل‌شدهٔ شمارهٔ قبلی) فقط ادمین سطح بالا
+            if (!canViewHidden) {
+                return res.status(403).json({ error: 'فقط ادمین سطح بالا به آرشیو مکالمات دسترسی دارد' });
+            }
             where.status = 'archived';
         } else if (status) {
             where.status = status;
-        } else if (!canViewArchived) {
+        } else {
+            // لیست عادی: آرشیو نشان داده نشود — تب آرشیو جداست
             where.status = { [Op.ne]: 'archived' };
         }
+        void canViewArchived;
         if (priority) where.priority = priority;
         if (assignedTo) where.assignedTo = assignedTo;
         if (unassigned === '1' || unassigned === 'true') { where.assignedTo = null; where.departmentId = null; }

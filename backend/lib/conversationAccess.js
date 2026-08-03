@@ -6,7 +6,7 @@ const {
     visibleDespiteHiddenOr,
 } = require('./staffResourceGrants');
 
-/** آیا کاربر جاری به این مکالمه دسترسی دارد؟ (grants اختیاری — اگر نباشد فقط بدون اعطا چک می‌شود) */
+/** آیا کاربر جاری به این مکالمه دسترسی دارد؟ */
 function canAccessConversation(user, userId, conversation, grants = null) {
     if (!conversation || !user) return false;
     if (isMainAdmin(user) || canViewHiddenConversations(user)) return true;
@@ -38,39 +38,36 @@ async function canAccessConversationAsync(user, userId, conversation) {
 
 /** فیلتر Sequelize برای مخفی‌سازی مکالمات از دید کاربران غیرمجاز */
 function hiddenConversationWhere(user, grants = null) {
-    if (canViewHiddenConversations(user)) return {};
+    if (isMainAdmin(user) || canViewHiddenConversations(user)) return {};
     return visibleDespiteHiddenOr(grants);
 }
 
 /**
- * شرط لیست/شمارش مکالمات بر اساس نقش، مخفی‌سازی و اعطای دسترسی.
- * پیش‌فرض: مکالمات isHiddenFromStaff در لیست نمی‌آیند (حتی برای owner/admin)،
- * مگر includeHidden یا hiddenOnly و کاربر مجاز به دیدن مخفی‌ها باشد.
+ * شرط لیست مکالمات.
+ * ادمین سطح بالا (owner/admin/main): همه (آرشیو با فیلتر جدا در route).
+ * بقیه: فقط غیرمخفی (+ اعطا) و بر اساس نقش/تخصیص.
  *
  * @param {object} [opts]
- * @param {boolean} [opts.includeHidden] — ادمین سطح بالا: مخفی‌ها را هم در لیست بیاور
- * @param {boolean} [opts.hiddenOnly] — ادمین سطح بالا: فقط مخفی‌ها
+ * @param {boolean} [opts.hiddenOnly] — فقط مخفی‌ها (ادمین)
+ * @param {boolean} [opts.includeHidden] — مخفی‌ها را هم بیاور (ادمین؛ پیش‌فرض ادمین همه را می‌بیند)
  */
 function conversationListWhere(user, userId, grants = null, opts = {}) {
     const canSeeHidden = isMainAdmin(user) || canViewHiddenConversations(user);
-    const includeHidden = !!(opts && opts.includeHidden) && canSeeHidden;
     const hiddenOnly = !!(opts && opts.hiddenOnly) && canSeeHidden;
 
     if (hiddenOnly) {
         return { isHiddenFromStaff: true };
     }
 
-    // پیش‌فرض برای همه (از جمله ادمین): مخفی‌ها را نشان نده مگر اعطا شده باشند
-    // includeHidden فقط برای ادمین سطح بالا همهٔ مخفی‌ها را هم اضافه می‌کند
-    if (includeHidden) {
-        if (['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1 || canSeeHidden) {
-            return {};
-        }
+    // ادمین سطح بالا: بدون فیلتر مخفی (لیست کامل؛ آرشیو جدا فیلتر می‌شود)
+    if (canSeeHidden) {
+        return {};
     }
 
     const visibility = visibleDespiteHiddenOr(grants);
 
-    if (canSeeHidden || ['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1) {
+    if (['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1) {
+        // owner/admin اینجا فقط اگر canSeeHidden نبودند؛ manager همیشه visibility
         return visibility;
     }
 
@@ -95,7 +92,7 @@ async function conversationListWhereAsync(user, userId, opts = {}) {
     if (opts && opts.hiddenOnly && canSeeHidden) {
         return { isHiddenFromStaff: true };
     }
-    if (opts && opts.includeHidden && canSeeHidden) {
+    if (canSeeHidden) {
         return {};
     }
     const grants = await getUserGrantSets(userId);

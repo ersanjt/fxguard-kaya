@@ -1,7 +1,7 @@
 /**
  * قفل دادهٔ CRM قبلی پس از تعویض شماره واتساپ:
- * مکالمات و مشتریان موجود فقط برای ادمین سطح بالا (owner/admin/main admin) دیده می‌شوند
- * مگر اینکه صریحاً دسترسی اعطا شود.
+ * همهٔ مکالمات → آرشیو + مخفی از کارکنان
+ * مشتریان → محدود؛ فقط ادمین سطح بالا (و اعطای صریح) می‌بینند
  */
 const { Conversation, Customer, WhatsappConnection } = require('../models');
 const logger = require('../config/logger');
@@ -12,14 +12,14 @@ function normalizeLinkedNumber(num) {
 }
 
 /**
- * همهٔ مکالمات و مشتریان فعلی را محدود می‌کند.
- * @returns {{ conversationsUpdated: number, customersUpdated: number }}
+ * همهٔ مکالمات فعلی را آرشیو و از کارکنان مخفی می‌کند؛ مشتریان را محدود می‌کند.
+ * @returns {{ conversationsUpdated: number, customersUpdated: number, archived: number }}
  */
 async function lockdownExistingCrmData({ reason } = {}) {
     const [convResult, custResult] = await Promise.all([
         Conversation.update(
-            { isHiddenFromStaff: true },
-            { where: { isHiddenFromStaff: false } }
+            { isHiddenFromStaff: true, status: 'archived' },
+            { where: {} }
         ),
         Customer.update(
             { isRestrictedFromStaff: true },
@@ -28,16 +28,18 @@ async function lockdownExistingCrmData({ reason } = {}) {
     ]);
     const conversationsUpdated = Array.isArray(convResult) ? convResult[0] : convResult;
     const customersUpdated = Array.isArray(custResult) ? custResult[0] : custResult;
-    logger.info('Legacy CRM lockdown applied', {
+    const archived = await Conversation.count({ where: { status: 'archived', isHiddenFromStaff: true } });
+    logger.info('Legacy CRM lockdown applied (archived + hidden)', {
         reason: reason || 'manual',
         conversationsUpdated,
         customersUpdated,
+        archived,
     });
-    return { conversationsUpdated, customersUpdated };
+    return { conversationsUpdated, customersUpdated, archived };
 }
 
 /**
- * اگر شمارهٔ متصل‌شده با آخرین شمارهٔ ذخیره‌شده فرق کند، دادهٔ قبلی را قفل می‌کند.
+ * اگر شمارهٔ متصل‌شده با آخرین شمارهٔ ذخیره‌شده فرق کند، دادهٔ قبلی را قفل و آرشیو می‌کند.
  * اولین اتصال (بدون lastLinkedGatewayNumber) فقط شماره را ذخیره می‌کند و قفل نمی‌زند.
  */
 async function handleGatewayNumberReady(linkedNumber, meta = {}) {
@@ -72,7 +74,7 @@ async function handleGatewayNumberReady(linkedNumber, meta = {}) {
     });
     row.lastLinkedGatewayNumber = number;
     await row.save();
-    logger.warn('WhatsApp gateway number changed — legacy CRM data locked', {
+    logger.warn('WhatsApp gateway number changed — legacy CRM data archived and locked', {
         previous: prev,
         number,
         ...lockdown,
@@ -82,13 +84,21 @@ async function handleGatewayNumberReady(linkedNumber, meta = {}) {
 
 /** آمار وضعیت قفل برای UI */
 async function getLockdownStats() {
-    const [hiddenConversations, restrictedCustomers, totalCustomers, totalConversations] = await Promise.all([
-        Conversation.count({ where: { isHiddenFromStaff: true } }),
-        Customer.count({ where: { isRestrictedFromStaff: true } }),
-        Customer.count(),
-        Conversation.count(),
-    ]);
-    return { hiddenConversations, restrictedCustomers, totalCustomers, totalConversations };
+    const [hiddenConversations, archivedHidden, restrictedCustomers, totalCustomers, totalConversations] =
+        await Promise.all([
+            Conversation.count({ where: { isHiddenFromStaff: true } }),
+            Conversation.count({ where: { status: 'archived', isHiddenFromStaff: true } }),
+            Customer.count({ where: { isRestrictedFromStaff: true } }),
+            Customer.count(),
+            Conversation.count(),
+        ]);
+    return {
+        hiddenConversations,
+        archivedHidden,
+        restrictedCustomers,
+        totalCustomers,
+        totalConversations,
+    };
 }
 
 module.exports = {
