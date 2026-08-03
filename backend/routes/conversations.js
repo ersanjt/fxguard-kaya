@@ -180,7 +180,6 @@ router.get('/', async (req, res, next) => {
         const { status, priority, assignedTo, unread, unassigned, unanswered, branchId, departmentId, search, archived, isGroup, page = 1, limit = 20 } = req.query;
         const where = {};
 
-        const canViewArchived = req.canViewArchivedConversations && req.canViewArchivedConversations();
         const canViewHidden = req.canViewHiddenConversations && req.canViewHiddenConversations();
         if (status === 'archived' || archived === '1' || archived === 'true') {
             // آرشیو (از جمله مکالمات قفل‌شدهٔ شمارهٔ قبلی) فقط ادمین سطح بالا
@@ -194,7 +193,6 @@ router.get('/', async (req, res, next) => {
             // لیست عادی: آرشیو نشان داده نشود — تب آرشیو جداست
             where.status = { [Op.ne]: 'archived' };
         }
-        void canViewArchived;
         if (priority) where.priority = priority;
         if (assignedTo) where.assignedTo = assignedTo;
         if (unassigned === '1' || unassigned === 'true') { where.assignedTo = null; where.departmentId = null; }
