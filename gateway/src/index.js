@@ -1104,17 +1104,29 @@ async function stopWhatsApp() {
 // All /api/* (except /test) require secret when GATEWAY_API_SECRET is set
 app.use('/api/', requireGatewaySecret);
 
+function gatewayHasUsableClient() {
+    return !!(client && client.pupPage && (isClientReady || lastAccountInfo || connectionPhase === 'ready'));
+}
+
 // /api/status: بدون await Redis — همیشه سریع پاسخ بده؛ در صورت auth_failure پیام خطا برگردانده می‌شود
 app.get('/api/status', async (req, res) => {
-    const status = isClientReady ? 'ready' : isClientStarting ? 'starting' : 'disconnected';
+    const usable = gatewayHasUsableClient();
+    const status = isClientReady
+        ? 'ready'
+        : isClientStarting
+          ? 'starting'
+          : usable
+            ? 'ready'
+            : 'disconnected';
     const body = {
-        whatsapp: isClientReady,
+        whatsapp: isClientReady || usable,
+        usable,
         starting: isClientStarting,
         redis: redisClient?.isReady || false,
         rabbitmq: !!rabbitChannel,
         status,
     };
-    if (isClientReady && lastAccountInfo) {
+    if ((isClientReady || usable) && lastAccountInfo) {
         body.pushname = lastAccountInfo.name;
         body.number = lastAccountInfo.number;
     }
@@ -1274,18 +1286,25 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
     } catch (error) {
         let status = error?.statusCode || 500;
         let errMsg = formatGatewayError(error);
-        const protocolLike =
-            /send_timeout|timeout|ProtocolError|Target closed|Session closed|Runtime\.callFunctionOn|Execution context was destroyed|Navigating frame was detached|^Error:\s*[a-z]$/i.test(
+        const sessionDead =
+            /send_timeout|ProtocolError|Target closed|Session closed|Runtime\.callFunctionOn|Execution context was destroyed|Navigating frame was detached/i.test(
                 errMsg
-            ) || /^[a-z]$/i.test(String(error?.message || '').trim());
+            );
+        const protocolLike =
+            sessionDead ||
+            /timeout/i.test(errMsg) ||
+            /^Error:\s*[a-z]$/i.test(errMsg) ||
+            /^[a-z]$/i.test(String(error?.message || '').trim());
         if (protocolLike) {
             status = 503;
             if (/send_timeout/i.test(errMsg)) {
                 errMsg = 'WhatsApp send timed out — browser session may be stuck; restart gateway';
             }
-            // ready اما صفحه مرده — reconnect تا CRM گیر نکند
-            isClientReady = false;
-            scheduleReconnect();
+            // فقط وقتی سشن واقعاً مرده است ready را خاموش کن (خطاهای تک‌حرفی LID نباید sync گروه‌ها را بشکند)
+            if (sessionDead) {
+                isClientReady = false;
+                scheduleReconnect();
+            }
         }
         logger.error('Send message error', {
             error: errMsg,
@@ -1347,9 +1366,6 @@ let lastGroupsCache = { at: 0, groups: [] };
 async function listWhatsAppGroupsFromStore() {
     if (!client?.pupPage) throw new Error('pupPage_unavailable');
     return client.pupPage.evaluate(() => {
-        const store = window.Store;
-        if (!store) return [];
-
         function collectModels(collection) {
             if (!collection) return [];
             try {
@@ -1398,17 +1414,33 @@ async function listWhatsAppGroupsFromStore() {
             out.push(row);
         }
 
-        // ۱) همهٔ گروه‌هایی که حساب عضو آن‌هاست (حتی بدون پیام اخیر در Chat list)
-        const metas = collectModels(store.GroupMetadata);
+        const store = window.Store || {};
+
+        // ماژول‌های جدید واتساپ وب (اگر Store خالی باشد)
+        let chatCollection = store.Chat;
+        let groupMeta = store.GroupMetadata;
+        try {
+            const req = typeof window.require === 'function' ? window.require : null;
+            if (req) {
+                chatCollection =
+                    chatCollection ||
+                    req('WAWebChatCollection')?.ChatCollection ||
+                    req('WAWebChatCollection')?.default;
+                groupMeta =
+                    groupMeta ||
+                    req('WAWebGroupMetadataCollection')?.GroupMetadataCollection ||
+                    req('WAWebGroupMetadataCollection')?.default ||
+                    req('WAWebGroupMetadataCollection');
+            }
+        } catch (_) {}
+
+        const metas = collectModels(groupMeta);
         for (let i = 0; i < metas.length; i++) {
             const m = metas[i];
-            const ser = jidOf(m);
-            const name = (m && (m.subject || m.name || m.formattedTitle)) || null;
-            pushGroup(ser, name);
+            pushGroup(jidOf(m), (m && (m.subject || m.name || m.formattedTitle)) || null);
         }
 
-        // ۲) گروه‌های حاضر در لیست چت (نام ممکن است بهتر باشد)
-        const chats = collectModels(store.Chat);
+        const chats = collectModels(chatCollection);
         for (let i = 0; i < chats.length; i++) {
             const c = chats[i];
             const ser = jidOf(c);
@@ -1428,19 +1460,39 @@ async function listWhatsAppGroupsFromStore() {
     });
 }
 
+async function listWhatsAppGroupsViaWWebJS() {
+    if (!client?.pupPage) throw new Error('pupPage_unavailable');
+    return client.pupPage.evaluate(async () => {
+        if (!window.WWebJS || typeof window.WWebJS.getChats !== 'function') return null;
+        const chats = await window.WWebJS.getChats();
+        return (chats || [])
+            .filter((c) => c && c.isGroup)
+            .map((c) => ({
+                id: (c.id && (c.id._serialized || c.id)) || null,
+                name: c.name || c.formattedTitle || null,
+            }))
+            .filter((g) => g.id);
+    });
+}
+
 async function listWhatsAppGroups() {
-    if (!isClientReady || !client) {
+    if (!client) {
+        const err = new Error('WhatsApp not ready');
+        err.statusCode = 503;
+        throw err;
+    }
+    if (!isClientReady && !gatewayHasUsableClient()) {
         const err = new Error('WhatsApp not ready');
         err.statusCode = 503;
         throw err;
     }
 
-    // مسیر سبک: فقط گروه‌ها از Store — getChats() روی سشن‌های بزرگ timeout/«r» می‌دهد
+    // مسیر سبک: Store / ماژول‌های WA Web
     try {
         const fromStore = await Promise.race([
             listWhatsAppGroupsFromStore(),
             new Promise((_, reject) =>
-                setTimeout(() => reject(new Error('getGroups_store_timeout')), 15000)
+                setTimeout(() => reject(new Error('getGroups_store_timeout')), 12000)
             ),
         ]);
         if (Array.isArray(fromStore) && fromStore.length > 0) {
@@ -1448,13 +1500,26 @@ async function listWhatsAppGroups() {
             logger.info('WhatsApp groups listed from Store', { count: fromStore.length });
             return fromStore;
         }
-        if (Array.isArray(fromStore) && fromStore.length === 0) {
-            logger.info('Store returned 0 groups — trying getChats fallback');
-        }
+        logger.info('Store returned 0 groups — trying WWebJS/getChats');
     } catch (storeErr) {
-        logger.warn('Group list via Store failed — falling back to getChats', {
-            error: formatGatewayError(storeErr),
-        });
+        logger.warn('Group list via Store failed', { error: formatGatewayError(storeErr) });
+    }
+
+    // مسیر میانی: WWebJS.getChats فقط گروه‌ها
+    try {
+        const viaWw = await Promise.race([
+            listWhatsAppGroupsViaWWebJS(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('getGroups_wwebjs_timeout')), 20000)
+            ),
+        ]);
+        if (Array.isArray(viaWw) && viaWw.length > 0) {
+            lastGroupsCache = { at: Date.now(), groups: viaWw };
+            logger.info('WhatsApp groups listed via WWebJS', { count: viaWw.length });
+            return viaWw;
+        }
+    } catch (wwErr) {
+        logger.warn('Group list via WWebJS failed', { error: formatGatewayError(wwErr) });
     }
 
     try {
@@ -1473,6 +1538,7 @@ async function listWhatsAppGroups() {
             }))
             .filter((g) => g.id);
         lastGroupsCache = { at: Date.now(), groups };
+        logger.info('WhatsApp groups listed via getChats', { count: groups.length });
         return groups;
     } catch (chatsErr) {
         const age = Date.now() - (lastGroupsCache.at || 0);
@@ -1484,15 +1550,25 @@ async function listWhatsAppGroups() {
             });
             return lastGroupsCache.groups;
         }
-        throw chatsErr;
+        const err = new Error(formatGatewayError(chatsErr) || 'groups_unavailable');
+        err.statusCode = 503;
+        throw err;
     }
 }
 
 app.get('/api/chats/groups', async (req, res) => {
     try {
-        if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
+        if (!client) return res.status(503).json({ error: 'WhatsApp not ready' });
+        if (!isClientReady && !gatewayHasUsableClient()) {
+            return res.status(503).json({ error: 'WhatsApp not ready' });
+        }
         const groups = await listWhatsAppGroups();
-        return res.json({ success: true, groups, count: groups.length });
+        return res.json({
+            success: true,
+            groups,
+            count: groups.length,
+            ready: !!isClientReady,
+        });
     } catch (error) {
         const msg = formatGatewayError(error);
         logger.error('Get groups error', { error: msg, stack: error?.stack?.slice?.(0, 400) });
@@ -1505,13 +1581,11 @@ app.get('/api/chats/groups', async (req, res) => {
                 stale: true,
             });
         }
-        if (
-            /timeout|not ready|Session closed|Target closed|Protocol|getChats|getGroups/i.test(msg) ||
-            /^[a-z]$/i.test(String(error?.message || '').trim())
-        ) {
-            return res.status(503).json({ error: msg });
-        }
-        return res.status(503).json({ error: msg });
+        const notReady = /WhatsApp not ready/i.test(msg);
+        return res.status(503).json({
+            error: notReady ? 'WhatsApp not ready' : msg || 'groups_unavailable',
+            code: notReady ? 'not_ready' : 'groups_unavailable',
+        });
     }
 });
 

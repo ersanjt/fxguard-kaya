@@ -99,17 +99,42 @@ router.post('/sync-groups', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const { gatewayGet, GATEWAY_URL } = require('../lib/gatewayClient');
+
+        let statusReady = null;
+        try {
+            const st = await gatewayGet('/api/status', { timeout: 5000 });
+            const d = st?.data || {};
+            statusReady = !!(
+                d.whatsapp ||
+                d.usable ||
+                d.status === 'ready' ||
+                d.phase === 'ready'
+            );
+            // فقط وقتی واقعاً قطع است متوقف شو؛ در حالت starting همچنان groups را امتحان می‌کنیم
+            if (!statusReady && d.status === 'disconnected' && !d.starting) {
+                return res.status(503).json({
+                    error:
+                        'واتساپ Gateway آماده نیست (وضعیت: disconnected). از تنظیمات واتساپ اتصال/QR را برقرار کنید.',
+                });
+            }
+        } catch (stErr) {
+            logger.warn('sync-groups: status check failed', { error: stErr?.message });
+            // ادامه می‌دهیم؛ ممکن است فقط /status موقتاً مشکل داشته باشد
+        }
+
         let gwRes;
         try {
-            // Store path معمولاً <15s؛ کل درخواست زیر زیر proxy (~60s) بماند
             gwRes = await gatewayGet('/api/chats/groups', { timeout: 35000 });
         } catch (gwErr) {
             const status = gwErr?.response?.status;
             const gwBody = gwErr?.response?.data;
             const gwMsg = (gwBody && (gwBody.error || gwBody.message)) || gwErr?.message || '';
+            const gwCode = gwBody && gwBody.code;
             logger.warn('sync-groups: gateway request failed', {
                 status,
                 error: gwMsg,
+                code: gwCode || null,
+                statusReady,
                 gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
             });
             if (status === 404 || String(gwMsg).includes('404')) {
@@ -122,20 +147,29 @@ router.post('/sync-groups', async (req, res, next) => {
                     error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را بررسی کنید.',
                 });
             }
-            if (status === 503 || /not ready|WhatsApp not ready/i.test(String(gwMsg))) {
+            const reallyNotReady =
+                gwCode === 'not_ready' ||
+                /^WhatsApp not ready$/i.test(String(gwMsg).trim()) ||
+                (statusReady === false && /not ready/i.test(String(gwMsg)));
+            if (reallyNotReady) {
                 return res.status(503).json({
                     error: 'واتساپ Gateway آماده نیست. صبر کنید تا وضعیت ready شود، بعد دوباره همگام‌سازی کنید.',
                 });
             }
             if (
+                status === 503 ||
                 status === 500 ||
                 status >= 502 ||
-                /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNABORTED|timeout|getChats|getGroups/i.test(String(gwMsg))
+                /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNABORTED|timeout|getChats|getGroups|groups_unavailable|pupPage/i.test(
+                    String(gwMsg)
+                )
             ) {
                 return res.status(503).json({
                     error:
-                        'Gateway موقتاً گروه‌ها را برنگرداند' +
-                        (gwMsg ? ` (${String(gwMsg).slice(0, 120)})` : '') +
+                        'خواندن لیست گروه‌ها از واتساپ طول کشید یا موقتاً شکست خورد' +
+                        (gwMsg && !/not ready/i.test(String(gwMsg))
+                            ? ` (${String(gwMsg).slice(0, 100)})`
+                            : '') +
                         '. چند ثانیه بعد دوباره بزنید؛ اگر ادامه داشت Gateway را ری‌استارت کنید.',
                 });
             }

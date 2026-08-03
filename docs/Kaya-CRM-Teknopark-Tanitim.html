@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Kaya CRM — Teknoloji ve İnovasyon Parkları Tanıtım</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 16mm 16mm 16mm;
+    }
+
+    :root {
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --soft: #f0fdfa;
+      --warn: #b45309;
+      --card: #ffffff;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      color: var(--ink);
+      background: #fff;
+      font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      font-size: 11pt;
+      line-height: 1.45;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      page-break-after: always;
+      break-after: page;
+      min-height: 250mm;
+      padding: 4mm 0 8mm;
+      position: relative;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    .eyebrow {
+      font-size: 9pt;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent);
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+
+    h1 {
+      font-size: 28pt;
+      line-height: 1.15;
+      margin: 0 0 10px;
+      letter-spacing: -0.02em;
+    }
+
+    h2 {
+      font-size: 18pt;
+      margin: 0 0 12px;
+      letter-spacing: -0.01em;
+    }
+
+    h3 {
+      font-size: 12pt;
+      margin: 16px 0 8px;
+      color: var(--accent-dark);
+    }
+
+    p { margin: 0 0 10px; color: var(--muted); }
+
+    .lead {
+      font-size: 13pt;
+      color: var(--ink);
+      max-width: 92%;
+    }
+
+    .cover {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 250mm;
+      background:
+        linear-gradient(160deg, #0f766e 0%, #134e4a 48%, #0f172a 100%);
+      color: #fff;
+      border-radius: 18px;
+      padding: 28mm 16mm 16mm;
+      margin: 0;
+    }
+
+    .cover h1,
+    .cover p,
+    .cover .eyebrow { color: #fff; }
+
+    .cover .eyebrow { opacity: 0.85; }
+
+    .cover h1 {
+      font-size: 36pt;
+      margin-top: 18mm;
+    }
+
+    .cover .tagline {
+      font-size: 14pt;
+      opacity: 0.92;
+      max-width: 85%;
+      margin-top: 8px;
+    }
+
+    .cover-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      border-top: 1px solid rgba(255,255,255,0.25);
+      padding-top: 14px;
+      font-size: 10pt;
+    }
+
+    .cover-meta strong { display: block; opacity: 0.7; font-weight: 600; margin-bottom: 2px; }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      font-size: 9.5pt;
+    }
+
+    ul, ol {
+      margin: 0 0 12px;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    li { margin: 4px 0; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--soft);
+      border: 1px solid #ccfbf1;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .card h4 {
+      margin: 0 0 6px;
+      font-size: 11pt;
+      color: var(--accent-dark);
+    }
+
+    .card p, .card li { font-size: 10pt; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 10pt;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f8fafc;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) td { background: #fcfffe; }
+
+    .quote {
+      border-left: 4px solid var(--accent);
+      padding: 10px 14px;
+      background: #f8fafc;
+      border-radius: 0 10px 10px 0;
+      color: var(--ink);
+      font-size: 11.5pt;
+      margin: 12px 0;
+    }
+
+    .footer-note {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      font-size: 8.5pt;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      padding-top: 6px;
+    }
+
+    .cta-box {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0f766e, #115e59);
+      color: #fff;
+    }
+
+    .cta-box h3 { color: #fff; margin-top: 0; }
+    .cta-box p { color: rgba(255,255,255,0.9); margin-bottom: 6px; }
+    .cta-box a { color: #fff; font-weight: 700; }
+
+    .section-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 10pt;
+      font-weight: 700;
+      margin-right: 8px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .title-row h2 { margin: 0; }
+
+    .pill {
+      display: inline-block;
+      background: #ecfdf5;
+      color: var(--accent-dark);
+      border: 1px solid #99f6e4;
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 9pt;
+      font-weight: 600;
+      margin: 2px 4px 2px 0;
+    }
+
+    .closing {
+      min-height: 250mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      background: #0f172a;
+      color: #fff;
+      border-radius: 18px;
+      padding: 24mm 16mm;
+    }
+
+    .closing h1 { color: #fff; font-size: 30pt; }
+    .closing p { color: rgba(255,255,255,0.82); }
+    .closing .url {
+      margin-top: 18px;
+      font-size: 14pt;
+      font-weight: 700;
+      color: #5eead4;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- KAPAK -->
+  <section class="page">
+    <div class="cover">
+      <div>
+        <p class="eyebrow">Tanıtım Dosyası · 2026</p>
+        <div class="badge-row">
+          <span class="badge">Teknopark</span>
+          <span class="badge">Fintech</span>
+          <span class="badge">WhatsApp CRM</span>
+          <span class="badge">White-Label</span>
+        </div>
+        <h1>Kaya CRM</h1>
+        <p class="tagline">WhatsApp merkezli müşteri, destek ve döviz operasyon platformu</p>
+        <p class="tagline" style="font-size:12pt; opacity:0.8; margin-top:14px;">
+          Finans · Döviz · Hizmet işletmeleri için entegre çözüm
+        </p>
+      </div>
+      <div class="cover-meta">
+        <div>
+          <strong>Canlı ortam</strong>
+          kaya.fxguard.io
+        </div>
+        <div>
+          <strong>Hedef</strong>
+          Teknoloji ve inovasyon parkları
+        </div>
+        <div>
+          <strong>Dil</strong>
+          Türkçe · İngilizce · Farsça
+        </div>
+        <div>
+          <strong>Ürün sahibi</strong>
+          Ersan Jahed Tabrizi
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ÖZET -->
+  <section class="page">
+    <p class="eyebrow">01 · Yönetici özeti</p>
+    <div class="title-row"><h2>Kaya CRM nedir?</h2></div>
+    <p class="lead">
+      <strong>Kaya CRM</strong>, müşteri yönetimini, WhatsApp desteğini, iç ekip koordinasyonunu
+      ve döviz/finans operasyonunu tek güvenli web panelde birleştiren entegre bir platformdur.
+    </p>
+    <div class="quote">
+      Dağınık WhatsApp sohbetlerini izlenebilir, atanabilir ve raporlanabilir bir iş sistemine dönüştürür.
+    </div>
+
+    <h3>Ne için yapıldı?</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4>Merkezileştirme</h4>
+        <p>Tüm WhatsApp konuşmaları tek gelen kutusunda; kim ne zaman cevapladı net görünür.</p>
+      </div>
+      <div class="card">
+        <h4>Operasyon</h4>
+        <p>Atama, bilet, görev, süreç (BPM), departman ve şube yönetimi.</p>
+      </div>
+      <div class="card">
+        <h4>Güven ve uyum</h4>
+        <p>Konuşma kaydı, rol bazlı yetki, 2FA, aktivite günlüğü; Meta Cloud API desteği.</p>
+      </div>
+      <div class="card">
+        <h4>Sektör ihtiyacı</h4>
+        <p>Canlı kur şeridi, döviz servisleri, white-label markalama, on-premise seçeneği.</p>
+      </div>
+    </div>
+    <div class="footer-note"><span>Kaya CRM</span><span>Teknopark Tanıtım Dosyası</span></div>
+  </section>
+
+  <!-- PROBLEM -->
+  <section class="page">
+    <p class="eyebrow">02 · Pazar problemi</p>
+    <div class="title-row"><h2>WhatsApp işin merkezinde, sistem değil</h2></div>
+    <p class="lead">Türkiye ve benzer pazarlarda ilk temasın büyük kısmı WhatsApp üzerinden gelir. Ancak operasyon çoğu zaman CRM dışında kalır.</p>
+    <ul>
+      <li>Mesajlar personelin telefonunda dağınık durur</li>
+      <li>Geçmiş yoktur; müşteri her seferinde yeniden anlatır</li>
+      <li>Yönetici göremez: kim çevrimiçi, kim cevap vermedi?</li>
+      <li>Kur ve yanıtlar şubelere göre farklılaşır</li>
+      <li>Ekip büyüdükçe kaos artar</li>
+    </ul>
+
+    <h3>Önce / Sonra</h3>
+    <table>
+      <thead>
+        <tr><th>Önce</th><th>Sonra (Kaya CRM)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Mesajlar personel telefonunda</td><td>Merkezi panel + müşteri + zaman damgası</td></tr>
+        <tr><td>Müşteri kimle konuştuğunu bilmiyor</td><td>Tek seferlik ajan tanıtımı + net devir</td></tr>
+        <tr><td>Kur ve yanıtlar dağınık</td><td>Canlı kur şeridi + şablon + yapay zekâ</td></tr>
+        <tr><td>Yönetici kör</td><td>Çevrimiçi durumu, bilet, aktivite</td></tr>
+        <tr><td>Büyüme = kaos</td><td>Rol · departman · şube · yetki matrisi</td></tr>
+      </tbody>
+    </table>
+    <div class="footer-note"><span>Kaya CRM</span><span>Teknopark Tanıtım Dosyası</span></div>
+  </section>
+
+  <!-- HEDEF -->
+  <section class="page">
+    <p class="eyebrow">03 · Hedef müşteri</p>
+    <div class="title-row"><h2>Kimler için?</h2></div>
+    <div class="grid-2">
+      <div class="card">
+        <h4>İdeal müşteri</h4>
+        <ul>
+          <li>Döviz büroları / online exchange</li>
+          <li>Para transferi ve finans hizmetleri</li>
+          <li>Çok şubeli holdingler</li>
+          <li>WhatsApp ile satış/destek yapan B2B ekipler</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Ölçek değeri</h4>
+        <table>
+          <tr><th>Ölçek</th><th>Değer</th></tr>
+          <tr><td>5–20</td><td>Excel + WhatsApp grubundan çıkış</td></tr>
+          <tr><td>20–100</td><td>Departman, bilet, iç sohbet, rapor</td></tr>
+          <tr><td>100+</td><td>Şube, Meta Cloud, yasal toplu mesaj</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h3>Örnek senaryo — 3 şubeli döviz işletmesi</h3>
+    <div class="card">
+      <p><strong>Önce:</strong> her şube ayrı WhatsApp, kur Telegram grubunda.</p>
+      <p><strong>Sonra:</strong> tek kur şeridi, konuşma şubeye atanır, merkez her şeyi görür.</p>
+      <p><strong>Sonuç:</strong> kur hatası azalır · müşteri memnuniyeti artar · SLA ölçülebilir hale gelir.</p>
+    </div>
+    <div class="footer-note"><span>Kaya CRM</span><span>Teknopark Tanıtım Dosyası</span></div>
+  </section>
+
+  <!-- MIMARI + MODULLER -->
+  <section class="page">
+    <p class="eyebrow">04 · Ürün mimarisi</p>
+    <div class="title-row"><h2>Basit mimari</h2></div>
+    <div class="card" style="text-align:center; font-family: Consolas, monospace; font-size:10.5pt; line-height:1.7;">
+      Müşteri (WhatsApp)<br/>↕<br/>
+      Gateway / Meta Cloud API<br/>↕<br/>
+      Backend (API + veritabanı)<br/>↕<br/>
+      Web Panel · PWA · Android / iOS
+    </div>
+    <p>Personel tarayıcı veya mobil uygulama ile çalışır. Veri müşteri sunucusunda veya özel (dedicated) ortamda tutulabilir — on-premise / özel bulut mümkündür.</p>
+
+    <h3>Ana modüller</h3>
+    <p>
+      <span class="pill">Gösterge paneli</span>
+      <span class="pill">WhatsApp konuşmaları</span>
+      <span class="pill">Müşteriler / KYC arşivi</span>
+      <span class="pill">Biletler & görevler</span>
+      <span class="pill">Süreçler (BPM)</span>
+      <span class="pill">Departman / şube / RBAC</span>
+      <span class="pill">İç sohbet & duyuru</span>
+      <span class="pill">Meta Cloud + QR Gateway</span>
+      <span class="pill">Mesaj şablonları</span>
+      <span class="pill">Canlı kur şeridi</span>
+      <span class="pill">Döviz servisleri</span>
+      <span class="pill">Yapay zekâ asistanı</span>
+      <span class="pill">White-label</span>
+      <span class="pill">Denetim / Excel</span>
+    </p>
+    <div class="footer-note"><span>Kaya CRM</span><span>Teknopark Tanıtım Dosyası</span></div>
+  </section>
+
+  <!-- REKABET + TEKNOLOJI -->
+  <section class="page">
+    <p class="eyebrow">05 · Fark ve teknoloji</p>
+    <div class="title-row"><h2>Neden genel CRM değil?</h2></div>
+    <table>
+      <thead>
+        <tr><th>Genel CRM</th><th>Kaya CRM</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>WhatsApp eklenti / pahalı</td><td><strong>Ürünün çekirdeği</strong></td></tr>
+        <tr><td>İngilizce odaklı</td><td><strong>TR + FA + EN yerli arayüz</strong></td></tr>
+        <tr><td>Kur yok</td><td><strong>Şerit + grafik + ayar</strong></td></tr>
+        <tr><td>Çoğunlukla sadece SaaS</td><td><strong>On-premise mümkün</strong></td></tr>
+        <tr><td>Döviz operasyonu yok</td><td><strong>Servis + kasa</strong></td></tr>
+        <tr><td>Sabit marka</td><td><strong>Tam white-label</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h3>Teknoloji özeti</h3>
+    <table>
+      <tr><th>Katman</th><th>Teknoloji</th></tr>
+      <tr><td>Backend</td><td>Node.js, Express, Sequelize</td></tr>
+      <tr><td>Veritabanı</td><td>PostgreSQL (üretim)</td></tr>
+      <tr><td>Gerçek zamanlı</td><td>Socket.IO</td></tr>
+      <tr><td>WhatsApp</td><td>Meta Cloud API + Gateway</td></tr>
+      <tr><td>Web / Mobil</td><td>SPA + PWA · Android (Kotlin) · iOS (Swift)</td></tr>
+      <tr><td>Güvenlik</td><td>JWT, TOTP 2FA, Helmet, hız limiti, aktivite günlüğü</td></tr>
+    </table>
+    <div class="footer-note"><span>Kaya CRM</span><span>Teknopark Tanıtım Dosyası</span></div>
+  </section>
+
+  <!-- TURKIYE + KURULUM -->
+  <section class="page">
+    <p class="eyebrow">06 · Türkiye ve teknopark</p>
+    <div class="title-row"><h2>Neden Türkiye / neden teknopark?</h2></div>
+    <ol>
+      <li><strong>Pazar uyumu</strong> — WhatsApp iş kültürü Türkiye’de güçlü</li>
+      <li><strong>Dil</strong> — Arayüz Türkçe hazır</li>
+      <li><strong>Komşu pazarlar</strong> — MENA, Avrupa koridoru, diaspora finans</li>
+      <li><strong>Düzenleme ve güven</strong> — konuşma kaydı, kimlik, Meta resmi kanal</li>
+      <li><strong>İnovasyon alanı</strong> — yapay zekâ yönlendirme, white-label SaaS, fintech operasyon</li>
+      <li><strong>Ekosistem</strong> — park şirketlerine pilot, mentörlük, pazara çıkış</li>
+    </ol>
+    <div class="quote">
+      Teknopark değeri: yerelleştirilmiş B2B SaaS + ihracat potansiyeli + istihdam (ürün / satış / destek).
+    </div>
+
+    <h3>Tipik kurulum süresi</h3>
+    <table>
+      <tr><th>Aşama</th><th>Süre</th></tr>
+      <tr><td>Keşif toplantısı</td><td>1 görüşme</td></tr>
+      <tr><td>Kurulum (SSL + sunucu)</td><td>1–3 gün</td></tr>
+      <tr><td>WhatsApp (Gateway / Meta)</td><td>1–7 gün</td></tr>
+      <tr><td>Markalama + kullanıcılar</td><td>1–2 gün</td></tr>
+      <tr><td>Eğitim</td><td>1–2 gün</td></tr>
+    </table>
+    <div class="footer-note"><span>Kaya CRM</span><span>Teknopark Tanıtım Dosyası</span></div>
+  </section>
+
+  <!-- PAKETLER + IS BIRLIGI -->
+  <section class="page">
+    <p class="eyebrow">07 · İş birliği</p>
+    <div class="title-row"><h2>İş birliği modelleri</h2></div>
+    <div class="grid-2">
+      <div class="card">
+        <h4>1. Pilot</h4>
+        <p>1–2 park şirketi ile 30–60 gün deneme.</p>
+      </div>
+      <div class="card">
+        <h4>2. Yerleşim</h4>
+        <p>Ofis / soft-landing, mentör erişimi.</p>
+      </div>
+      <div class="card">
+        <h4>3. Pazara çıkış</h4>
+        <p>Finans ve hizmet firmalarına tanıtım.</p>
+      </div>
+      <div class="card">
+        <h4>4. White-label ortak</h4>
+        <p>Yerel satıcı / entegratör modeli.</p>
+      </div>
+    </div>
+
+    <h3>Paket çerçevesi</h3>
+    <div class="grid-3">
+      <div class="card">
+        <h4>Starter</h4>
+        <ul>
+          <li>10 kullanıcıya kadar</li>
+          <li>Konuşma + müşteri + bilet</li>
+          <li>Gateway (QR)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Business</h4>
+        <ul>
+          <li>50 kullanıcıya kadar</li>
+          <li>Meta Cloud + yapay zekâ</li>
+          <li>White-label + eğitim</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Enterprise</h4>
+        <ul>
+          <li>Şube + denetim + SLA</li>
+          <li>Özel sunucu</li>
+          <li>Onboarding & destek</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="cta-box">
+      <h3>İletişim ve demo</h3>
+      <p>Tanışma + canlı demo + uygun iş birliği yolu için:</p>
+      <p><a href="https://kaya.fxguard.io">https://kaya.fxguard.io</a></p>
+      <p>E-posta: ersanjahedtabrizi@gmail.com</p>
+    </div>
+    <div class="footer-note"><span>Kaya CRM</span><span>Teknopark Tanıtım Dosyası</span></div>
+  </section>
+
+  <!-- SSS -->
+  <section class="page">
+    <p class="eyebrow">08 · Sık sorulan sorular</p>
+    <div class="title-row"><h2>Kısa yanıtlar</h2></div>
+    <table>
+      <thead>
+        <tr><th>Soru</th><th>Yanıt</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Rakipleriniz kim?</td><td>Genel CRM’ler WhatsApp’ı eklenti görür; Kaya çekirdek ürün + kur + Türkçe arayüz sunar.</td></tr>
+        <tr><td>Veri nerede?</td><td>On-premise veya özel sunucu; PostgreSQL + yedekleme.</td></tr>
+        <tr><td>Meta ban riski?</td><td>Cloud API + onaylı şablon; QR toplu mesajdan çok daha güvenli.</td></tr>
+        <tr><td>Ne kadar sürede canlı?</td><td>Gateway 1–2 gün; Meta 3–7 gün; eğitim 1 gün.</td></tr>
+        <tr><td>Yapay zekâ nasıl?</td><td>Yönlendirme + otomatik yanıt; insan cevaplayınca yapay zekâ durur.</td></tr>
+        <tr><td>Mobil var mı?</td><td>PWA + Android APK; iOS mevcut.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Asansör konuşması</h3>
+    <div class="quote">
+      Kaya CRM, WhatsApp üzerinden müşteri kazanıp destek veren işletmeler için entegre bir operasyon platformudur.
+      Tüm konuşmaları tek panele alır; atama, bilet, rol ve şube yönetimi sunar. Döviz işletmeleri için canlı kur şeridi vardır.
+      Arayüz Türkçe, Farsça ve İngilizcedir; Meta WhatsApp Cloud API ve white-label destekler. Veri müşteri sunucusunda tutulabilir.
+      Amacımız Türkiye’de teknoloji parkları ve finans hizmet şirketleriyle pilot ve pazara çıkış iş birliği kurmak.
+    </div>
+    <div class="footer-note"><span>Kaya CRM</span><span>Teknopark Tanıtım Dosyası</span></div>
+  </section>
+
+  <!-- KAPANIS -->
+  <section class="page">
+    <div class="closing">
+      <p class="eyebrow" style="color:#5eead4;">Kapanış</p>
+      <h1>Kaya CRM</h1>
+      <p style="font-size:14pt; max-width:80%; margin: 12px auto;">
+        WhatsApp’ı dağınık bir sohbetten yönetilebilir bir işletme sistemine çevirir.
+      </p>
+      <p>
+        Türkçe arayüz · döviz odaklı · white-label · on-premise mümkün
+      </p>
+      <p class="url">https://kaya.fxguard.io</p>
+      <p style="margin-top:28px; font-size:12pt;">Teşekkürler · Görüşmek dileğiyle</p>
+    </div>
+  </section>
+
+</body>
+</html>

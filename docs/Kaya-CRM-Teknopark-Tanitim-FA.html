@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>کایا سی‌آر‌ام — معرفی برای پارک‌های فناوری و نوآوری</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 14mm 16mm 16mm 16mm;
+    }
+
+    :root {
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #e2e8f0;
+      --accent: #0f766e;
+      --accent-dark: #115e59;
+      --soft: #f0fdfa;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      color: var(--ink);
+      background: #fff;
+      font-family: "Segoe UI", Tahoma, "Arial", sans-serif;
+      font-size: 11pt;
+      line-height: 1.7;
+      direction: rtl;
+      text-align: right;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      page-break-after: always;
+      break-after: page;
+      min-height: 250mm;
+      padding: 4mm 0 8mm;
+      position: relative;
+    }
+
+    .page:last-child {
+      page-break-after: auto;
+      break-after: auto;
+    }
+
+    .eyebrow {
+      font-size: 9pt;
+      letter-spacing: 0.04em;
+      color: var(--accent);
+      font-weight: 700;
+      margin: 0 0 8px;
+    }
+
+    h1 {
+      font-size: 26pt;
+      line-height: 1.25;
+      margin: 0 0 10px;
+    }
+
+    h2 {
+      font-size: 17pt;
+      margin: 0 0 12px;
+      line-height: 1.35;
+    }
+
+    h3 {
+      font-size: 12pt;
+      margin: 16px 0 8px;
+      color: var(--accent-dark);
+    }
+
+    p { margin: 0 0 10px; color: var(--muted); }
+
+    .lead {
+      font-size: 12.5pt;
+      color: var(--ink);
+      max-width: 95%;
+    }
+
+    .cover {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: 250mm;
+      background: linear-gradient(200deg, #0f766e 0%, #134e4a 48%, #0f172a 100%);
+      color: #fff;
+      border-radius: 18px;
+      padding: 28mm 16mm 16mm;
+      margin: 0;
+    }
+
+    .cover h1,
+    .cover p,
+    .cover .eyebrow { color: #fff; }
+
+    .cover .eyebrow { opacity: 0.9; }
+
+    .cover h1 {
+      font-size: 34pt;
+      margin-top: 18mm;
+    }
+
+    .cover .tagline {
+      font-size: 14pt;
+      opacity: 0.94;
+      max-width: 90%;
+      margin-top: 8px;
+      color: #fff;
+    }
+
+    .cover-meta {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      border-top: 1px solid rgba(255,255,255,0.25);
+      padding-top: 14px;
+      font-size: 10pt;
+    }
+
+    .cover-meta strong {
+      display: block;
+      opacity: 0.75;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .badge-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 14px 0 0;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      font-size: 9.5pt;
+    }
+
+    ul, ol {
+      margin: 0 0 12px;
+      padding-right: 18px;
+      padding-left: 0;
+      color: var(--muted);
+    }
+
+    li { margin: 4px 0; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .card {
+      background: var(--soft);
+      border: 1px solid #ccfbf1;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .card h4 {
+      margin: 0 0 6px;
+      font-size: 11pt;
+      color: var(--accent-dark);
+    }
+
+    .card p, .card li { font-size: 10pt; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 10pt;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      text-align: right;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f8fafc;
+      color: var(--ink);
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) td { background: #fcfffe; }
+
+    .quote {
+      border-right: 4px solid var(--accent);
+      border-left: none;
+      padding: 10px 14px;
+      background: #f8fafc;
+      border-radius: 10px 0 0 10px;
+      color: var(--ink);
+      font-size: 11.5pt;
+      margin: 12px 0;
+    }
+
+    .footer-note {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      font-size: 8.5pt;
+      color: #94a3b8;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid var(--line);
+      padding-top: 6px;
+      direction: rtl;
+    }
+
+    .cta-box {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #0f766e, #115e59);
+      color: #fff;
+    }
+
+    .cta-box h3 { color: #fff; margin-top: 0; }
+    .cta-box p { color: rgba(255,255,255,0.92); margin-bottom: 6px; }
+    .cta-box a { color: #fff; font-weight: 700; }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .title-row h2 { margin: 0; }
+
+    .pill {
+      display: inline-block;
+      background: #ecfdf5;
+      color: var(--accent-dark);
+      border: 1px solid #99f6e4;
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 9pt;
+      font-weight: 600;
+      margin: 2px 0 2px 4px;
+    }
+
+    .closing {
+      min-height: 250mm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      background: #0f172a;
+      color: #fff;
+      border-radius: 18px;
+      padding: 24mm 16mm;
+    }
+
+    .closing h1 { color: #fff; font-size: 30pt; }
+    .closing p { color: rgba(255,255,255,0.85); }
+    .closing .url {
+      margin-top: 18px;
+      font-size: 14pt;
+      font-weight: 700;
+      color: #5eead4;
+      direction: ltr;
+    }
+
+    .ltr { direction: ltr; unicode-bidi: embed; }
+  </style>
+</head>
+<body>
+
+  <!-- کاور -->
+  <section class="page">
+    <div class="cover">
+      <div>
+        <p class="eyebrow">پرونده معرفی · ۲۰۲۶</p>
+        <div class="badge-row">
+          <span class="badge">پارک فناوری</span>
+          <span class="badge">فین‌تک</span>
+          <span class="badge">CRM واتساپ</span>
+          <span class="badge">White-Label</span>
+        </div>
+        <h1>کایا سی‌آر‌ام</h1>
+        <p class="tagline">پلتفرم یکپارچه مدیریت مشتری، پشتیبانی واتساپ و عملیات صرافی</p>
+        <p class="tagline" style="font-size:12pt; opacity:0.85; margin-top:14px;">
+          ویژه کسب‌وکارهای مالی · صرافی · خدمات‌محور
+        </p>
+      </div>
+      <div class="cover-meta">
+        <div>
+          <strong>نسخه زنده</strong>
+          <span class="ltr">kaya.fxguard.io</span>
+        </div>
+        <div>
+          <strong>مخاطب</strong>
+          پارک‌های فناوری و نوآوری
+        </div>
+        <div>
+          <strong>زبان رابط</strong>
+          فارسی · ترکی · انگلیسی
+        </div>
+        <div>
+          <strong>مالک محصول</strong>
+          ارسان جاهد تبریزی
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- خلاصه -->
+  <section class="page">
+    <p class="eyebrow">۰۱ · خلاصه مدیریتی</p>
+    <div class="title-row"><h2>کایا سی‌آر‌ام چیست؟</h2></div>
+    <p class="lead">
+      <strong>کایا سی‌آر‌ام</strong> پلتفرم یکپارچه‌ای است که مدیریت مشتری، پشتیبانی واتساپ،
+      هماهنگی تیم داخلی و عملیات صرافی/خدمات مالی را در یک پنل وب امن جمع می‌کند.
+    </p>
+    <div class="quote">
+      مکالمات پراکنده واتساپ را به یک سیستم قابل ردیابی، قابل تخصیص و قابل گزارش تبدیل می‌کند.
+    </div>
+
+    <h3>با چه هدفی ساخته شده؟</h3>
+    <div class="grid-2">
+      <div class="card">
+        <h4>مرکزیت‌بخشی</h4>
+        <p>همه مکالمات واتساپ در یک صندوق ورودی؛ مشخص است چه کسی و چه زمانی پاسخ داده.</p>
+      </div>
+      <div class="card">
+        <h4>عملیات</h4>
+        <p>تخصیص، تیکت، تسک، فرایند (BPM)، دپارتمان و شعبه.</p>
+      </div>
+      <div class="card">
+        <h4>اعتماد و انطباق</h4>
+        <p>ثبت مکالمه، دسترسی نقش‌محور، احراز دو مرحله‌ای، لاگ فعالیت؛ پشتیبانی Meta Cloud API.</p>
+      </div>
+      <div class="card">
+        <h4>نیاز بخش صرافی</h4>
+        <p>نوار نرخ زنده، خدمات صرافی، برندسازی white-label و امکان استقرار روی سرور مشتری.</p>
+      </div>
+    </div>
+    <div class="footer-note"><span>کایا سی‌آر‌ام</span><span>پرونده معرفی پارک فناوری</span></div>
+  </section>
+
+  <!-- مشکل -->
+  <section class="page">
+    <p class="eyebrow">۰۲ · مسئله بازار</p>
+    <div class="title-row"><h2>واتساپ مرکز کسب‌وکار است، اما سیستم نیست</h2></div>
+    <p class="lead">در ایران، ترکیه و بازارهای مشابه، بخش بزرگی از تماس اولیه از واتساپ می‌آید؛ اما عملیات اغلب بیرون از CRM می‌ماند.</p>
+    <ul>
+      <li>پیام‌ها روی موبایل پرسنل پراکنده است</li>
+      <li>تاریخچه متمرکز نیست؛ مشتری هر بار از اول توضیح می‌دهد</li>
+      <li>مدیر نمی‌بیند چه کسی آنلاین است و چه کسی پاسخ نداده</li>
+      <li>نرخ و پاسخ‌ها بین شعب ناهماهنگ می‌شود</li>
+      <li>با رشد تیم، آشفتگی بیشتر می‌شود</li>
+    </ul>
+
+    <h3>قبل / بعد</h3>
+    <table>
+      <thead>
+        <tr><th>قبل</th><th>بعد (کایا سی‌آر‌ام)</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>پیام روی موبایل پرسنل</td><td>پنل مرکزی + مشتری + زمان</td></tr>
+        <tr><td>مشتری نمی‌داند با چه کسی صحبت می‌کند</td><td>معرفی یک‌باره کارشناس + انتقال شفاف</td></tr>
+        <tr><td>نرخ و پاسخ‌ها پراکنده</td><td>نوار نرخ زنده + تمپلیت + هوش مصنوعی</td></tr>
+        <tr><td>مدیر کور است</td><td>وضعیت آنلاین، تیکت، فعالیت</td></tr>
+        <tr><td>رشد = هرج‌ومرج</td><td>نقش · دپارتمان · شعبه · دسترسی دقیق</td></tr>
+      </tbody>
+    </table>
+    <div class="footer-note"><span>کایا سی‌آر‌ام</span><span>پرونده معرفی پارک فناوری</span></div>
+  </section>
+
+  <!-- مخاطب -->
+  <section class="page">
+    <p class="eyebrow">۰۳ · مخاطب هدف</p>
+    <div class="title-row"><h2>برای چه کسب‌وکارهایی؟</h2></div>
+    <div class="grid-2">
+      <div class="card">
+        <h4>مشتری ایده‌آل</h4>
+        <ul>
+          <li>صرافی‌ها و صرافی‌های آنلاین</li>
+          <li>خدمات مالی و انتقال پول</li>
+          <li>هلدینگ‌ها و شرکت‌های چندشعبه</li>
+          <li>تیم‌های B2B با فروش/پشتیبانی واتساپ</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>ارزش بر اساس اندازه</h4>
+        <table>
+          <tr><th>اندازه</th><th>ارزش</th></tr>
+          <tr><td>۵–۲۰</td><td>خروج از اکسل + گروه واتساپ</td></tr>
+          <tr><td>۲۰–۱۰۰</td><td>دپارتمان، تیکت، چت داخلی، گزارش</td></tr>
+          <tr><td>۱۰۰+</td><td>شعب، Meta Cloud، ارسال انبوه قانونی</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h3>سناریو نمونه — صرافی سه‌شعبه</h3>
+    <div class="card">
+      <p><strong>قبل:</strong> هر شعبه واتساپ جدا، نرخ در گروه تلگرام.</p>
+      <p><strong>بعد:</strong> یک نوار نرخ، مکالمه به شعبه تخصیص داده می‌شود، مرکز همه را می‌بیند.</p>
+      <p><strong>نتیجه:</strong> خطای نرخ کاهش · رضایت مشتری افزایش · SLA قابل اندازه‌گیری.</p>
+    </div>
+    <div class="footer-note"><span>کایا سی‌آر‌ام</span><span>پرونده معرفی پارک فناوری</span></div>
+  </section>
+
+  <!-- معماری -->
+  <section class="page">
+    <p class="eyebrow">۰۴ · معماری محصول</p>
+    <div class="title-row"><h2>معماری ساده</h2></div>
+    <div class="card" style="text-align:center; font-family: Consolas, monospace; font-size:10.5pt; line-height:1.8; direction:ltr;">
+      Customer (WhatsApp)<br/>↕<br/>
+      Gateway / Meta Cloud API<br/>↕<br/>
+      Backend (API + Database)<br/>↕<br/>
+      Web Panel · PWA · Android / iOS
+    </div>
+    <p>کارکنان از مرورگر یا اپ موبایل کار می‌کنند. داده می‌تواند روی سرور مشتری یا محیط اختصاصی نگه‌داری شود — استقرار on-premise / ابر خصوصی ممکن است.</p>
+
+    <h3>ماژول‌های اصلی</h3>
+    <p>
+      <span class="pill">داشبورد</span>
+      <span class="pill">مکالمات واتساپ</span>
+      <span class="pill">مشتریان / آرشیو KYC</span>
+      <span class="pill">تیکت و تسک</span>
+      <span class="pill">فرایندها (BPM)</span>
+      <span class="pill">دپارتمان / شعبه / دسترسی</span>
+      <span class="pill">چت داخلی و اطلاعیه</span>
+      <span class="pill">Meta Cloud + Gateway</span>
+      <span class="pill">تمپلیت پیام</span>
+      <span class="pill">نوار نرخ زنده</span>
+      <span class="pill">خدمات صرافی</span>
+      <span class="pill">دستیار هوش مصنوعی</span>
+      <span class="pill">White-label</span>
+      <span class="pill">نظارت / خروجی اکسل</span>
+    </p>
+    <div class="footer-note"><span>کایا سی‌آر‌ام</span><span>پرونده معرفی پارک فناوری</span></div>
+  </section>
+
+  <!-- رقابت -->
+  <section class="page">
+    <p class="eyebrow">۰۵ · تمایز و فناوری</p>
+    <div class="title-row"><h2>چرا CRM عمومی کافی نیست؟</h2></div>
+    <table>
+      <thead>
+        <tr><th>CRM عمومی</th><th>کایا سی‌آر‌ام</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>واتساپ به‌صورت افزونه / گران</td><td><strong>هسته محصول</strong></td></tr>
+        <tr><td>انگلیسی‌محور</td><td><strong>رابط بومی فارسی + ترکی + انگلیسی</strong></td></tr>
+        <tr><td>بدون نرخ ارز</td><td><strong>نوار + نمودار + تنظیم نرخ</strong></td></tr>
+        <tr><td>غالباً فقط SaaS</td><td><strong>امکان on-premise</strong></td></tr>
+        <tr><td>بدون عملیات صرافی</td><td><strong>سرویس + صندوق</strong></td></tr>
+        <tr><td>برند ثابت</td><td><strong>White-label کامل</strong></td></tr>
+      </tbody>
+    </table>
+
+    <h3>خلاصه فناوری</h3>
+    <table>
+      <tr><th>لایه</th><th>فناوری</th></tr>
+      <tr><td>Backend</td><td>Node.js, Express, Sequelize</td></tr>
+      <tr><td>پایگاه داده</td><td>PostgreSQL (محیط تولید)</td></tr>
+      <tr><td>بلادرنگ</td><td>Socket.IO</td></tr>
+      <tr><td>واتساپ</td><td>Meta Cloud API + Gateway</td></tr>
+      <tr><td>وب / موبایل</td><td>SPA + PWA · Android (Kotlin) · iOS (Swift)</td></tr>
+      <tr><td>امنیت</td><td>JWT، TOTP 2FA، Helmet، محدودیت نرخ، لاگ فعالیت</td></tr>
+    </table>
+    <div class="footer-note"><span>کایا سی‌آر‌ام</span><span>پرونده معرفی پارک فناوری</span></div>
+  </section>
+
+  <!-- ترکیه / پارک -->
+  <section class="page">
+    <p class="eyebrow">۰۶ · ترکیه و پارک فناوری</p>
+    <div class="title-row"><h2>چرا ترکیه؟ چرا پارک فناوری؟</h2></div>
+    <ol>
+      <li><strong>هم‌خوانی بازار</strong> — فرهنگ کاری واتساپ‌محور در ترکیه قوی است</li>
+      <li><strong>زبان</strong> — رابط کاربری ترکی آماده است</li>
+      <li><strong>بازارهای همسایه</strong> — MENA، کریدور اروپا، خدمات مالی دیاسپورا</li>
+      <li><strong>اعتماد و انطباق</strong> — ثبت مکالمه، هویت، کانال رسمی Meta</li>
+      <li><strong>فضای نوآوری</strong> — مسیریابی با هوش مصنوعی، SaaS وایت‌لیبل، عملیات فین‌تک</li>
+      <li><strong>اکوسیستم</strong> — پایلوت با شرکت‌های پارک، منتورینگ، ورود به بازار</li>
+    </ol>
+    <div class="quote">
+      ارزش برای پارک فناوری: SaaS سازمانی بومی‌سازی‌شده + پتانسیل صادرات + اشتغال (محصول / فروش / پشتیبانی).
+    </div>
+
+    <h3>زمان استقرار معمول</h3>
+    <table>
+      <tr><th>مرحله</th><th>مدت</th></tr>
+      <tr><td>جلسه شناخت</td><td>۱ جلسه</td></tr>
+      <tr><td>نصب (SSL + سرور)</td><td>۱–۳ روز</td></tr>
+      <tr><td>واتساپ (Gateway / Meta)</td><td>۱–۷ روز</td></tr>
+      <tr><td>برندسازی + کاربران</td><td>۱–۲ روز</td></tr>
+      <tr><td>آموزش</td><td>۱–۲ روز</td></tr>
+    </table>
+    <div class="footer-note"><span>کایا سی‌آر‌ام</span><span>پرونده معرفی پارک فناوری</span></div>
+  </section>
+
+  <!-- همکاری -->
+  <section class="page">
+    <p class="eyebrow">۰۷ · همکاری</p>
+    <div class="title-row"><h2>مدل‌های همکاری</h2></div>
+    <div class="grid-2">
+      <div class="card">
+        <h4>۱. پایلوت</h4>
+        <p>آزمایش ۳۰–۶۰ روزه با ۱–۲ شرکت داخل پارک.</p>
+      </div>
+      <div class="card">
+        <h4>۲. استقرار</h4>
+        <p>دفتر / soft-landing و دسترسی به منتور.</p>
+      </div>
+      <div class="card">
+        <h4>۳. ورود به بازار</h4>
+        <p>معرفی به شرکت‌های مالی و خدماتی.</p>
+      </div>
+      <div class="card">
+        <h4>۴. شریک White-label</h4>
+        <p>مدل فروشنده / یکپارچه‌ساز محلی.</p>
+      </div>
+    </div>
+
+    <h3>چارچوب بسته‌ها</h3>
+    <div class="grid-3">
+      <div class="card">
+        <h4>Starter</h4>
+        <ul>
+          <li>تا ۱۰ کاربر</li>
+          <li>مکالمه + مشتری + تیکت</li>
+          <li>Gateway (QR)</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Business</h4>
+        <ul>
+          <li>تا ۵۰ کاربر</li>
+          <li>Meta Cloud + هوش مصنوعی</li>
+          <li>White-label + آموزش</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h4>Enterprise</h4>
+        <ul>
+          <li>شعبه + نظارت + SLA</li>
+          <li>سرور اختصاصی</li>
+          <li>راه‌اندازی و پشتیبانی</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="cta-box">
+      <h3>تماس و دمو</h3>
+      <p>برای جلسه معرفی + دمو زنده + مسیر همکاری مناسب:</p>
+      <p><a class="ltr" href="https://kaya.fxguard.io">https://kaya.fxguard.io</a></p>
+      <p class="ltr">ersanjahedtabrizi@gmail.com</p>
+    </div>
+    <div class="footer-note"><span>کایا سی‌آر‌ام</span><span>پرونده معرفی پارک فناوری</span></div>
+  </section>
+
+  <!-- FAQ -->
+  <section class="page">
+    <p class="eyebrow">۰۸ · پرسش‌های پرتکرار</p>
+    <div class="title-row"><h2>پاسخ‌های کوتاه</h2></div>
+    <table>
+      <thead>
+        <tr><th>سؤال</th><th>پاسخ</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>رقبا چه کسانی هستند؟</td><td>CRMهای عمومی واتساپ را افزونه می‌بینند؛ کایا هسته محصول + نرخ + رابط بومی دارد.</td></tr>
+        <tr><td>داده کجاست؟</td><td>روی سرور مشتری یا سرور اختصاصی؛ PostgreSQL + پشتیبان‌گیری.</td></tr>
+        <tr><td>ریسک بن شدن Meta؟</td><td>Cloud API + تمپلیت تأییدشده؛ بسیار امن‌تر از ارسال انبوه با QR.</td></tr>
+        <tr><td>چقدر تا راه‌اندازی؟</td><td>Gateway ۱–۲ روز؛ Meta ۳–۷ روز؛ آموزش ۱ روز.</td></tr>
+        <tr><td>هوش مصنوعی چگونه کار می‌کند؟</td><td>مسیریابی + پاسخ خودکار؛ با پاسخ انسان، هوش مصنوعی متوقف می‌شود.</td></tr>
+        <tr><td>موبایل دارید؟</td><td>PWA + APK اندروید؛ iOS موجود است.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>معرفی یک‌دقیقه‌ای</h3>
+    <div class="quote">
+      کایا سی‌آر‌ام یک پلتفرم عملیاتی یکپارچه برای کسب‌وکارهایی است که مشتری را از واتساپ جذب و پشتیبانی می‌کنند.
+      همه مکالمات را در یک پنل جمع می‌کند؛ تخصیص، تیکت، نقش و شعبه دارد. برای صرافی‌ها نوار نرخ زنده دارد.
+      رابط فارسی، ترکی و انگلیسی است؛ Meta WhatsApp Cloud API و white-label را پشتیبانی می‌کند.
+      داده می‌تواند روی سرور مشتری باشد. هدف ما همکاری پایلوت و ورود به بازار با پارک‌های فناوری و شرکت‌های خدمات مالی در ترکیه است.
+    </div>
+    <div class="footer-note"><span>کایا سی‌آر‌ام</span><span>پرونده معرفی پارک فناوری</span></div>
+  </section>
+
+  <!-- پایان -->
+  <section class="page">
+    <div class="closing">
+      <p class="eyebrow" style="color:#5eead4;">پایان</p>
+      <h1>کایا سی‌آر‌ام</h1>
+      <p style="font-size:14pt; max-width:85%; margin: 12px auto;">
+        واتساپ را از یک گفت‌وگوی پراکنده به یک سیستم قابل مدیریت کسب‌وکار تبدیل می‌کند.
+      </p>
+      <p>
+        رابط فارسی · تمرکز صرافی · white-label · امکان on-premise
+      </p>
+      <p class="url">https://kaya.fxguard.io</p>
+      <p style="margin-top:28px; font-size:12pt;">با سپاس · آماده گفت‌وگو هستیم</p>
+    </div>
+  </section>
+
+</body>
+</html>

@@ -4889,8 +4889,8 @@
                     setConvQuickTab('groups');
                     loadConversations();
                 } else {
-                    let errMsg = (typeof getApiError === 'function' ? getApiError(res) : null)
-                        || (res.data && res.data.error)
+                    let errMsg = (res.data && res.data.error)
+                        || (typeof getApiError === 'function' ? getApiError(res) : null)
                         || res.error
                         || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed');
                     // فقط وقتی پیام عمومی/خالی است، متن پیش‌فرض 503 را بگذار
@@ -4899,8 +4899,8 @@
                         /sunucu hatas[iı]|server error|خطای سرور|html\b/i.test(String(errMsg));
                     if (generic && (res.status === 503 || res.status === 502)) {
                         errMsg = LANG === 'fa'
-                            ? 'واتساپ/Gateway آماده نیست یا همگام‌سازی طول کشید. چند ثانیه بعد دوباره بزنید.'
-                            : 'WhatsApp/Gateway not ready or sync timed out. Try again shortly.';
+                            ? 'همگام‌سازی گروه‌ها ناموفق بود. چند ثانیه بعد دوباره بزنید؛ اگر ادامه داشت Gateway را ری‌استارت کنید.'
+                            : 'Group sync failed. Try again shortly; if it persists, restart the Gateway.';
                     }
                     toast(errMsg, true);
                 }
