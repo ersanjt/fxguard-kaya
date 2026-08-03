@@ -1248,17 +1248,29 @@ app.post('/api/calls/start', sendRateLimitMiddleware, async (req, res) => {
 app.get('/api/chats/groups', async (req, res) => {
     try {
         if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
-        const chats = await client.getChats();
-        const groups = chats
-            .filter((c) => c.isGroup)
+        const chats = await Promise.race([
+            client.getChats(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('getChats_timeout')), 40000)
+            ),
+        ]);
+        const list = Array.isArray(chats) ? chats : [];
+        const groups = list
+            .filter((c) => c && c.isGroup)
             .map((c) => ({
-                id: c.id?._serialized || c.id,
+                id: (c.id && (c.id._serialized || c.id)) || null,
                 name: c.name || c.subject || c.formattedTitle || null,
-            }));
+            }))
+            .filter((g) => g.id);
         return res.json({ success: true, groups });
     } catch (error) {
-        logger.error('Get groups error', { error: error?.message });
-        return res.status(500).json({ error: error?.message || 'get_groups_failed' });
+        const msg = error?.message || 'get_groups_failed';
+        logger.error('Get groups error', { error: msg });
+        // timeout / session flake → 503 تا بک‌اند آلارم ۵۰۰ ندهد
+        if (/timeout|not ready|Session closed|Target closed|Protocol error/i.test(msg)) {
+            return res.status(503).json({ error: msg });
+        }
+        return res.status(503).json({ error: msg });
     }
 });
 

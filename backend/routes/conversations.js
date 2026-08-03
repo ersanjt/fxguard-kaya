@@ -100,22 +100,47 @@ router.post('/sync-groups', async (req, res, next) => {
         const { gatewayGet, GATEWAY_URL } = require('../lib/gatewayClient');
         let gwRes;
         try {
-            gwRes = await gatewayGet('/api/chats/groups', { timeout: 15000 });
+            gwRes = await gatewayGet('/api/chats/groups', { timeout: 45000 });
         } catch (gwErr) {
             const status = gwErr?.response?.status;
-            const msg = gwErr?.message || '';
-            if (status === 404 || msg.includes('404')) {
+            const gwBody = gwErr?.response?.data;
+            const gwMsg = (gwBody && (gwBody.error || gwBody.message)) || gwErr?.message || '';
+            const logger = require('../config/logger');
+            logger.warn('sync-groups: gateway request failed', {
+                status,
+                error: gwMsg,
+                gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
+            });
+            if (status === 404 || String(gwMsg).includes('404')) {
                 return res.status(503).json({
-                    error: 'مسیر /api/chats/groups در Gateway یافت نشد. احتمالاً GATEWAY_URL در .env اشتباه است (باید آدرس Gateway باشد، نه Backend) یا نسخه Gateway قدیمی است.'
+                    error: 'مسیر گروه‌ها در Gateway یافت نشد. GATEWAY_URL یا نسخهٔ Gateway را بررسی کنید.',
                 });
             }
             if (status === 401) {
-                return res.status(503).json({ error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را در .env بررسی کنید.' });
+                return res.status(503).json({
+                    error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را بررسی کنید.',
+                });
             }
-            if (status === 503 || msg.includes('503') || msg.includes('ECONNREFUSED') || msg.includes('ENOTFOUND')) {
-                return res.status(503).json({ error: 'Gateway در دسترس نیست. مطمئن شوید Gateway روی پورت صحیح در حال اجراست و GATEWAY_URL=' + (GATEWAY_URL || 'http://localhost:3001') + ' درست است.' });
+            if (status === 503 || /not ready|WhatsApp not ready/i.test(String(gwMsg))) {
+                return res.status(503).json({
+                    error: 'واتساپ Gateway آماده نیست. صبر کنید تا وضعیت ready شود، بعد دوباره همگام‌سازی کنید.',
+                });
             }
-            throw gwErr;
+            if (
+                status === 500 ||
+                status >= 502 ||
+                /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNABORTED|timeout/i.test(String(gwMsg))
+            ) {
+                return res.status(503).json({
+                    error:
+                        'Gateway موقتاً گروه‌ها را برنگرداند' +
+                        (gwMsg ? ` (${String(gwMsg).slice(0, 120)})` : '') +
+                        '. وضعیت واتساپ و لاگ crm-gateway-kaya را بررسی کنید.',
+                });
+            }
+            return res.status(503).json({
+                error: 'خطا در ارتباط با Gateway برای همگام‌سازی گروه‌ها. دوباره تلاش کنید.',
+            });
         }
         const groups = gwRes?.data?.groups || gwRes?.data?.data?.groups || [];
         let synced = 0;
@@ -130,40 +155,61 @@ router.post('/sync-groups', async (req, res, next) => {
                     [customer] = await Customer.findOrCreate({
                         where: { phone: groupId },
                         defaults: { name: groupName || `گروه ${groupId}`, source: 'whatsapp' },
-                        transaction: t
+                        transaction: t,
                     });
                 } catch (e) {
                     if (e.name === 'SequelizeUniqueConstraintError') {
                         customer = await Customer.findOne({ where: { phone: groupId }, transaction: t });
                     } else throw e;
                 }
-                if (!customer) { await t.rollback(); continue; }
+                if (!customer) {
+                    await t.rollback();
+                    continue;
+                }
                 if (groupName && String(customer.name || '').trim() !== groupName) {
                     await customer.update({ name: groupName }, { transaction: t });
                 }
-                const conv = await Conversation.findOne({
-                    where: { customerId: customer.id, status: { [Op.ne]: 'closed' } },
-                    transaction: t
+                // مکالمهٔ فعال (غیرآرشیو) را ترجیح بده؛ آرشیو قفل‌شده را دوباره باز نکن
+                let conv = await Conversation.findOne({
+                    where: {
+                        customerId: customer.id,
+                        status: { [Op.notIn]: ['closed', 'archived'] },
+                    },
+                    transaction: t,
                 });
                 if (!conv) {
-                    await Conversation.create({
-                        customerId: customer.id,
-                        status: 'open',
-                        priority: 'normal',
-                        source: 'whatsapp',
-                        metadata: { isGroup: true, groupName: groupName || null }
-                    }, { transaction: t });
+                    await Conversation.create(
+                        {
+                            customerId: customer.id,
+                            status: 'open',
+                            priority: 'normal',
+                            source: 'whatsapp',
+                            metadata: { isGroup: true, groupName: groupName || null },
+                        },
+                        { transaction: t }
+                    );
                 } else {
                     const meta = conv.metadata || {};
                     const needsUpdate = !meta.isGroup || (groupName && meta.groupName !== groupName);
                     if (needsUpdate) {
-                        await conv.update({ metadata: { ...meta, isGroup: true, groupName: groupName || meta.groupName || null } }, { transaction: t });
+                        await conv.update(
+                            {
+                                metadata: {
+                                    ...meta,
+                                    isGroup: true,
+                                    groupName: groupName || meta.groupName || null,
+                                },
+                            },
+                            { transaction: t }
+                        );
                     }
                 }
                 await t.commit();
                 synced++;
             } catch (loopErr) {
-                await t.rollback();
+                try {
+                    await t.rollback();
+                } catch (_) {}
                 logger.warn('sync-groups: failed for group', { groupId, error: loopErr.message });
             }
         }
