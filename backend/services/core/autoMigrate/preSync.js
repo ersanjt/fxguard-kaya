@@ -132,6 +132,18 @@ async function runPreSync(sequelize, logger) {
                     });
                 }
             }
+            // باید قبل از sync باشد تا Sequelize ایندکس روی ستون ناموجود نسازد
+            if (!custDesc.isRestrictedFromStaff) {
+                await qi.addColumn('Customers', 'isRestrictedFromStaff', {
+                    type: DataTypes.BOOLEAN,
+                    allowNull: false,
+                    defaultValue: false,
+                }).catch(e => {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
+                        logger.warn('Customers.isRestrictedFromStaff migration:', e.message);
+                });
+                logger.info('✅ Customers.isRestrictedFromStaff column added (pre-sync)');
+            }
             if (isPg) {
                 if (!custDesc.gender) {
                     await sequelize
@@ -237,6 +249,25 @@ async function runPreSync(sequelize, logger) {
     } catch (e) {
         if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
             logger.warn('InternalThreadParticipants pre-sync migration:', e.message);
+    }
+
+    try {
+        let connDesc;
+        try {
+            connDesc = await qi.describeTable('whatsapp_connections');
+        } catch (_) {
+            connDesc = null;
+        }
+        if (connDesc && connDesc.lastLinkedGatewayNumber === undefined) {
+            await qi.addColumn('whatsapp_connections', 'lastLinkedGatewayNumber', {
+                type: DataTypes.STRING(32),
+                allowNull: true,
+            });
+            logger.info('✅ whatsapp_connections.lastLinkedGatewayNumber column added (pre-sync)');
+        }
+    } catch (e) {
+        if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
+            logger.warn('whatsapp_connections pre-sync migration:', e.message);
     }
 }
 
