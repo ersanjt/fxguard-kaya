@@ -1271,23 +1271,42 @@
         async function loadForwardCustomers(search) {
             const list = document.getElementById('forwardMsgCustomerList');
             if (!list) return;
-            list.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            list.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
             let q = '?limit=30';
             if (search && String(search).trim()) q += '&search=' + encodeURIComponent(String(search).trim());
             const res = await apiFetch('/api/customers' + q);
             if (res.needLogin) return;
             if (!res.ok) { list.innerHTML = '<div class="empty">' + escapeHtml(res.data && res.data.error ? res.data.error : '') + '</div>'; return; }
             const data = res.data;
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + t('empty_customers') + '</div>'; return; }
+            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty">' + escapeHtml(t('empty_customers') || '') + '</div>'; return; }
             const currentCustId = currentConvDetail && currentConvDetail.customerId;
             list.innerHTML = data.data.map(function(c) {
                 const seePhone = canViewCustomerPhoneUi();
-                const name = c.name || (seePhone ? c.phone : '') || t('customer');
-                const initial = (name && name[0]) ? name[0].toUpperCase() : '?';
+                const phoneRaw = String(c.phone || '');
+                const isGroup = /@g\.us$/i.test(phoneRaw) || !!(c.metadata && c.metadata.isGroup);
+                const name = c.name || (seePhone && !isGroup ? phoneRaw : '') || (isGroup ? (t('group_chat') || 'Group') : t('customer'));
+                const initial = isGroup ? '👥' : ((name && name[0]) ? name[0].toUpperCase() : '?');
                 const picSrcNc = customerAvatarDisplaySrc(c);
-                const avatarHtml = customerAvatarShowsImage(c) && picSrcNc ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">' : '<span class="avatar-fallback">' + escapeHtml(initial) + '</span>';
-                const sameHint = (currentCustId && c.id === currentCustId) ? ' <span class="meta">(' + escapeHtml(LANG === 'fa' ? 'همین چت' : 'This chat') + ')</span>' : '';
-                return '<div class="new-conv-customer-item forward-customer-item" role="button" tabindex="0" data-forward-customer-id="' + escapeAttr(String(c.id)) + '" data-forward-customer-name="' + escapeAttr(String(name || '')) + '"><span class="conv-item-avatar" style="width:36px;height:36px;font-size:0.9rem;">' + avatarHtml + '</span><span class="name">' + escapeHtml(name) + sameHint + '</span><span class="meta">' + escapeHtml(seePhone ? (c.phone || '') : '') + '</span></div>';
+                const avatarHtml = !isGroup && customerAvatarShowsImage(c) && picSrcNc
+                    ? '<span class="avatar-fallback">' + escapeHtml(initial) + '</span><img src="' + escapeHtml(picSrcNc) + '" alt="" referrerpolicy="no-referrer" loading="lazy" onerror="crmAvatarImgErr(this)" onload="crmAvatarImgLoaded(this)">'
+                    : '<span class="avatar-fallback">' + (isGroup ? initial : escapeHtml(initial)) + '</span>';
+                const isCurrent = !!(currentCustId && c.id === currentCustId);
+                const badges = [];
+                if (isCurrent) badges.push('<span class="forward-item-badge">' + escapeHtml(t('conv_forward_this_chat') || (LANG === 'fa' ? 'همین چت' : 'This chat')) + '</span>');
+                if (isGroup) badges.push('<span class="forward-item-badge forward-item-badge--group">' + escapeHtml(t('group_chat') || (LANG === 'fa' ? 'گروه' : 'Group')) + '</span>');
+                let metaText = '';
+                if (isGroup) {
+                    metaText = t('conv_forward_group_meta') || (LANG === 'fa' ? 'گروه واتساپ' : 'WhatsApp group');
+                } else if (seePhone && phoneRaw) {
+                    metaText = phoneRaw;
+                }
+                return '<div class="new-conv-customer-item forward-customer-item' + (isCurrent ? ' is-current' : '') + '" role="button" tabindex="0" data-forward-customer-id="' + escapeAttr(String(c.id)) + '" data-forward-customer-name="' + escapeAttr(String(name || '')) + '">' +
+                    '<span class="conv-item-avatar' + (isGroup ? ' forward-avatar-group' : '') + '" style="width:40px;height:40px;font-size:0.95rem;">' + avatarHtml + '</span>' +
+                    '<span class="forward-item-body">' +
+                        '<span class="forward-item-title"><span class="name">' + escapeHtml(name) + '</span>' + badges.join('') + '</span>' +
+                        (metaText ? '<span class="forward-item-meta">' + escapeHtml(metaText) + '</span>' : '') +
+                    '</span>' +
+                '</div>';
             }).join('');
         }
         async function forwardMessageToCustomer(customerId, customerName) {
