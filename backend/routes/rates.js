@@ -5,8 +5,13 @@ const { RateAdjustment, RateCurrency, TickerConfig } = require('../models');
 const defaultRateCurrencies = require('../lib/defaultRateCurrencies');
 const logger = require('../config/logger');
 const { getNavasanApiKey, navasanLatestUrl } = require('../lib/navasanApiKey');
-
-let lastRatesCache = null;
+const {
+    pickValue,
+    pickChange,
+    applyAdjustment,
+    fetchRawNavasan,
+    getLastRatesCache
+} = require('../lib/ratesSnapshot');
 
 /** لیست ارزها از DB؛ اگر خالی بود از پیش‌فرض برمی‌گرداند */
 async function getRatesKeys() {
@@ -21,35 +26,6 @@ async function getRatesKeys() {
     return defaultRateCurrencies.map(({ key, label, apiKeys }) => ({ key, label, apiKeys }));
 }
 
-function pickValue(raw, apiKeys) {
-    for (const k of apiKeys) {
-        const obj = raw[k];
-        if (!obj) continue;
-        let v = obj.value;
-        if (v == null) continue;
-        if (typeof v === 'string') v = parseFloat(v.replace(/[^\d.-]/g, ''));
-        const num = Number(v);
-        if (!isNaN(num)) return num;
-    }
-    return null;
-}
-function pickChange(raw, apiKeys) {
-    for (const k of apiKeys) {
-        const v = raw[k] && raw[k].change != null ? raw[k].change : null;
-        if (v != null) return Number(v);
-    }
-    return null;
-}
-
-function applyAdjustment(rawNum, adj) {
-    if (!adj || adj.adjustmentType === 'none' || adj.adjustmentType == null) return rawNum;
-    const val = adj.value != null ? Number(adj.value) : 0;
-    if (adj.adjustmentType === 'fixed') return val;
-    if (adj.adjustmentType === 'delta_toman') return (rawNum || 0) + val;
-    if (adj.adjustmentType === 'percent') return (rawNum || 0) * (1 + val / 100);
-    return rawNum;
-}
-
 // GET /api/rates/config-status — وضعیت تنظیمات (آیا API key دارد؟)
 router.get('/config-status', async (req, res, _next) => {
     if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
@@ -62,22 +38,9 @@ router.get('/', async (req, res, _next) => {
     if (!req.canAccess('rates')) return res.status(403).json({ error: 'دسترسی ندارید' });
     try {
         const RATES_KEYS = await getRatesKeys();
-        let raw = null;
-        const apiKey = await getNavasanApiKey();
-        const latestUrl = navasanLatestUrl(apiKey);
-        if (latestUrl) {
-            raw = await axios.get(latestUrl, { timeout: 12000 }).then(r => r.data || {}).catch((e) => {
-                logger.warn('Navasan API error', { error: e.message || e.code });
-                return null;
-            });
-        } else {
-            logger.warn('Navasan API key not set — using cached rates only');
-        }
-        if (!raw || Object.keys(raw).length === 0) {
-            raw = lastRatesCache || {};
-        } else {
-            lastRatesCache = raw;
-        }
+        const { raw: fetchedRaw, hasApiKey } = await fetchRawNavasan();
+        const raw = fetchedRaw && Object.keys(fetchedRaw).length ? fetchedRaw : (getLastRatesCache() || {});
+        void hasApiKey;
         const adjustments = {};
         try {
             const rows = await RateAdjustment.findAll();

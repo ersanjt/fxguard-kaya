@@ -2,6 +2,8 @@
  * ارسال روزانه نرخ ارز در تلگرام
  * هر روز یک بار در ساعت مشخص (پیش‌فرض: ۹ صبح) اجرا می‌شود
  * متغیر محیطی: DAILY_RATES_HOUR (پیش‌فرض: 9) و DAILY_RATES_MINUTE (پیش‌فرض: 0)
+ *
+ * در PM2 cluster فقط instance 0 ارسال می‌کند تا پیام تکراری نرود.
  */
 
 const logger = require('../config/logger');
@@ -15,6 +17,13 @@ const CHECK_INTERVAL_MS = 60 * 1000;
 
 let _intervalId = null;
 let _lastSentDate = null;
+
+function shouldSkipDailyRatesForThisWorker() {
+    if (process.env.DAILY_RATES_ALL_WORKERS === '1') return false;
+    const inst = process.env.NODE_APP_INSTANCE;
+    if (inst === undefined || inst === '') return false;
+    return String(inst) !== '0';
+}
 
 async function broadcastRates() {
     try {
@@ -39,8 +48,10 @@ async function broadcastRates() {
             return;
         }
 
-        const header = `📅 <b>نرخ ارز روزانه</b>\n`;
-        const fullText = header + '\n' + text.replace(/^💱.*?\n/, '');
+        const siteName = (settings && settings.siteName) || 'کایا';
+        const header = `📅 <b>نرخ روزانه · ${String(siteName).replace(/</g, '')}</b>\n`;
+        // حذف هدر تکراری از getRatesText اگر وجود داشته باشد — متن کامل را نگه می‌داریم
+        const fullText = header + '\n' + text;
         const result = await telegramService.sendMessage(fullText, telegramConfig);
         if (result.ok) {
             logger.info('Daily rates broadcast sent successfully');
@@ -65,18 +76,21 @@ function shouldSendNow() {
 function startDailyRatesJob() {
     if (_intervalId) return;
 
+    if (shouldSkipDailyRatesForThisWorker()) {
+        logger.info('Daily rates job skipped on this worker (only instance 0 sends)');
+        return;
+    }
+
     logger.info(`📊 Daily rates job started — scheduled at ${DAILY_RATES_HOUR}:${String(DAILY_RATES_MINUTE).padStart(2, '0')} daily`);
 
     _intervalId = setInterval(async () => {
         if (shouldSendNow()) {
-            // Mark as sent immediately to prevent duplicate sends within the same minute
             const todayKey = new Date().toDateString();
             _lastSentDate = todayKey;
             logger.info('Daily rates: sending broadcast...');
             try {
                 await broadcastRates();
             } catch (err) {
-                // On failure, clear the date so it retries on next check cycle
                 if (_lastSentDate === todayKey) _lastSentDate = null;
                 logger.error('Daily rates broadcast threw', { error: err.message });
             }
