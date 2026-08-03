@@ -249,6 +249,7 @@ window.__I18N_TR = {
     conv_quick_tabs_hide: 'Hızlı filtreleri gizle',
     conv_quick_tabs_show: 'Hızlı filtreleri göster',
     filter_archived: 'Arşiv',
+    filter_restricted: 'Kısıtlı / kilitli',
     status_active: 'Aktif',
     status_inactive: 'Pasif',
     status_blocked: 'Engelli',

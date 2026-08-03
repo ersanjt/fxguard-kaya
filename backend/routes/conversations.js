@@ -218,7 +218,13 @@ router.get('/', async (req, res, next) => {
         }
 
         // سیاست دسترسی لیست + مخفی‌سازی از کارکنان (+ اعطای دسترسی)
-        const listAccess = await conversationListWhereAsync(req.user, req.userId);
+        // پیش‌فرض: مکالمات قفل‌شده در لیست نیستند؛ فقط با includeHidden/hiddenOnly برای ادمین سطح بالا
+        const includeHidden = req.query.includeHidden === '1' || req.query.includeHidden === 'true';
+        const hiddenOnly = req.query.hiddenOnly === '1' || req.query.hiddenOnly === 'true';
+        const listAccess = await conversationListWhereAsync(req.user, req.userId, {
+            includeHidden,
+            hiddenOnly,
+        });
         if (listAccess && Object.keys(listAccess).length) {
             where[Op.and] = (where[Op.and] || []).concat([listAccess]);
         }

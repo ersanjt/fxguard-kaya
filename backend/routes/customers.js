@@ -41,12 +41,25 @@ router.get('/', async (req, res, next) => {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
         const { page = 1, limit = 100, search, status } = req.query;
         const { page: p, limit: l, offset } = parsePagination(page, limit, 200);
-        const customerIds = await getAccessibleCustomerIds(req);
+        const customerIds = await getAccessibleCustomerIds(req, {
+            includeRestricted:
+                req.query.includeRestricted === '1' ||
+                req.query.includeRestricted === 'true' ||
+                req.query.restrictedOnly === '1' ||
+                req.query.restrictedOnly === 'true',
+        });
         const where = {};
-        if (customerIds && customerIds.length === 0) {
+        if (req.query.restrictedOnly === '1' || req.query.restrictedOnly === 'true') {
+            if (!(req.canViewHiddenConversations && req.canViewHiddenConversations())) {
+                return res.status(403).json({ error: 'دسترسی ندارید' });
+            }
+            where.isRestrictedFromStaff = true;
+        } else if (customerIds && customerIds.length === 0) {
             return res.json({ data: [], total: 0, page: p, stats: { total: 0, active: 0, inactive: 0, blocked: 0 } });
         }
-        if (customerIds) where.id = { [Op.in]: customerIds };
+        if (customerIds && !(req.query.restrictedOnly === '1' || req.query.restrictedOnly === 'true')) {
+            where.id = { [Op.in]: customerIds };
+        }
         if (status && ['active', 'inactive', 'blocked'].includes(status)) where.status = status;
         if (search && String(search).trim()) {
             const term = '%' + String(search).trim().replace(/[%_\\]/g, '\\$&') + '%';

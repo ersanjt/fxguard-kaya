@@ -2017,7 +2017,18 @@
                         }
                     });
                     socket.on('new_message', function(data) {
-                        if (data.isHiddenFromStaff && typeof canViewHiddenConversations === 'function' && !canViewHiddenConversations()) return;
+                        if (data.isHiddenFromStaff) {
+                            // مکالمهٔ قفل‌شده در لیست/اعلان عادی نیاید؛ فقط تب «محدود»
+                            const onRestricted = typeof convQuickTab !== 'undefined' && convQuickTab === 'restricted';
+                            const activeH = document.querySelector('.nav-link.active');
+                            const onConvH = activeH && activeH.getAttribute('data-page') === 'conversations';
+                            const convIdH = data.conversationId || (data.conversation && data.conversation.id);
+                            if (onRestricted && onConvH) {
+                                debouncedLoadConversations(800);
+                                if (currentConvId === convIdH && convIdH) loadMessages(convIdH);
+                            }
+                            return;
+                        }
                         const active = document.querySelector('.nav-link.active');
                         const onConv = active && active.getAttribute('data-page') === 'conversations';
                         const convId = data.conversationId || (data.conversation && data.conversation.id);
@@ -4771,6 +4782,8 @@
             }
             const tabArchived = document.getElementById('convTabArchived');
             if (tabArchived) tabArchived.style.display = canViewArchivedConversations() ? '' : 'none';
+            const tabRestricted = document.getElementById('convTabRestricted');
+            if (tabRestricted) tabRestricted.style.display = canViewHiddenConversations() ? '' : 'none';
             const statusFilter = document.getElementById('convFilterStatus');
             if (statusFilter && canViewArchivedConversations()) {
                 const hasArchived = Array.from(statusFilter.options).some(function(o){ return o.value === 'archived'; });
@@ -4957,12 +4970,13 @@
             else if (convQuickTab === 'open') q += '&status=open';
             else if (convQuickTab === 'archived') q += '&status=archived';
             else if (convQuickTab === 'groups') q += '&isGroup=true';
+            else if (convQuickTab === 'restricted') q += '&hiddenOnly=true';
             else if (convQuickTab === 'mine' && currentUser && currentUser.id) q += '&assignedTo=' + encodeURIComponent(currentUser.id);
-            if (convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'archived' || convQuickTab === 'groups') { if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value); }
+            if (convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'archived' || convQuickTab === 'groups' || convQuickTab === 'restricted') { if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value); }
             if (priorityEl && priorityEl.value) q += '&priority=' + encodeURIComponent(priorityEl.value);
             if (branchEl && branchEl.value) q += '&branchId=' + encodeURIComponent(branchEl.value);
             if (deptEl && deptEl.value) q += '&departmentId=' + encodeURIComponent(deptEl.value);
-            if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open' || convQuickTab === 'archived' || convQuickTab === 'groups') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
+            if ((convQuickTab === 'all' || convQuickTab === 'unread' || convQuickTab === 'unanswered' || convQuickTab === 'open' || convQuickTab === 'archived' || convQuickTab === 'groups' || convQuickTab === 'restricted') && assigneeEl && assigneeEl.value) q += '&assignedTo=' + encodeURIComponent(assigneeEl.value);
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
             let res;
             try {
@@ -5013,7 +5027,24 @@
                 }, 50);
                 return;
             }
-            const newItems = data.data.map(function(c) {
+            const visibleRows = (data.data || []).filter(function(c) {
+                if (c.isHiddenFromStaff && convQuickTab !== 'restricted') return false;
+                return true;
+            });
+            if (visibleRows.length === 0) {
+                if (!appendMode) list.innerHTML = '<div class="empty conv-empty"><span class="empty-icon">💬</span><p>' + t('empty_conv') + '</p><button type="button" class="btn-primary" id="emptyConvNewBtn">' + (t('conv_new') || (LANG === 'fa' ? 'مکالمه جدید' : 'New conversation')) + '</button></div>';
+                var lmBtnEmpty = document.getElementById('convLoadMoreBtn');
+                if (lmBtnEmpty) lmBtnEmpty.style.display = 'none';
+                setTimeout(function() {
+                    const emptyBtn = document.getElementById('emptyConvNewBtn');
+                    if (emptyBtn) {
+                        emptyBtn.removeEventListener('click', openNewConvModal);
+                        emptyBtn.addEventListener('click', openNewConvModal);
+                    }
+                }, 50);
+                return;
+            }
+            const newItems = visibleRows.map(function(c) {
                 const cust = c.customer || {};
                 const isGroup = !!(c.metadata && c.metadata.isGroup);
                 const canSeePhone = typeof canViewCustomerPhoneUi === 'function' ? canViewCustomerPhoneUi() : !!(currentUser && currentUser.permissions && currentUser.permissions.view_customer_phone);

@@ -42,15 +42,35 @@ function hiddenConversationWhere(user, grants = null) {
     return visibleDespiteHiddenOr(grants);
 }
 
-/** شرط لیست/شمارش مکالمات بر اساس نقش، مخفی‌سازی و اعطای دسترسی */
-function conversationListWhere(user, userId, grants = null) {
-    if (isMainAdmin(user) || canViewHiddenConversations(user)) {
-        return {};
+/**
+ * شرط لیست/شمارش مکالمات بر اساس نقش، مخفی‌سازی و اعطای دسترسی.
+ * پیش‌فرض: مکالمات isHiddenFromStaff در لیست نمی‌آیند (حتی برای owner/admin)،
+ * مگر includeHidden یا hiddenOnly و کاربر مجاز به دیدن مخفی‌ها باشد.
+ *
+ * @param {object} [opts]
+ * @param {boolean} [opts.includeHidden] — ادمین سطح بالا: مخفی‌ها را هم در لیست بیاور
+ * @param {boolean} [opts.hiddenOnly] — ادمین سطح بالا: فقط مخفی‌ها
+ */
+function conversationListWhere(user, userId, grants = null, opts = {}) {
+    const canSeeHidden = isMainAdmin(user) || canViewHiddenConversations(user);
+    const includeHidden = !!(opts && opts.includeHidden) && canSeeHidden;
+    const hiddenOnly = !!(opts && opts.hiddenOnly) && canSeeHidden;
+
+    if (hiddenOnly) {
+        return { isHiddenFromStaff: true };
     }
 
-    const visibility = hiddenConversationWhere(user, grants);
+    // پیش‌فرض برای همه (از جمله ادمین): مخفی‌ها را نشان نده مگر اعطا شده باشند
+    // includeHidden فقط برای ادمین سطح بالا همهٔ مخفی‌ها را هم اضافه می‌کند
+    if (includeHidden) {
+        if (['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1 || canSeeHidden) {
+            return {};
+        }
+    }
 
-    if (['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1) {
+    const visibility = visibleDespiteHiddenOr(grants);
+
+    if (canSeeHidden || ['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1) {
         return visibility;
     }
 
@@ -70,10 +90,16 @@ function conversationListWhere(user, userId, grants = null) {
     };
 }
 
-async function conversationListWhereAsync(user, userId) {
-    if (isMainAdmin(user) || canViewHiddenConversations(user)) return {};
+async function conversationListWhereAsync(user, userId, opts = {}) {
+    const canSeeHidden = isMainAdmin(user) || canViewHiddenConversations(user);
+    if (opts && opts.hiddenOnly && canSeeHidden) {
+        return { isHiddenFromStaff: true };
+    }
+    if (opts && opts.includeHidden && canSeeHidden) {
+        return {};
+    }
     const grants = await getUserGrantSets(userId);
-    return conversationListWhere(user, userId, grants);
+    return conversationListWhere(user, userId, grants, opts);
 }
 
 module.exports = {

@@ -6,23 +6,34 @@ const { hiddenConversationWhere } = require('./conversationAccess');
 
 /**
  * شناسه مشتری‌هایی که این کاربر مجاز به دیدنشان است.
- * ادمین سطح بالا (owner/admin/main admin) → null (همه، شامل محدودشده‌ها).
- * بقیه → غیرمحدود + اعطاشده (+ از مسیر مکالمات قابل‌دسترسی برای agent/supervisor).
+ * ادمین سطح بالا با includeRestricted → null (همه، شامل محدودشده‌ها).
+ * پیش‌فرض حتی برای ادمین: غیرمحدود + اعطاشده (محدودشده‌ها در لیست عادی نمی‌آیند).
  */
-async function getAccessibleCustomerIds(req) {
-    if (isMainAdmin(req.user) || canViewHiddenConversations(req.user)) return null;
+async function getAccessibleCustomerIds(req, opts = {}) {
+    const includeRestricted =
+        !!(opts && opts.includeRestricted) &&
+        (isMainAdmin(req.user) || canViewHiddenConversations(req.user));
+
+    if (includeRestricted) return null;
 
     const grants = await getUserGrantSets(req.userId);
     const grantedIds = grantedCustomerIdList(grants);
 
-    if (req.user.role === 'manager') {
+    const unrestrictedOrGranted = {
+        [Op.or]: [
+            { isRestrictedFromStaff: false },
+            ...(grantedIds.length ? [{ id: { [Op.in]: grantedIds } }] : []),
+        ],
+    };
+
+    // ادمین/مالک/مدیر بدون includeRestricted: همهٔ غیرمحدود (+ اعطا)
+    if (
+        isMainAdmin(req.user) ||
+        canViewHiddenConversations(req.user) ||
+        req.user.role === 'manager'
+    ) {
         const rows = await Customer.findAll({
-            where: {
-                [Op.or]: [
-                    { isRestrictedFromStaff: false },
-                    ...(grantedIds.length ? [{ id: { [Op.in]: grantedIds } }] : []),
-                ],
-            },
+            where: unrestrictedOrGranted,
             attributes: ['id'],
             raw: true,
         });
@@ -47,14 +58,12 @@ async function getAccessibleCustomerIds(req) {
 
     const ids = new Set([...fromConvs, ...grantedIds]);
 
-    // مشتریان محدود بدون اعطا را حذف کن (حتی اگر از مکالمهٔ قدیمی بیایند)
     if (ids.size === 0) return [];
     const allowed = await Customer.findAll({
         where: {
-            id: { [Op.in]: [...ids] },
-            [Op.or]: [
-                { isRestrictedFromStaff: false },
-                ...(grantedIds.length ? [{ id: { [Op.in]: grantedIds } }] : []),
+            [Op.and]: [
+                { id: { [Op.in]: [...ids] } },
+                unrestrictedOrGranted,
             ],
         },
         attributes: ['id'],

@@ -252,6 +252,7 @@ window.__I18N_EN = {
     filter_priority_label: 'Priority',
     filter_assignee_label: 'Assignee',
     filter_archived: 'Archived',
+    filter_restricted: 'Restricted / locked',
     filter_unanswered: 'Unanswered',
     status_active: 'Active',
     status_inactive: 'Inactive',

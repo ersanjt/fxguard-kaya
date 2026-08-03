@@ -2017,7 +2017,18 @@
                         }
                     });
                     socket.on('new_message', function(data) {
-                        if (data.isHiddenFromStaff && typeof canViewHiddenConversations === 'function' && !canViewHiddenConversations()) return;
+                        if (data.isHiddenFromStaff) {
+                            // مکالمهٔ قفل‌شده در لیست/اعلان عادی نیاید؛ فقط تب «محدود»
+                            const onRestricted = typeof convQuickTab !== 'undefined' && convQuickTab === 'restricted';
+                            const activeH = document.querySelector('.nav-link.active');
+                            const onConvH = activeH && activeH.getAttribute('data-page') === 'conversations';
+                            const convIdH = data.conversationId || (data.conversation && data.conversation.id);
+                            if (onRestricted && onConvH) {
+                                debouncedLoadConversations(800);
+                                if (currentConvId === convIdH && convIdH) loadMessages(convIdH);
+                            }
+                            return;
+                        }
                         const active = document.querySelector('.nav-link.active');
                         const onConv = active && active.getAttribute('data-page') === 'conversations';
                         const convId = data.conversationId || (data.conversation && data.conversation.id);
