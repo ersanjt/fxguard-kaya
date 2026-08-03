@@ -539,8 +539,8 @@
 
     /* ── Load Branding (اولویت از تنظیمات وبسایت پنل) ───────────────── */
     var LP_DEFAULT_LOGO = '/brand/kaya-logo.png';
-    var LP_DEFAULT_FAVICON = '/brand/kaya-favicon-32.png';
-    var LP_DEFAULT_APPLE = '/brand/kaya-apple-touch.png';
+    var LP_DEFAULT_FAVICON = '/brand/kaya-favicon-32.png?v=2';
+    var LP_DEFAULT_APPLE = '/brand/kaya-apple-touch.png?v=2';
 
     function lpResolveFaviconHref(d) {
         if (!d) return LP_DEFAULT_FAVICON;
