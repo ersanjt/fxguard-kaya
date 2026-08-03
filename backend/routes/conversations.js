@@ -972,15 +972,29 @@ router.post('/:id/call', async (req, res, next) => {
         if (result.error) return res.status(result.status || 500).json({ error: result.error });
         res.json(result.data);
     } catch (err) {
-        if (err.response?.status === 503) {
+        const status = err.response?.status;
+        const gwMsg = err.response?.data?.error || err.response?.data?.message || err.message;
+        if (status === 503 || status === 502 || status === 504) {
             return res.status(503).json({
-                error: err.response?.data?.error || 'Gateway واتساپ آماده نیست. اتصال را در تنظیمات بررسی کنید.',
+                error: gwMsg || 'Gateway واتساپ آماده نیست. اتصال را در تنظیمات بررسی کنید.',
             });
         }
-        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+        if (status === 400) {
+            return res.status(400).json({ error: gwMsg || 'درخواست تماس نامعتبر است' });
+        }
+        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ECONNABORTED') {
             return res.status(503).json({ error: 'Gateway در دسترس نیست' });
         }
-        next(err);
+        // خطای کنترل‌شده تماس — 5xx اسپایک نساز
+        const logger = require('../config/logger');
+        logger.warn('wa call endpoint failed', {
+            conversationId: req.params.id,
+            error: err.message,
+            status: status || null,
+        });
+        return res.status(503).json({
+            error: gwMsg || 'تماس واتساپ انجام نشد. چند ثانیه بعد دوباره تلاش کنید.',
+        });
     }
 });
 

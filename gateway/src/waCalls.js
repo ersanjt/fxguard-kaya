@@ -83,14 +83,35 @@ async function createWaCallLink(client, isVideo) {
  */
 async function startOutgoingCall(client, to, isVideo, logger, opts = {}) {
     const raw = String(to || '').trim();
-    const chatId =
-        raw.includes('@c.us') || raw.includes('@g.us') ? raw : `${raw.replace(/\D/g, '')}@c.us`;
-    const isGroup = chatId.includes('@g.us');
+    let chatId;
+    if (/@(c\.us|g\.us|lid|s\.whatsapp\.net)$/i.test(raw)) {
+        chatId = raw;
+    } else if (raw.includes('@')) {
+        chatId = raw;
+    } else {
+        const digits = raw.replace(/\D/g, '');
+        chatId = digits ? `${digits}@c.us` : '';
+    }
+    if (!chatId) {
+        const err = new Error('invalid_recipient');
+        err.statusCode = 400;
+        throw err;
+    }
+    const isGroup = /@g\.us$/i.test(chatId);
     const introText = (opts.introText && String(opts.introText).trim()) || '';
 
     if (introText) {
-        await client.sendMessage(chatId, introText);
-        await sleep(900);
+        try {
+            await client.sendMessage(chatId, introText);
+            await sleep(900);
+        } catch (e) {
+            logger.warn('Call intro send failed', { chatId, error: e?.message });
+            const err = new Error(
+                'ارسال پیام معرفی تماس ناموفق بود — شناسه مخاطب یا نشست واتساپ را بررسی کنید'
+            );
+            err.statusCode = 503;
+            throw err;
+        }
     }
 
     try {
@@ -112,8 +133,17 @@ async function startOutgoingCall(client, to, isVideo, logger, opts = {}) {
         });
     }
 
-    const callLink = await createWaCallLink(client, isVideo);
-    if (!callLink) throw new Error('call_link_failed');
+    let callLink = '';
+    try {
+        callLink = await createWaCallLink(client, isVideo);
+    } catch (e) {
+        logger.warn('createWaCallLink failed', { error: e?.message, chatId });
+    }
+    if (!callLink) {
+        const err = new Error('call_link_failed');
+        err.statusCode = 503;
+        throw err;
+    }
 
     const linkLead = isGroup
         ? isVideo
@@ -125,10 +155,17 @@ async function startOutgoingCall(client, to, isVideo, logger, opts = {}) {
     const text = introText
         ? `${introText}\n\n${linkLead}\n${callLink}`
         : `${linkLead}\n${callLink}`;
-    if (!introText) {
-        await client.sendMessage(chatId, text);
-    } else {
-        await client.sendMessage(chatId, `${linkLead}\n${callLink}`);
+    try {
+        if (!introText) {
+            await client.sendMessage(chatId, text);
+        } else {
+            await client.sendMessage(chatId, `${linkLead}\n${callLink}`);
+        }
+    } catch (e) {
+        logger.warn('Call link send failed', { chatId, error: e?.message });
+        const err = new Error('ارسال لینک تماس ناموفق بود');
+        err.statusCode = 503;
+        throw err;
     }
     logger.info('Call link sent', { chatId, isVideo, isGroup, introSent: !!introText });
     return { ok: true, method: 'link', callLink, isGroup, introSent: !!introText };

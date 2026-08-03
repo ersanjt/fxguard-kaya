@@ -1308,18 +1308,35 @@ app.post('/api/calls/start', sendRateLimitMiddleware, async (req, res) => {
         const { to, type, introText } = req.body || {};
         if (!to) return res.status(400).json({ error: 'to is required' });
         const isVideo = type === 'video';
+        const chatId = normalizePhoneToChatId(String(to)) || String(to).trim();
+        if (!chatId) return res.status(400).json({ error: 'Invalid recipient' });
 
-        const result = await startOutgoingCall(client, to, isVideo, logger, { introText });
+        const result = await startOutgoingCall(client, chatId, isVideo, logger, { introText });
         return res.json({ success: true, ...result });
     } catch (error) {
-        const msg = error?.message || 'call_failed';
-        if (msg === 'call_link_failed') {
+        const msg = formatGatewayError(error);
+        const status = error?.statusCode || 500;
+        if (
+            status === 400 ||
+            /invalid_recipient|to is required/i.test(msg)
+        ) {
+            return res.status(400).json({ error: msg });
+        }
+        if (
+            status === 503 ||
+            /call_link_failed|not ready|timeout|Protocol|Target closed|Session closed|^[a-z]$/i.test(
+                msg
+            )
+        ) {
             return res.status(503).json({
-                error: 'امکان ایجاد لینک تماس وجود ندارد. نسخه واتساپ وب را بررسی کنید.',
+                error:
+                    msg === 'call_link_failed'
+                        ? 'امکان ایجاد لینک تماس وجود ندارد. نسخه واتساپ وب را بررسی کنید.'
+                        : msg || 'WhatsApp call unavailable',
             });
         }
-        logger.error('Start call error', { error: msg });
-        return res.status(500).json({ error: msg });
+        logger.error('Start call error', { error: msg, stack: error?.stack?.slice?.(0, 400) });
+        return res.status(503).json({ error: msg || 'call_failed' });
     }
 });
 
