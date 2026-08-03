@@ -396,11 +396,16 @@ function formatGatewayError(err) {
     if (typeof err === 'string' && err.trim()) return err.trim();
     const msg = err.message || err.originalMessage || err.name;
     if (msg && String(msg).trim().length > 1) return String(msg).trim();
+    // خطاهای تک‌حرفی puppeteer («t»/«r») — از stack استفاده کن
+    if (err.stack) {
+        const line = String(err.stack).split('\n')[0];
+        if (line && line.trim().length > 1) return line.trim();
+    }
     try {
         const s = String(err);
-        if (s && s !== '[object Object]') return s;
+        if (s && s !== '[object Object]' && s.length > 1) return s;
     } catch (_) {}
-    return err.stack ? String(err.stack).split('\n')[0] : 'unknown_error';
+    return 'unknown_error';
 }
 
 function buildClient() {
@@ -437,6 +442,11 @@ function buildClient() {
         puppeteer: {
             headless: true,
             args: puppeteerArgs,
+            // جلوگیری از Runtime.callFunctionOn timed out روی سشن‌های سنگین
+            protocolTimeout: Math.max(
+                120000,
+                parseInt(process.env.PUPPETEER_PROTOCOL_TIMEOUT_MS, 10) || 180000
+            ),
         },
     };
     if (process.env.WHATSAPP_WEB_VERSION_CACHE === 'none') {
@@ -913,11 +923,16 @@ function normalizePhoneToChatId(phoneOrJid) {
     if (!phoneOrJid || typeof phoneOrJid !== 'string') return null;
     const v = phoneOrJid.trim();
     if (!v) return null;
-    if (v.includes('@c.us') || v.includes('@g.us') || v.includes('@s.whatsapp.net') || v.includes('@lid')) {
-        return v;
-    }
-    const digits = v.replace(/\D/g, '');
+    if (v.includes('@g.us') || v.includes('@s.whatsapp.net')) return v;
+
+    // رقم‌ها را از JID هم بگیر؛ ۰۰ بین‌المللی / صفر محلی را بردار تا «۰۰۹۸…@lid» ساخته نشود
+    let digits = v.replace(/\D/g, '');
+    while (digits.startsWith('00')) digits = digits.slice(2);
+    if (/^0\d{9,11}$/.test(digits)) digits = digits.slice(1);
     if (!digits) return null;
+    if (digits.length <= 10 && !digits.startsWith('98') && /^9\d{9}$/.test(digits)) {
+        digits = '98' + digits;
+    }
 
     // پیش‌شماره‌های رایج → شماره واقعی؛ در غیر این صورت LID واتساپ
     const phoneLike =
@@ -927,7 +942,10 @@ function normalizePhoneToChatId(phoneOrJid) {
         /^(1|7|20|27|30|31|32|33|34|39|44|45|46|47|48|49|61|62|63|65|66|81|82|84|86|91|92|93|94|966|964|994)\d{8,12}$/.test(
             digits
         );
-    return phoneLike ? `${digits}@c.us` : `${digits}@lid`;
+    if (phoneLike) return `${digits}@c.us`;
+    // فقط LID واقعی (نه شمارهٔ اشتباه‌تگ‌شده با @lid)
+    if (/@lid$/i.test(v) || !/@c\.us$/i.test(v)) return `${digits}@lid`;
+    return `${digits}@c.us`;
 }
 
 /**
@@ -1154,13 +1172,14 @@ app.post('/api/logout', async (req, res) => {
 
 app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
     let tmpMediaPath = null;
+    let chatId;
     try {
         if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
 
         const { to, message, media, replyTo } = req.body || {};
         if (!to || (!message && !media)) return res.status(400).json({ error: 'Invalid payload' });
 
-        let chatId = await resolveOutboundChatId(to);
+        chatId = await resolveOutboundChatId(to);
         if (!chatId) return res.status(400).json({ error: 'Invalid recipient' });
 
         let sentMsg;
@@ -1209,50 +1228,44 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
             return client.sendMessage(targetChatId, message || '', sendOpts);
         }
 
-        try {
-            sentMsg = await Promise.race([
-                doSend(chatId),
-                new Promise((_, reject) =>
-                    setTimeout(() => {
-                        const err = new Error('send_timeout');
-                        err.statusCode = 503;
-                        reject(err);
-                    }, 20000)
-                ),
-            ]);
-        } catch (firstErr) {
-            // اگر @c.us شکست خورد، یک‌بار با @lid امتحان کن (چت‌های Privacy/LID)
-            const digits = String(to).replace(/\D/g, '');
-            const lidId = digits && !String(chatId).includes('@lid') ? `${digits}@lid` : null;
-            if (lidId && lidId !== chatId && firstErr?.message !== 'send_timeout') {
-                logger.warn('Send via phone JID failed — retrying as LID', {
-                    chatId,
-                    lidId,
-                    error: firstErr?.message,
-                });
-                chatId = lidId;
-                sentMsg = await Promise.race([
-                    doSend(chatId),
-                    new Promise((_, reject) =>
-                        setTimeout(() => {
-                            const err = new Error('send_timeout');
-                            err.statusCode = 503;
-                            reject(err);
-                        }, 20000)
-                    ),
-                ]);
-            } else {
-                throw firstErr;
-            }
-        }
+        sentMsg = await Promise.race([
+            doSend(chatId),
+            new Promise((_, reject) =>
+                setTimeout(() => {
+                    const err = new Error('send_timeout');
+                    err.statusCode = 503;
+                    reject(err);
+                }, 45000)
+            ),
+        ]);
 
         markGatewaySentMessage(sentMsg?.id?.id);
         logger.info('✉️ Message sent', { to: chatId, messageId: sentMsg?.id?.id, hasMedia: !!media });
         return res.json({ success: true, messageId: sentMsg?.id?.id, chatId });
     } catch (error) {
-        const status = error?.statusCode || 500;
-        logger.error('Send message error', { error: error?.message, status });
-        return res.status(status).json({ error: error?.message || 'send_failed' });
+        let status = error?.statusCode || 500;
+        let errMsg = formatGatewayError(error);
+        const protocolLike =
+            /send_timeout|timeout|ProtocolError|Target closed|Session closed|Runtime\.callFunctionOn|Execution context was destroyed|Navigating frame was detached|^Error:\s*[a-z]$/i.test(
+                errMsg
+            ) || /^[a-z]$/i.test(String(error?.message || '').trim());
+        if (protocolLike) {
+            status = 503;
+            if (/send_timeout/i.test(errMsg)) {
+                errMsg = 'WhatsApp send timed out — browser session may be stuck; restart gateway';
+            }
+            // ready اما صفحه مرده — reconnect تا CRM گیر نکند
+            isClientReady = false;
+            scheduleReconnect();
+        }
+        logger.error('Send message error', {
+            error: errMsg,
+            status,
+            to: req.body?.to,
+            chatId,
+            stack: error?.stack?.slice?.(0, 500),
+        });
+        return res.status(status).json({ error: errMsg || 'send_failed' });
     } finally {
         await cleanupTempMedia(tmpMediaPath);
     }

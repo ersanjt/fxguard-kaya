@@ -23,6 +23,26 @@ function extractDigits(val) {
     return stripWhatsAppSuffix(val).replace(/\D/g, '');
 }
 
+/**
+ * رقم‌های شماره را برای تشخیص E.164 آماده می‌کند:
+ * ۰۰ بین‌المللی و صفر محلی (۰۹…) را حذف می‌کند.
+ * بدون این، «۰۰۹۸۹…» به‌اشتباه LID می‌شود.
+ */
+function canonicalizePhoneDigits(val) {
+    let s = extractDigits(val);
+    while (s.startsWith('00')) s = s.slice(2);
+    if (/^0\d{9,11}$/.test(s)) s = s.slice(1);
+    return s;
+}
+
+function isKnownPhoneDigits(digits) {
+    if (!digits) return false;
+    if (/^989\d{9}$/.test(digits)) return true;
+    if (/^90\d{10}$/.test(digits)) return true;
+    if (/^971\d{8,9}$/.test(digits)) return true;
+    return PHONE_CC_PREFIXES.some((cc) => digits.startsWith(cc) && digits.length >= cc.length + 8 && digits.length <= cc.length + 12);
+}
+
 /** آیا این مقدار شناسهٔ گروه واتساپ است؟ */
 function isGroupJid(val) {
     return /@g\.us$/i.test(String(val || '').trim());
@@ -31,32 +51,26 @@ function isGroupJid(val) {
 /** آیا این مقدار (یا رقم‌هایش) شبیه LID واتساپ است نه شمارهٔ E.164؟ */
 function isLikelyWhatsAppLid(val) {
     const s = String(val || '').trim();
-    if (/@lid$/i.test(s)) return true;
     if (isGroupJid(s) || /@(c\.us|s\.whatsapp\.net)$/i.test(s)) return false;
-    const digits = extractDigits(s);
+    const digits = canonicalizePhoneDigits(s);
     if (!digits || digits.length < 8 || digits.length > 20) return false;
-    // شماره‌های رایج منطقه ما را شماره حساب کن
-    if (/^989\d{9}$/.test(digits)) return false;
-    if (/^90\d{10}$/.test(digits)) return false;
-    if (/^971\d{8,9}$/.test(digits)) return false;
+    // شمارهٔ واقعی که فقط با @lid یا ۰۰ اشتباه ذخیره شده
+    if (isKnownPhoneDigits(digits)) return false;
+    if (/@lid$/i.test(s)) return true;
     // اگر با هیچ پیش‌شمارهٔ شناخته‌شده‌ای شروع نشود → LID
-    const matchedCc = PHONE_CC_PREFIXES.some((cc) => digits.startsWith(cc) && digits.length >= cc.length + 8);
-    return !matchedCc;
+    return true;
 }
 
 function normalizePhone(val) {
     if (val == null || val === '') return '';
     const raw = String(val).trim();
     if (isGroupJid(raw)) return raw;
-    if (/@lid$/i.test(raw) || isLikelyWhatsAppLid(raw)) {
-        // LID را نرمال به رقم نکن / کد کشور نچسبان
-        const digits = extractDigits(raw);
-        return digits || '';
-    }
-    let s = extractDigits(raw);
+    let s = canonicalizePhoneDigits(raw);
     if (!s) return '';
-    // حذف صفر اول برای شماره‌های ایرانی (مثل 09121234567)
-    if (s.startsWith('0') && s.length > 10) s = s.slice(1);
+    // LID واقعی: رقم‌ها را دست نزن / کد کشور نچسبان
+    if (isLikelyWhatsAppLid(raw) && !isKnownPhoneDigits(s)) {
+        return s;
+    }
     // اگر کد کشور ندارد و طول مناسب است، 98 اضافه کن
     if (s && !s.startsWith('98') && s.length <= 10) s = '98' + s;
     return s;
@@ -72,13 +86,14 @@ function getSendTarget(phone) {
     if (phone == null || phone === '') return '';
     const s = String(phone).trim();
     if (isGroupJid(s)) return s;
-    if (/@lid$/i.test(s)) {
-        const digits = extractDigits(s);
-        return digits ? `${digits}@lid` : s;
+    const digits = canonicalizePhoneDigits(s);
+    if (!digits) return '';
+    // شمارهٔ واقعی که اشتباه با @lid یا ۰۰ ذخیره شده → رقم E.164
+    if (isKnownPhoneDigits(digits) || (!/@lid$/i.test(s) && !isLikelyWhatsAppLid(s))) {
+        return normalizePhone(s) || digits;
     }
-    if (isLikelyWhatsAppLid(s)) {
-        const digits = extractDigits(s);
-        return digits ? `${digits}@lid` : '';
+    if (/@lid$/i.test(s) || isLikelyWhatsAppLid(s)) {
+        return `${digits}@lid`;
     }
     return normalizePhone(s) || s;
 }

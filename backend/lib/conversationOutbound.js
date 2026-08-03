@@ -336,7 +336,8 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
                 };
             }
         }
-        const gwRes = await sendWhatsAppMessage(payload, { timeout: 12000 });
+        // باید از timeout ارسال Gateway (~45s) بیشتر باشد تا خطای واقعی برگردد نه abort خالی
+        const gwRes = await sendWhatsAppMessage(payload, { timeout: 55000 });
         const waId = gwRes?.data?.messageId;
         const updateFields = { status: 'sent' };
         if (waId) updateFields.whatsappId = waId;
