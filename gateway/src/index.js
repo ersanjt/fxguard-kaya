@@ -129,6 +129,8 @@ const WHATSAPP_VOICE_MIME = 'audio/ogg; codecs=opus';
 const WHATSAPP_VOICE_FILENAME = 'audio.ogg';
 /** message IDs we sent via API — skip message_create echo to backend (avoids duplicate CRM rows) */
 const recentGatewaySentIds = new Map();
+/** during API sendMessage, message_create fires before we have the id — skip echo processing */
+let outboundApiSendDepth = 0;
 
 function markGatewaySentMessage(waMsgId) {
     if (!waMsgId) return;
@@ -747,13 +749,23 @@ function attachClientEvents(c) {
         try {
             if (!msg.fromMe) return; // فقط پیام‌های ارسالی خودمان
             const waEchoId = msg?.id?.id;
+            // ارسال از API: echo قبل از markGatewaySentMessage می‌آید — فقط id را ثبت کن
+            if (outboundApiSendDepth > 0) {
+                markGatewaySentMessage(waEchoId);
+                return;
+            }
             if (isGatewaySentEcho(waEchoId)) {
                 return;
             }
             if (await isDuplicateIncomingGatewayMessage(waEchoId)) return;
             const chat = await msg.getChat();
             if (chat?.isGroup) return; // گروه‌ها را نادیده بگیر
-            const contact = await chat.getContact();
+            let contact = null;
+            try {
+                contact = await chat.getContact();
+            } catch (_) {
+                /* LID / privacy: getContact گاهی fail می‌کند */
+            }
 
             const messageData = {
                 id: msg?.id?.id,
@@ -767,10 +779,12 @@ function attachClientEvents(c) {
                 isStatus: msg.isStatus,
                 fromMe: true,
                 contact: {
-                    number: contact?.number,
+                    number: contact?.number || null,
                     name: contact?.name || contact?.pushname || null,
                     isMyContact: contact?.isMyContact,
-                    profilePicUrl: await contact.getProfilePicUrl().catch(() => null),
+                    profilePicUrl: contact
+                        ? await contact.getProfilePicUrl().catch(() => null)
+                        : null,
                 },
                 chat: {
                     id: chat?.id?._serialized,
@@ -790,7 +804,9 @@ function attachClientEvents(c) {
                         };
                     }
                 } catch (error) {
-                    logger.error('message_create media download error', { error: error?.message });
+                    logger.error('message_create media download error', {
+                        error: formatGatewayError(error),
+                    });
                 }
             }
 
@@ -805,9 +821,14 @@ function attachClientEvents(c) {
             }
 
             io.emit('new_message', messageData);
-            logger.info('📤 Outgoing message from mobile captured', { to: contact?.number });
+            logger.info('📤 Outgoing message from mobile captured', {
+                to: contact?.number || msg.to || null,
+            });
         } catch (error) {
-            logger.error('Error processing message_create', { error: error?.message });
+            logger.error('Error processing message_create', {
+                error: formatGatewayError(error),
+                stack: error?.stack?.slice?.(0, 300),
+            });
         }
     });
 }
@@ -1228,16 +1249,21 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
             return client.sendMessage(targetChatId, message || '', sendOpts);
         }
 
-        sentMsg = await Promise.race([
-            doSend(chatId),
-            new Promise((_, reject) =>
-                setTimeout(() => {
-                    const err = new Error('send_timeout');
-                    err.statusCode = 503;
-                    reject(err);
-                }, 45000)
-            ),
-        ]);
+        outboundApiSendDepth += 1;
+        try {
+            sentMsg = await Promise.race([
+                doSend(chatId),
+                new Promise((_, reject) =>
+                    setTimeout(() => {
+                        const err = new Error('send_timeout');
+                        err.statusCode = 503;
+                        reject(err);
+                    }, 45000)
+                ),
+            ]);
+        } finally {
+            outboundApiSendDepth = Math.max(0, outboundApiSendDepth - 1);
+        }
 
         markGatewaySentMessage(sentMsg?.id?.id);
         logger.info('✉️ Message sent', { to: chatId, messageId: sentMsg?.id?.id, hasMedia: !!media });
