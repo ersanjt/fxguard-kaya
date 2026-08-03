@@ -62,6 +62,11 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'X-Gateway-Secret برای احراز هویت Gateway',
         },
+        lastLinkedGatewayNumber: {
+            type: DataTypes.STRING(32),
+            allowNull: true,
+            comment: 'آخرین شماره واتساپ متصل‌شده از Gateway — برای تشخیص تعویض شماره و قفل دادهٔ قبلی',
+        },
     }, {
         timestamps: true,
         tableName: 'whatsapp_connections',

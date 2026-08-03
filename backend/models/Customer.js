@@ -108,6 +108,12 @@ module.exports = (sequelize) => {
         },
         website: {
             type: DataTypes.STRING
+        },
+        isRestrictedFromStaff: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: false,
+            comment: 'محدود از کارکنان — فقط ادمین سطح بالا یا دارندگان اعطای دسترسی می‌بینند'
         }
     }, {
         timestamps: true,
@@ -116,7 +122,8 @@ module.exports = (sequelize) => {
             { fields: ['email'] },
             { fields: ['status'] },
             { fields: ['birthDate'] },
-            { fields: ['loyaltyTier'] }
+            { fields: ['loyaltyTier'] },
+            { fields: ['isRestrictedFromStaff'] }
         ]
     });
 
@@ -141,6 +148,14 @@ module.exports = (sequelize) => {
         }
         if (models.CustomerDocument) {
             Customer.hasMany(models.CustomerDocument, { foreignKey: 'customerId', as: 'documents' });
+        }
+        if (models.StaffResourceGrant) {
+            Customer.hasMany(models.StaffResourceGrant, {
+                foreignKey: 'resourceId',
+                constraints: false,
+                scope: { resourceType: 'customer' },
+                as: 'accessGrants'
+            });
         }
     };
 

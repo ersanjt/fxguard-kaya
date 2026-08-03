@@ -15,11 +15,11 @@ const {
 } = require('../models');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
-const { conversationListWhere } = require('../lib/conversationAccess');
+const { conversationListWhereAsync } = require('../lib/conversationAccess');
 const { getVisibleStaffUserIds, applyVisibleUserFilter } = require('../lib/staffSupervision');
 
-function conversationWhere(req) {
-    return conversationListWhere(req.user, req.userId);
+async function conversationWhere(req) {
+    return conversationListWhereAsync(req.user, req.userId);
 }
 
 /** ترکیب فیلتر دسترسی با شرط اضافی برای count */
@@ -68,7 +68,7 @@ async function dashboard(req, res, next) {
         }
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const convWhere = conversationWhere(req);
+        const convWhere = await conversationWhere(req);
         const hasConvFilter = Object.keys(convWhere).length > 0;
 
         const [

@@ -1823,6 +1823,7 @@
                 loadWhatsappWelcomeConfig();
                 loadWhatsappStats();
                 loadWhatsappOverview();
+                if (typeof loadLegacyLockdownCard === 'function') loadLegacyLockdownCard();
             }
             if (page === 'message-templates') { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); }

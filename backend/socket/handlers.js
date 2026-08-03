@@ -6,7 +6,7 @@ const { getSendTarget } = require('../lib/phoneUtils');
 const { sendWhatsAppMessage, isCloudApiConfigured } = require('../lib/gatewayClient');
 const { logActivity } = require('../services/activityLog');
 const { notifySystemEvent } = require('../services/systemEventNotifier');
-const { canAccessConversation } = require('../lib/conversationAccess');
+const { canAccessConversationAsync } = require('../lib/conversationAccess');
 const { validateOutboundSender, applyStaffSignatureToOutboundText } = require('../lib/outboundMessagePrefix');
 const { maybeSendEmployeeIntro } = require('../services/autoMessages');
 const { notifyStaffPresence } = require('../lib/staffPresenceNotify');
@@ -105,7 +105,7 @@ function setupSocketHandlers(io, getRabbitChannel, logger) {
                 if (!user) return socket.emit('error', { message: 'Unauthorized' });
                 if (!user.isActive) return socket.emit('error', { message: 'حساب کاربری غیرفعال است' });
 
-                if (!canAccessConversation(user, socket.userId, conversation)) {
+                if (!(await canAccessConversationAsync(user, socket.userId, conversation))) {
                     return socket.emit('error', { message: 'دسترسی به این مکالمه ندارید' });
                 }
 

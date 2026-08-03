@@ -56,6 +56,10 @@ function replaceTemplateVariables(text, customer) {
 router.post('/send', async (req, res, next) => {
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        const { canBulkMessage } = require('../lib/permissions');
+        if (!canBulkMessage(req.user)) {
+            return res.status(403).json({ error: 'دسترسی به ارسال پیام انبوه ندارید' });
+        }
         const enableBulk = process.env.ENABLE_BULK_MESSAGING !== 'false';
         if (!enableBulk) return res.status(403).json({ error: 'ارسال انبوه غیرفعال است. ENABLE_BULK_MESSAGING را در .env فعال کنید.' });
 

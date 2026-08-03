@@ -141,10 +141,37 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
                         logger.warn('whatsapp_connections.' + name, e.message);
                 }
             }
+            if (connDesc.lastLinkedGatewayNumber === undefined) {
+                try {
+                    await qi.addColumn('whatsapp_connections', 'lastLinkedGatewayNumber', {
+                        type: DataTypes.STRING(32),
+                        allowNull: true,
+                    });
+                    logger.info('✅ whatsapp_connections: lastLinkedGatewayNumber column added (auto-migration)');
+                } catch (e) {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
+                        logger.warn('whatsapp_connections.lastLinkedGatewayNumber', e.message);
+                }
+            }
         }
     } catch (e) {
         if (!String(e.message || '').includes('does not exist') && !String(e.message || '').includes('no such table'))
             logger.warn('whatsapp_connections migration:', e.message);
+    }
+
+    try {
+        const custDesc = await qi.describeTable('Customers');
+        if (custDesc && custDesc.isRestrictedFromStaff === undefined) {
+            await qi.addColumn('Customers', 'isRestrictedFromStaff', {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false,
+            });
+            logger.info('✅ Customers: isRestrictedFromStaff column added (auto-migration)');
+        }
+    } catch (e) {
+        if (!String(e.message || '').includes('does not exist') && !String(e.message || '').includes('no such table'))
+            logger.warn('Customers isRestrictedFromStaff migration:', e.message);
     }
 
     try {

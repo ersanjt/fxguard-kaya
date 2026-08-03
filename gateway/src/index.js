@@ -452,7 +452,10 @@ function attachClientEvents(c) {
                 platform: info?.platform || null,
             };
             io.emit('account_info', lastAccountInfo);
-        } catch (_) {}
+            notifyBackendStatus('ready', null, { number: lastAccountInfo.number, name: lastAccountInfo.name }).catch(() => {});
+        } catch (_) {
+            notifyBackendStatus('ready', null, {}).catch(() => {});
+        }
     });
 
     c.on('disconnected', async (reason) => {
@@ -767,13 +770,19 @@ function sleep(ms) {
 }
 
 /** اطلاع‌رسانی به بکند هنگام قطع/وصل شدن واتساپ */
-async function notifyBackendStatus(event, reason) {
+async function notifyBackendStatus(event, reason, extra = {}) {
     try {
         const backendUrl = process.env.BACKEND_API_URL || 'http://localhost:3002';
         const webhookSecret = process.env.WEBHOOK_SECRET || '';
         await axios.post(
             `${backendUrl}/api/webhook/gateway-status`,
-            { event, reason: reason || null, timestamp: new Date().toISOString() },
+            {
+                event,
+                reason: reason || null,
+                number: extra.number || null,
+                name: extra.name || null,
+                timestamp: new Date().toISOString(),
+            },
             {
                 timeout: 5000,
                 validateStatus: () => true,

@@ -4483,6 +4483,11 @@
                 convHideBtn.removeEventListener('click', toggleConvHidden);
                 convHideBtn.addEventListener('click', toggleConvHidden);
             }
+            const convGrantBtn = document.getElementById('btnConvGrantAccess');
+            if (convGrantBtn) {
+                convGrantBtn.removeEventListener('click', openConvGrantAccess);
+                convGrantBtn.addEventListener('click', openConvGrantAccess);
+            }
             
             const assignBtn = document.getElementById('btnAssignToMe');
             if (assignBtn) {
@@ -5235,10 +5240,14 @@
                 const archBtn = document.getElementById('btnConvArchive');
                 const delBtn = document.getElementById('btnConvDelete');
                 const hideBtn = document.getElementById('btnConvHide');
+                const grantBtn = document.getElementById('btnConvGrantAccess');
                 if (hideBtn) {
                     hideBtn.style.display = canViewHiddenConversations() ? '' : 'none';
                     hideBtn.textContent = d.isHiddenFromStaff ? (t('btn_conv_unhide') || 'Show to staff') : (t('btn_conv_hide') || 'Hide from staff');
                     hideBtn.setAttribute('data-i18n', d.isHiddenFromStaff ? 'btn_conv_unhide' : 'btn_conv_hide');
+                }
+                if (grantBtn) {
+                    grantBtn.style.display = canViewHiddenConversations() ? '' : 'none';
                 }
                 if (archBtn) archBtn.style.display = (canManageConversations() && d.status !== 'archived') ? '' : 'none';
                 if (delBtn) delBtn.style.display = canManageConversations() ? '' : 'none';
@@ -5251,7 +5260,8 @@
                         var fArch = archBtn && archBtn.style.display !== 'none';
                         var fDel = delBtn && delBtn.style.display !== 'none';
                         var fHide = hideBtn && hideBtn.style.display !== 'none';
-                        footerEl2.style.display = (fApply || fArch || fDel || fHide) ? '' : 'none';
+                        var fGrant = grantBtn && grantBtn.style.display !== 'none';
+                        footerEl2.style.display = (fApply || fArch || fDel || fHide || fGrant) ? '' : 'none';
                         footVis = footerEl2.style.display !== 'none';
                     }
                     var gridVis = actionsEl.querySelector('.conv-detail-fields-grid');
@@ -5499,6 +5509,127 @@
             } else {
                 toast((res.data && res.data.error) || t('err_generic'), true);
             }
+        }
+
+        var _staffAccessGrantCtx = null;
+        async function openStaffAccessGrantModal(opts) {
+            if (!canViewHiddenConversations()) {
+                toast(t('no_access') || 'دسترسی ندارید', true);
+                return;
+            }
+            const customerId = opts && opts.customerId;
+            const conversationId = opts && opts.conversationId;
+            if (!customerId && !conversationId) return;
+            _staffAccessGrantCtx = { customerId: customerId || null, conversationId: conversationId || null };
+            const modal = document.getElementById('modalStaffAccessGrant');
+            if (!modal) return;
+            modal.style.display = 'flex';
+            const sel = document.getElementById('staffAccessGrantUserSel');
+            const listEl = document.getElementById('staffAccessGrantList');
+            if (listEl) listEl.innerHTML = '<div class="loading-skeleton loading-row"></div>';
+            const usersRes = await apiFetch('/api/users');
+            if (usersRes.ok && usersRes.data) {
+                const users = usersRes.data.data || usersRes.data || [];
+                const optsHtml = '<option value="">' + escapeHtml(t('access_grant_user') || 'User') + '</option>' +
+                    users.filter(function(u) { return u.isActive !== false; }).map(function(u) {
+                        return '<option value="' + escapeHtml(u.id) + '">' + escapeHtml(u.name || u.username || u.email || '') + '</option>';
+                    }).join('');
+                if (sel) sel.innerHTML = optsHtml;
+            }
+            await refreshStaffAccessGrantList();
+        }
+        function closeStaffAccessGrantModal() {
+            const modal = document.getElementById('modalStaffAccessGrant');
+            if (modal) modal.style.display = 'none';
+            _staffAccessGrantCtx = null;
+        }
+        async function refreshStaffAccessGrantList() {
+            const listEl = document.getElementById('staffAccessGrantList');
+            if (!listEl || !_staffAccessGrantCtx) return;
+            let url = null;
+            if (_staffAccessGrantCtx.customerId) url = '/api/access-grants/customers/' + _staffAccessGrantCtx.customerId;
+            else if (_staffAccessGrantCtx.conversationId) url = '/api/access-grants/conversations/' + _staffAccessGrantCtx.conversationId;
+            if (!url) return;
+            const res = await apiFetch(url);
+            if (!res.ok) {
+                listEl.innerHTML = '<div class="empty">' + escapeHtml((res.data && res.data.error) || t('err_generic')) + '</div>';
+                return;
+            }
+            if (res.data && res.data.customerId && !_staffAccessGrantCtx.customerId) {
+                _staffAccessGrantCtx.customerId = res.data.customerId;
+            }
+            const grants = (res.data && (res.data.grants || res.data.customerGrants)) || [];
+            const allGrants = res.data && res.data.customerGrants
+                ? [].concat(res.data.grants || [], res.data.customerGrants || [])
+                : grants;
+            const seen = {};
+            const unique = allGrants.filter(function(g) {
+                if (!g.userId || seen[g.userId]) return false;
+                seen[g.userId] = true;
+                return true;
+            });
+            if (unique.length === 0) {
+                listEl.innerHTML = '<div class="empty">' + escapeHtml(t('access_grant_empty') || 'No grants') + '</div>';
+                return;
+            }
+            listEl.innerHTML = unique.map(function(g) {
+                const name = (g.user && (g.user.name || g.user.username || g.user.email)) || g.userId;
+                return '<div class="staff-access-grant-row" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--border, #e5e7eb);">' +
+                    '<span>' + escapeHtml(name) + '</span>' +
+                    '<button type="button" class="btn-secondary btn-sm" data-revoke-user="' + escapeHtml(g.userId) + '">' + escapeHtml(t('access_grant_revoke') || 'Revoke') + '</button></div>';
+            }).join('');
+            listEl.querySelectorAll('[data-revoke-user]').forEach(function(btn) {
+                btn.addEventListener('click', async function() {
+                    const uid = btn.getAttribute('data-revoke-user');
+                    const cid = _staffAccessGrantCtx && _staffAccessGrantCtx.customerId;
+                    if (!cid || !uid) return;
+                    const r = await apiFetch('/api/access-grants/customers/' + cid + '/users/' + uid, { method: 'DELETE' });
+                    if (r.ok) {
+                        toast(t('access_grant_revoked') || 'Revoked');
+                        refreshStaffAccessGrantList();
+                    } else toast((r.data && r.data.error) || t('err_generic'), true);
+                });
+            });
+        }
+        async function submitStaffAccessGrant() {
+            if (!_staffAccessGrantCtx) return;
+            const sel = document.getElementById('staffAccessGrantUserSel');
+            const userId = sel && sel.value;
+            if (!userId) {
+                toast(LANG === 'fa' ? 'کاربر را انتخاب کنید' : 'Select a user', true);
+                return;
+            }
+            let res;
+            if (_staffAccessGrantCtx.customerId) {
+                res = await apiFetch('/api/access-grants/customers/' + _staffAccessGrantCtx.customerId, {
+                    method: 'POST',
+                    body: JSON.stringify({ userId: userId })
+                });
+            } else if (_staffAccessGrantCtx.conversationId) {
+                res = await apiFetch('/api/access-grants/conversations/' + _staffAccessGrantCtx.conversationId, {
+                    method: 'POST',
+                    body: JSON.stringify({ userId: userId })
+                });
+            }
+            if (!res) return;
+            if (res.ok) {
+                toast(t('access_grant_done') || 'Granted');
+                if (res.data && res.data.grant && res.data.grant.resourceId) {
+                    _staffAccessGrantCtx.customerId = res.data.grant.resourceId;
+                }
+                refreshStaffAccessGrantList();
+            } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+        function openConvGrantAccess() {
+            if (!currentConvId) return;
+            const custId = currentConvDetail && currentConvDetail.customerId
+                ? currentConvDetail.customerId
+                : (currentConvDetail && currentConvDetail.customer && currentConvDetail.customer.id);
+            openStaffAccessGrantModal({ conversationId: currentConvId, customerId: custId || null });
+        }
+        function openCustomerGrantAccess(customerId) {
+            if (!customerId) return;
+            openStaffAccessGrantModal({ customerId: customerId });
         }
         async function archiveConversation() {
             if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را آرشیو کند' : 'Only owner can archive', true); return; }
@@ -7221,7 +7352,10 @@
             updateBulkSelectedCount();
         }
         function openBulkSendModal() {
-            if (!can('conversations')) { toast(t('no_access') || 'دسترسی ندارید', true); return; }
+            if (typeof canAccessSection === 'function' ? !canAccessSection('bulk_messaging') : !((currentUser && currentUser.permissions && currentUser.permissions.bulk_messaging))) {
+                toast(t('no_access') || 'دسترسی ندارید', true);
+                return;
+            }
             document.getElementById('modalBulkSend').style.display = 'flex';
             document.getElementById('bulkMessageContent').value = '';
             document.getElementById('bulkDelaySec').value = 5;
@@ -7333,12 +7467,20 @@
                 const qName = (c.name || c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const qPhone = (c.phone || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const delBtn = (currentUser && currentUser.canDeleteCustomer) ? '<button type="button" class="btn-danger btn-danger-outline customer-detail-action-btn" id="custDeleteBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_delete') || (LANG === 'fa' ? 'حذف مشتری' : 'Delete customer')) + '</button>' : '';
-                quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" id="custChatBtn" data-cust-id="' + c.id + '" data-cust-name="' + qName + '" data-cust-phone="' + qPhone + '">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custEditBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custTransBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('transaction_add')) + '</button>' + delBtn;
+                const grantBtn = canViewHiddenConversations() ? '<button type="button" class="btn-secondary customer-detail-action-btn" id="custGrantAccessBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('access_grant_btn') || 'Grant access') + '</button>' : '';
+                const restrictedBadge = c.isRestrictedFromStaff ? '<span class="badge" style="margin-inline-start:8px;">' + escapeHtml(t('customer_restricted_badge') || 'Restricted') + '</span>' : '';
+                quickActionsEl.innerHTML = '<button type="button" class="btn-primary customer-detail-action-btn" id="custChatBtn" data-cust-id="' + c.id + '" data-cust-name="' + qName + '" data-cust-phone="' + qPhone + '">' + escapeHtml(t('customer_quick_chat')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custEditBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('customer_quick_edit')) + '</button><button type="button" class="btn-secondary customer-detail-action-btn" id="custTransBtn" data-cust-id="' + c.id + '">' + escapeHtml(t('transaction_add')) + '</button>' + grantBtn + delBtn + restrictedBadge;
                 setTimeout(function() {
                     const chatBtn = document.getElementById('custChatBtn');
                     const editBtn = document.getElementById('custEditBtn');
                     const transBtn = document.getElementById('custTransBtn');
                     const delBtnEl = document.getElementById('custDeleteBtn');
+                    const grantBtnEl = document.getElementById('custGrantAccessBtn');
+                    if (grantBtnEl) {
+                        grantBtnEl.addEventListener('click', function() {
+                            openCustomerGrantAccess(c.id);
+                        });
+                    }
                     if (chatBtn) {
                         chatBtn.removeEventListener('click', function() {});
                         chatBtn.addEventListener('click', function(e) {
@@ -9166,6 +9308,7 @@
                 loadWhatsappWelcomeConfig();
                 loadWhatsappStats();
                 loadWhatsappOverview();
+                if (typeof loadLegacyLockdownCard === 'function') loadLegacyLockdownCard();
             }
             if (page === 'message-templates') { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); }
             if (page === 'rates') { loadRatesAdjustments(); loadTickerConfig(); loadCurrencies(); checkRatesApiKeyStatus(); }
@@ -10128,9 +10271,9 @@
             filterAndRenderUsers();
         }
         let currentEditUserId = null;
-        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets', view_customer_phone: 'section_view_customer_phone' };
+        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets', view_customer_phone: 'section_view_customer_phone', bulk_messaging: 'section_bulk_messaging' };
         const permGroups = [
-            { key: 'communications', title: 'user_perms_group_communications', keys: ['conversations', 'customers', 'tickets', 'internal_chat', 'whatsapp', 'announcements', 'view_customer_phone'] },
+            { key: 'communications', title: 'user_perms_group_communications', keys: ['conversations', 'customers', 'tickets', 'internal_chat', 'whatsapp', 'announcements', 'view_customer_phone', 'bulk_messaging'] },
             { key: 'organization', title: 'user_perms_group_organization', keys: ['dashboard', 'departments', 'users', 'branches', 'tasks', 'processes', 'staff_activity', 'supervision'] },
             { key: 'settings', title: 'user_perms_group_settings', keys: ['rates', 'services', 'panel_settings'] },
             { key: 'special', title: 'user_perms_group_special', keys: ['manage_users', 'manage_tickets'] }
@@ -11445,6 +11588,12 @@
                     if (cloudApiInfo) {
                         cloudApiInfo.textContent = t('whatsapp_cloud_api_info');
                         cloudApiInfo.style.display = isCloudApi ? 'block' : 'none';
+                    }
+                    if (!isCloudApi && data.number && currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin')) {
+                        apiFetch('/api/access-grants/sync-gateway-number', {
+                            method: 'POST',
+                            body: JSON.stringify({ number: String(data.number).replace(/\D/g, '') })
+                        }).catch(function() {});
                     }
                 }
                 if (waAlive()) { loadWhatsappDeptRouting(); loadWhatsappUnassigned(); }
@@ -13492,7 +13641,55 @@
             window.filterInternalThreads = filterInternalThreads;
             window.toggleInternalChatFloating = toggleInternalChatFloating;
             window.selectThreadInPopup = selectThreadInPopup;
+            window.openStaffAccessGrantModal = typeof openStaffAccessGrantModal === 'function' ? openStaffAccessGrantModal : undefined;
+            window.closeStaffAccessGrantModal = typeof closeStaffAccessGrantModal === 'function' ? closeStaffAccessGrantModal : undefined;
+            window.submitStaffAccessGrant = typeof submitStaffAccessGrant === 'function' ? submitStaffAccessGrant : undefined;
+            window.openConvGrantAccess = typeof openConvGrantAccess === 'function' ? openConvGrantAccess : undefined;
+            window.openCustomerGrantAccess = typeof openCustomerGrantAccess === 'function' ? openCustomerGrantAccess : undefined;
+            window.openBulkSendModal = typeof openBulkSendModal === 'function' ? openBulkSendModal : undefined;
+            window.closeBulkSendModal = typeof closeBulkSendModal === 'function' ? closeBulkSendModal : undefined;
+            window.submitBulkSend = typeof submitBulkSend === 'function' ? submitBulkSend : undefined;
+            window.bulkSelectFiltered = typeof bulkSelectFiltered === 'function' ? bulkSelectFiltered : undefined;
+            window.bulkClearSelection = typeof bulkClearSelection === 'function' ? bulkClearSelection : undefined;
         })();
+
+        async function loadLegacyLockdownCard() {
+            const card = document.getElementById('whatsappLegacyLockdownCard');
+            const statsEl = document.getElementById('whatsappLegacyLockdownStats');
+            const btn = document.getElementById('btnLegacyCrmLockdown');
+            if (!card) return;
+            const canLock = currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin');
+            if (!canLock) {
+                card.style.display = 'none';
+                return;
+            }
+            card.style.display = 'block';
+            const res = await apiFetch('/api/access-grants/stats');
+            if (res.ok && res.data && statsEl) {
+                const tpl = t('whatsapp_legacy_lockdown_stats') || '{hidden} hidden · {restricted}/{total} restricted';
+                statsEl.textContent = tpl
+                    .replace('{hidden}', String(res.data.hiddenConversations || 0))
+                    .replace('{restricted}', String(res.data.restrictedCustomers || 0))
+                    .replace('{total}', String(res.data.totalCustomers || 0));
+            }
+            if (btn && !btn._lockdownBound) {
+                btn._lockdownBound = true;
+                btn.addEventListener('click', async function() {
+                    if (!confirm(t('whatsapp_legacy_lockdown_confirm') || 'Lock previous CRM data?')) return;
+                    btn.disabled = true;
+                    const r = await apiFetch('/api/access-grants/lockdown-legacy', { method: 'POST', body: '{}' });
+                    btn.disabled = false;
+                    if (r.ok) {
+                        toast(t('whatsapp_legacy_lockdown_done') || 'Locked');
+                        loadLegacyLockdownCard();
+                        if (typeof loadConversations === 'function') loadConversations();
+                        if (typeof loadCustomers === 'function') loadCustomers();
+                    } else {
+                        toast((r.data && r.data.error) || t('err_generic'), true);
+                    }
+                });
+            }
+        }
 
         /** مقداردهی بعد از تأیید /api/auth/me — ناو، تنظیمات، رویدادها، سوکت، نرخ، حضور، TOTP. قابل استخراج به ماژول auth. */
         async function runAfterAuthReady() {

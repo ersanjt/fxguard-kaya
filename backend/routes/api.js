@@ -32,6 +32,7 @@ const tagsRoutes = require('./tags');
 const templatesRoutes = require('./templates');
 const fileTemplatesRoutes = require('./fileTemplates');
 const bulkRoutes = require('./bulk');
+const accessGrantsRoutes = require('./accessGrants');
 const customersImportRoutes = require('./customersImport');
 const createTicketsRouter = require('./tickets');
 const uploadRoutes = require('./upload');
@@ -211,6 +212,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.use('/message-templates', authMiddleware, templatesRoutes);
     apiRouter.use('/file-templates', authMiddleware, fileTemplatesRoutes);
     apiRouter.use('/bulk', authMiddleware, bulkRoutes);
+    apiRouter.use('/access-grants', authMiddleware, accessGrantsRoutes);
     apiRouter.use('/customers/import', authMiddleware, customersImportRoutes);
     apiRouter.use('/tickets', authMiddleware, requireSection('tickets'), createTicketsRouter(io));
     apiRouter.use('/branches', authMiddleware, branchRoutes);
@@ -300,10 +302,10 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
         }
     });
 
-    // اطلاع‌رسانی از gateway هنگام قطع/وصل واتساپ → هشدار تلگرام به ادمین
+    // اطلاع‌رسانی از gateway هنگام قطع/وصل واتساپ → هشدار تلگرام + قفل داده در تعویض شماره
     apiRouter.post('/webhook/gateway-status', webhookAuth, express.json({ limit: '32kb' }), async (req, res) => {
         try {
-            const { event, reason } = req.body || {};
+            const { event, reason, number } = req.body || {};
             if (event === 'disconnected') {
                 const msg = reason === 'logged_out'
                     ? '❌ واتساپ Logout شد — سشن منقضی. وارد داشبورد شوید و QR جدید را اسکن کنید.'
@@ -314,6 +316,25 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
                     message: msg,
                 }).catch(() => {});
                 logger.warn('Gateway status webhook: disconnected', { reason });
+            } else if (event === 'ready') {
+                try {
+                    const { handleGatewayNumberReady } = require('../services/legacyCrmLockdown');
+                    const result = await handleGatewayNumberReady(number, { reason: 'gateway_ready' });
+                    if (result.changed && result.lockdown) {
+                        notifySystemEvent('system', '🔒 قفل دادهٔ قبلی پس از تعویض شماره واتساپ', {
+                            previous: result.previous,
+                            number: result.number,
+                            conversationsUpdated: result.lockdown.conversationsUpdated,
+                            customersUpdated: result.lockdown.customersUpdated,
+                            message: 'مکالمات و مشتریان قبلی فقط برای ادمین سطح بالا قابل مشاهده‌اند مگر دسترسی اعطا شود.',
+                        }).catch(() => {});
+                        logger.warn('Gateway ready: number changed, legacy CRM locked', result);
+                    } else {
+                        logger.info('Gateway status webhook: ready', { number: result.number || number, changed: !!result.changed });
+                    }
+                } catch (lockErr) {
+                    logger.warn('Gateway ready lockdown check failed', { error: lockErr?.message });
+                }
             }
             res.json({ ok: true });
         } catch (e) {

@@ -6,7 +6,7 @@ const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { canAccessCustomer } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
-const { canAccessConversation: userCanAccessConversation, conversationListWhere } = require('../lib/conversationAccess');
+const { canAccessConversationAsync, conversationListWhereAsync } = require('../lib/conversationAccess');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const logger = require('../config/logger');
 const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
@@ -21,7 +21,7 @@ function canArchiveOrDeleteConversation(req) {
 
 /** آیا کاربر جاری به این مکالمه دسترسی دارد؟ */
 async function canAccessConversation(req, conversation) {
-    return userCanAccessConversation(req.user, req.userId, conversation);
+    return canAccessConversationAsync(req.user, req.userId, conversation);
 }
 
 /** آیا کاربر می‌تواند مکالمه را تخصیص/بست/تغییر وضعیت دهد؟ (ادمین اصلی، owner، admin، manager) */
@@ -217,13 +217,10 @@ router.get('/', async (req, res, next) => {
             ]);
         }
 
-        // سیاست دسترسی لیست + مخفی‌سازی از کارکنان
-        const listAccess = conversationListWhere(req.user, req.userId);
-        if (listAccess[Op.or]) {
-            where[Op.or] = listAccess[Op.or];
-        }
-        if (listAccess.isHiddenFromStaff === false) {
-            where.isHiddenFromStaff = false;
+        // سیاست دسترسی لیست + مخفی‌سازی از کارکنان (+ اعطای دسترسی)
+        const listAccess = await conversationListWhereAsync(req.user, req.userId);
+        if (listAccess && Object.keys(listAccess).length) {
+            where[Op.and] = (where[Op.and] || []).concat([listAccess]);
         }
 
         // حذف wildcardهای SQL برای جلوگیری از abuse و بار ناخواسته روی DB

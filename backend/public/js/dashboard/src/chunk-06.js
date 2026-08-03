@@ -73,6 +73,12 @@
                         cloudApiInfo.textContent = t('whatsapp_cloud_api_info');
                         cloudApiInfo.style.display = isCloudApi ? 'block' : 'none';
                     }
+                    if (!isCloudApi && data.number && currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin')) {
+                        apiFetch('/api/access-grants/sync-gateway-number', {
+                            method: 'POST',
+                            body: JSON.stringify({ number: String(data.number).replace(/\D/g, '') })
+                        }).catch(function() {});
+                    }
                 }
                 if (waAlive()) { loadWhatsappDeptRouting(); loadWhatsappUnassigned(); }
                 return;
@@ -2119,7 +2125,55 @@
             window.filterInternalThreads = filterInternalThreads;
             window.toggleInternalChatFloating = toggleInternalChatFloating;
             window.selectThreadInPopup = selectThreadInPopup;
+            window.openStaffAccessGrantModal = typeof openStaffAccessGrantModal === 'function' ? openStaffAccessGrantModal : undefined;
+            window.closeStaffAccessGrantModal = typeof closeStaffAccessGrantModal === 'function' ? closeStaffAccessGrantModal : undefined;
+            window.submitStaffAccessGrant = typeof submitStaffAccessGrant === 'function' ? submitStaffAccessGrant : undefined;
+            window.openConvGrantAccess = typeof openConvGrantAccess === 'function' ? openConvGrantAccess : undefined;
+            window.openCustomerGrantAccess = typeof openCustomerGrantAccess === 'function' ? openCustomerGrantAccess : undefined;
+            window.openBulkSendModal = typeof openBulkSendModal === 'function' ? openBulkSendModal : undefined;
+            window.closeBulkSendModal = typeof closeBulkSendModal === 'function' ? closeBulkSendModal : undefined;
+            window.submitBulkSend = typeof submitBulkSend === 'function' ? submitBulkSend : undefined;
+            window.bulkSelectFiltered = typeof bulkSelectFiltered === 'function' ? bulkSelectFiltered : undefined;
+            window.bulkClearSelection = typeof bulkClearSelection === 'function' ? bulkClearSelection : undefined;
         })();
+
+        async function loadLegacyLockdownCard() {
+            const card = document.getElementById('whatsappLegacyLockdownCard');
+            const statsEl = document.getElementById('whatsappLegacyLockdownStats');
+            const btn = document.getElementById('btnLegacyCrmLockdown');
+            if (!card) return;
+            const canLock = currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin');
+            if (!canLock) {
+                card.style.display = 'none';
+                return;
+            }
+            card.style.display = 'block';
+            const res = await apiFetch('/api/access-grants/stats');
+            if (res.ok && res.data && statsEl) {
+                const tpl = t('whatsapp_legacy_lockdown_stats') || '{hidden} hidden · {restricted}/{total} restricted';
+                statsEl.textContent = tpl
+                    .replace('{hidden}', String(res.data.hiddenConversations || 0))
+                    .replace('{restricted}', String(res.data.restrictedCustomers || 0))
+                    .replace('{total}', String(res.data.totalCustomers || 0));
+            }
+            if (btn && !btn._lockdownBound) {
+                btn._lockdownBound = true;
+                btn.addEventListener('click', async function() {
+                    if (!confirm(t('whatsapp_legacy_lockdown_confirm') || 'Lock previous CRM data?')) return;
+                    btn.disabled = true;
+                    const r = await apiFetch('/api/access-grants/lockdown-legacy', { method: 'POST', body: '{}' });
+                    btn.disabled = false;
+                    if (r.ok) {
+                        toast(t('whatsapp_legacy_lockdown_done') || 'Locked');
+                        loadLegacyLockdownCard();
+                        if (typeof loadConversations === 'function') loadConversations();
+                        if (typeof loadCustomers === 'function') loadCustomers();
+                    } else {
+                        toast((r.data && r.data.error) || t('err_generic'), true);
+                    }
+                });
+            }
+        }
 
         /** مقداردهی بعد از تأیید /api/auth/me — ناو، تنظیمات، رویدادها، سوکت، نرخ، حضور، TOTP. قابل استخراج به ماژول auth. */
         async function runAfterAuthReady() {

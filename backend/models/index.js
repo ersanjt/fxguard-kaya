@@ -74,7 +74,8 @@ const models = {
     PasswordResetToken: require('./PasswordResetToken')(sequelize),
     CompanyEmail: require('./CompanyEmail')(sequelize),
     Attendance: require('./Attendance')(sequelize),
-    NotificationPreference: require('./NotificationPreference')(sequelize)
+    NotificationPreference: require('./NotificationPreference')(sequelize),
+    StaffResourceGrant: require('./StaffResourceGrant')(sequelize),
 };
 
 // تعریف روابط

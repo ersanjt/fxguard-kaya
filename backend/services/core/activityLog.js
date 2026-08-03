@@ -21,6 +21,7 @@ const VALID_ACTIONS = new Set([
     'internal_thread_created', 'internal_message_sent',
     'bulk_message_sent', 'customers_imported',
     'customer_note_added',
+    'legacy_crm_lockdown',
 ]);
 
 async function logActivity({ userId, branchId, departmentId, action, entityType, entityId, customerId, summary, metadata = {} }) {
