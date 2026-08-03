@@ -372,16 +372,35 @@ async function prepareChromeUserDataDir(sessionPath) {
     await unlinkLocks();
 
     if (process.platform === 'linux') {
-        try {
-            // فقط کروم‌هایی که همین پروفایل نشست کایا را باز کرده‌اند
-            execFileSync('pkill', ['-f', userDataDir], { stdio: 'ignore', timeout: 8000 });
-            logger.warn('Killed orphan Chromium holding WhatsApp session profile', { userDataDir });
-        } catch (_) {
-            // pkill exit 1 = هیچ پروسه‌ای نبود
+        const patterns = [
+            userDataDir,
+            root,
+            // مسیر نسبی/مطلق در cmdline کروم
+            'kayaCRM-kaya/gateway/sessions',
+        ];
+        for (const pattern of patterns) {
+            try {
+                execFileSync('pkill', ['-9', '-f', pattern], { stdio: 'ignore', timeout: 8000 });
+                logger.warn('Killed orphan Chromium holding WhatsApp session profile', { pattern });
+            } catch (_) {
+                // pkill exit 1 = هیچ پروسه‌ای نبود
+            }
         }
-        await new Promise((r) => setTimeout(r, 1000));
+        await new Promise((r) => setTimeout(r, 1500));
         await unlinkLocks();
     }
+}
+
+function formatGatewayError(err) {
+    if (!err) return 'unknown_error';
+    if (typeof err === 'string' && err.trim()) return err.trim();
+    const msg = err.message || err.originalMessage || err.name;
+    if (msg && String(msg).trim().length > 1) return String(msg).trim();
+    try {
+        const s = String(err);
+        if (s && s !== '[object Object]') return s;
+    } catch (_) {}
+    return err.stack ? String(err.stack).split('\n')[0] : 'unknown_error';
 }
 
 function buildClient() {
