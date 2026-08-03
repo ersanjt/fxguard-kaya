@@ -374,7 +374,11 @@
                 return { ok: false, needLogin: false, status: 429, data: data, error: (data && data.error) || (LANG === 'fa' ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.' : 'Too many requests. Please wait a moment.') };
             }
             if (!r.ok && data && (data.error || data.message)) {
-                return { ok: false, needLogin: r.status === 401, status: r.status, data: data, error: data.error || data.message };
+                var errVal = data.error || data.message;
+                return { ok: false, needLogin: r.status === 401, status: r.status, data: data, error: typeof errVal === 'string' ? errVal : (errVal && errVal.message) || null };
+            }
+            if (!r.ok) {
+                return { ok: false, needLogin: r.status === 401, status: r.status, data: data, error: (LANG === 'tr' ? 'Sunucu hatası (HTTP ' + (r.status || '?') + ')' : LANG === 'fa' ? 'خطای سرور (HTTP ' + (r.status || '?') + ')' : 'Server error (HTTP ' + (r.status || '?') + ')') };
             }
             return { ok: r.ok, status: r.status, data: data };
         }
@@ -382,9 +386,15 @@
             if (window.CRM && window.CRM.Api && typeof window.CRM.Api.getError === 'function') {
                 return window.CRM.Api.getError(res);
             }
-            if (res && res.error) return res.error;
-            if (res && res.data && (res.data.error || res.data.message)) return res.data.error || res.data.message;
-            return LANG === 'fa' ? 'خطا در ارتباط با سرور' : 'Server error';
+            if (res && typeof res.error === 'string' && res.error.trim()) return res.error;
+            if (res && res.data) {
+                var e = res.data.error || res.data.message;
+                if (typeof e === 'string' && e.trim()) return e;
+            }
+            if (res && (res.status === 502 || res.status === 503)) {
+                return LANG === 'tr' ? 'WhatsApp Gateway hazır değil veya mesaj iletilemedi.' : (LANG === 'fa' ? 'واتساپ/Gateway آماده نیست یا پیام ارسال نشد.' : 'WhatsApp Gateway not ready.');
+            }
+            return LANG === 'tr' ? ('Sunucu hatası' + (res && res.status ? ' (HTTP ' + res.status + ')' : '')) : (LANG === 'fa' ? 'خطا در ارتباط با سرور' : 'Server error');
         }
 
         function showTotpPromptIfNeeded() {

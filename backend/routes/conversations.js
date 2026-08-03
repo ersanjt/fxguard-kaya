@@ -870,10 +870,27 @@ router.post('/:id/send', async (req, res, next) => {
         const replyTo = req.body.replyTo || null;
         if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
         const result = await deliverOutboundConversationMessage(req, conversation, { content, media, replyTo });
-        if (result.error) return res.status(result.status || 500).json({ error: result.error, message: result.msg });
+        if (result.error) {
+            return res.status(result.status || 500).json({
+                error: result.error,
+                messageId: result.msg && result.msg.id ? result.msg.id : undefined,
+            });
+        }
         await emitConversationNewMessage(req, conversation, result.msg);
         res.json(result.msg);
     } catch (err) {
+        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ETIMEDOUT') {
+            return res.status(503).json({
+                error: 'Gateway واتساپ در دسترس نیست. سرویس crm-gateway-kaya را بررسی کنید.',
+            });
+        }
+        if (err.response && (err.response.status === 503 || err.response.status === 502)) {
+            return res.status(503).json({
+                error:
+                    (err.response.data && (err.response.data.error || err.response.data.message)) ||
+                    'واتساپ Gateway آماده نیست. QR/اتصال را در تنظیمات واتساپ بررسی کنید.',
+            });
+        }
         next(err);
     }
 });

@@ -308,6 +308,14 @@ async function deliverOutboundConversationMessage(req, conversation, { content, 
         await msg.update(updateFields);
     } catch (gwErr) {
         let errMsg = gwErr?.response?.data?.error || gwErr?.message || 'خطا در ارسال به واتساپ';
+        if (typeof errMsg !== 'string') errMsg = String(errMsg?.message || errMsg || 'خطا در ارسال به واتساپ');
+        if (gwErr?.code === 'ECONNREFUSED' || gwErr?.code === 'ENOTFOUND') {
+            errMsg = 'Gateway واتساپ روشن نیست یا آدرس GATEWAY_URL اشتباه است';
+        } else if (gwErr?.code === 'ECONNABORTED' || /timeout/i.test(errMsg)) {
+            errMsg = 'زمان ارسال به Gateway تمام شد. وضعیت واتساپ (ready) را بررسی کنید';
+        } else if (/not ready/i.test(errMsg)) {
+            errMsg = 'واتساپ Gateway آماده نیست. ابتدا QR را اسکن کنید یا اتصال را برقرار کنید';
+        }
         if (errMsg.includes('Invalid or unsafe media URL') || errMsg.includes('media URL')) {
             errMsg += ' — برای پیام صوتی/فایل، در Gateway: MEDIA_ALLOW_LOCALHOST=true یا MEDIA_URL_WHITELIST تنظیم کنید؛ در Backend: BACKEND_PUBLIC_URL را به آدرسی که Gateway به آن دسترسی دارد تنظیم کنید.';
         }

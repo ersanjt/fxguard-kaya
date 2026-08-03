@@ -162,22 +162,62 @@
         };
     }
     if (!r.ok && data && (data.error || data.message)) {
+        const errVal = data.error || data.message;
         return {
             ok: false,
             needLogin: r.status === 401,
             status: r.status,
             data: data,
-            error: data.error || data.message,
+            error: typeof errVal === 'string' ? errVal : (errVal && errVal.message) || null,
+        };
+    }
+    if (!r.ok) {
+        const langFail = config.getLang ? config.getLang() : 'fa';
+        return {
+            ok: false,
+            needLogin: r.status === 401,
+            status: r.status,
+            data: data,
+            error:
+                langFail === 'tr'
+                    ? 'Sunucu hatası (HTTP ' + (r.status || '?') + ')'
+                    : langFail === 'fa'
+                      ? 'خطای سرور (HTTP ' + (r.status || '?') + ')'
+                      : 'Server error (HTTP ' + (r.status || '?') + ')',
         };
     }
     return { ok: r.ok, status: r.status, data: data };
 }
 
 function getApiError(res) {
-    if (res && res.error) return res.error;
-    if (res && res.data && (res.data.error || res.data.message))
-        return res.data.error || res.data.message;
+    if (res && typeof res.error === 'string' && res.error.trim()) return res.error;
+    if (res && res.data) {
+        const e = res.data.error || res.data.message;
+        if (typeof e === 'string' && e.trim()) return e;
+    }
     const lang = config.getLang ? config.getLang() : 'fa';
+    const status = res && res.status ? Number(res.status) : 0;
+    if (status === 502 || status === 503) {
+        return lang === 'tr'
+            ? 'WhatsApp Gateway hazır değil veya mesaj iletilemedi. Bağlantıyı kontrol edin.'
+            : lang === 'fa'
+              ? 'واتساپ/Gateway آماده نیست یا پیام ارسال نشد. اتصال واتساپ را بررسی کنید.'
+              : 'WhatsApp Gateway is not ready or the message could not be delivered.';
+    }
+    if (status === 429) {
+        return lang === 'tr'
+            ? 'Çok fazla istek. Lütfen biraz bekleyin.'
+            : lang === 'fa'
+              ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.'
+              : 'Too many requests. Please wait.';
+    }
+    if (status >= 400) {
+        return lang === 'tr'
+            ? 'Sunucu hatası (HTTP ' + status + ')'
+            : lang === 'fa'
+              ? 'خطای سرور (HTTP ' + status + ')'
+              : 'Server error (HTTP ' + status + ')';
+    }
     return lang === 'tr'
         ? 'Sunucu hatası'
         : lang === 'fa'
