@@ -950,19 +950,133 @@
         }
         .msg-voice-wa-shell {
             position: relative;
-            max-width: min(100%, 360px);
-            border-radius: 12px;
-            padding: 10px 12px 8px;
+            max-width: min(100%, 380px);
+            border-radius: 16px;
+            padding: 12px 12px 10px;
             box-sizing: border-box;
-            box-shadow: 0 1px 0.5px rgba(11, 20, 26, 0.13);
+            box-shadow:
+                0 1px 2px rgba(11, 20, 26, 0.08),
+                0 8px 20px rgba(11, 20, 26, 0.06);
+            transition: box-shadow 0.18s ease, transform 0.18s ease;
+        }
+        .msg-voice-wa-shell:hover {
+            box-shadow:
+                0 2px 4px rgba(11, 20, 26, 0.1),
+                0 12px 28px rgba(11, 20, 26, 0.08);
         }
         .msg-voice-wa-shell--in {
-            background: #fff;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f8fa 100%);
             border: 1px solid rgba(17, 27, 33, 0.08);
         }
         .msg-voice-wa-shell--out {
-            background: #d9fdd3;
+            background: linear-gradient(165deg, #e7ffdb 0%, #d1f4c9 55%, #c8efbf 100%);
             border: 1px solid rgba(17, 27, 33, 0.06);
+        }
+        .msg-voice-wa-toolbar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 6px;
+            margin: 0 0 8px;
+            opacity: 0.72;
+            transition: opacity 0.15s ease;
+        }
+        .msg-voice-wa-shell:hover .msg-voice-wa-toolbar,
+        .msg-voice-wa-shell:focus-within .msg-voice-wa-toolbar {
+            opacity: 1;
+        }
+        .msg-voice-toolbar-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 999px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background: rgba(17, 27, 33, 0.06);
+            color: #3b4a54;
+            text-decoration: none;
+            transition: background 0.15s ease, color 0.15s ease, transform 0.12s ease;
+            -webkit-tap-highlight-color: transparent;
+            padding: 0;
+        }
+        .msg-voice-wa-shell--out .msg-voice-toolbar-btn {
+            background: rgba(17, 27, 33, 0.08);
+            color: #1f2c34;
+        }
+        .msg-voice-toolbar-btn:hover {
+            background: rgba(0, 168, 132, 0.16);
+            color: #008f6f;
+            transform: translateY(-1px);
+        }
+        .msg-voice-toolbar-btn:focus-visible {
+            outline: 2px solid #00a884;
+            outline-offset: 2px;
+        }
+        .msg-voice-wa-shell .msg-voice-play {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: #00a884;
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(0, 168, 132, 0.35);
+        }
+        .msg-voice-wa-shell .msg-voice-play:hover {
+            transform: scale(1.05);
+            filter: brightness(1.05);
+            opacity: 1;
+        }
+        .msg-voice-wa-shell--in .msg-voice-play,
+        .msg-voice-wa-shell--out .msg-voice-play {
+            color: #fff !important;
+            background: #00a884;
+        }
+        .msg-voice-wa-shell .msg-voice-speed {
+            min-width: 38px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            background: rgba(17, 27, 33, 0.08);
+            color: #3b4a54;
+        }
+        .msg-voice-wa-shell--out .msg-voice-speed {
+            background: rgba(17, 27, 33, 0.1);
+            color: #1f2c34;
+        }
+        .msg-voice-wa-shell .msg-voice-wave-area {
+            height: 36px;
+        }
+        .msg-voice-wa-shell .msg-voice-wave-bars {
+            height: 28px;
+            opacity: 1;
+            gap: 2.5px;
+        }
+        .msg-voice-wa-shell .msg-voice-bar {
+            max-width: 3.5px;
+            border-radius: 999px;
+        }
+        .msg-voice-wa-shell .msg-voice-tg-meta {
+            margin-top: 4px;
+            font-size: 0.72rem;
+            letter-spacing: 0.01em;
+            font-variant-numeric: tabular-nums;
+        }
+        .msg-voice-wa-msg .msg-footer {
+            min-height: 0;
+            padding-top: 2px;
+        }
+        .msg-media-voice-wa-compact > .msg-voice-dl-subtle {
+            display: none;
+        }
+        @media (hover: none), (max-width: 900px) {
+            .msg-voice-wa-toolbar {
+                opacity: 1;
+            }
+            .msg-voice-toolbar-btn {
+                width: 34px;
+                height: 34px;
+            }
         }
         .msg-voice-wa-row {
             display: flex;

@@ -2175,19 +2175,31 @@
                             : '<span class="msg-voice-sent-time">' + escapeHtml(time) + '</span>';
                         var waShellCls = 'msg-voice-wa-shell' + (isOut ? ' msg-voice-wa-shell--out' : ' msg-voice-wa-shell--in');
                         var waRowCls = 'msg-voice-wa-row' + (isOut ? ' msg-voice-wa-row--out' : ' msg-voice-wa-row--in');
+                        var voiceFwdLabel = LANG === 'fa' ? '🎤 پیام صوتی' : (LANG === 'tr' ? '🎤 Sesli mesaj' : '🎤 Voice message');
+                        var voiceFwdTitle = escapeAttr((typeof t === 'function' && t('msg_forward_short')) || (LANG === 'fa' ? 'فوروارد' : LANG === 'tr' ? 'İlet' : 'Forward'));
+                        var voiceDlTitle = escapeAttr(LANG === 'fa' ? 'دانلود' : (LANG === 'tr' ? 'İndir' : 'Download'));
+                        var voiceToolbar = m.id
+                            ? ('<div class="msg-voice-wa-toolbar" role="toolbar" aria-label="' + escapeAttr(LANG === 'fa' ? 'عملیات پیام صوتی' : 'Voice actions') + '">' +
+                                '<button type="button" class="msg-voice-toolbar-btn msg-forward-btn" data-msg-id="' + escapeAttr(m.id) + '" data-preview="' + escapeAttr(voiceFwdLabel) + '" title="' + voiceFwdTitle + '" aria-label="' + voiceFwdTitle + '">' +
+                                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>' +
+                                '</button>' +
+                                '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-voice-toolbar-btn msg-voice-toolbar-dl" data-open="1" title="' + voiceDlTitle + '" aria-label="' + voiceDlTitle + '">' +
+                                '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>' +
+                                '</a></div>')
+                            : '';
                         var voicePlayerCore =
                             '<div class="msg-voice-player msg-voice-player--telegram" role="group" aria-label="' + escapeAttr(groupAria) + '" dir="ltr">' +
                             '<div class="msg-voice-tg-row">' +
                             '<button type="button" class="msg-voice-play" aria-label="' + escapeAttr(playAria) + '" aria-pressed="false">' +
-                            '<svg class="msg-voice-icon msg-voice-icon--play" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8 5v14l11-7z"/></svg>' +
-                            '<svg class="msg-voice-icon msg-voice-icon--pause" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>' +
+                            '<svg class="msg-voice-icon msg-voice-icon--play" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M8.5 5.5v13l11-6.5-11-6.5z"/></svg>' +
+                            '<svg class="msg-voice-icon msg-voice-icon--pause" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 5h4v14H6V5zm8 0h4v14h-4V5z"/></svg>' +
                             '</button>' +
                             '<div class="msg-voice-wave-area" role="slider" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="' + escapeAttr(groupAria) + '" tabindex="0">' +
                             '<div class="msg-voice-wave-bars" aria-hidden="true">' + voiceBars + '</div>' +
                             '<div class="msg-voice-wave-played" aria-hidden="true"></div>' +
                             '<div class="msg-voice-playhead" aria-hidden="true"></div>' +
                             '</div>' +
-                            '<button type="button" class="msg-voice-speed" aria-label="' + escapeAttr(speedAria) + '">1x</button>' +
+                            '<button type="button" class="msg-voice-speed" aria-label="' + escapeAttr(speedAria) + '">1×</button>' +
                             '</div>' +
                             '<div class="msg-voice-tg-meta">' +
                             '<span class="msg-voice-tg-time"><span class="msg-voice-curr">0:00</span><span class="msg-voice-dur"></span></span>' +
@@ -2195,12 +2207,12 @@
                             '</div>' +
                             '<audio class="msg-audio-el" src="' + escapeHtml(mediaUrl) + '" preload="metadata" playsinline onerror="crmVoiceAudioErr(this)"></audio>' +
                             '</div>';
-                        var voiceTail = '<p class="msg-media-audio-err" role="alert">' + escapeHtml(errHint) + '</p>' +
-                            '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-dl msg-voice-dl-subtle" data-open="1">' + (LANG === 'fa' ? 'دانلود فایل صوتی' : 'Download audio') + '</a>';
+                        var voiceTail = '<p class="msg-media-audio-err" role="alert">' + escapeHtml(errHint) + '</p>';
                         if (voiceBubbleCompact) {
                             mediaHtml =
                                 '<div class="msg-media msg-media-voice-tg msg-media-voice-wa-compact' + voiceClass + '">' +
                                 '<div class="' + waShellCls + '">' +
+                                voiceToolbar +
                                 '<div class="' + waRowCls + '">' +
                                 buildVoiceWaAvatarCol(isOut, m) +
                                 voicePlayerCore +
@@ -2211,7 +2223,9 @@
                             mediaHtml =
                                 '<div class="msg-media msg-media-voice-tg' + voiceClass + '">' +
                                 voicePlayerCore +
+                                voiceToolbar +
                                 voiceTail +
+                                '<a href="' + escapeHtml(mediaUrl) + '" target="_blank" rel="noopener noreferrer" class="msg-media-link msg-media-dl msg-voice-dl-subtle" data-open="1">' + (LANG === 'fa' ? 'دانلود فایل صوتی' : 'Download audio') + '</a>' +
                                 '</div>';
                         }
                     } else {
@@ -2243,6 +2257,9 @@
                 else if (displayContent && !(m.hasMedia && !(m.mediaData && m.mediaData.url)) && !isWaCallMsg) contentHtml = '<div>' + linkifyMessageContent(displayContent) + '</div>';
                 let preview = (m.content || '').slice(0, 50) || (m.hasMedia ? '📎' : '');
                 if ((m.content || '').length > 50) preview += '…';
+                if (resolvedMediaType === 'audio') {
+                    preview = LANG === 'fa' ? '🎤 پیام صوتی' : (LANG === 'tr' ? '🎤 Sesli mesaj' : '🎤 Voice message');
+                }
                 // اضافه کردن اسم فرستنده به preview برای گروه
                 let replyPreviewSender = '';
                 if (!isOut && currentConvIsGroup) {
@@ -2254,8 +2271,9 @@
                 const replyTitle = escapeAttr((typeof t === 'function' && t('msg_reply_short')) || (LANG === 'fa' ? 'پاسخ' : LANG === 'tr' ? 'Yanıtla' : 'Reply'));
                 const forwardTitle = escapeAttr((typeof t === 'function' && t('msg_forward_short')) || (LANG === 'fa' ? 'فوروارد' : LANG === 'tr' ? 'İlet' : 'Forward'));
                 const replyBtn = m.whatsappId ? '<button type="button" class="msg-reply-btn" data-wa-id="' + escapeAttr(m.whatsappId) + '" data-preview="' + escapeAttr(replyPreviewSender + preview) + '" title="' + replyTitle + '">↩</button>' : '';
-                const forwardBtn = m.id ? '<button type="button" class="msg-forward-btn" data-msg-id="' + escapeAttr(m.id) + '" data-preview="' + escapeAttr(replyPreviewSender + preview) + '" title="' + forwardTitle + '">➦</button>' : '';
                 const voiceTgHideFooterTime = (resolvedMediaType === 'audio' && !displayContent);
+                // فوروارد ویس روی خود حباب است؛ در فوتر تکرار نشود
+                const forwardBtn = (m.id && !voiceTgHideFooterTime) ? '<button type="button" class="msg-forward-btn" data-msg-id="' + escapeAttr(m.id) + '" data-preview="' + escapeAttr(replyPreviewSender + preview) + '" title="' + forwardTitle + '">➦</button>' : '';
                 const statusHtml = (!voiceTgHideFooterTime && isOut && m.status && m.status !== 'pending') ? '<span class="msg-status msg-status-' + m.status + '" title="' + (m.status === 'read' ? (LANG === 'fa' ? 'خوانده شده' : 'Read') : m.status === 'delivered' ? (LANG === 'fa' ? 'تحویل' : 'Delivered') : m.status === 'sent' ? (LANG === 'fa' ? 'ارسال' : 'Sent') : m.status === 'failed' ? (LANG === 'fa' ? 'ارسال نشد' : 'Failed to send') : '') + '">' + waMsgStatusTicks(m.status) + '</span>' : '';
                 const msgWaExtra = voiceTgHideFooterTime ? ' msg-voice-footer-hide-time msg-voice-wa-msg' : '';
                 var contextBanner = buildMessageContextBanner(m, isOut);

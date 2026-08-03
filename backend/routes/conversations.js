@@ -451,11 +451,19 @@ router.post('/forward', async (req, res, next) => {
         let media = null;
         if (sourceMsg.hasMedia && sourceMsg.mediaData) {
             const md = sourceMsg.mediaData;
+            const srcType = String(sourceMsg.type || '').toLowerCase();
+            const mime = String(md.mimetype || '').toLowerCase();
+            const isVoice =
+                srcType === 'ptt' ||
+                srcType === 'audio' ||
+                /^audio\/(ogg|opus|webm)/i.test(mime) ||
+                /voice|ptt/i.test(String(md.filename || content || ''));
             media = {
                 url: md.url,
                 filename: md.filename || sourceMsg.content || 'file',
-                mimetype: md.mimetype || 'application/octet-stream',
-                type: sourceMsg.type,
+                mimetype: md.mimetype || (isVoice ? 'audio/ogg; codecs=opus' : 'application/octet-stream'),
+                type: isVoice ? 'audio' : (['image', 'video', 'audio', 'document'].includes(srcType) ? srcType : 'document'),
+                sendAsVoice: !!isVoice,
             };
             if (/^voice\.(webm|ogg|m4a|mp3|wav)$/i.test(content)) content = '';
             else if (content === md.filename || content === 'file' || content === '📎 فایل') content = '';
