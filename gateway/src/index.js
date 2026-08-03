@@ -22,6 +22,7 @@ const axios = require('axios');
 const cron = require('node-cron');
 const fs = require('fs').promises;
 const path = require('path');
+const { execFileSync } = require('child_process');
 const { startOutgoingCall } = require('./waCalls');
 const { createSendRateLimiter } = require('./sendRateLimiter');
 require('dotenv').config();
@@ -343,10 +344,48 @@ let lastAuthFailureMessage = null;
 /** وضعیت اتصال برای نمایش در پنل: qr | authenticated (اسکن شد، در حال همگام‌سازی) | ready | auth_failure */
 let connectionPhase = null;
 
-function buildClient() {
-    const sessionPath = path.resolve(
+function getWhatsAppSessionPath() {
+    return path.resolve(
         process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth')
     );
+}
+
+/**
+ * بعد از pm2 restart گاهی Chromium یتیم می‌ماند و userDataDir را قفل می‌کند
+ * → حلقهٔ کرش «browser is already running». قفل و پروسهٔ یتیم را پاک کن.
+ */
+async function prepareChromeUserDataDir(sessionPath) {
+    const root = sessionPath || getWhatsAppSessionPath();
+    const userDataDir = path.join(root, 'session');
+    const lockNames = ['SingletonLock', 'SingletonCookie', 'SingletonSocket'];
+
+    async function unlinkLocks() {
+        for (const name of lockNames) {
+            try {
+                await fs.unlink(path.join(userDataDir, name));
+            } catch (_) {
+                /* ignore */
+            }
+        }
+    }
+
+    await unlinkLocks();
+
+    if (process.platform === 'linux') {
+        try {
+            // فقط کروم‌هایی که همین پروفایل نشست کایا را باز کرده‌اند
+            execFileSync('pkill', ['-f', userDataDir], { stdio: 'ignore', timeout: 8000 });
+            logger.warn('Killed orphan Chromium holding WhatsApp session profile', { userDataDir });
+        } catch (_) {
+            // pkill exit 1 = هیچ پروسه‌ای نبود
+        }
+        await new Promise((r) => setTimeout(r, 1000));
+        await unlinkLocks();
+    }
+}
+
+function buildClient() {
+    const sessionPath = getWhatsAppSessionPath();
     logger.info('WhatsApp session path', { sessionPath });
 
     const puppeteerArgs = [
@@ -939,22 +978,33 @@ async function startWhatsApp() {
     lastAuthFailureMessage = null;
     connectionPhase = null;
 
-    if (!client) {
-        const sessionPath = path.resolve(
-            process.env.WHATSAPP_SESSION_PATH || path.join(process.cwd(), '.wwebjs_auth')
-        );
-        await ensureDir(sessionPath);
-        client = buildClient();
-    }
-
     try {
+        const sessionPath = getWhatsAppSessionPath();
+        await ensureDir(sessionPath);
+        await prepareChromeUserDataDir(sessionPath);
+
+        if (!client) {
+            client = buildClient();
+        }
+
         redisClient.set('whatsapp:status', 'starting').catch(() => {});
-        client.initialize();
+        await Promise.resolve(client.initialize());
         return { ok: true, status: 'initializing' };
     } catch (e) {
         isClientStarting = false;
-        logger.error('Start WhatsApp error', { error: e?.message });
-        return { ok: false, error: e?.message || 'start_failed' };
+        const msg = e?.message || 'start_failed';
+        logger.error('Start WhatsApp error', { error: msg });
+        if (/browser is already running/i.test(msg)) {
+            try {
+                await prepareChromeUserDataDir(getWhatsAppSessionPath());
+            } catch (_) {}
+            try {
+                resetClientState();
+            } catch (_) {}
+            scheduleReconnect();
+            return { ok: false, error: msg, recovering: true };
+        }
+        return { ok: false, error: msg };
     }
 }
 
@@ -1096,7 +1146,7 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
 
         let sentMsg;
         const sendOpts = replyTo ? { quotedMessageId: replyTo } : {};
-        async function doSend(targetChatId) {
+        const doSend = async (targetChatId) => {
             if (media?.data) {
                 const built = await buildOutboundMessageMedia(media, message);
                 if (!built) {
@@ -1462,16 +1512,33 @@ function isRecoverablePuppeteerRejection(reason) {
         /Target closed/i.test(msg) ||
         /detached Frame/i.test(msg) ||
         /Protocol error.*Target closed/i.test(msg) ||
-        /Navigation failed/i.test(msg)
+        /Navigation failed/i.test(msg) ||
+        /browser is already running/i.test(msg)
     );
 }
 
 process.on('unhandledRejection', (reason) => {
+    const msg = reason && reason.message ? String(reason.message) : String(reason || '');
+    if (/browser is already running/i.test(msg)) {
+        logger.warn(
+            'unhandledRejection (Chrome profile lock) — clearing orphans and reconnecting',
+            { reason: msg }
+        );
+        prepareChromeUserDataDir(getWhatsAppSessionPath())
+            .catch(() => {})
+            .finally(() => {
+                try {
+                    resetClientState();
+                } catch (_) {}
+                scheduleReconnect();
+            });
+        return;
+    }
     if (isRecoverablePuppeteerRejection(reason)) {
         logger.warn(
             'unhandledRejection (Puppeteer/WhatsApp — recoverable) — scheduling reconnect',
             {
-                reason: reason && reason.message ? reason.message : String(reason),
+                reason: msg,
             }
         );
         try {
@@ -1487,12 +1554,21 @@ process.on('unhandledRejection', (reason) => {
     setTimeout(() => process.exit(1), 500);
 });
 
-// Graceful shutdown
-process.on('SIGINT', async () => {
-    logger.info('Shutting down gracefully...');
+async function gracefulShutdown(signal) {
+    logger.info('Shutting down gracefully...', { signal });
     try {
         await stopWhatsApp();
     } catch (_) {}
+    try {
+        await prepareChromeUserDataDir(getWhatsAppSessionPath());
+    } catch (_) {}
     redisClient.quit().catch(() => {});
     process.exit(0);
+}
+
+process.on('SIGINT', () => {
+    gracefulShutdown('SIGINT');
+});
+process.on('SIGTERM', () => {
+    gracefulShutdown('SIGTERM');
 });
