@@ -1,5 +1,6 @@
 /**
- * Analytics controller — dashboard stats and metrics
+ * Analytics controller — آمار داشبورد بر اساس دسترسی همان کاربر
+ * (مکالمات مخفی/آرشیو قفل‌شده و مشتریان محدود در KPI لیست عادی نمی‌آیند)
  */
 const { Op, fn, col } = require('sequelize');
 const {
@@ -14,13 +15,9 @@ const {
     sequelize,
 } = require('../models');
 const { getAccessibleCustomerIds } = require('../lib/customerAccess');
-const { isMainAdmin } = require('../lib/permissions');
+const { isMainAdmin, canViewHiddenConversations } = require('../lib/permissions');
 const { conversationListWhereAsync } = require('../lib/conversationAccess');
 const { getVisibleStaffUserIds, applyVisibleUserFilter } = require('../lib/staffSupervision');
-
-async function conversationWhere(req) {
-    return conversationListWhereAsync(req.user, req.userId);
-}
 
 /** ترکیب فیلتر دسترسی با شرط اضافی برای count */
 function mergeConvWhere(convWhere, extra) {
@@ -30,6 +27,15 @@ function mergeConvWhere(convWhere, extra) {
     if (parts.length === 0) return {};
     if (parts.length === 1) return parts[0];
     return { [Op.and]: parts };
+}
+
+/**
+ * دامنهٔ مکالمات قابل‌مشاهده برای KPI داشبورد = همان منطق لیست مکالمات
+ * + همیشه بدون آرشیو (آرشیو شمارهٔ قبلی فقط در تب آرشیو ادمین است)
+ */
+async function activeConversationWhere(req) {
+    const access = await conversationListWhereAsync(req.user, req.userId);
+    return mergeConvWhere(access, { status: { [Op.ne]: 'archived' } });
 }
 
 const UNANSWERED_EXTRA = {
@@ -68,8 +74,14 @@ async function dashboard(req, res, next) {
         }
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const convWhere = await conversationWhere(req);
+
+        const convWhere = await activeConversationWhere(req);
         const hasConvFilter = Object.keys(convWhere).length > 0;
+        const canSeeHidden = isMainAdmin(req.user) || canViewHiddenConversations(req.user);
+
+        // بدون تخصیص: فقط برای ادمین/مدیر معنا دارد؛ کارشناس فقط کار خودش را می‌بیند
+        const showUnassignedPool =
+            canSeeHidden || ['owner', 'admin', 'manager'].indexOf(req.user.role || '') !== -1;
 
         const [
             totalConversations,
@@ -85,11 +97,16 @@ async function dashboard(req, res, next) {
             unreadAnnouncements,
             staffOnline,
             loginsToday,
+            archivedLockedCount,
         ] = await Promise.all([
             Conversation.count({ where: convWhere }),
-            Conversation.count({ where: { ...convWhere, status: 'open' } }),
-            Conversation.count({ where: { ...convWhere, unreadCount: { [Op.gt]: 0 } } }),
-            Conversation.count({ where: mergeConvWhere(convWhere, UNASSIGNED_EXTRA) }),
+            Conversation.count({ where: mergeConvWhere(convWhere, { status: 'open' }) }),
+            Conversation.count({
+                where: mergeConvWhere(convWhere, { unreadCount: { [Op.gt]: 0 } }),
+            }),
+            showUnassignedPool
+                ? Conversation.count({ where: mergeConvWhere(convWhere, UNASSIGNED_EXTRA) })
+                : Promise.resolve(0),
             Conversation.count({ where: mergeConvWhere(convWhere, UNANSWERED_EXTRA) }),
             hasConvFilter
                 ? Message.count({
@@ -104,15 +121,33 @@ async function dashboard(req, res, next) {
                           },
                       ],
                   })
-                : Message.count({ where: { timestamp: { [Op.gte]: today } } }),
+                : Message.count({
+                      where: { timestamp: { [Op.gte]: today } },
+                      include: [
+                          {
+                              model: Conversation,
+                              as: 'conversation',
+                              where: { status: { [Op.ne]: 'archived' } },
+                              required: true,
+                              attributes: [],
+                          },
+                      ],
+                  }),
             (async () => {
                 const ids = await getAccessibleCustomerIds(req);
                 if (ids === null) return Customer.count();
                 if (ids.length === 0) return 0;
                 return Customer.count({ where: { id: { [Op.in]: ids } } });
             })(),
-            Ticket.count({ where: { ...ticketAccessWhere(req), status: { [Op.in]: ['open', 'in_progress'] } } }),
-            Task.count({ where: { ...taskAccessWhere(req), status: { [Op.in]: ['pending', 'in_progress'] } } }),
+            Ticket.count({
+                where: { ...ticketAccessWhere(req), status: { [Op.in]: ['open', 'in_progress'] } },
+            }),
+            Task.count({
+                where: {
+                    ...taskAccessWhere(req),
+                    status: { [Op.in]: ['pending', 'in_progress'] },
+                },
+            }),
             Announcement.count(),
             (async () => {
                 try {
@@ -122,10 +157,9 @@ async function dashboard(req, res, next) {
                         attributes: ['announcementId'],
                         raw: true,
                     });
-                    const readAnnIds = readIds.map(r => r.announcementId);
-                    const whereClause = readAnnIds.length > 0
-                        ? { id: { [Op.notIn]: readAnnIds } }
-                        : {};
+                    const readAnnIds = readIds.map((r) => r.announcementId);
+                    const whereClause =
+                        readAnnIds.length > 0 ? { id: { [Op.notIn]: readAnnIds } } : {};
                     return Announcement.count({ where: whereClause });
                 } catch (_) {
                     return Announcement.count();
@@ -149,6 +183,11 @@ async function dashboard(req, res, next) {
                 );
                 return User.count({ where });
             })(),
+            canSeeHidden
+                ? Conversation.count({
+                      where: { status: 'archived', isHiddenFromStaff: true },
+                  })
+                : Promise.resolve(0),
         ]);
 
         let avgResponseTimeMinutes = null;
@@ -157,12 +196,12 @@ async function dashboard(req, res, next) {
 
         const [ratedRows, convsWithReply] = await Promise.all([
             Conversation.findAll({
-                where: { ...convWhere, rating: { [Op.ne]: null } },
+                where: mergeConvWhere(convWhere, { rating: { [Op.ne]: null } }),
                 attributes: ['rating'],
                 raw: true,
             }),
             Conversation.findAll({
-                where: { ...convWhere, firstReplyAt: { [Op.ne]: null } },
+                where: mergeConvWhere(convWhere, { firstReplyAt: { [Op.ne]: null } }),
                 attributes: ['id', 'firstReplyAt'],
                 raw: true,
             }),
@@ -220,6 +259,9 @@ async function dashboard(req, res, next) {
             avgResponseTimeMinutes: avgResponseTimeMinutes ?? null,
             avgRating: avgRating ?? null,
             ratedConversationsCount: ratedCount ?? 0,
+            /** فقط برای ادمین: تعداد مکالمات آرشیو قفل‌شده (شمارهٔ قبلی) — در KPI اصلی نیست */
+            archivedLockedConversations: archivedLockedCount || 0,
+            scopedToUser: true,
         });
     } catch (err) {
         next(err);
