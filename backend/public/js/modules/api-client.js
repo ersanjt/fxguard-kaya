@@ -127,11 +127,14 @@
         };
     }
     if (r.status === 401) {
-        if (typeof config.on401 === 'function') config.on401(data);
+        if (!opt.softAuth && typeof config.on401 === 'function') config.on401(data);
         const lang4 = config.getLang ? config.getLang() : 'fa';
         return {
             ok: false,
-            needLogin: true,
+            needLogin: !opt.softAuth,
+            softAuth: !!opt.softAuth,
+            status: 401,
+            data: data,
             error:
                 data && data.error
                     ? data.error

@@ -658,22 +658,29 @@
 
     /* ── Check existing auth cookie ──────────────── */
     function checkExistingToken() {
+        var params;
+        try { params = new URLSearchParams(window.location.search); } catch (_) { params = null; }
+        // بعد از kick-out با reauth=1 خودکار برنگردان — کاربر باید دوباره وارد شود
+        if (params && params.get('reauth') === '1') {
+            try { sessionStorage.removeItem('crm_token'); } catch (_) {}
+            return;
+        }
         fetch('/api/auth/me', {
             credentials: 'include',
-            headers: (function () {
-                try {
-                    var t = sessionStorage.getItem('crm_token');
-                    return t ? { Authorization: 'Bearer ' + t } : {};
-                } catch (_) { return {}; }
-            })()
+            cache: 'no-store',
+            headers: { Accept: 'application/json' }
         }).then(function(r) {
-            return r.json().then(function(d) {
+            return r.text().then(function(text) {
+                if ((text || '').trim().startsWith('<')) return { ok: false, d: {} };
+                var d = {};
+                try { d = JSON.parse(text); } catch (_) {}
                 return { ok: r.ok, d: d };
-            }).catch(function() {
-                return { ok: r.ok, d: {} };
             });
         }).then(function(res) {
             if (res.ok && res.d && res.d.email && !res.d.error) {
+                if (res.d.token) {
+                    try { sessionStorage.setItem('crm_token', res.d.token); } catch (_) {}
+                }
                 var returnTo = '';
                 try {
                     returnTo = new URLSearchParams(window.location.search).get('return') || '';

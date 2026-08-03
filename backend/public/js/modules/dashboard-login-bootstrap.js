@@ -120,6 +120,14 @@
         root.style.setProperty('--accent-soft', 'rgba(' + r + ',' + g + ',' + b + ',0.15)');
     }
 
+    function resolveLoginLogoSrc(b) {
+        if (!b) return '/brand/kaya-logo.png';
+        var login = b.loginLogoUrl && String(b.loginLogoUrl).trim();
+        if (login) return login;
+        var logo = b.logoUrl && String(b.logoUrl).trim();
+        return logo || '/brand/kaya-logo.png';
+    }
+
     function applyBrandingEarly(b) {
         if (!b) return;
         var root = document.documentElement;
@@ -127,23 +135,16 @@
         if (b.pageTitle) document.title = b.pageTitle;
         else if (b.loginTitle) document.title = b.loginTitle;
         var fav = document.getElementById('favicon');
-        if (fav && b.faviconUrl) fav.href = b.faviconUrl;
+        var favHref = (b.faviconUrl && String(b.faviconUrl).trim()) || (b.logoUrl && String(b.logoUrl).trim()) || '/brand/kaya-favicon-32.png';
+        if (fav) fav.href = favHref;
         var ath = document.getElementById('appleTouchIcon');
-        if (ath && (b.faviconUrl || b.loginLogoUrl || b.logoUrl)) ath.href = b.faviconUrl || b.loginLogoUrl || b.logoUrl;
+        if (ath) ath.href = (b.faviconUrl || b.loginLogoUrl || b.logoUrl || '/brand/kaya-apple-touch.png');
         var amTitle = document.querySelector('meta[name="apple-mobile-web-app-title"]');
         if (amTitle && b.siteName) amTitle.setAttribute('content', b.siteName);
         if (b.uiTheme && b.uiTheme !== 'default' && document.body) {
             document.body.classList.remove('theme-minimal', 'theme-dark', 'theme-light', 'theme-ocean', 'theme-warm');
             document.body.classList.add('theme-' + b.uiTheme);
         }
-    }
-
-    function resolveLoginLogoSrc(b) {
-        if (!b) return '';
-        var login = b.loginLogoUrl && String(b.loginLogoUrl).trim();
-        if (login) return login;
-        var logo = b.logoUrl && String(b.logoUrl).trim();
-        return logo || '';
     }
 
     function applyBrandingDom(b, lang) {

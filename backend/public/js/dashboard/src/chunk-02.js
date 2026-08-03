@@ -75,7 +75,7 @@
                 const cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                 let preview = (data.message && data.message.content) ? String(data.message.content).slice(0, 80) : '';
                 if (preview.length >= 80) preview += '…';
-                const notifIcon = typeof resolvePanelFaviconHref === 'function' ? resolvePanelFaviconHref(PANEL_BRANDING_STATE || {}) : '/favicon-kaya.svg';
+                const notifIcon = typeof resolvePanelFaviconHref === 'function' ? resolvePanelFaviconHref(PANEL_BRANDING_STATE || {}) : '/brand/kaya-favicon-32.png';
                 const n = new Notification((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + cust, { body: preview || (LANG === 'fa' ? 'پیام واتساپ' : 'WhatsApp message'), icon: notifIcon });
                 n.onclick = function() { window.focus(); n.close(); if (data.conversationId) { showPage('conversations'); setTimeout(function() { openChat(data.conversationId, cust, data.customer && data.customer.phone, data.customer && data.customer.profilePic); }, 200); } };
             } catch (e) {}
@@ -289,6 +289,15 @@
             disconnectSocket();
             persistAuthToken(null);
             currentUser = null;
+            // کوکی httpOnly را هم پاک کن تا حلقهٔ login↔dashboard نسازد
+            try {
+                fetch((typeof API === 'string' ? API : '') + '/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store'
+                }).catch(function () {});
+            } catch (_e) {}
             if (redirectLogin !== false) {
                 if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
                     window.LoginBootstrap.setLoggedOut();
@@ -297,7 +306,7 @@
                 }
                 const appEl = document.getElementById('app');
                 if (appEl) appEl.classList.remove('show', 'app-loading', 'app-ready');
-                redirectToLoginPage();
+                redirectToLoginPage({ reauth: true });
             }
         }
 
@@ -351,8 +360,15 @@
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
-                teardownActiveSession(true);
-                return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
+                if (!opt.softAuth) teardownActiveSession(true);
+                return {
+                    ok: false,
+                    needLogin: !opt.softAuth,
+                    softAuth: !!opt.softAuth,
+                    status: 401,
+                    data: data,
+                    error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again')
+                };
             }
             if (r.status === 429) {
                 return { ok: false, needLogin: false, status: 429, data: data, error: (data && data.error) || (LANG === 'fa' ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.' : 'Too many requests. Please wait a moment.') };

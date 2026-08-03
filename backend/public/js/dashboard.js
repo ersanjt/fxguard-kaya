@@ -38,13 +38,15 @@
                 if (t) token = t;
             } catch (_) {}
         }
-        function redirectToLoginPage() {
+        function redirectToLoginPage(opts) {
+            const o = opts || {};
             const qs = window.location.search || '';
             const hash = window.location.hash || '';
             const path = window.location.pathname || '/dashboard';
-            const dest =
+            let dest =
                 '/login?return=' +
                 encodeURIComponent(path + qs + hash);
+            if (o.reauth) dest += '&reauth=1';
             window.location.replace(dest);
             return true;
         }
@@ -2254,7 +2256,7 @@
                 const cust = (data.customer && (data.customer.name || data.customer.phone)) || (LANG === 'fa' ? 'مشتری' : 'Customer');
                 let preview = (data.message && data.message.content) ? String(data.message.content).slice(0, 80) : '';
                 if (preview.length >= 80) preview += '…';
-                const notifIcon = typeof resolvePanelFaviconHref === 'function' ? resolvePanelFaviconHref(PANEL_BRANDING_STATE || {}) : '/favicon-kaya.svg';
+                const notifIcon = typeof resolvePanelFaviconHref === 'function' ? resolvePanelFaviconHref(PANEL_BRANDING_STATE || {}) : '/brand/kaya-favicon-32.png';
                 const n = new Notification((LANG === 'fa' ? 'پیام جدید از ' : 'New message from ') + cust, { body: preview || (LANG === 'fa' ? 'پیام واتساپ' : 'WhatsApp message'), icon: notifIcon });
                 n.onclick = function() { window.focus(); n.close(); if (data.conversationId) { showPage('conversations'); setTimeout(function() { openChat(data.conversationId, cust, data.customer && data.customer.phone, data.customer && data.customer.profilePic); }, 200); } };
             } catch (e) {}
@@ -2468,6 +2470,15 @@
             disconnectSocket();
             persistAuthToken(null);
             currentUser = null;
+            // کوکی httpOnly را هم پاک کن تا حلقهٔ login↔dashboard نسازد
+            try {
+                fetch((typeof API === 'string' ? API : '') + '/api/auth/logout', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { Accept: 'application/json' },
+                    cache: 'no-store'
+                }).catch(function () {});
+            } catch (_e) {}
             if (redirectLogin !== false) {
                 if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
                     window.LoginBootstrap.setLoggedOut();
@@ -2476,7 +2487,7 @@
                 }
                 const appEl = document.getElementById('app');
                 if (appEl) appEl.classList.remove('show', 'app-loading', 'app-ready');
-                redirectToLoginPage();
+                redirectToLoginPage({ reauth: true });
             }
         }
 
@@ -2530,8 +2541,15 @@
                 return { ok: false, needLogin: false, error: (LANG === 'fa' ? 'پاسخ سرور معتبر نیست' : 'Invalid server response') };
             }
             if (r.status === 401) {
-                teardownActiveSession(true);
-                return { ok: false, needLogin: true, error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again') };
+                if (!opt.softAuth) teardownActiveSession(true);
+                return {
+                    ok: false,
+                    needLogin: !opt.softAuth,
+                    softAuth: !!opt.softAuth,
+                    status: 401,
+                    data: data,
+                    error: (data && data.error) ? data.error : (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please sign in again')
+                };
             }
             if (r.status === 429) {
                 return { ok: false, needLogin: false, status: 429, data: data, error: (data && data.error) || (LANG === 'fa' ? 'تعداد درخواست‌ها زیاد شده. چند ثانیه صبر کنید.' : 'Too many requests. Please wait a moment.') };
@@ -13857,11 +13875,16 @@
             const tryN = attempt || 0;
             document.documentElement.classList.add('auth-verifying');
             try {
-                const res = await apiFetch('/api/auth/me');
-                // فقط 401 واقعی = خروج. HTML/شبکه/۵xx نباید نشست را پاک کند (باعث حلقهٔ «ورود → بیرون»).
-                if (res.needLogin || res.status === 401) {
+                // softAuth: روی 401، on401 سراسری را صدا نزن (جلوگیری از double-redirect)
+                let res = await apiFetch('/api/auth/me', { softAuth: true });
+                if ((res.status === 401 || !res.ok) && tryN === 0) {
+                    // Bearer کهنه را دور بریز و فقط با کوکی دوباره امتحان کن
                     persistAuthToken(null);
-                    redirectToLoginPage();
+                    res = await apiFetch('/api/auth/me', { softAuth: true });
+                }
+                if (res.status === 401) {
+                    persistAuthToken(null);
+                    redirectToLoginPage({ reauth: true });
                     return;
                 }
                 if (!res.ok || !res.data || !res.data.email) {
@@ -13881,7 +13904,7 @@
                         return;
                     }
                     persistAuthToken(null);
-                    redirectToLoginPage();
+                    redirectToLoginPage({ reauth: true });
                     return;
                 }
                 const u = res.data;

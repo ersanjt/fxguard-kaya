@@ -2217,11 +2217,16 @@
             const tryN = attempt || 0;
             document.documentElement.classList.add('auth-verifying');
             try {
-                const res = await apiFetch('/api/auth/me');
-                // فقط 401 واقعی = خروج. HTML/شبکه/۵xx نباید نشست را پاک کند (باعث حلقهٔ «ورود → بیرون»).
-                if (res.needLogin || res.status === 401) {
+                // softAuth: روی 401، on401 سراسری را صدا نزن (جلوگیری از double-redirect)
+                let res = await apiFetch('/api/auth/me', { softAuth: true });
+                if ((res.status === 401 || !res.ok) && tryN === 0) {
+                    // Bearer کهنه را دور بریز و فقط با کوکی دوباره امتحان کن
                     persistAuthToken(null);
-                    redirectToLoginPage();
+                    res = await apiFetch('/api/auth/me', { softAuth: true });
+                }
+                if (res.status === 401) {
+                    persistAuthToken(null);
+                    redirectToLoginPage({ reauth: true });
                     return;
                 }
                 if (!res.ok || !res.data || !res.data.email) {
@@ -2241,7 +2246,7 @@
                         return;
                     }
                     persistAuthToken(null);
-                    redirectToLoginPage();
+                    redirectToLoginPage({ reauth: true });
                     return;
                 }
                 const u = res.data;

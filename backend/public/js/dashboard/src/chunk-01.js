@@ -38,13 +38,15 @@
                 if (t) token = t;
             } catch (_) {}
         }
-        function redirectToLoginPage() {
+        function redirectToLoginPage(opts) {
+            const o = opts || {};
             const qs = window.location.search || '';
             const hash = window.location.hash || '';
             const path = window.location.pathname || '/dashboard';
-            const dest =
+            let dest =
                 '/login?return=' +
                 encodeURIComponent(path + qs + hash);
+            if (o.reauth) dest += '&reauth=1';
             window.location.replace(dest);
             return true;
         }

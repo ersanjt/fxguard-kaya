@@ -407,7 +407,7 @@ router.post('/totp/verify-login', async (req, res, next) => {
     }
 });
 
-const { authMiddleware } = require('../middleware/auth');
+const { authMiddleware, optionalAuthMiddleware } = require('../middleware/auth');
 
 router.get('/me', authMiddleware, async (req, res, next) => {
     try {
@@ -476,10 +476,14 @@ router.post('/totp/disable', authMiddleware, async (req, res, next) => {
     }
 });
 
-router.post('/logout', authMiddleware, async (req, res, next) => {
+router.post('/logout', optionalAuthMiddleware, async (req, res, next) => {
     try {
+        // همیشه کوکی را پاک کن — حتی اگر Bearer کهنه باشد (جلوگیری از حلقهٔ ورود/خروج)
         clearAuthCookie(res);
         const user = req.user;
+        if (!user) {
+            return res.json({ ok: true, message: 'خروج انجام شد' });
+        }
         await user.update({ status: 'offline' });
         await logActivity({
             userId: user.id,
