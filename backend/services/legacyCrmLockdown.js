@@ -27,12 +27,28 @@ function chatIdVariants(id) {
     const out = new Set();
     if (!s) return [];
     out.add(s);
+    const lower = s.toLowerCase();
+    out.add(lower);
     const digits = s.replace(/\D/g, '');
     if (digits) {
         out.add(digits);
         out.add(`${digits}@c.us`);
         out.add(`${digits}@s.whatsapp.net`);
         out.add(`${digits}@lid`);
+        out.add(`${digits}@g.us`);
+    }
+    // 123@g.us ↔ همان با/بدون پسوند
+    const at = lower.indexOf('@');
+    if (at > 0) {
+        const user = lower.slice(0, at);
+        const host = lower.slice(at + 1);
+        out.add(user);
+        if (host) out.add(`${user}@${host}`);
+        const userDigits = user.replace(/\D/g, '');
+        if (userDigits && userDigits !== user) {
+            out.add(userDigits);
+            out.add(`${userDigits}@${host}`);
+        }
     }
     return [...out];
 }
@@ -109,15 +125,32 @@ async function restoreLegacyCrmVisibility({ reason } = {}) {
  */
 async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
     const gw = normalizeLinkedNumber(gatewayNumber);
+    const ids = Array.isArray(chatIds) ? chatIds.filter(Boolean) : [];
+
+    // بدون لیست واقعی واتساپ، هیچ‌چیز را آرشیو نکن (جلوگیری از «همه آرشیو / هیچ‌کدام»)
+    if (ids.length === 0) {
+        logger.warn('applyVisibility skipped — empty Gateway chat list', {
+            gatewayNumber: gw || null,
+        });
+        return {
+            opened: 0,
+            archived: 0,
+            unrestricted: 0,
+            restricted: 0,
+            allowedCount: 0,
+            skipped: true,
+        };
+    }
+
     const allowed = new Set();
-    for (const id of chatIds || []) {
-        for (const v of chatIdVariants(id)) allowed.add(v);
+    for (const id of ids) {
+        for (const v of chatIdVariants(id)) allowed.add(String(v).toLowerCase());
     }
 
     const convs = await Conversation.findAll({
         where: { status: { [Op.ne]: 'closed' } },
         include: [{ model: Customer, as: 'customer', required: true }],
-        limit: 5000,
+        limit: 8000,
     });
 
     let opened = 0;
@@ -130,7 +163,7 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
         if (!isWhatsAppIdentity(phone)) continue;
 
         const variants = chatIdVariants(phone);
-        const onCurrent = variants.some((v) => allowed.has(v));
+        const onCurrent = variants.some((v) => allowed.has(String(v).toLowerCase()));
         const meta = { ...(conv.metadata || {}) };
 
         if (onCurrent) {
@@ -145,7 +178,10 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
                     metadata: meta,
                 });
                 opened++;
-            } else {
+            } else if (
+                meta.linkedGatewayNumber !== (conv.metadata || {}).linkedGatewayNumber ||
+                (conv.metadata || {}).notOnCurrentGateway
+            ) {
                 await conv.update({ metadata: meta });
             }
             if (conv.customer.isRestrictedFromStaff) {
@@ -165,6 +201,8 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
                     metadata: meta,
                 });
                 archived++;
+            } else {
+                await conv.update({ metadata: meta });
             }
             if (!conv.customer.isRestrictedFromStaff) {
                 await conv.customer.update({ isRestrictedFromStaff: true });
@@ -175,7 +213,7 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
 
     logger.info('Applied visibility for current Gateway chats', {
         gatewayNumber: gw || null,
-        allowedCount: (chatIds || []).length,
+        allowedCount: ids.length,
         opened,
         archived,
         unrestricted,
@@ -186,7 +224,7 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
         archived,
         unrestricted,
         restricted,
-        allowedCount: (chatIds || []).length,
+        allowedCount: ids.length,
     };
 }
 

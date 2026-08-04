@@ -2590,8 +2590,10 @@
                     const r = await apiFetch('/api/access-grants/lockdown-legacy', { method: 'POST', body: '{}' });
                     btn.disabled = false;
                     if (r.ok) {
-                        toast(t('whatsapp_legacy_lockdown_done') || 'Locked');
+                        const msg = (r.data && r.data.message) || (t('whatsapp_legacy_lockdown_done') || 'Locked');
+                        toast(msg);
                         loadLegacyLockdownCard();
+                        if (typeof setConvQuickTab === 'function') setConvQuickTab('all');
                         if (typeof loadConversations === 'function') loadConversations();
                         if (typeof loadCustomers === 'function') loadCustomers();
                     } else {

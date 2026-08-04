@@ -1013,9 +1013,8 @@
                 return;
             }
             const visibleRows = (data.data || []).filter(function(c) {
-                // قفل‌شده فقط در تب آرشیو یا «محدود» — مگر ادمین سطح بالا که همه را ببیند
+                // قفل‌شده فقط در تب آرشیو یا «محدود» — حتی برای ادمین در «همه» دیده نشود
                 if (c.isHiddenFromStaff && convQuickTab !== 'restricted' && convQuickTab !== 'archived') {
-                    if (typeof canViewHiddenConversations === 'function' && canViewHiddenConversations()) return true;
                     return false;
                 }
                 return true;

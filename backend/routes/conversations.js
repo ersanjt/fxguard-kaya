@@ -604,8 +604,13 @@ router.get('/', async (req, res, next) => {
         }
 
         // سیاست دسترسی لیست + مخفی‌سازی از کارکنان (+ اعطای دسترسی)
-        // پیش‌فرض: مکالمات قفل‌شده در لیست نیستند؛ فقط با includeHidden/hiddenOnly برای ادمین سطح بالا
-        const includeHidden = req.query.includeHidden === '1' || req.query.includeHidden === 'true';
+        // پیش‌فرض: مکالمات قفل‌شده در لیست نیستند؛ آرشیو/محدود برای ادمین جداست
+        const viewingArchived =
+            status === 'archived' || archived === '1' || archived === 'true';
+        const includeHidden =
+            req.query.includeHidden === '1' ||
+            req.query.includeHidden === 'true' ||
+            viewingArchived;
         const hiddenOnly = req.query.hiddenOnly === '1' || req.query.hiddenOnly === 'true';
         const listAccess = await conversationListWhereAsync(req.user, req.userId, {
             includeHidden,

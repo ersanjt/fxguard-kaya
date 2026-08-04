@@ -44,30 +44,33 @@ function hiddenConversationWhere(user, grants = null) {
 
 /**
  * شرط لیست مکالمات.
- * ادمین سطح بالا (owner/admin/main): همه (آرشیو با فیلتر جدا در route).
+ * لیست عادی («همه»): حتی ادمین سطح بالا قفل‌شده‌ها را نمی‌بیند — تب آرشیو / محدود جداست.
  * بقیه: فقط غیرمخفی (+ اعطا) و بر اساس نقش/تخصیص.
  *
  * @param {object} [opts]
  * @param {boolean} [opts.hiddenOnly] — فقط مخفی‌ها (ادمین)
- * @param {boolean} [opts.includeHidden] — مخفی‌ها را هم بیاور (ادمین؛ پیش‌فرض ادمین همه را می‌بیند)
+ * @param {boolean} [opts.includeHidden] — مخفی‌ها را هم بیاور (ادمین)
  */
 function conversationListWhere(user, userId, grants = null, opts = {}) {
     const canSeeHidden = isMainAdmin(user) || canViewHiddenConversations(user);
     const hiddenOnly = !!(opts && opts.hiddenOnly) && canSeeHidden;
+    const includeHidden = !!(opts && opts.includeHidden) && canSeeHidden;
 
     if (hiddenOnly) {
         return { isHiddenFromStaff: true };
     }
 
-    // ادمین سطح بالا: بدون فیلتر مخفی (لیست کامل؛ آرشیو جدا فیلتر می‌شود)
-    if (canSeeHidden) {
+    // ادمین: فقط با includeHidden همه را ببین؛ وگرنه مثل بقیه بدون قفل‌شده
+    if (canSeeHidden && includeHidden) {
         return {};
+    }
+    if (canSeeHidden) {
+        return { isHiddenFromStaff: false };
     }
 
     const visibility = visibleDespiteHiddenOr(grants);
 
     if (['owner', 'admin', 'manager'].indexOf(user.role || '') !== -1) {
-        // owner/admin اینجا فقط اگر canSeeHidden نبودند؛ manager همیشه visibility
         return visibility;
     }
 
@@ -92,8 +95,11 @@ async function conversationListWhereAsync(user, userId, opts = {}) {
     if (opts && opts.hiddenOnly && canSeeHidden) {
         return { isHiddenFromStaff: true };
     }
-    if (canSeeHidden) {
+    if (canSeeHidden && opts && opts.includeHidden) {
         return {};
+    }
+    if (canSeeHidden) {
+        return { isHiddenFromStaff: false };
     }
     const grants = await getUserGrantSets(userId);
     return conversationListWhere(user, userId, grants, opts);

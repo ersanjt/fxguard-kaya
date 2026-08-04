@@ -13,10 +13,11 @@ const {
     grantCustomersToUser,
 } = require('../lib/staffResourceGrants');
 const {
-    lockdownExistingCrmData,
     restoreLegacyCrmVisibility,
+    applyVisibilityForCurrentGatewayChats,
     getLockdownStats,
     handleGatewayNumberReady,
+    normalizeLinkedNumber,
 } = require('../services/legacyCrmLockdown');
 const { logActivity } = require('../services/activityLog');
 
@@ -41,23 +42,101 @@ router.get('/stats', async (req, res, next) => {
 
 /**
  * POST /api/access-grants/lockdown-legacy
- * مخفی‌سازی همهٔ مکالمات و مشتریان فعلی از کارکنان (غیر از ادمین سطح بالا)
+ * فقط مکالمات خارج از چت‌لیست شمارهٔ فعلی Gateway را آرشیو/مخفی می‌کند.
+ * (دیگر همهٔ مکالمات را یکجا قفل نمی‌کند)
  */
 router.post('/lockdown-legacy', async (req, res, next) => {
     try {
         if (!requireGrantAdmin(req, res)) return;
-        const result = await lockdownExistingCrmData({ reason: 'manual_admin', userId: req.userId });
+
+        const {
+            gatewayGet,
+            gatewayPost,
+            getWhatsappConnectionConfig,
+        } = require('../lib/gatewayClient');
+
+        const cfg = await getWhatsappConnectionConfig();
+        let liveStatus = {};
+        try {
+            const st = await gatewayGet('/api/status', { timeout: 10000, cfg });
+            liveStatus = st?.data || {};
+        } catch (_) {}
+
+        const gatewayNumber =
+            normalizeLinkedNumber(liveStatus.number) ||
+            normalizeLinkedNumber(req.body && req.body.number) ||
+            '';
+
+        const ready =
+            !!(liveStatus.whatsapp || liveStatus.usable || liveStatus.status === 'ready' || liveStatus.phase === 'ready');
+        if (!ready) {
+            try {
+                await gatewayPost('/api/start', {}, { timeout: 20000, cfg });
+            } catch (_) {}
+            return res.status(503).json({
+                error: 'Gateway واتساپ آماده نیست. ابتدا در تنظیمات واتساپ وضعیت «متصل» را ببینید، بعد دوباره بزنید.',
+            });
+        }
+
+        let chatsPayload = null;
+        try {
+            const gwRes = await gatewayGet('/api/chats', { timeout: 45000, cfg });
+            chatsPayload = gwRes?.data || null;
+        } catch (eAll) {
+            if (eAll?.response?.status === 404) {
+                try {
+                    const gwRes = await gatewayGet('/api/chats/groups', { timeout: 40000, cfg });
+                    chatsPayload = gwRes?.data || null;
+                } catch (eGrp) {
+                    return res.status(503).json({
+                        error:
+                            (eGrp?.response?.data && eGrp.response.data.error) ||
+                            'لیست چت‌های واتساپ این شماره دریافت نشد. همگام‌سازی را از صفحه مکالمات امتحان کنید.',
+                    });
+                }
+            } else {
+                return res.status(503).json({
+                    error:
+                        (eAll?.response?.data && eAll.response.data.error) ||
+                        'لیست چت‌های واتساپ این شماره دریافت نشد. چند ثانیه صبر کنید و دوباره بزنید.',
+                });
+            }
+        }
+
+        const raw =
+            (chatsPayload && (chatsPayload.chats || chatsPayload.groups)) || [];
+        const chatIds = (Array.isArray(raw) ? raw : [])
+            .map((c) => (c && (c.id || c.chatId) ? String(c.id || c.chatId).trim() : ''))
+            .filter(Boolean);
+
+        if (!chatIds.length) {
+            return res.status(503).json({
+                error: 'لیست چت از واتساپ خالی آمد — برای جلوگیری از آرشیو اشتباه، هیچ تغییری داده نشد. ۲۰ ثانیه بعد دوباره بزنید یا «همگام‌سازی چت‌ها» را بزنید.',
+                gatewayNumber: gatewayNumber || null,
+            });
+        }
+
+        const visibility = await applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber);
         await logActivity({
             userId: req.userId,
             branchId: req.user.branchId,
             departmentId: req.user.departmentId,
             action: 'legacy_crm_lockdown',
             entityType: 'system',
-            summary: `قفل دادهٔ قبلی: ${result.conversationsUpdated} مکالمه، ${result.customersUpdated} مشتری`,
-            metadata: result,
+            summary: `تفکیک شماره Gateway: ${visibility.archived} آرشیو، ${visibility.opened} باز، ${chatIds.length} چت فعلی`,
+            metadata: { ...visibility, gatewayNumber },
         }).catch(() => {});
         const stats = await getLockdownStats();
-        res.json({ ok: true, ...result, stats });
+        res.json({
+            ok: true,
+            ...visibility,
+            gatewayNumber: gatewayNumber || null,
+            chatsOnGateway: chatIds.length,
+            stats,
+            message: visibility.skipped
+                ? 'لیست خالی بود؛ تغییری اعمال نشد'
+                : `${visibility.opened} مکالمهٔ شمارهٔ فعلی باز شد؛ ${visibility.archived} مکالمهٔ دیگر به آرشیو رفت`,
+        });
     } catch (err) {
         next(err);
     }

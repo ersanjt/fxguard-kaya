@@ -5185,9 +5185,8 @@
                 return;
             }
             const visibleRows = (data.data || []).filter(function(c) {
-                // قفل‌شده فقط در تب آرشیو یا «محدود» — مگر ادمین سطح بالا که همه را ببیند
+                // قفل‌شده فقط در تب آرشیو یا «محدود» — حتی برای ادمین در «همه» دیده نشود
                 if (c.isHiddenFromStaff && convQuickTab !== 'restricted' && convQuickTab !== 'archived') {
-                    if (typeof canViewHiddenConversations === 'function' && canViewHiddenConversations()) return true;
                     return false;
                 }
                 return true;
@@ -14431,8 +14430,10 @@
                     const r = await apiFetch('/api/access-grants/lockdown-legacy', { method: 'POST', body: '{}' });
                     btn.disabled = false;
                     if (r.ok) {
-                        toast(t('whatsapp_legacy_lockdown_done') || 'Locked');
+                        const msg = (r.data && r.data.message) || (t('whatsapp_legacy_lockdown_done') || 'Locked');
+                        toast(msg);
                         loadLegacyLockdownCard();
+                        if (typeof setConvQuickTab === 'function') setConvQuickTab('all');
                         if (typeof loadConversations === 'function') loadConversations();
                         if (typeof loadCustomers === 'function') loadCustomers();
                     } else {
