@@ -22,8 +22,14 @@ const {
 } = require('../lib/audioConverter');
 
 function resolveUploadFilePath(uploadsDir, relUnderUploads) {
-    const rel = String(relUnderUploads || '').replace(/^\/+/, '');
+    let rel = String(relUnderUploads || '').replace(/^\/+/, '');
     if (!rel || rel.includes('..')) return null;
+    try {
+        rel = decodeURIComponent(rel);
+    } catch (_) {
+        /* keep raw */
+    }
+    if (rel.includes('..')) return null;
     const resolvedRoot = path.resolve(uploadsDir) + path.sep;
     const resolvedFile = path.resolve(uploadsDir, rel);
     if (resolvedFile !== path.resolve(uploadsDir) && !resolvedFile.startsWith(resolvedRoot)) return null;
