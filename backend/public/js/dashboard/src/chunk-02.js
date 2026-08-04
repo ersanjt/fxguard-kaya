@@ -280,7 +280,8 @@
             list.innerHTML = html;
         }
 
-        function teardownActiveSession(redirectLogin) {
+        function teardownActiveSession(redirectLogin, opts) {
+            const o = opts || {};
             if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
             if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
             if (tickerTimeInterval) { clearInterval(tickerTimeInterval); tickerTimeInterval = null; }
@@ -289,15 +290,18 @@
             disconnectSocket();
             persistAuthToken(null);
             currentUser = null;
-            // کوکی httpOnly را هم پاک کن تا حلقهٔ login↔dashboard نسازد
-            try {
-                fetch((typeof API === 'string' ? API : '') + '/api/auth/logout', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { Accept: 'application/json' },
-                    cache: 'no-store'
-                }).catch(function () {});
-            } catch (_e) {}
+            // فقط خروج صریح کاربر کوکی httpOnly را پاک کند — kick خودکار با logout
+            // باعث پاک شدن کوکیِ تازهٔ ورود و حلقهٔ login↔dashboard می‌شود
+            if (o.clearCookie) {
+                try {
+                    fetch((typeof API === 'string' ? API : '') + '/api/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { Accept: 'application/json' },
+                        cache: 'no-store'
+                    }).catch(function () {});
+                } catch (_e) {}
+            }
             if (redirectLogin !== false) {
                 if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
                     window.LoginBootstrap.setLoggedOut();
@@ -689,7 +693,8 @@
 
         async function logout() {
             try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
-            teardownActiveSession(true);
+            // کوکی همین‌الان با /logout پاک شده؛ دوباره logout نزن
+            teardownActiveSession(true, { clearCookie: false });
         }
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }

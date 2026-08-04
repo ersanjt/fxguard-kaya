@@ -299,6 +299,11 @@ async function connectRabbitMQ() {
         await rabbitChannel.assertQueue(OUTGOING_QUEUE, { durable: true });
 
         logger.info('✅ Connected to RabbitMQ');
+        if (String(process.env.INCOMING_VIA || 'http').toLowerCase() !== 'rabbit') {
+            logger.info(
+                '📥 Incoming messages use HTTP webhook (default). Set INCOMING_VIA=rabbit only if Backend consumes the queue.'
+            );
+        }
 
         const OUTGOING_DLQ = OUTGOING_QUEUE + '_dead';
         await rabbitChannel.assertQueue(OUTGOING_DLQ, { durable: true });
@@ -347,12 +352,21 @@ let isClientReady = false;
 let isClientStarting = false;
 /** آخرین زمانی که رویداد ready آمد — برای soft-ready کوتاه‌مدت */
 let lastReadyAt = 0;
+/** عملیات سنگین روی صفحهٔ واتساپ (لیست گروه/…) — health check را موقتاً آرام کن */
+let waOpsBusy = 0;
 
 let lastQrImageDataUrl = null;
 let lastAccountInfo = null;
 let lastAuthFailureMessage = null;
 /** وضعیت اتصال برای نمایش در پنل: qr | authenticated (اسکن شد، در حال همگام‌سازی) | ready | auth_failure */
 let connectionPhase = null;
+
+function beginWaOps() {
+    waOpsBusy += 1;
+}
+function endWaOps() {
+    waOpsBusy = Math.max(0, waOpsBusy - 1);
+}
 
 /**
  * آیا کلاینت برای عملیات (گروه/ارسال) قابل استفاده است؟
@@ -749,18 +763,8 @@ function attachClientEvents(c) {
                 }
             }
 
-            // Send to backend (persistent: RabbitMQ keeps message if backend down)
-            if (rabbitChannel) {
-                rabbitChannel.sendToQueue(
-                    INCOMING_QUEUE,
-                    Buffer.from(JSON.stringify(messageData)),
-                    {
-                        persistent: true,
-                    }
-                );
-            } else {
-                await sendToBackendWithRetry(messageData);
-            }
+            // Send to backend (HTTP by default — see deliverIncomingMessage)
+            await deliverIncomingMessage(messageData);
 
             // realtime dashboard
             io.emit('new_message', messageData);
@@ -869,15 +873,7 @@ function attachClientEvents(c) {
                 }
             }
 
-            if (rabbitChannel) {
-                rabbitChannel.sendToQueue(
-                    INCOMING_QUEUE,
-                    Buffer.from(JSON.stringify(messageData)),
-                    { persistent: true }
-                );
-            } else {
-                await sendToBackendWithRetry(messageData);
-            }
+            await deliverIncomingMessage(messageData);
 
             io.emit('new_message', messageData);
             logger.info('📤 Outgoing message from mobile captured', {
@@ -916,6 +912,11 @@ async function sendToBackendWithRetry(messageData) {
                 }
             );
             if (res.status >= 200 && res.status < 300) return;
+            logger.warn('Backend webhook rejected', {
+                attempt: i + 1,
+                status: res.status,
+                error: res.data?.error || null,
+            });
         } catch (err) {
             logger.warn('Backend webhook attempt failed', { attempt: i + 1, error: err?.message });
         }
@@ -924,6 +925,30 @@ async function sendToBackendWithRetry(messageData) {
     logger.error('Backend webhook failed after retries – message may be lost', {
         from: messageData?.from,
     });
+}
+
+/**
+ * تحویل پیام ورودی به Backend.
+ * پیش‌فرض HTTP است — اگر Gateway به Rabbit وصل باشد ولی Backend consumer نداشته باشد
+ * (health: rabbitmq disabled) پیام‌ها در صف گم می‌شوند. فقط با INCOMING_VIA=rabbit صف استفاده شود.
+ */
+async function deliverIncomingMessage(messageData) {
+    const via = String(process.env.INCOMING_VIA || 'http').toLowerCase();
+    if (via === 'rabbit' && rabbitChannel) {
+        try {
+            rabbitChannel.sendToQueue(
+                INCOMING_QUEUE,
+                Buffer.from(JSON.stringify(messageData)),
+                { persistent: true }
+            );
+            return;
+        } catch (e) {
+            logger.warn('Rabbit incoming publish failed — falling back to HTTP', {
+                error: e?.message,
+            });
+        }
+    }
+    await sendToBackendWithRetry(messageData);
 }
 
 function sleep(ms) {
@@ -1090,6 +1115,12 @@ async function startWhatsApp() {
     if (isClientReady) return { ok: true, status: 'already_ready' };
     if (isClientStarting) return { ok: true, status: 'starting' };
 
+    // اگر صفحهٔ کروم هنوز زنده است، اول بازیابی کن — initialize مجدد سشن آماده را خراب می‌کند
+    if (client?.pupPage) {
+        const restored = await tryRestoreWhatsAppReady();
+        if (restored) return { ok: true, status: 'already_ready' };
+    }
+
     isClientStarting = true;
     isClientReady = false;
     lastAuthFailureMessage = null;
@@ -1101,6 +1132,18 @@ async function startWhatsApp() {
         await prepareChromeUserDataDir(sessionPath);
 
         if (!client) {
+            client = buildClient();
+        } else if (client.pupPage) {
+            // کلاینت نیمه‌جان — قبل از initialize دوباره، اول destroy تمیز
+            try {
+                await Promise.race([
+                    client.destroy(),
+                    new Promise((_, rej) =>
+                        setTimeout(() => rej(new Error('destroy_timeout')), 12000)
+                    ),
+                ]);
+            } catch (_) {}
+            client = null;
             client = buildClient();
         }
 
@@ -1561,10 +1604,31 @@ async function listWhatsAppGroups() {
 }
 
 app.get('/api/chats/groups', async (req, res) => {
+    beginWaOps();
     try {
         if (!isWhatsAppUsable()) {
-            const restored = await tryRestoreWhatsAppReady();
-            if (!restored) return res.status(503).json({ error: 'WhatsApp not ready' });
+            let restored = await tryRestoreWhatsAppReady();
+            if (!restored && client?.pupPage && lastReadyAt > 0) {
+                // soft-ready: پرچم را برگردان و لیست را امتحان کن
+                isClientReady = true;
+                connectionPhase = 'ready';
+                restored = true;
+            }
+            if (!restored) {
+                await startWhatsApp().catch(() => {});
+                const deadline = Date.now() + 20000;
+                while (Date.now() < deadline && !isWhatsAppUsable()) {
+                    await new Promise((r) => setTimeout(r, 1500));
+                    if (await tryRestoreWhatsAppReady()) break;
+                }
+            }
+            if (!isWhatsAppUsable()) {
+                return res.status(503).json({
+                    error: 'WhatsApp not ready',
+                    phase: connectionPhase || (isClientStarting ? 'starting' : 'disconnected'),
+                    starting: !!isClientStarting,
+                });
+            }
         }
         const groups = await listWhatsAppGroups();
         return res.json({ success: true, groups, count: groups.length });
@@ -1586,9 +1650,14 @@ app.get('/api/chats/groups', async (req, res) => {
             ) ||
             /^[a-z]$/i.test(String(error?.message || '').trim())
         ) {
-            return res.status(503).json({ error: msg });
+            return res.status(503).json({
+                error: msg,
+                phase: connectionPhase || null,
+            });
         }
-        return res.status(503).json({ error: msg });
+        return res.status(503).json({ error: msg, phase: connectionPhase || null });
+    } finally {
+        endWaOps();
     }
 });
 
@@ -1764,8 +1833,11 @@ function startServer() {
         cron.schedule('*/5 * * * *', async () => {
             try {
                 if (isClientStarting) return; // در حال اتصال است — دست نزن
+                if (waOpsBusy > 0) return; // لیست گروه/عملیات سنگین — ping کاذب timeout ندهد
 
                 if (!isClientReady) {
+                    // قبل از reconnect: شاید فقط پرچم فلیکر کرده
+                    if (client?.pupPage && (await tryRestoreWhatsAppReady())) return;
                     logger.warn('💉 Health check: WhatsApp not connected — scheduling reconnect');
                     scheduleReconnect();
                     return;
@@ -1790,12 +1862,18 @@ function startServer() {
                         state,
                         failCount: healthCheckFailCount,
                     });
-                    if (healthCheckFailCount >= 2) {
+                    // هرگز client را بدون destroy صفر نکن (Chrome یتیم + browser already running)
+                    if (healthCheckFailCount >= 3) {
                         healthCheckFailCount = 0;
-                        isClientReady = false;
-                        connectionPhase = null;
-                        client = null;
-                        scheduleReconnect();
+                        const restored = await tryRestoreWhatsAppReady();
+                        if (!restored) {
+                            try {
+                                await stopWhatsApp();
+                            } catch (_) {
+                                resetClientState();
+                            }
+                            scheduleReconnect();
+                        }
                     }
                 }
             } catch (e) {
@@ -1804,12 +1882,18 @@ function startServer() {
                     error: e?.message,
                     failCount: healthCheckFailCount,
                 });
-                if (healthCheckFailCount >= 2) {
+                if (healthCheckFailCount >= 3) {
                     healthCheckFailCount = 0;
-                    isClientReady = false;
-                    connectionPhase = null;
-                    client = null;
-                    scheduleReconnect();
+                    if (waOpsBusy > 0) return;
+                    const restored = await tryRestoreWhatsAppReady().catch(() => false);
+                    if (!restored) {
+                        try {
+                            await stopWhatsApp();
+                        } catch (_) {
+                            resetClientState();
+                        }
+                        scheduleReconnect();
+                    }
                 }
             }
         });

@@ -216,6 +216,8 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
         if (p.endsWith('/ping')) return next();
         // Presence heartbeat is high-frequency and low-cost
         if (p.endsWith('/auth/me/presence')) return next();
+        // بازیابی نشست بعد از login نباید با rate-limit عمومی قطع شود
+        if (p.endsWith('/auth/me') && req.method === 'GET') return next();
         if (p.endsWith('/auth/login') || p.endsWith('/auth/totp/verify-login')) return loginLimiter(req, res, next);
         if (p.endsWith('/auth/forgot-password') || p.endsWith('/auth/reset-password')) {
             return passwordResetLimiter(req, res, next);

@@ -284,10 +284,16 @@
         try {
             returnTo = new URLSearchParams(window.location.search).get('return') || '';
         } catch (_) {}
+        // reauth را از return حذف کن تا دوباره auto-redirect گیر نکند
         if (returnTo && returnTo.charAt(0) === '/' && returnTo.indexOf('//') !== 0) {
-            window.location.href = returnTo;
+            try {
+                var u = new URL(returnTo, window.location.origin);
+                u.searchParams.delete('reauth');
+                returnTo = u.pathname + (u.search || '') + (u.hash || '');
+            } catch (_) {}
+            window.location.replace(returnTo);
         } else {
-            window.location.href = '/dashboard';
+            window.location.replace('/dashboard');
         }
     }
 
@@ -677,7 +683,7 @@
                 return { ok: r.ok, d: d };
             });
         }).then(function(res) {
-            if (res.ok && res.d && res.d.email && !res.d.error) {
+            if (res.ok && res.d && (res.d.id || res.d.email) && !res.d.error) {
                 if (res.d.token) {
                     try { sessionStorage.setItem('crm_token', res.d.token); } catch (_) {}
                 }

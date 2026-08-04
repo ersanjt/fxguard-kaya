@@ -2461,7 +2461,8 @@
             list.innerHTML = html;
         }
 
-        function teardownActiveSession(redirectLogin) {
+        function teardownActiveSession(redirectLogin, opts) {
+            const o = opts || {};
             if (presenceInterval) { clearInterval(presenceInterval); presenceInterval = null; }
             if (ratesInterval) { clearInterval(ratesInterval); ratesInterval = null; }
             if (tickerTimeInterval) { clearInterval(tickerTimeInterval); tickerTimeInterval = null; }
@@ -2470,15 +2471,18 @@
             disconnectSocket();
             persistAuthToken(null);
             currentUser = null;
-            // کوکی httpOnly را هم پاک کن تا حلقهٔ login↔dashboard نسازد
-            try {
-                fetch((typeof API === 'string' ? API : '') + '/api/auth/logout', {
-                    method: 'POST',
-                    credentials: 'include',
-                    headers: { Accept: 'application/json' },
-                    cache: 'no-store'
-                }).catch(function () {});
-            } catch (_e) {}
+            // فقط خروج صریح کاربر کوکی httpOnly را پاک کند — kick خودکار با logout
+            // باعث پاک شدن کوکیِ تازهٔ ورود و حلقهٔ login↔dashboard می‌شود
+            if (o.clearCookie) {
+                try {
+                    fetch((typeof API === 'string' ? API : '') + '/api/auth/logout', {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: { Accept: 'application/json' },
+                        cache: 'no-store'
+                    }).catch(function () {});
+                } catch (_e) {}
+            }
             if (redirectLogin !== false) {
                 if (window.LoginBootstrap && typeof window.LoginBootstrap.setLoggedOut === 'function') {
                     window.LoginBootstrap.setLoggedOut();
@@ -2870,7 +2874,8 @@
 
         async function logout() {
             try { await apiFetch('/api/auth/logout', { method: 'POST' }); } catch (_) {}
-            teardownActiveSession(true);
+            // کوکی همین‌الان با /logout پاک شده؛ دوباره logout نزن
+            teardownActiveSession(true, { clearCookie: false });
         }
 
         function escapeHtml(s) { if (window.CRM && window.CRM.Utils && typeof window.CRM.Utils.escapeHtml === 'function') return window.CRM.Utils.escapeHtml(s); if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
@@ -4950,14 +4955,19 @@
                         || (res.data && res.data.error)
                         || res.error
                         || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed');
-                    // فقط وقتی پیام عمومی/خالی است، متن پیش‌فرض 503 را بگذار
+                    // پیام قدیمی «تب Gateway را وصل کنید» را نشان نده — متن سرور یا راهنمای کوتاه
+                    if (/تب Gateway را وصل کنید|Gateway را وصل کنید \(QR\)/i.test(String(errMsg))) {
+                        errMsg = LANG === 'fa'
+                            ? 'همگام‌سازی الان کامل نشد. چند ثانیه صبر کنید و دوباره بزنید.'
+                            : 'Sync did not finish. Wait a few seconds and try again.';
+                    }
                     const generic =
                         !errMsg ||
                         /sunucu hatas[iı]|server error|خطای سرور|html\b/i.test(String(errMsg));
                     if (generic && (res.status === 503 || res.status === 502)) {
                         errMsg = LANG === 'fa'
-                            ? 'واتساپ/Gateway آماده نیست یا همگام‌سازی طول کشید. چند ثانیه بعد دوباره بزنید.'
-                            : 'WhatsApp/Gateway not ready or sync timed out. Try again shortly.';
+                            ? 'همگام‌سازی طول کشید یا موقتاً قطع شد. چند ثانیه بعد دوباره بزنید.'
+                            : 'Sync timed out or was interrupted. Try again shortly.';
                     }
                     toast(errMsg, true);
                 }
@@ -5175,8 +5185,11 @@
                 return;
             }
             const visibleRows = (data.data || []).filter(function(c) {
-                // قفل‌شده فقط در تب آرشیو یا «محدود» — لیست عادی هیچ‌وقت نشان ندهد
-                if (c.isHiddenFromStaff && convQuickTab !== 'restricted' && convQuickTab !== 'archived') return false;
+                // قفل‌شده فقط در تب آرشیو یا «محدود» — مگر ادمین سطح بالا که همه را ببیند
+                if (c.isHiddenFromStaff && convQuickTab !== 'restricted' && convQuickTab !== 'archived') {
+                    if (typeof canViewHiddenConversations === 'function' && canViewHiddenConversations()) return true;
+                    return false;
+                }
                 return true;
             });
             if (visibleRows.length === 0) {
@@ -11861,7 +11874,11 @@
             var fullyReady = isCloudOnly || gatewayReady || (!!(data && data.whatsapp) && !cloudReadyHint && data.gatewayReady !== false && !isCloudApi);
 
             const statusLabel = fullyReady
-                ? (isCloudApi ? t('whatsapp_cloud_api_connected') : t('whatsapp_connected'))
+                ? (isCloudApi
+                    ? t('whatsapp_cloud_api_connected')
+                    : (LANG === 'fa'
+                        ? (t('whatsapp_connected') || 'متصل') + ' (Gateway)'
+                        : (t('whatsapp_connected') || 'Connected') + ' (Gateway)'))
                 : (cloudReadyHint
                     ? (LANG === 'fa' ? 'Cloud آماده — برای گروه‌ها Gateway/QR لازم است' : 'Cloud ready — Gateway/QR needed for groups')
                     : (phase === 'authenticated' ? t('whatsapp_syncing') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected'))));
@@ -14369,6 +14386,7 @@
             const card = document.getElementById('whatsappLegacyLockdownCard');
             const statsEl = document.getElementById('whatsappLegacyLockdownStats');
             const btn = document.getElementById('btnLegacyCrmLockdown');
+            const btnRestore = document.getElementById('btnLegacyCrmRestore');
             if (!card) return;
             const canLock = currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin');
             if (!canLock) {
@@ -14384,6 +14402,26 @@
                     .replace('{hidden}', String(res.data.hiddenConversations || 0))
                     .replace('{restricted}', String(res.data.restrictedCustomers || 0))
                     .replace('{total}', String(res.data.totalCustomers || 0));
+            }
+            if (btnRestore && !btnRestore._restoreBound) {
+                btnRestore._restoreBound = true;
+                btnRestore.addEventListener('click', async function() {
+                    if (!confirm(t('whatsapp_legacy_restore_confirm') || 'Restore all locked chats to the normal list?')) return;
+                    btnRestore.disabled = true;
+                    const r = await apiFetch('/api/access-grants/restore-legacy', { method: 'POST', body: '{}' });
+                    btnRestore.disabled = false;
+                    if (r.ok) {
+                        const n = (r.data && r.data.conversationsUpdated) || 0;
+                        const c = (r.data && r.data.customersUpdated) || 0;
+                        toast((t('whatsapp_legacy_restore_done') || 'Restored') + ' (' + n + '/' + c + ')');
+                        loadLegacyLockdownCard();
+                        if (typeof setConvQuickTab === 'function') setConvQuickTab('all');
+                        if (typeof loadConversations === 'function') loadConversations();
+                        if (typeof loadCustomers === 'function') loadCustomers();
+                    } else {
+                        toast((r.data && r.data.error) || t('err_generic'), true);
+                    }
+                });
             }
             if (btn && !btn._lockdownBound) {
                 btn._lockdownBound = true;
@@ -14620,9 +14658,11 @@
             try {
                 // softAuth: روی 401، on401 سراسری را صدا نزن (جلوگیری از double-redirect)
                 let res = await apiFetch('/api/auth/me', { softAuth: true });
-                if ((res.status === 401 || !res.ok) && tryN === 0) {
-                    // Bearer کهنه را دور بریز و فقط با کوکی دوباره امتحان کن
-                    persistAuthToken(null);
+                if (!res.ok && tryN === 0) {
+                    // فقط روی 401 واقعی Bearer کهنه را دور بریز — خطای موقت/HTML/۵xx توکن تازهٔ ورود را پاک نکند
+                    if (res.status === 401) {
+                        persistAuthToken(null);
+                    }
                     res = await apiFetch('/api/auth/me', { softAuth: true });
                 }
                 if (res.status === 401) {
@@ -14630,9 +14670,14 @@
                     redirectToLoginPage({ reauth: true });
                     return;
                 }
-                if (!res.ok || !res.data || !res.data.email) {
-                    const transient = !res.status || res.status >= 500 || /HTML|JSON|اتصال|Cloudflare|proxy/i.test(String(res.error || ''));
-                    if (transient && tryN < 2) {
+                const userOk = !!(res.ok && res.data && (res.data.id || res.data.email));
+                if (!userOk) {
+                    const transient =
+                        res.status === 429 ||
+                        !res.status ||
+                        res.status >= 500 ||
+                        /HTML|JSON|اتصال|Cloudflare|proxy|timeout|timed out|شبکه/i.test(String(res.error || ''));
+                    if (transient && tryN < 3) {
                         setTimeout(function () { restoreSessionFromServer(tryN + 1); }, 700 * (tryN + 1));
                         return;
                     }
@@ -14669,7 +14714,7 @@
                 } catch (e) { console.error('Post-me init:', e); }
             } catch (e) {
                 console.error('restoreSession:', e);
-                if (tryN < 2) {
+                if (tryN < 3) {
                     setTimeout(function () { restoreSessionFromServer(tryN + 1); }, 700 * (tryN + 1));
                     return;
                 }

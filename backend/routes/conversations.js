@@ -179,9 +179,12 @@ router.post('/sync-groups', async (req, res, next) => {
 
         const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+        const isGwReady = (data) =>
+            !!(data && (data.whatsapp || data.usable || data.status === 'ready' || data.phase === 'ready'));
+
         /** وضعیت Gateway؛ در صورت نیاز /api/start و انتظار تا ready */
         const ensureGatewayWhatsappReady = async (cfg, opts = {}) => {
-            const maxWaitMs = opts.maxWaitMs != null ? opts.maxWaitMs : 28000;
+            const maxWaitMs = opts.maxWaitMs != null ? opts.maxWaitMs : 35000;
             const startedAt = Date.now();
             let last = {};
             let startAttempted = false;
@@ -190,7 +193,7 @@ router.post('/sync-groups', async (req, res, next) => {
                 try {
                     const st = await gatewayGet('/api/status', { timeout: 10000, cfg });
                     last = st?.data || {};
-                    if (last.whatsapp || last.usable || last.status === 'ready') {
+                    if (isGwReady(last)) {
                         return { ok: true, data: last };
                     }
                 } catch (e) {
@@ -222,107 +225,145 @@ router.post('/sync-groups', async (req, res, next) => {
                     }
                 }
 
-                await sleep(2500);
+                await sleep(2000);
             }
 
             return { ok: false, data: last };
         };
 
         const cfg = await getWhatsappConnectionConfig();
-        const readyGate = await ensureGatewayWhatsappReady(cfg);
-        if (!readyGate.ok) {
-            const data = readyGate.data || {};
-            const phase = data.phase || data.status || 'disconnected';
-            const mode = cfg.connectionMode || 'cloud_first';
-            let hint = 'واتساپ Gateway آماده نیست. ';
-            if (phase === 'authenticated' || data.starting) {
-                hint += 'اسکن شده و در حال همگام‌سازی است — ۳۰–۶۰ ثانیه صبر کنید بعد دوباره بزنید.';
-            } else if (phase === 'qr') {
-                hint +=
-                    'QR آماده است. در تنظیمات واتساپ تب Gateway اسکن کنید، صبر کنید تا ready شود، بعد همگام‌سازی را بزنید.';
-            } else if (mode === 'cloud' || mode === 'cloud_first') {
-                hint +=
-                    'گروه‌ها فقط از طریق Gateway (QR) می‌آیند. به تنظیمات واتساپ بروید، تب Gateway را باز کنید، «شروع» بزنید و در صورت نیاز QR را اسکن کنید.';
-            } else {
-                hint +=
-                    'در تنظیمات واتساپ QR را اسکن کنید تا وضعیت ready شود، بعد دوباره همگام‌سازی کنید.';
+        let readyGate = await ensureGatewayWhatsappReady(cfg);
+
+        // حتی اگر ensure کوتاه شکست خورد، یک وضعیت زنده بگیر — UI ممکن است «متصل» باشد
+        let liveStatus = readyGate.data || {};
+        try {
+            const st = await gatewayGet('/api/status', { timeout: 8000, cfg });
+            liveStatus = st?.data || liveStatus;
+            if (isGwReady(liveStatus)) {
+                readyGate = { ok: true, data: liveStatus };
             }
-            return res.status(503).json({
-                error: hint,
-                gatewayStatus: phase,
-                connectionMode: mode,
-                gatewayReady: false,
+        } catch (_) {}
+
+        const fetchGatewayGroups = async () => {
+            let lastErr = null;
+            for (let attempt = 0; attempt < 4; attempt++) {
+                try {
+                    if (attempt > 0) {
+                        await gatewayPost('/api/start', {}, { timeout: 20000, cfg }).catch(() => {});
+                        await ensureGatewayWhatsappReady(cfg, { maxWaitMs: 12000 });
+                        await sleep(1200 * attempt);
+                    }
+                    return await gatewayGet('/api/chats/groups', { timeout: 40000, cfg });
+                } catch (e) {
+                    lastErr = e;
+                    const msg =
+                        (e?.response?.data && (e.response.data.error || e.response.data.message)) ||
+                        e?.message ||
+                        '';
+                    const retryable =
+                        e?.response?.status === 503 ||
+                        /not ready|timeout|getChats|getGroups|Session closed|Target closed/i.test(
+                            String(msg)
+                        );
+                    if (!retryable) throw e;
+                }
+            }
+            throw lastErr || new Error('groups_fetch_failed');
+        };
+
+        let gwRes;
+        let fetchErr = null;
+        try {
+            gwRes = await fetchGatewayGroups();
+        } catch (e) {
+            fetchErr = e;
+        }
+
+        // اگر لیست گروه موقتاً نیامد ولی Gateway ready است، خطای QR نده — از گروه‌های موجود CRM استفاده کن
+        if (!gwRes && isGwReady(readyGate.data || liveStatus)) {
+            logger.warn('sync-groups: groups list failed while Gateway ready — soft path', {
+                error: fetchErr?.response?.data?.error || fetchErr?.message || null,
+                gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
+            });
+            const existingGroupConvs = await Conversation.findAll({
+                where: {
+                    status: { [Op.notIn]: ['closed'] },
+                },
+                include: [
+                    {
+                        model: Customer,
+                        as: 'customer',
+                        required: true,
+                        where: {
+                            phone: { [Op.like]: '%@g.us' },
+                        },
+                    },
+                ],
+                limit: 500,
+            });
+            let softSynced = 0;
+            for (const conv of existingGroupConvs) {
+                try {
+                    if (conv.isHiddenFromStaff || conv.status === 'archived') {
+                        await conv.update({
+                            status: 'open',
+                            isHiddenFromStaff: false,
+                            closedAt: null,
+                        });
+                        softSynced++;
+                    }
+                    const cust = conv.customer;
+                    if (cust && cust.isRestrictedFromStaff) {
+                        await cust.update({ isRestrictedFromStaff: false });
+                    }
+                } catch (_) {}
+            }
+            return res.json({
+                ok: true,
+                groupsCount: existingGroupConvs.length,
+                synced: softSynced,
+                soft: true,
+                message:
+                    existingGroupConvs.length > 0
+                        ? `${existingGroupConvs.length} گروه از قبل در سیستم بود و نمایش داده شد. لیست تازه از واتساپ لحظه‌ای برنگشت — چند ثانیه بعد دوباره همگام‌سازی را بزنید.`
+                        : 'Gateway متصل است اما الان لیست تازهٔ گروه‌ها از واتساپ نیامد. ۲۰ ثانیه صبر کنید و دوباره همگام‌سازی کنید.',
             });
         }
 
-        const fetchGatewayGroups = () => gatewayGet('/api/chats/groups', { timeout: 35000, cfg });
-
-        let gwRes;
-        try {
-            gwRes = await fetchGatewayGroups();
-        } catch (firstErr) {
-            let err = firstErr;
-            const s1 = err?.response?.status;
-            const m1 =
-                (err?.response?.data && (err.response.data.error || err.response.data.message)) ||
-                err?.message ||
+        if (!gwRes) {
+            const status = fetchErr?.response?.status;
+            const gwMsg =
+                (fetchErr?.response?.data &&
+                    (fetchErr.response.data.error || fetchErr.response.data.message)) ||
+                fetchErr?.message ||
                 '';
-            if (s1 === 503 || /not ready|WhatsApp not ready/i.test(String(m1))) {
-                // یک‌بار دیگر start/wait سپس retry
-                await ensureGatewayWhatsappReady(cfg, { maxWaitMs: 15000 });
-                try {
-                    await sleep(1500);
-                    gwRes = await fetchGatewayGroups();
-                } catch (retryErr) {
-                    err = retryErr;
-                }
-            }
-            if (!gwRes) {
-                const status = err?.response?.status;
-                const gwMsg =
-                    (err?.response?.data &&
-                        (err.response.data.error || err.response.data.message)) ||
-                    err?.message ||
-                    '';
-                logger.warn('sync-groups: gateway request failed', {
-                    status,
-                    error: gwMsg,
-                    gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
-                });
-                if (status === 404 || String(gwMsg).includes('404')) {
-                    return res.status(503).json({
-                        error: 'مسیر گروه‌ها در Gateway یافت نشد. GATEWAY_URL یا نسخهٔ Gateway را بررسی کنید.',
-                    });
-                }
-                if (status === 401) {
-                    return res.status(503).json({
-                        error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را بررسی کنید.',
-                    });
-                }
-                if (status === 503 || /not ready|WhatsApp not ready/i.test(String(gwMsg))) {
-                    return res.status(503).json({
-                        error: 'واتساپ Gateway آماده نیست. در تنظیمات واتساپ تب Gateway را وصل کنید (QR)، صبر کنید تا ready شود، بعد دوباره همگام‌سازی کنید.',
-                    });
-                }
-                if (
-                    status === 500 ||
-                    status >= 502 ||
-                    /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNABORTED|timeout|getChats|getGroups/i.test(
-                        String(gwMsg)
-                    )
-                ) {
-                    return res.status(503).json({
-                        error:
-                            'Gateway موقتاً گروه‌ها را برنگرداند' +
-                            (gwMsg ? ` (${String(gwMsg).slice(0, 120)})` : '') +
-                            '. چند ثانیه بعد دوباره بزنید؛ اگر ادامه داشت Gateway را ری‌استارت کنید.',
-                    });
-                }
+            logger.warn('sync-groups: gateway request failed', {
+                status,
+                error: gwMsg,
+                gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
+            });
+            if (status === 404 || String(gwMsg).includes('404')) {
                 return res.status(503).json({
-                    error: 'خطا در ارتباط با Gateway برای همگام‌سازی گروه‌ها. دوباره تلاش کنید.',
+                    error: 'مسیر گروه‌ها در Gateway یافت نشد. GATEWAY_URL یا نسخهٔ Gateway را بررسی کنید.',
                 });
             }
+            if (status === 401) {
+                return res.status(503).json({
+                    error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را بررسی کنید.',
+                });
+            }
+            // دیگر پیام «تب Gateway را وصل کنید (QR)» نشان داده نمی‌شود
+            return res.status(503).json({
+                error:
+                    'همگام‌سازی گروه‌ها الان کامل نشد. چند ثانیه صبر کنید و دوباره بزنید. اگر ادامه داشت در تنظیمات واتساپ وضعیت Gateway را به‌روز کنید.',
+                gatewayStatus: (liveStatus && (liveStatus.phase || liveStatus.status)) || null,
+            });
         }
+
+        if (!readyGate.ok && !isGwReady(liveStatus) && gwRes) {
+            logger.info('sync-groups: groups returned despite ensureGate miss');
+        }
+
         const groups = gwRes?.data?.groups || gwRes?.data?.data?.groups || [];
         let synced = 0;
         for (const g of groups) {
@@ -350,14 +391,12 @@ router.post('/sync-groups', async (req, res, next) => {
                     await t.rollback();
                     continue;
                 }
-                if (groupName && String(customer.name || '').trim() !== groupName) {
-                    await customer.update({ name: groupName }, { transaction: t });
-                }
-                // گروه فعال از شمارهٔ فعلی: محدودیت قفل قدیمی را بردار
                 if (customer.isRestrictedFromStaff) {
                     await customer.update({ isRestrictedFromStaff: false }, { transaction: t });
                 }
-                // مکالمهٔ فعال (غیرآرشیو) را ترجیح بده؛ آرشیو قفل‌شده را دوباره باز کن
+                if (groupName && customer.name !== groupName) {
+                    await customer.update({ name: groupName }, { transaction: t });
+                }
                 let conv = await Conversation.findOne({
                     where: {
                         customerId: customer.id,

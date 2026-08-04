@@ -33,7 +33,11 @@
             var fullyReady = isCloudOnly || gatewayReady || (!!(data && data.whatsapp) && !cloudReadyHint && data.gatewayReady !== false && !isCloudApi);
 
             const statusLabel = fullyReady
-                ? (isCloudApi ? t('whatsapp_cloud_api_connected') : t('whatsapp_connected'))
+                ? (isCloudApi
+                    ? t('whatsapp_cloud_api_connected')
+                    : (LANG === 'fa'
+                        ? (t('whatsapp_connected') || 'متصل') + ' (Gateway)'
+                        : (t('whatsapp_connected') || 'Connected') + ' (Gateway)'))
                 : (cloudReadyHint
                     ? (LANG === 'fa' ? 'Cloud آماده — برای گروه‌ها Gateway/QR لازم است' : 'Cloud ready — Gateway/QR needed for groups')
                     : (phase === 'authenticated' ? t('whatsapp_syncing') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected'))));
@@ -2541,6 +2545,7 @@
             const card = document.getElementById('whatsappLegacyLockdownCard');
             const statsEl = document.getElementById('whatsappLegacyLockdownStats');
             const btn = document.getElementById('btnLegacyCrmLockdown');
+            const btnRestore = document.getElementById('btnLegacyCrmRestore');
             if (!card) return;
             const canLock = currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin');
             if (!canLock) {
@@ -2556,6 +2561,26 @@
                     .replace('{hidden}', String(res.data.hiddenConversations || 0))
                     .replace('{restricted}', String(res.data.restrictedCustomers || 0))
                     .replace('{total}', String(res.data.totalCustomers || 0));
+            }
+            if (btnRestore && !btnRestore._restoreBound) {
+                btnRestore._restoreBound = true;
+                btnRestore.addEventListener('click', async function() {
+                    if (!confirm(t('whatsapp_legacy_restore_confirm') || 'Restore all locked chats to the normal list?')) return;
+                    btnRestore.disabled = true;
+                    const r = await apiFetch('/api/access-grants/restore-legacy', { method: 'POST', body: '{}' });
+                    btnRestore.disabled = false;
+                    if (r.ok) {
+                        const n = (r.data && r.data.conversationsUpdated) || 0;
+                        const c = (r.data && r.data.customersUpdated) || 0;
+                        toast((t('whatsapp_legacy_restore_done') || 'Restored') + ' (' + n + '/' + c + ')');
+                        loadLegacyLockdownCard();
+                        if (typeof setConvQuickTab === 'function') setConvQuickTab('all');
+                        if (typeof loadConversations === 'function') loadConversations();
+                        if (typeof loadCustomers === 'function') loadCustomers();
+                    } else {
+                        toast((r.data && r.data.error) || t('err_generic'), true);
+                    }
+                });
             }
             if (btn && !btn._lockdownBound) {
                 btn._lockdownBound = true;
@@ -2792,9 +2817,11 @@
             try {
                 // softAuth: روی 401، on401 سراسری را صدا نزن (جلوگیری از double-redirect)
                 let res = await apiFetch('/api/auth/me', { softAuth: true });
-                if ((res.status === 401 || !res.ok) && tryN === 0) {
-                    // Bearer کهنه را دور بریز و فقط با کوکی دوباره امتحان کن
-                    persistAuthToken(null);
+                if (!res.ok && tryN === 0) {
+                    // فقط روی 401 واقعی Bearer کهنه را دور بریز — خطای موقت/HTML/۵xx توکن تازهٔ ورود را پاک نکند
+                    if (res.status === 401) {
+                        persistAuthToken(null);
+                    }
                     res = await apiFetch('/api/auth/me', { softAuth: true });
                 }
                 if (res.status === 401) {
@@ -2802,9 +2829,14 @@
                     redirectToLoginPage({ reauth: true });
                     return;
                 }
-                if (!res.ok || !res.data || !res.data.email) {
-                    const transient = !res.status || res.status >= 500 || /HTML|JSON|اتصال|Cloudflare|proxy/i.test(String(res.error || ''));
-                    if (transient && tryN < 2) {
+                const userOk = !!(res.ok && res.data && (res.data.id || res.data.email));
+                if (!userOk) {
+                    const transient =
+                        res.status === 429 ||
+                        !res.status ||
+                        res.status >= 500 ||
+                        /HTML|JSON|اتصال|Cloudflare|proxy|timeout|timed out|شبکه/i.test(String(res.error || ''));
+                    if (transient && tryN < 3) {
                         setTimeout(function () { restoreSessionFromServer(tryN + 1); }, 700 * (tryN + 1));
                         return;
                     }
@@ -2841,7 +2873,7 @@
                 } catch (e) { console.error('Post-me init:', e); }
             } catch (e) {
                 console.error('restoreSession:', e);
-                if (tryN < 2) {
+                if (tryN < 3) {
                     setTimeout(function () { restoreSessionFromServer(tryN + 1); }, 700 * (tryN + 1));
                     return;
                 }

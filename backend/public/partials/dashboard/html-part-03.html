@@ -441,7 +441,10 @@
                                 <h3 class="whatsapp-card-title" data-i18n="whatsapp_legacy_lockdown_title">حفاظت دادهٔ قبلی</h3>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_legacy_lockdown_hint">پس از اتصال شمارهٔ جدید، مکالمات و مشتریان ذخیره‌شده را فقط برای ادمین سطح بالا مخفی کنید. بعداً می‌توانید به کارکنان دسترسی بدهید یا با ارسال انبوه شمارهٔ جدید را اطلاع دهید.</p>
                                 <p id="whatsappLegacyLockdownStats" class="text-muted" style="font-size:0.85rem;margin:0 0 12px;"></p>
-                                <button type="button" id="btnLegacyCrmLockdown" class="btn-secondary" data-i18n="whatsapp_legacy_lockdown_btn">مخفی‌سازی مشتریان و مکالمات قبلی</button>
+                                <div class="whatsapp-form-actions-inline" style="display:flex;flex-wrap:wrap;gap:8px;">
+                                    <button type="button" id="btnLegacyCrmRestore" class="btn-primary" data-i18n="whatsapp_legacy_restore_btn">نمایش مجدد همه مکالمات و مشتریان</button>
+                                    <button type="button" id="btnLegacyCrmLockdown" class="btn-secondary" data-i18n="whatsapp_legacy_lockdown_btn">مخفی‌سازی مشتریان و مکالمات قبلی</button>
+                                </div>
                             </div>
                         </aside>
                         <div class="whatsapp-col whatsapp-col-settings">
@@ -460,6 +463,7 @@
                                     <button type="button" class="whatsapp-conn-tab active" data-tab="cloud" data-i18n="whatsapp_tab_cloud">Cloud API (Meta)</button>
                                     <button type="button" class="whatsapp-conn-tab" data-tab="gateway" data-i18n="whatsapp_tab_gateway">Gateway (QR)</button>
                                 </div>
+                                <p class="text-muted whatsapp-hint" id="whatsappGroupsNeedGatewayHint" data-i18n="whatsapp_groups_need_gateway_hint">همگام‌سازی گروه‌ها فقط با Gateway (QR) کار می‌کند؛ تب Cloud برای پیام خصوصی/Meta است و جایگزین QR نیست.</p>
                                 <div id="whatsappCloudSettings" class="whatsapp-conn-panel active">
                                     <label class="whatsapp-check-label"><input type="checkbox" id="whatsappCloudEnabled" checked> <span data-i18n="whatsapp_cloud_enabled">فعال</span></label>
                                     <div class="whatsapp-form-row"><label for="whatsappCloudAccessToken" data-i18n="whatsapp_cloud_access_token">Access Token</label><input type="password" id="whatsappCloudAccessToken" class="whatsapp-input" placeholder="EAAxxx..." autocomplete="off"></div>

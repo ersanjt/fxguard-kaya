@@ -783,14 +783,19 @@
                         || (res.data && res.data.error)
                         || res.error
                         || (LANG === 'fa' ? 'خطا در همگام‌سازی' : 'Sync failed');
-                    // فقط وقتی پیام عمومی/خالی است، متن پیش‌فرض 503 را بگذار
+                    // پیام قدیمی «تب Gateway را وصل کنید» را نشان نده — متن سرور یا راهنمای کوتاه
+                    if (/تب Gateway را وصل کنید|Gateway را وصل کنید \(QR\)/i.test(String(errMsg))) {
+                        errMsg = LANG === 'fa'
+                            ? 'همگام‌سازی الان کامل نشد. چند ثانیه صبر کنید و دوباره بزنید.'
+                            : 'Sync did not finish. Wait a few seconds and try again.';
+                    }
                     const generic =
                         !errMsg ||
                         /sunucu hatas[iı]|server error|خطای سرور|html\b/i.test(String(errMsg));
                     if (generic && (res.status === 503 || res.status === 502)) {
                         errMsg = LANG === 'fa'
-                            ? 'واتساپ/Gateway آماده نیست یا همگام‌سازی طول کشید. چند ثانیه بعد دوباره بزنید.'
-                            : 'WhatsApp/Gateway not ready or sync timed out. Try again shortly.';
+                            ? 'همگام‌سازی طول کشید یا موقتاً قطع شد. چند ثانیه بعد دوباره بزنید.'
+                            : 'Sync timed out or was interrupted. Try again shortly.';
                     }
                     toast(errMsg, true);
                 }
@@ -1008,8 +1013,11 @@
                 return;
             }
             const visibleRows = (data.data || []).filter(function(c) {
-                // قفل‌شده فقط در تب آرشیو یا «محدود» — لیست عادی هیچ‌وقت نشان ندهد
-                if (c.isHiddenFromStaff && convQuickTab !== 'restricted' && convQuickTab !== 'archived') return false;
+                // قفل‌شده فقط در تب آرشیو یا «محدود» — مگر ادمین سطح بالا که همه را ببیند
+                if (c.isHiddenFromStaff && convQuickTab !== 'restricted' && convQuickTab !== 'archived') {
+                    if (typeof canViewHiddenConversations === 'function' && canViewHiddenConversations()) return true;
+                    return false;
+                }
                 return true;
             });
             if (visibleRows.length === 0) {

@@ -6,14 +6,15 @@ const { COOKIE_NAME } = require('../lib/authCookie');
 
 function collectCandidateTokens(req) {
     const tokens = [];
+    // کوکی httpOnly را اول امتحان کن — Bearer کهنه در sessionStorage باعث بیرون‌انداختن نشود
+    if (req.cookies && req.cookies[COOKIE_NAME]) {
+        const cookieTok = String(req.cookies[COOKIE_NAME] || '').trim();
+        if (cookieTok) tokens.push(cookieTok);
+    }
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
         const bearer = authHeader.slice(7).trim();
-        if (bearer) tokens.push(bearer);
-    }
-    if (req.cookies && req.cookies[COOKIE_NAME]) {
-        const cookieTok = String(req.cookies[COOKIE_NAME] || '').trim();
-        if (cookieTok && tokens.indexOf(cookieTok) === -1) tokens.push(cookieTok);
+        if (bearer && tokens.indexOf(bearer) === -1) tokens.push(bearer);
     }
     return tokens;
 }
@@ -57,7 +58,7 @@ async function resolveUserFromToken(token) {
 }
 
 /**
- * Bearer را اول امتحان می‌کند؛ اگر نامعتبر بود کوکی httpOnly را هم امتحان می‌کند
+ * Bearer را هم امتحان می‌کند؛ کوکی httpOnly اول است
  * تا نشست ذخیره‌شدهٔ کهنه باعث بیرون‌انداختن نشود.
  */
 async function authMiddleware(req, res, next) {

@@ -39,6 +39,46 @@ async function lockdownExistingCrmData({ reason } = {}) {
 }
 
 /**
+ * بازگردانی دیده‌شدن مکالمات/مشتریان قفل‌شده (مثلاً بعد از اتصال مجدد همان شماره).
+ * مکالمات مخفی → قابل‌نمایش و open؛ محدودیت مشتریان برداشته می‌شود.
+ */
+async function restoreLegacyCrmVisibility({ reason } = {}) {
+    const [convHidden, custResult] = await Promise.all([
+        Conversation.update(
+            {
+                isHiddenFromStaff: false,
+                status: 'open',
+                closedAt: null,
+            },
+            { where: { isHiddenFromStaff: true } }
+        ),
+        Customer.update(
+            { isRestrictedFromStaff: false },
+            { where: { isRestrictedFromStaff: true } }
+        ),
+    ]);
+
+    // آرشیو بدون پرچم مخفی (اگر فقط status عوض شده) هم به open برگردان
+    const [convArchived] = await Conversation.update(
+        { status: 'open', closedAt: null, isHiddenFromStaff: false },
+        { where: { status: 'archived' } }
+    );
+
+    const conversationsUpdated =
+        (Array.isArray(convHidden) ? convHidden[0] : convHidden) +
+        (typeof convArchived === 'number' ? convArchived : 0);
+    const customersUpdated = Array.isArray(custResult) ? custResult[0] : custResult;
+    const stats = await getLockdownStats();
+    logger.info('Legacy CRM visibility restored', {
+        reason: reason || 'manual',
+        conversationsUpdated,
+        customersUpdated,
+        remainingHidden: stats.hiddenConversations,
+    });
+    return { conversationsUpdated, customersUpdated, stats };
+}
+
+/**
  * اگر شمارهٔ متصل‌شده با آخرین شمارهٔ ذخیره‌شده فرق کند، دادهٔ قبلی را قفل و آرشیو می‌کند.
  * اولین اتصال (بدون lastLinkedGatewayNumber) فقط شماره را ذخیره می‌کند و قفل نمی‌زند.
  */
@@ -103,6 +143,7 @@ async function getLockdownStats() {
 
 module.exports = {
     lockdownExistingCrmData,
+    restoreLegacyCrmVisibility,
     handleGatewayNumberReady,
     getLockdownStats,
     normalizeLinkedNumber,

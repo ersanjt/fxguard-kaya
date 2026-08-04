@@ -14,6 +14,7 @@ const {
 } = require('../lib/staffResourceGrants');
 const {
     lockdownExistingCrmData,
+    restoreLegacyCrmVisibility,
     getLockdownStats,
     handleGatewayNumberReady,
 } = require('../services/legacyCrmLockdown');
@@ -57,6 +58,32 @@ router.post('/lockdown-legacy', async (req, res, next) => {
         }).catch(() => {});
         const stats = await getLockdownStats();
         res.json({ ok: true, ...result, stats });
+    } catch (err) {
+        next(err);
+    }
+});
+
+/**
+ * POST /api/access-grants/restore-legacy
+ * بازگردانی مکالمات/مشتریان قفل‌شده به لیست عادی (برای شمارهٔ فعلی Gateway)
+ */
+router.post('/restore-legacy', async (req, res, next) => {
+    try {
+        if (!requireGrantAdmin(req, res)) return;
+        const result = await restoreLegacyCrmVisibility({
+            reason: 'manual_admin_restore',
+            userId: req.userId,
+        });
+        await logActivity({
+            userId: req.userId,
+            branchId: req.user.branchId,
+            departmentId: req.user.departmentId,
+            action: 'legacy_crm_restore',
+            entityType: 'system',
+            summary: `بازگردانی دید مکالمات: ${result.conversationsUpdated} مکالمه، ${result.customersUpdated} مشتری`,
+            metadata: result,
+        }).catch(() => {});
+        res.json({ ok: true, ...result });
     } catch (err) {
         next(err);
     }

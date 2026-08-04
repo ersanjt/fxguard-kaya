@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="KAYA">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="9fc218b1658d">
+    <meta name="crm-build" content="d747734adae9">
     <title>پورتال کارکنان کایا | KAYA</title>
     <link rel="icon" id="favicon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/brand/kaya-apple-touch.png?v=2">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=9fc218b1658d">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=9fc218b1658d" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=d747734adae9">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=d747734adae9" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -1641,7 +1641,10 @@
                                 <h3 class="whatsapp-card-title" data-i18n="whatsapp_legacy_lockdown_title">حفاظت دادهٔ قبلی</h3>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_legacy_lockdown_hint">پس از اتصال شمارهٔ جدید، مکالمات و مشتریان ذخیره‌شده را فقط برای ادمین سطح بالا مخفی کنید. بعداً می‌توانید به کارکنان دسترسی بدهید یا با ارسال انبوه شمارهٔ جدید را اطلاع دهید.</p>
                                 <p id="whatsappLegacyLockdownStats" class="text-muted" style="font-size:0.85rem;margin:0 0 12px;"></p>
-                                <button type="button" id="btnLegacyCrmLockdown" class="btn-secondary" data-i18n="whatsapp_legacy_lockdown_btn">مخفی‌سازی مشتریان و مکالمات قبلی</button>
+                                <div class="whatsapp-form-actions-inline" style="display:flex;flex-wrap:wrap;gap:8px;">
+                                    <button type="button" id="btnLegacyCrmRestore" class="btn-primary" data-i18n="whatsapp_legacy_restore_btn">نمایش مجدد همه مکالمات و مشتریان</button>
+                                    <button type="button" id="btnLegacyCrmLockdown" class="btn-secondary" data-i18n="whatsapp_legacy_lockdown_btn">مخفی‌سازی مشتریان و مکالمات قبلی</button>
+                                </div>
                             </div>
                         </aside>
                         <div class="whatsapp-col whatsapp-col-settings">
@@ -1660,6 +1663,7 @@
                                     <button type="button" class="whatsapp-conn-tab active" data-tab="cloud" data-i18n="whatsapp_tab_cloud">Cloud API (Meta)</button>
                                     <button type="button" class="whatsapp-conn-tab" data-tab="gateway" data-i18n="whatsapp_tab_gateway">Gateway (QR)</button>
                                 </div>
+                                <p class="text-muted whatsapp-hint" id="whatsappGroupsNeedGatewayHint" data-i18n="whatsapp_groups_need_gateway_hint">همگام‌سازی گروه‌ها فقط با Gateway (QR) کار می‌کند؛ تب Cloud برای پیام خصوصی/Meta است و جایگزین QR نیست.</p>
                                 <div id="whatsappCloudSettings" class="whatsapp-conn-panel active">
                                     <label class="whatsapp-check-label"><input type="checkbox" id="whatsappCloudEnabled" checked> <span data-i18n="whatsapp_cloud_enabled">فعال</span></label>
                                     <div class="whatsapp-form-row"><label for="whatsappCloudAccessToken" data-i18n="whatsapp_cloud_access_token">Access Token</label><input type="password" id="whatsappCloudAccessToken" class="whatsapp-input" placeholder="EAAxxx..." autocomplete="off"></div>
@@ -3920,10 +3924,10 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=9fc218b1658d" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=9fc218b1658d" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=9fc218b1658d" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=9fc218b1658d" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=d747734adae9" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=d747734adae9" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=d747734adae9" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=d747734adae9" charset="utf-8"></script>
     <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
         <div class="modal-box onboarding-tour-box" dir="auto">
             <div class="onboarding-tour-header">
@@ -3950,10 +3954,10 @@
         </div>
     </div>
 
-    <script src="/js/i18n-en.js?v=9fc218b1658d" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=9fc218b1658d" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=9fc218b1658d" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=9fc218b1658d" charset="utf-8"></script>
+    <script src="/js/i18n-en.js?v=d747734adae9" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=d747734adae9" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=d747734adae9" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=d747734adae9" charset="utf-8"></script>
     <script>
     (function() {
         var meta = document.querySelector('meta[name="crm-build"]');

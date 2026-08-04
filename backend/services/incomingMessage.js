@@ -553,16 +553,60 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         }
 
         let conversation = await Conversation.findOne({
-            where: { customerId: customer.id, status: { [Op.ne]: 'closed' } }
+            where: {
+                customerId: customer.id,
+                status: { [Op.notIn]: ['closed', 'archived'] },
+            },
+            order: [['lastMessageAt', 'DESC'], ['updatedAt', 'DESC']],
         });
+
+        // مکالمهٔ آرشیو/مخفی (مثلاً بعد از عوض شدن شماره Gateway) — با پیام زنده دوباره باز کن
+        if (!conversation) {
+            const archivedConv = await Conversation.findOne({
+                where: { customerId: customer.id, status: 'archived' },
+                order: [['lastMessageAt', 'DESC'], ['updatedAt', 'DESC']],
+            });
+            if (archivedConv) {
+                await archivedConv.update({
+                    status: 'open',
+                    isHiddenFromStaff: false,
+                    closedAt: null,
+                });
+                conversation = archivedConv;
+                logger.info('Reopened archived conversation on live WhatsApp message', {
+                    conversationId: conversation.id,
+                    customerId: customer.id,
+                    phone,
+                });
+            }
+        }
+
+        if (conversation && (conversation.isHiddenFromStaff || conversation.status === 'archived')) {
+            await conversation.update({
+                status: 'open',
+                isHiddenFromStaff: false,
+                closedAt: null,
+            });
+            logger.info('Unhid conversation on live WhatsApp message', {
+                conversationId: conversation.id,
+                customerId: customer.id,
+            });
+        }
+
+        if (customer.isRestrictedFromStaff) {
+            await customer.update({ isRestrictedFromStaff: false });
+        }
 
         if (!conversation) {
             const t = await sequelize.transaction();
             try {
                 conversation = await Conversation.findOne({
-                    where: { customerId: customer.id, status: { [Op.ne]: 'closed' } },
+                    where: {
+                        customerId: customer.id,
+                        status: { [Op.notIn]: ['closed', 'archived'] },
+                    },
                     transaction: t,
-                    lock: t.LOCK.UPDATE
+                    lock: t.LOCK.UPDATE,
                 });
                 if (!conversation) {
                     conversation = await Conversation.create({
@@ -577,7 +621,10 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
             } catch (txErr) {
                 await t.rollback();
                 conversation = await Conversation.findOne({
-                    where: { customerId: customer.id, status: { [Op.ne]: 'closed' } }
+                    where: {
+                        customerId: customer.id,
+                        status: { [Op.notIn]: ['closed', 'archived'] },
+                    },
                 });
                 if (!conversation) throw txErr;
             }
