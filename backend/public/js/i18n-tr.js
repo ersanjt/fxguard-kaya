@@ -1220,6 +1220,7 @@ window.__I18N_TR = {
     panel_smtp_from: 'Gönderen adresi (From)',
     panel_smtp_from_name: 'Gönderen adı',
     panel_smtp_secure: 'SSL/TLS kullan (port 465)',
+    panel_smtp_secure_hint: 'Port 587: SSL kapalı (STARTTLS). Port 465: SSL açık. Uyumsuzluk “wrong version number” hatası verir.',
     panel_email_login_notification: 'Giriş bildirimi e-postası gönder',
     panel_test_email_label: 'Test e-postası gönder',
     panel_test_email_btn: 'Test gönder',

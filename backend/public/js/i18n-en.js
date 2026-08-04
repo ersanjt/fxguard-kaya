@@ -1243,6 +1243,7 @@ window.__I18N_EN = {
     panel_smtp_from: 'From address',
     panel_smtp_from_name: 'From name',
     panel_smtp_secure: 'Use SSL/TLS (port 465)',
+    panel_smtp_secure_hint: 'Port 587: leave SSL unchecked (STARTTLS). Port 465: enable SSL. A mismatch causes “wrong version number”.',
     panel_email_login_notification: 'Send login notification email to user',
     panel_test_email_label: 'Send test email',
     panel_test_email_btn: 'Send test',

@@ -154,7 +154,10 @@ function getSupportedLanguages(settings) {
 function getPanelEmailConfig(settings) {
     if (!settings || !settings.smtpHost || !settings.smtpPort) return null;
     const host = (settings.smtpHost || '').replace(/\.+$/, '').trim();
-    const secure = !!settings.smtpSecure;
+    const portNum = parseInt(String(settings.smtpPort), 10) || 587;
+    let secure = !!settings.smtpSecure;
+    if (portNum === 465) secure = true;
+    else if (portNum === 587) secure = false;
     return {
         host,
         port: settings.smtpPort,

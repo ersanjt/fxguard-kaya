@@ -1293,6 +1293,7 @@ window.__I18N_FA = {
     panel_smtp_from: 'آدرس فرستنده (From)',
     panel_smtp_from_name: 'نام فرستنده',
     panel_smtp_secure: 'استفاده از SSL/TLS (پورت ۴۶۵)',
+    panel_smtp_secure_hint: 'پورت ۵۸۷: تیک خاموش (STARTTLS). پورت ۴۶۵: تیک روشن (SSL). عدم تطابق باعث خطای wrong version number می‌شود.',
     panel_email_login_notification: 'ارسال اعلان ورود به ایمیل کاربر',
     panel_test_email_label: 'ارسال ایمیل تست',
     panel_section_visibility: 'نمایش بخش‌ها در سایت',

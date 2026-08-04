@@ -11,9 +11,13 @@ const logger = require('../config/logger');
 
 const FROM_NAME = process.env.SMTP_FROM_NAME || 'Kaya CRM';
 const FROM_EMAIL = process.env.SMTP_FROM || process.env.SMTP_USER || 'noreply@localhost';
-const LOGIN_NOTIFICATION_ENABLED = process.env.EMAIL_LOGIN_NOTIFICATION === 'true' || process.env.EMAIL_LOGIN_NOTIFICATION === '1';
+const LOGIN_NOTIFICATION_ENABLED =
+    process.env.EMAIL_LOGIN_NOTIFICATION === 'true' || process.env.EMAIL_LOGIN_NOTIFICATION === '1';
 const PANEL_URL =
-    process.env.BACKEND_PUBLIC_URL || process.env.PANEL_URL || process.env.FRONTEND_URL || 'http://localhost:3002';
+    process.env.BACKEND_PUBLIC_URL ||
+    process.env.PANEL_URL ||
+    process.env.FRONTEND_URL ||
+    'http://localhost:3002';
 const MAX_RETRIES = parseInt(process.env.EMAIL_MAX_RETRIES || '3', 10);
 const RETRY_DELAY_MS = parseInt(process.env.EMAIL_RETRY_DELAY_MS || '2000', 10);
 const RATE_LIMIT_REQUESTS = parseInt(process.env.EMAIL_RATE_LIMIT_REQUESTS || '100', 10);
@@ -28,7 +32,7 @@ const emailStats = { count: 0, resetAt: Date.now() };
 function parseFallbackHosts(raw) {
     return String(raw || '')
         .split(',')
-        .map(h => h.trim().toLowerCase())
+        .map((h) => h.trim().toLowerCase())
         .filter(Boolean);
 }
 
@@ -57,7 +61,10 @@ function checkRateLimit() {
         emailStats.resetAt = now;
     }
     if (emailStats.count >= RATE_LIMIT_REQUESTS) {
-        logger.warn('Email rate limit exceeded', { count: emailStats.count, limit: RATE_LIMIT_REQUESTS });
+        logger.warn('Email rate limit exceeded', {
+            count: emailStats.count,
+            limit: RATE_LIMIT_REQUESTS,
+        });
         return false;
     }
     emailStats.count++;
@@ -68,7 +75,8 @@ function getEnvEmailConfig() {
     if (!isEnabled()) return null;
     const host = normalizeHost(process.env.SMTP_HOST || '');
     const port = parseInt(process.env.SMTP_PORT, 10) || 587;
-    const secure = process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1' || port === 465;
+    const secure =
+        process.env.SMTP_SECURE === 'true' || process.env.SMTP_SECURE === '1' || port === 465;
     return {
         host,
         port,
@@ -77,27 +85,113 @@ function getEnvEmailConfig() {
         from: process.env.SMTP_FROM || process.env.SMTP_USER || null,
         fromName: process.env.SMTP_FROM_NAME || FROM_NAME || null,
         secure,
-        allowSelfSigned: parseFallbackHosts(process.env.SMTP_ALLOW_SELF_SIGNED_HOSTS || '').some(h => host.includes(h) || host === h),
-        fallbackHosts: parseFallbackHosts(process.env.SMTP_FALLBACK_HOSTS || '')
+        allowSelfSigned: parseFallbackHosts(process.env.SMTP_ALLOW_SELF_SIGNED_HOSTS || '').some(
+            (h) => host.includes(h) || host === h
+        ),
+        fallbackHosts: parseFallbackHosts(process.env.SMTP_FALLBACK_HOSTS || ''),
     };
 }
 
 function isRetryableError(err) {
     const msg = (err && err.message ? err.message : '').toLowerCase();
-    return err.code === 'ECONNREFUSED' ||
+    if (isTlsMismatchError(err)) return false;
+    return (
+        err.code === 'ECONNREFUSED' ||
         err.code === 'ETIMEDOUT' ||
         err.code === 'EHOSTUNREACH' ||
         err.code === 'ECONNECTION' ||
-        msg.includes('smtp') ||
         msg.includes('timeout') ||
-        msg.includes('connection');
+        msg.includes('connection')
+    );
+}
+
+function isTlsMismatchError(err) {
+    const msg = (err && err.message ? err.message : '').toLowerCase();
+    return (
+        msg.includes('wrong version number') ||
+        msg.includes('ssl3_get_record') ||
+        msg.includes('ssl routines') ||
+        err.code === 'ERR_SSL_WRONG_VERSION_NUMBER' ||
+        err.code === 'EPROTO'
+    );
+}
+
+function isAuthSmtpError(err) {
+    const msg = (err && err.message ? err.message : '').toLowerCase();
+    const code = err && (err.responseCode || err.code);
+    return (
+        code === 535 ||
+        code === 534 ||
+        code === 530 ||
+        msg.includes('invalid login') ||
+        msg.includes('authentication failed') ||
+        (msg.includes('auth') && msg.includes('fail'))
+    );
+}
+
+/** Normalize secure flag from port (465 = implicit SSL, 587 = STARTTLS). */
+function normalizeSmtpSecure(port, secure) {
+    const p = parseInt(port, 10) || 587;
+    if (p === 465) return true;
+    if (p === 587) return false;
+    return !!secure;
+}
+
+/**
+ * Ordered connection attempts. Never prefer 587+secure (causes wrong version number).
+ */
+function buildSmtpConnectionCandidates(port, secure) {
+    const basePort = parseInt(port, 10) || 587;
+    const baseSecure = normalizeSmtpSecure(basePort, secure);
+    const primary = { port: basePort, secure: baseSecure };
+    const alts = [
+        { port: 587, secure: false },
+        { port: 465, secure: true },
+        { port: 25, secure: false },
+        { port: 2525, secure: false },
+    ];
+    const out = [primary];
+    const key = (c) => `${c.port}:${c.secure ? 1 : 0}`;
+    const seen = new Set([key(primary)]);
+    for (const a of alts) {
+        const k = key(a);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(a);
+    }
+    return out;
+}
+
+function formatSmtpUserError(err) {
+    if (!err) return 'Email send failed';
+    const raw = err.message || String(err);
+    if (isTlsMismatchError(err)) {
+        return (
+            'عدم تطابق SSL/TLS با پورت SMTP. برای پورت ۵۸۷ تیک «SSL/TLS (۴۶۵)» را خاموش بگذارید (STARTTLS). ' +
+            'برای پورت ۴۶۵ تیک SSL را روشن کنید. تنظیمات را ذخیره کنید و دوباره تست بزنید.'
+        );
+    }
+    if (isAuthSmtpError(err)) {
+        return 'احراز هویت SMTP ناموفق بود. نام کاربری و رمز ایمیل را بررسی کنید (برای Gmail از App Password استفاده کنید).';
+    }
+    if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT' || err.code === 'EHOSTUNREACH') {
+        return 'اتصال به سرور SMTP برقرار نشد. Host و پورت را بررسی کنید (معمولاً ۵۸۷ یا ۴۶۵).';
+    }
+    if (err.code === 'ENOTFOUND' || /getaddrinfo|enotfound/i.test(raw)) {
+        return 'آدرس Host SMTP پیدا نشد. املای دامنه را بررسی کنید (بدون نقطهٔ اضافه در انتها).';
+    }
+    // Strip noisy openssl dumps when a clearer hint exists
+    if (/openssl|ssl routines/i.test(raw) && raw.length > 160) {
+        return 'خطای امنیتی TLS در اتصال SMTP. پورت و گزینه SSL/TLS را مطابق راهنمای هاست ایمیل تنظیم کنید.';
+    }
+    return raw;
 }
 
 function getCandidateHosts(config) {
     const baseHost = normalizeHost(config.host);
     const envFallback = parseFallbackHosts(process.env.SMTP_FALLBACK_HOSTS || '');
     const cfgFallback = Array.isArray(config.fallbackHosts)
-        ? config.fallbackHosts.map(h => normalizeHost(h)).filter(Boolean)
+        ? config.fallbackHosts.map((h) => normalizeHost(h)).filter(Boolean)
         : [];
     const out = [baseHost];
     for (const h of [...cfgFallback, ...envFallback]) {
@@ -126,8 +220,8 @@ function buildMailOpts(config, { to, subject, text, html, attachments = [] }) {
             'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
             'X-Priority': '3',
             'X-MSMail-Priority': 'Normal',
-            'Precedence': 'bulk'
-        }
+            Precedence: 'bulk',
+        },
     };
 }
 
@@ -183,7 +277,12 @@ function parsePositiveInt(val, fallback) {
     return n;
 }
 
-async function sendMailWithConfigDetailed(config, { to, subject, text, html, attachments = [] }, attempt = 1, deliveryOpts = null) {
+async function sendMailWithConfigDetailed(
+    config,
+    { to, subject, text, html, attachments = [] },
+    attempt = 1,
+    deliveryOpts = null
+) {
     if (!config || !config.host || !config.port) {
         return { ok: false, error: 'SMTP host and port are required' };
     }
@@ -201,47 +300,35 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
         }
     }
 
-    const effMaxRetries = deliveryOpts && deliveryOpts.maxRetries != null
-        ? Math.max(1, parsePositiveInt(deliveryOpts.maxRetries, MAX_RETRIES))
-        : MAX_RETRIES;
-    const connTimeoutMs = deliveryOpts && deliveryOpts.connectionTimeoutMs != null
-        ? parsePositiveInt(deliveryOpts.connectionTimeoutMs, CONNECTION_TIMEOUT_MS)
-        : CONNECTION_TIMEOUT_MS;
-    const greetTimeoutMs = deliveryOpts && deliveryOpts.greetingTimeoutMs != null
-        ? parsePositiveInt(deliveryOpts.greetingTimeoutMs, GREETING_TIMEOUT_MS)
-        : GREETING_TIMEOUT_MS;
-    const sockTimeoutMs = deliveryOpts && deliveryOpts.socketTimeoutMs != null
-        ? parsePositiveInt(deliveryOpts.socketTimeoutMs, SOCKET_TIMEOUT_MS)
-        : SOCKET_TIMEOUT_MS;
+    const effMaxRetries =
+        deliveryOpts && deliveryOpts.maxRetries != null
+            ? Math.max(1, parsePositiveInt(deliveryOpts.maxRetries, MAX_RETRIES))
+            : MAX_RETRIES;
+    const connTimeoutMs =
+        deliveryOpts && deliveryOpts.connectionTimeoutMs != null
+            ? parsePositiveInt(deliveryOpts.connectionTimeoutMs, CONNECTION_TIMEOUT_MS)
+            : CONNECTION_TIMEOUT_MS;
+    const greetTimeoutMs =
+        deliveryOpts && deliveryOpts.greetingTimeoutMs != null
+            ? parsePositiveInt(deliveryOpts.greetingTimeoutMs, GREETING_TIMEOUT_MS)
+            : GREETING_TIMEOUT_MS;
+    const sockTimeoutMs =
+        deliveryOpts && deliveryOpts.socketTimeoutMs != null
+            ? parsePositiveInt(deliveryOpts.socketTimeoutMs, SOCKET_TIMEOUT_MS)
+            : SOCKET_TIMEOUT_MS;
 
     const nodemailer_local = require('nodemailer');
     const basePort = parseInt(config.port, 10) || 587;
-    const baseSecure = !!config.secure;
+    const baseSecure = normalizeSmtpSecure(basePort, config.secure);
     const mailOpts = buildMailOpts(config, { to, subject, text, html, attachments });
     const hostCandidates = getCandidateHosts(config);
     let lastError = null;
+    let bestError = null;
 
-    // If SSL/TLS mismatch happens (wrong version number), try alternate port/secure combos.
-    // This addresses errors like: "ssl3_get_record:wrong version number".
-    const connectionCandidates = deliveryOpts && deliveryOpts.singleConnectionCandidate
-        ? [{ port: basePort, secure: baseSecure }]
-        : (() => {
-            if (basePort === 587) {
-                return [
-                    { port: 587, secure: false },
-                    { port: 465, secure: true },
-                    { port: 587, secure: true }
-                ];
-            }
-            if (basePort === 465) {
-                return [
-                    { port: 465, secure: true },
-                    { port: 587, secure: false },
-                    { port: 465, secure: false }
-                ];
-            }
-            return [{ port: basePort, secure: baseSecure }];
-        })();
+    const connectionCandidates =
+        deliveryOpts && deliveryOpts.singleConnectionCandidate
+            ? [{ port: basePort, secure: baseSecure }]
+            : buildSmtpConnectionCandidates(basePort, baseSecure);
 
     for (const host of hostCandidates) {
         for (const conn of connectionCandidates) {
@@ -254,13 +341,20 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
                         host,
                         port: tryPort,
                         secure: trySecure,
-                        auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
+                        auth:
+                            config.user && config.pass
+                                ? { user: config.user, pass: config.pass }
+                                : undefined,
                         connectionTimeout: connTimeoutMs,
                         greetingTimeout: greetTimeoutMs,
-                        socketTimeout: sockTimeoutMs
+                        socketTimeout: sockTimeoutMs,
                     };
+                    // 587: plain then upgrade (STARTTLS). 465: implicit TLS.
                     if (tryPort === 587 && !trySecure) opts.requireTLS = true;
-                    if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
+                    if (tryPort === 25 && !trySecure) opts.ignoreTLS = false;
+                    const tlsOpts = { minVersion: 'TLSv1.2' };
+                    if (config.allowSelfSigned) tlsOpts.rejectUnauthorized = false;
+                    opts.tls = tlsOpts;
 
                     const transport = nodemailer_local.createTransport(opts);
                     await transport.sendMail(mailOpts);
@@ -268,11 +362,17 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
                         to: emails.join(', '),
                         host,
                         port: tryPort,
-                        secure: trySecure
+                        secure: trySecure,
                     });
-                    return { ok: true, usedHost: host };
+                    return { ok: true, usedHost: host, usedPort: tryPort, usedSecure: trySecure };
                 } catch (err) {
                     lastError = err;
+                    // Prefer auth/host errors over misleading TLS mismatch from a bad combo
+                    if (!bestError || (isTlsMismatchError(bestError) && !isTlsMismatchError(err))) {
+                        bestError = err;
+                    } else if (!isTlsMismatchError(err) && isAuthSmtpError(err)) {
+                        bestError = err;
+                    }
                     const retryable = isRetryableError(err);
                     if (retryable && i < effMaxRetries) {
                         const delay = RETRY_DELAY_MS * i;
@@ -283,9 +383,9 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
                             host,
                             port: tryPort,
                             secure: trySecure,
-                            error: err.message
+                            error: err.message,
                         });
-                        await new Promise(resolve => setTimeout(resolve, delay));
+                        await new Promise((resolve) => setTimeout(resolve, delay));
                         continue;
                     }
 
@@ -296,22 +396,33 @@ async function sendMailWithConfigDetailed(config, { to, subject, text, html, att
         }
     }
 
-    let msg = (lastError && (lastError.message || String(lastError))) || 'Email send failed';
-    if (lastError && lastError.response) msg += ' — ' + (typeof lastError.response === 'string' ? lastError.response : JSON.stringify(lastError.response));
-    logger.error('Email send error (custom config)', { error: msg });
+    const errForUser = bestError || lastError;
+    let msg = formatSmtpUserError(errForUser);
+    if (errForUser && errForUser.response && !isTlsMismatchError(errForUser)) {
+        const resp =
+            typeof errForUser.response === 'string'
+                ? errForUser.response
+                : JSON.stringify(errForUser.response);
+        if (resp && msg.length < 220) msg += ' — ' + String(resp).slice(0, 120);
+    }
+    logger.error('Email send error (custom config)', {
+        error: (errForUser && errForUser.message) || msg,
+        userFacing: msg,
+    });
     return { ok: false, error: msg };
 }
 
 /** Shared HTML layout for outbound mail (English, LTR). */
 function baseHtml(title, body, opts = {}) {
     const accentColor = opts.accentColor || '#059669';
-    const accentDark  = opts.accentDark  || '#047857';
-    const siteName    = opts.siteName    || FROM_NAME || 'Staff Portal';
-    const logoUrl     = opts.logoUrl     || '';
-    const footerText  = opts.footerText  || `This email was sent automatically by <strong>${siteName}</strong>.`;
-    const unsubUrl    = `${PANEL_URL}?unsubscribe=1`;
-    const dir         = opts.dir || 'ltr';
-    const lang        = opts.lang || 'en';
+    const accentDark = opts.accentDark || '#047857';
+    const siteName = opts.siteName || FROM_NAME || 'Staff Portal';
+    const logoUrl = opts.logoUrl || '';
+    const footerText =
+        opts.footerText || `This email was sent automatically by <strong>${siteName}</strong>.`;
+    const unsubUrl = `${PANEL_URL}?unsubscribe=1`;
+    const dir = opts.dir || 'ltr';
+    const lang = opts.lang || 'en';
 
     return `<!DOCTYPE html>
 <html dir="${dir}" lang="${lang}" xmlns="http://www.w3.org/1999/xhtml">
@@ -394,14 +505,20 @@ function baseHtml(title, body, opts = {}) {
  * Welcome email for a newly created user (sign-in details).
  * @param {object} [extra] - { passwordLinkUrl, guideExtra }
  */
-async function sendWelcomeCredentials(user, plainPassword, siteName = 'Staff Portal', panelConfig = null, extra = null) {
+async function sendWelcomeCredentials(
+    user,
+    plainPassword,
+    siteName = 'Staff Portal',
+    panelConfig = null,
+    extra = null
+) {
     if (!user || !user.email) return false;
     const roleLabels = {
         owner: 'Owner',
         admin: 'Administrator',
         manager: 'Manager',
         supervisor: 'Supervisor',
-        agent: 'Agent'
+        agent: 'Agent',
     };
     const roleName = roleLabels[user.role] || user.role || 'Agent';
     const passwordLinkUrl = extra && extra.passwordLinkUrl;
@@ -420,16 +537,24 @@ async function sendWelcomeCredentials(user, plainPassword, siteName = 'Staff Por
         <div class="label">Sign-in email${user.username ? ' / username' : ''}</div>
         <div class="value">${escHtml(user.email)}${user.username ? ' · ' + escHtml(user.username) : ''}</div>
       </div>
-      ${plainPassword && plainPassword !== '—' ? `
+      ${
+          plainPassword && plainPassword !== '—'
+              ? `
       <div class="cred-box">
         <div class="cred-label">Temporary password</div>
         <div class="cred-value">${escHtml(plainPassword)}</div>
-      </div>` : ''}
-      ${passwordLinkUrl ? `
+      </div>`
+              : ''
+      }
+      ${
+          passwordLinkUrl
+              ? `
       <div class="info-box">
         <div class="label">Secure password link</div>
         <div class="value"><a href="${escHtml(passwordLinkUrl)}" style="color:#059669">Set or reset your password</a></div>
-      </div>` : ''}
+      </div>`
+              : ''
+      }
       <div class="alert-box alert-warn">
         <span class="alert-icon">⚠️</span>
         <span class="alert-text">Change your password after first sign-in. Prefer the secure link above when available.</span>
@@ -460,7 +585,7 @@ async function sendWelcomeCredentials(user, plainPassword, siteName = 'Staff Por
         to: user.email,
         subject: `${title} — your sign-in details`,
         text: `Hello ${user.name || 'there'},\n\nYour account on ${siteName} is ready.\n\nPortal: ${PANEL_URL}\nEmail: ${user.email}${user.username ? '\nUsername: ' + user.username : ''}\nTemporary password: ${plainPassword || '(use secure link)'}\n${passwordLinkUrl ? 'Password link: ' + passwordLinkUrl + '\n' : ''}\nPlease change your password after you sign in.`,
-        html: baseHtml(title, body, { siteName })
+        html: baseHtml(title, body, { siteName }),
     };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
     return sendMail(mailOpts);
@@ -484,11 +609,15 @@ async function sendAccountLifecycleEmail(user, details = {}, panelConfig = null)
         <div class="value" style="white-space:pre-wrap;font-family:inherit">${escHtml(bodyText)}</div>
       </div>
       ${actorName ? `<p style="font-size:.9rem;color:#64748b">Changed by: ${escHtml(actorName)}</p>` : ''}
-      ${passwordLinkUrl ? `
+      ${
+          passwordLinkUrl
+              ? `
       <div class="info-box">
         <div class="label">Secure password link</div>
         <div class="value"><a href="${escHtml(passwordLinkUrl)}" style="color:#059669">Open link</a></div>
-      </div>` : ''}
+      </div>`
+              : ''
+      }
       <div class="text-center mt-4">
         <a href="${PANEL_URL}" class="btn">Open portal →</a>
       </div>`;
@@ -496,7 +625,7 @@ async function sendAccountLifecycleEmail(user, details = {}, panelConfig = null)
         to: user.email,
         subject: `${siteName} — ${title}`,
         text: `${title}\n\n${bodyText}\n\nPortal: ${PANEL_URL}${passwordLinkUrl ? '\nPassword: ' + passwordLinkUrl : ''}`,
-        html: baseHtml(title, body, { siteName })
+        html: baseHtml(title, body, { siteName }),
     };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
     return sendMail(mailOpts);
@@ -533,7 +662,7 @@ async function sendLoginNotification(user, ip = '', userAgent = '', options = nu
         to: user.email,
         subject: `Sign-in notification — ${now}`,
         text: `A sign-in to the portal was recorded.\nTime: ${now}${ip ? '\nIP: ' + ip : ''}`,
-        html: baseHtml(title, body)
+        html: baseHtml(title, body),
     };
     if (usePanel) return sendMailWithConfig(options.emailConfig, mailOpts);
     return sendMail(mailOpts);
@@ -570,15 +699,19 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
         to: user.email,
         subject: 'Password reset request',
         text: `Password reset\n\nHello ${user.name || 'there'},\nUse this link to set a new password: ${resetUrl}\n(Valid for ${expiresInMinutes} minutes.)`,
-        html: baseHtml(title, body)
+        html: baseHtml(title, body),
     };
     /** بازیابی رمز: بدون چند دقیقه انتظار — SMTP کند/قطع نباید UI را قفل کند */
     const quickForgotDelivery = {
         maxRetries: parsePositiveInt(process.env.EMAIL_FORGOT_MAX_RETRIES, 1),
-        connectionTimeoutMs: parsePositiveInt(process.env.EMAIL_FORGOT_CONNECTION_TIMEOUT_MS, 10000),
+        connectionTimeoutMs: parsePositiveInt(
+            process.env.EMAIL_FORGOT_CONNECTION_TIMEOUT_MS,
+            10000
+        ),
         greetingTimeoutMs: parsePositiveInt(process.env.EMAIL_FORGOT_GREETING_TIMEOUT_MS, 7000),
         socketTimeoutMs: parsePositiveInt(process.env.EMAIL_FORGOT_SOCKET_TIMEOUT_MS, 10000),
-        singleConnectionCandidate: process.env.EMAIL_FORGOT_TRY_ALL_SMTP_COMBOS === '1' ? false : true
+        singleConnectionCandidate:
+            process.env.EMAIL_FORGOT_TRY_ALL_SMTP_COMBOS === '1' ? false : true,
     };
     const envCfg = getEnvEmailConfig();
     const cfg = panelConfig && panelConfig.host ? panelConfig : envCfg;
@@ -589,8 +722,11 @@ async function sendPasswordReset(user, resetToken, expiresInMinutes = 60, panelC
 
 function escHtml(s) {
     return String(s == null ? '' : s)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
 }
 
 /**
@@ -603,7 +739,7 @@ async function sendTicketAssigned(user, ticket, assignedBy = null, panelConfig =
         high: '<span class="badge badge-red">High</span>',
         urgent: '<span class="badge badge-red">Urgent</span>',
         normal: '<span class="badge badge-blue">Normal</span>',
-        low: '<span class="badge badge-yellow">Low</span>'
+        low: '<span class="badge badge-yellow">Low</span>',
     };
     const title = 'A ticket has been assigned to you';
     const body = `
@@ -626,7 +762,7 @@ async function sendTicketAssigned(user, ticket, assignedBy = null, panelConfig =
         to: user.email,
         subject: `New ticket: ${ticket.subject || ticket.title || '#' + (ticket.ticketNumber || '')}`,
         text: `A ticket was assigned to you: ${ticket.subject || ticket.title || ''} — ${ticketUrl}`,
-        html: baseHtml(title, body)
+        html: baseHtml(title, body),
     };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
     return sendMail(mailOpts);
@@ -635,7 +771,13 @@ async function sendTicketAssigned(user, ticket, assignedBy = null, panelConfig =
 /**
  * ارسال ایمیل هنگام تخصیص مکالمه به کاربر
  */
-async function sendConversationAssigned(user, conversation, customerName = '', assignedBy = null, panelConfig = null) {
+async function sendConversationAssigned(
+    user,
+    conversation,
+    customerName = '',
+    assignedBy = null,
+    panelConfig = null
+) {
     if (!user || !user.email) return false;
     const convUrl = `${PANEL_URL}?page=conversations&id=${encodeURIComponent(conversation.id || '')}`;
     const title = 'A conversation has been assigned to you';
@@ -651,7 +793,7 @@ async function sendConversationAssigned(user, conversation, customerName = '', a
         to: user.email,
         subject: `New conversation assigned${customerName ? ': ' + customerName : ''}`,
         text: `A conversation was assigned to you: ${customerName || ''} — ${convUrl}`,
-        html: baseHtml(title, body)
+        html: baseHtml(title, body),
     };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
     return sendMail(mailOpts);
@@ -673,7 +815,12 @@ async function sendContactForm({ purpose, name, email, phone, message, emailConf
         return { ok: false, error: 'Invalid recipient email' };
     }
 
-    const purposeLabels = { purchase: 'Purchase', quote: 'Custom Quote', support: 'Support', other: 'Other' };
+    const purposeLabels = {
+        purchase: 'Purchase',
+        quote: 'Custom Quote',
+        support: 'Support',
+        other: 'Other',
+    };
     const subject = 'WhatsApp CRM - ' + (purposeLabels[purpose] || purpose || 'New Contact');
     const text = [
         `Purpose: ${purposeLabels[purpose] || purpose}`,
@@ -682,10 +829,17 @@ async function sendContactForm({ purpose, name, email, phone, message, emailConf
         `Phone: ${phone || '—'}`,
         '',
         'Message:',
-        message || '—'
+        message || '—',
     ].join('\n');
-    const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-    const html = baseHtml(subject, `
+    const esc = (s) =>
+        String(s || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    const html = baseHtml(
+        subject,
+        `
       <p><strong>Purpose:</strong> ${esc(purposeLabels[purpose] || purpose)}</p>
       <p><strong>Name:</strong> ${esc(name) || '—'}</p>
       <p><strong>Email:</strong> <a href="mailto:${esc(email || '')}">${esc(email) || '—'}</a></p>
@@ -693,11 +847,17 @@ async function sendContactForm({ purpose, name, email, phone, message, emailConf
       <p><strong>Message:</strong></p>
       <p>${esc(message || '—').replace(/\n/g, '<br>')}</p>
       <p class="muted">Reply directly to ${esc(email) || 'the sender'}.</p>
-    `);
-    
+    `
+    );
+
     let result;
     if (emailConfig && emailConfig.host) {
-        result = await sendMailWithConfigDetailed(emailConfig, { to: toEmail, subject, text, html });
+        result = await sendMailWithConfigDetailed(emailConfig, {
+            to: toEmail,
+            subject,
+            text,
+            html,
+        });
     } else {
         result = await sendMailWithRetry({ to: toEmail, subject, text, html });
     }
@@ -720,27 +880,45 @@ async function testSmtpConnection(config) {
     try {
         const nodemailer_test = require('nodemailer');
         const host = normalizeHost(config.host);
-        const port = parseInt(config.port, 10) || 587;
-        const secure = !!config.secure;
-        const opts = {
-            host,
-            port,
-            secure,
-            auth: config.user && config.pass ? { user: config.user, pass: config.pass } : undefined,
-            connectionTimeout: CONNECTION_TIMEOUT_MS,
-            greetingTimeout: GREETING_TIMEOUT_MS,
-            socketTimeout: SOCKET_TIMEOUT_MS
-        };
-        if (port === 587 && !secure) opts.requireTLS = true;
-        if (config.allowSelfSigned) opts.tls = { rejectUnauthorized: false };
-        
-        const transport = nodemailer_test.createTransport(opts);
-        await transport.verify();
-        logger.info('SMTP connection verified successfully');
-        return { ok: true };
+        const candidates = buildSmtpConnectionCandidates(config.port, config.secure);
+        let lastErr = null;
+        for (const conn of candidates) {
+            const port = parseInt(conn.port, 10) || 587;
+            const secure = !!conn.secure;
+            try {
+                const opts = {
+                    host,
+                    port,
+                    secure,
+                    auth:
+                        config.user && config.pass
+                            ? { user: config.user, pass: config.pass }
+                            : undefined,
+                    connectionTimeout: CONNECTION_TIMEOUT_MS,
+                    greetingTimeout: GREETING_TIMEOUT_MS,
+                    socketTimeout: SOCKET_TIMEOUT_MS,
+                    tls: { minVersion: 'TLSv1.2' },
+                };
+                if (port === 587 && !secure) opts.requireTLS = true;
+                if (config.allowSelfSigned) opts.tls.rejectUnauthorized = false;
+
+                const transport = nodemailer_test.createTransport(opts);
+                await transport.verify();
+                logger.info('SMTP connection verified successfully', { host, port, secure });
+                return { ok: true, usedPort: port, usedSecure: secure };
+            } catch (err) {
+                lastErr = err;
+                if (isTlsMismatchError(err)) continue;
+            }
+        }
+        const errorMsg = formatSmtpUserError(lastErr);
+        logger.error('SMTP connection test failed', {
+            error: (lastErr && lastErr.message) || errorMsg,
+        });
+        return { ok: false, error: errorMsg };
     } catch (err) {
-        const errorMsg = err.message || String(err);
-        logger.error('SMTP connection test failed', { error: errorMsg });
+        const errorMsg = formatSmtpUserError(err);
+        logger.error('SMTP connection test failed', { error: err.message || errorMsg });
         return { ok: false, error: errorMsg };
     }
 }
@@ -757,7 +935,10 @@ async function sendTestEmail(config, testEmail) {
         to: testEmail,
         subject: 'SMTP test — Kaya CRM',
         text: 'This message was sent to verify your SMTP settings.',
-        html: baseHtml('SMTP test', '<p>This message was sent to verify your SMTP settings.</p><p>If you received it, your outbound mail configuration is working.</p>')
+        html: baseHtml(
+            'SMTP test',
+            '<p>This message was sent to verify your SMTP settings.</p><p>If you received it, your outbound mail configuration is working.</p>'
+        ),
     });
 
     return result;
@@ -784,5 +965,5 @@ module.exports = {
     LOGIN_NOTIFICATION_ENABLED,
     PANEL_URL,
     baseHtml,
-    escHtml
+    escHtml,
 };

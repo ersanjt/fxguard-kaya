@@ -9412,6 +9412,7 @@
             const statusEl = document.getElementById('panelTestEmailStatus');
             const to = (toEl && toEl.value || '').trim();
             if (!to) { toast(LANG === 'fa' ? 'آدرس ایمیل را وارد کنید.' : 'Enter email address.', true); return; }
+            if (typeof syncSmtpPortWithSecure === 'function') syncSmtpPortWithSecure();
             if (btn) { btn.disabled = true; btn.textContent = (LANG === 'fa' ? 'در حال ارسال...' : 'Sending...'); }
             if (statusEl) { statusEl.style.display = 'none'; }
             const get = function(id) { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
@@ -9429,7 +9430,7 @@
             }
             try {
                 const ctrl = new AbortController();
-                const timeoutId = setTimeout(function() { ctrl.abort(); }, 35000);
+                const timeoutId = setTimeout(function() { ctrl.abort(); }, 45000);
                 const res = await apiFetch('/api/panel-settings/test-email', { method: 'POST', body: JSON.stringify(payload), signal: ctrl.signal });
                 clearTimeout(timeoutId);
                 if (res.ok && res.data && res.data.ok) {
@@ -9438,6 +9439,18 @@
                     if (res.data.usedFallback) {
                         const hostEl = document.getElementById('panelSettingSmtpHost');
                         if (hostEl) { hostEl.value = res.data.usedFallback; markPanelSettingsChanged(); }
+                    }
+                    if (res.data.usedPort != null) {
+                        const portEl = document.getElementById('panelSettingSmtpPort');
+                        const secureEl = document.getElementById('panelSettingSmtpSecure');
+                        if (portEl && String(portEl.value || '') !== String(res.data.usedPort)) {
+                            portEl.value = String(res.data.usedPort);
+                            markPanelSettingsChanged();
+                        }
+                        if (secureEl && typeof res.data.usedSecure === 'boolean') {
+                            secureEl.checked = !!res.data.usedSecure;
+                            markPanelSettingsChanged();
+                        }
                     }
                 } else {
                     toast((res.data && res.data.error) || (LANG === 'fa' ? 'ارسال ناموفق' : 'Send failed'), true);
