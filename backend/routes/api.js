@@ -44,6 +44,7 @@ const announcementsRoutes = require('./announcements');
 const createInternalRouter = require('./internal');
 const companyEmailsRoutes = require('./companyEmails');
 const panelSettingsRoutes = require('./panelSettings');
+const { createSystemStatusRouter } = require('./systemStatus');
 const { getProfileImage } = require('./profileImage');
 
 function getCloudWebhookAppSecret() {
@@ -228,6 +229,11 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
     apiRouter.use('/internal', authMiddleware, requireSection('internal_chat'), createInternalRouter(io));
     apiRouter.use('/panel-settings', panelSettingsRoutes);
     apiRouter.use('/company-emails', authMiddleware, companyEmailsRoutes);
+    apiRouter.use(
+        '/system-status',
+        authMiddleware,
+        createSystemStatusRouter({ redisClient, getRabbitChannel })
+    );
 
     // بدنه با express.json در server.js (WEBHOOK_BODY_LIMIT، پیش‌فرض 25mb) پارس شده
     apiRouter.post('/webhook/incoming-message', webhookAuth, (req, res) => {

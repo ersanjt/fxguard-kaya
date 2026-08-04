@@ -662,7 +662,11 @@
             if (currentUser && currentUser.isMainAdmin) return true;
             return false;
         }
-        function canManageConversations() { const r = (currentUser && currentUser.role) || ''; return r === 'owner'; }
+        function canManageConversations() {
+            if (currentUser && currentUser.canManageConversations) return true;
+            const r = (currentUser && currentUser.role) || '';
+            return r === 'owner' || !!(currentUser && currentUser.isProtectedAdmin);
+        }
         /** نمایش تب آرشیو / محدود — فقط ادمین سطح بالا؛ از صفحه مکالمات صدا زده می‌شود */
         function refreshConvAdminTabs() {
             const show = canViewHiddenConversations();
@@ -1627,18 +1631,28 @@
             openStaffAccessGrantModal({ customerId: customerId });
         }
         async function archiveConversation() {
-            if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را آرشیو کند' : 'Only owner can archive', true); return; }
-            if (!confirm(LANG === 'fa' ? 'آیا از آرشیو کردن این مکالمه مطمئن هستید؟' : 'Archive this conversation?')) return;
+            if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک یا ادمین اصلی می‌تواند مکالمه را آرشیو کند' : 'Only owner/main admin can archive', true); return; }
+            if (!confirm(LANG === 'fa' ? 'مکالمه آرشیو شود؟ پیام‌ها حذف نمی‌شوند و در سیستم می‌مانند.' : 'Archive this conversation? Messages will be preserved.')) return;
             const res = await apiFetch('/api/conversations/' + currentConvId, { method: 'PATCH', body: JSON.stringify({ status: 'archived' }) });
             if (res.needLogin) return;
-            if (res.ok) { toast(LANG === 'fa' ? 'مکالمه به آرشیو ارسال شد' : 'Conversation archived'); closeChatMobile(); loadConversations(); currentConvId = null; } else toast((res.data && res.data.error) || t('err_generic'), true);
+            if (res.ok) {
+                toast(LANG === 'fa' ? 'مکالمه به آرشیو ارسال شد؛ پیام‌ها حفظ شدند' : 'Conversation archived; messages preserved');
+                closeChatMobile();
+                loadConversations();
+                currentConvId = null;
+            } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
         async function deleteConversation() {
-            if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک می‌تواند مکالمه را حذف کند' : 'Only owner can delete', true); return; }
-            if (!confirm(LANG === 'fa' ? 'آیا از حذف دائمی این مکالمه و تمام پیام‌های آن مطمئن هستید؟ این عمل قابل بازگشت نیست.' : 'Permanently delete this conversation and all messages? This cannot be undone.')) return;
+            if (!currentConvId || !canManageConversations()) { toast(LANG === 'fa' ? 'فقط مالک یا ادمین اصلی می‌تواند مکالمه را از لیست خارج کند' : 'Only owner/main admin can remove', true); return; }
+            if (!confirm(LANG === 'fa' ? 'مکالمه از لیست فعال خارج و آرشیو شود؟ پیام‌ها هرگز از سیستم پاک نمی‌شوند.' : 'Remove from active list and archive? Messages are never permanently deleted.')) return;
             const res = await apiFetch('/api/conversations/' + currentConvId, { method: 'DELETE' });
             if (res.needLogin) return;
-            if (res.ok) { toast(LANG === 'fa' ? 'مکالمه حذف شد' : 'Conversation deleted'); closeChatMobile(); loadConversations(); currentConvId = null; } else toast((res.data && res.data.error) || t('err_generic'), true);
+            if (res.ok) {
+                toast((res.data && res.data.message) || (LANG === 'fa' ? 'آرشیو شد؛ پیام‌ها حفظ شدند' : 'Archived; messages preserved'));
+                closeChatMobile();
+                loadConversations();
+                currentConvId = null;
+            } else toast((res.data && res.data.error) || t('err_generic'), true);
         }
 
         function openChatFromHistory(el) {

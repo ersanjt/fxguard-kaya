@@ -67,6 +67,12 @@ module.exports = (sequelize) => {
             allowNull: true,
             comment: 'آخرین شماره واتساپ متصل‌شده از Gateway — برای تشخیص تعویض شماره و قفل دادهٔ قبلی',
         },
+        numberFailoverEnabled: {
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+            defaultValue: true,
+            comment: 'اگر چند شماره فعال باشد، در خطای ارسال به شماره پشتیبان سوئیچ شود',
+        },
     }, {
         timestamps: true,
         tableName: 'whatsapp_connections',

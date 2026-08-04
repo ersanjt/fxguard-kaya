@@ -98,7 +98,51 @@ router.post('/sync-groups', async (req, res, next) => {
     const logger = require('../config/logger');
     try {
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        const { gatewayGet, GATEWAY_URL } = require('../lib/gatewayClient');
+        const { gatewayGet, GATEWAY_URL, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
+
+        // پیش‌پرواز وضعیت Gateway — پیام خطای دقیق‌تر برای cloud_first / قطع بودن
+        try {
+            const cfg = await getWhatsappConnectionConfig();
+            const st = await gatewayGet('/api/status', { timeout: 10000 });
+            const data = st?.data || {};
+            if (!data.whatsapp) {
+                const phase = data.phase || data.status || 'disconnected';
+                const mode = cfg.connectionMode || 'cloud_first';
+                let hint = 'واتساپ Gateway آماده نیست. ';
+                if (phase === 'authenticated' || data.starting) {
+                    hint += 'اسکن شده و در حال همگام‌سازی است — ۳۰–۶۰ ثانیه صبر کنید بعد دوباره بزنید.';
+                } else if (mode === 'cloud' || mode === 'cloud_first') {
+                    hint +=
+                        'گروه‌ها فقط از طریق Gateway (QR) می‌آیند. به تنظیمات واتساپ بروید، تب Gateway را باز کنید، «شروع» بزنید و QR را اسکن کنید.';
+                } else {
+                    hint += 'در تنظیمات واتساپ QR را اسکن کنید تا وضعیت ready شود، بعد دوباره همگام‌سازی کنید.';
+                }
+                return res.status(503).json({
+                    error: hint,
+                    gatewayStatus: phase,
+                    connectionMode: mode,
+                    gatewayReady: false,
+                });
+            }
+        } catch (preErr) {
+            const status = preErr?.response?.status;
+            const gwMsg = preErr?.response?.data?.error || preErr?.message || '';
+            if (status === 401) {
+                return res.status(503).json({
+                    error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را بررسی کنید.',
+                });
+            }
+            logger.warn('sync-groups: gateway status preflight failed', {
+                status,
+                error: gwMsg,
+                gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
+            });
+            return res.status(503).json({
+                error:
+                    'Gateway در دسترس نیست. سرویس crm-gateway را روی سرور چک کنید (PM2) و از پنل واتساپ «شروع Gateway» بزنید.',
+            });
+        }
+
         let gwRes;
         try {
             // Store path معمولاً <15s؛ کل درخواست زیر زیر proxy (~60s) بماند
@@ -124,7 +168,8 @@ router.post('/sync-groups', async (req, res, next) => {
             }
             if (status === 503 || /not ready|WhatsApp not ready/i.test(String(gwMsg))) {
                 return res.status(503).json({
-                    error: 'واتساپ Gateway آماده نیست. صبر کنید تا وضعیت ready شود، بعد دوباره همگام‌سازی کنید.',
+                    error:
+                        'واتساپ Gateway آماده نیست. در تنظیمات واتساپ تب Gateway را وصل کنید (QR)، صبر کنید تا ready شود، بعد دوباره همگام‌سازی کنید.',
                 });
             }
             if (
@@ -873,17 +918,49 @@ router.patch('/:id', async (req, res, next) => {
     }
 });
 
-// ——— حذف مکالمه (فقط مالک)
+// ——— آرشیو مکالمه (حذف سخت پیام‌ها ممنوع است — فقط مالک/ادمین اصلی)
 router.delete('/:id', async (req, res, next) => {
     try {
-        if (!canArchiveOrDeleteConversation(req)) return res.status(403).json({ error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند مکالمه را حذف کند' });
+        if (!canArchiveOrDeleteConversation(req)) {
+            return res.status(403).json({
+                error: 'فقط مالک مجموعه یا ادمین اصلی می‌تواند مکالمه را از لیست فعال خارج کند',
+            });
+        }
         if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id);
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        await Message.destroy({ where: { conversationId: conversation.id } });
-        await conversation.destroy();
-        res.json({ ok: true });
+
+        // پیام‌ها هرگز destroy نمی‌شوند — فقط آرشیو + مخفی از لیست عادی کارکنان
+        const meta = Object.assign({}, conversation.metadata || {}, {
+            softRemovedAt: new Date().toISOString(),
+            softRemovedBy: req.userId || null,
+        });
+        await conversation.update({
+            status: 'archived',
+            isHiddenFromStaff: true,
+            unreadCount: 0,
+            metadata: meta,
+        });
+
+        try {
+            await logActivity({
+                userId: req.userId,
+                action: 'conversation_archived',
+                entityType: 'conversation',
+                entityId: conversation.id,
+                customerId: conversation.customerId || null,
+                summary: 'مکالمه آرشیو شد (پیام‌ها حفظ شدند)',
+                metadata: { softRemove: true },
+            });
+        } catch (_) {}
+
+        res.json({
+            ok: true,
+            archived: true,
+            messagesPreserved: true,
+            message: 'مکالمه آرشیو شد. پیام‌ها حذف نشدند و در سیستم باقی ماندند.',
+        });
     } catch (err) {
         next(err);
     }

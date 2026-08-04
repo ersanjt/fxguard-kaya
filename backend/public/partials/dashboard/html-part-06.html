@@ -271,6 +271,7 @@
                             <div class="user-edit-field"><label data-i18n="label_name">نام کامل</label><input type="text" id="userEditName" placeholder="" autocomplete="name"></div>
                             <div class="user-edit-field"><label data-i18n="profile_username">نام کاربری</label><input type="text" id="userEditUsername" placeholder="" autocomplete="username"></div>
                             <div class="user-edit-field"><label data-i18n="label_email">ایمیل</label><input type="email" id="userEditEmail" placeholder="" autocomplete="email"></div>
+                            <div class="user-edit-field"><label data-i18n="user_whatsapp_phone">شماره واتساپ شخصی</label><input type="tel" id="userEditPhone" inputmode="tel" data-i18n-ph="user_whatsapp_phone_ph" placeholder="مثلاً 98912… یا 0912…" autocomplete="tel"></div>
                             <div class="user-edit-field"><label data-i18n="label_role">نقش</label><select id="userEditRole"><option value="agent" data-i18n="role_agent">کارمند</option><option value="supervisor" data-i18n="role_supervisor">ناظر</option><option value="manager" data-i18n="role_manager">مدیر</option><option value="admin" data-i18n="role_admin">ادمین</option><option value="owner" data-i18n="role_owner">مالک</option></select></div>
                             <div class="user-edit-field"><label data-i18n="label_position">سمت</label><input type="text" id="userEditPosition" data-i18n-ph="position_ph" placeholder="مثلاً مدیر فروش، حسابدار"></div>
                             <div class="user-edit-field user-edit-field-wide"><label data-i18n="user_whatsapp_sender_name">نام در پیام واتساپ</label><input type="text" id="userEditWhatsappSender" data-i18n-ph="user_whatsapp_sender_ph" placeholder="مثلاً پروانه اکبری"></div>
@@ -576,6 +577,32 @@
     <script src="/js/modules/utils.js?v=__CRM_BUILD__" charset="utf-8"></script>
     <script src="/js/modules/api-client.js?v=__CRM_BUILD__" charset="utf-8"></script>
     <script src="/js/i18n-fa.js?v=__CRM_BUILD__" charset="utf-8"></script>
+    <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
+        <div class="modal-box onboarding-tour-box" dir="auto">
+            <div class="onboarding-tour-header">
+                <div>
+                    <p class="onboarding-tour-kicker" data-i18n="onboarding_kicker">راهنمای ورود</p>
+                    <h2 id="onboardingTourTitle" data-i18n="onboarding_title">شروع کار با پنل</h2>
+                </div>
+                <button type="button" class="modal-close" id="btnOnboardingClose" aria-label="Close">&times;</button>
+            </div>
+            <div class="onboarding-progress" id="onboardingProgress" aria-hidden="true"></div>
+            <div class="onboarding-tour-body">
+                <p class="onboarding-step-count" id="onboardingStepCount"></p>
+                <h3 class="onboarding-step-title" id="onboardingStepTitle"></h3>
+                <p class="onboarding-step-desc" id="onboardingStepDesc"></p>
+            </div>
+            <div class="onboarding-tour-footer">
+                <button type="button" class="btn-secondary" id="btnOnboardingLater" data-i18n="onboarding_later">بعداً</button>
+                <div class="onboarding-tour-nav">
+                    <button type="button" class="btn-secondary" id="btnOnboardingPrev" data-i18n="onboarding_prev">قبلی</button>
+                    <button type="button" class="btn-secondary" id="btnOnboardingGo" data-i18n="onboarding_go">برو به این بخش</button>
+                    <button type="button" class="btn-primary" id="btnOnboardingNext" data-i18n="onboarding_next">بعدی</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="/js/i18n-en.js?v=__CRM_BUILD__" charset="utf-8"></script>
     <script src="/js/i18n-tr.js?v=__CRM_BUILD__" charset="utf-8"></script>
     <script src="/js/modules/dashboard-i18n.js?v=__CRM_BUILD__" charset="utf-8"></script>

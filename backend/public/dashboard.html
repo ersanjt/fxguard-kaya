@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="KAYA">
     <link rel="manifest" href="/manifest.json">
     <meta name="description" content="پورتال کارکنان کایا — ورود از سراسر دنیا، مدیریت مکالمات واتساپ و نظارت">
-    <meta name="crm-build" content="0e4f6430cfa8">
+    <meta name="crm-build" content="340661cc7177">
     <title>پورتال کارکنان کایا | KAYA</title>
     <link rel="icon" id="favicon" type="image/png" href="/brand/kaya-favicon-32.png?v=2">
     <link rel="apple-touch-icon" id="appleTouchIcon" href="/brand/kaya-apple-touch.png?v=2">
@@ -20,8 +20,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <noscript><link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet"></noscript>
-    <link rel="stylesheet" href="/css/dashboard.css?v=0e4f6430cfa8">
-    <script src="/js/modules/dashboard-login-bootstrap.js?v=0e4f6430cfa8" charset="utf-8"></script>
+    <link rel="stylesheet" href="/css/dashboard.css?v=340661cc7177">
+    <script src="/js/modules/dashboard-login-bootstrap.js?v=340661cc7177" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -252,6 +252,7 @@
                             <a href="#departments" class="nav-link" data-page="departments" data-section="departments" data-i18n-title="nav_departments"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-building"/></svg></span> <span class="nav-link-label" data-i18n="nav_departments">دپارتمان‌ها</span></a>
                         </div>
                         <a href="#supervision" class="nav-link nav-supervision" data-page="supervision" data-section="supervision" style="display:none;" data-i18n-title="nav_supervision"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-chart"/></svg></span> <span class="nav-link-label" data-i18n="nav_supervision">نظارت (مالک)</span></a>
+                        <a href="#system-status" class="nav-link nav-system-status" data-page="system-status" data-section="system_status" style="display:none;" data-i18n-title="nav_system_status"><span class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></span> <span class="nav-link-label" data-i18n="nav_system_status">وضعیت سیستم</span></a>
                         <a href="#staff-activity" class="nav-link nav-staff-activity" data-page="staff-activity" data-section="staff_activity" style="display:none;" data-i18n-title="nav_staff_activity"><span class="nav-icon"><svg viewBox="0 0 24 24"><use href="#icon-user-online"/></svg></span> <span class="nav-link-label" data-i18n="nav_staff_activity">ورودها و وضعیت آنلاین</span></a>
                     </div>
                 </div>
@@ -742,6 +743,7 @@
                             <div><label data-i18n="label_name">نام کامل</label><input id="userName" data-i18n-ph="user_ph_name" placeholder="نام کامل"></div>
                             <div><label data-i18n="profile_username">نام کاربری (اختیاری)</label><input id="userUsernameAdd" type="text" placeholder="username" autocomplete="username"></div>
                             <div><label data-i18n="label_email">ایمیل</label><input id="userEmailAdd" type="email" placeholder="email@kaya.fxguard.io"></div>
+                            <div><label data-i18n="user_whatsapp_phone">شماره واتساپ شخصی</label><input id="userPhoneAdd" type="tel" inputmode="tel" data-i18n-ph="user_whatsapp_phone_ph" placeholder="مثلاً 98912… یا 0912…" autocomplete="tel"></div>
                             <div><label data-i18n="label_password">رمز عبور</label><input id="userPass" type="password" data-i18n-ph="user_ph_pass" placeholder="حداقل ۶ کاراکتر"></div>
                             <div><label data-i18n="label_role">نقش</label><select id="userRole"><option value="agent" data-i18n="role_agent">کارمند</option><option value="supervisor" data-i18n="role_supervisor">ناظر</option><option value="manager" data-i18n="role_manager">مدیر</option><option value="admin" data-i18n="role_admin">ادمین</option><option value="owner" data-i18n="role_owner">مالک</option></select></div>
                             <div><label data-i18n="label_position">سمت</label><input id="userPositionAdd" type="text" data-i18n-ph="position_ph" placeholder="مثلاً مدیر فروش، حسابدار"></div>
@@ -759,7 +761,7 @@
                     <div class="ticket-page-header">
                         <div class="ticket-page-header-text">
                             <h2 data-i18n="page_tickets">تیکت‌های داخلی</h2>
-                            <p class="ticket-page-desc" data-i18n="tickets_intro">بخش رسمی ثبت و پیگیری درخواست‌ها و مشکلات. هر تیکت دارای شماره رسمی است.</p>
+                            <p class="ticket-page-desc" data-i18n="tickets_intro">بخش رسمی ثبت و پیگیری درخواست‌ها و مشکلات. هر تیکت دارای شماره رسمی است. (با «وظایف و تسک‌ها» فرق دارد.)</p>
                         </div>
                         <button type="button" class="btn-primary ticket-create-btn" onclick="toggleTicketForm()" id="btnTicketCreate" data-i18n="create_ticket">ثبت تیکت</button>
                     </div>
@@ -980,6 +982,7 @@
                     <div class="profile-page-head">
                         <h2 data-i18n="page_profile">پروفایل من</h2>
                         <p class="profile-intro text-muted" data-i18n="profile_intro">نام کاربری، نام، نام خانوادگی، تاریخ تولد، تلفن و تصویر پروفایل را می‌توانید ویرایش کنید. ورود با ایمیل یا نام کاربری امکان‌پذیر است. ایمیل و دپارتمان توسط مدیر تنظیم می‌شود.</p>
+                        <button type="button" class="btn-secondary btn-sm" id="btnReplayOnboarding" onclick="showOnboardingTour(true)" data-i18n="onboarding_replay">راهنمای استفاده</button>
                     </div>
                     <div class="profile-page-body">
                     <div class="profile-card">
@@ -1436,6 +1439,42 @@
                         <div id="supActList"></div>
                     </div>
                 </div>
+                <div id="pageSystemStatus" class="page sys-status-page">
+                    <div class="sys-status-header">
+                        <div>
+                            <h2 data-i18n="page_system_status">وضعیت سیستم</h2>
+                            <p class="sys-status-intro" data-i18n="sys_status_intro">سلامت Gateway، واتساپ، پایگاه‌داده، صف پیام و بکاپ — به‌همراه متریک‌های عملیاتی</p>
+                        </div>
+                        <div class="sys-status-actions">
+                            <span id="sysStatusUpdatedAt" class="sys-status-updated text-muted"></span>
+                            <label class="sys-auto-refresh"><input type="checkbox" id="sysStatusAutoRefresh" checked> <span data-i18n="sys_auto_refresh">بروزرسانی خودکار</span></label>
+                            <button type="button" class="btn-primary" id="btnRefreshSystemStatus" onclick="loadSystemStatus(true)" data-i18n="sys_refresh">بروزرسانی</button>
+                        </div>
+                    </div>
+                    <div id="sysOverallBanner" class="sys-overall-banner" aria-live="polite">
+                        <span class="sys-overall-dot" aria-hidden="true"></span>
+                        <span id="sysOverallLabel" data-i18n="loading">در حال بارگذاری...</span>
+                    </div>
+                    <div id="sysStatusChecks" class="sys-check-grid"></div>
+                    <div class="sys-metrics-row">
+                        <section class="sys-panel">
+                            <h3 data-i18n="sys_ops_counts">آمار عملیاتی</h3>
+                            <div id="sysOpsCounts" class="sys-stat-cards"></div>
+                        </section>
+                        <section class="sys-panel">
+                            <h3 data-i18n="sys_process">فرآیند سرور</h3>
+                            <div id="sysProcessInfo" class="sys-kv"></div>
+                        </section>
+                        <section class="sys-panel">
+                            <h3 data-i18n="sys_http_counters">شمارنده‌های HTTP</h3>
+                            <div id="sysHttpCounters" class="sys-kv"></div>
+                        </section>
+                    </div>
+                    <details class="sys-raw-details">
+                        <summary data-i18n="sys_raw_json">خروجی خام JSON</summary>
+                        <pre id="sysStatusRaw" class="sys-raw-pre"></pre>
+                    </details>
+                </div>
                 <div id="pageWhatsapp" class="page whatsapp-page" role="main" aria-labelledby="whatsapp-page-title">
                     <header class="whatsapp-page-header">
                         <div class="whatsapp-header-badge" aria-hidden="true">
@@ -1628,6 +1667,29 @@
                                     <div class="whatsapp-form-row"><label for="whatsappGatewayApiSecret" data-i18n="whatsapp_gateway_secret">API Secret</label><input type="password" id="whatsappGatewayApiSecret" class="whatsapp-input" placeholder="اختیاری" autocomplete="off"></div>
                                 </div>
                                 <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappConnection" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                            <div id="whatsappNumbersBox" class="whatsapp-card form-box whatsapp-numbers-card">
+                                <h3 class="whatsapp-card-title" data-i18n="wa_numbers_title">شماره‌های واتساپ و Failover</h3>
+                                <p class="text-muted whatsapp-hint" data-i18n="wa_numbers_hint">برای کاهش ریسک بلاک، یک اسلات پشتیبان بسازید و بعداً شماره/Cloud دوم را پر کنید. با فعال بودن Failover، اگر ارسال از شماره اصلی شکست بخورد سیستم به پشتیبان می‌رود.</p>
+                                <label class="whatsapp-check-label"><input type="checkbox" id="whatsappNumberFailoverEnabled" checked> <span data-i18n="wa_numbers_failover">Failover چندشماره فعال</span></label>
+                                <div id="whatsappNumbersList" class="wa-numbers-list"></div>
+                                <div class="wa-numbers-actions">
+                                    <button type="button" class="btn-secondary" id="btnAddWhatsappStandby" data-i18n="wa_numbers_add_standby">افزودن اسلات پشتیبان</button>
+                                    <button type="button" class="btn-secondary btn-sm" id="btnRefreshWhatsappNumbers" data-i18n="sys_refresh">بروزرسانی</button>
+                                </div>
+                                <div id="whatsappStandbyForm" class="wa-standby-form" style="display:none;">
+                                    <h4 class="wa-standby-form-title" data-i18n="wa_numbers_standby_form">پیکربندی شماره پشتیبان</h4>
+                                    <input type="hidden" id="waStandbyEditId" value="">
+                                    <div class="whatsapp-form-row"><label for="waStandbyLabel" data-i18n="wa_numbers_label">برچسب</label><input type="text" id="waStandbyLabel" class="whatsapp-input" placeholder="خط پشتیبان"></div>
+                                    <div class="whatsapp-form-row"><label for="waStandbyDisplayPhone" data-i18n="wa_numbers_display_phone">شماره نمایشی</label><input type="text" id="waStandbyDisplayPhone" class="whatsapp-input" placeholder="+98912…" dir="ltr"></div>
+                                    <div class="whatsapp-form-row"><label for="waStandbyPhoneNumberId" data-i18n="whatsapp_cloud_phone_id">Phone Number ID (Meta)</label><input type="text" id="waStandbyPhoneNumberId" class="whatsapp-input" placeholder="اختیاری — بعداً" dir="ltr"></div>
+                                    <div class="whatsapp-form-row"><label for="waStandbyAccessToken" data-i18n="whatsapp_cloud_access_token">Access Token</label><input type="password" id="waStandbyAccessToken" class="whatsapp-input" placeholder="اختیاری — بعداً" autocomplete="off"></div>
+                                    <p class="text-muted whatsapp-hint" data-i18n="wa_numbers_standby_hint">الان می‌توانید فقط اسلات خالی بسازید؛ وقتی شماره دوم آماده شد Token و Phone Number ID را اینجا وارد کنید.</p>
+                                    <div class="whatsapp-form-actions-inline">
+                                        <button type="button" class="btn-primary btn-sm" id="btnSaveWhatsappStandby" data-i18n="btn_save">ذخیره</button>
+                                        <button type="button" class="btn-secondary btn-sm" id="btnCancelWhatsappStandby" data-i18n="btn_cancel">انصراف</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -3489,6 +3551,7 @@
                             <div class="user-edit-field"><label data-i18n="label_name">نام کامل</label><input type="text" id="userEditName" placeholder="" autocomplete="name"></div>
                             <div class="user-edit-field"><label data-i18n="profile_username">نام کاربری</label><input type="text" id="userEditUsername" placeholder="" autocomplete="username"></div>
                             <div class="user-edit-field"><label data-i18n="label_email">ایمیل</label><input type="email" id="userEditEmail" placeholder="" autocomplete="email"></div>
+                            <div class="user-edit-field"><label data-i18n="user_whatsapp_phone">شماره واتساپ شخصی</label><input type="tel" id="userEditPhone" inputmode="tel" data-i18n-ph="user_whatsapp_phone_ph" placeholder="مثلاً 98912… یا 0912…" autocomplete="tel"></div>
                             <div class="user-edit-field"><label data-i18n="label_role">نقش</label><select id="userEditRole"><option value="agent" data-i18n="role_agent">کارمند</option><option value="supervisor" data-i18n="role_supervisor">ناظر</option><option value="manager" data-i18n="role_manager">مدیر</option><option value="admin" data-i18n="role_admin">ادمین</option><option value="owner" data-i18n="role_owner">مالک</option></select></div>
                             <div class="user-edit-field"><label data-i18n="label_position">سمت</label><input type="text" id="userEditPosition" data-i18n-ph="position_ph" placeholder="مثلاً مدیر فروش، حسابدار"></div>
                             <div class="user-edit-field user-edit-field-wide"><label data-i18n="user_whatsapp_sender_name">نام در پیام واتساپ</label><input type="text" id="userEditWhatsappSender" data-i18n-ph="user_whatsapp_sender_ph" placeholder="مثلاً پروانه اکبری"></div>
@@ -3790,14 +3853,40 @@
         </div>
     </div>
     <script src="/socket.io/socket.io.js"></script>
-    <script src="/js/modules/constants.js?v=0e4f6430cfa8" charset="utf-8"></script>
-    <script src="/js/modules/utils.js?v=0e4f6430cfa8" charset="utf-8"></script>
-    <script src="/js/modules/api-client.js?v=0e4f6430cfa8" charset="utf-8"></script>
-    <script src="/js/i18n-fa.js?v=0e4f6430cfa8" charset="utf-8"></script>
-    <script src="/js/i18n-en.js?v=0e4f6430cfa8" charset="utf-8"></script>
-    <script src="/js/i18n-tr.js?v=0e4f6430cfa8" charset="utf-8"></script>
-    <script src="/js/modules/dashboard-i18n.js?v=0e4f6430cfa8" charset="utf-8"></script>
-    <script src="/js/dashboard.js?v=0e4f6430cfa8" charset="utf-8"></script>
+    <script src="/js/modules/constants.js?v=340661cc7177" charset="utf-8"></script>
+    <script src="/js/modules/utils.js?v=340661cc7177" charset="utf-8"></script>
+    <script src="/js/modules/api-client.js?v=340661cc7177" charset="utf-8"></script>
+    <script src="/js/i18n-fa.js?v=340661cc7177" charset="utf-8"></script>
+    <div id="onboardingTourModal" class="modal-overlay onboarding-tour-overlay" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="onboardingTourTitle">
+        <div class="modal-box onboarding-tour-box" dir="auto">
+            <div class="onboarding-tour-header">
+                <div>
+                    <p class="onboarding-tour-kicker" data-i18n="onboarding_kicker">راهنمای ورود</p>
+                    <h2 id="onboardingTourTitle" data-i18n="onboarding_title">شروع کار با پنل</h2>
+                </div>
+                <button type="button" class="modal-close" id="btnOnboardingClose" aria-label="Close">&times;</button>
+            </div>
+            <div class="onboarding-progress" id="onboardingProgress" aria-hidden="true"></div>
+            <div class="onboarding-tour-body">
+                <p class="onboarding-step-count" id="onboardingStepCount"></p>
+                <h3 class="onboarding-step-title" id="onboardingStepTitle"></h3>
+                <p class="onboarding-step-desc" id="onboardingStepDesc"></p>
+            </div>
+            <div class="onboarding-tour-footer">
+                <button type="button" class="btn-secondary" id="btnOnboardingLater" data-i18n="onboarding_later">بعداً</button>
+                <div class="onboarding-tour-nav">
+                    <button type="button" class="btn-secondary" id="btnOnboardingPrev" data-i18n="onboarding_prev">قبلی</button>
+                    <button type="button" class="btn-secondary" id="btnOnboardingGo" data-i18n="onboarding_go">برو به این بخش</button>
+                    <button type="button" class="btn-primary" id="btnOnboardingNext" data-i18n="onboarding_next">بعدی</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/i18n-en.js?v=340661cc7177" charset="utf-8"></script>
+    <script src="/js/i18n-tr.js?v=340661cc7177" charset="utf-8"></script>
+    <script src="/js/modules/dashboard-i18n.js?v=340661cc7177" charset="utf-8"></script>
+    <script src="/js/dashboard.js?v=340661cc7177" charset="utf-8"></script>
     <script>
     (function() {
         var meta = document.querySelector('meta[name="crm-build"]');

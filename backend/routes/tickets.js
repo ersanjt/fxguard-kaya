@@ -52,9 +52,9 @@ router.get('/', async (req, res, next) => {
     try {
         const { status, priority, assignedTo, createdBy, departmentId, search, sort = 'newest' } = req.query;
         const { page, limit, offset } = parsePagination(req.query.page, req.query.limit, 100);
+        // Op.or یک Symbol است — Object.keys آن را نمی‌بیند؛ مثل tasks با spread ادغام کن
         const accessWhere = ticketAccessWhere(req);
-        const andParts = Object.keys(accessWhere).length > 0 ? [accessWhere] : [];
-        const where = {};
+        const where = { ...accessWhere };
         if (status) {
             if (!VALID_TICKET_STATUSES.has(status)) return res.status(400).json({ error: 'وضعیت تیکت نامعتبر است' });
             where.status = status;
@@ -68,7 +68,8 @@ router.get('/', async (req, res, next) => {
         if (departmentId) where.departmentId = departmentId;
         if (search && String(search).trim()) {
             const safeTerm = '%' + String(search).trim().replace(/[%_\\]/g, '\\$&') + '%';
-            andParts.push({
+            where[Op.and] = where[Op.and] || [];
+            where[Op.and].push({
                 [Op.or]: [
                     { title: { [Op.like]: safeTerm } },
                     { description: { [Op.like]: safeTerm } },
@@ -76,7 +77,6 @@ router.get('/', async (req, res, next) => {
                 ]
             });
         }
-        if (andParts.length > 0) where[Op.and] = andParts;
         let order = [['createdAt', 'DESC']];
         if (sort === 'oldest') order = [['createdAt', 'ASC']];
         else if (sort === 'priority') order = [[literal("CASE \"Tickets\".\"priority\" WHEN 'urgent' THEN 4 WHEN 'high' THEN 3 WHEN 'normal' THEN 2 WHEN 'low' THEN 1 ELSE 0 END"), 'DESC'], ['createdAt', 'DESC']];
@@ -249,13 +249,21 @@ router.put('/:id', async (req, res, next) => {
 router.delete('/:id', async (req, res, next) => {
     if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه تیکت نامعتبر است' });
     try {
-        if (!canManageTicket(req)) return res.status(403).json({ error: 'فقط مدیر، ادمین یا مالک می‌تواند تیکت را حذف کند' });
+        // حذف سخت تیکت فقط برای مالک/ادمین اصلی — و حتی آن‌ها آرشیو می‌کنند (پیام‌های سیستمی حفظ شوند)
+        if (!(isMainAdmin(req.user) || req.user.role === 'owner')) {
+            return res.status(403).json({
+                error: 'فقط مالک مجموعه یا ادمین اصلی می‌تواند تیکت را از لیست فعال خارج کند',
+            });
+        }
         const ticket = await Ticket.findByPk(req.params.id);
         if (!ticket) return res.status(404).json({ error: 'تیکت یافت نشد' });
         if (!canAccessTicket(req, ticket)) return res.status(403).json({ error: 'دسترسی به این تیکت ندارید' });
-        await TicketReply.destroy({ where: { ticketId: ticket.id } });
-        await ticket.destroy();
-        res.json({ ok: true });
+        await ticket.update({ status: 'archived' });
+        res.json({
+            ok: true,
+            archived: true,
+            message: 'تیکت آرشیو شد (حذف دائمی انجام نشد).',
+        });
     } catch (err) {
         next(err);
     }

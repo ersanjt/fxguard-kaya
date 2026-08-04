@@ -339,12 +339,32 @@ async function connectRabbitMQ() {
 let client = null;
 let isClientReady = false;
 let isClientStarting = false;
+/** آخرین زمانی که رویداد ready آمد — برای soft-ready کوتاه‌مدت */
+let lastReadyAt = 0;
 
 let lastQrImageDataUrl = null;
 let lastAccountInfo = null;
 let lastAuthFailureMessage = null;
 /** وضعیت اتصال برای نمایش در پنل: qr | authenticated (اسکن شد، در حال همگام‌سازی) | ready | auth_failure */
 let connectionPhase = null;
+
+/**
+ * آیا کلاینت برای عملیات (گروه/ارسال) قابل استفاده است؟
+ * گاهی isClientReady لحظه‌ای false می‌شود در حالی که pupPage هنوز زنده است.
+ */
+function isWhatsAppUsable() {
+    if (client && isClientReady) return true;
+    if (
+        client &&
+        client.pupPage &&
+        lastReadyAt > 0 &&
+        Date.now() - lastReadyAt < 90 * 1000 &&
+        connectionPhase === 'ready'
+    ) {
+        return true;
+    }
+    return false;
+}
 
 function getWhatsAppSessionPath() {
     return path.resolve(
@@ -505,6 +525,7 @@ function attachClientEvents(c) {
     c.on('ready', () => {
         isClientReady = true;
         isClientStarting = false;
+        lastReadyAt = Date.now();
         reconnectAttemptCount = 0;
         lastAuthFailureMessage = null;
         connectionPhase = 'ready';
@@ -1106,15 +1127,17 @@ app.use('/api/', requireGatewaySecret);
 
 // /api/status: بدون await Redis — همیشه سریع پاسخ بده؛ در صورت auth_failure پیام خطا برگردانده می‌شود
 app.get('/api/status', async (req, res) => {
-    const status = isClientReady ? 'ready' : isClientStarting ? 'starting' : 'disconnected';
+    const usable = isWhatsAppUsable();
+    const status = usable ? 'ready' : isClientStarting ? 'starting' : 'disconnected';
     const body = {
-        whatsapp: isClientReady,
+        whatsapp: usable,
         starting: isClientStarting,
         redis: redisClient?.isReady || false,
         rabbitmq: !!rabbitChannel,
         status,
+        usable,
     };
-    if (isClientReady && lastAccountInfo) {
+    if (usable && lastAccountInfo) {
         body.pushname = lastAccountInfo.name;
         body.number = lastAccountInfo.number;
     }
@@ -1198,7 +1221,7 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
     let tmpMediaPath = null;
     let chatId;
     try {
-        if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
+        if (!isWhatsAppUsable()) return res.status(503).json({ error: 'WhatsApp not ready' });
 
         const { to, message, media, replyTo } = req.body || {};
         if (!to || (!message && !media)) return res.status(400).json({ error: 'Invalid payload' });
@@ -1303,7 +1326,7 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
 // تماس صوتی/تصویری — از طریق UI واتساپ وب یا ارسال لینک تماس
 app.post('/api/calls/start', sendRateLimitMiddleware, async (req, res) => {
     try {
-        if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
+        if (!isWhatsAppUsable()) return res.status(503).json({ error: 'WhatsApp not ready' });
 
         const { to, type, introText } = req.body || {};
         if (!to) return res.status(400).json({ error: 'to is required' });
@@ -1429,7 +1452,7 @@ async function listWhatsAppGroupsFromStore() {
 }
 
 async function listWhatsAppGroups() {
-    if (!isClientReady || !client) {
+    if (!isWhatsAppUsable()) {
         const err = new Error('WhatsApp not ready');
         err.statusCode = 503;
         throw err;
@@ -1490,7 +1513,7 @@ async function listWhatsAppGroups() {
 
 app.get('/api/chats/groups', async (req, res) => {
     try {
-        if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
+        if (!isWhatsAppUsable()) return res.status(503).json({ error: 'WhatsApp not ready' });
         const groups = await listWhatsAppGroups();
         return res.json({ success: true, groups, count: groups.length });
     } catch (error) {
@@ -1518,7 +1541,7 @@ app.get('/api/chats/groups', async (req, res) => {
 // اعضای گروه — برای نمایش نام فرستنده‌ها در چت گروهی (وقتی senderName ذخیره نشده)
 app.get('/api/chats/groups/:groupId/participants', async (req, res) => {
     try {
-        if (!isClientReady || !client) return res.status(503).json({ error: 'WhatsApp not ready' });
+        if (!isWhatsAppUsable()) return res.status(503).json({ error: 'WhatsApp not ready' });
         const groupId = (req.params.groupId || '').trim();
         if (!groupId) return res.status(400).json({ error: 'groupId required' });
         const chatId = groupId.includes('@g.us') ? groupId : `${groupId}@g.us`;
@@ -1582,7 +1605,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
 
 // ==================== RabbitMQ outgoing helper ====================
 async function sendWhatsAppMessage(data) {
-    if (!isClientReady || !client) throw new Error('WhatsApp not ready');
+    if (!isWhatsAppUsable()) throw new Error('WhatsApp not ready');
 
     const { to, message, media, replyTo } = data || {};
     if (!to) throw new Error('Missing "to"');

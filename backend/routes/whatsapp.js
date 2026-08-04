@@ -152,6 +152,7 @@ router.get('/connection', async (req, res, next) => {
             gatewayEnabled: row.gatewayEnabled !== false,
             gatewayUrl: row.gatewayUrl || '',
             gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
+            numberFailoverEnabled: row.numberFailoverEnabled !== false,
         });
     } catch (err) {
         if (/no such table|relation .* does not exist/i.test(err.message)) {
@@ -164,6 +165,7 @@ router.get('/connection', async (req, res, next) => {
                 gatewayEnabled: true,
                 gatewayUrl: '',
                 gatewayApiSecretSet: false,
+                numberFailoverEnabled: true,
             });
         }
         next(err);
@@ -204,8 +206,15 @@ router.put('/connection', async (req, res, next) => {
             const v = String(body.gatewayApiSecret || '').trim();
             row.gatewayApiSecret = v || null;
         }
+        if (typeof body.numberFailoverEnabled === 'boolean') {
+            row.numberFailoverEnabled = body.numberFailoverEnabled;
+        }
         await row.save();
         invalidateCache();
+        try {
+            const { syncPrimaryFromConnection } = require('../services/whatsappNumbers');
+            await syncPrimaryFromConnection(row);
+        } catch (_) {}
         res.json({
             connectionMode: row.connectionMode,
             cloudEnabled: row.cloudEnabled,
@@ -217,11 +226,90 @@ router.put('/connection', async (req, res, next) => {
             gatewayEnabled: row.gatewayEnabled,
             gatewayUrl: row.gatewayUrl || '',
             gatewayApiSecretSet: !!(row.gatewayApiSecret && String(row.gatewayApiSecret).trim().length > 0),
+            numberFailoverEnabled: row.numberFailoverEnabled !== false,
         });
     } catch (err) {
         if (/no such table|relation .* does not exist/i.test(err.message)) {
             return res.status(500).json({ error: 'لطفاً ابتدا اسکریپت add-whatsapp-connection-table را اجرا کنید: node scripts/add-whatsapp-connection-table.js' });
         }
+        next(err);
+    }
+});
+
+function requireWhatsappAdmin(req, res) {
+    if (!req.canAccess('whatsapp')) {
+        res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        return false;
+    }
+    if (req.user.role !== 'admin' && req.user.role !== 'owner') {
+        res.status(403).json({ error: 'فقط ادمین یا مالک می‌تواند شماره‌های واتساپ را مدیریت کند' });
+        return false;
+    }
+    return true;
+}
+
+/** لیست اسلات‌های شماره (اصلی + پشتیبان) */
+router.get('/numbers', async (req, res, next) => {
+    try {
+        if (!req.canAccess('whatsapp')) return res.status(403).json({ error: 'دسترسی به بخش واتساپ ندارید' });
+        const numbersSvc = require('../services/whatsappNumbers');
+        const data = await numbersSvc.listNumbers();
+        res.json(data);
+    } catch (err) {
+        if (/no such table|does not exist/i.test(String(err.message || ''))) {
+            return res.json({ failoverEnabled: true, numbers: [], standbyCount: 0, readyStandbyCount: 0, canFailover: false });
+        }
+        next(err);
+    }
+});
+
+/** افزودن اسلات پشتیبان (حتی بدون اعتبارنامه — برای آماده‌سازی) */
+router.post('/numbers', async (req, res, next) => {
+    try {
+        if (!requireWhatsappAdmin(req, res)) return;
+        const numbersSvc = require('../services/whatsappNumbers');
+        const created = await numbersSvc.createStandbyNumber(req.body || {});
+        res.status(201).json(created);
+    } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
+        next(err);
+    }
+});
+
+router.put('/numbers/failover', async (req, res, next) => {
+    try {
+        if (!requireWhatsappAdmin(req, res)) return;
+        const numbersSvc = require('../services/whatsappNumbers');
+        const enabled = !!(req.body && req.body.enabled);
+        const failoverEnabled = await numbersSvc.setFailoverEnabled(enabled);
+        res.json({ failoverEnabled });
+    } catch (err) {
+        next(err);
+    }
+});
+
+router.put('/numbers/:id', async (req, res, next) => {
+    try {
+        if (!requireWhatsappAdmin(req, res)) return;
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر' });
+        const numbersSvc = require('../services/whatsappNumbers');
+        const updated = await numbersSvc.updateNumber(req.params.id, req.body || {});
+        res.json(updated);
+    } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
+        next(err);
+    }
+});
+
+router.delete('/numbers/:id', async (req, res, next) => {
+    try {
+        if (!requireWhatsappAdmin(req, res)) return;
+        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر' });
+        const numbersSvc = require('../services/whatsappNumbers');
+        const result = await numbersSvc.deleteNumber(req.params.id);
+        res.json(result);
+    } catch (err) {
+        if (err.status) return res.status(err.status).json({ error: err.message });
         next(err);
     }
 });

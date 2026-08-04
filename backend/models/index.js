@@ -61,6 +61,7 @@ const models = {
     TickerConfig: require('./TickerConfig')(sequelize),
     WhatsappConfig: require('./WhatsappConfig')(sequelize),
     WhatsappConnection: require('./WhatsappConnection')(sequelize),
+    WhatsappNumber: require('./WhatsappNumber')(sequelize),
     ProcessTemplate: require('./ProcessTemplate')(sequelize),
     ProcessInstance: require('./ProcessInstance')(sequelize),
     ProcessInstanceStep: require('./ProcessInstanceStep')(sequelize),

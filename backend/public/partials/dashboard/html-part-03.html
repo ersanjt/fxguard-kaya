@@ -244,6 +244,42 @@
                         <div id="supActList"></div>
                     </div>
                 </div>
+                <div id="pageSystemStatus" class="page sys-status-page">
+                    <div class="sys-status-header">
+                        <div>
+                            <h2 data-i18n="page_system_status">وضعیت سیستم</h2>
+                            <p class="sys-status-intro" data-i18n="sys_status_intro">سلامت Gateway، واتساپ، پایگاه‌داده، صف پیام و بکاپ — به‌همراه متریک‌های عملیاتی</p>
+                        </div>
+                        <div class="sys-status-actions">
+                            <span id="sysStatusUpdatedAt" class="sys-status-updated text-muted"></span>
+                            <label class="sys-auto-refresh"><input type="checkbox" id="sysStatusAutoRefresh" checked> <span data-i18n="sys_auto_refresh">بروزرسانی خودکار</span></label>
+                            <button type="button" class="btn-primary" id="btnRefreshSystemStatus" onclick="loadSystemStatus(true)" data-i18n="sys_refresh">بروزرسانی</button>
+                        </div>
+                    </div>
+                    <div id="sysOverallBanner" class="sys-overall-banner" aria-live="polite">
+                        <span class="sys-overall-dot" aria-hidden="true"></span>
+                        <span id="sysOverallLabel" data-i18n="loading">در حال بارگذاری...</span>
+                    </div>
+                    <div id="sysStatusChecks" class="sys-check-grid"></div>
+                    <div class="sys-metrics-row">
+                        <section class="sys-panel">
+                            <h3 data-i18n="sys_ops_counts">آمار عملیاتی</h3>
+                            <div id="sysOpsCounts" class="sys-stat-cards"></div>
+                        </section>
+                        <section class="sys-panel">
+                            <h3 data-i18n="sys_process">فرآیند سرور</h3>
+                            <div id="sysProcessInfo" class="sys-kv"></div>
+                        </section>
+                        <section class="sys-panel">
+                            <h3 data-i18n="sys_http_counters">شمارنده‌های HTTP</h3>
+                            <div id="sysHttpCounters" class="sys-kv"></div>
+                        </section>
+                    </div>
+                    <details class="sys-raw-details">
+                        <summary data-i18n="sys_raw_json">خروجی خام JSON</summary>
+                        <pre id="sysStatusRaw" class="sys-raw-pre"></pre>
+                    </details>
+                </div>
                 <div id="pageWhatsapp" class="page whatsapp-page" role="main" aria-labelledby="whatsapp-page-title">
                     <header class="whatsapp-page-header">
                         <div class="whatsapp-header-badge" aria-hidden="true">
@@ -436,6 +472,29 @@
                                     <div class="whatsapp-form-row"><label for="whatsappGatewayApiSecret" data-i18n="whatsapp_gateway_secret">API Secret</label><input type="password" id="whatsappGatewayApiSecret" class="whatsapp-input" placeholder="اختیاری" autocomplete="off"></div>
                                 </div>
                                 <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappConnection" data-i18n="btn_save">ذخیره</button>
+                            </div>
+                            <div id="whatsappNumbersBox" class="whatsapp-card form-box whatsapp-numbers-card">
+                                <h3 class="whatsapp-card-title" data-i18n="wa_numbers_title">شماره‌های واتساپ و Failover</h3>
+                                <p class="text-muted whatsapp-hint" data-i18n="wa_numbers_hint">برای کاهش ریسک بلاک، یک اسلات پشتیبان بسازید و بعداً شماره/Cloud دوم را پر کنید. با فعال بودن Failover، اگر ارسال از شماره اصلی شکست بخورد سیستم به پشتیبان می‌رود.</p>
+                                <label class="whatsapp-check-label"><input type="checkbox" id="whatsappNumberFailoverEnabled" checked> <span data-i18n="wa_numbers_failover">Failover چندشماره فعال</span></label>
+                                <div id="whatsappNumbersList" class="wa-numbers-list"></div>
+                                <div class="wa-numbers-actions">
+                                    <button type="button" class="btn-secondary" id="btnAddWhatsappStandby" data-i18n="wa_numbers_add_standby">افزودن اسلات پشتیبان</button>
+                                    <button type="button" class="btn-secondary btn-sm" id="btnRefreshWhatsappNumbers" data-i18n="sys_refresh">بروزرسانی</button>
+                                </div>
+                                <div id="whatsappStandbyForm" class="wa-standby-form" style="display:none;">
+                                    <h4 class="wa-standby-form-title" data-i18n="wa_numbers_standby_form">پیکربندی شماره پشتیبان</h4>
+                                    <input type="hidden" id="waStandbyEditId" value="">
+                                    <div class="whatsapp-form-row"><label for="waStandbyLabel" data-i18n="wa_numbers_label">برچسب</label><input type="text" id="waStandbyLabel" class="whatsapp-input" placeholder="خط پشتیبان"></div>
+                                    <div class="whatsapp-form-row"><label for="waStandbyDisplayPhone" data-i18n="wa_numbers_display_phone">شماره نمایشی</label><input type="text" id="waStandbyDisplayPhone" class="whatsapp-input" placeholder="+98912…" dir="ltr"></div>
+                                    <div class="whatsapp-form-row"><label for="waStandbyPhoneNumberId" data-i18n="whatsapp_cloud_phone_id">Phone Number ID (Meta)</label><input type="text" id="waStandbyPhoneNumberId" class="whatsapp-input" placeholder="اختیاری — بعداً" dir="ltr"></div>
+                                    <div class="whatsapp-form-row"><label for="waStandbyAccessToken" data-i18n="whatsapp_cloud_access_token">Access Token</label><input type="password" id="waStandbyAccessToken" class="whatsapp-input" placeholder="اختیاری — بعداً" autocomplete="off"></div>
+                                    <p class="text-muted whatsapp-hint" data-i18n="wa_numbers_standby_hint">الان می‌توانید فقط اسلات خالی بسازید؛ وقتی شماره دوم آماده شد Token و Phone Number ID را اینجا وارد کنید.</p>
+                                    <div class="whatsapp-form-actions-inline">
+                                        <button type="button" class="btn-primary btn-sm" id="btnSaveWhatsappStandby" data-i18n="btn_save">ذخیره</button>
+                                        <button type="button" class="btn-secondary btn-sm" id="btnCancelWhatsappStandby" data-i18n="btn_cancel">انصراف</button>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

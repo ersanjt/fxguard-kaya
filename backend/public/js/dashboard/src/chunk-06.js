@@ -26,8 +26,18 @@
             st.className = 'whatsapp-status-line';
             const phase = data && data.phase;
             var isCloudApi = !!(data && data.cloudApi);
-            const statusLabel = data && data.whatsapp ? (isCloudApi ? t('whatsapp_cloud_api_connected') : t('whatsapp_connected')) : (phase === 'authenticated' ? t('whatsapp_syncing') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected')));
-            const statusText = t('whatsapp_status') + ' ' + statusLabel + (isCloudApi ? '' : (' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'))));
+            var gatewayReady = !!(data && data.gatewayReady);
+            var cloudReadyHint = !!(data && (data.cloudReadyHint || data.cloudApiPartial));
+            var isCloudOnly = !!(isCloudApi && data && data.connectionMode === 'cloud');
+            // کاملاً آماده = Gateway واقعاً ready، یا حالت فقط-Cloud
+            var fullyReady = isCloudOnly || gatewayReady || (!!(data && data.whatsapp) && !cloudReadyHint && data.gatewayReady !== false && !isCloudApi);
+
+            const statusLabel = fullyReady
+                ? (isCloudApi ? t('whatsapp_cloud_api_connected') : t('whatsapp_connected'))
+                : (cloudReadyHint
+                    ? (LANG === 'fa' ? 'Cloud آماده — برای گروه‌ها Gateway/QR لازم است' : 'Cloud ready — Gateway/QR needed for groups')
+                    : (phase === 'authenticated' ? t('whatsapp_syncing') : (data && data.starting ? (LANG === 'fa' ? 'در حال اتصال...' : 'Connecting...') : t('whatsapp_disconnected'))));
+            const statusText = t('whatsapp_status') + ' ' + statusLabel + (isCloudApi && fullyReady ? '' : (' | ' + t('redis') + ': ' + (data && data.redis ? t('active') : t('inactive'))));
             st.textContent = statusText;
             const authFailureEl = document.getElementById('whatsappAuthFailure');
             if (authFailureEl) {
@@ -39,7 +49,7 @@
                     authFailureEl.textContent = '';
                 }
             }
-            if (data && data.whatsapp) {
+            if (fullyReady) {
                 var isCloudApi = !!(data && data.cloudApi);
                 isWhatsappPolling = false;
                 setWhatsappStatusBadge('connected');
@@ -82,6 +92,23 @@
                 }
                 if (waAlive()) { loadWhatsappDeptRouting(); loadWhatsappUnassigned(); }
                 return;
+            }
+            // Cloud آماده ولی Gateway نه → راهنما + ادامه برای QR
+            if (cloudReadyHint && lastCard) {
+                lastCard.style.display = 'block';
+                const lastStatus = document.getElementById('whatsappLastStatus');
+                const lastNumber = document.getElementById('whatsappLastNumber');
+                const lastResult = document.getElementById('whatsappLastResult');
+                if (lastStatus) lastStatus.textContent = LANG === 'fa' ? 'Cloud آماده / Gateway قطع' : 'Cloud OK / Gateway off';
+                if (lastNumber) lastNumber.textContent = (data && data.number) || '—';
+                if (lastResult) lastResult.textContent = LANG === 'fa' ? 'برای گروه‌ها QR اسکن کنید' : 'Scan QR for groups';
+                const cloudApiInfo = document.getElementById('whatsappCloudApiInfo');
+                if (cloudApiInfo) {
+                    cloudApiInfo.textContent = LANG === 'fa'
+                        ? 'Cloud API برای پیام خصوصی فعال است. برای همگام‌سازی گروه‌ها باید Gateway را با QR وصل کنید.'
+                        : 'Cloud API handles private messages. Connect Gateway via QR to sync groups.';
+                    cloudApiInfo.style.display = 'block';
+                }
             }
             if (!waAlive()) return;
             setWhatsappStatusBadge(data && data.starting ? 'starting' : 'disconnected');
@@ -210,6 +237,9 @@
             if (gwEn) gwEn.checked = d.gatewayEnabled !== false;
             if (gwUrl) gwUrl.value = d.gatewayUrl || '';
             if (gwSecret) { gwSecret.value = ''; gwSecret.placeholder = d.gatewayApiSecretSet ? (LANG === 'fa' ? 'ذخیره شده ✓' : 'Saved ✓') : (LANG === 'fa' ? 'اختیاری' : 'Optional'); }
+            var fo = document.getElementById('whatsappNumberFailoverEnabled');
+            if (fo) fo.checked = d.numberFailoverEnabled !== false;
+            if (typeof loadWhatsappNumbers === 'function') loadWhatsappNumbers();
         }
         async function saveWhatsappConnectionSettings() {
             var saveBtn = document.getElementById('btnSaveWhatsappConnection');
@@ -221,6 +251,7 @@
             var cloudTplLang = document.getElementById('whatsappCloudBulkTemplateLanguage');
             var gwUrl = document.getElementById('whatsappGatewayUrl');
             var gwSecret = document.getElementById('whatsappGatewayApiSecret');
+            var fo = document.getElementById('whatsappNumberFailoverEnabled');
             var body = {
                 connectionMode: (document.getElementById('whatsappConnectionMode') || {}).value || 'cloud_first',
                 cloudEnabled: (document.getElementById('whatsappCloudEnabled') || {}).checked !== false,
@@ -229,7 +260,8 @@
                 cloudBulkTemplateName: (cloudTplName && cloudTplName.value) ? cloudTplName.value.trim() : undefined,
                 cloudBulkTemplateLanguage: (cloudTplLang && cloudTplLang.value) ? cloudTplLang.value.trim() : undefined,
                 gatewayEnabled: (document.getElementById('whatsappGatewayEnabled') || {}).checked !== false,
-                gatewayUrl: (gwUrl && gwUrl.value) ? gwUrl.value.trim() : undefined
+                gatewayUrl: (gwUrl && gwUrl.value) ? gwUrl.value.trim() : undefined,
+                numberFailoverEnabled: fo ? !!fo.checked : true
             };
             if (cloudToken && cloudToken.value.trim()) body.cloudAccessToken = cloudToken.value.trim();
             if (gwSecret && gwSecret.value.trim()) body.gatewayApiSecret = gwSecret.value.trim();
@@ -240,6 +272,173 @@
                 else toast((res.data && res.data.error) || t('err_generic'), true);
             } finally { waBtnLoading(saveBtn, false); }
         }
+
+        function hideWhatsappStandbyForm() {
+            var form = document.getElementById('whatsappStandbyForm');
+            if (form) form.style.display = 'none';
+            var idEl = document.getElementById('waStandbyEditId');
+            if (idEl) idEl.value = '';
+            ['waStandbyLabel', 'waStandbyDisplayPhone', 'waStandbyPhoneNumberId', 'waStandbyAccessToken'].forEach(function(id) {
+                var el = document.getElementById(id);
+                if (el) el.value = '';
+            });
+        }
+
+        function showWhatsappStandbyForm(edit) {
+            var form = document.getElementById('whatsappStandbyForm');
+            if (!form) return;
+            form.style.display = 'block';
+            var idEl = document.getElementById('waStandbyEditId');
+            if (idEl) idEl.value = (edit && edit.id) || '';
+            var label = document.getElementById('waStandbyLabel');
+            var phone = document.getElementById('waStandbyDisplayPhone');
+            var phoneId = document.getElementById('waStandbyPhoneNumberId');
+            var token = document.getElementById('waStandbyAccessToken');
+            if (label) label.value = (edit && edit.label) || '';
+            if (phone) phone.value = (edit && edit.displayPhone) || '';
+            if (phoneId) phoneId.value = (edit && edit.cloudPhoneNumberId) || '';
+            if (token) { token.value = ''; token.placeholder = (edit && edit.cloudAccessTokenSet) ? (LANG === 'fa' ? 'ذخیره شده ✓' : 'Saved ✓') : (LANG === 'fa' ? 'اختیاری — بعداً' : 'Optional — later'); }
+        }
+
+        async function loadWhatsappNumbers() {
+            var list = document.getElementById('whatsappNumbersList');
+            if (!list) return;
+            var res = await apiFetch('/api/whatsapp/numbers');
+            if (res.needLogin) return;
+            if (!res.ok) {
+                list.innerHTML = '<div class="empty">' + escapeHtml((res.data && res.data.error) || t('err_generic')) + '</div>';
+                return;
+            }
+            var d = res.data || {};
+            var fo = document.getElementById('whatsappNumberFailoverEnabled');
+            if (fo) fo.checked = d.failoverEnabled !== false;
+            var numbers = d.numbers || [];
+            if (!numbers.length) {
+                list.innerHTML = '<div class="empty">' + escapeHtml(t('wa_numbers_need_standby')) + '</div>';
+                return;
+            }
+            var html = '';
+            if (d.canFailover) {
+                html += '<div class="wa-number-meta" style="margin-bottom:8px;color:var(--accent);">' + escapeHtml(t('wa_numbers_can_failover')) + '</div>';
+            } else {
+                html += '<div class="wa-number-meta" style="margin-bottom:8px;">' + escapeHtml(t('wa_numbers_need_standby')) + '</div>';
+            }
+            numbers.forEach(function(n) {
+                var roleBadge = n.role === 'primary'
+                    ? '<span class="wa-number-badge primary">' + escapeHtml(t('wa_numbers_role_primary')) + '</span>'
+                    : '<span class="wa-number-badge standby">' + escapeHtml(t('wa_numbers_role_standby')) + '</span>';
+                var statusBadge = n.ready
+                    ? '<span class="wa-number-badge ready">' + escapeHtml(t('wa_numbers_ready')) + '</span>'
+                    : '<span class="wa-number-badge pending">' + escapeHtml(t('wa_numbers_pending')) + '</span>';
+                var metaParts = [];
+                if (n.displayPhone) metaParts.push(n.displayPhone);
+                if (n.cloudPhoneNumberId) metaParts.push('ID: ' + n.cloudPhoneNumberId);
+                metaParts.push(n.slotKey);
+                if (n.lastError) metaParts.push(n.lastError);
+                html += '<div class="wa-number-row ' + (n.ready ? 'is-ready' : 'is-pending') + '">';
+                html += '<div class="wa-number-main"><div class="wa-number-title">' + escapeHtml(n.label || n.slotKey) + roleBadge + statusBadge + '</div>';
+                html += '<div class="wa-number-meta">' + escapeHtml(metaParts.join(' · ')) + '</div></div>';
+                html += '<div class="wa-number-actions">';
+                if (n.role !== 'primary') {
+                    html += '<button type="button" class="btn-secondary btn-sm" data-wa-num-edit="' + escapeHtml(n.id) + '">' + escapeHtml(t('wa_numbers_edit')) + '</button>';
+                    html += '<button type="button" class="btn-secondary btn-sm" data-wa-num-del="' + escapeHtml(n.id) + '">' + escapeHtml(t('wa_numbers_delete')) + '</button>';
+                }
+                html += '</div></div>';
+            });
+            list.innerHTML = html;
+            list._numbersCache = numbers;
+        }
+
+        async function saveWhatsappStandby() {
+            var idEl = document.getElementById('waStandbyEditId');
+            var editId = idEl && idEl.value ? idEl.value.trim() : '';
+            var body = {
+                label: ((document.getElementById('waStandbyLabel') || {}).value || '').trim(),
+                displayPhone: ((document.getElementById('waStandbyDisplayPhone') || {}).value || '').trim(),
+                cloudPhoneNumberId: ((document.getElementById('waStandbyPhoneNumberId') || {}).value || '').trim(),
+                transportPreference: 'cloud'
+            };
+            var tok = ((document.getElementById('waStandbyAccessToken') || {}).value || '').trim();
+            if (tok) body.cloudAccessToken = tok;
+            var res;
+            if (editId) {
+                res = await apiFetch('/api/whatsapp/numbers/' + encodeURIComponent(editId), { method: 'PUT', body: JSON.stringify(body) });
+            } else {
+                res = await apiFetch('/api/whatsapp/numbers', { method: 'POST', body: JSON.stringify(body) });
+            }
+            if (res.needLogin) return;
+            if (res.ok) {
+                toast(res.data && res.data.ready ? t('done_msg') : t('wa_numbers_empty_slot_ok'));
+                hideWhatsappStandbyForm();
+                loadWhatsappNumbers();
+            } else toast((res.data && res.data.error) || t('err_generic'), true);
+        }
+
+        async function toggleWhatsappNumberFailover() {
+            var fo = document.getElementById('whatsappNumberFailoverEnabled');
+            if (!fo) return;
+            var res = await apiFetch('/api/whatsapp/numbers/failover', {
+                method: 'PUT',
+                body: JSON.stringify({ enabled: !!fo.checked })
+            });
+            if (res.needLogin) return;
+            if (res.ok) loadWhatsappNumbers();
+            else {
+                fo.checked = !fo.checked;
+                toast((res.data && res.data.error) || t('err_generic'), true);
+            }
+        }
+
+        (function bindWhatsappNumbersUi() {
+            var addBtn = document.getElementById('btnAddWhatsappStandby');
+            if (addBtn && !addBtn._bound) {
+                addBtn._bound = true;
+                addBtn.addEventListener('click', function() { showWhatsappStandbyForm(null); });
+            }
+            var refreshBtn = document.getElementById('btnRefreshWhatsappNumbers');
+            if (refreshBtn && !refreshBtn._bound) {
+                refreshBtn._bound = true;
+                refreshBtn.addEventListener('click', function() { loadWhatsappNumbers(); });
+            }
+            var saveBtn = document.getElementById('btnSaveWhatsappStandby');
+            if (saveBtn && !saveBtn._bound) {
+                saveBtn._bound = true;
+                saveBtn.addEventListener('click', function() { saveWhatsappStandby(); });
+            }
+            var cancelBtn = document.getElementById('btnCancelWhatsappStandby');
+            if (cancelBtn && !cancelBtn._bound) {
+                cancelBtn._bound = true;
+                cancelBtn.addEventListener('click', hideWhatsappStandbyForm);
+            }
+            var fo = document.getElementById('whatsappNumberFailoverEnabled');
+            if (fo && !fo._bound) {
+                fo._bound = true;
+                fo.addEventListener('change', function() { toggleWhatsappNumberFailover(); });
+            }
+            var list = document.getElementById('whatsappNumbersList');
+            if (list && !list._bound) {
+                list._bound = true;
+                list.addEventListener('click', async function(e) {
+                    var editBtn = e.target.closest('[data-wa-num-edit]');
+                    var delBtn = e.target.closest('[data-wa-num-del]');
+                    if (editBtn) {
+                        var id = editBtn.getAttribute('data-wa-num-edit');
+                        var cached = (list._numbersCache || []).find(function(n) { return n.id === id; });
+                        showWhatsappStandbyForm(cached || { id: id });
+                        return;
+                    }
+                    if (delBtn) {
+                        var delId = delBtn.getAttribute('data-wa-num-del');
+                        if (!delId) return;
+                        if (!confirm(LANG === 'fa' ? 'اسلات پشتیبان حذف شود؟' : 'Delete standby slot?')) return;
+                        var res = await apiFetch('/api/whatsapp/numbers/' + encodeURIComponent(delId), { method: 'DELETE' });
+                        if (res.ok) { toast(t('done_msg')); loadWhatsappNumbers(); }
+                        else toast((res.data && res.data.error) || t('err_generic'), true);
+                    }
+                });
+            }
+        })();
+
         async function verifyWhatsappCloudConnection() {
             var btn = document.getElementById('btnVerifyWhatsappCloud');
             var out = document.getElementById('whatsappCloudVerifyResult');
@@ -1707,6 +1906,184 @@
             if (modal) modal.style.display = 'none';
         }
 
+        var _sysStatusPollTimer = null;
+        var _sysStatusLoading = false;
+
+        function formatBytes(n) {
+            n = Number(n) || 0;
+            if (n < 1024) return n + ' B';
+            if (n < 1048576) return (n / 1024).toFixed(1) + ' KB';
+            if (n < 1073741824) return (n / 1048576).toFixed(1) + ' MB';
+            return (n / 1073741824).toFixed(2) + ' GB';
+        }
+
+        function formatUptime(sec) {
+            sec = Math.max(0, Math.floor(Number(sec) || 0));
+            var d = Math.floor(sec / 86400);
+            var h = Math.floor((sec % 86400) / 3600);
+            var m = Math.floor((sec % 3600) / 60);
+            var s = sec % 60;
+            if (d > 0) return d + 'd ' + h + 'h ' + m + 'm';
+            if (h > 0) return h + 'h ' + m + 'm';
+            if (m > 0) return m + 'm ' + s + 's';
+            return s + 's';
+        }
+
+        function sysCheckLabel(key) {
+            var map = {
+                database: 'sys_check_database',
+                redis: 'sys_check_redis',
+                rabbitmq: 'sys_check_rabbitmq',
+                gateway: 'sys_check_gateway',
+                whatsapp: 'sys_check_whatsapp',
+                backups: 'sys_check_backups'
+            };
+            return t(map[key] || key);
+        }
+
+        function sysStatusClass(st) {
+            st = String(st || '').toLowerCase();
+            if (st === 'ok' || st === 'disabled' || st === 'skipped') return 'is-ok';
+            if (st === 'error' || st === 'old' || st === 'missing' || st === 'disconnected') return 'is-error';
+            return 'is-degraded';
+        }
+
+        function sysOverallLabel(st) {
+            if (st === 'ok') return t('sys_status_ok');
+            if (st === 'error') return t('sys_status_error');
+            return t('sys_status_degraded');
+        }
+
+        function stopSystemStatusLive() {
+            if (_sysStatusPollTimer) {
+                clearInterval(_sysStatusPollTimer);
+                _sysStatusPollTimer = null;
+            }
+        }
+
+        function startSystemStatusLive() {
+            stopSystemStatusLive();
+            var box = document.getElementById('sysStatusAutoRefresh');
+            if (box && !box._bound) {
+                box._bound = true;
+                box.addEventListener('change', function() {
+                    if (box.checked) startSystemStatusLive();
+                    else stopSystemStatusLive();
+                });
+            }
+            if (box && !box.checked) return;
+            _sysStatusPollTimer = setInterval(function() {
+                var page = document.getElementById('pageSystemStatus');
+                if (!page || !page.classList.contains('show')) {
+                    stopSystemStatusLive();
+                    return;
+                }
+                loadSystemStatus(false);
+            }, 15000);
+        }
+
+        async function loadSystemStatus(showSkeleton) {
+            if (_sysStatusLoading) return;
+            var checksEl = document.getElementById('sysStatusChecks');
+            var banner = document.getElementById('sysOverallBanner');
+            var labelEl = document.getElementById('sysOverallLabel');
+            if (!checksEl) return;
+            _sysStatusLoading = true;
+            try {
+                if (showSkeleton) {
+                    checksEl.innerHTML = '<div class="loading-skeleton loading-row"></div><div class="loading-skeleton loading-row"></div>';
+                    if (labelEl) labelEl.textContent = t('loading');
+                }
+                var res = await apiFetch('/api/system-status');
+                if (res.needLogin) return;
+                if (!res.ok) {
+                    if (banner) banner.className = 'sys-overall-banner is-error';
+                    if (labelEl) labelEl.textContent = (res.data && res.data.error) || t('err_generic');
+                    checksEl.innerHTML = '<div class="empty">' + escapeHtml((res.data && res.data.error) || t('err_generic')) + '</div>';
+                    return;
+                }
+                var data = res.data || {};
+                var overall = data.status || 'degraded';
+                if (banner) banner.className = 'sys-overall-banner ' + sysStatusClass(overall);
+                if (labelEl) labelEl.textContent = sysOverallLabel(overall);
+
+                var updated = document.getElementById('sysStatusUpdatedAt');
+                if (updated) {
+                    updated.textContent = t('sys_updated') + ': ' + (data.checkedAt || data.timestamp
+                        ? (typeof fmtTZ === 'function' ? fmtTZ(data.checkedAt || data.timestamp, 'datetime') : String(data.checkedAt || data.timestamp))
+                        : '—');
+                }
+
+                var checks = data.checks || {};
+                var order = ['database', 'redis', 'rabbitmq', 'gateway', 'whatsapp', 'backups'];
+                var html = '';
+                order.forEach(function(key) {
+                    var c = checks[key];
+                    if (!c) return;
+                    var st = c.status || '—';
+                    var meta = [];
+                    if (typeof c.latencyMs === 'number') meta.push(t('sys_latency') + ': ' + c.latencyMs + ' ms');
+                    if (c.channel) meta.push(String(c.channel));
+                    if (c.detail) meta.push(String(c.detail));
+                    if (c.number) meta.push(String(c.number));
+                    if (c.pushname) meta.push(String(c.pushname));
+                    if (c.mode) meta.push('mode: ' + c.mode);
+                    if (c.latest && c.latest.name) meta.push(c.latest.name + (c.ageHours != null ? ' (' + c.ageHours + 'h)' : ''));
+                    if (c.count != null && key === 'backups') meta.push('n=' + c.count);
+                    if (c.error) meta.push(String(c.error));
+                    html += '<article class="sys-check-card ' + sysStatusClass(st) + '">';
+                    html += '<div class="sys-check-title">' + escapeHtml(sysCheckLabel(key)) + '</div>';
+                    html += '<div class="sys-check-status">' + escapeHtml(String(st)) + '</div>';
+                    if (meta.length) html += '<div class="sys-check-meta">' + escapeHtml(meta.join(' · ')) + '</div>';
+                    html += '</article>';
+                });
+                checksEl.innerHTML = html || '<div class="empty">—</div>';
+
+                var counts = data.counts || {};
+                var ops = document.getElementById('sysOpsCounts');
+                if (ops) {
+                    ops.innerHTML =
+                        '<div class="sys-stat-card"><div class="val">' + (counts.openConversations || 0) + '</div><div class="label">' + escapeHtml(t('sys_open_conversations')) + '</div></div>' +
+                        '<div class="sys-stat-card"><div class="val">' + (counts.todayMessages || 0) + '</div><div class="label">' + escapeHtml(t('sys_today_messages')) + '</div></div>' +
+                        '<div class="sys-stat-card"><div class="val">' + (counts.activeUsers || 0) + '</div><div class="label">' + escapeHtml(t('sys_active_users')) + '</div></div>' +
+                        '<div class="sys-stat-card"><div class="val">' + (counts.customers || 0) + '</div><div class="label">' + escapeHtml(t('sys_customers')) + '</div></div>';
+                }
+
+                var proc = data.process || {};
+                var procEl = document.getElementById('sysProcessInfo');
+                if (procEl) {
+                    var mem = (proc.memory && proc.memory.rss) || 0;
+                    procEl.innerHTML =
+                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_uptime')) + '</span><span>' + escapeHtml(formatUptime(data.uptime || proc.uptimeSec)) + '</span></div>' +
+                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_memory_rss')) + '</span><span>' + escapeHtml(formatBytes(mem)) + '</span></div>' +
+                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_node')) + '</span><span>' + escapeHtml(proc.node || '—') + '</span></div>' +
+                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_env')) + '</span><span>' + escapeHtml(proc.env || '—') + '</span></div>' +
+                        '<div class="sys-kv-row"><span>PID</span><span>' + escapeHtml(String(proc.pid || '—')) + '</span></div>';
+                }
+
+                var ctr = data.counters || {};
+                var ctrEl = document.getElementById('sysHttpCounters');
+                if (ctrEl) {
+                    ctrEl.innerHTML =
+                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_http_total')) + '</span><span>' + (ctr.httpRequestsTotal || 0) + '</span></div>' +
+                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_http_5xx')) + '</span><span>' + (ctr.http5xxTotal || 0) + '</span></div>' +
+                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_gw_checks')) + '</span><span>' + (ctr.gatewayStatusChecks || 0) + '</span></div>' +
+                        '<div class="sys-kv-row"><span>' + escapeHtml(t('sys_gw_failures')) + '</span><span>' + (ctr.gatewayStatusFailures || 0) + '</span></div>';
+                }
+
+                var raw = document.getElementById('sysStatusRaw');
+                if (raw) {
+                    try { raw.textContent = JSON.stringify(data, null, 2); } catch (_) { raw.textContent = ''; }
+                }
+            } catch (e) {
+                if (banner) banner.className = 'sys-overall-banner is-error';
+                if (labelEl) labelEl.textContent = t('err_generic');
+                checksEl.innerHTML = '<div class="empty">' + escapeHtml(t('err_generic')) + '</div>';
+            } finally {
+                _sysStatusLoading = false;
+            }
+        }
+
         document.querySelectorAll('.sup-tab').forEach(function(btn) {
             btn.addEventListener('click', function() {
                 const tab = this.getAttribute('data-tab');
@@ -1820,6 +2197,8 @@
             window.toggleUserForm = toggleUserForm;
             window.addUser = addUser;
             window.saveUserEdit = saveUserEdit;
+            window.showOnboardingTour = showOnboardingTour;
+            window.dismissOnboardingTour = dismissOnboardingTour;
             window.openDeleteUserModal = openDeleteUserModal;
             window.closeDeleteUserModal = closeDeleteUserModal;
             window.confirmDeleteUser = confirmDeleteUser;
@@ -2209,6 +2588,179 @@
                 await loadPanelSettingsAndApply();
             } catch (e) {
                 console.error('Panel settings:', e);
+            }
+            safe('maybeShowOnboardingTour', maybeShowOnboardingTour);
+        }
+
+        function showOnboardingTour(force) {
+            const modal = document.getElementById('onboardingTourModal');
+            if (!modal) return;
+            if (!force) {
+                try {
+                    if (sessionStorage.getItem('crm_onboarding_snooze') === '1') return;
+                } catch (_) {}
+            }
+            onboardingStepIndex = 0;
+            modal.style.display = 'flex';
+            bindOnboardingControlsOnce();
+            renderOnboardingStep();
+            if (typeof applyTranslations === 'function') {
+                try { applyTranslations(); } catch (_) {}
+            } else if (typeof window.applyTranslations === 'function') {
+                try { window.applyTranslations(); } catch (_) {}
+            }
+            if (force) modal.setAttribute('data-force', '1');
+            else modal.removeAttribute('data-force');
+        }
+
+        var onboardingStepIndex = 0;
+        var onboardingControlsBound = false;
+
+        function getOnboardingSteps() {
+            return [
+                {
+                    page: 'conversations',
+                    titleKey: 'onboarding_step_conversations_title',
+                    descKey: 'onboarding_step_conversations_desc',
+                },
+                {
+                    page: 'customers',
+                    titleKey: 'onboarding_step_customers_title',
+                    descKey: 'onboarding_step_customers_desc',
+                },
+                {
+                    page: 'tickets',
+                    titleKey: 'onboarding_step_tickets_title',
+                    descKey: 'onboarding_step_tickets_desc',
+                },
+                {
+                    page: 'tasks',
+                    titleKey: 'onboarding_step_tasks_title',
+                    descKey: 'onboarding_step_tasks_desc',
+                },
+                {
+                    page: 'profile',
+                    titleKey: 'onboarding_step_telegram_title',
+                    descKey: 'onboarding_step_telegram_desc',
+                },
+                {
+                    page: null,
+                    titleKey: 'onboarding_step_whatsapp_title',
+                    descKey: 'onboarding_step_whatsapp_desc',
+                },
+            ];
+        }
+
+        function renderOnboardingStep() {
+            const steps = getOnboardingSteps();
+            if (onboardingStepIndex < 0) onboardingStepIndex = 0;
+            if (onboardingStepIndex >= steps.length) onboardingStepIndex = steps.length - 1;
+            const step = steps[onboardingStepIndex];
+            const titleEl = document.getElementById('onboardingStepTitle');
+            const descEl = document.getElementById('onboardingStepDesc');
+            const countEl = document.getElementById('onboardingStepCount');
+            const prog = document.getElementById('onboardingProgress');
+            const prevBtn = document.getElementById('btnOnboardingPrev');
+            const nextBtn = document.getElementById('btnOnboardingNext');
+            const goBtn = document.getElementById('btnOnboardingGo');
+            if (titleEl) titleEl.textContent = t(step.titleKey);
+            if (descEl) descEl.textContent = t(step.descKey);
+            if (countEl) {
+                countEl.textContent = (LANG === 'fa'
+                    ? ('گام ' + (onboardingStepIndex + 1) + ' از ' + steps.length)
+                    : (LANG === 'tr'
+                        ? ('Adım ' + (onboardingStepIndex + 1) + ' / ' + steps.length)
+                        : ('Step ' + (onboardingStepIndex + 1) + ' of ' + steps.length)));
+            }
+            if (prog) {
+                prog.innerHTML = steps.map(function (_s, i) {
+                    var cls = 'onboarding-progress-dot';
+                    if (i < onboardingStepIndex) cls += ' is-done';
+                    if (i === onboardingStepIndex) cls += ' is-active';
+                    return '<span class="' + cls + '"></span>';
+                }).join('');
+            }
+            if (prevBtn) prevBtn.style.visibility = onboardingStepIndex === 0 ? 'hidden' : 'visible';
+            if (goBtn) goBtn.style.display = step.page ? '' : 'none';
+            if (nextBtn) {
+                const last = onboardingStepIndex >= steps.length - 1;
+                nextBtn.textContent = last ? t('onboarding_done') : t('onboarding_next');
+                nextBtn.setAttribute('data-i18n', last ? 'onboarding_done' : 'onboarding_next');
+            }
+        }
+
+        function bindOnboardingControlsOnce() {
+            if (onboardingControlsBound) return;
+            onboardingControlsBound = true;
+            const later = document.getElementById('btnOnboardingLater');
+            const closeBtn = document.getElementById('btnOnboardingClose');
+            const prevBtn = document.getElementById('btnOnboardingPrev');
+            const nextBtn = document.getElementById('btnOnboardingNext');
+            const goBtn = document.getElementById('btnOnboardingGo');
+            if (later) later.addEventListener('click', function () { dismissOnboardingTour(false); });
+            if (closeBtn) closeBtn.addEventListener('click', function () { dismissOnboardingTour(false); });
+            if (prevBtn) prevBtn.addEventListener('click', function () {
+                onboardingStepIndex = Math.max(0, onboardingStepIndex - 1);
+                renderOnboardingStep();
+            });
+            if (nextBtn) nextBtn.addEventListener('click', function () {
+                const steps = getOnboardingSteps();
+                if (onboardingStepIndex >= steps.length - 1) {
+                    dismissOnboardingTour(true);
+                    return;
+                }
+                onboardingStepIndex += 1;
+                renderOnboardingStep();
+            });
+            if (goBtn) goBtn.addEventListener('click', function () {
+                const step = getOnboardingSteps()[onboardingStepIndex];
+                if (step && step.page && typeof showPage === 'function') {
+                    try { showPage(step.page); } catch (_) {}
+                    if (step.page === 'profile') {
+                        try { location.hash = 'profile'; } catch (_) {}
+                    }
+                }
+            });
+        }
+
+        function maybeShowOnboardingTour() {
+            try {
+                if (!currentUser) return;
+                const seen = currentUser.settings && currentUser.settings.hasSeenOnboarding;
+                if (seen) return;
+                try {
+                    if (sessionStorage.getItem('crm_onboarding_snooze') === '1') return;
+                } catch (_) {}
+                setTimeout(function () { showOnboardingTour(false); }, 700);
+            } catch (_) {}
+        }
+
+        async function dismissOnboardingTour(markDone) {
+            const modal = document.getElementById('onboardingTourModal');
+            if (modal) modal.style.display = 'none';
+            if (!markDone) {
+                try { sessionStorage.setItem('crm_onboarding_snooze', '1'); } catch (_) {}
+                return;
+            }
+            try { sessionStorage.removeItem('crm_onboarding_snooze'); } catch (_) {}
+            try {
+                const res = await apiFetch('/api/users/me', {
+                    method: 'PATCH',
+                    body: JSON.stringify({ settings: { hasSeenOnboarding: true } }),
+                });
+                if (res.ok && res.data) {
+                    currentUser = Object.assign({}, currentUser || {}, res.data);
+                    if (!currentUser.settings) currentUser.settings = {};
+                    currentUser.settings.hasSeenOnboarding = true;
+                } else if (currentUser) {
+                    if (!currentUser.settings) currentUser.settings = {};
+                    currentUser.settings.hasSeenOnboarding = true;
+                }
+            } catch (_) {
+                if (currentUser) {
+                    if (!currentUser.settings) currentUser.settings = {};
+                    currentUser.settings.hasSeenOnboarding = true;
+                }
             }
         }
 

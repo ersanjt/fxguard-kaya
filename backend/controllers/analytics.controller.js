@@ -19,11 +19,17 @@ const { isMainAdmin, canViewHiddenConversations } = require('../lib/permissions'
 const { conversationListWhereAsync } = require('../lib/conversationAccess');
 const { getVisibleStaffUserIds, applyVisibleUserFilter } = require('../lib/staffSupervision');
 
+/** آیا where خالی نیست؟ (کلیدهای Symbol مثل Op.and/Op.or با Object.keys دیده نمی‌شوند) */
+function hasWhereClauses(where) {
+    if (!where || typeof where !== 'object') return false;
+    return Reflect.ownKeys(where).length > 0;
+}
+
 /** ترکیب فیلتر دسترسی با شرط اضافی برای count */
 function mergeConvWhere(convWhere, extra) {
     const parts = [];
-    if (convWhere && Object.keys(convWhere).length) parts.push(convWhere);
-    if (extra && Object.keys(extra).length) parts.push(extra);
+    if (hasWhereClauses(convWhere)) parts.push(convWhere);
+    if (hasWhereClauses(extra)) parts.push(extra);
     if (parts.length === 0) return {};
     if (parts.length === 1) return parts[0];
     return { [Op.and]: parts };
@@ -76,7 +82,7 @@ async function dashboard(req, res, next) {
         today.setHours(0, 0, 0, 0);
 
         const convWhere = await activeConversationWhere(req);
-        const hasConvFilter = Object.keys(convWhere).length > 0;
+        const hasConvFilter = hasWhereClauses(convWhere);
         const canSeeHidden = isMainAdmin(req.user) || canViewHiddenConversations(req.user);
 
         // بدون تخصیص: فقط برای ادمین/مدیر معنا دارد؛ کارشناس فقط کار خودش را می‌بیند

@@ -13,6 +13,7 @@ const VALID_ACTIONS = new Set([
     'ticket_created', 'ticket_updated', 'ticket_closed', 'ticket_deleted',
     'task_created', 'task_updated', 'task_completed',
     'user_created', 'user_updated', 'user_deleted', 'user_deactivated',
+    'staff_lifecycle_notified',
     'announcement_created', 'announcement_deleted',
     'settings_updated', 'password_reset', 'totp_setup', 'totp_disabled',
     'transaction_created', 'transaction_updated', 'transaction_deleted',

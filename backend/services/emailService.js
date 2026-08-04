@@ -392,8 +392,9 @@ function baseHtml(title, body, opts = {}) {
 
 /**
  * Welcome email for a newly created user (sign-in details).
+ * @param {object} [extra] - { passwordLinkUrl, guideExtra }
  */
-async function sendWelcomeCredentials(user, plainPassword, siteName = 'Staff Portal', panelConfig = null) {
+async function sendWelcomeCredentials(user, plainPassword, siteName = 'Staff Portal', panelConfig = null, extra = null) {
     if (!user || !user.email) return false;
     const roleLabels = {
         owner: 'Owner',
@@ -403,10 +404,11 @@ async function sendWelcomeCredentials(user, plainPassword, siteName = 'Staff Por
         agent: 'Agent'
     };
     const roleName = roleLabels[user.role] || user.role || 'Agent';
+    const passwordLinkUrl = extra && extra.passwordLinkUrl;
     const title = `Welcome to ${escHtml(siteName)}`;
     const body = `
       <p>Hello <strong>${escHtml(user.name || 'there')}</strong>,</p>
-      <p>Your account on <strong>${escHtml(siteName)}</strong> has been created.</p>
+      <p>Your staff account on <strong>${escHtml(siteName)}</strong> has been created.</p>
       <p>Your role: <span class="badge badge-green">${escHtml(roleName)}</span></p>
       <hr class="divider">
       <p><strong>Sign-in details</strong></p>
@@ -418,31 +420,38 @@ async function sendWelcomeCredentials(user, plainPassword, siteName = 'Staff Por
         <div class="label">Sign-in email${user.username ? ' / username' : ''}</div>
         <div class="value">${escHtml(user.email)}${user.username ? ' · ' + escHtml(user.username) : ''}</div>
       </div>
+      ${plainPassword && plainPassword !== '—' ? `
       <div class="cred-box">
         <div class="cred-label">Temporary password</div>
         <div class="cred-value">${escHtml(plainPassword)}</div>
-      </div>
+      </div>` : ''}
+      ${passwordLinkUrl ? `
+      <div class="info-box">
+        <div class="label">Secure password link</div>
+        <div class="value"><a href="${escHtml(passwordLinkUrl)}" style="color:#059669">Set or reset your password</a></div>
+      </div>` : ''}
       <div class="alert-box alert-warn">
         <span class="alert-icon">⚠️</span>
-        <span class="alert-text">After your first sign-in, change your password from <strong>My profile</strong>.</span>
+        <span class="alert-text">Change your password after first sign-in. Prefer the secure link above when available.</span>
       </div>
       <hr class="divider">
       <p><strong>What you can do</strong></p>
       <div class="feature-grid">
         <div class="feature-item"><span class="icon">💬</span>WhatsApp conversations</div>
         <div class="feature-item"><span class="icon">👥</span>Customer management</div>
-        <div class="feature-item"><span class="icon">🎫</span>Tickets</div>
+        <div class="feature-item"><span class="icon">🎫</span>Internal tickets</div>
         <div class="feature-item"><span class="icon">✅</span>Tasks</div>
         <div class="feature-item"><span class="icon">📊</span>Reports &amp; analytics</div>
-        <div class="feature-item"><span class="icon">🔔</span>Real-time notifications</div>
+        <div class="feature-item"><span class="icon">🔔</span>Telegram bot (link in Profile)</div>
       </div>
       <hr class="divider">
       <p><strong>Getting started</strong></p>
       <ol style="margin: 0 0 0 20px; padding: 0; font-size:.94rem; color:#2d3748">
         <li style="margin-bottom:6px">Open the portal and sign in</li>
-        <li style="margin-bottom:6px">Change your password</li>
-        <li style="margin-bottom:6px">Complete your profile</li>
-        <li>Start working with conversations and tickets</li>
+        <li style="margin-bottom:6px">Set a strong password</li>
+        <li style="margin-bottom:6px">Open <strong>My profile</strong> and link Telegram for account alerts</li>
+        <li style="margin-bottom:6px">Complete the short onboarding checklist on first login</li>
+        <li>Work with conversations, tickets, and tasks</li>
       </ol>
       <div class="text-center mt-4">
         <a href="${PANEL_URL}" class="btn">Sign in to the portal →</a>
@@ -450,7 +459,43 @@ async function sendWelcomeCredentials(user, plainPassword, siteName = 'Staff Por
     const mailOpts = {
         to: user.email,
         subject: `${title} — your sign-in details`,
-        text: `Hello ${user.name || 'there'},\n\nYour account on ${siteName} is ready.\n\nPortal: ${PANEL_URL}\nEmail: ${user.email}${user.username ? '\nUsername: ' + user.username : ''}\nTemporary password: ${plainPassword}\n\nPlease change your password after you sign in.`,
+        text: `Hello ${user.name || 'there'},\n\nYour account on ${siteName} is ready.\n\nPortal: ${PANEL_URL}\nEmail: ${user.email}${user.username ? '\nUsername: ' + user.username : ''}\nTemporary password: ${plainPassword || '(use secure link)'}\n${passwordLinkUrl ? 'Password link: ' + passwordLinkUrl + '\n' : ''}\nPlease change your password after you sign in.`,
+        html: baseHtml(title, body, { siteName })
+    };
+    if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
+    return sendMail(mailOpts);
+}
+
+/**
+ * اعلان تغییرات حساب (نقش، شعبه، مسدود، رمز و …)
+ */
+async function sendAccountLifecycleEmail(user, details = {}, panelConfig = null) {
+    if (!user || !user.email) return false;
+    const siteName = details.siteName || 'Staff Portal';
+    const title = details.title || 'Account update';
+    const bodyText = details.bodyText || '';
+    const passwordLinkUrl = details.passwordLinkUrl;
+    const actorName = details.actorName || '';
+    const body = `
+      <p>Hello <strong>${escHtml(user.name || 'there')}</strong>,</p>
+      <p>${escHtml(title)}</p>
+      <div class="info-box">
+        <div class="label">Details</div>
+        <div class="value" style="white-space:pre-wrap;font-family:inherit">${escHtml(bodyText)}</div>
+      </div>
+      ${actorName ? `<p style="font-size:.9rem;color:#64748b">Changed by: ${escHtml(actorName)}</p>` : ''}
+      ${passwordLinkUrl ? `
+      <div class="info-box">
+        <div class="label">Secure password link</div>
+        <div class="value"><a href="${escHtml(passwordLinkUrl)}" style="color:#059669">Open link</a></div>
+      </div>` : ''}
+      <div class="text-center mt-4">
+        <a href="${PANEL_URL}" class="btn">Open portal →</a>
+      </div>`;
+    const mailOpts = {
+        to: user.email,
+        subject: `${siteName} — ${title}`,
+        text: `${title}\n\n${bodyText}\n\nPortal: ${PANEL_URL}${passwordLinkUrl ? '\nPassword: ' + passwordLinkUrl : ''}`,
         html: baseHtml(title, body, { siteName })
     };
     if (panelConfig && panelConfig.host) return sendMailWithConfig(panelConfig, mailOpts);
@@ -727,6 +772,7 @@ module.exports = {
     sendMailWithConfig,
     sendMailWithConfigDetailed,
     sendWelcomeCredentials,
+    sendAccountLifecycleEmail,
     sendLoginNotification,
     sendPasswordReset,
     sendTicketAssigned,

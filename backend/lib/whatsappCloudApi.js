@@ -24,14 +24,25 @@ async function isConfigured() {
     return isCloudConfigured();
 }
 
-async function _getConfig() {
+/**
+ * @param {object|null} [cfgOverride] — تنظیمات اسلات شماره (failover)
+ */
+async function _getConfig(cfgOverride) {
+    if (cfgOverride && cfgOverride.cloudAccessToken && cfgOverride.cloudPhoneNumberId) {
+        return {
+            cloudEnabled: cfgOverride.cloudEnabled !== false,
+            cloudAccessToken: cfgOverride.cloudAccessToken,
+            cloudPhoneNumberId: cfgOverride.cloudPhoneNumberId,
+            cloudVerifyToken: cfgOverride.cloudVerifyToken || '',
+        };
+    }
     const c = await getWhatsappConnectionConfig();
     if (!c.cloudEnabled || !c.cloudAccessToken || !c.cloudPhoneNumberId) return null;
     return c;
 }
 
-async function sendText(to, text) {
-    const cfg = await _getConfig();
+async function sendText(to, text, cfgOverride) {
+    const cfg = await _getConfig(cfgOverride);
     if (!cfg) throw new Error('WhatsApp Cloud API not configured');
     const phone = String(to).replace(/\D/g, '').replace(/^0/, '');
     if (!phone) throw new Error('Invalid phone number');
@@ -72,8 +83,8 @@ function normalizeCloudPhone(to) {
  * @param {string} languageCode - مثلاً fa, en_US
  * @param {Array<{type:string, parameters:Array}>|null} components
  */
-async function sendTemplate(to, templateName, languageCode = 'fa', components = null) {
-    const cfg = await _getConfig();
+async function sendTemplate(to, templateName, languageCode = 'fa', components = null, cfgOverride) {
+    const cfg = await _getConfig(cfgOverride);
     if (!cfg) throw new Error('WhatsApp Cloud API not configured');
     const name = String(templateName || '').trim();
     if (!name) throw new Error('Template name is required');
@@ -162,8 +173,8 @@ function normalizeCloudMediaMime(mimetype) {
  * ارسال رسانه (تصویر، صوت، ویدئو، سند)
  * Meta Cloud API فقط URL عمومی را می‌پذیرد — برای base64 ابتدا در uploads ذخیره و BACKEND_PUBLIC_URL استفاده کنید
  */
-async function sendMedia(to, media, caption = '') {
-    const cfg = await _getConfig();
+async function sendMedia(to, media, caption = '', cfgOverride) {
+    const cfg = await _getConfig(cfgOverride);
     if (!cfg) throw new Error('WhatsApp Cloud API not configured');
     const phone = String(to).replace(/\D/g, '').replace(/^0/, '');
     if (!phone) throw new Error('Invalid phone number');
@@ -259,8 +270,9 @@ async function sendMedia(to, media, caption = '') {
 /**
  * ارسال پیام (متن یا رسانه) — سازگار با gateway send-message
  * @param {object} payload - { to, message, media }
+ * @param {object} [cfgOverride] - تنظیمات Cloud برای اسلات failover
  */
-async function sendMessage(payload) {
+async function sendMessage(payload, cfgOverride) {
     const { to, message, media, templateName, templateLanguage, templateBodyParams, templateComponents } = payload || {};
     if (!to) throw new Error('Missing "to"');
 
@@ -268,14 +280,14 @@ async function sendMessage(payload) {
         const components = templateComponents || buildBodyTemplateComponents(
             templateBodyParams || (message ? [message] : [])
         );
-        return sendTemplate(to, templateName, templateLanguage || 'fa', components);
+        return sendTemplate(to, templateName, templateLanguage || 'fa', components, cfgOverride);
     }
 
     if (media && (media.url || media.data)) {
         const cap = media.sendAsVoice ? '' : (message || '');
-        return sendMedia(to, media, cap);
+        return sendMedia(to, media, cap, cfgOverride);
     }
-    return sendText(to, message || '');
+    return sendText(to, message || '', cfgOverride);
 }
 
 /**

@@ -589,13 +589,13 @@
         }
         function closeCustomerModal() { const m = document.getElementById('customerModal'); if (m) m.style.display = 'none'; }
         async function deleteCustomer(custId) {
-            if (!currentUser || !currentUser.canDeleteCustomer) { toast(LANG === 'fa' ? 'شما اجازه حذف مشتری را ندارید' : 'You cannot delete customers', true); return; }
+            if (!currentUser || !currentUser.canDeleteCustomer) { toast(LANG === 'fa' ? 'فقط مالک یا ادمین اصلی می‌تواند مشتری را از دسترس خارج کند' : 'Only owner/main admin can remove customers', true); return; }
             const name = (currentCustomerData && currentCustomerData.id === custId) ? (currentCustomerData.name || currentCustomerData.phone) : (document.getElementById('customerModalName') && document.getElementById('customerModalName').value) || (document.getElementById('customerModalPhone') && document.getElementById('customerModalPhone').value) || custId;
-            const msg = (LANG === 'fa' ? 'آیا از حذف مشتری «' : 'Delete customer "') + (name || custId) + (LANG === 'fa' ? '» مطمئن هستید؟ مکالمات، یادداشت‌ها و تراکنش‌ها هم حذف می‌شوند.' : '"? Conversations, notes and transactions will be removed.');
+            const msg = (LANG === 'fa' ? 'مشتری «' : 'Remove customer "') + (name || custId) + (LANG === 'fa' ? '» از دسترس خارج شود؟ پیام‌ها و سوابق حذف نمی‌شوند؛ فقط از لیست فعال کنار می‌رود.' : '" from active list? Messages and history are preserved.');
             if (!confirm(msg)) return;
             const res = await apiFetch('/api/customers/' + custId, { method: 'DELETE' });
             if (res.needLogin) return;
-            if (res.ok) { toast(LANG === 'fa' ? 'مشتری حذف شد' : 'Customer deleted'); closeCustomerModal(); showPage('customers'); loadCustomers(); currentCustomerId = null; currentCustomerData = null; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
+            if (res.ok) { toast((res.data && res.data.message) || (LANG === 'fa' ? 'مشتری از دسترس خارج شد؛ پیام‌ها حفظ شدند' : 'Customer removed from active list; messages preserved')); closeCustomerModal(); showPage('customers'); loadCustomers(); currentCustomerId = null; currentCustomerData = null; } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
         async function saveCustomerFromModal() {
             const id = document.getElementById('customerModalId').value.trim();
@@ -878,7 +878,7 @@
         function applyHiddenSections(hidden) {
             HIDDEN_SECTIONS = Array.isArray(hidden) ? hidden : [];
             const can = canAccessSection;
-            const pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
+            const pageToSection = { 'panel-settings': 'panel_settings', 'whatsapp': 'whatsapp', 'tickets': 'tickets', 'internal-chat': 'internal_chat', 'tasks': 'tasks', 'supervision': 'supervision', 'system-status': 'system_status', 'staff-activity': 'staff_activity', 'branches': 'branches', 'departments': 'departments', 'users': 'users', 'rates': 'rates', 'rates-charts': 'rates', 'services': 'services', 'conversations': 'conversations', 'customers': 'customers', 'processes': 'processes', 'announcements': 'announcements', 'message-templates': 'conversations' };
             document.querySelectorAll('.nav-link[data-page]').forEach(function(link) {
                 const page = link.getAttribute('data-page');
                 const section = link.getAttribute('data-section') || pageToSection[page];
@@ -1825,6 +1825,7 @@
                 loadWhatsappWelcomeConfig();
                 loadWhatsappStats();
                 loadWhatsappOverview();
+                if (typeof loadWhatsappNumbers === 'function') loadWhatsappNumbers();
                 if (typeof loadLegacyLockdownCard === 'function') loadLegacyLockdownCard();
             }
             if (page === 'message-templates') { initMessageTemplatesTabs(); initTplVarPills(); loadMessageTemplates(); }
@@ -1851,6 +1852,7 @@
             if (page === 'announcements') { loadAnnouncements(); if (currentUser && (currentUser.role === 'owner' || currentUser.role === 'admin' || currentUser.role === 'manager')) { document.getElementById('announcementSendBox').style.display = 'block'; loadAnnouncementTargets(); } else document.getElementById('announcementSendBox').style.display = 'none'; }
             if (page === 'internal-chat') { window.hasNewInternalChat = false; updateNavBadges(); const popupTid = currentInternalThreadId; closeInternalChatPopup(); var wrap = document.getElementById('internalChatLayoutWrap'); if (wrap) wrap.classList.remove('internal-chat-mobile-chat-open'); loadInternalThreads(); loadInternalUsers(); if (popupTid) setTimeout(function(){ openInternalThread(popupTid); }, 150); }
             if (page === 'supervision') { loadSupervisionFiltersInit(); loadSupervisionPerformance(); document.querySelectorAll('.sup-tab').forEach(function(b){ b.classList.remove('active'); if(b.getAttribute('data-tab')==='performance') b.classList.add('active'); }); document.querySelectorAll('.sup-panel').forEach(function(p){ p.classList.remove('show'); if(p.id==='supPerformance') p.classList.add('show'); }); }
+            if (page === 'system-status') { loadSystemStatus(true); startSystemStatusLive(); } else { stopSystemStatusLive(); }
             if (page === 'panel-settings') loadPanelSettings();
             if (prevPage === 'internal-chat' && page !== 'internal-chat' && currentInternalThreadId) {
                 const headerEl = document.getElementById('internalChatHeader');

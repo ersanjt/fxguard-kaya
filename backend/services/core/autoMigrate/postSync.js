@@ -130,6 +130,7 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
             const connCols = [
                 ['cloudBulkTemplateName', { type: DataTypes.STRING(128), allowNull: true }],
                 ['cloudBulkTemplateLanguage', { type: DataTypes.STRING(16), allowNull: true, defaultValue: 'fa' }],
+                ['numberFailoverEnabled', { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true }],
             ];
             for (const [name, def] of connCols) {
                 if (connDesc[name] !== undefined) continue;
@@ -234,6 +235,29 @@ async function runPostSync(sequelize, logger, { RateCurrency }) {
     } catch (e) {
         if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
             logger.warn('InternalThreadParticipants migration:', e.message);
+    }
+
+    try {
+        const npDesc = await qi.describeTable('notification_preferences');
+        const npCols = [
+            ['accountLifecycleEmailEnabled', { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true }],
+            ['accountLifecycleWhatsappEnabled', { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true }],
+            ['accountLifecycleTelegramEnabled', { type: DataTypes.BOOLEAN, allowNull: true, defaultValue: true }],
+        ];
+        for (const [name, def] of npCols) {
+            if (npDesc && npDesc[name] === undefined) {
+                try {
+                    await qi.addColumn('notification_preferences', name, def);
+                    logger.info('✅ notification_preferences: ' + name + ' column added (auto-migration)');
+                } catch (e) {
+                    if (!String(e.message || '').includes('already exists') && !String(e.message || '').includes('duplicate'))
+                        logger.warn('notification_preferences.' + name, e.message);
+                }
+            }
+        }
+    } catch (e) {
+        if (!String(e.message || '').includes('No description') && !String(e.message || '').includes('does not exist'))
+            logger.warn('notification_preferences migration:', e.message);
     }
 
     const defaultRateCurrencies = require('../../../lib/defaultRateCurrencies');

@@ -7,7 +7,7 @@
     const VALID_PAGES = [
         'dashboard', 'conversations', 'customers', 'departments', 'users',
         'tickets', 'tasks', 'processes', 'whatsapp', 'message-templates',
-        'branches', 'supervision', 'staff-activity', 'profile', 'announcements',
+        'branches', 'supervision', 'system-status', 'staff-activity', 'profile', 'announcements',
         'internal-chat', 'rates', 'rates-charts', 'services', 'panel-settings'
     ];
 
@@ -18,6 +18,7 @@
         'internal-chat': 'internal_chat',
         tasks: 'tasks',
         supervision: 'supervision',
+        'system-status': 'system_status',
         'staff-activity': 'staff_activity',
         branches: 'branches',
         departments: 'departments',
@@ -45,6 +46,7 @@
         'message-templates': 'pageMessageTemplates',
         branches: 'pageBranches',
         supervision: 'pageSupervision',
+        'system-status': 'pageSystemStatus',
         'staff-activity': 'pageStaffActivity',
         profile: 'pageProfile',
         announcements: 'pageAnnouncements',
@@ -66,6 +68,7 @@
         users: 'nav_users',
         branches: 'nav_branches',
         supervision: 'nav_supervision',
+        'system-status': 'nav_system_status',
         'staff-activity': 'nav_staff_activity',
         profile: 'nav_profile',
         announcements: 'nav_announcements',

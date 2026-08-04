@@ -237,6 +237,10 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
             setImmediate(() => {
                 try {
                     const status = res.statusCode || 0;
+                    try {
+                        const { recordHttpRequest } = require('../services/systemHealth');
+                        recordHttpRequest(req.method, status, Date.now() - startedAt);
+                    } catch (_) {}
                     const hit = onApiResponseFinished({
                         method: req.method,
                         path: req.originalUrl || req.url,
@@ -256,43 +260,73 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
     app.use('/api', createApiRouter(io, getRabbitChannel, redisClient, logger));
 
     app.get('/health', async (req, res) => {
-        const checks = {};
-        let dbOk = true;
-        let degraded = false;
-
+        const deep = String(req.query.deep || '') === '1' || String(req.query.deep || '').toLowerCase() === 'true';
         try {
-            await sequelize.authenticate();
-            checks.database = { status: 'ok' };
+            const { collectSystemHealth } = require('../services/systemHealth');
+            const report = await collectSystemHealth({
+                redisClient,
+                getRabbitChannel,
+                includeGateway: deep,
+                includeCounts: deep
+            });
+            const statusCode = report.status === 'error' ? 503 : 200;
+            return res.status(statusCode).json({
+                status: report.status,
+                timestamp: report.timestamp || report.checkedAt,
+                uptime: report.uptime,
+                checks: {
+                    database: report.checks.database,
+                    redis: report.checks.redis,
+                    rabbitmq: report.checks.rabbitmq,
+                    ...(deep
+                        ? {
+                              gateway: report.checks.gateway,
+                              whatsapp: report.checks.whatsapp,
+                              backups: report.checks.backups
+                          }
+                        : {})
+                },
+                ...(deep
+                    ? {
+                          process: report.process,
+                          counts: report.counts,
+                          checkedAt: report.checkedAt
+                      }
+                    : {})
+            });
         } catch (e) {
-            checks.database = { status: 'error', error: 'DB unreachable' };
-            dbOk = false;
+            return res.status(503).json({
+                status: 'error',
+                checks: { error: e.message || 'health_failed' }
+            });
         }
+    });
 
+    /** Optional Prometheus scrape: Authorization: Bearer <METRICS_TOKEN> or X-Metrics-Token */
+    app.get('/metrics', async (req, res) => {
+        const token = String(process.env.METRICS_TOKEN || '').trim();
+        if (!token) {
+            return res.status(404).json({ error: 'metrics_disabled', hint: 'Set METRICS_TOKEN or use /api/system-status' });
+        }
+        const auth = String(req.get('authorization') || '');
+        const headerTok = String(req.get('x-metrics-token') || '').trim();
+        const bearer = auth.toLowerCase().startsWith('bearer ') ? auth.slice(7).trim() : '';
+        if (bearer !== token && headerTok !== token) {
+            return res.status(401).json({ error: 'unauthorized' });
+        }
         try {
-            if (redisClient && !redisClient.isStub) {
-                await redisClient.ping();
-                checks.redis = { status: 'ok' };
-            } else {
-                checks.redis = { status: 'disabled' };
-            }
+            const { collectSystemHealth, toPrometheusText } = require('../services/systemHealth');
+            const report = await collectSystemHealth({
+                redisClient,
+                getRabbitChannel,
+                includeGateway: true,
+                includeCounts: true
+            });
+            res.setHeader('Content-Type', 'text/plain; version=0.0.4; charset=utf-8');
+            return res.send(toPrometheusText(report));
         } catch (e) {
-            checks.redis = { status: 'error', error: 'Redis unreachable' };
-            degraded = true;
+            return res.status(500).send(`# error ${e.message || 'metrics_failed'}\n`);
         }
-
-        const rabbitOk = !!getRabbitChannel();
-        const rabbitConfigured = !!process.env.RABBITMQ_URL;
-        checks.rabbitmq = { status: rabbitOk ? 'ok' : rabbitConfigured ? 'disconnected' : 'disabled' };
-        if (!rabbitOk && rabbitConfigured) degraded = true;
-
-        const statusCode = dbOk ? 200 : 503;
-        const overallStatus = !dbOk ? 'error' : degraded ? 'degraded' : 'ok';
-        res.status(statusCode).json({
-            status: overallStatus,
-            timestamp: new Date().toISOString(),
-            uptime: Math.floor(process.uptime()),
-            checks
-        });
     });
 
     function serveLogin(req, res) {
@@ -344,6 +378,7 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
             'message-templates',
             'branches',
             'supervision',
+            'system-status',
             'staff-activity',
             'profile',
             'announcements',

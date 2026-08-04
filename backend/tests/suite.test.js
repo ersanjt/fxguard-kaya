@@ -64,6 +64,14 @@ async function runTests() {
         assert(r.body.uptime >= 0);
     });
 
+    await test('GET /metrics without METRICS_TOKEN returns 404', async () => {
+        const prev = process.env.METRICS_TOKEN;
+        delete process.env.METRICS_TOKEN;
+        const r = await req.get('/metrics');
+        if (prev != null) process.env.METRICS_TOKEN = prev;
+        assert.strictEqual(r.status, 404);
+    });
+
     await test('GET /api/ping returns ok:true', async () => {
         const r = await req.get('/api/ping');
         assert.strictEqual(r.status, 200);
@@ -123,6 +131,40 @@ async function runTests() {
         assert.strictEqual(r.status, 200);
         assert.strictEqual(r.body.email, 'admin@test.com');
         assert(!r.body.password, 'Password must not be in /me response');
+    });
+
+    await test('GET /api/system-status without auth returns 401', async () => {
+        const r = await req.get('/api/system-status');
+        assert.strictEqual(r.status, 401);
+    });
+
+    await test('GET /api/system-status for admin returns health payload', async () => {
+        const r = await req.get('/api/system-status')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.ok([200, 503].includes(r.status), `Unexpected status ${r.status}`);
+        assert(['ok', 'degraded', 'error'].includes(r.body.status), `Unexpected status: ${r.body.status}`);
+        assert(r.body.checks && r.body.checks.database, 'Expected database check');
+        assert(r.body.checks.gateway || r.body.checks.whatsapp, 'Expected gateway/whatsapp check');
+        assert(r.body.process, 'Expected process info');
+    });
+
+    await test('GET /api/whatsapp/numbers seeds primary slot', async () => {
+        const r = await req.get('/api/whatsapp/numbers')
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(r.status, 200);
+        assert(Array.isArray(r.body.numbers), 'Expected numbers array');
+        assert(r.body.numbers.some((n) => n.slotKey === 'primary' || n.role === 'primary'), 'Expected primary slot');
+        assert.strictEqual(typeof r.body.failoverEnabled, 'boolean');
+    });
+
+    await test('POST /api/whatsapp/numbers creates empty standby slot', async () => {
+        const r = await req.post('/api/whatsapp/numbers')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ label: 'Standby test slot' });
+        assert.strictEqual(r.status, 201, JSON.stringify(r.body));
+        assert.strictEqual(r.body.role, 'standby');
+        assert.strictEqual(r.body.ready, false);
+        assert(r.body.id, 'Expected id');
     });
 
     await test('GET /api/profile-image without auth returns 401', async () => {
@@ -247,6 +289,38 @@ async function runTests() {
         assert.strictEqual(r.status, 200);
         assert(r.body.token);
         agentToken = r.body.token;
+    });
+
+    // ── Tickets: access scoping ───────────────────────────────────────────────
+    section('Tickets — access filter');
+
+    await test('GET /api/tickets for agent only returns own/dept tickets', async () => {
+        const adminTicket = await req.post('/api/tickets')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ title: 'Admin-only ticket leak check', description: 'should not leak to agent', priority: 'low' });
+        assert.strictEqual(adminTicket.status, 201, JSON.stringify(adminTicket.body));
+        const agentTicket = await req.post('/api/tickets')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({
+                title: 'Assigned to agent',
+                description: 'visible',
+                priority: 'normal',
+                assignedTo: createdUserId,
+            });
+        assert.strictEqual(agentTicket.status, 201, JSON.stringify(agentTicket.body));
+
+        const list = await req.get('/api/tickets')
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(list.status, 200);
+        const rows = list.body.data || [];
+        const ids = rows.map((t) => t.id);
+        assert(ids.includes(agentTicket.body.id), 'agent should see assigned ticket');
+        assert(!ids.includes(adminTicket.body.id), 'agent must not see unrelated admin ticket');
+
+        const stats = await req.get('/api/tickets/stats')
+            .set('Authorization', `Bearer ${agentToken}`);
+        assert.strictEqual(stats.status, 200);
+        assert.strictEqual(stats.body.total, rows.length, 'stats total should match scoped list length');
     });
 
     // ── Users: Read ──────────────────────────────────────────────────────────
@@ -735,6 +809,39 @@ async function runTests() {
 
     // ── Customers: Delete ────────────────────────────────────────────────────
     section('Customers — Delete');
+
+    await test('DELETE /api/customers/:id soft-deletes without wiping messages', async () => {
+        const { Message, Conversation, Customer } = require('../models');
+        const uniquePhone = '0900' + String(Date.now()).slice(-7);
+        const cr = await req.post('/api/customers')
+            .set('Authorization', `Bearer ${adminToken}`)
+            .send({ name: 'Soft Del Msg', phone: uniquePhone, status: 'active' });
+        assert.strictEqual(cr.status, 201, JSON.stringify(cr.body));
+        const cid = cr.body.id;
+        const conv = await Conversation.create({
+            customerId: cid,
+            status: 'open',
+            priority: 'normal',
+            source: 'whatsapp',
+        });
+        await Message.create({
+            conversationId: conv.id,
+            customerId: cid,
+            content: 'must survive soft delete',
+            direction: 'incoming',
+            timestamp: new Date(),
+        });
+        const dr = await req.delete(`/api/customers/${cid}`)
+            .set('Authorization', `Bearer ${adminToken}`);
+        assert.strictEqual(dr.status, 200, JSON.stringify(dr.body));
+        assert.strictEqual(dr.body.messagesPreserved, true);
+        const msgCount = await Message.count({ where: { customerId: cid } });
+        assert.strictEqual(msgCount, 1, 'messages must remain after soft delete');
+        const cust = await Customer.findByPk(cid);
+        assert(cust, 'customer row must remain');
+        assert.strictEqual(cust.status, 'inactive');
+        assert(cust.customFields && cust.customFields.softDeletedAt, 'softDeletedAt flag expected');
+    });
 
     await test('DELETE /api/customers/:id succeeds when customer has documents and tags', async () => {
         const { CustomerDocument, Tag, Customer } = require('../models');

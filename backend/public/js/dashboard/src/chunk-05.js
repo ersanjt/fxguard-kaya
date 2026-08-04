@@ -684,7 +684,7 @@
             filterAndRenderUsers();
         }
         let currentEditUserId = null;
-        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets', view_customer_phone: 'section_view_customer_phone', bulk_messaging: 'section_bulk_messaging' };
+        var sectionLabels = { dashboard: 'page_dashboard', conversations: 'section_conversations', customers: 'section_customers', tickets: 'section_tickets', tasks: 'section_tasks', departments: 'section_departments', users: 'section_users', branches: 'section_branches', supervision: 'section_supervision', system_status: 'section_system_status', staff_activity: 'section_staff_activity', announcements: 'section_announcements', internal_chat: 'section_internal_chat', whatsapp: 'section_whatsapp', rates: 'section_rates', services: 'section_services', processes: 'section_processes', panel_settings: 'page_panel_settings', manage_users: 'section_manage_users', manage_tickets: 'section_manage_tickets', view_customer_phone: 'section_view_customer_phone', bulk_messaging: 'section_bulk_messaging' };
         const permGroups = [
             { key: 'communications', title: 'user_perms_group_communications', keys: ['conversations', 'customers', 'tickets', 'internal_chat', 'whatsapp', 'announcements', 'view_customer_phone', 'bulk_messaging'] },
             { key: 'organization', title: 'user_perms_group_organization', keys: ['dashboard', 'departments', 'users', 'branches', 'tasks', 'processes', 'staff_activity', 'supervision'] },
@@ -717,6 +717,8 @@
             document.getElementById('userEditName').value = u.name || '';
             document.getElementById('userEditUsername').value = u.username || '';
             document.getElementById('userEditEmail').value = u.email || '';
+            const phoneEditEl = document.getElementById('userEditPhone');
+            if (phoneEditEl) phoneEditEl.value = u.phone || '';
             document.getElementById('userEditRole').value = u.role || 'agent';
             document.getElementById('userEditDept').value = u.departmentId || '';
             document.getElementById('userEditBranch').value = u.branchId || '';
@@ -730,7 +732,7 @@
             if (waSenderEl) waSenderEl.value = u.whatsappSenderName || '';
             const waHonorificEl = document.getElementById('userEditWhatsappHonorific');
             if (waHonorificEl) waHonorificEl.value = u.whatsappHonorific || '';
-            const editFields = ['userEditName','userEditUsername','userEditEmail','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition','userEditWhatsappSender','userEditWhatsappHonorific'];
+            const editFields = ['userEditName','userEditUsername','userEditEmail','userEditPhone','userEditRole','userEditDept','userEditBranch','userEditActive','userEditPassword','userEditSkillsKeywords','userEditPosition','userEditWhatsappSender','userEditWhatsappHonorific'];
             editFields.forEach(function(fid) { const el = document.getElementById(fid); if (el) el.disabled = isProtected; });
             let protectedBanner = document.getElementById('userEditProtectedBanner');
             if (!protectedBanner) {
@@ -816,6 +818,7 @@
                 name: document.getElementById('userEditName').value.trim(),
                 username: document.getElementById('userEditUsername').value.trim() || null,
                 email: editEmail,
+                phone: (document.getElementById('userEditPhone') && document.getElementById('userEditPhone').value.trim()) || null,
                 role: document.getElementById('userEditRole').value,
                 position: posEl ? posEl.value.trim() || null : undefined,
                 whatsappSenderName: waSenderEl ? waSenderEl.value.trim() || null : undefined,
@@ -864,17 +867,20 @@
             const positionVal = (positionEl && positionEl.value.trim()) || null;
             const waSenderAdd = document.getElementById('userWhatsappSenderAdd');
             const whatsappSenderName = (waSenderAdd && waSenderAdd.value.trim()) || null;
-            const res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms, skillsKeywords: skillsKeywords, position: positionVal, whatsappSenderName: whatsappSenderName }) });
+            const phoneAddEl = document.getElementById('userPhoneAdd');
+            const phoneVal = (phoneAddEl && phoneAddEl.value.trim()) || null;
+            const res = await apiFetch('/api/users', { method: 'POST', body: JSON.stringify({ name: name, username: username, email: email, password: password, phone: phoneVal, role: document.getElementById('userRole').value, departmentId: deptId, branchId: branchId, permissions: perms, skillsKeywords: skillsKeywords, position: positionVal, whatsappSenderName: whatsappSenderName }) });
             if (res.needLogin) return;
             if (res.ok) {
                 document.getElementById('userName').value = '';
                 if (document.getElementById('userUsernameAdd')) document.getElementById('userUsernameAdd').value = '';
                 document.getElementById('userEmailAdd').value = '';
+                if (phoneAddEl) phoneAddEl.value = '';
                 document.getElementById('userPass').value = '';
                 if (document.getElementById('userSkillsAdd')) document.getElementById('userSkillsAdd').value = '';
                 if (positionEl) positionEl.value = '';
                 if (waSenderAdd) waSenderAdd.value = '';
-                toast(t('toast_user_added')); loadUsers(); toggleUserForm();
+                toast(LANG === 'fa' ? 'کاربر ثبت شد؛ ایمیل/واتساپ/تلگرام در حال ارسال است' : 'User created; notifications are being sent'); loadUsers(); toggleUserForm();
             } else { toast((res.data && res.data.error) || t('err_generic'), true); }
         }
 

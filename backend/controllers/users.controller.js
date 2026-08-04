@@ -25,7 +25,26 @@ const {
 const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser, canManageTickets, canViewCustomerPhone } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { isValidUUID } = require('../lib/validation');
-const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
+const { normalizePhone, isKnownPhoneDigits, canonicalizePhoneDigits } = require('../lib/phoneUtils');
+const {
+    snapshotUser,
+    resolveNames,
+    notifyAccountCreated,
+    notifyAccountUpdated,
+} = require('../services/staffLifecycleNotifier');
+
+function normalizeOptionalStaffPhone(raw) {
+    if (raw === undefined) return undefined;
+    if (raw === null || String(raw).trim() === '') return null;
+    const digits = canonicalizePhoneDigits(raw);
+    const normalized = normalizePhone(raw);
+    if (!normalized || !isKnownPhoneDigits(canonicalizePhoneDigits(normalized) || digits)) {
+        const err = new Error('شماره واتساپ نامعتبر است');
+        err.statusCode = 400;
+        throw err;
+    }
+    return normalized;
+}
 
 async function list(req, res, next) {
     try {
@@ -81,11 +100,13 @@ function me(req, res) {
         department: u.department,
         branch: u.branch,
         permissions: req.permissions,
+        settings: u.settings || {},
         totpEnabled: !!u.totpEnabled,
         canDeleteCustomer: canDeleteCustomer(u),
         canDeleteUser: canDeleteUser(u),
         canManageTickets: canManageTickets(u),
         canViewCustomerPhone: canViewCustomerPhone(u),
+        canManageConversations: canManageConversations(u),
         isProtectedAdmin: isMainAdmin(u),
     };
     res.json(out);
@@ -94,7 +115,7 @@ function me(req, res) {
 async function patchMe(req, res, next) {
     try {
         const user = req.user;
-        const { username, firstName, lastName, dateOfBirth, name, phone, password, avatar, email, whatsappSenderName } = req.body;
+        const { username, firstName, lastName, dateOfBirth, name, phone, password, avatar, email, whatsappSenderName, settings: settingsPatch } = req.body;
         if (username !== undefined) {
             const trimmed = String(username).trim();
             if (trimmed) {
@@ -120,7 +141,20 @@ async function patchMe(req, res, next) {
             if (trimmed) user.name = trimmed;
         }
         if (dateOfBirth !== undefined) user.dateOfBirth = dateOfBirth ? String(dateOfBirth).trim() || null : null;
-        if (phone !== undefined) user.phone = phone ? String(phone).trim() : null;
+        if (phone !== undefined) {
+            try {
+                user.phone = normalizeOptionalStaffPhone(phone);
+            } catch (e) {
+                return res.status(400).json({ error: e.message });
+            }
+        }
+        if (settingsPatch && typeof settingsPatch === 'object') {
+            const nextSettings = { ...(user.settings || {}) };
+            if (settingsPatch.hasSeenOnboarding !== undefined) {
+                nextSettings.hasSeenOnboarding = !!settingsPatch.hasSeenOnboarding;
+            }
+            user.settings = nextSettings;
+        }
         if (whatsappSenderName !== undefined && req.canManageUsers()) {
             user.whatsappSenderName = whatsappSenderName ? String(whatsappSenderName).trim() : null;
         }
@@ -191,9 +225,15 @@ async function create(req, res, next) {
         if (!req.canManageUsers()) {
             return res.status(403).json({ error: 'فقط مدیر مجموعه یا کسی که دسترسی مدیریت کاربران دارد می‌تواند کاربر جدید بسازد' });
         }
-        const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords, position, whatsappSenderName, whatsappHonorific } = req.body;
+        const { name, username, email, password, role, departmentId, branchId, permissions, skillsKeywords, position, whatsappSenderName, whatsappHonorific, phone } = req.body;
         if (!name || !email || !password) {
             return res.status(400).json({ error: 'نام، ایمیل و رمز الزامی است' });
+        }
+        let staffPhone = null;
+        try {
+            if (phone !== undefined) staffPhone = normalizeOptionalStaffPhone(phone);
+        } catch (e) {
+            return res.status(400).json({ error: e.message });
         }
         const pwdCheck = validatePassword(password);
         if (!pwdCheck.valid) return res.status(400).json({ error: pwdCheck.message });
@@ -223,6 +263,7 @@ async function create(req, res, next) {
             username: (username && String(username).trim()) || null,
             email: trimmedEmail,
             password,
+            phone: staffPhone,
             role: role || 'agent',
             position: position ? String(position).trim() : null,
             whatsappSenderName: whatsappSenderName ? String(whatsappSenderName).trim() : null,
@@ -230,28 +271,33 @@ async function create(req, res, next) {
             departmentId: departmentId || null,
             branchId: finalBranchId,
             permissions: permissions && typeof permissions === 'object' ? permissions : {},
-            settings: skillsKeywords ? { notifications: true, soundAlerts: true, autoAssign: true, skillsKeywords: String(skillsKeywords).trim() } : undefined,
+            settings: {
+                notifications: true,
+                soundAlerts: true,
+                autoAssign: true,
+                hasSeenOnboarding: false,
+                ...(skillsKeywords ? { skillsKeywords: String(skillsKeywords).trim() } : {}),
+            },
         });
         const plainPassword = password;
+        const actor = req.user;
         setImmediate(async () => {
             try {
-                const emailService = require('../services/emailService');
                 const { notifySystemEvent } = require('../services/systemEventNotifier');
-                const settings = await getPanelSettings();
-                const emailConfig = getPanelEmailConfig(settings);
-                const siteName = (settings && settings.siteName) || 'پورتال کارکنان';
-                // ارسال ایمیل خوش‌آمدگویی به کاربر جدید
-                await emailService.sendWelcomeCredentials(user, plainPassword, siteName, emailConfig);
-                // اطلاع تلگرام به ادمین
+                await notifyAccountCreated(user, { plainPassword, actor });
                 const roleLabels = { owner: 'مالک', admin: 'مدیر', manager: 'مدیر میانی', supervisor: 'سرپرست', agent: 'کارشناس' };
                 await notifySystemEvent('system', '👤 کاربر جدید ثبت شد', {
                     نام: user.name || '—',
                     ایمیل: user.email,
                     نقش: roleLabels[user.role] || user.role || '—',
-                    توسط: req.user ? req.user.name || req.user.email : 'سیستم',
-                    'ایمیل_خوش‌آمدگویی': 'ارسال شد',
+                    توسط: actor ? actor.name || actor.email : 'سیستم',
+                    اعلان_کاربر: 'ایمیل/واتساپ/تلگرام',
                 });
-            } catch (_) {}
+            } catch (err) {
+                try {
+                    require('../config/logger').warn('staff lifecycle on create failed', { error: err.message });
+                } catch (_) {}
+            }
         });
         const u = user.toJSON();
         delete u.password;
@@ -275,7 +321,10 @@ async function update(req, res, next) {
                 error: 'اطلاعات ادمین اصلی سیستم غیر قابل ویرایش است. هیچ کاربری حتی با بالاترین سطح دسترسی امکان ویرایش ادمین اصلی را ندارد.',
             });
         }
-        const { name, username, email, role, departmentId, branchId, isActive, permissions, position, whatsappSenderName, whatsappHonorific } = req.body;
+        const { name, username, email, role, departmentId, branchId, isActive, permissions, position, whatsappSenderName, whatsappHonorific, phone } = req.body;
+        const beforeNames = await resolveNames(user.departmentId, user.branchId);
+        const beforeSnap = snapshotUser(user, beforeNames);
+        let passwordChanged = false;
         if (name !== undefined) {
             const trimmedName = String(name).trim();
             if (!trimmedName) return res.status(400).json({ error: 'نام نمی‌تواند خالی باشد' });
@@ -287,6 +336,13 @@ async function update(req, res, next) {
         }
         if (whatsappHonorific !== undefined) {
             user.whatsappHonorific = whatsappHonorific ? String(whatsappHonorific).trim() : null;
+        }
+        if (phone !== undefined) {
+            try {
+                user.phone = normalizeOptionalStaffPhone(phone);
+            } catch (e) {
+                return res.status(400).json({ error: e.message });
+            }
         }
         if (username !== undefined) {
             const trimmed = String(username || '').trim();
@@ -338,6 +394,7 @@ async function update(req, res, next) {
             const pwdCheck = validatePassword(req.body.password);
             if (!pwdCheck.valid) return res.status(400).json({ error: pwdCheck.message });
             user.password = req.body.password;
+            passwordChanged = true;
         }
         if (permissions !== undefined && typeof permissions === 'object') {
             const merged = { ...(user.permissions || {}) };
@@ -353,6 +410,16 @@ async function update(req, res, next) {
             user.settings = settings;
         }
         await user.save();
+        const actor = req.user;
+        setImmediate(async () => {
+            try {
+                await notifyAccountUpdated(beforeSnap, user, { actor, passwordChanged });
+            } catch (err) {
+                try {
+                    require('../config/logger').warn('staff lifecycle on update failed', { error: err.message });
+                } catch (_) {}
+            }
+        });
         const u = user.toJSON();
         delete u.password;
         delete u.totpSecret;

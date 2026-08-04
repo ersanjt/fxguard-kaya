@@ -51,6 +51,22 @@ module.exports = (sequelize) => {
             defaultValue: true,
             comment: 'دریافت ایمیل هنگام پاسخ به تیکت'
         },
+        // چرخهٔ عمر حساب (ایجاد / تغییر نقش / مسدود و …)
+        accountLifecycleEmailEnabled: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+            comment: 'ایمیل برای رویدادهای حساب کاربری'
+        },
+        accountLifecycleWhatsappEnabled: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+            comment: 'واتساپ برای رویدادهای حساب کاربری'
+        },
+        accountLifecycleTelegramEnabled: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: true,
+            comment: 'تلگرام برای رویدادهای حساب کاربری (در صورت لینک بودن)'
+        },
         // دیگر
         digestEnabled: {
             type: DataTypes.BOOLEAN,

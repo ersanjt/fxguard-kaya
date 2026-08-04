@@ -129,6 +129,9 @@ router.get('/:id', async (req, res, next) => {
             include: [{ model: Tag, as: 'tags', attributes: ['id', 'name', 'color'], through: { attributes: [] } }]
         });
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
+        if (customer.customFields && customer.customFields.softDeletedAt) {
+            return res.status(404).json({ error: 'مشتری یافت نشد' });
+        }
         const allowed = await canAccessCustomer(req, customer.id);
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         res.json(redactCustomerPhone(customer, req.user));
@@ -344,11 +347,15 @@ router.put('/:id', async (req, res, next) => {
     }
 });
 
-// حذف مشتری — فقط ادمین یا مدیر (یا مالک)
+// حذف نرم مشتری — فقط مالک/ادمین اصلی؛ پیام‌ها و مکالمات هرگز destroy نمی‌شوند
 router.delete('/:id', async (req, res, next) => {
     try {
         if (!req.canAccess('customers')) return res.status(403).json({ error: 'دسترسی به بخش مشتریان ندارید' });
-        if (!req.canDeleteCustomer()) return res.status(403).json({ error: 'فقط ادمین یا مدیر می‌توانند مشتری را حذف کنند' });
+        if (!req.canDeleteCustomer()) {
+            return res.status(403).json({
+                error: 'فقط مالک مجموعه یا ادمین اصلی می‌تواند مشتری را از دسترس خارج کند',
+            });
+        }
         if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const customer = await Customer.findByPk(req.params.id);
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
@@ -356,29 +363,29 @@ router.delete('/:id', async (req, res, next) => {
         if (!allowed) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
 
         const customerId = customer.id;
+        const cf = Object.assign({}, customer.customFields || {}, {
+            softDeletedAt: new Date().toISOString(),
+            softDeletedBy: req.userId || null,
+        });
+
         const t = await sequelize.transaction();
         try {
-            const convRows = await Conversation.findAll({ where: { customerId }, transaction: t });
-            for (const conv of convRows) {
-                await conv.setTags([], { transaction: t });
-            }
-            await Message.destroy({ where: { customerId }, transaction: t });
-            await Conversation.destroy({ where: { customerId }, transaction: t });
-            await customer.setTags([], { transaction: t });
-            const docs = await CustomerDocument.findAll({ where: { customerId }, transaction: t });
-            for (const doc of docs) {
-                try {
-                    const absPath = path.join(__dirname, '..', 'public', doc.filePath);
-                    const absPath2 = path.join(__dirname, '..', String(doc.filePath).replace(/^\//, ''));
-                    if (fs.existsSync(absPath2)) fs.unlinkSync(absPath2);
-                    else if (fs.existsSync(absPath)) fs.unlinkSync(absPath);
-                } catch (_) {}
-                await doc.destroy({ transaction: t });
-            }
-            await CustomerNote.destroy({ where: { customerId }, transaction: t });
-            await ActivityLog.destroy({ where: { customerId }, transaction: t });
-            await Transaction.update({ customerId: null }, { where: { customerId }, transaction: t });
-            await customer.destroy({ transaction: t });
+            await customer.update(
+                {
+                    status: 'inactive',
+                    isRestrictedFromStaff: true,
+                    customFields: cf,
+                },
+                { transaction: t }
+            );
+            // مکالمات آرشیو می‌شوند؛ پیام‌ها دست‌نخورده می‌مانند
+            await Conversation.update(
+                {
+                    status: 'archived',
+                    isHiddenFromStaff: true,
+                },
+                { where: { customerId }, transaction: t }
+            );
             await t.commit();
         } catch (txErr) {
             await t.rollback();
@@ -390,10 +397,15 @@ router.delete('/:id', async (req, res, next) => {
             action: 'customer_deleted',
             entityType: 'customer',
             entityId: customerId,
-            summary: 'مشتری حذف شد',
-            metadata: { name: customer.name, phone: customer.phone }
+            customerId,
+            summary: 'مشتری از دسترس خارج شد (حذف نرم — پیام‌ها حفظ شدند)',
+            metadata: { name: customer.name, phone: customer.phone, softDelete: true },
         });
-        res.json({ message: 'مشتری حذف شد' });
+        res.json({
+            message: 'مشتری از دسترس خارج شد. پیام‌ها و سوابق حذف نشدند.',
+            softDeleted: true,
+            messagesPreserved: true,
+        });
     } catch (err) {
         next(err);
     }

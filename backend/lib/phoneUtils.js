@@ -116,4 +116,6 @@ module.exports = {
     isGroupJid,
     extractDigits,
     stripWhatsAppSuffix,
+    canonicalizePhoneDigits,
+    isKnownPhoneDigits,
 };

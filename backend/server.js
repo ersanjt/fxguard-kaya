@@ -23,6 +23,7 @@ const { ensureAdminUser } = require('./services/seed');
 const { connectRabbitMQ, getRabbitChannel } = require('./services/rabbitmq');
 const { checkUnansweredConversations } = require('./jobs/unansweredConversations');
 const { startDailyRatesJob, stopDailyRatesJob } = require('./jobs/dailyRates');
+const { startScheduledBackupJob, stopScheduledBackupJob } = require('./jobs/scheduledBackup');
 const telegramBotService = require('./services/telegramBotService');
 const { getPanelSettings, getPanelAlertConfig } = require('./services/panelSettingsLoader');
 const models = require('./models');
@@ -86,6 +87,7 @@ async function startServer() {
         }
 
         startDailyRatesJob();
+        startScheduledBackupJob();
 
         const PORT = process.env.PORT || 3002;
         await new Promise((resolve, reject) => {
@@ -126,6 +128,7 @@ async function gracefulShutdown(signal) {
     }
     telegramBotService.stopPolling();
     stopDailyRatesJob();
+    stopScheduledBackupJob();
 
     const forceExitTimer = setTimeout(() => {
         logger.warn('Graceful shutdown timed out — forcing exit');
