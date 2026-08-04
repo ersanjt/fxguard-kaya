@@ -561,16 +561,30 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         });
 
         // مکالمهٔ آرشیو/مخفی (مثلاً بعد از عوض شدن شماره Gateway) — با پیام زنده دوباره باز کن
+        let linkedGw = null;
+        try {
+            const { WhatsappConnection } = require('../models');
+            const { normalizeLinkedNumber } = require('./legacyCrmLockdown');
+            const row = await WhatsappConnection.findByPk('default');
+            linkedGw = normalizeLinkedNumber(row?.lastLinkedGatewayNumber) || null;
+        } catch (_) {}
+
         if (!conversation) {
             const archivedConv = await Conversation.findOne({
                 where: { customerId: customer.id, status: 'archived' },
                 order: [['lastMessageAt', 'DESC'], ['updatedAt', 'DESC']],
             });
             if (archivedConv) {
+                const meta = {
+                    ...(archivedConv.metadata || {}),
+                    linkedGatewayNumber: linkedGw || (archivedConv.metadata || {}).linkedGatewayNumber,
+                    notOnCurrentGateway: false,
+                };
                 await archivedConv.update({
                     status: 'open',
                     isHiddenFromStaff: false,
                     closedAt: null,
+                    metadata: meta,
                 });
                 conversation = archivedConv;
                 logger.info('Reopened archived conversation on live WhatsApp message', {
@@ -582,10 +596,16 @@ async function processIncomingMessage(messageData, { io, rabbitChannel, redisCli
         }
 
         if (conversation && (conversation.isHiddenFromStaff || conversation.status === 'archived')) {
+            const meta = {
+                ...(conversation.metadata || {}),
+                linkedGatewayNumber: linkedGw || (conversation.metadata || {}).linkedGatewayNumber,
+                notOnCurrentGateway: false,
+            };
             await conversation.update({
                 status: 'open',
                 isHiddenFromStaff: false,
                 closedAt: null,
+                metadata: meta,
             });
             logger.info('Unhid conversation on live WhatsApp message', {
                 conversationId: conversation.id,

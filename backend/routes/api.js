@@ -324,11 +324,7 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
                 logger.warn('Gateway status webhook: disconnected', { reason });
             } else if (event === 'ready') {
                 try {
-                    const {
-                        handleGatewayNumberReady,
-                        restoreLegacyCrmVisibility,
-                        getLockdownStats,
-                    } = require('../services/legacyCrmLockdown');
+                    const { handleGatewayNumberReady } = require('../services/legacyCrmLockdown');
                     const result = await handleGatewayNumberReady(number, { reason: 'gateway_ready' });
                     if (result.changed && result.lockdown) {
                         notifySystemEvent('system', '🔒 قفل دادهٔ قبلی پس از تعویض شماره واتساپ', {
@@ -340,22 +336,11 @@ function createApiRouter(io, getRabbitChannel, redisClient, logger) {
                         }).catch(() => {});
                         logger.warn('Gateway ready: number changed, legacy CRM locked', result);
                     } else {
-                        // همان شماره دوباره ready شد — مکالمات قفل‌شده را برای نمایش باز کن
-                        const stats = await getLockdownStats().catch(() => null);
-                        if (stats && (stats.hiddenConversations > 0 || stats.restrictedCustomers > 0)) {
-                            const restored = await restoreLegacyCrmVisibility({
-                                reason: 'gateway_ready_same_number',
-                            });
-                            logger.info('Gateway ready: restored locked CRM visibility', {
-                                number: result.number || number,
-                                ...restored,
-                            });
-                        } else {
-                            logger.info('Gateway status webhook: ready', {
-                                number: result.number || number,
-                                changed: !!result.changed,
-                            });
-                        }
+                        // باز کردن همه را اینجا انجام نده — فقط با همگام‌سازی چت‌های همین شماره
+                        logger.info('Gateway status webhook: ready', {
+                            number: result.number || number,
+                            changed: !!result.changed,
+                        });
                     }
                 } catch (lockErr) {
                     logger.warn('Gateway ready lockdown check failed', { error: lockErr?.message });
