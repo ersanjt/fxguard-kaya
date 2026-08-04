@@ -376,9 +376,24 @@
                         </div>
                     </section>
                     <nav class="whatsapp-pro-nav" role="tablist" aria-label="WhatsApp sections">
-                        <button type="button" class="whatsapp-pro-tab active" role="tab" aria-selected="true" data-wa-tab="channels" id="waTabChannels" data-i18n="whatsapp_tab_channels">اتصال و کانال‌ها</button>
-                        <button type="button" class="whatsapp-pro-tab" role="tab" aria-selected="false" data-wa-tab="automation" id="waTabAutomation" data-i18n="whatsapp_tab_automation">پیام‌رسانی و هوش مصنوعی</button>
-                        <button type="button" class="whatsapp-pro-tab" role="tab" aria-selected="false" data-wa-tab="routing" id="waTabRouting" data-i18n="whatsapp_tab_routing">مسیریابی و صف</button>
+                        <button type="button" class="whatsapp-pro-tab active" role="tab" aria-selected="true" data-wa-tab="channels" id="waTabChannels" data-i18n-aria-label="whatsapp_tab_channels">
+                            <span class="wa-tab-ic wa-tab-ic--channels" aria-hidden="true">
+                                <svg viewBox="0 0 32 32" fill="none"><path d="M6 18c0-5.5 4.5-10 10-10s10 4.5 10 10v2.2c0 .9-.5 1.7-1.3 2.1L22 24.2v1.3c0 .8-.7 1.5-1.5 1.5H11.5c-.8 0-1.5-.7-1.5-1.5v-1.3l-2.7-1.9A2.4 2.4 0 0 1 6 20.2V18z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12 15.5h8M12 19h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="23.5" cy="10.5" r="3.2" fill="currentColor" opacity=".22"/><path d="M23.5 8.8v3.4M21.8 10.5h3.4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg>
+                            </span>
+                            <span data-i18n="whatsapp_tab_channels">اتصال و کانال‌ها</span>
+                        </button>
+                        <button type="button" class="whatsapp-pro-tab" role="tab" aria-selected="false" data-wa-tab="automation" id="waTabAutomation" data-i18n-aria-label="whatsapp_tab_automation">
+                            <span class="wa-tab-ic wa-tab-ic--automation" aria-hidden="true">
+                                <svg viewBox="0 0 32 32" fill="none"><path d="M16 5.5 19.2 12l7 .7-5.3 4.7 1.6 6.8L16 20.8l-6.5 3.4 1.6-6.8L5.8 12.7l7-.7L16 5.5z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><circle cx="16" cy="14.2" r="2.1" fill="currentColor"/><path d="M9 25.5c2.2-1.6 4.6-2.4 7-2.4s4.8.8 7 2.4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+                            </span>
+                            <span data-i18n="whatsapp_tab_automation">پیام‌رسانی و هوش مصنوعی</span>
+                        </button>
+                        <button type="button" class="whatsapp-pro-tab" role="tab" aria-selected="false" data-wa-tab="routing" id="waTabRouting" data-i18n-aria-label="whatsapp_tab_routing">
+                            <span class="wa-tab-ic wa-tab-ic--routing" aria-hidden="true">
+                                <svg viewBox="0 0 32 32" fill="none"><path d="M7 8h8.5a4.5 4.5 0 0 1 0 9H12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M25 24h-8.5a4.5 4.5 0 0 1 0-9H20" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="7" cy="8" r="2.3" fill="currentColor"/><circle cx="25" cy="24" r="2.3" fill="currentColor"/><circle cx="12" cy="17" r="2" fill="currentColor" opacity=".35"/></svg>
+                            </span>
+                            <span data-i18n="whatsapp_tab_routing">مسیریابی و صف</span>
+                        </button>
                     </nav>
                     <div id="whatsappPanelChannels" class="whatsapp-pro-panel whatsapp-pro-panel--active" role="tabpanel" aria-labelledby="waTabChannels" aria-hidden="false">
                     <div class="whatsapp-page-layout">
@@ -500,17 +515,53 @@
                     </div>
                     </div>
                     <div id="whatsappPanelAutomation" class="whatsapp-pro-panel" role="tabpanel" aria-labelledby="waTabAutomation" aria-hidden="true">
+                        <header class="wa-auto-hero" aria-labelledby="waAutoHeroTitle">
+                            <div class="wa-auto-hero-mark" aria-hidden="true">
+                                <img src="/icons/kaya-ai-messenger-mark.png" alt="" width="72" height="72" decoding="async">
+                            </div>
+                            <div class="wa-auto-hero-copy">
+                                <h3 id="waAutoHeroTitle" class="wa-auto-hero-title" data-i18n="whatsapp_automation_hero_title">پیام‌رسان هوشمند کایا</h3>
+                                <p class="wa-auto-hero-text" data-i18n="whatsapp_automation_hero_hint">خوش‌آمدگویی، پاسخ هوش مصنوعی، پیام‌های تخصیص و هشدار مکالمات بدون پاسخ — همه از یک جریان واحد.</p>
+                            </div>
+                        </header>
                         <div class="whatsapp-automation-grid">
-                            <div id="whatsappWelcomeBox" class="whatsapp-card form-box whatsapp-card--pro">
-                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">💬</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_welcome_title">پاسخ خودکار به اولین پیام</h3></div>
+                            <div id="whatsappWelcomeBox" class="whatsapp-card form-box whatsapp-card--pro wa-card-welcome">
+                                <div class="whatsapp-card-head">
+                                    <span class="whatsapp-card-icon wa-ic wa-ic--welcome" aria-hidden="true">
+                                        <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="8" width="28" height="32" rx="8" stroke="currentColor" stroke-width="2"/><path d="M14 18h12M14 24h8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M34 16c5 3.5 7.5 8 7.5 13S39 35.5 34 39" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M34 22.5c2.8 2 4.2 4.6 4.2 7.5S36.8 35 34 37" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".55"/><circle cx="20" cy="32" r="2.4" fill="currentColor"/></svg>
+                                    </span>
+                                    <h3 class="whatsapp-card-title" data-i18n="whatsapp_welcome_title">پاسخ خودکار به اولین پیام</h3>
+                                </div>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_welcome_hint">هر کسی که برای اولین بار به شما پیام می‌دهد، این متن به‌صورت خودکار برایش ارسال می‌شود. خالی = غیرفعال</p>
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappWelcomeEnabled" checked> <span data-i18n="whatsapp_welcome_enabled">فعال</span></label>
                                 <textarea id="whatsappWelcomeMessage" rows="4" data-i18n-ph="whatsapp_welcome_ph" placeholder="سلام! به صرافی کایا خوش آمدید. در خدمت شما هستیم." class="whatsapp-textarea"></textarea>
                                 <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappWelcome" data-i18n="btn_save">ذخیره</button>
                             </div>
-                            <div id="whatsappAIBox" class="whatsapp-card form-box whatsapp-card--pro">
-                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">✨</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی (OpenAI)</h3></div>
+                            <div id="whatsappAIBox" class="whatsapp-card form-box whatsapp-card--pro wa-card-ai">
+                                <div class="whatsapp-card-head">
+                                    <span class="whatsapp-card-icon wa-ic wa-ic--ai" aria-hidden="true">
+                                        <svg viewBox="0 0 48 48" fill="none"><path d="M24 6.5 29.8 18l12.2 1.2-9.2 8.2 2.8 12.1L24 33.2 12.4 39.5l2.8-12.1-9.2-8.2L18.2 18 24 6.5z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="24" cy="23" r="3.2" fill="currentColor"/><circle cx="14" cy="12" r="2" fill="currentColor" opacity=".45"/><circle cx="36" cy="13" r="2" fill="currentColor" opacity=".45"/><circle cx="10" cy="30" r="2" fill="currentColor" opacity=".45"/><path d="M14 12c3.2 2.2 6.2 3.4 10 3.4M36 13c-3 2-6.2 3.2-9.5 3.5M10 30c4-.2 8.2-2 11.5-5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" opacity=".55"/></svg>
+                                    </span>
+                                    <div class="wa-card-head-text">
+                                        <h3 class="whatsapp-card-title" data-i18n="whatsapp_ai_title">پاسخ خودکار هوش مصنوعی (OpenAI)</h3>
+                                        <span class="wa-ai-badge" data-i18n="whatsapp_ai_badge">هستهٔ هوشمند</span>
+                                    </div>
+                                </div>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_ai_hint">وقتی هیچ قانون پاسخ خودکار (کلمات کلیدی) جواب ندهد، هوش مصنوعی به پیام مشتری پاسخ می‌دهد. مسیریابی به دپارتمان مناسب هم با AI انجام می‌شود.</p>
+                                <ul class="wa-ai-feats" aria-label="AI features">
+                                    <li>
+                                        <span class="wa-ai-feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12h10M14 12l-3-3M14 12l-3 3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 7v10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="18" cy="5.5" r="1.4" fill="currentColor"/></svg></span>
+                                        <span data-i18n="whatsapp_ai_feat_reply">پاسخ خودکار</span>
+                                    </li>
+                                    <li>
+                                        <span class="wa-ai-feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M5 7h6a4 4 0 0 1 0 8H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M19 17h-6a4 4 0 0 1 0-8h2" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="5" cy="7" r="1.6" fill="currentColor"/><circle cx="19" cy="17" r="1.6" fill="currentColor"/></svg></span>
+                                        <span data-i18n="whatsapp_ai_feat_route">مسیریابی دپارتمان</span>
+                                    </li>
+                                    <li>
+                                        <span class="wa-ai-feat-ic" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M7 17V9.5A4.5 4.5 0 0 1 16 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M7 17h9.5a3.5 3.5 0 0 0 0-7H14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="7" cy="17" r="1.6" fill="currentColor"/></svg></span>
+                                        <span data-i18n="whatsapp_ai_feat_fallback">پس از قوانین کلیدواژه</span>
+                                    </li>
+                                </ul>
                                 <div class="whatsapp-openai-key-row">
                                     <label for="whatsappOpenAIApiKey" data-i18n="whatsapp_openai_key_label">کلید API اوپن‌ای‌آی</label>
                                     <div class="whatsapp-openai-key-wrap">
@@ -522,8 +573,13 @@
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAIEnabled" checked> <span data-i18n="whatsapp_ai_enabled">فعال</span></label>
                                 <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappAI" data-i18n="btn_save">ذخیره</button>
                             </div>
-                            <div id="whatsappAutoMessagesBox" class="whatsapp-card form-box whatsapp-card--pro whatsapp-card--wide">
-                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">📋</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_auto_messages_title">پیام‌های خودکار تخصیص و معرفی</h3></div>
+                            <div id="whatsappAutoMessagesBox" class="whatsapp-card form-box whatsapp-card--pro whatsapp-card--wide wa-card-relay">
+                                <div class="whatsapp-card-head">
+                                    <span class="whatsapp-card-icon wa-ic wa-ic--relay" aria-hidden="true">
+                                        <svg viewBox="0 0 48 48" fill="none"><rect x="6" y="8" width="22" height="12" rx="4" stroke="currentColor" stroke-width="2"/><rect x="14" y="18" width="22" height="12" rx="4" stroke="currentColor" stroke-width="2" opacity=".75"/><rect x="22" y="28" width="20" height="12" rx="4" stroke="currentColor" stroke-width="2" opacity=".55"/><path d="M28 14h8.5a5.5 5.5 0 0 1 0 11H36" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="40.5" cy="19.5" r="2.2" fill="currentColor"/></svg>
+                                    </span>
+                                    <h3 class="whatsapp-card-title" data-i18n="whatsapp_auto_messages_title">پیام‌های خودکار تخصیص و معرفی</h3>
+                                </div>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_auto_messages_hint">متن پیام‌هایی که هنگام تخصیص به دپارتمان یا معرفی کارمند ارسال می‌شوند. از {{deptName}} و {{name}} برای جایگزینی استفاده کنید. خالی = پیش‌فرض.</p>
                                 <label class="whatsapp-check-label"><input type="checkbox" id="whatsappAutoAssignmentMessagesEnabled" checked> <span data-i18n="whatsapp_auto_messages_enabled">ارسال پیام‌های تخصیص و معرفی</span></label>
                                 <div class="whatsapp-auto-messages-grid">
@@ -546,8 +602,13 @@
                                 </div>
                                 <button type="button" class="btn-primary whatsapp-save-btn" id="btnSaveWhatsappAutoMessages" data-i18n="btn_save">ذخیره</button>
                             </div>
-                            <div id="whatsappUnansweredBox" class="whatsapp-card form-box whatsapp-card--pro whatsapp-card--wide">
-                                <div class="whatsapp-card-head"><span class="whatsapp-card-icon" aria-hidden="true">⏱</span><h3 class="whatsapp-card-title" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3></div>
+                            <div id="whatsappUnansweredBox" class="whatsapp-card form-box whatsapp-card--pro whatsapp-card--wide wa-card-radar">
+                                <div class="whatsapp-card-head">
+                                    <span class="whatsapp-card-icon wa-ic wa-ic--radar" aria-hidden="true">
+                                        <svg viewBox="0 0 48 48" fill="none"><circle cx="24" cy="26" r="14" stroke="currentColor" stroke-width="2" opacity=".35"/><circle cx="24" cy="26" r="8.5" stroke="currentColor" stroke-width="2" opacity=".6"/><path d="M24 26V12.5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path d="M24 12.5l3.2 4.2H20.8L24 12.5z" fill="currentColor"/><path d="M10 38h28" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".45"/><path d="M16 38c1.8-3.2 4.6-5 8-5s6.2 1.8 8 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                                    </span>
+                                    <h3 class="whatsapp-card-title" data-i18n="whatsapp_unanswered_title">اعلان و Escalation مکالمات بدون پاسخ</h3>
+                                </div>
                                 <p class="text-muted whatsapp-hint" data-i18n="whatsapp_unanswered_hint">وقتی مشتری پیام می‌دهد و کسی جواب نمی‌دهد، بعد از مدت مشخص اعلان ارسال می‌شود و در صورت ادامه، مکالمه به دپارتمان پشتیبانی برگردانده می‌شود.</p>
                                 <div class="whatsapp-unanswered-grid">
                                     <div><label data-i18n="whatsapp_alert_after">اعلان بعد از (دقیقه)</label><input type="number" id="whatsappAlertMinutes" min="1" max="120" value="5" class="whatsapp-input-num"></div>
