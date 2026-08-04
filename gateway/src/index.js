@@ -170,7 +170,10 @@ function isGatewaySentEcho(waMsgId) {
 
 function isVoiceMediaPayload(media) {
     if (!media) return false;
-    const mime = String(media.mimetype || '').split(';')[0].trim().toLowerCase();
+    const mime = String(media.mimetype || '')
+        .split(';')[0]
+        .trim()
+        .toLowerCase();
     return !!(media.sendAsVoice || /^audio\/(ogg|opus)/i.test(mime));
 }
 
@@ -185,7 +188,10 @@ async function buildOutboundMessageMedia(media, message) {
         }
         const tmpDir = path.join(UPLOADS_DIR, 'tmp');
         await ensureDir(tmpDir);
-        const tmpPath = path.join(tmpDir, `ptt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.ogg`);
+        const tmpPath = path.join(
+            tmpDir,
+            `ptt-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.ogg`
+        );
         await fs.writeFile(tmpPath, buf);
         const mediaObj = MessageMedia.fromFilePath(tmpPath);
         mediaObj.mimetype = WHATSAPP_VOICE_MIME;
@@ -543,7 +549,10 @@ function attachClientEvents(c) {
                 platform: info?.platform || null,
             };
             io.emit('account_info', lastAccountInfo);
-            notifyBackendStatus('ready', null, { number: lastAccountInfo.number, name: lastAccountInfo.name }).catch(() => {});
+            notifyBackendStatus('ready', null, {
+                number: lastAccountInfo.number,
+                name: lastAccountInfo.name,
+            }).catch(() => {});
         } catch (_) {
             notifyBackendStatus('ready', null, {}).catch(() => {});
         }
@@ -665,7 +674,11 @@ function attachClientEvents(c) {
                 if (typeof ser === 'string' && /@lid$/i.test(ser)) {
                     contactLid = ser;
                     if (!contactNumber) contactNumber = null;
-                } else if (!contactNumber && typeof ser === 'string' && /@(c\.us|s\.whatsapp\.net)$/i.test(ser)) {
+                } else if (
+                    !contactNumber &&
+                    typeof ser === 'string' &&
+                    /@(c\.us|s\.whatsapp\.net)$/i.test(ser)
+                ) {
                     contactNumber = String(ser).replace(/@(c\.us|s\.whatsapp\.net)$/i, '');
                 }
             } catch (_) {}
@@ -1269,11 +1282,15 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
                 } else {
                     sendOpts.caption = message || '';
                 }
-                logger.info('📎 Sending media (url)', { to: targetChatId, mime: mediaObj?.mimetype, asVoice });
+                logger.info('📎 Sending media (url)', {
+                    to: targetChatId,
+                    mime: mediaObj?.mimetype,
+                    asVoice,
+                });
                 return client.sendMessage(targetChatId, mediaObj, sendOpts);
             }
             return client.sendMessage(targetChatId, message || '', sendOpts);
-        }
+        };
 
         outboundApiSendDepth += 1;
         try {
@@ -1292,7 +1309,11 @@ app.post('/api/send-message', sendRateLimitMiddleware, async (req, res) => {
         }
 
         markGatewaySentMessage(sentMsg?.id?.id);
-        logger.info('✉️ Message sent', { to: chatId, messageId: sentMsg?.id?.id, hasMedia: !!media });
+        logger.info('✉️ Message sent', {
+            to: chatId,
+            messageId: sentMsg?.id?.id,
+            hasMedia: !!media,
+        });
         return res.json({ success: true, messageId: sentMsg?.id?.id, chatId });
     } catch (error) {
         let status = error?.statusCode || 500;
@@ -1339,10 +1360,7 @@ app.post('/api/calls/start', sendRateLimitMiddleware, async (req, res) => {
     } catch (error) {
         const msg = formatGatewayError(error);
         const status = error?.statusCode || 500;
-        if (
-            status === 400 ||
-            /invalid_recipient|to is required/i.test(msg)
-        ) {
+        if (status === 400 || /invalid_recipient|to is required/i.test(msg)) {
             return res.status(400).json({ error: msg });
         }
         if (
@@ -1531,7 +1549,9 @@ app.get('/api/chats/groups', async (req, res) => {
             });
         }
         if (
-            /timeout|not ready|Session closed|Target closed|Protocol|getChats|getGroups/i.test(msg) ||
+            /timeout|not ready|Session closed|Target closed|Protocol|getChats|getGroups/i.test(
+                msg
+            ) ||
             /^[a-z]$/i.test(String(error?.message || '').trim())
         ) {
             return res.status(503).json({ error: msg });
