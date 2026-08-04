@@ -2376,13 +2376,19 @@
         var _waPickerDocBound = false;
         var _waAttachMenuDocListener = null;
         function closeWaTemplateDropdown() {
+            if (typeof setChatTemplateDropdownOpen === 'function') {
+                setChatTemplateDropdownOpen(false);
+                return;
+            }
             var dd = document.getElementById('chatTemplateDropdown');
             var tplBtn = document.getElementById('waAttachTemplateBtn');
+            var area = document.getElementById('chatArea') || document.querySelector('.chat-area');
             if (dd) {
                 dd.hidden = true;
                 dd.style.display = 'none';
             }
             if (tplBtn) tplBtn.setAttribute('aria-expanded', 'false');
+            if (area) area.classList.remove('wa-template-dd-open');
         }
         function closeWaAttachMenu() {
             var m = document.getElementById('waAttachMenu');

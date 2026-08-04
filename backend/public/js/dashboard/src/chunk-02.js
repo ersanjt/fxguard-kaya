@@ -1802,8 +1802,8 @@
                     const furl = fileTplItem.getAttribute('data-file-url') || '';
                     if (fid && typeof sendMsg === 'function') {
                         e.preventDefault(); e.stopPropagation();
-                        var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn');
-                        if (dd) { dd.hidden = true; dd.style.display = 'none'; } if (btn) btn.setAttribute('aria-expanded', 'false');
+                        if (typeof setChatTemplateDropdownOpen === 'function') setChatTemplateDropdownOpen(false);
+                        else if (typeof closeWaTemplateDropdown === 'function') closeWaTemplateDropdown();
                         apiFetch('/api/file-templates/' + fid + '/use', { method: 'POST' }).catch(function(){});
                         apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: { url: furl, filename: fname, mimetype: fmime } }) }).then(function(r) { if (!r.ok) toast((r.data && r.data.error) || t('err_generic'), true); });
                     }
@@ -1813,7 +1813,12 @@
                 if (tplItem && tplItem.hasAttribute('data-content')) {
                     var tid = tplItem.getAttribute('data-id');
                     const c = typeof unescapeFromDataAttr === 'function' ? unescapeFromDataAttr(tplItem.getAttribute('data-content') || '') : (tplItem.getAttribute('data-content') || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-                    if (typeof insertTemplateIntoChat === 'function') { e.preventDefault(); e.stopPropagation(); insertTemplateIntoChat(c, tid); var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn'); if (dd) { dd.hidden = true; dd.style.display = 'none'; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
+                    if (typeof insertTemplateIntoChat === 'function') {
+                        e.preventDefault(); e.stopPropagation();
+                        insertTemplateIntoChat(c, tid);
+                        if (typeof setChatTemplateDropdownOpen === 'function') setChatTemplateDropdownOpen(false);
+                        else if (typeof closeWaTemplateDropdown === 'function') closeWaTemplateDropdown();
+                    }
                     return;
                 }
                 // کلیک روی آیتم تاریخچه مکالمات یا تاریخچه کامل در کارت مشتری — باز کردن مکالمه

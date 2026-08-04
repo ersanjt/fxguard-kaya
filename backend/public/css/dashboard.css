@@ -6640,18 +6640,37 @@
         #pageConversations.wa-conversations-theme .wa-chat-template-dropdown {
             inset-inline-start: 0;
             inset-inline-end: auto;
+            left: auto;
+            right: auto;
             min-width: 260px;
-            max-width: min(92vw, 320px);
+            max-width: min(calc(100vw - 24px), 320px);
+            width: max-content;
             padding: 6px 0;
             background: #233239;
             border: 1px solid rgba(134, 150, 160, 0.22);
             border-radius: 12px;
             box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
-            z-index: 1003;
+            z-index: 1200;
+            box-sizing: border-box;
         }
+        /* RTL: لبهٔ راست دراپ‌داون به دکمه پیوست بچسبد و به داخل چت (چپ) باز شود */
         [dir="rtl"] #pageConversations.wa-conversations-theme .wa-chat-template-dropdown {
-            inset-inline-start: auto;
-            inset-inline-end: 0;
+            inset-inline-start: 0;
+            inset-inline-end: auto;
+            right: 0;
+            left: auto;
+        }
+        [dir="ltr"] #pageConversations.wa-conversations-theme .wa-chat-template-dropdown {
+            inset-inline-start: 0;
+            inset-inline-end: auto;
+            left: 0;
+            right: auto;
+        }
+        #pageConversations.wa-conversations-theme .chat-area.wa-template-dd-open {
+            overflow: visible;
+        }
+        #pageConversations.wa-conversations-theme .chat-area.wa-template-dd-open .chat-messages {
+            z-index: 0;
         }
         #pageConversations.wa-conversations-theme .wa-chat-template-dropdown .chat-tpl-dd-section-title {
             padding: 8px 14px 4px;

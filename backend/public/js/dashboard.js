@@ -3983,8 +3983,8 @@
                     const furl = fileTplItem.getAttribute('data-file-url') || '';
                     if (fid && typeof sendMsg === 'function') {
                         e.preventDefault(); e.stopPropagation();
-                        var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn');
-                        if (dd) { dd.hidden = true; dd.style.display = 'none'; } if (btn) btn.setAttribute('aria-expanded', 'false');
+                        if (typeof setChatTemplateDropdownOpen === 'function') setChatTemplateDropdownOpen(false);
+                        else if (typeof closeWaTemplateDropdown === 'function') closeWaTemplateDropdown();
                         apiFetch('/api/file-templates/' + fid + '/use', { method: 'POST' }).catch(function(){});
                         apiFetch('/api/conversations/' + currentConvId + '/send', { method: 'POST', body: JSON.stringify({ content: '', media: { url: furl, filename: fname, mimetype: fmime } }) }).then(function(r) { if (!r.ok) toast((r.data && r.data.error) || t('err_generic'), true); });
                     }
@@ -3994,7 +3994,12 @@
                 if (tplItem && tplItem.hasAttribute('data-content')) {
                     var tid = tplItem.getAttribute('data-id');
                     const c = typeof unescapeFromDataAttr === 'function' ? unescapeFromDataAttr(tplItem.getAttribute('data-content') || '') : (tplItem.getAttribute('data-content') || '').replace(/&quot;/g, '"').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
-                    if (typeof insertTemplateIntoChat === 'function') { e.preventDefault(); e.stopPropagation(); insertTemplateIntoChat(c, tid); var dd = document.getElementById('chatTemplateDropdown'); var btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn'); if (dd) { dd.hidden = true; dd.style.display = 'none'; } if (btn) btn.setAttribute('aria-expanded', 'false'); }
+                    if (typeof insertTemplateIntoChat === 'function') {
+                        e.preventDefault(); e.stopPropagation();
+                        insertTemplateIntoChat(c, tid);
+                        if (typeof setChatTemplateDropdownOpen === 'function') setChatTemplateDropdownOpen(false);
+                        else if (typeof closeWaTemplateDropdown === 'function') closeWaTemplateDropdown();
+                    }
                     return;
                 }
                 // کلیک روی آیتم تاریخچه مکالمات یا تاریخچه کامل در کارت مشتری — باز کردن مکالمه
@@ -6538,13 +6543,19 @@
         var _waPickerDocBound = false;
         var _waAttachMenuDocListener = null;
         function closeWaTemplateDropdown() {
+            if (typeof setChatTemplateDropdownOpen === 'function') {
+                setChatTemplateDropdownOpen(false);
+                return;
+            }
             var dd = document.getElementById('chatTemplateDropdown');
             var tplBtn = document.getElementById('waAttachTemplateBtn');
+            var area = document.getElementById('chatArea') || document.querySelector('.chat-area');
             if (dd) {
                 dd.hidden = true;
                 dd.style.display = 'none';
             }
             if (tplBtn) tplBtn.setAttribute('aria-expanded', 'false');
+            if (area) area.classList.remove('wa-template-dd-open');
         }
         function closeWaAttachMenu() {
             var m = document.getElementById('waAttachMenu');
@@ -12899,21 +12910,33 @@
             if (dd.hidden) return false;
             return dd.style.display !== 'none';
         }
+        function setChatTemplateDropdownOpen(open) {
+            var dd = document.getElementById('chatTemplateDropdown');
+            var btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn');
+            var area = document.getElementById('chatArea') || document.querySelector('.chat-area');
+            if (dd) {
+                if (open) {
+                    dd.hidden = false;
+                    dd.style.display = 'block';
+                } else {
+                    dd.hidden = true;
+                    dd.style.display = 'none';
+                }
+            }
+            if (btn) btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            if (area) area.classList.toggle('wa-template-dd-open', !!open);
+        }
         async function toggleTemplateDropdown() {
             const dd = document.getElementById('chatTemplateDropdown');
             const btn = document.getElementById('waAttachTemplateBtn') || document.getElementById('msgTemplateBtn');
             if (!dd) return;
             if (isChatTemplateDropdownOpen(dd)) {
-                dd.hidden = true;
-                dd.style.display = 'none';
-                if (btn) btn.setAttribute('aria-expanded', 'false');
+                setChatTemplateDropdownOpen(false);
                 return;
             }
             if (typeof closeWaAttachMenu === 'function') closeWaAttachMenu();
             dd.innerHTML = '<div class="chat-template-dropdown-loading">' + escapeHtml(t('loading') || '…') + '</div>';
-            dd.hidden = false;
-            dd.style.display = 'block';
-            if (btn) btn.setAttribute('aria-expanded', 'true');
+            setChatTemplateDropdownOpen(true);
             if (chatTemplatesCache.length === 0) {
                 const res = await apiFetch('/api/message-templates');
                 if (res.ok && res.data && res.data.data) chatTemplatesCache = res.data.data;
@@ -12937,7 +12960,18 @@
                     const ext = (f.filename || '').split('.').pop().toLowerCase();
                     const icon = f.mimetype && f.mimetype.indexOf('image') !== -1 ? '🖼' : f.mimetype && f.mimetype.indexOf('pdf') !== -1 ? '📄' : f.mimetype && f.mimetype.indexOf('audio') !== -1 ? '🎵' : f.mimetype && f.mimetype.indexOf('video') !== -1 ? '🎬' : '📎';
                     const size = f.filesize ? (f.filesize < 1024*1024 ? Math.round(f.filesize/1024) + ' KB' : (f.filesize/1024/1024).toFixed(1) + ' MB') : '';
-                    const fUrl = f.url || (f.filepath ? '/uploads/file-templates/' + encodeURIComponent((f.filepath.split(/[\\/]/).pop()) || '') : '');
+                    var rawUrl = f.url || (f.filepath ? '/uploads/file-templates/' + ((f.filepath.split(/[\\/]/).pop()) || '') : '');
+                    var fUrl = '';
+                    if (rawUrl) {
+                        try {
+                            // encode path segments that may contain spaces from legacy uploads
+                            var parts = String(rawUrl).split('/');
+                            fUrl = parts.map(function(p, i) {
+                                if (!p || i === 0) return p;
+                                try { return encodeURIComponent(decodeURIComponent(p)); } catch (_) { return encodeURIComponent(p); }
+                            }).join('/');
+                        } catch (_) { fUrl = rawUrl; }
+                    }
                     return '<div class="chat-template-dropdown-item chat-file-tpl-item" data-file-id="' + escapeHtml(f.id) + '" data-file-name="' + escapeHtml(f.name || f.filename || '') + '" data-file-url="' + escapeHtml(fUrl) + '" data-mimetype="' + escapeHtml(f.mimetype || '') + '" data-filename="' + escapeHtml(f.filename || '') + '" role="button" tabindex="0"><div class="tpl-name">' + icon + ' ' + escapeHtml(f.name || f.filename || '') + '</div>' + (size ? '<div class="tpl-preview">' + size + (f.category ? ' · ' + escapeHtml(f.category) : '') + '</div>' : '') + '</div>';
                 }).join('');
             }
@@ -12950,9 +12984,7 @@
                 var insideAttachTrigger = menuBtn && (e.target === menuBtn || menuBtn.contains(e.target));
                 var insideAttachMenu = attachMenu && !attachMenu.hidden && attachMenu.contains(e.target);
                 if (!dd.contains(e.target) && !insideTplAnchor && !insideAttachTrigger && !insideAttachMenu) {
-                    dd.hidden = true;
-                    dd.style.display = 'none';
-                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                    setChatTemplateDropdownOpen(false);
                     document.removeEventListener('click', closeTemplateDd);
                 }
             });

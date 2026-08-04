@@ -107,7 +107,8 @@ async function checkWhatsappGateway() {
                 number: data.number || null,
                 pushname: data.pushname || null,
                 phase: data.phase || null,
-                usable: !!data.usable,
+                // اگر Gateway فیلد usable نفرستد، از whatsapp/status استفاده کن
+                usable: data.usable != null ? !!data.usable : ready,
             };
         } catch (gwErr) {
             counters.gatewayStatusFailures += 1;
@@ -128,7 +129,10 @@ async function checkWhatsappGateway() {
                 channel: 'gateway',
                 whatsapp: false,
                 detail: 'Gateway unreachable',
-                error: gwErr.response?.status === 401 ? 'auth_failed' : gwErr.code || gwErr.message || 'unreachable',
+                error:
+                    gwErr.response?.status === 401
+                        ? 'auth_failed'
+                        : gwErr.code || gwErr.message || 'unreachable',
             };
         }
     } catch (e) {
@@ -251,7 +255,11 @@ async function collectSystemHealth(opts = {}) {
         backups.status === 'error'
     ) {
         overall = 'degraded';
-    } else if (whatsapp.status === 'starting' || backups.status === 'stale' || backups.status === 'empty') {
+    } else if (
+        whatsapp.status === 'starting' ||
+        backups.status === 'stale' ||
+        backups.status === 'empty'
+    ) {
         overall = overall === 'ok' ? 'degraded' : overall;
     }
 
@@ -277,7 +285,9 @@ function toPrometheusText(health) {
 
     lines.push('# HELP kaya_status_code 0=ok 1=degraded 2=error');
     lines.push('# TYPE kaya_status_code gauge');
-    lines.push(`kaya_status_code ${health.status === 'ok' ? 0 : health.status === 'degraded' ? 1 : 2}`);
+    lines.push(
+        `kaya_status_code ${health.status === 'ok' ? 0 : health.status === 'degraded' ? 1 : 2}`
+    );
 
     lines.push('# HELP kaya_process_uptime_seconds Process uptime');
     lines.push('# TYPE kaya_process_uptime_seconds gauge');
@@ -285,10 +295,13 @@ function toPrometheusText(health) {
 
     lines.push('# HELP kaya_process_memory_rss_bytes RSS memory');
     lines.push('# TYPE kaya_process_memory_rss_bytes gauge');
-    lines.push(`kaya_process_memory_rss_bytes ${(health.process && health.process.memory && health.process.memory.rss) || 0}`);
+    lines.push(
+        `kaya_process_memory_rss_bytes ${(health.process && health.process.memory && health.process.memory.rss) || 0}`
+    );
 
     const mapCheck = (name, c) => {
-        const ok = c && (c.status === 'ok' || c.status === 'disabled' || c.status === 'skipped') ? 1 : 0;
+        const ok =
+            c && (c.status === 'ok' || c.status === 'disabled' || c.status === 'skipped') ? 1 : 0;
         lines.push(`kaya_check_up{check="${esc(name)}"} ${ok}`);
         if (c && typeof c.latencyMs === 'number') {
             lines.push(`kaya_check_latency_ms{check="${esc(name)}"} ${c.latencyMs}`);

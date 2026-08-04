@@ -357,17 +357,39 @@ let connectionPhase = null;
 /**
  * آیا کلاینت برای عملیات (گروه/ارسال) قابل استفاده است؟
  * گاهی isClientReady لحظه‌ای false می‌شود در حالی که pupPage هنوز زنده است.
+ * تا وقتی phase=ready و صفحهٔ کروم زنده است، usable می‌ماند (نه فقط ۹۰ثانیه).
  */
 function isWhatsAppUsable() {
     if (client && isClientReady) return true;
-    if (
-        client &&
-        client.pupPage &&
-        lastReadyAt > 0 &&
-        Date.now() - lastReadyAt < 90 * 1000 &&
-        connectionPhase === 'ready'
-    ) {
+    if (client && client.pupPage && lastReadyAt > 0 && connectionPhase === 'ready') {
+        // بازیابی پرچم — جلوی 503های کاذب بعد از فلیکر isClientReady
+        isClientReady = true;
         return true;
+    }
+    return false;
+}
+
+/** اگر سشن هنوز CONNECTED است، پرچم‌های ready را دوباره ست کن */
+async function tryRestoreWhatsAppReady() {
+    if (!client || !client.pupPage) return false;
+    if (isClientReady && connectionPhase === 'ready') return true;
+    try {
+        const state = await Promise.race([
+            client.getState(),
+            new Promise((_, rej) => setTimeout(() => rej(new Error('restore_timeout')), 8000)),
+        ]);
+        if (state === 'CONNECTED') {
+            isClientReady = true;
+            isClientStarting = false;
+            lastReadyAt = Date.now();
+            connectionPhase = 'ready';
+            healthCheckFailCount = 0;
+            redisClient.set('whatsapp:status', 'ready').catch(() => {});
+            logger.info('✅ WhatsApp ready restored via getState(CONNECTED)');
+            return true;
+        }
+    } catch (e) {
+        logger.warn('tryRestoreWhatsAppReady failed', { error: e?.message });
     }
     return false;
 }
@@ -1140,7 +1162,11 @@ app.use('/api/', requireGatewaySecret);
 
 // /api/status: بدون await Redis — همیشه سریع پاسخ بده؛ در صورت auth_failure پیام خطا برگردانده می‌شود
 app.get('/api/status', async (req, res) => {
-    const usable = isWhatsAppUsable();
+    let usable = isWhatsAppUsable();
+    // اگر phase=ready ولی usable لحظه‌ای false است، یک‌بار از getState بازیابی کن
+    if (!usable && client && connectionPhase === 'ready') {
+        usable = await tryRestoreWhatsAppReady();
+    }
     const status = usable ? 'ready' : isClientStarting ? 'starting' : 'disconnected';
     const body = {
         whatsapp: usable,
@@ -1150,7 +1176,7 @@ app.get('/api/status', async (req, res) => {
         status,
         usable,
     };
-    if (usable && lastAccountInfo) {
+    if ((usable || connectionPhase === 'ready') && lastAccountInfo) {
         body.pushname = lastAccountInfo.name;
         body.number = lastAccountInfo.number;
     }
@@ -1473,9 +1499,12 @@ async function listWhatsAppGroupsFromStore() {
 
 async function listWhatsAppGroups() {
     if (!isWhatsAppUsable()) {
-        const err = new Error('WhatsApp not ready');
-        err.statusCode = 503;
-        throw err;
+        const restored = await tryRestoreWhatsAppReady();
+        if (!restored) {
+            const err = new Error('WhatsApp not ready');
+            err.statusCode = 503;
+            throw err;
+        }
     }
 
     // مسیر سبک: فقط گروه‌ها از Store — getChats() روی سشن‌های بزرگ timeout/«r» می‌دهد
@@ -1533,7 +1562,10 @@ async function listWhatsAppGroups() {
 
 app.get('/api/chats/groups', async (req, res) => {
     try {
-        if (!isWhatsAppUsable()) return res.status(503).json({ error: 'WhatsApp not ready' });
+        if (!isWhatsAppUsable()) {
+            const restored = await tryRestoreWhatsAppReady();
+            if (!restored) return res.status(503).json({ error: 'WhatsApp not ready' });
+        }
         const groups = await listWhatsAppGroups();
         return res.json({ success: true, groups, count: groups.length });
     } catch (error) {
@@ -1749,6 +1781,9 @@ function startServer() {
 
                 if (state === 'CONNECTED') {
                     healthCheckFailCount = 0;
+                    isClientReady = true;
+                    lastReadyAt = Date.now();
+                    connectionPhase = 'ready';
                 } else {
                     healthCheckFailCount++;
                     logger.warn('💉 Health check: unexpected state', {
@@ -1758,6 +1793,7 @@ function startServer() {
                     if (healthCheckFailCount >= 2) {
                         healthCheckFailCount = 0;
                         isClientReady = false;
+                        connectionPhase = null;
                         client = null;
                         scheduleReconnect();
                     }
@@ -1771,6 +1807,7 @@ function startServer() {
                 if (healthCheckFailCount >= 2) {
                     healthCheckFailCount = 0;
                     isClientReady = false;
+                    connectionPhase = null;
                     client = null;
                     scheduleReconnect();
                 }

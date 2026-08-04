@@ -1,18 +1,37 @@
 const express = require('express');
 const router = express.Router();
-const { sequelize, Conversation, Customer, Message, User, Branch, Department } = require('../models');
-const { sendDeptAssignedMessage, sendConversationEndedMessage, clearConversationEndedFlag } = require('../services/autoMessages');
+const {
+    sequelize,
+    Conversation,
+    Customer,
+    Message,
+    User,
+    Branch,
+    Department,
+} = require('../models');
+const {
+    sendDeptAssignedMessage,
+    sendConversationEndedMessage,
+    clearConversationEndedFlag,
+} = require('../services/autoMessages');
 const { Op } = require('sequelize');
 const { logActivity } = require('../services/activityLog');
 const { canAccessCustomer } = require('../lib/customerAccess');
 const { isMainAdmin } = require('../lib/permissions');
-const { canAccessConversationAsync, conversationListWhereAsync } = require('../lib/conversationAccess');
+const {
+    canAccessConversationAsync,
+    conversationListWhereAsync,
+} = require('../lib/conversationAccess');
 const { isValidUUID, parsePagination, safeString } = require('../lib/validation');
 const logger = require('../config/logger');
 const { maybeRefreshWhatsappCustomerAvatar } = require('../lib/customerAvatar');
 const { deliverOutboundConversationMessage } = require('../lib/conversationOutbound');
 const { getUserWhatsAppSenderName } = require('../lib/outboundMessagePrefix');
-const { redactConversationPhones, redactConversationList, publicCustomerSocketPayload } = require('../lib/customerPhoneVisibility');
+const {
+    redactConversationPhones,
+    redactConversationList,
+    publicCustomerSocketPayload,
+} = require('../lib/customerPhoneVisibility');
 
 /** آیا کاربر می‌تواند مکالمه را آرشیو یا حذف کند؟ (فقط مالک) */
 function canArchiveOrDeleteConversation(req) {
@@ -26,7 +45,12 @@ async function canAccessConversation(req, conversation) {
 
 /** آیا کاربر می‌تواند مکالمه را تخصیص/بست/تغییر وضعیت دهد؟ (ادمین اصلی، owner، admin، manager) */
 function canManageConversation(req) {
-    return isMainAdmin(req.user) || req.user.role === 'owner' || req.user.role === 'admin' || req.user.role === 'manager';
+    return (
+        isMainAdmin(req.user) ||
+        req.user.role === 'owner' ||
+        req.user.role === 'admin' ||
+        req.user.role === 'manager'
+    );
 }
 
 async function emitConversationNewMessage(req, conversation, msg) {
@@ -35,10 +59,27 @@ async function emitConversationNewMessage(req, conversation, msg) {
     let messagePayload = msg;
     try {
         const full = await Message.findByPk(msg.id, {
-            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username', 'avatar', 'firstName', 'lastName', 'whatsappSenderName'], required: false }],
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: [
+                        'id',
+                        'name',
+                        'username',
+                        'avatar',
+                        'firstName',
+                        'lastName',
+                        'whatsappSenderName',
+                    ],
+                    required: false,
+                },
+            ],
         });
         if (full) messagePayload = full;
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+        /* ignore */
+    }
     const customer = conversation.customer;
     io.emit('new_message', {
         conversationId: conversation.id,
@@ -52,20 +93,36 @@ async function emitConversationNewMessage(req, conversation, msg) {
 // ——— ایجاد مکالمه جدید (با مشتری)
 router.post('/', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const { customerId } = req.body;
         if (!customerId) return res.status(400).json({ error: 'شناسه مشتری الزامی است' });
-        if (!(await canAccessCustomer(req, customerId))) return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
+        if (!(await canAccessCustomer(req, customerId)))
+            return res.status(403).json({ error: 'دسترسی به این مشتری ندارید' });
         const customer = await Customer.findByPk(customerId);
         if (!customer) return res.status(404).json({ error: 'مشتری یافت نشد' });
         let conversation = await Conversation.findOne({
             where: { customerId, status: { [Op.notIn]: ['closed', 'archived'] } },
             include: [
-                { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'] },
+                {
+                    model: Customer,
+                    as: 'customer',
+                    attributes: ['id', 'name', 'phone', 'profilePic'],
+                },
                 { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
-                { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
-                { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
-            ]
+                {
+                    model: Branch,
+                    as: 'branch',
+                    attributes: ['id', 'name', 'city'],
+                    required: false,
+                },
+                {
+                    model: Department,
+                    as: 'department',
+                    attributes: ['id', 'name', 'color'],
+                    required: false,
+                },
+            ],
         });
         if (!conversation) {
             conversation = await Conversation.create({
@@ -76,15 +133,29 @@ router.post('/', async (req, res, next) => {
                 branchId: req.user.branchId || null,
                 departmentId: req.user.departmentId || null,
                 assignedTo: req.userId,
-                assignedAt: new Date()
+                assignedAt: new Date(),
             });
             conversation = await Conversation.findByPk(conversation.id, {
                 include: [
-                    { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'] },
+                    {
+                        model: Customer,
+                        as: 'customer',
+                        attributes: ['id', 'name', 'phone', 'profilePic'],
+                    },
                     { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
-                    { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
-                    { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
-                ]
+                    {
+                        model: Branch,
+                        as: 'branch',
+                        attributes: ['id', 'name', 'city'],
+                        required: false,
+                    },
+                    {
+                        model: Department,
+                        as: 'department',
+                        attributes: ['id', 'name', 'color'],
+                        required: false,
+                    },
+                ],
             });
         }
         res.status(201).json(redactConversationPhones(conversation, req.user));
@@ -97,25 +168,41 @@ router.post('/', async (req, res, next) => {
 router.post('/sync-groups', async (req, res, next) => {
     const logger = require('../config/logger');
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        const { gatewayGet, GATEWAY_URL, getWhatsappConnectionConfig } = require('../lib/gatewayClient');
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        const {
+            gatewayGet,
+            GATEWAY_URL,
+            getWhatsappConnectionConfig,
+        } = require('../lib/gatewayClient');
 
         // پیش‌پرواز وضعیت Gateway — پیام خطای دقیق‌تر برای cloud_first / قطع بودن
         try {
             const cfg = await getWhatsappConnectionConfig();
-            const st = await gatewayGet('/api/status', { timeout: 10000 });
-            const data = st?.data || {};
+            let st = await gatewayGet('/api/status', { timeout: 10000 });
+            let data = st?.data || {};
+            // بعد از reload گاهی یک لحظه not-ready است؛ یک‌بار صبر و دوباره چک
+            if (
+                !data.whatsapp &&
+                (data.phase === 'ready' || data.starting || data.phase === 'authenticated')
+            ) {
+                await new Promise((r) => setTimeout(r, 2500));
+                st = await gatewayGet('/api/status', { timeout: 10000 });
+                data = st?.data || {};
+            }
             if (!data.whatsapp) {
                 const phase = data.phase || data.status || 'disconnected';
                 const mode = cfg.connectionMode || 'cloud_first';
                 let hint = 'واتساپ Gateway آماده نیست. ';
                 if (phase === 'authenticated' || data.starting) {
-                    hint += 'اسکن شده و در حال همگام‌سازی است — ۳۰–۶۰ ثانیه صبر کنید بعد دوباره بزنید.';
+                    hint +=
+                        'اسکن شده و در حال همگام‌سازی است — ۳۰–۶۰ ثانیه صبر کنید بعد دوباره بزنید.';
                 } else if (mode === 'cloud' || mode === 'cloud_first') {
                     hint +=
                         'گروه‌ها فقط از طریق Gateway (QR) می‌آیند. به تنظیمات واتساپ بروید، تب Gateway را باز کنید، «شروع» بزنید و QR را اسکن کنید.';
                 } else {
-                    hint += 'در تنظیمات واتساپ QR را اسکن کنید تا وضعیت ready شود، بعد دوباره همگام‌سازی کنید.';
+                    hint +=
+                        'در تنظیمات واتساپ QR را اسکن کنید تا وضعیت ready شود، بعد دوباره همگام‌سازی کنید.';
                 }
                 return res.status(503).json({
                     error: hint,
@@ -138,55 +225,75 @@ router.post('/sync-groups', async (req, res, next) => {
                 gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
             });
             return res.status(503).json({
-                error:
-                    'Gateway در دسترس نیست. سرویس crm-gateway را روی سرور چک کنید (PM2) و از پنل واتساپ «شروع Gateway» بزنید.',
+                error: 'Gateway در دسترس نیست. سرویس crm-gateway را روی سرور چک کنید (PM2) و از پنل واتساپ «شروع Gateway» بزنید.',
             });
         }
 
+        const fetchGatewayGroups = () => gatewayGet('/api/chats/groups', { timeout: 35000 });
+
         let gwRes;
         try {
-            // Store path معمولاً <15s؛ کل درخواست زیر زیر proxy (~60s) بماند
-            gwRes = await gatewayGet('/api/chats/groups', { timeout: 35000 });
-        } catch (gwErr) {
-            const status = gwErr?.response?.status;
-            const gwBody = gwErr?.response?.data;
-            const gwMsg = (gwBody && (gwBody.error || gwBody.message)) || gwErr?.message || '';
-            logger.warn('sync-groups: gateway request failed', {
-                status,
-                error: gwMsg,
-                gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
-            });
-            if (status === 404 || String(gwMsg).includes('404')) {
+            gwRes = await fetchGatewayGroups();
+        } catch (firstErr) {
+            let err = firstErr;
+            const s1 = err?.response?.status;
+            const m1 =
+                (err?.response?.data && (err.response.data.error || err.response.data.message)) ||
+                err?.message ||
+                '';
+            if (s1 === 503 || /not ready|WhatsApp not ready/i.test(String(m1))) {
+                try {
+                    await new Promise((r) => setTimeout(r, 2500));
+                    gwRes = await fetchGatewayGroups();
+                } catch (retryErr) {
+                    err = retryErr;
+                }
+            }
+            if (!gwRes) {
+                const status = err?.response?.status;
+                const gwMsg =
+                    (err?.response?.data &&
+                        (err.response.data.error || err.response.data.message)) ||
+                    err?.message ||
+                    '';
+                logger.warn('sync-groups: gateway request failed', {
+                    status,
+                    error: gwMsg,
+                    gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
+                });
+                if (status === 404 || String(gwMsg).includes('404')) {
+                    return res.status(503).json({
+                        error: 'مسیر گروه‌ها در Gateway یافت نشد. GATEWAY_URL یا نسخهٔ Gateway را بررسی کنید.',
+                    });
+                }
+                if (status === 401) {
+                    return res.status(503).json({
+                        error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را بررسی کنید.',
+                    });
+                }
+                if (status === 503 || /not ready|WhatsApp not ready/i.test(String(gwMsg))) {
+                    return res.status(503).json({
+                        error: 'واتساپ Gateway آماده نیست. در تنظیمات واتساپ تب Gateway را وصل کنید (QR)، صبر کنید تا ready شود، بعد دوباره همگام‌سازی کنید.',
+                    });
+                }
+                if (
+                    status === 500 ||
+                    status >= 502 ||
+                    /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNABORTED|timeout|getChats|getGroups/i.test(
+                        String(gwMsg)
+                    )
+                ) {
+                    return res.status(503).json({
+                        error:
+                            'Gateway موقتاً گروه‌ها را برنگرداند' +
+                            (gwMsg ? ` (${String(gwMsg).slice(0, 120)})` : '') +
+                            '. چند ثانیه بعد دوباره بزنید؛ اگر ادامه داشت Gateway را ری‌استارت کنید.',
+                    });
+                }
                 return res.status(503).json({
-                    error: 'مسیر گروه‌ها در Gateway یافت نشد. GATEWAY_URL یا نسخهٔ Gateway را بررسی کنید.',
+                    error: 'خطا در ارتباط با Gateway برای همگام‌سازی گروه‌ها. دوباره تلاش کنید.',
                 });
             }
-            if (status === 401) {
-                return res.status(503).json({
-                    error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را بررسی کنید.',
-                });
-            }
-            if (status === 503 || /not ready|WhatsApp not ready/i.test(String(gwMsg))) {
-                return res.status(503).json({
-                    error:
-                        'واتساپ Gateway آماده نیست. در تنظیمات واتساپ تب Gateway را وصل کنید (QR)، صبر کنید تا ready شود، بعد دوباره همگام‌سازی کنید.',
-                });
-            }
-            if (
-                status === 500 ||
-                status >= 502 ||
-                /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|ECONNABORTED|timeout|getChats|getGroups/i.test(String(gwMsg))
-            ) {
-                return res.status(503).json({
-                    error:
-                        'Gateway موقتاً گروه‌ها را برنگرداند' +
-                        (gwMsg ? ` (${String(gwMsg).slice(0, 120)})` : '') +
-                        '. چند ثانیه بعد دوباره بزنید؛ اگر ادامه داشت Gateway را ری‌استارت کنید.',
-                });
-            }
-            return res.status(503).json({
-                error: 'خطا در ارتباط با Gateway برای همگام‌سازی گروه‌ها. دوباره تلاش کنید.',
-            });
         }
         const groups = gwRes?.data?.groups || gwRes?.data?.data?.groups || [];
         let synced = 0;
@@ -205,7 +312,10 @@ router.post('/sync-groups', async (req, res, next) => {
                     });
                 } catch (e) {
                     if (e.name === 'SequelizeUniqueConstraintError') {
-                        customer = await Customer.findOne({ where: { phone: groupId }, transaction: t });
+                        customer = await Customer.findOne({
+                            where: { phone: groupId },
+                            transaction: t,
+                        });
                     } else throw e;
                 }
                 if (!customer) {
@@ -308,15 +418,32 @@ router.post('/sync-groups', async (req, res, next) => {
 // ——— لیست مکالمات (با فیلتر و سیاست دسترسی)
 router.get('/', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        const { status, priority, assignedTo, unread, unassigned, unanswered, branchId, departmentId, search, archived, isGroup, page = 1, limit = 20 } = req.query;
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        const {
+            status,
+            priority,
+            assignedTo,
+            unread,
+            unassigned,
+            unanswered,
+            branchId,
+            departmentId,
+            search,
+            archived,
+            isGroup,
+            page = 1,
+            limit = 20,
+        } = req.query;
         const where = {};
 
         const canViewHidden = req.canViewHiddenConversations && req.canViewHiddenConversations();
         if (status === 'archived' || archived === '1' || archived === 'true') {
             // آرشیو (از جمله مکالمات قفل‌شدهٔ شمارهٔ قبلی) فقط ادمین سطح بالا
             if (!canViewHidden) {
-                return res.status(403).json({ error: 'فقط ادمین سطح بالا به آرشیو مکالمات دسترسی دارد' });
+                return res
+                    .status(403)
+                    .json({ error: 'فقط ادمین سطح بالا به آرشیو مکالمات دسترسی دارد' });
             }
             where.status = 'archived';
         } else if (status) {
@@ -327,16 +454,20 @@ router.get('/', async (req, res, next) => {
         }
         if (priority) where.priority = priority;
         if (assignedTo) where.assignedTo = assignedTo;
-        if (unassigned === '1' || unassigned === 'true') { where.assignedTo = null; where.departmentId = null; }
+        if (unassigned === '1' || unassigned === 'true') {
+            where.assignedTo = null;
+            where.departmentId = null;
+        }
         if (unread === '1' || unread === 'true') where.unreadCount = { [Op.gt]: 0 };
         if (isGroup === '1' || isGroup === 'true') {
             const dialect = sequelize.getDialect();
             const tbl = Conversation.tableName || 'Conversations';
-            const subq = dialect === 'postgres'
-                ? `(SELECT id FROM "${tbl}" WHERE (metadata->>'isGroup')::text = 'true')`
-                : `(SELECT id FROM "${tbl}" WHERE (json_extract(metadata, '$.isGroup') = 1 OR json_extract(metadata, '$.isGroup') = 'true'))`;
+            const subq =
+                dialect === 'postgres'
+                    ? `(SELECT id FROM "${tbl}" WHERE (metadata->>'isGroup')::text = 'true')`
+                    : `(SELECT id FROM "${tbl}" WHERE (json_extract(metadata, '$.isGroup') = 1 OR json_extract(metadata, '$.isGroup') = 'true'))`;
             where[Op.and] = (where[Op.and] || []).concat([
-                sequelize.where(sequelize.col('Conversation.id'), Op.in, sequelize.literal(subq))
+                sequelize.where(sequelize.col('Conversation.id'), Op.in, sequelize.literal(subq)),
             ]);
         }
         if (branchId) where.branchId = branchId;
@@ -346,10 +477,16 @@ router.get('/', async (req, res, next) => {
             where[Op.and] = (where[Op.and] || []).concat([
                 { status: { [Op.in]: ['open', 'pending'] } },
                 { lastIncomingMessageAt: { [Op.ne]: null } },
-                { [Op.or]: [
-                    { lastOutgoingMessageAt: null },
-                    sequelize.where(sequelize.col('lastIncomingMessageAt'), Op.gt, sequelize.col('lastOutgoingMessageAt'))
-                ] }
+                {
+                    [Op.or]: [
+                        { lastOutgoingMessageAt: null },
+                        sequelize.where(
+                            sequelize.col('lastIncomingMessageAt'),
+                            Op.gt,
+                            sequelize.col('lastOutgoingMessageAt')
+                        ),
+                    ],
+                },
             ]);
         }
 
@@ -371,17 +508,27 @@ router.get('/', async (req, res, next) => {
             : null;
         const customerSearchWhere = normalizedSearch
             ? {
-                [Op.or]: [
-                    { name: { [Op.like]: '%' + normalizedSearch + '%' } },
-                    { phone: { [Op.like]: '%' + normalizedSearch + '%' } }
-                ]
-            }
+                  [Op.or]: [
+                      { name: { [Op.like]: '%' + normalizedSearch + '%' } },
+                      { phone: { [Op.like]: '%' + normalizedSearch + '%' } },
+                  ],
+              }
             : null;
         const include = [
-            { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'], ...(customerSearchWhere ? { where: customerSearchWhere, required: true } : {}) },
+            {
+                model: Customer,
+                as: 'customer',
+                attributes: ['id', 'name', 'phone', 'profilePic'],
+                ...(customerSearchWhere ? { where: customerSearchWhere, required: true } : {}),
+            },
             { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
             { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
-            { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
+            {
+                model: Department,
+                as: 'department',
+                attributes: ['id', 'name', 'color'],
+                required: false,
+            },
         ];
 
         const { page: p, limit: l, offset } = parsePagination(page, limit, 100);
@@ -391,43 +538,47 @@ router.get('/', async (req, res, next) => {
             distinct: true,
             order: [['lastMessageAt', 'DESC']],
             limit: l,
-            offset
+            offset,
         });
         // شمارش‌های تجمیعی برای UI (بر اساس همان فیلترهای فعلی)
         const [openCount, unreadCountRaw] = await Promise.all([
             Conversation.count({
                 where: { ...where, status: 'open' },
                 include: customerSearchWhere
-                    ? [{
-                        model: Customer,
-                        as: 'customer',
-                        attributes: [],
-                        where: customerSearchWhere,
-                        required: true
-                    }]
+                    ? [
+                          {
+                              model: Customer,
+                              as: 'customer',
+                              attributes: [],
+                              where: customerSearchWhere,
+                              required: true,
+                          },
+                      ]
                     : undefined,
                 distinct: true,
-                col: 'id'
+                col: 'id',
             }),
             Conversation.sum('unreadCount', {
                 where,
                 include: customerSearchWhere
-                    ? [{
-                        model: Customer,
-                        as: 'customer',
-                        attributes: [],
-                        where: customerSearchWhere,
-                        required: true
-                    }]
-                    : undefined
-            })
+                    ? [
+                          {
+                              model: Customer,
+                              as: 'customer',
+                              attributes: [],
+                              where: customerSearchWhere,
+                              required: true,
+                          },
+                      ]
+                    : undefined,
+            }),
         ]);
         res.json({
             data: redactConversationList(rows, req.user),
             total: count,
             page: p,
             openCount: Number(openCount) || 0,
-            unreadCount: Number(unreadCountRaw) || 0
+            unreadCount: Number(unreadCountRaw) || 0,
         });
     } catch (err) {
         next(err);
@@ -444,15 +595,25 @@ const conversationDetailInclude = [
 // ——— فوروارد پیام به مشتری دیگر
 router.post('/forward', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const { messageId, customerId } = req.body || {};
-        if (!isValidUUID(messageId)) return res.status(400).json({ error: 'شناسه پیام نامعتبر است' });
-        if (!isValidUUID(customerId)) return res.status(400).json({ error: 'شناسه مشتری نامعتبر است' });
+        if (!isValidUUID(messageId))
+            return res.status(400).json({ error: 'شناسه پیام نامعتبر است' });
+        if (!isValidUUID(customerId))
+            return res.status(400).json({ error: 'شناسه مشتری نامعتبر است' });
 
         const sourceMsg = await Message.findByPk(messageId, {
-            include: [{ model: Conversation, as: 'conversation', include: [{ model: Customer, as: 'customer' }] }],
+            include: [
+                {
+                    model: Conversation,
+                    as: 'conversation',
+                    include: [{ model: Customer, as: 'customer' }],
+                },
+            ],
         });
-        if (!sourceMsg || !sourceMsg.conversation) return res.status(404).json({ error: 'پیام یافت نشد' });
+        if (!sourceMsg || !sourceMsg.conversation)
+            return res.status(404).json({ error: 'پیام یافت نشد' });
         if (!(await canAccessConversation(req, sourceMsg.conversation))) {
             return res.status(403).json({ error: 'دسترسی به پیام مبدأ ندارید' });
         }
@@ -506,29 +667,39 @@ router.post('/forward', async (req, res, next) => {
             media = {
                 url: md.url,
                 filename: md.filename || sourceMsg.content || 'file',
-                mimetype: md.mimetype || (isVoice ? 'audio/ogg; codecs=opus' : 'application/octet-stream'),
-                type: isVoice ? 'audio' : (['image', 'video', 'audio', 'document'].includes(srcType) ? srcType : 'document'),
+                mimetype:
+                    md.mimetype ||
+                    (isVoice ? 'audio/ogg; codecs=opus' : 'application/octet-stream'),
+                type: isVoice
+                    ? 'audio'
+                    : ['image', 'video', 'audio', 'document'].includes(srcType)
+                      ? srcType
+                      : 'document',
                 sendAsVoice: !!isVoice,
             };
             if (/^voice\.(webm|ogg|m4a|mp3|wav)$/i.test(content)) content = '';
-            else if (content === md.filename || content === 'file' || content === '📎 فایل') content = '';
+            else if (content === md.filename || content === 'file' || content === '📎 فایل')
+                content = '';
         }
-        if (!content && !media) return res.status(400).json({ error: 'این پیام محتوای قابل فوروارد ندارد' });
+        if (!content && !media)
+            return res.status(400).json({ error: 'این پیام محتوای قابل فوروارد ندارد' });
 
         const sourceCustomer = sourceMsg.conversation.customer;
         const targetCustomerName = customer.name || customer.phone || '';
         const forwardedByName =
-            getUserWhatsAppSenderName(req.user)
-            || [req.user.firstName, req.user.lastName].filter(Boolean).join(' ').trim()
-            || req.user.name
-            || req.user.username
-            || '';
+            getUserWhatsAppSenderName(req.user) ||
+            [req.user.firstName, req.user.lastName].filter(Boolean).join(' ').trim() ||
+            req.user.name ||
+            req.user.username ||
+            '';
         const metadata = {
             forwardedFrom: {
                 messageId: sourceMsg.id,
                 conversationId: sourceMsg.conversationId,
                 customerId: sourceMsg.customerId,
-                customerName: sourceCustomer ? (sourceCustomer.name || sourceCustomer.phone || '') : '',
+                customerName: sourceCustomer
+                    ? sourceCustomer.name || sourceCustomer.phone || ''
+                    : '',
             },
             forwardedTo: {
                 customerId,
@@ -541,10 +712,21 @@ router.post('/forward', async (req, res, next) => {
             },
         };
 
-        const result = await deliverOutboundConversationMessage(req, targetConv, { content, media, metadata });
-        if (result.error) return res.status(result.status || 500).json({ error: result.error, message: result.msg });
+        const result = await deliverOutboundConversationMessage(req, targetConv, {
+            content,
+            media,
+            metadata,
+        });
+        if (result.error)
+            return res
+                .status(result.status || 500)
+                .json({ error: result.error, message: result.msg });
         await emitConversationNewMessage(req, targetConv, result.msg);
-        res.json({ ok: true, message: result.msg, conversation: { id: targetConv.id, customerId: targetConv.customerId } });
+        res.json({
+            ok: true,
+            message: result.msg,
+            conversation: { id: targetConv.id, customerId: targetConv.customerId },
+        });
     } catch (err) {
         next(err);
     }
@@ -553,8 +735,12 @@ router.post('/forward', async (req, res, next) => {
 // ——— مالک خط واتساپ موبایل (برای نمایش فرستندهٔ پیام‌های غیر CRM)
 router.get('/mobile-wa-sender', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        const { loadMobileWhatsappUser, serializeMobileWhatsappUser } = require('../lib/resolveMobileWhatsappUser');
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        const {
+            loadMobileWhatsappUser,
+            serializeMobileWhatsappUser,
+        } = require('../lib/resolveMobileWhatsappUser');
         const user = await loadMobileWhatsappUser(req.app.get('logger') || logger);
         res.json({ user: serializeMobileWhatsappUser(user) });
     } catch (err) {
@@ -565,23 +751,37 @@ router.get('/mobile-wa-sender', async (req, res, next) => {
 // ——— جزئیات یک مکالمه
 router.get('/:id', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!isValidUUID(req.params.id))
+            return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id, {
             include: conversationDetailInclude,
         });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
-        if (conversation.status === 'archived' && !(req.canViewArchivedConversations && req.canViewArchivedConversations())) {
-            return res.status(403).json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
+        if (!(await canAccessConversation(req, conversation)))
+            return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (
+            conversation.status === 'archived' &&
+            !(req.canViewArchivedConversations && req.canViewArchivedConversations())
+        ) {
+            return res
+                .status(403)
+                .json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
         }
         const meta = conversation.metadata || {};
-        const isGroup = !!(meta.isGroup || (conversation.customer && String(conversation.customer.phone || '').includes('@g.us')));
+        const isGroup = !!(
+            meta.isGroup ||
+            (conversation.customer && String(conversation.customer.phone || '').includes('@g.us'))
+        );
         if (!isGroup && conversation.customer) {
             try {
                 await maybeRefreshWhatsappCustomerAvatar(conversation.customer);
             } catch (e) {
-                logger.warn('conversation avatar refresh', { customerId: conversation.customerId, err: e && e.message });
+                logger.warn('conversation avatar refresh', {
+                    customerId: conversation.customerId,
+                    err: e && e.message,
+                });
             }
         }
         await conversation.reload({ include: conversationDetailInclude });
@@ -594,15 +794,25 @@ router.get('/:id', async (req, res, next) => {
 // ——— پیام‌های مکالمه (شامل کاربر ارسال‌کننده برای پیام‌های خروجی)
 router.get('/:id/messages', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!isValidUUID(req.params.id))
+            return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id, {
-            include: [{ model: Customer, as: 'customer', attributes: ['id', 'phone'], required: false }]
+            include: [
+                { model: Customer, as: 'customer', attributes: ['id', 'phone'], required: false },
+            ],
         });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
-        if (conversation.status === 'archived' && !(req.canViewArchivedConversations && req.canViewArchivedConversations())) {
-            return res.status(403).json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
+        if (!(await canAccessConversation(req, conversation)))
+            return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (
+            conversation.status === 'archived' &&
+            !(req.canViewArchivedConversations && req.canViewArchivedConversations())
+        ) {
+            return res
+                .status(403)
+                .json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
         }
         // pagination: پیش‌فرض آخرین ۱۰۰ پیام، با before برای بارگذاری پیام‌های قدیمی‌تر
         const pageLimit = Math.min(parseInt(req.query.limit) || 100, 200);
@@ -610,11 +820,12 @@ router.get('/:id/messages', async (req, res, next) => {
         const msgWhere = { conversationId: req.params.id };
         if (beforeId) {
             const { isValidUUID } = require('../lib/validation');
-            if (!isValidUUID(beforeId)) return res.status(400).json({ error: 'شناسه پیام (before) نامعتبر است' });
+            if (!isValidUUID(beforeId))
+                return res.status(400).json({ error: 'شناسه پیام (before) نامعتبر است' });
             // UUIDv4 ترتیب زمانی ندارد؛ پیام مرجع را می‌گیریم و صفحه‌بندی را روی timestamp انجام می‌دهیم.
             const beforeMsg = await Message.findOne({
                 where: { id: beforeId, conversationId: req.params.id },
-                attributes: ['id', 'timestamp']
+                attributes: ['id', 'timestamp'],
             });
             if (!beforeMsg || !beforeMsg.timestamp) {
                 return res.status(404).json({ error: 'پیام مرجع برای صفحه‌بندی یافت نشد' });
@@ -624,37 +835,63 @@ router.get('/:id/messages', async (req, res, next) => {
                 {
                     [Op.and]: [
                         { timestamp: beforeMsg.timestamp },
-                        { id: { [Op.lt]: beforeMsg.id } }
-                    ]
-                }
+                        { id: { [Op.lt]: beforeMsg.id } },
+                    ],
+                },
             ];
         }
         const total = await Message.count({ where: { conversationId: req.params.id } });
         const messages = await Message.findAll({
             where: msgWhere,
-            include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username', 'avatar', 'firstName', 'lastName', 'whatsappSenderName'], required: false }],
+            include: [
+                {
+                    model: User,
+                    as: 'user',
+                    attributes: [
+                        'id',
+                        'name',
+                        'username',
+                        'avatar',
+                        'firstName',
+                        'lastName',
+                        'whatsappSenderName',
+                    ],
+                    required: false,
+                },
+            ],
             order: [['timestamp', 'DESC']],
-            limit: pageLimit
+            limit: pageLimit,
         });
         // برگشت به ترتیب صعودی برای نمایش صحیح در UI
         messages.reverse();
         // برای چت گروهی: اگر پیام‌هایی senderId دارند ولی senderName ندارند، از Gateway لیست اعضا را بگیر و نام را پر کن
         const meta = conversation.metadata || {};
-        const isGroup = meta.isGroup || (conversation.customer && String(conversation.customer.phone || '').includes('@g.us'));
+        const isGroup =
+            meta.isGroup ||
+            (conversation.customer && String(conversation.customer.phone || '').includes('@g.us'));
         if (isGroup && conversation.customer && conversation.customer.phone) {
-            const needResolve = messages.some(m => m.direction === 'incoming' && m.metadata?.senderId && !m.metadata?.senderName);
+            const needResolve = messages.some(
+                (m) => m.direction === 'incoming' && m.metadata?.senderId && !m.metadata?.senderName
+            );
             if (needResolve) {
                 try {
                     const { gatewayGet } = require('../lib/gatewayClient');
                     const groupId = String(conversation.customer.phone).trim();
-                    const gwRes = await gatewayGet('/api/chats/groups/' + encodeURIComponent(groupId) + '/participants', { timeout: 10000 });
-                    const participants = (gwRes?.data?.participants || []);
+                    const gwRes = await gatewayGet(
+                        '/api/chats/groups/' + encodeURIComponent(groupId) + '/participants',
+                        { timeout: 10000 }
+                    );
+                    const participants = gwRes?.data?.participants || [];
                     const idToName = {};
                     for (const p of participants) {
                         if (p.name && p.id) idToName[String(p.id)] = p.name;
                     }
                     for (const m of messages) {
-                        if (m.direction === 'incoming' && m.metadata?.senderId && !m.metadata?.senderName) {
+                        if (
+                            m.direction === 'incoming' &&
+                            m.metadata?.senderId &&
+                            !m.metadata?.senderName
+                        ) {
                             const sid = String(m.metadata.senderId);
                             const name = idToName[sid];
                             if (name) m.metadata = { ...m.metadata, senderName: name };
@@ -665,7 +902,11 @@ router.get('/:id/messages', async (req, res, next) => {
                 }
             }
         }
-        const { loadMobileWhatsappUser, applyMobileWhatsappSenderToMessages, serializeMobileWhatsappUser } = require('../lib/resolveMobileWhatsappUser');
+        const {
+            loadMobileWhatsappUser,
+            applyMobileWhatsappSenderToMessages,
+            serializeMobileWhatsappUser,
+        } = require('../lib/resolveMobileWhatsappUser');
         const mobileOwner = await loadMobileWhatsappUser(req.app.get('logger') || logger);
         applyMobileWhatsappSenderToMessages(messages, mobileOwner);
 
@@ -685,13 +926,21 @@ router.get('/:id/messages', async (req, res, next) => {
 // ——— آمار مکالمه برای نظارت مدیر (زمان اولین پاسخ، پاسخ‌دهندگان، خوانده‌شدن)
 router.get('/:id/stats', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!isValidUUID(req.params.id))
+            return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id);
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
-        if (conversation.status === 'archived' && !(req.canViewArchivedConversations && req.canViewArchivedConversations())) {
-            return res.status(403).json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
+        if (!(await canAccessConversation(req, conversation)))
+            return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (
+            conversation.status === 'archived' &&
+            !(req.canViewArchivedConversations && req.canViewArchivedConversations())
+        ) {
+            return res
+                .status(403)
+                .json({ error: 'فقط مالک، ادمین و مدیر می‌توانند مکالمات آرشیو شده را ببینند' });
         }
         // Use SQL aggregation instead of loading all messages into memory
         const convId = req.params.id;
@@ -699,42 +948,61 @@ router.get('/:id/stats', async (req, res, next) => {
             // Total and outgoing counts
             Message.findAll({
                 where: { conversationId: convId },
-                attributes: [
-                    'direction',
-                    [sequelize.fn('COUNT', sequelize.col('id')), 'cnt']
-                ],
+                attributes: ['direction', [sequelize.fn('COUNT', sequelize.col('id')), 'cnt']],
                 group: ['direction'],
-                raw: true
+                raw: true,
             }),
             // First incoming message timestamp
             Message.findOne({
-                where: { conversationId: convId, direction: 'incoming', timestamp: { [Op.ne]: null } },
+                where: {
+                    conversationId: convId,
+                    direction: 'incoming',
+                    timestamp: { [Op.ne]: null },
+                },
                 attributes: ['timestamp'],
                 order: [['timestamp', 'ASC']],
-                raw: true
+                raw: true,
             }),
             // Distinct responders (users who sent outgoing messages)
             Message.findAll({
                 where: { conversationId: convId, direction: 'outgoing', userId: { [Op.ne]: null } },
-                attributes: ['userId', [sequelize.fn('MIN', sequelize.col('timestamp')), 'firstAt']],
-                include: [{ model: User, as: 'user', attributes: ['id', 'name', 'username', 'avatar', 'firstName', 'lastName', 'whatsappSenderName'], required: false }],
+                attributes: [
+                    'userId',
+                    [sequelize.fn('MIN', sequelize.col('timestamp')), 'firstAt'],
+                ],
+                include: [
+                    {
+                        model: User,
+                        as: 'user',
+                        attributes: [
+                            'id',
+                            'name',
+                            'username',
+                            'avatar',
+                            'firstName',
+                            'lastName',
+                            'whatsappSenderName',
+                        ],
+                        required: false,
+                    },
+                ],
                 group: ['userId', 'user.id', 'user.name', 'user.username', 'user.avatar'],
                 order: [[sequelize.fn('MIN', sequelize.col('timestamp')), 'ASC']],
-                raw: false
-            })
+                raw: false,
+            }),
         ]);
         // First outgoing message timestamp AFTER first incoming
         const firstOutgoing = firstIncoming?.timestamp
             ? await Message.findOne({
-                where: {
-                    conversationId: convId,
-                    direction: 'outgoing',
-                    timestamp: { [Op.gte]: firstIncoming.timestamp }
-                },
-                attributes: ['timestamp'],
-                order: [['timestamp', 'ASC']],
-                raw: true
-            })
+                  where: {
+                      conversationId: convId,
+                      direction: 'outgoing',
+                      timestamp: { [Op.gte]: firstIncoming.timestamp },
+                  },
+                  attributes: ['timestamp'],
+                  order: [['timestamp', 'ASC']],
+                  raw: true,
+              })
             : null;
 
         const countMap = {};
@@ -749,9 +1017,9 @@ router.get('/:id/stats', async (req, res, next) => {
             firstResponseTimeMin = Math.round((firstOutgoingAt - firstIncomingAt) / 60000);
         }
 
-        const responders = responderRows.map(m => ({
+        const responders = responderRows.map((m) => ({
             id: m.userId,
-            name: (m.user && (m.user.name || m.user.username)) || '—'
+            name: (m.user && (m.user.name || m.user.username)) || '—',
         }));
 
         res.json({
@@ -761,7 +1029,7 @@ router.get('/:id/stats', async (req, res, next) => {
             responders,
             messageCount,
             outgoingCount,
-            unreadCount: conversation.unreadCount || 0
+            unreadCount: conversation.unreadCount || 0,
         });
     } catch (err) {
         next(err);
@@ -771,18 +1039,32 @@ router.get('/:id/stats', async (req, res, next) => {
 // ——— به‌روزرسانی مکالمه (تخصیص، وضعیت، اولویت، بستن، موضوع، خوانده‌شدن)
 router.patch('/:id', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!isValidUUID(req.params.id))
+            return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id, {
             include: [
                 { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone'] },
-                { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] }
-            ]
+                { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
+            ],
         });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (!(await canAccessConversation(req, conversation)))
+            return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
 
-        const { assignedTo, departmentId, branchId, status, priority, subject, markRead, rating, feedback, isHiddenFromStaff } = req.body;
+        const {
+            assignedTo,
+            departmentId,
+            branchId,
+            status,
+            priority,
+            subject,
+            markRead,
+            rating,
+            feedback,
+            isHiddenFromStaff,
+        } = req.body;
         const prevStatus = conversation.status;
 
         if (markRead === true || markRead === 'true') {
@@ -795,25 +1077,56 @@ router.patch('/:id', async (req, res, next) => {
         const canAssignSelf = !canManage && assignedTo === req.userId;
         if (assignedTo !== undefined) {
             if (canManage || canAssignSelf) {
-                updateData.assignedTo = canAssignSelf ? req.userId : (assignedTo || null);
+                updateData.assignedTo = canAssignSelf ? req.userId : assignedTo || null;
                 updateData.assignedAt = updateData.assignedTo ? new Date() : null;
             }
         }
-        if (!canManage && Object.keys(updateData).length === 0 && (departmentId !== undefined || branchId !== undefined || status !== undefined || priority !== undefined || subject !== undefined)) {
-            return res.status(403).json({ error: 'فقط مدیر یا ادمین می‌تواند تخصیص و وضعیت مکالمه را تغییر دهد' });
+        if (
+            !canManage &&
+            Object.keys(updateData).length === 0 &&
+            (departmentId !== undefined ||
+                branchId !== undefined ||
+                status !== undefined ||
+                priority !== undefined ||
+                subject !== undefined)
+        ) {
+            return res
+                .status(403)
+                .json({ error: 'فقط مدیر یا ادمین می‌تواند تخصیص و وضعیت مکالمه را تغییر دهد' });
         }
-        if (!canManage && (departmentId !== undefined || branchId !== undefined || status !== undefined || priority !== undefined || subject !== undefined)) {
-            return res.status(403).json({ error: 'فقط مدیر یا ادمین می‌تواند وضعیت و اولویت را تغییر دهد' });
+        if (
+            !canManage &&
+            (departmentId !== undefined ||
+                branchId !== undefined ||
+                status !== undefined ||
+                priority !== undefined ||
+                subject !== undefined)
+        ) {
+            return res
+                .status(403)
+                .json({ error: 'فقط مدیر یا ادمین می‌تواند وضعیت و اولویت را تغییر دهد' });
         }
         if (canManage && departmentId !== undefined) updateData.departmentId = departmentId || null;
-        if (canManage && branchId !== undefined && (isMainAdmin(req.user) || req.user.role === 'owner' || req.user.role === 'admin' || req.user.role === 'manager')) updateData.branchId = branchId || null;
+        if (
+            canManage &&
+            branchId !== undefined &&
+            (isMainAdmin(req.user) ||
+                req.user.role === 'owner' ||
+                req.user.role === 'admin' ||
+                req.user.role === 'manager')
+        )
+            updateData.branchId = branchId || null;
         const VALID_CONV_STATUSES = ['open', 'pending', 'closed', 'resolved', 'archived'];
         if (canManage && status !== undefined) {
             if (!VALID_CONV_STATUSES.includes(status)) {
                 return res.status(400).json({ error: 'وضعیت مکالمه نامعتبر است' });
             }
             if (status === 'archived' && !canArchiveOrDeleteConversation(req)) {
-                return res.status(403).json({ error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند مکالمه را آرشیو کند' });
+                return res
+                    .status(403)
+                    .json({
+                        error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند مکالمه را آرشیو کند',
+                    });
             }
             updateData.status = status;
             if (status === 'closed' || status === 'resolved' || status === 'archived') {
@@ -823,16 +1136,24 @@ router.patch('/:id', async (req, res, next) => {
         }
         if (canManage && priority !== undefined) updateData.priority = priority;
         if (canManage && subject !== undefined) updateData.subject = subject;
-        if (rating !== undefined && Number(rating) >= 1 && Number(rating) <= 5) updateData.rating = Math.round(Number(rating));
+        if (rating !== undefined && Number(rating) >= 1 && Number(rating) <= 5)
+            updateData.rating = Math.round(Number(rating));
         if (feedback !== undefined) updateData.feedback = String(feedback || '').trim() || null;
         if (isHiddenFromStaff !== undefined) {
             if (!(req.canViewHiddenConversations && req.canViewHiddenConversations())) {
-                return res.status(403).json({ error: 'فقط مالک یا ادمین می‌تواند مکالمه را از دید کارکنان مخفی کند' });
+                return res
+                    .status(403)
+                    .json({
+                        error: 'فقط مالک یا ادمین می‌تواند مکالمه را از دید کارکنان مخفی کند',
+                    });
             }
-            updateData.isHiddenFromStaff = isHiddenFromStaff === true || isHiddenFromStaff === 'true';
+            updateData.isHiddenFromStaff =
+                isHiddenFromStaff === true || isHiddenFromStaff === 'true';
         }
 
-        const prevDeptIdBeforeUpdate = conversation.departmentId ? String(conversation.departmentId) : null;
+        const prevDeptIdBeforeUpdate = conversation.departmentId
+            ? String(conversation.departmentId)
+            : null;
 
         await conversation.update(updateData);
 
@@ -840,32 +1161,50 @@ router.patch('/:id', async (req, res, next) => {
             await logActivity({
                 userId: req.userId,
                 branchId: conversation.branchId || req.user.branchId,
-                departmentId: updateData.departmentId || conversation.departmentId || req.user.departmentId,
+                departmentId:
+                    updateData.departmentId || conversation.departmentId || req.user.departmentId,
                 action: 'conversation_assigned',
                 entityType: 'conversation',
                 entityId: conversation.id,
                 customerId: conversation.customerId,
                 summary: `مکالمه به کاربر تخصیص داده شد`,
-                metadata: { conversationId: conversation.id, assignedTo: updateData.assignedTo, customerPhone: conversation.customer && conversation.customer.phone }
+                metadata: {
+                    conversationId: conversation.id,
+                    assignedTo: updateData.assignedTo,
+                    customerPhone: conversation.customer && conversation.customer.phone,
+                },
             });
             // ارسال ایمیل اطلاع‌رسانی به کاربر تخصیص‌یافته
             if (String(updateData.assignedTo) !== String(req.userId)) {
                 setImmediate(async () => {
                     try {
                         const emailService = require('../services/emailService');
-                        const { getPanelSettings, getPanelEmailConfig } = require('../services/panelSettingsLoader');
+                        const {
+                            getPanelSettings,
+                            getPanelEmailConfig,
+                        } = require('../services/panelSettingsLoader');
                         const { NotificationPreference } = require('../models');
-                        const assignee = await User.findByPk(updateData.assignedTo, { attributes: ['id', 'name', 'email'] });
+                        const assignee = await User.findByPk(updateData.assignedTo, {
+                            attributes: ['id', 'name', 'email'],
+                        });
                         if (!assignee || !assignee.email) return;
                         const [pref, settings] = await Promise.all([
                             NotificationPreference.findOne({ where: { userId: assignee.id } }),
-                            getPanelSettings()
+                            getPanelSettings(),
                         ]);
                         if (pref && pref.ticketAssignedEmailEnabled === false) return;
                         const emailConfig = getPanelEmailConfig(settings);
-                        const customerName = conversation.customer ? conversation.customer.name || conversation.customer.phone : '';
+                        const customerName = conversation.customer
+                            ? conversation.customer.name || conversation.customer.phone
+                            : '';
                         const assignerName = req.user ? req.user.name || req.user.email : null;
-                        await emailService.sendConversationAssigned(assignee, conversation, customerName, assignerName, emailConfig && emailConfig.host ? emailConfig : null);
+                        await emailService.sendConversationAssigned(
+                            assignee,
+                            conversation,
+                            customerName,
+                            assignerName,
+                            emailConfig && emailConfig.host ? emailConfig : null
+                        );
                     } catch (_) {}
                 });
             }
@@ -875,7 +1214,9 @@ router.patch('/:id', async (req, res, next) => {
             const deptChanged = prevDeptIdBeforeUpdate !== newDeptId;
             if (updateData.departmentId && deptChanged) {
                 const dept = await Department.findByPk(updateData.departmentId);
-                const convForDept = await Conversation.findByPk(req.params.id, { include: [{ model: Department, as: 'department' }] });
+                const convForDept = await Conversation.findByPk(req.params.id, {
+                    include: [{ model: Department, as: 'department' }],
+                });
                 if (convForDept && dept) await sendDeptAssignedMessage(convForDept, dept);
             }
             if (deptChanged) {
@@ -888,7 +1229,11 @@ router.patch('/:id', async (req, res, next) => {
                     entityId: conversation.id,
                     customerId: conversation.customerId,
                     summary: `دپارتمان مکالمه تغییر کرد`,
-                    metadata: { conversationId: conversation.id, departmentId: updateData.departmentId, customerPhone: conversation.customer && conversation.customer.phone }
+                    metadata: {
+                        conversationId: conversation.id,
+                        departmentId: updateData.departmentId,
+                        customerPhone: conversation.customer && conversation.customer.phone,
+                    },
                 });
             }
         }
@@ -898,19 +1243,41 @@ router.patch('/:id', async (req, res, next) => {
             const wasEnded = END_STATUSES.includes(prevStatus);
             const isEnded = END_STATUSES.includes(updateData.status);
             if (isEnded && !wasEnded) {
-                try { await sendConversationEndedMessage(conversation.id); } catch (_) {}
-            } else if (!isEnded && wasEnded && (updateData.status === 'open' || updateData.status === 'pending')) {
-                try { await clearConversationEndedFlag(conversation.id); } catch (_) {}
+                try {
+                    await sendConversationEndedMessage(conversation.id);
+                } catch (_) {}
+            } else if (
+                !isEnded &&
+                wasEnded &&
+                (updateData.status === 'open' || updateData.status === 'pending')
+            ) {
+                try {
+                    await clearConversationEndedFlag(conversation.id);
+                } catch (_) {}
             }
         }
 
         const updated = await Conversation.findByPk(req.params.id, {
             include: [
-                { model: Customer, as: 'customer', attributes: ['id', 'name', 'phone', 'profilePic'] },
+                {
+                    model: Customer,
+                    as: 'customer',
+                    attributes: ['id', 'name', 'phone', 'profilePic'],
+                },
                 { model: User, as: 'assignee', attributes: ['id', 'name', 'avatar'] },
-                { model: Branch, as: 'branch', attributes: ['id', 'name', 'city'], required: false },
-                { model: Department, as: 'department', attributes: ['id', 'name', 'color'], required: false }
-            ]
+                {
+                    model: Branch,
+                    as: 'branch',
+                    attributes: ['id', 'name', 'city'],
+                    required: false,
+                },
+                {
+                    model: Department,
+                    as: 'department',
+                    attributes: ['id', 'name', 'color'],
+                    required: false,
+                },
+            ],
         });
         res.json(redactConversationPhones(updated, req.user));
     } catch (err) {
@@ -926,8 +1293,10 @@ router.delete('/:id', async (req, res, next) => {
                 error: 'فقط مالک مجموعه یا ادمین اصلی می‌تواند مکالمه را از لیست فعال خارج کند',
             });
         }
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!isValidUUID(req.params.id))
+            return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id);
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
 
@@ -969,11 +1338,14 @@ router.delete('/:id', async (req, res, next) => {
 // ——— علامت‌گذاری به‌عنوان خوانده‌شده
 router.post('/:id/read', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!isValidUUID(req.params.id))
+            return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id);
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (!(await canAccessConversation(req, conversation)))
+            return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         await conversation.update({ unreadCount: 0 });
         res.json({ ok: true });
     } catch (err) {
@@ -984,16 +1356,29 @@ router.post('/:id/read', async (req, res, next) => {
 // ——— ارسال پیام (متن یا فایل/عکس)
 router.post('/:id/send', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
-        const conversation = await Conversation.findByPk(req.params.id, { include: [{ model: Customer, as: 'customer' }, { model: Department, as: 'department', required: false }] });
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!isValidUUID(req.params.id))
+            return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        const conversation = await Conversation.findByPk(req.params.id, {
+            include: [
+                { model: Customer, as: 'customer' },
+                { model: Department, as: 'department', required: false },
+            ],
+        });
         if (!conversation) return res.status(404).json({ error: 'مکالمه یافت نشد' });
-        if (!(await canAccessConversation(req, conversation))) return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
+        if (!(await canAccessConversation(req, conversation)))
+            return res.status(403).json({ error: 'دسترسی به این مکالمه ندارید' });
         const content = safeString(req.body.content, 10000);
         const media = req.body.media || null;
         const replyTo = req.body.replyTo || null;
-        if (!content && !media) return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
-        const result = await deliverOutboundConversationMessage(req, conversation, { content, media, replyTo });
+        if (!content && !media)
+            return res.status(400).json({ error: 'متن پیام یا فایل الزامی است' });
+        const result = await deliverOutboundConversationMessage(req, conversation, {
+            content,
+            media,
+            replyTo,
+        });
         if (result.error) {
             return res.status(result.status || 500).json({
                 error: result.error,
@@ -1022,8 +1407,10 @@ router.post('/:id/send', async (req, res, next) => {
 // ——— تماس صوتی/تصویری واتساپ (فقط Gateway — نه Cloud API)
 router.post('/:id/call', async (req, res, next) => {
     try {
-        if (!req.canAccess('conversations')) return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
-        if (!isValidUUID(req.params.id)) return res.status(400).json({ error: 'شناسه نامعتبر است' });
+        if (!req.canAccess('conversations'))
+            return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
+        if (!isValidUUID(req.params.id))
+            return res.status(400).json({ error: 'شناسه نامعتبر است' });
         const conversation = await Conversation.findByPk(req.params.id, {
             include: [
                 { model: Customer, as: 'customer' },
@@ -1059,7 +1446,11 @@ router.post('/:id/call', async (req, res, next) => {
         if (status === 400) {
             return res.status(400).json({ error: gwMsg || 'درخواست تماس نامعتبر است' });
         }
-        if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND' || err.code === 'ECONNABORTED') {
+        if (
+            err.code === 'ECONNREFUSED' ||
+            err.code === 'ENOTFOUND' ||
+            err.code === 'ECONNABORTED'
+        ) {
             return res.status(503).json({ error: 'Gateway در دسترس نیست' });
         }
         // خطای کنترل‌شده تماس — 5xx اسپایک نساز
