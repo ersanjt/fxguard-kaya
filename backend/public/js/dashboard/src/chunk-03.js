@@ -680,6 +680,7 @@
                 tabRestricted.style.display = show ? 'inline-flex' : 'none';
                 tabRestricted.textContent = t('filter_restricted') || (LANG === 'fa' ? 'محدود / قفل‌شده' : 'Restricted');
             }
+            if (typeof refreshCustomerAdminTabs === 'function') refreshCustomerAdminTabs();
             if (show) {
                 const bar = document.getElementById('convQuickTabsBar');
                 if (bar && bar.classList.contains('is-collapsed')) {
@@ -694,6 +695,53 @@
                     if (toggle) toggle.setAttribute('aria-expanded', 'true');
                 }
             }
+        }
+
+        var customerQuickTab = 'active';
+        function refreshCustomerAdminTabs() {
+            const show = canViewHiddenConversations();
+            const tabArchive = document.getElementById('custTabArchive');
+            const tabsWrap = document.getElementById('customerViewTabs');
+            const hint = document.getElementById('customerArchiveHint');
+            if (tabsWrap) tabsWrap.style.display = show ? 'flex' : 'none';
+            if (tabArchive) {
+                tabArchive.style.display = show ? 'inline-flex' : 'none';
+                tabArchive.textContent = t('customers_tab_archive') || t('filter_archived') || (LANG === 'fa' ? 'آرشیو (شماره قبلی)' : 'Archive');
+            }
+            const tabActive = document.getElementById('custTabActive');
+            if (tabActive) {
+                tabActive.textContent = t('customers_tab_active') || (LANG === 'fa' ? 'مشتریان فعال' : 'Active customers');
+            }
+            if (!show && customerQuickTab === 'archive') {
+                customerQuickTab = 'active';
+                document.querySelectorAll('#customerViewTabs .conv-tab').forEach(function(b) {
+                    const on = b.getAttribute('data-cust-tab') === 'active';
+                    b.classList.toggle('active', on);
+                    b.setAttribute('aria-selected', on ? 'true' : 'false');
+                });
+            }
+            if (hint) {
+                hint.style.display = show && customerQuickTab === 'archive' ? 'block' : 'none';
+            }
+        }
+        function setCustomerQuickTab(tab) {
+            if (tab !== 'active' && tab !== 'archive') return;
+            if (tab === 'archive' && !canViewHiddenConversations()) return;
+            customerQuickTab = tab;
+            document.querySelectorAll('#customerViewTabs .conv-tab').forEach(function(b) {
+                const on = b.getAttribute('data-cust-tab') === tab;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            const hint = document.getElementById('customerArchiveHint');
+            if (hint) hint.style.display = tab === 'archive' ? 'block' : 'none';
+            const title = document.getElementById('customerListTitle');
+            if (title) {
+                title.textContent = tab === 'archive'
+                    ? (t('customers_tab_archive') || t('filter_archived') || 'Archive')
+                    : (t('nav_customers') || 'Customers');
+            }
+            loadCustomers();
         }
         async function loadConvFiltersInit() {
             await loadConvAssignees();
@@ -3273,13 +3321,23 @@
             const statusEl = document.getElementById('customerFilterStatus');
             if (searchEl && searchEl.value.trim()) q += '&search=' + encodeURIComponent(searchEl.value.trim());
             if (statusEl && statusEl.value) q += '&status=' + encodeURIComponent(statusEl.value);
+            if (customerQuickTab === 'archive') q += '&restrictedOnly=true';
             const res = await apiFetch('/api/customers' + q);
             if (res.needLogin) { list.innerHTML = '<div class="empty"><span class="empty-icon">&#128101;</span><p>' + (LANG === 'fa' ? 'لطفاً دوباره وارد شوید' : 'Please log in again') + '</p></div>'; return; }
             if (!res.ok) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128101;</span><p>' + (res.data && res.data.error ? escapeHtml(res.data.error) : (LANG === 'fa' ? 'خطا در بارگذاری' : 'Load failed')) + '</p><button type="button" class="btn-primary" id="customerRetryBtn">' + (LANG === 'fa' ? 'تلاش مجدد' : 'Retry') + '</button></div>'; return; }
             const data = res.data;
             if (statsEl && data.stats) { statsEl.style.display = 'flex'; statsEl.innerHTML = '<span class="customer-stat"><strong>' + data.stats.total + '</strong> ' + (LANG === 'fa' ? 'مشتری' : 'customers') + '</span><span class="customer-stat"><strong>' + data.stats.active + '</strong> ' + (LANG === 'fa' ? 'فعال' : 'active') + '</span><span class="customer-stat"><strong>' + data.stats.inactive + '</strong> ' + (LANG === 'fa' ? 'غیرفعال' : 'inactive') + '</span><span class="customer-stat"><strong>' + data.stats.blocked + '</strong> ' + (LANG === 'fa' ? 'مسدود' : 'blocked') + '</span>'; }
             if (countEl) countEl.textContent = (data.total || 0) + ' ' + (LANG === 'fa' ? 'مشتری' : '');
-            if (!data.data || data.data.length === 0) { list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + t('empty_customers') + '</p><button type="button" class="btn-primary" id="emptyCustomerAddBtn">' + escapeHtml(t('customer_add')) + '</button></div>'; return; }
+            if (!data.data || data.data.length === 0) {
+                const emptyMsg = customerQuickTab === 'archive'
+                    ? (t('empty_customers_archive') || (LANG === 'fa' ? 'مشتری قفل‌شده‌ای از شماره قبلی نیست.' : 'No locked customers from a previous number.'))
+                    : t('empty_customers');
+                const emptyBtn = customerQuickTab === 'archive'
+                    ? ''
+                    : '<button type="button" class="btn-primary" id="emptyCustomerAddBtn">' + escapeHtml(t('customer_add')) + '</button>';
+                list.innerHTML = '<div class="empty customer-empty-state"><span class="empty-icon">&#128100;</span><p>' + escapeHtml(emptyMsg) + '</p>' + emptyBtn + '</div>';
+                return;
+            }
             const sortEl = document.getElementById('customerSort');
             const sortVal = sortEl ? sortEl.value : 'newest';
             const sorted = sortCustomerList(data.data, sortVal);
@@ -3306,7 +3364,10 @@
                 const safeName = (name || '').replace(/'/g, "\\'").replace(/\\/g, '\\\\');
                 const checked = bulkIds.indexOf(c.id) >= 0 ? ' checked' : '';
                 const phoneShown = seePhone ? (c.phone || '') : '';
-                return '<div class="customer-card" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(name) + '" data-customer-phone="' + escapeHtml(phoneShown) + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"><div class="customer-card-main">' + avatarHtml + '<div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(name) + '</span><div class="customer-card-meta">' + escapeHtml(phoneShown) + (c.email ? (phoneShown ? ' · ' : '') + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(name) + '" data-customer-phone="' + escapeHtml(phoneShown) + '">' + escapeHtml(t('btn_send') || 'Send') + '</button></div>';
+                const restrictedBadge = c.isRestrictedFromStaff
+                    ? '<span class="badge customer-badge-restricted">' + escapeHtml(t('customer_restricted_badge') || (LANG === 'fa' ? 'آرشیو شماره قبلی' : 'Previous number')) + '</span>'
+                    : '';
+                return '<div class="customer-card' + (c.isRestrictedFromStaff ? ' customer-card--restricted' : '') + '" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(name) + '" data-customer-phone="' + escapeHtml(phoneShown) + '" role="button" tabindex="0"><input type="checkbox" class="bulk-customer-check" data-customer-id="' + c.id + '"' + checked + '><div class="customer-card-main">' + avatarHtml + '<div class="customer-card-body"><span class="customer-card-name">' + escapeHtml(name) + restrictedBadge + '</span><div class="customer-card-meta">' + escapeHtml(phoneShown) + (c.email ? (phoneShown ? ' · ' : '') + escapeHtml(c.email) : '') + '</div><div class="customer-card-meta">' + lastContact + ' · ' + (c.totalConversations || 0) + ' ' + (LANG === 'fa' ? 'مکالمه' : 'conv') + (assigneeDept ? ' · ' + escapeHtml(assigneeDept) : '') + '</div></div><span class="badge ' + statusClass + '">' + statusLabel + '</span></div><button type="button" class="btn-primary customer-send-btn" data-customer-id="' + c.id + '" data-customer-name="' + escapeHtml(name) + '" data-customer-phone="' + escapeHtml(phoneShown) + '">' + escapeHtml(t('btn_send') || 'Send') + '</button></div>';
             }).join('');
             updateBulkSelectedCount();
         }
@@ -3362,6 +3423,17 @@
             });
             if (statusEl) statusEl.addEventListener('change', function() { applyCustomerFilters(); saveFilters(); });
             if (sortEl) sortEl.addEventListener('change', function() { applyCustomerFilters(); saveFilters(); });
+            const tabsWrap = document.getElementById('customerViewTabs');
+            if (tabsWrap && !tabsWrap._custTabsBound) {
+                tabsWrap._custTabsBound = true;
+                tabsWrap.addEventListener('click', function(e) {
+                    const btn = e.target && e.target.closest && e.target.closest('[data-cust-tab]');
+                    if (!btn || !tabsWrap.contains(btn)) return;
+                    e.preventDefault();
+                    setCustomerQuickTab(btn.getAttribute('data-cust-tab'));
+                });
+            }
+            if (typeof refreshCustomerAdminTabs === 'function') refreshCustomerAdminTabs();
             updateClearBtn();
         }
 

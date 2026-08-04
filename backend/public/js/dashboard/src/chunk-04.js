@@ -1811,7 +1811,11 @@
                     if (typeof refreshConvAdminTabs === 'function') refreshConvAdminTabs();
                 }, 250);
             }
-            if (page === 'customers') { initCustomerFilters(); loadCustomers(); }
+            if (page === 'customers') {
+                initCustomerFilters();
+                if (typeof refreshCustomerAdminTabs === 'function') refreshCustomerAdminTabs();
+                loadCustomers();
+            }
             if (page === 'departments') { loadDepartments(); loadBranchesForSelect(['deptBranch']); }
             if (page === 'users') { document.getElementById('userFormBox').style.display = 'none'; document.getElementById('btnAddUser').style.display = (currentUser && currentUser.permissions && currentUser.permissions.manage_users) ? '' : 'none'; document.getElementById('btnCancelUserForm').style.display = 'none'; loadUsers(); loadDeptsForUser(); loadBranchesForSelect(['userBranch','userEditBranch']); initUserAddPerms(); initUserFilters(); initUserEditTabs(); }
             if (page === 'tickets') { loadTicketFiltersInit(); loadTickets(); }

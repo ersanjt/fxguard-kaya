@@ -69,7 +69,13 @@ router.get('/', async (req, res, next) => {
                 { email: { [Op.like]: term } }
             ];
         }
-        const statsWhere = customerIds ? { id: { [Op.in]: customerIds } } : {};
+        const restrictedOnly =
+            req.query.restrictedOnly === '1' || req.query.restrictedOnly === 'true';
+        const statsWhere = restrictedOnly
+            ? { isRestrictedFromStaff: true }
+            : customerIds
+              ? { id: { [Op.in]: customerIds } }
+              : { isRestrictedFromStaff: false };
         const [stats, { rows, count }] = await Promise.all([
             !search ? Customer.findAll({
                 where: statsWhere,

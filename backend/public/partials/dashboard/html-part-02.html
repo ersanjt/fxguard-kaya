@@ -16,9 +16,14 @@
                         </div>
                         <div class="customer-filters-backdrop" id="customerFiltersBackdrop" onclick="document.getElementById('customerFilterToggle').click()"></div>
                     </div>
+                    <div class="customer-view-tabs" id="customerViewTabs" role="tablist" aria-label="Customer views">
+                        <button type="button" class="conv-tab active" role="tab" aria-selected="true" data-cust-tab="active" id="custTabActive" data-i18n="customers_tab_active">مشتریان فعال</button>
+                        <button type="button" class="conv-tab" role="tab" aria-selected="false" data-cust-tab="archive" id="custTabArchive" style="display:none;" data-i18n="customers_tab_archive">آرشیو (شماره قبلی)</button>
+                    </div>
+                    <p id="customerArchiveHint" class="customer-archive-hint text-muted" style="display:none;" data-i18n="customers_archive_hint">شماره‌هایی که پس از تعویض واتساپ قفل شده‌اند؛ فقط ادمین سطح بالا می‌بیند.</p>
                     <!-- هدر لیست: شمارنده + refresh — فقط desktop -->
                     <div class="customer-list-header">
-                        <span class="customer-list-title" data-i18n="nav_customers">مشتریان</span>
+                        <span class="customer-list-title" id="customerListTitle" data-i18n="nav_customers">مشتریان</span>
                         <div class="customer-list-header-right">
                             <button type="button" class="btn-icon-text" id="customerRefreshBtn" onclick="loadCustomers()" data-i18n-title="dashboard_refresh" title="تازه‌سازی" aria-label="تازه‌سازی">&#8635;</button>
                             <span class="customer-list-count" id="customerListCount"></span>
