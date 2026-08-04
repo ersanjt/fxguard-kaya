@@ -4936,7 +4936,7 @@
         async function syncWhatsAppGroups() {
             const btn = document.getElementById('btnSyncGroups');
             const textSpan = btn && btn.querySelector('.conv-sync-text');
-            const syncText = t('conv_sync_groups') || (LANG === 'fa' ? 'همگام‌سازی گروه‌ها' : 'Sync groups');
+            const syncText = t('conv_sync_groups') || (LANG === 'fa' ? 'همگام‌سازی چت‌ها و گروه‌ها' : 'Sync chats & groups');
             if (btn) {
                 btn.disabled = true;
                 btn.classList.add('is-syncing');
@@ -4944,11 +4944,11 @@
                 else btn.textContent = (LANG === 'fa' ? 'در حال همگام‌سازی...' : 'Syncing...');
             }
             try {
-                const res = await apiFetch('/api/conversations/sync-groups', { method: 'POST' });
+                const res = await apiFetch('/api/conversations/sync-groups', { method: 'POST', timeoutMs: 120000 });
                 if (res.needLogin) return;
                 if (res.ok) {
-                    toast((res.data && res.data.message) || (LANG === 'fa' ? 'گروه‌ها همگام شدند' : 'Groups synced'));
-                    setConvQuickTab('groups');
+                    toast((res.data && res.data.message) || (LANG === 'fa' ? 'چت‌ها و گروه‌ها همگام شدند' : 'Chats & groups synced'));
+                    setConvQuickTab('all');
                     loadConversations();
                 } else {
                     let errMsg = (typeof getApiError === 'function' ? getApiError(res) : null)

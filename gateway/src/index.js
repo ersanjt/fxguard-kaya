@@ -1453,6 +1453,8 @@ app.post('/api/calls/start', sendRateLimitMiddleware, async (req, res) => {
 // لیست گروه‌های واتساپ — برای همگام‌سازی با CRM
 /** آخرین لیست موفق گروه‌ها (fallback وقتی getChats سنگین/خراب است) */
 let lastGroupsCache = { at: 0, groups: [] };
+/** آخرین لیست موفق همهٔ چت‌ها (خصوصی + گروه) */
+let lastChatsCache = { at: 0, chats: [] };
 
 async function listWhatsAppGroupsFromStore() {
     if (!client?.pupPage) throw new Error('pupPage_unavailable');
@@ -1653,6 +1655,239 @@ app.get('/api/chats/groups', async (req, res) => {
             return res.status(503).json({
                 error: msg,
                 phase: connectionPhase || null,
+            });
+        }
+        return res.status(503).json({ error: msg, phase: connectionPhase || null });
+    } finally {
+        endWaOps();
+    }
+});
+
+/** همهٔ چت‌های واتساپ (خصوصی + گروه) از Store */
+async function listWhatsAppAllChatsFromStore() {
+    if (!client?.pupPage) throw new Error('pupPage_unavailable');
+    return client.pupPage.evaluate(() => {
+        // runs inside WhatsApp Web Chromium page
+        // eslint-disable-next-line no-undef
+        const store = window.Store;
+        if (!store) return [];
+
+        function collectModels(collection) {
+            if (!collection) return [];
+            try {
+                if (typeof collection.getModelsArray === 'function') {
+                    return collection.getModelsArray() || [];
+                }
+            } catch (_) {}
+            try {
+                if (Array.isArray(collection.models)) return collection.models;
+            } catch (_) {}
+            try {
+                if (collection._models) return Object.values(collection._models);
+            } catch (_) {}
+            try {
+                if (typeof collection.map === 'function') {
+                    const arr = [];
+                    collection.map(function (m) {
+                        arr.push(m);
+                    });
+                    return arr;
+                }
+            } catch (_) {}
+            return [];
+        }
+
+        function jidOf(model) {
+            if (!model) return null;
+            const id = model.id;
+            if (!id) return null;
+            if (id._serialized) return String(id._serialized);
+            if (id.user && id.server) return String(id.user) + '@' + String(id.server);
+            return null;
+        }
+
+        const seen = Object.create(null);
+        const out = [];
+
+        function pushChat(ser, name, isGroup, preview, ts) {
+            if (!ser) return;
+            const s = String(ser);
+            if (!s.includes('@')) return;
+            // status / broadcast را رد کن
+            if (s === 'status@broadcast' || s.endsWith('@broadcast')) return;
+            if (seen[s]) {
+                if (name && !seen[s].name) seen[s].name = String(name);
+                return;
+            }
+            const row = {
+                id: s,
+                name: name ? String(name) : null,
+                isGroup: !!isGroup || s.endsWith('@g.us'),
+                lastPreview: preview ? String(preview).slice(0, 120) : null,
+                timestamp: ts || null,
+            };
+            seen[s] = row;
+            out.push(row);
+        }
+
+        const chats = collectModels(store.Chat);
+        for (let i = 0; i < chats.length; i++) {
+            const c = chats[i];
+            const ser = jidOf(c);
+            if (!ser) continue;
+            const isGroup = !!(c && (c.isGroup || String(ser).endsWith('@g.us')));
+            const name =
+                (c &&
+                    (c.name ||
+                        c.formattedTitle ||
+                        c.verifiedName ||
+                        (c.contact && (c.contact.name || c.contact.pushname)) ||
+                        (c.groupMetadata && c.groupMetadata.subject))) ||
+                null;
+            let preview = null;
+            let ts = null;
+            try {
+                const lm = c.lastReceivedKey || c.lastMessage || c.msgs;
+                if (c.lastMessage) {
+                    preview =
+                        c.lastMessage.body ||
+                        c.lastMessage.caption ||
+                        (c.lastMessage.type ? '[' + c.lastMessage.type + ']' : null);
+                    ts = c.lastMessage.t || c.lastMessage.timestamp || null;
+                } else if (typeof c.t === 'number') {
+                    ts = c.t;
+                }
+                if (!preview && c.previewMessage) {
+                    preview = c.previewMessage.body || c.previewMessage.caption || null;
+                }
+                void lm;
+            } catch (_) {}
+            pushChat(ser, name, isGroup, preview, ts);
+        }
+
+        // گروه‌هایی که در Chat نیستند ولی در GroupMetadata هستند
+        const metas = collectModels(store.GroupMetadata);
+        for (let i = 0; i < metas.length; i++) {
+            const m = metas[i];
+            const ser = jidOf(m);
+            const name = (m && (m.subject || m.name || m.formattedTitle)) || null;
+            pushChat(ser, name, true, null, null);
+        }
+
+        return out;
+    });
+}
+
+async function listWhatsAppAllChats() {
+    if (!isWhatsAppUsable()) {
+        const restored = await tryRestoreWhatsAppReady();
+        if (!restored) {
+            const err = new Error('WhatsApp not ready');
+            err.statusCode = 503;
+            throw err;
+        }
+    }
+
+    try {
+        const fromStore = await Promise.race([
+            listWhatsAppAllChatsFromStore(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('getChats_store_timeout')), 18000)
+            ),
+        ]);
+        if (Array.isArray(fromStore) && fromStore.length > 0) {
+            lastChatsCache = { at: Date.now(), chats: fromStore };
+            const groupsOnly = fromStore.filter((c) => c.isGroup);
+            if (groupsOnly.length) lastGroupsCache = { at: Date.now(), groups: groupsOnly };
+            logger.info('WhatsApp chats listed from Store', {
+                count: fromStore.length,
+                groups: groupsOnly.length,
+            });
+            return fromStore;
+        }
+    } catch (storeErr) {
+        logger.warn('Chat list via Store failed — falling back to getChats', {
+            error: formatGatewayError(storeErr),
+        });
+    }
+
+    try {
+        const chats = await Promise.race([
+            client.getChats(),
+            new Promise((_, reject) =>
+                setTimeout(() => reject(new Error('getChats_timeout')), 25000)
+            ),
+        ]);
+        const list = Array.isArray(chats) ? chats : [];
+        const mapped = list
+            .map((c) => {
+                const id = (c.id && (c.id._serialized || c.id)) || null;
+                if (!id) return null;
+                return {
+                    id: String(id),
+                    name: c.name || c.subject || c.formattedTitle || null,
+                    isGroup: !!c.isGroup,
+                    lastPreview: c.lastMessage
+                        ? String(c.lastMessage.body || c.lastMessage.caption || '').slice(0, 120)
+                        : null,
+                    timestamp: c.timestamp || null,
+                };
+            })
+            .filter(Boolean);
+        lastChatsCache = { at: Date.now(), chats: mapped };
+        const groupsOnly = mapped.filter((c) => c.isGroup);
+        if (groupsOnly.length) lastGroupsCache = { at: Date.now(), groups: groupsOnly };
+        return mapped;
+    } catch (chatsErr) {
+        const age = Date.now() - (lastChatsCache.at || 0);
+        if (lastChatsCache.chats?.length && age < 30 * 60 * 1000) {
+            logger.warn('getChats failed — serving cached chats', {
+                error: formatGatewayError(chatsErr),
+                cached: lastChatsCache.chats.length,
+            });
+            return lastChatsCache.chats;
+        }
+        throw chatsErr;
+    }
+}
+
+app.get('/api/chats', async (req, res) => {
+    beginWaOps();
+    try {
+        if (!isWhatsAppUsable()) {
+            let restored = await tryRestoreWhatsAppReady();
+            if (!restored && client?.pupPage && lastReadyAt > 0) {
+                isClientReady = true;
+                connectionPhase = 'ready';
+                restored = true;
+            }
+            if (!restored) {
+                await startWhatsApp().catch(() => {});
+                const deadline = Date.now() + 20000;
+                while (Date.now() < deadline && !isWhatsAppUsable()) {
+                    await new Promise((r) => setTimeout(r, 1500));
+                    if (await tryRestoreWhatsAppReady()) break;
+                }
+            }
+            if (!isWhatsAppUsable()) {
+                return res.status(503).json({
+                    error: 'WhatsApp not ready',
+                    phase: connectionPhase || (isClientStarting ? 'starting' : 'disconnected'),
+                });
+            }
+        }
+        const chats = await listWhatsAppAllChats();
+        return res.json({ success: true, chats, count: chats.length });
+    } catch (error) {
+        const msg = formatGatewayError(error);
+        logger.error('Get chats error', { error: msg });
+        const age = Date.now() - (lastChatsCache.at || 0);
+        if (lastChatsCache.chats?.length && age < 30 * 60 * 1000) {
+            return res.json({
+                success: true,
+                chats: lastChatsCache.chats,
+                count: lastChatsCache.chats.length,
+                stale: true,
             });
         }
         return res.status(503).json({ error: msg, phase: connectionPhase || null });

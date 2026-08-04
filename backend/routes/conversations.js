@@ -244,7 +244,17 @@ router.post('/sync-groups', async (req, res, next) => {
             }
         } catch (_) {}
 
-        const fetchGatewayGroups = async () => {
+        // قبل از همگام‌سازی: همهٔ مکالمات قفل‌شده را دوباره قابل‌نمایش کن
+        try {
+            const { restoreLegacyCrmVisibility } = require('../services/legacyCrmLockdown');
+            await restoreLegacyCrmVisibility({ reason: 'sync_groups_auto' });
+        } catch (restoreErr) {
+            logger.warn('sync-groups: auto-restore visibility failed', {
+                error: restoreErr?.message,
+            });
+        }
+
+        const fetchGatewayChats = async () => {
             let lastErr = null;
             for (let attempt = 0; attempt < 4; attempt++) {
                 try {
@@ -253,7 +263,15 @@ router.post('/sync-groups', async (req, res, next) => {
                         await ensureGatewayWhatsappReady(cfg, { maxWaitMs: 12000 });
                         await sleep(1200 * attempt);
                     }
-                    return await gatewayGet('/api/chats/groups', { timeout: 40000, cfg });
+                    // اول همهٔ چت‌ها (خصوصی + گروه)، بعد فقط گروه
+                    try {
+                        return await gatewayGet('/api/chats', { timeout: 45000, cfg });
+                    } catch (eAll) {
+                        if (eAll?.response?.status === 404) {
+                            return await gatewayGet('/api/chats/groups', { timeout: 40000, cfg });
+                        }
+                        throw eAll;
+                    }
                 } catch (e) {
                     lastErr = e;
                     const msg =
@@ -268,41 +286,55 @@ router.post('/sync-groups', async (req, res, next) => {
                     if (!retryable) throw e;
                 }
             }
-            throw lastErr || new Error('groups_fetch_failed');
+            throw lastErr || new Error('chats_fetch_failed');
         };
 
         let gwRes;
         let fetchErr = null;
         try {
-            gwRes = await fetchGatewayGroups();
+            gwRes = await fetchGatewayChats();
         } catch (e) {
             fetchErr = e;
         }
 
-        // اگر لیست گروه موقتاً نیامد ولی Gateway ready است، خطای QR نده — از گروه‌های موجود CRM استفاده کن
+        const normalizeChatRows = (payload) => {
+            const chats = payload?.chats || payload?.data?.chats || null;
+            if (Array.isArray(chats) && chats.length) {
+                return chats
+                    .map((c) => ({
+                        id: (c.id || '').toString().trim(),
+                        name: (c.name || c.subject || c.formattedTitle || '').toString().trim(),
+                        isGroup: !!(c.isGroup || String(c.id || '').endsWith('@g.us')),
+                        lastPreview: (c.lastPreview || '').toString().trim() || null,
+                        timestamp: c.timestamp || null,
+                    }))
+                    .filter((c) => c.id);
+            }
+            const groups = payload?.groups || payload?.data?.groups || [];
+            return (groups || [])
+                .map((g) => ({
+                    id: (g.id || '').toString().trim(),
+                    name: (g.name || g.subject || g.formattedTitle || '').toString().trim(),
+                    isGroup: true,
+                    lastPreview: null,
+                    timestamp: null,
+                }))
+                .filter((g) => g.id);
+        };
+
+        // اگر لیست موقتاً نیامد ولی Gateway ready است — مکالمات موجود CRM را باز کن
         if (!gwRes && isGwReady(readyGate.data || liveStatus)) {
-            logger.warn('sync-groups: groups list failed while Gateway ready — soft path', {
+            logger.warn('sync-groups: chats list failed while Gateway ready — soft path', {
                 error: fetchErr?.response?.data?.error || fetchErr?.message || null,
                 gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
             });
-            const existingGroupConvs = await Conversation.findAll({
-                where: {
-                    status: { [Op.notIn]: ['closed'] },
-                },
-                include: [
-                    {
-                        model: Customer,
-                        as: 'customer',
-                        required: true,
-                        where: {
-                            phone: { [Op.like]: '%@g.us' },
-                        },
-                    },
-                ],
-                limit: 500,
+            const existingConvs = await Conversation.findAll({
+                where: { status: { [Op.ne]: 'closed' } },
+                include: [{ model: Customer, as: 'customer', required: true }],
+                limit: 2000,
             });
             let softSynced = 0;
-            for (const conv of existingGroupConvs) {
+            for (const conv of existingConvs) {
                 try {
                     if (conv.isHiddenFromStaff || conv.status === 'archived') {
                         await conv.update({
@@ -320,13 +352,16 @@ router.post('/sync-groups', async (req, res, next) => {
             }
             return res.json({
                 ok: true,
-                groupsCount: existingGroupConvs.length,
+                groupsCount: existingConvs.filter(
+                    (c) => c.customer && String(c.customer.phone || '').includes('@g.us')
+                ).length,
+                chatsCount: existingConvs.length,
                 synced: softSynced,
                 soft: true,
                 message:
-                    existingGroupConvs.length > 0
-                        ? `${existingGroupConvs.length} گروه از قبل در سیستم بود و نمایش داده شد. لیست تازه از واتساپ لحظه‌ای برنگشت — چند ثانیه بعد دوباره همگام‌سازی را بزنید.`
-                        : 'Gateway متصل است اما الان لیست تازهٔ گروه‌ها از واتساپ نیامد. ۲۰ ثانیه صبر کنید و دوباره همگام‌سازی کنید.',
+                    existingConvs.length > 0
+                        ? `${existingConvs.length} مکالمه در سیستم باز/نمایش داده شد. لیست تازه از واتساپ لحظه‌ای برنگشت — چند ثانیه بعد دوباره همگام‌سازی کنید.`
+                        : 'Gateway متصل است اما الان لیست چت‌ها از واتساپ نیامد. ۲۰ ثانیه صبر کنید و دوباره همگام‌سازی کنید.',
             });
         }
 
@@ -344,7 +379,7 @@ router.post('/sync-groups', async (req, res, next) => {
             });
             if (status === 404 || String(gwMsg).includes('404')) {
                 return res.status(503).json({
-                    error: 'مسیر گروه‌ها در Gateway یافت نشد. GATEWAY_URL یا نسخهٔ Gateway را بررسی کنید.',
+                    error: 'مسیر چت‌ها در Gateway یافت نشد. GATEWAY_URL یا نسخهٔ Gateway را بررسی کنید.',
                 });
             }
             if (status === 401) {
@@ -352,37 +387,37 @@ router.post('/sync-groups', async (req, res, next) => {
                     error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را بررسی کنید.',
                 });
             }
-            // دیگر پیام «تب Gateway را وصل کنید (QR)» نشان داده نمی‌شود
             return res.status(503).json({
                 error:
-                    'همگام‌سازی گروه‌ها الان کامل نشد. چند ثانیه صبر کنید و دوباره بزنید. اگر ادامه داشت در تنظیمات واتساپ وضعیت Gateway را به‌روز کنید.',
+                    'همگام‌سازی چت‌ها الان کامل نشد. چند ثانیه صبر کنید و دوباره بزنید. اگر ادامه داشت در تنظیمات واتساپ وضعیت Gateway را به‌روز کنید.',
                 gatewayStatus: (liveStatus && (liveStatus.phase || liveStatus.status)) || null,
             });
         }
 
-        if (!readyGate.ok && !isGwReady(liveStatus) && gwRes) {
-            logger.info('sync-groups: groups returned despite ensureGate miss');
-        }
-
-        const groups = gwRes?.data?.groups || gwRes?.data?.data?.groups || [];
+        const chatRows = normalizeChatRows(gwRes.data || {});
         let synced = 0;
-        for (const g of groups) {
-            const groupId = (g.id || '').toString().trim();
-            if (!groupId) continue;
-            const groupName = (g.name || g.subject || g.formattedTitle || '').toString().trim();
+        let groupsSynced = 0;
+        for (const row of chatRows) {
+            const chatId = row.id;
+            const chatName = row.name;
+            const isGroup = !!row.isGroup;
             const t = await sequelize.transaction();
             try {
                 let customer;
                 try {
                     [customer] = await Customer.findOrCreate({
-                        where: { phone: groupId },
-                        defaults: { name: groupName || `گروه ${groupId}`, source: 'whatsapp' },
+                        where: { phone: chatId },
+                        defaults: {
+                            name: chatName || (isGroup ? `گروه ${chatId}` : `مشتری ${chatId}`),
+                            source: 'whatsapp',
+                            isRestrictedFromStaff: false,
+                        },
                         transaction: t,
                     });
                 } catch (e) {
                     if (e.name === 'SequelizeUniqueConstraintError') {
                         customer = await Customer.findOne({
-                            where: { phone: groupId },
+                            where: { phone: chatId },
                             transaction: t,
                         });
                     } else throw e;
@@ -391,12 +426,13 @@ router.post('/sync-groups', async (req, res, next) => {
                     await t.rollback();
                     continue;
                 }
-                if (customer.isRestrictedFromStaff) {
-                    await customer.update({ isRestrictedFromStaff: false }, { transaction: t });
+                const custUpdates = {};
+                if (customer.isRestrictedFromStaff) custUpdates.isRestrictedFromStaff = false;
+                if (chatName && customer.name !== chatName) custUpdates.name = chatName;
+                if (Object.keys(custUpdates).length) {
+                    await customer.update(custUpdates, { transaction: t });
                 }
-                if (groupName && customer.name !== groupName) {
-                    await customer.update({ name: groupName }, { transaction: t });
-                }
+
                 let conv = await Conversation.findOne({
                     where: {
                         customerId: customer.id,
@@ -412,70 +448,86 @@ router.post('/sync-groups', async (req, res, next) => {
                     });
                     if (archived) {
                         const meta = archived.metadata || {};
-                        await archived.update(
-                            {
-                                status: 'open',
-                                isHiddenFromStaff: false,
-                                metadata: {
-                                    ...meta,
-                                    isGroup: true,
-                                    groupName: groupName || meta.groupName || null,
-                                },
+                        const upd = {
+                            status: 'open',
+                            isHiddenFromStaff: false,
+                            closedAt: null,
+                            metadata: {
+                                ...meta,
+                                isGroup,
+                                groupName: isGroup ? chatName || meta.groupName || null : meta.groupName,
                             },
-                            { transaction: t }
-                        );
+                        };
+                        if (row.lastPreview) {
+                            upd.lastMessagePreview = row.lastPreview;
+                            if (row.timestamp) {
+                                const tsNum = Number(row.timestamp);
+                                upd.lastMessageAt = new Date(
+                                    tsNum < 1e12 ? tsNum * 1000 : tsNum
+                                );
+                            }
+                        }
+                        await archived.update(upd, { transaction: t });
                         conv = archived;
                     } else {
-                        await Conversation.create(
-                            {
-                                customerId: customer.id,
-                                status: 'open',
-                                priority: 'normal',
-                                source: 'whatsapp',
-                                isHiddenFromStaff: false,
-                                metadata: { isGroup: true, groupName: groupName || null },
-                            },
-                            { transaction: t }
-                        );
+                        const createData = {
+                            customerId: customer.id,
+                            status: 'open',
+                            priority: 'normal',
+                            source: 'whatsapp',
+                            isHiddenFromStaff: false,
+                            metadata: isGroup
+                                ? { isGroup: true, groupName: chatName || null }
+                                : {},
+                        };
+                        if (row.lastPreview) {
+                            createData.lastMessagePreview = row.lastPreview;
+                            if (row.timestamp) {
+                                const tsNum = Number(row.timestamp);
+                                createData.lastMessageAt = new Date(
+                                    tsNum < 1e12 ? tsNum * 1000 : tsNum
+                                );
+                            }
+                        }
+                        await Conversation.create(createData, { transaction: t });
                     }
                 } else {
                     const meta = conv.metadata || {};
-                    const needsUpdate =
-                        !meta.isGroup ||
-                        (groupName && meta.groupName !== groupName) ||
-                        conv.isHiddenFromStaff;
-                    if (needsUpdate) {
-                        await conv.update(
-                            {
-                                isHiddenFromStaff: false,
-                                metadata: {
-                                    ...meta,
-                                    isGroup: true,
-                                    groupName: groupName || meta.groupName || null,
-                                },
-                            },
-                            { transaction: t }
-                        );
+                    const upd = { isHiddenFromStaff: false };
+                    if (isGroup) {
+                        upd.metadata = {
+                            ...meta,
+                            isGroup: true,
+                            groupName: chatName || meta.groupName || null,
+                        };
                     }
+                    if (row.lastPreview && !conv.lastMessagePreview) {
+                        upd.lastMessagePreview = row.lastPreview;
+                    }
+                    await conv.update(upd, { transaction: t });
                 }
                 await t.commit();
                 synced++;
+                if (isGroup) groupsSynced++;
             } catch (loopErr) {
                 try {
                     await t.rollback();
                 } catch (_) {}
-                logger.warn('sync-groups: failed for group', { groupId, error: loopErr.message });
+                logger.warn('sync-groups: failed for chat', { chatId, error: loopErr.message });
             }
         }
         res.json({
             ok: true,
-            groupsCount: groups.length,
+            groupsCount: groupsSynced,
+            chatsCount: chatRows.length,
             synced,
             stale: !!gwRes?.data?.stale,
             message:
-                groups.length === 0
-                    ? 'هیچ گروهی از واتساپ دریافت نشد'
-                    : `${synced} گروه همگام شد` + (gwRes?.data?.stale ? ' (از کش Gateway)' : ''),
+                chatRows.length === 0
+                    ? 'هیچ چتی از واتساپ دریافت نشد'
+                    : `${synced} مکالمه همگام شد` +
+                      (groupsSynced ? ` (${groupsSynced} گروه)` : '') +
+                      (gwRes?.data?.stale ? ' (از کش Gateway)' : ''),
         });
     } catch (err) {
         next(err);

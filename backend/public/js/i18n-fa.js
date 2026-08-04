@@ -166,7 +166,7 @@ window.__I18N_FA = {
     page_conversations: 'مکالمات',
     conv_page_desc: 'مدیریت مکالمات با مشتریان، پاسخ‌دهی و تخصیص به دپارتمان‌ها.',
     conv_new: 'مکالمه جدید',
-    conv_sync_groups: 'همگام‌سازی گروه‌ها',
+    conv_sync_groups: 'همگام‌سازی چت‌ها و گروه‌ها',
     conv_tab_groups: 'گروه‌ها',
     conv_search_ph: 'جستجو نام یا شماره مشتری...',
     conv_list_title: 'مکالمات',
