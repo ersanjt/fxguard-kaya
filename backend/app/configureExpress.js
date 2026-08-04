@@ -81,7 +81,7 @@ function resolveWebhookIncomingBodyLimit() {
  * @param {import('sequelize').Sequelize} deps.sequelize
  * @returns {{ redisClient: object }}
  */
-function configureExpress({ app, io, getRabbitChannel, logger, sequelize }) {
+function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _sequelize }) {
     const webhookIncomingBodyLimit = resolveWebhookIncomingBodyLimit();
 
     app.use(

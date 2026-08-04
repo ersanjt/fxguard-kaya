@@ -22,7 +22,7 @@ const {
     PasswordResetToken,
     sequelize,
 } = require('../models');
-const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser, canManageTickets, canViewCustomerPhone } = require('../lib/permissions');
+const { getPermissions, isMainAdmin, canDeleteCustomer, canDeleteUser, canManageTickets, canViewCustomerPhone, canManageConversations } = require('../lib/permissions');
 const { validatePassword } = require('../lib/passwordValidation');
 const { isValidUUID } = require('../lib/validation');
 const { normalizePhone, isKnownPhoneDigits, canonicalizePhoneDigits } = require('../lib/phoneUtils');

@@ -1370,6 +1370,8 @@ let lastGroupsCache = { at: 0, groups: [] };
 async function listWhatsAppGroupsFromStore() {
     if (!client?.pupPage) throw new Error('pupPage_unavailable');
     return client.pupPage.evaluate(() => {
+        // runs inside WhatsApp Web Chromium page
+        // eslint-disable-next-line no-undef
         const store = window.Store;
         if (!store) return [];
 
