@@ -172,64 +172,90 @@ router.post('/sync-groups', async (req, res, next) => {
             return res.status(403).json({ error: 'دسترسی به بخش مکالمات ندارید' });
         const {
             gatewayGet,
+            gatewayPost,
             GATEWAY_URL,
             getWhatsappConnectionConfig,
         } = require('../lib/gatewayClient');
 
-        // پیش‌پرواز وضعیت Gateway — پیام خطای دقیق‌تر برای cloud_first / قطع بودن
-        try {
-            const cfg = await getWhatsappConnectionConfig();
-            let st = await gatewayGet('/api/status', { timeout: 10000 });
-            let data = st?.data || {};
-            // بعد از reload گاهی یک لحظه not-ready است؛ یک‌بار صبر و دوباره چک
-            if (
-                !data.whatsapp &&
-                (data.phase === 'ready' || data.starting || data.phase === 'authenticated')
-            ) {
-                await new Promise((r) => setTimeout(r, 2500));
-                st = await gatewayGet('/api/status', { timeout: 10000 });
-                data = st?.data || {};
-            }
-            if (!data.whatsapp) {
-                const phase = data.phase || data.status || 'disconnected';
-                const mode = cfg.connectionMode || 'cloud_first';
-                let hint = 'واتساپ Gateway آماده نیست. ';
-                if (phase === 'authenticated' || data.starting) {
-                    hint +=
-                        'اسکن شده و در حال همگام‌سازی است — ۳۰–۶۰ ثانیه صبر کنید بعد دوباره بزنید.';
-                } else if (mode === 'cloud' || mode === 'cloud_first') {
-                    hint +=
-                        'گروه‌ها فقط از طریق Gateway (QR) می‌آیند. به تنظیمات واتساپ بروید، تب Gateway را باز کنید، «شروع» بزنید و QR را اسکن کنید.';
-                } else {
-                    hint +=
-                        'در تنظیمات واتساپ QR را اسکن کنید تا وضعیت ready شود، بعد دوباره همگام‌سازی کنید.';
+        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+        /** وضعیت Gateway؛ در صورت نیاز /api/start و انتظار تا ready */
+        async function ensureGatewayWhatsappReady(cfg, opts = {}) {
+            const maxWaitMs = opts.maxWaitMs != null ? opts.maxWaitMs : 28000;
+            const startedAt = Date.now();
+            let last = {};
+            let startAttempted = false;
+
+            while (Date.now() - startedAt < maxWaitMs) {
+                try {
+                    const st = await gatewayGet('/api/status', { timeout: 10000, cfg });
+                    last = st?.data || {};
+                    if (last.whatsapp || last.usable || last.status === 'ready') {
+                        return { ok: true, data: last };
+                    }
+                } catch (e) {
+                    last = {
+                        status: 'unreachable',
+                        error: e?.response?.data?.error || e?.message || 'unreachable',
+                    };
                 }
-                return res.status(503).json({
-                    error: hint,
-                    gatewayStatus: phase,
-                    connectionMode: mode,
-                    gatewayReady: false,
-                });
+
+                const phase = last.phase || last.status || '';
+                const needsStart =
+                    !last.starting &&
+                    phase !== 'authenticated' &&
+                    phase !== 'qr' &&
+                    (phase === 'disconnected' ||
+                        phase === 'unreachable' ||
+                        phase === 'auth_failure' ||
+                        !phase);
+
+                if (needsStart && !startAttempted) {
+                    startAttempted = true;
+                    try {
+                        await gatewayPost('/api/start', {}, { timeout: 25000, cfg });
+                        logger.info('sync-groups: triggered gateway /api/start');
+                    } catch (startErr) {
+                        logger.warn('sync-groups: gateway start failed', {
+                            error: startErr?.response?.data?.error || startErr?.message,
+                        });
+                    }
+                }
+
+                await sleep(2500);
             }
-        } catch (preErr) {
-            const status = preErr?.response?.status;
-            const gwMsg = preErr?.response?.data?.error || preErr?.message || '';
-            if (status === 401) {
-                return res.status(503).json({
-                    error: 'Gateway: احراز هویت ناموفق. GATEWAY_API_SECRET را بررسی کنید.',
-                });
+
+            return { ok: false, data: last };
+        }
+
+        const cfg = await getWhatsappConnectionConfig();
+        const readyGate = await ensureGatewayWhatsappReady(cfg);
+        if (!readyGate.ok) {
+            const data = readyGate.data || {};
+            const phase = data.phase || data.status || 'disconnected';
+            const mode = cfg.connectionMode || 'cloud_first';
+            let hint = 'واتساپ Gateway آماده نیست. ';
+            if (phase === 'authenticated' || data.starting) {
+                hint += 'اسکن شده و در حال همگام‌سازی است — ۳۰–۶۰ ثانیه صبر کنید بعد دوباره بزنید.';
+            } else if (phase === 'qr') {
+                hint +=
+                    'QR آماده است. در تنظیمات واتساپ تب Gateway اسکن کنید، صبر کنید تا ready شود، بعد همگام‌سازی را بزنید.';
+            } else if (mode === 'cloud' || mode === 'cloud_first') {
+                hint +=
+                    'گروه‌ها فقط از طریق Gateway (QR) می‌آیند. به تنظیمات واتساپ بروید، تب Gateway را باز کنید، «شروع» بزنید و در صورت نیاز QR را اسکن کنید.';
+            } else {
+                hint +=
+                    'در تنظیمات واتساپ QR را اسکن کنید تا وضعیت ready شود، بعد دوباره همگام‌سازی کنید.';
             }
-            logger.warn('sync-groups: gateway status preflight failed', {
-                status,
-                error: gwMsg,
-                gatewayUrl: GATEWAY_URL || process.env.GATEWAY_URL || null,
-            });
             return res.status(503).json({
-                error: 'Gateway در دسترس نیست. سرویس crm-gateway را روی سرور چک کنید (PM2) و از پنل واتساپ «شروع Gateway» بزنید.',
+                error: hint,
+                gatewayStatus: phase,
+                connectionMode: mode,
+                gatewayReady: false,
             });
         }
 
-        const fetchGatewayGroups = () => gatewayGet('/api/chats/groups', { timeout: 35000 });
+        const fetchGatewayGroups = () => gatewayGet('/api/chats/groups', { timeout: 35000, cfg });
 
         let gwRes;
         try {
@@ -242,8 +268,10 @@ router.post('/sync-groups', async (req, res, next) => {
                 err?.message ||
                 '';
             if (s1 === 503 || /not ready|WhatsApp not ready/i.test(String(m1))) {
+                // یک‌بار دیگر start/wait سپس retry
+                await ensureGatewayWhatsappReady(cfg, { maxWaitMs: 15000 });
                 try {
-                    await new Promise((r) => setTimeout(r, 2500));
+                    await sleep(1500);
                     gwRes = await fetchGatewayGroups();
                 } catch (retryErr) {
                     err = retryErr;
@@ -1122,11 +1150,9 @@ router.patch('/:id', async (req, res, next) => {
                 return res.status(400).json({ error: 'وضعیت مکالمه نامعتبر است' });
             }
             if (status === 'archived' && !canArchiveOrDeleteConversation(req)) {
-                return res
-                    .status(403)
-                    .json({
-                        error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند مکالمه را آرشیو کند',
-                    });
+                return res.status(403).json({
+                    error: 'فقط مالک مجموعه (بالاترین سطح دسترسی) می‌تواند مکالمه را آرشیو کند',
+                });
             }
             updateData.status = status;
             if (status === 'closed' || status === 'resolved' || status === 'archived') {
@@ -1141,11 +1167,9 @@ router.patch('/:id', async (req, res, next) => {
         if (feedback !== undefined) updateData.feedback = String(feedback || '').trim() || null;
         if (isHiddenFromStaff !== undefined) {
             if (!(req.canViewHiddenConversations && req.canViewHiddenConversations())) {
-                return res
-                    .status(403)
-                    .json({
-                        error: 'فقط مالک یا ادمین می‌تواند مکالمه را از دید کارکنان مخفی کند',
-                    });
+                return res.status(403).json({
+                    error: 'فقط مالک یا ادمین می‌تواند مکالمه را از دید کارکنان مخفی کند',
+                });
             }
             updateData.isHiddenFromStaff =
                 isHiddenFromStaff === true || isHiddenFromStaff === 'true';
