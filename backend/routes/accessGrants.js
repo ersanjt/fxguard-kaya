@@ -54,6 +54,8 @@ router.post('/lockdown-legacy', async (req, res, next) => {
             gatewayPost,
             getWhatsappConnectionConfig,
         } = require('../lib/gatewayClient');
+        const logger = require('../config/logger');
+        const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
         const cfg = await getWhatsappConnectionConfig();
         let liveStatus = {};
@@ -67,51 +69,89 @@ router.post('/lockdown-legacy', async (req, res, next) => {
             normalizeLinkedNumber(req.body && req.body.number) ||
             '';
 
-        const ready =
-            !!(liveStatus.whatsapp || liveStatus.usable || liveStatus.status === 'ready' || liveStatus.phase === 'ready');
-        if (!ready) {
+        const isReady = (d) =>
+            !!(d && (d.whatsapp || d.usable || d.status === 'ready' || d.phase === 'ready'));
+
+        if (!isReady(liveStatus)) {
             try {
                 await gatewayPost('/api/start', {}, { timeout: 20000, cfg });
+                for (let i = 0; i < 8; i++) {
+                    await sleep(1500);
+                    try {
+                        const st = await gatewayGet('/api/status', { timeout: 8000, cfg });
+                        liveStatus = st?.data || liveStatus;
+                        if (isReady(liveStatus)) break;
+                    } catch (_) {}
+                }
             } catch (_) {}
+        }
+
+        if (!isReady(liveStatus)) {
             return res.status(503).json({
                 error: 'Gateway واتساپ آماده نیست. ابتدا در تنظیمات واتساپ وضعیت «متصل» را ببینید، بعد دوباره بزنید.',
             });
         }
 
         let chatsPayload = null;
-        try {
-            const gwRes = await gatewayGet('/api/chats', { timeout: 45000, cfg });
-            chatsPayload = gwRes?.data || null;
-        } catch (eAll) {
-            if (eAll?.response?.status === 404) {
-                try {
-                    const gwRes = await gatewayGet('/api/chats/groups', { timeout: 40000, cfg });
-                    chatsPayload = gwRes?.data || null;
-                } catch (eGrp) {
-                    return res.status(503).json({
-                        error:
-                            (eGrp?.response?.data && eGrp.response.data.error) ||
-                            'لیست چت‌های واتساپ این شماره دریافت نشد. همگام‌سازی را از صفحه مکالمات امتحان کنید.',
-                    });
+        let lastErrMsg = '';
+        for (let attempt = 0; attempt < 4; attempt++) {
+            try {
+                if (attempt > 0) {
+                    await gatewayPost('/api/start', {}, { timeout: 20000, cfg }).catch(() => {});
+                    await sleep(1200 * attempt);
                 }
-            } else {
-                return res.status(503).json({
-                    error:
-                        (eAll?.response?.data && eAll.response.data.error) ||
-                        'لیست چت‌های واتساپ این شماره دریافت نشد. چند ثانیه صبر کنید و دوباره بزنید.',
+                try {
+                    const gwRes = await gatewayGet('/api/chats', { timeout: 60000, cfg });
+                    chatsPayload = gwRes?.data || null;
+                } catch (eAll) {
+                    if (eAll?.response?.status === 404) {
+                        const gwRes = await gatewayGet('/api/chats/groups', {
+                            timeout: 45000,
+                            cfg,
+                        });
+                        chatsPayload = gwRes?.data || null;
+                    } else {
+                        throw eAll;
+                    }
+                }
+                break;
+            } catch (e) {
+                lastErrMsg =
+                    (e?.response?.data && (e.response.data.error || e.response.data.message)) ||
+                    e?.message ||
+                    '';
+                logger.warn('lockdown-legacy: chats fetch failed', {
+                    attempt: attempt + 1,
+                    error: lastErrMsg,
                 });
+                const retryable =
+                    e?.response?.status === 503 ||
+                    /not ready|timeout|getChats|Session closed|Target closed/i.test(
+                        String(lastErrMsg)
+                    );
+                if (!retryable) break;
             }
         }
 
         const raw =
-            (chatsPayload && (chatsPayload.chats || chatsPayload.groups)) || [];
-        const chatIds = (Array.isArray(raw) ? raw : [])
+            (chatsPayload && (chatsPayload.chats || chatsPayload.groups || chatsPayload.data)) ||
+            [];
+        const list = Array.isArray(raw)
+            ? raw
+            : Array.isArray(raw?.chats)
+              ? raw.chats
+              : Array.isArray(raw?.groups)
+                ? raw.groups
+                : [];
+        const chatIds = list
             .map((c) => (c && (c.id || c.chatId) ? String(c.id || c.chatId).trim() : ''))
             .filter(Boolean);
 
         if (!chatIds.length) {
             return res.status(503).json({
-                error: 'لیست چت از واتساپ خالی آمد — برای جلوگیری از آرشیو اشتباه، هیچ تغییری داده نشد. ۲۰ ثانیه بعد دوباره بزنید یا «همگام‌سازی چت‌ها» را بزنید.',
+                error: lastErrMsg
+                    ? `لیست چت واتساپ نیامد (${String(lastErrMsg).slice(0, 120)}). ۲۰ ثانیه صبر کنید و دوباره بزنید، یا از صفحه مکالمات «همگام‌سازی چت‌ها و گروه‌ها» را بزنید.`
+                    : 'لیست چت از واتساپ خالی آمد — برای جلوگیری از آرشیو اشتباه، هیچ تغییری داده نشد. ۲۰ ثانیه بعد دوباره بزنید یا «همگام‌سازی چت‌ها» را بزنید.',
                 gatewayNumber: gatewayNumber || null,
             });
         }

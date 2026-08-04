@@ -122,6 +122,7 @@ async function restoreLegacyCrmVisibility({ reason } = {}) {
 /**
  * فقط چت‌های موجود روی شمارهٔ فعلی Gateway را باز کن؛
  * بقیهٔ مکالمات واتساپی را دوباره آرشیو/مخفی کن.
+ * آپدیت‌ها bulk هستند تا درخواست تایم‌اوت نشود.
  */
 async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
     const gw = normalizeLinkedNumber(gatewayNumber);
@@ -149,14 +150,22 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
 
     const convs = await Conversation.findAll({
         where: { status: { [Op.ne]: 'closed' } },
-        include: [{ model: Customer, as: 'customer', required: true }],
+        include: [
+            {
+                model: Customer,
+                as: 'customer',
+                required: true,
+                attributes: ['id', 'phone', 'isRestrictedFromStaff'],
+            },
+        ],
+        attributes: ['id', 'status', 'isHiddenFromStaff', 'customerId'],
         limit: 8000,
     });
 
-    let opened = 0;
-    let archived = 0;
-    let unrestricted = 0;
-    let restricted = 0;
+    const openIds = [];
+    const archiveIds = [];
+    const unrestrictCust = new Set();
+    const restrictCust = new Set();
 
     for (const conv of convs) {
         const phone = String(conv.customer?.phone || '');
@@ -164,66 +173,65 @@ async function applyVisibilityForCurrentGatewayChats(chatIds, gatewayNumber) {
 
         const variants = chatIdVariants(phone);
         const onCurrent = variants.some((v) => allowed.has(String(v).toLowerCase()));
-        const meta = { ...(conv.metadata || {}) };
 
         if (onCurrent) {
-            meta.linkedGatewayNumber = gw || meta.linkedGatewayNumber || null;
-            meta.notOnCurrentGateway = false;
-            const needOpen = conv.status === 'archived' || !!conv.isHiddenFromStaff;
-            if (needOpen) {
-                await conv.update({
-                    status: 'open',
-                    isHiddenFromStaff: false,
-                    closedAt: null,
-                    metadata: meta,
-                });
-                opened++;
-            } else if (
-                meta.linkedGatewayNumber !== (conv.metadata || {}).linkedGatewayNumber ||
-                (conv.metadata || {}).notOnCurrentGateway
-            ) {
-                await conv.update({ metadata: meta });
+            if (conv.status === 'archived' || !!conv.isHiddenFromStaff) {
+                openIds.push(conv.id);
             }
-            if (conv.customer.isRestrictedFromStaff) {
-                await conv.customer.update({ isRestrictedFromStaff: false });
-                unrestricted++;
+            if (conv.customer?.isRestrictedFromStaff) {
+                unrestrictCust.add(conv.customer.id);
             }
         } else {
-            meta.notOnCurrentGateway = true;
-            if (gw) {
-                meta.previousGatewayNumber =
-                    meta.linkedGatewayNumber || meta.previousGatewayNumber || null;
-            }
             if (conv.status !== 'archived' || !conv.isHiddenFromStaff) {
-                await conv.update({
-                    status: 'archived',
-                    isHiddenFromStaff: true,
-                    metadata: meta,
-                });
-                archived++;
-            } else {
-                await conv.update({ metadata: meta });
+                archiveIds.push(conv.id);
             }
-            if (!conv.customer.isRestrictedFromStaff) {
-                await conv.customer.update({ isRestrictedFromStaff: true });
-                restricted++;
+            if (conv.customer && !conv.customer.isRestrictedFromStaff) {
+                restrictCust.add(conv.customer.id);
             }
         }
+    }
+
+    const chunked = async (Model, values, idList, size = 250) => {
+        for (let i = 0; i < idList.length; i += size) {
+            const slice = idList.slice(i, i + size);
+            await Model.update(values, { where: { id: { [Op.in]: slice } } });
+        }
+    };
+
+    if (openIds.length) {
+        await chunked(
+            Conversation,
+            { status: 'open', isHiddenFromStaff: false, closedAt: null },
+            openIds
+        );
+    }
+    if (archiveIds.length) {
+        await chunked(
+            Conversation,
+            { status: 'archived', isHiddenFromStaff: true },
+            archiveIds
+        );
+    }
+    if (unrestrictCust.size) {
+        await chunked(Customer, { isRestrictedFromStaff: false }, [...unrestrictCust]);
+    }
+    if (restrictCust.size) {
+        await chunked(Customer, { isRestrictedFromStaff: true }, [...restrictCust]);
     }
 
     logger.info('Applied visibility for current Gateway chats', {
         gatewayNumber: gw || null,
         allowedCount: ids.length,
-        opened,
-        archived,
-        unrestricted,
-        restricted,
+        opened: openIds.length,
+        archived: archiveIds.length,
+        unrestricted: unrestrictCust.size,
+        restricted: restrictCust.size,
     });
     return {
-        opened,
-        archived,
-        unrestricted,
-        restricted,
+        opened: openIds.length,
+        archived: archiveIds.length,
+        unrestricted: unrestrictCust.size,
+        restricted: restrictCust.size,
         allowedCount: ids.length,
     };
 }
