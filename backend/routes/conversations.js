@@ -180,7 +180,7 @@ router.post('/sync-groups', async (req, res, next) => {
         const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
         /** وضعیت Gateway؛ در صورت نیاز /api/start و انتظار تا ready */
-        async function ensureGatewayWhatsappReady(cfg, opts = {}) {
+        const ensureGatewayWhatsappReady = async (cfg, opts = {}) => {
             const maxWaitMs = opts.maxWaitMs != null ? opts.maxWaitMs : 28000;
             const startedAt = Date.now();
             let last = {};
@@ -226,7 +226,7 @@ router.post('/sync-groups', async (req, res, next) => {
             }
 
             return { ok: false, data: last };
-        }
+        };
 
         const cfg = await getWhatsappConnectionConfig();
         const readyGate = await ensureGatewayWhatsappReady(cfg);
