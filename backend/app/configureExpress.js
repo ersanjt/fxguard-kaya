@@ -435,7 +435,16 @@ function configureExpress({ app, io, getRabbitChannel, logger, sequelize: _seque
             res.setHeader('X-Content-Type-Options', 'nosniff');
             next();
         },
-        express.static(path.join(__dirname, '..', 'uploads'))
+        express.static(path.join(__dirname, '..', 'uploads'), {
+            fallthrough: true,
+            // جلوگیری از کرش روی نام فایل عجیب / دسترسی
+            setHeaders: (res) => {
+                res.setHeader('X-Content-Type-Options', 'nosniff');
+            }
+        }),
+        (req, res) => {
+            res.status(404).type('text/plain').send('Not found');
+        }
     );
     app.use(
         express.static(publicDir, {

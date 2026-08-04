@@ -12,6 +12,9 @@ const isDev = process.env.NODE_ENV !== 'production';
 function getHttpStatus(err) {
     if (err.status) return err.status;
     if (err.statusCode) return err.statusCode;
+    // فایل استاتیک / sendFile — نبودن فایل نباید 500 و آلارم باشد
+    if (err.code === 'ENOENT') return 404;
+    if (err.code === 'EACCES' || err.code === 'EPERM') return 403;
     // Sequelize validation errors
     if (err.name === 'SequelizeValidationError' || err.name === 'SequelizeUniqueConstraintError') return 422;
     if (err.name === 'SequelizeForeignKeyConstraintError') return 409;
@@ -42,8 +45,8 @@ function getUserMessage(err, status) {
     if (err.code === 'LIMIT_FILE_SIZE') return 'حجم فایل بیش از حد مجاز است';
     if (err.code === 'LIMIT_FILE_COUNT') return 'تعداد فایل‌ها بیش از حد مجاز است';
     if (err.code === 'LIMIT_UNEXPECTED_FILE') return 'فیلد فایل نامعتبر است';
-    // Client errors (4xx) — pass through the message
     if (status >= 400 && status < 500 && err.message) return err.message;
+    if (status === 404) return 'یافت نشد';
     // Server errors — generic message in production
     return isDev ? (err.message || 'خطای داخلی سرور') : 'خطای داخلی سرور';
 }

@@ -7,6 +7,23 @@ const { FileTemplate, User } = require('../models');
 const logger = require('../config/logger');
 const { isValidUUID } = require('../lib/validation');
 
+function safeUploadBasename(originalName) {
+    const ext = path.extname(originalName || '').slice(0, 20);
+    const base = path
+        .basename(originalName || 'file', ext)
+        .replace(/[^\w\u0600-\u06FF.-]+/g, '_')
+        .replace(/_+/g, '_')
+        .replace(/^[_.]+|[_.]+$/g, '')
+        .slice(0, 80);
+    return (base || 'file') + ext.toLowerCase();
+}
+
+function publicFileTemplateUrl(filepathOrName) {
+    const fname = path.basename(filepathOrName || '');
+    if (!fname) return null;
+    return '/uploads/file-templates/' + encodeURIComponent(fname);
+}
+
 // تنظیمات multer برای آپلود فایل
 const storage = multer.diskStorage({
     destination: async (req, file, cb) => {
@@ -19,10 +36,11 @@ const storage = multer.diskStorage({
         }
     },
     filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        const ext = path.extname(file.originalname);
-        const nameWithoutExt = path.basename(file.originalname, ext);
-        cb(null, nameWithoutExt + '-' + uniqueSuffix + ext);
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+        const safe = safeUploadBasename(file.originalname);
+        const ext = path.extname(safe);
+        const nameWithoutExt = path.basename(safe, ext);
+        cb(null, `${nameWithoutExt}-${uniqueSuffix}${ext}`);
     }
 });
 
@@ -103,7 +121,7 @@ router.get('/', async (req, res, next) => {
         const result = filtered.map(ft => {
             const plain = ft.toJSON ? ft.toJSON() : ft;
             const fname = path.basename(plain.filepath || plain.filename || '');
-            plain.url = fname ? '/uploads/file-templates/' + fname : null;
+            plain.url = publicFileTemplateUrl(fname);
             return plain;
         });
         res.json({ data: result });
@@ -157,7 +175,7 @@ router.post('/', upload.single('file'), async (req, res, next) => {
 
         const plain = result.toJSON ? result.toJSON() : result;
         const fname = path.basename(plain.filepath || plain.filename || '');
-        plain.url = fname ? '/uploads/file-templates/' + fname : null;
+        plain.url = publicFileTemplateUrl(fname);
         res.status(201).json(plain);
     } catch (err) {
         logger.error('Error uploading file template', { error: err.message });
@@ -214,7 +232,7 @@ router.get('/:id', async (req, res, next) => {
 
         const plain = fileTemplate.toJSON ? fileTemplate.toJSON() : fileTemplate;
         const fname = path.basename(plain.filepath || plain.filename || '');
-        plain.url = fname ? '/uploads/file-templates/' + fname : null;
+        plain.url = publicFileTemplateUrl(fname);
         res.json(plain);
     } catch (err) {
         logger.error('Error getting file template', { error: err.message });
@@ -243,7 +261,7 @@ router.get('/:id/download', async (req, res, next) => {
             return res.status(404).json({ error: 'فایل در سرور یافت نشد' });
         }
 
-        res.download(fileTemplate.filepath, fileTemplate.filename);
+        res.download(fileTemplate.filepath, safeUploadBasename(fileTemplate.filename || path.basename(fileTemplate.filepath || 'file')));
     } catch (err) {
         logger.error('Error downloading file template', { error: err.message });
         next(err);
@@ -294,7 +312,7 @@ router.put('/:id', async (req, res, next) => {
 
         const plain2 = result.toJSON ? result.toJSON() : result;
         const fname2 = path.basename(plain2.filepath || plain2.filename || '');
-        plain2.url = fname2 ? '/uploads/file-templates/' + fname2 : null;
+        plain2.url = publicFileTemplateUrl(fname2);
         res.json(plain2);
     } catch (err) {
         logger.error('Error updating file template', { error: err.message });

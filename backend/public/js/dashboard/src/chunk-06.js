@@ -1209,7 +1209,7 @@
                     const ext = (f.filename || '').split('.').pop().toLowerCase();
                     const icon = f.mimetype && f.mimetype.indexOf('image') !== -1 ? '🖼' : f.mimetype && f.mimetype.indexOf('pdf') !== -1 ? '📄' : f.mimetype && f.mimetype.indexOf('audio') !== -1 ? '🎵' : f.mimetype && f.mimetype.indexOf('video') !== -1 ? '🎬' : '📎';
                     const size = f.filesize ? (f.filesize < 1024*1024 ? Math.round(f.filesize/1024) + ' KB' : (f.filesize/1024/1024).toFixed(1) + ' MB') : '';
-                    const fUrl = f.url || (f.filepath ? '/uploads/file-templates/' + (f.filepath.split(/[\\/]/).pop()) : '');
+                    const fUrl = f.url || (f.filepath ? '/uploads/file-templates/' + encodeURIComponent((f.filepath.split(/[\\/]/).pop()) || '') : '');
                     return '<div class="chat-template-dropdown-item chat-file-tpl-item" data-file-id="' + escapeHtml(f.id) + '" data-file-name="' + escapeHtml(f.name || f.filename || '') + '" data-file-url="' + escapeHtml(fUrl) + '" data-mimetype="' + escapeHtml(f.mimetype || '') + '" data-filename="' + escapeHtml(f.filename || '') + '" role="button" tabindex="0"><div class="tpl-name">' + icon + ' ' + escapeHtml(f.name || f.filename || '') + '</div>' + (size ? '<div class="tpl-preview">' + size + (f.category ? ' · ' + escapeHtml(f.category) : '') + '</div>' : '') + '</div>';
                 }).join('');
             }
